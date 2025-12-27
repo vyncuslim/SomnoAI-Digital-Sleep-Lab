@@ -2,8 +2,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
+// Safely obtain the API key to prevent crashes in environments where 'process' is not defined globally.
+const getSafeApiKey = () => {
+  try {
+    return process.env.API_KEY || "";
+  } catch (e) {
+    return "";
+  }
+};
+
 // Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+// Wrapped in a closure or safer access to handle browser environments gracefully.
+const ai = new GoogleGenAI({ apiKey: getSafeApiKey() });
 
 export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
   try {

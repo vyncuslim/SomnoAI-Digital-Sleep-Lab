@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { GlassCard } from './GlassCard';
+import { GlassCard } from './GlassCard.tsx';
 import { Bell, Shield, Smartphone, Globe, Info, LogOut, ChevronRight, Moon } from 'lucide-react';
 
 export const Settings: React.FC = () => {

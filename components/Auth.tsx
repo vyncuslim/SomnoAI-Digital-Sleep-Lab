@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Moon, Mail, Lock, Eye, EyeOff } from 'lucide-react';
-import { GlassCard } from './GlassCard';
+import { GlassCard } from './GlassCard.tsx';
 
 interface AuthProps {
   onLogin: () => void;
