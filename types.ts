@@ -21,6 +21,7 @@ export interface SleepRecord {
   deepRatio: number; // 百分比
   remRatio: number;
   efficiency: number;
+  calories?: number; // 卡路里消耗 (kcal)
   stages: SleepStage[];
   heartRate: HeartRateData;
   aiInsights: string[];

@@ -5,7 +5,7 @@ import { SleepRecord } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { 
-  Heart, Sparkles, RefreshCw, CheckCircle2, AlertCircle, List, Zap, Clock, Activity, Loader2
+  Heart, Sparkles, RefreshCw, CheckCircle2, AlertCircle, List, Zap, Clock, Activity, Loader2, Flame
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -108,7 +108,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </div>
       </div>
 
-      {/* Main Metrics */}
+      {/* Main Metrics Grid */}
       <div className="grid grid-cols-2 gap-4">
         <GlassCard className="col-span-2 p-0 overflow-hidden border-indigo-500/10 bg-slate-900/40">
            <div className="p-6 flex justify-between items-start">
@@ -142,20 +142,36 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
            </div>
         </GlassCard>
 
-        <GlassCard className="p-6 space-y-3 group hover:border-indigo-500/30">
+        <GlassCard className="p-6 space-y-3 group hover:border-blue-500/30">
           <div className="flex items-center gap-2">
             <Clock size={16} className="text-blue-400" />
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">信号持续时间</p>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">睡眠时长</p>
           </div>
           <p className="text-xl font-black text-white">{formatDuration(data.totalDuration)}</p>
+        </GlassCard>
+
+        <GlassCard className="p-6 space-y-3 group hover:border-orange-500/30">
+          <div className="flex items-center gap-2">
+            <Flame size={16} className="text-orange-400" />
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">能量代谢</p>
+          </div>
+          <p className="text-xl font-black text-white">{data.calories || 0} <span className="text-[10px] text-slate-500 uppercase">kcal</span></p>
         </GlassCard>
 
         <GlassCard className="p-6 space-y-3 group hover:border-emerald-500/30">
           <div className="flex items-center gap-2">
             <Activity size={16} className="text-emerald-400" />
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">特征提取效率</p>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">提取效率</p>
           </div>
           <p className="text-xl font-black text-white">{data.efficiency}%</p>
+        </GlassCard>
+
+        <GlassCard className="p-6 space-y-3 group hover:border-indigo-500/30">
+          <div className="flex items-center gap-2">
+            <Sparkles size={16} className="text-indigo-400" />
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">深睡占比</p>
+          </div>
+          <p className="text-xl font-black text-white">{data.deepRatio}%</p>
         </GlassCard>
       </div>
 

@@ -7,7 +7,7 @@ import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord } from './types.ts';
-import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User, Loader2, CloudSync } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User, Loader2, CloudSync, PlusCircle, AlertTriangle } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
@@ -18,12 +18,18 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [errorToast, setErrorToast] = useState<string | null>(null);
 
   useEffect(() => {
     if (isLoggedIn) {
-      handleSyncGoogleFit(false); // 登录后尝试静默同步真实数据
+      handleSyncGoogleFit(false); 
     }
   }, [isLoggedIn]);
+
+  const showToast = (msg: string) => {
+    setErrorToast(msg);
+    setTimeout(() => setErrorToast(null), 5000);
+  };
 
   const refreshInsight = async (record: SleepRecord) => {
     try {
@@ -41,13 +47,16 @@ const App: React.FC = () => {
     setCurrentRecord(record);
     setHistory(prev => [record, ...prev]);
     setIsDataEntryOpen(false);
+    setActiveView('dashboard');
     refreshInsight(record);
   };
 
   const handleSyncGoogleFit = async (forcePrompt = true) => {
+    const shouldPrompt = forcePrompt || !googleFit.hasToken();
+    
     setIsLoading(true);
     try {
-      await googleFit.authorize(forcePrompt);
+      await googleFit.authorize(shouldPrompt);
       const fitData = await googleFit.fetchSleepData();
       
       const updatedRecord: SleepRecord = {
@@ -62,14 +71,14 @@ const App: React.FC = () => {
         heartRate: { resting: 0, average: 0, min: 0, max: 0, history: [] },
         aiInsights: ["正在从实验室终端提取生理信号..."],
         ...fitData,
-      };
+      } as SleepRecord;
       
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev.filter(h => !h.id.startsWith('fit-'))]);
       await refreshInsight(updatedRecord);
     } catch (err: any) {
       console.warn("Sync Issue:", err.message);
-      // 不再回退到演示数据
+      showToast(err.message);
     } finally {
       setIsLoading(false);
     }
@@ -95,22 +104,38 @@ const App: React.FC = () => {
 
     if (!currentRecord && activeView === 'dashboard') {
       return (
-        <div className="flex flex-col items-center justify-center h-[70vh] gap-8 text-center px-4">
+        <div className="flex flex-col items-center justify-center h-[70vh] gap-8 text-center px-4 animate-in fade-in duration-700">
           <div className="p-8 bg-indigo-500/10 border border-indigo-500/20 rounded-[3rem] shadow-2xl shadow-indigo-500/10">
             <CloudSync size={80} className="text-indigo-400 mb-2" />
           </div>
           <div className="max-w-xs space-y-4">
             <h2 className="text-3xl font-black text-white tracking-tight">等待信号接入</h2>
-            <p className="text-slate-400 text-sm leading-relaxed font-medium">
-              实验室尚未检测到您的生理特征流。请连接 Google 健身以开启 AI 深度睡眠分析。
-            </p>
+            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-left space-y-2">
+               <div className="flex items-center gap-2 text-amber-400">
+                 <AlertTriangle size={14} />
+                 <span className="text-[10px] font-black uppercase tracking-widest">排障清单</span>
+               </div>
+               <ul className="text-[10px] text-slate-400 list-disc list-inside space-y-1">
+                 <li>授权时是否勾选了<span className="text-slate-200">全部复选框</span>？</li>
+                 <li>手机 Google Fit 是否有<span className="text-slate-200">近 7 天</span>睡眠记录？</li>
+                 <li>手机是否开启了<span className="text-slate-200">同步</span>功能？</li>
+               </ul>
+            </div>
           </div>
-          <button 
-            onClick={() => handleSyncGoogleFit(true)}
-            className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl shadow-indigo-600/30"
-          >
-            立即开启实验室同步
-          </button>
+          <div className="flex flex-col w-full max-w-xs gap-3">
+            <button 
+              onClick={() => handleSyncGoogleFit(true)}
+              className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl shadow-indigo-600/30"
+            >
+              重新连接并核对权限
+            </button>
+            <button 
+              onClick={() => setIsDataEntryOpen(true)}
+              className="w-full py-5 bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
+            >
+              <PlusCircle size={18} /> 手动录入实验数据
+            </button>
+          </div>
         </div>
       );
     }
@@ -120,7 +145,7 @@ const App: React.FC = () => {
         <Dashboard 
           data={currentRecord!} 
           onAddData={() => setIsDataEntryOpen(true)} 
-          onSyncFit={() => handleSyncGoogleFit(true)}
+          onSyncFit={() => handleSyncGoogleFit(false)} 
         />
       );
       case 'calendar': return <Trends history={history} />;
@@ -164,6 +189,17 @@ const App: React.FC = () => {
             <NavItem view="profile" icon={User} label="系统" />
           </div>
         </nav>
+      )}
+
+      {/* Error Toast */}
+      {errorToast && (
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 bg-slate-900 border border-indigo-500/30 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col gap-1 animate-in slide-in-from-bottom-4 duration-300 max-w-[80vw]">
+          <div className="flex items-center gap-2 text-indigo-400">
+             <AlertTriangle size={16} />
+             <span className="text-xs font-black uppercase tracking-widest">同步反馈</span>
+          </div>
+          <span className="text-slate-300 text-[10px] font-medium leading-relaxed">{errorToast}</span>
+        </div>
       )}
 
       {isDataEntryOpen && (

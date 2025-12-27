@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap } from 'lucide-react';
+import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, CheckCircle2 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
@@ -48,19 +48,19 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         </div>
         <div>
           <h1 className="text-5xl font-black tracking-tighter text-white mb-3">SomnoAI</h1>
-          <p className="text-slate-400 font-medium tracking-wide">数字化睡眠实验室系统 v2.5</p>
+          <p className="text-slate-400 font-medium tracking-wide">数字化睡眠实验室系统 v2.6</p>
         </div>
       </div>
 
       <GlassCard className="w-full max-w-md p-10 border-slate-700/50 bg-slate-900/40 shadow-[0_20px_50px_rgba(0,0,0,0.5)] space-y-8 relative z-10">
         <div className="space-y-6">
-          <div className="p-5 bg-white/[0.03] rounded-3xl border border-white/5 text-left">
-            <div className="flex items-center gap-2 mb-3">
-              <ShieldCheck size={14} className="text-indigo-400" />
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">实验室隐私协议</p>
+          <div className="p-5 bg-indigo-500/10 rounded-3xl border border-indigo-500/20 text-left space-y-3">
+            <div className="flex items-center gap-2">
+              <CheckCircle2 size={16} className="text-indigo-400" />
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">接入关键指南</p>
             </div>
-            <p className="text-xs text-slate-400 leading-relaxed">
-              实验室将通过 <span className="text-white font-bold">Google Fit API</span> 安全提取您的心率、睡眠分期及生理特征流。所有计算均在受保护的环境中进行。
+            <p className="text-xs text-slate-300 leading-relaxed font-medium">
+              在接下来的 Google 授权弹窗中，请确保 <span className="text-white font-bold underline decoration-indigo-500">勾选所有 4 个复选框</span>（心率、睡眠、活动、个人资料），否则实验室将无法读取您的真实生理流。
             </p>
           </div>
 
@@ -85,7 +85,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             <div className="flex items-start gap-3 px-4 py-1">
               <Info size={14} className="text-amber-500 mt-1 shrink-0" />
               <p className="text-[10px] text-slate-500 leading-snug italic">
-                提示：若由于应用未经验证被拦截，请点击弹出窗口中的 <span className="text-slate-400 font-bold underline">“高级” &gt; “继续前往 mgx.dev”</span> 即可完成接入。
+                提示：若被浏览器拦截，请点击 <span className="text-slate-400 font-bold">“高级” &gt; “继续前往 mgx.dev”</span> 即可完成安全接入。
               </p>
             </div>
           </div>
