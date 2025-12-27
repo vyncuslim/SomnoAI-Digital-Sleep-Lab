@@ -5,22 +5,24 @@ export const COLORS = {
   light: '#06b6d4',
   awake: '#64748b',
   primary: '#4f46e5',
-  cardBg: 'rgba(30, 41, 59, 0.5)',
+  cardBg: 'rgba(15, 23, 42, 0.6)',
+  accent: '#818cf8',
 };
 
 export const MOCK_RECORD: any = {
   id: 'today',
   date: '12月27日 星期六',
   score: 82,
-  totalDuration: 450,
+  totalDuration: 450, // 7.5 hours
   deepRatio: 22,
   remRatio: 18,
-  efficiency: 85,
+  efficiency: 88,
   heartRate: {
-    average: 62,
-    min: 54,
-    max: 78,
-    history: []
+    resting: 62,
+    average: 64,
+    min: 58,
+    max: 82,
+    history: Array.from({ length: 24 }, (_, i) => ({ time: `${i}:00`, bpm: 60 + Math.random() * 10 }))
   },
   aiInsights: [
     "连接 Google Fit 后，将根据您的睡眠数据生成个性化建议",

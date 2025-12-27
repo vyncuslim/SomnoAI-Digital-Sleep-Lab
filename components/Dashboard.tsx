@@ -1,16 +1,17 @@
 
 import React from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, AreaChart, Area } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { SleepRecord } from '../types';
 import { GlassCard } from './GlassCard';
 import { COLORS } from '../constants';
-import { Bell, Settings, Clock, Moon, Zap, Activity, Heart, Sparkles, Plus, RefreshCw } from 'lucide-react';
+import { Bell, Settings, Clock, Moon, Zap, Activity, Heart, Sparkles, Plus } from 'lucide-react';
 
 interface DashboardProps {
   data: SleepRecord;
+  onAddData?: () => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData }) => {
   const scoreData = [{ value: data.score }, { value: 100 - data.score }];
   
   const weekTrendData = [
@@ -20,146 +21,190 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
     { day: '周三', score: 85 },
     { day: '周四', score: 80 },
     { day: '周五', score: 88 },
-    { day: '周六', score: 0 },
+    { day: '周六', score: 82 },
   ];
 
+  const formatDuration = (mins: number) => {
+    const h = Math.floor(mins / 60);
+    const m = mins % 60;
+    return `${h}小时${m}分`;
+  };
+
   return (
-    <div className="space-y-6 pb-32">
+    <div className="space-y-8 pb-32 animate-in fade-in duration-700">
       {/* Header */}
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">睡眠AI</h1>
-          <p className="text-slate-400 text-sm">{data.date}</p>
+          <h1 className="text-2xl font-bold tracking-tight">睡眠AI</h1>
+          <p className="text-slate-400 text-sm font-medium">{data.date}</p>
         </div>
-        <div className="flex gap-4">
-          <button className="p-2 text-slate-400 hover:text-white"><Bell size={22} /></button>
-          <button className="p-2 text-slate-400 hover:text-white"><Settings size={22} /></button>
+        <div className="flex gap-2">
+          <button className="p-2.5 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all">
+            <Bell size={20} />
+          </button>
+          <button className="p-2.5 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all">
+            <Settings size={20} />
+          </button>
         </div>
       </header>
 
       {/* Score Section */}
-      <div className="flex flex-col items-center justify-center py-6 relative">
-        <div className="w-48 h-48 relative">
+      <div className="flex flex-col items-center justify-center py-4 relative">
+        <div className="w-56 h-56 relative group">
+          <div className="absolute inset-0 bg-indigo-500/20 blur-[60px] rounded-full scale-75 group-hover:scale-100 transition-transform duration-1000"></div>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={scoreData}
                 cx="50%"
                 cy="50%"
-                innerRadius={70}
-                outerRadius={85}
+                innerRadius={75}
+                outerRadius={95}
                 paddingAngle={0}
                 dataKey="value"
                 startAngle={90}
                 endAngle={450}
                 stroke="none"
               >
-                <Cell fill="#4f46e5" />
-                <Cell fill="rgba(255,255,255,0.05)" />
+                <Cell fill="url(#scoreGradient)" />
+                <Cell fill="rgba(255,255,255,0.03)" />
               </Pie>
+              <defs>
+                <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stopColor="#818cf8" />
+                  <stop offset="100%" stopColor="#4f46e5" />
+                </linearGradient>
+              </defs>
             </PieChart>
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-5xl font-bold">{data.score}</span>
-            <span className="text-xs text-slate-400 mt-1">睡眠分数</span>
-            <span className="text-xs text-emerald-400 mt-1 font-bold">需改善</span>
+            <span className="text-6xl font-black text-white tracking-tighter drop-shadow-lg">{data.score}</span>
+            <span className="text-xs text-slate-400 font-bold tracking-[0.2em] mt-1">睡眠分数</span>
+            <div className="mt-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full">
+              <span className="text-[10px] text-emerald-400 font-black uppercase">表现良好</span>
+            </div>
           </div>
         </div>
-        <p className="text-slate-500 text-xs mt-4">暂无睡眠数据</p>
       </div>
 
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-4">
-        <GlassCard className="flex items-start gap-4 p-5">
-          <div className="p-2 bg-blue-500/10 rounded-xl text-blue-400">
-            <Clock size={20} />
+        <GlassCard className="flex flex-col gap-3 p-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-blue-500/10 rounded-xl text-blue-400">
+              <Clock size={20} />
+            </div>
+            <p className="text-slate-400 text-xs font-bold">总睡眠时长</p>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs mb-1">总睡眠时长</p>
-            <p className="text-lg font-bold">--</p>
-            <p className="text-[10px] text-slate-500">目标: 8小时</p>
-          </div>
-        </GlassCard>
-
-        <GlassCard className="flex items-start gap-4 p-5">
-          <div className="p-2 bg-purple-500/10 rounded-xl text-purple-400">
-            <Moon size={20} />
-          </div>
-          <div>
-            <p className="text-slate-400 text-xs mb-1">深睡睡眠</p>
-            <p className="text-lg font-bold">--</p>
-            <p className="text-[10px] text-slate-500">占比 0%</p>
+          <div className="space-y-1">
+            <p className="text-xl font-bold">{formatDuration(data.totalDuration)}</p>
+            <p className="text-[10px] text-slate-500 font-medium">目标: 8小时</p>
           </div>
         </GlassCard>
 
-        <GlassCard className="flex items-start gap-4 p-5">
-          <div className="p-2 bg-amber-500/10 rounded-xl text-amber-400">
-            <Zap size={20} />
+        <GlassCard className="flex flex-col gap-3 p-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-400">
+              <Moon size={20} />
+            </div>
+            <p className="text-slate-400 text-xs font-bold">深睡睡眠</p>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs mb-1">REM 睡眠</p>
-            <p className="text-lg font-bold">--</p>
-            <p className="text-[10px] text-slate-500">占比 0%</p>
+          <div className="space-y-1">
+            <p className="text-xl font-bold">{Math.floor(data.totalDuration * (data.deepRatio / 100) / 60)}h {Math.floor(data.totalDuration * (data.deepRatio / 100) % 60)}m</p>
+            <p className="text-[10px] text-slate-500 font-medium">占比 {data.deepRatio}%</p>
           </div>
         </GlassCard>
 
-        <GlassCard className="flex items-start gap-4 p-5">
-          <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-400">
-            <Activity size={20} />
+        <GlassCard className="flex flex-col gap-3 p-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-400">
+              <Zap size={20} />
+            </div>
+            <p className="text-slate-400 text-xs font-bold">REM 睡眠</p>
           </div>
-          <div>
-            <p className="text-slate-400 text-xs mb-1">睡眠效率</p>
-            <p className="text-lg font-bold">--</p>
-            <p className="text-[10px] text-slate-500">健康范围 85%+</p>
+          <div className="space-y-1">
+            <p className="text-xl font-bold">{Math.floor(data.totalDuration * (data.remRatio / 100) / 60)}h {Math.floor(data.totalDuration * (data.remRatio / 100) % 60)}m</p>
+            <p className="text-[10px] text-slate-500 font-medium">占比 {data.remRatio}%</p>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="flex flex-col gap-3 p-5">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-emerald-500/10 rounded-xl text-emerald-400">
+              <Activity size={20} />
+            </div>
+            <p className="text-slate-400 text-xs font-bold">睡眠效率</p>
+          </div>
+          <div className="space-y-1">
+            <p className="text-xl font-bold">{data.efficiency}%</p>
+            <p className="text-[10px] text-slate-500 font-medium">健康范围 85%+</p>
           </div>
         </GlassCard>
       </div>
 
       {/* Heart Rate Section */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center gap-2 px-1">
-          <Heart size={18} className="text-rose-500" />
-          <h3 className="font-bold">睡眠心率</h3>
-          <span className="text-[10px] text-slate-500 ml-auto">无数据</span>
+          <div className="p-1.5 bg-rose-500/20 rounded-lg text-rose-500">
+            <Heart size={18} />
+          </div>
+          <h3 className="font-bold text-lg">睡眠心率</h3>
+          <span className="text-[10px] text-slate-500 ml-auto font-bold uppercase tracking-wider">实时监测</span>
         </div>
-        <GlassCard className="grid grid-cols-3 gap-0 divide-x divide-white/5 p-4">
-          <div className="text-center px-2">
-            <p className="text-[10px] text-slate-400 mb-1">平均</p>
-            <p className="text-lg font-bold">--</p>
+        <GlassCard className="grid grid-cols-3 gap-0 divide-x divide-white/5 p-6 bg-slate-900/40">
+          <div className="text-center px-2 space-y-1">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">平均</p>
+            <p className="text-2xl font-black text-white">{data.heartRate.average}<span className="text-[10px] text-slate-500 ml-1">BPM</span></p>
           </div>
-          <div className="text-center px-2">
-            <p className="text-[10px] text-slate-400 mb-1">最低</p>
-            <p className="text-lg font-bold">--</p>
+          <div className="text-center px-2 space-y-1">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">最低</p>
+            <p className="text-2xl font-black text-rose-400">{data.heartRate.min}<span className="text-[10px] text-slate-500 ml-1">BPM</span></p>
           </div>
-          <div className="text-center px-2">
-            <p className="text-[10px] text-slate-400 mb-1">最高</p>
-            <p className="text-lg font-bold">--</p>
+          <div className="text-center px-2 space-y-1">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">最高</p>
+            <p className="text-2xl font-black text-rose-300">{data.heartRate.max}<span className="text-[10px] text-slate-500 ml-1">BPM</span></p>
           </div>
         </GlassCard>
       </div>
 
       {/* Sleep Stages Chart */}
-      <div className="space-y-3">
-        <h3 className="font-bold px-1">睡眠阶段</h3>
-        <GlassCard className="p-4 h-56 flex flex-col">
-          <div className="flex-1 flex items-end gap-0.5 px-6">
-            <div className="w-full h-full relative">
-              <div className="absolute left-[-2rem] top-0 h-full flex flex-col justify-between text-[10px] text-slate-500 pr-2">
-                <span>清醒</span>
-                <span>浅睡</span>
-                <span>REM</span>
-                <span>深睡</span>
-              </div>
-              {/* Stepped Chart Mockup */}
-              <div className="w-full h-full border-l border-b border-white/5 flex items-end">
-                <svg viewBox="0 0 100 40" className="w-full h-full">
-                  <path d="M 0 5 L 10 5 L 10 25 L 30 25 L 30 35 L 50 35 L 50 15 L 70 15 L 70 25 L 90 25 L 90 5 L 100 5" 
-                        fill="none" stroke="#4f46e5" strokeWidth="0.5" />
-                </svg>
-              </div>
+      <div className="space-y-4">
+        <h3 className="font-bold text-lg px-1">睡眠阶段</h3>
+        <GlassCard className="p-8 h-64 flex flex-col justify-between bg-slate-900/40">
+          <div className="flex-1 flex relative">
+            {/* Left Labels */}
+            <div className="absolute left-[-2.5rem] top-0 h-full flex flex-col justify-between text-[10px] text-slate-500 font-black py-1">
+              <span>清醒</span>
+              <span>浅睡</span>
+              <span>REM</span>
+              <span>深睡</span>
+            </div>
+            
+            {/* Grid Lines */}
+            <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
+              <div className="w-full border-t border-white/20"></div>
+              <div className="w-full border-t border-white/20"></div>
+              <div className="w-full border-t border-white/20"></div>
+              <div className="w-full border-b border-white/20"></div>
+            </div>
+
+            {/* Stepped Chart Area */}
+            <div className="flex-1 ml-4 overflow-hidden">
+              <svg viewBox="0 0 400 100" className="w-full h-full preserve-3d" preserveAspectRatio="none">
+                <path 
+                  d="M 0 10 L 40 10 L 40 40 L 100 40 L 100 90 L 160 90 L 160 65 L 240 65 L 240 40 L 320 40 L 320 10 L 400 10" 
+                  fill="none" 
+                  stroke="#4f46e5" 
+                  strokeWidth="3" 
+                  strokeLinecap="round" 
+                  strokeLinejoin="round"
+                  className="drop-shadow-[0_0_8px_rgba(79,70,229,0.5)]"
+                />
+              </svg>
             </div>
           </div>
-          <div className="flex justify-between text-[10px] text-slate-500 mt-2">
+          {/* Time Labels */}
+          <div className="flex justify-between text-[10px] text-slate-500 font-bold mt-6 ml-4">
             <span>23:00</span>
             <span>01:00</span>
             <span>03:00</span>
@@ -170,32 +215,41 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
       </div>
 
       {/* Weekly Trend */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex justify-between items-center px-1">
-          <h3 className="font-bold">本周趋势</h3>
-          <span className="text-[10px] text-slate-500">平均 0分</span>
+          <h3 className="font-bold text-lg">本周趋势</h3>
+          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-black">
+            平均 <span className="text-indigo-400">82分</span>
+          </div>
         </div>
-        <GlassCard className="p-4 h-48">
+        <GlassCard className="p-6 h-56 bg-slate-900/40">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weekTrendData}>
-              <Bar dataKey="score" fill="rgba(79, 70, 229, 0.4)" radius={[4, 4, 0, 0]} />
-              <XAxis dataKey="day" axisLine={false} tickLine={false} fontSize={10} stroke="#64748b" />
+            <BarChart data={weekTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+              <XAxis dataKey="day" axisLine={false} tickLine={false} fontSize={10} stroke="#64748b" dy={10} fontWeight="bold" />
+              <YAxis axisLine={false} tickLine={false} fontSize={10} stroke="#64748b" hide />
+              <Tooltip 
+                cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 10 }}
+                contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '10px', color: '#fff' }}
+              />
+              <Bar dataKey="score" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={32} />
             </BarChart>
           </ResponsiveContainer>
         </GlassCard>
       </div>
 
       {/* AI Insights */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="flex items-center gap-2 px-1">
-          <Sparkles size={18} className="text-indigo-400" />
-          <h3 className="font-bold">AI 睡眠洞察</h3>
+          <div className="p-1.5 bg-indigo-500/20 rounded-lg text-indigo-400">
+            <Sparkles size={18} />
+          </div>
+          <h3 className="font-bold text-lg">AI 睡眠洞察</h3>
         </div>
-        <GlassCard className="space-y-4 p-6">
+        <GlassCard className="space-y-4 p-6 bg-slate-900/40 border-indigo-500/10">
           {data.aiInsights.map((insight, i) => (
-            <div key={i} className="flex gap-3">
-              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 flex-shrink-0"></div>
-              <p className="text-sm text-slate-300 leading-relaxed">{insight}</p>
+            <div key={i} className="flex gap-4 group">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2.5 flex-shrink-0 group-hover:scale-150 transition-transform"></div>
+              <p className="text-sm text-slate-300 leading-relaxed font-medium">{insight}</p>
             </div>
           ))}
         </GlassCard>
@@ -203,21 +257,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ data }) => {
 
       {/* Google Fit Card */}
       <div className="space-y-4">
-        <button className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl font-bold flex items-center justify-center gap-2 text-slate-400">
-          <Plus size={18} /> 手动录入睡眠数据
+        <button 
+          onClick={onAddData}
+          className="w-full py-5 bg-white/5 border border-white/10 rounded-[2rem] font-bold flex items-center justify-center gap-2 text-slate-300 hover:bg-white/10 transition-all active:scale-95 group"
+        >
+          <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> 手动录入睡眠数据
         </button>
         
-        <div className="bg-[#1e1b4b]/40 border border-indigo-500/20 rounded-3xl p-6 flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-indigo-600/20 rounded-2xl text-indigo-400">
-              <Activity size={24} />
+        <div className="bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border border-indigo-500/20 rounded-[2.5rem] p-8 flex items-center justify-between shadow-2xl shadow-indigo-900/20 relative overflow-hidden group">
+          <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 blur-[50px] rounded-full group-hover:bg-indigo-500/10 transition-colors"></div>
+          <div className="flex items-center gap-5 relative z-10">
+            <div className="p-4 bg-indigo-600/20 rounded-2xl text-indigo-400 border border-indigo-500/20">
+              <Activity size={28} />
             </div>
             <div>
-              <h4 className="font-bold">Google Fit</h4>
-              <p className="text-xs text-slate-500">同步您的健康数据</p>
+              <h4 className="font-black text-lg">Google Fit</h4>
+              <p className="text-xs text-slate-400 font-medium">同步您的健康中心数据</p>
             </div>
           </div>
-          <button className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 rounded-xl text-sm font-bold transition-all">
+          <button className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-2xl text-sm font-black transition-all shadow-xl shadow-indigo-600/30 active:scale-90 relative z-10">
             连接
           </button>
         </div>
