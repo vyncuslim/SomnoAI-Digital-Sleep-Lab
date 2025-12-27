@@ -3,9 +3,10 @@ import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { SleepRecord } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
+import { COLORS } from '../constants.tsx';
 import { 
   Bell, Settings, Clock, Moon, Zap, Activity, Heart, 
-  Sparkles, Plus, RefreshCw, CheckCircle2, AlertCircle, CloudSync, ArrowRight, Loader2, ShieldCheck
+  Sparkles, Plus, RefreshCw, CheckCircle2, AlertCircle, CloudSync, ArrowRight, Loader2, ShieldCheck, List
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -45,6 +46,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
     const m = mins % 60;
     return `${h}小时${m}分`;
   };
+
+  // 计算阶段占比条
+  const totalStageMins = data.stages.reduce((acc, s) => acc + s.duration, 0);
 
   return (
     <div className="space-y-8 pb-32 animate-in fade-in duration-700">
@@ -111,6 +115,52 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
         </div>
       </div>
 
+      {/* Sleep Stages Visualization */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 px-1">
+          <div className="p-1.5 bg-indigo-500/20 rounded-lg text-indigo-400">
+            <List size={18} />
+          </div>
+          <h3 className="font-bold text-lg">睡眠架构</h3>
+        </div>
+        <GlassCard className="p-6 space-y-6">
+          <div className="w-full h-8 bg-slate-800/50 rounded-full overflow-hidden flex shadow-inner">
+            {data.stages.map((stage, idx) => {
+              const width = `${(stage.duration / totalStageMins) * 100}%`;
+              let color = COLORS.light;
+              if (stage.name === '深睡') color = COLORS.deep;
+              if (stage.name === 'REM') color = COLORS.rem;
+              if (stage.name === '清醒') color = COLORS.awake;
+              
+              return (
+                <div 
+                  key={idx} 
+                  style={{ width, backgroundColor: color }}
+                  className="h-full relative group transition-all hover:brightness-110"
+                >
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 bg-slate-900 text-[10px] px-2 py-1 rounded border border-white/10 opacity-0 group-hover:opacity-100 whitespace-nowrap z-10 transition-opacity">
+                    {stage.name}: {stage.duration}m
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex justify-between items-center gap-2 flex-wrap">
+            {[
+              { label: '深睡', color: COLORS.deep },
+              { label: 'REM', color: COLORS.rem },
+              { label: '浅睡', color: COLORS.light },
+              { label: '清醒', color: COLORS.awake }
+            ].map(item => (
+              <div key={item.label} className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
+                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{item.label}</span>
+              </div>
+            ))}
+          </div>
+        </GlassCard>
+      </div>
+
       {/* Metrics Grid */}
       <div className="grid grid-cols-2 gap-4">
         <GlassCard className="flex flex-col gap-3 p-5">
@@ -123,32 +173,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
           <div className="space-y-1">
             <p className="text-xl font-bold">{formatDuration(data.totalDuration)}</p>
             <p className="text-[10px] text-slate-500 font-medium">目标: 8小时</p>
-          </div>
-        </GlassCard>
-
-        <GlassCard className="flex flex-col gap-3 p-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-purple-500/10 rounded-xl text-purple-400">
-              <Moon size={20} />
-            </div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wide">深睡</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xl font-bold">{Math.floor(data.totalDuration * (data.deepRatio / 100) / 60)}h {Math.floor(data.totalDuration * (data.deepRatio / 100) % 60)}m</p>
-            <p className="text-[10px] text-slate-500 font-medium">占比 {data.deepRatio}%</p>
-          </div>
-        </GlassCard>
-
-        <GlassCard className="flex flex-col gap-3 p-5">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 bg-amber-500/10 rounded-xl text-amber-400">
-              <Zap size={20} />
-            </div>
-            <p className="text-slate-400 text-xs font-bold uppercase tracking-wide">REM</p>
-          </div>
-          <div className="space-y-1">
-            <p className="text-xl font-bold">{Math.floor(data.totalDuration * (data.remRatio / 100) / 60)}h {Math.floor(data.totalDuration * (data.remRatio / 100) % 60)}m</p>
-            <p className="text-[10px] text-slate-500 font-medium">占比 {data.remRatio}%</p>
           </div>
         </GlassCard>
 

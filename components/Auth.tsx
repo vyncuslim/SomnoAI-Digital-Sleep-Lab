@@ -1,10 +1,8 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Key, AlertCircle, CheckCircle2, Eye, EyeOff, Save, ShieldCheck, Lock, Loader2, Info } from 'lucide-react';
+import { Moon, ShieldCheck, Lock, Loader2, Info } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
-
-const MANUAL_KEY_STORAGE = 'SOMNO_MANUAL_API_KEY';
 
 interface AuthProps {
   onLogin: () => void;
@@ -12,37 +10,13 @@ interface AuthProps {
 
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
-  const [hasStoredKey, setHasStoredKey] = useState(false);
-  const [showKeyInput, setShowKeyInput] = useState(false);
 
   useEffect(() => {
-    // Check for existing API keys (Manual or Process Env)
-    const checkKey = () => {
-      const stored = localStorage.getItem(MANUAL_KEY_STORAGE);
-      const env = (globalThis as any).process?.env?.API_KEY;
-      setHasStoredKey(!!(stored || env));
-      if (stored) setApiKey(stored);
-    };
-    checkKey();
-
     // Pre-initialize Google Fit client to avoid blocking popups later
     googleFit.ensureClientInitialized().catch(err => {
       console.warn("Google Identity Service pre-init background warning:", err);
     });
   }, []);
-
-  const handleSaveKey = () => {
-    if (apiKey.trim().startsWith('AIza')) {
-      localStorage.setItem(MANUAL_KEY_STORAGE, apiKey.trim());
-      setHasStoredKey(true);
-      setShowKeyInput(false);
-      alert("AI 核心计算引擎已成功激活。");
-    } else {
-      alert("请输入有效的 Gemini API 密钥 (通常以 AIza 开头)");
-    }
-  };
 
   /**
    * Primary entry point for Google Fit connection.
@@ -91,56 +65,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       </div>
 
       <GlassCard className="w-full max-w-md p-8 border-slate-700/50 bg-slate-900/60 shadow-2xl space-y-6">
-        {/* AI Engine Status Badge */}
-        <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all duration-500 ${
-          hasStoredKey ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'
-        }`}>
-          {hasStoredKey ? <CheckCircle2 className="text-emerald-500" size={18} /> : <AlertCircle className="text-amber-500" size={18} />}
-          <div className="flex-1 text-left">
-            <p className="text-xs font-bold text-white">AI 核心: {hasStoredKey ? '准备就绪' : '待配置'}</p>
-            <button 
-              onClick={() => setShowKeyInput(!showKeyInput)}
-              className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mt-0.5 hover:text-indigo-300 transition-colors"
-            >
-              {showKeyInput ? '收起设置' : '配置计算引擎'}
-            </button>
-          </div>
-        </div>
-
-        {showKeyInput && (
-          <div className="space-y-3 animate-in fade-in slide-in-from-top-2">
-            <div className="relative">
-              <input 
-                type={showKey ? "text" : "password"}
-                value={apiKey}
-                onChange={(e) => setApiKey(e.target.value)}
-                placeholder="Gemini API Key (AIza...)"
-                className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-4 pl-4 pr-12 text-sm text-indigo-100 outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-              />
-              <button 
-                onClick={() => setShowKey(!showKey)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400"
-              >
-                {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
-              </button>
-            </div>
-            <button 
-              onClick={handleSaveKey}
-              className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20"
-            >
-              <Save size={16} /> 保存并激活
-            </button>
-          </div>
-        )}
-
+        {/* Fixed: Removed API Key configuration section to align with hard requirements */}
         <div className="space-y-4 pt-2">
           <div className="p-4 bg-white/5 rounded-2xl border border-white/10 mb-4 text-left">
             <div className="flex items-center gap-2 mb-2">
               <Lock size={14} className="text-indigo-400" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">数据主权声明</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">数据主权与计算声明</p>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-              实验室将通过 Google Fit 获取真实的生理指标。所有计算均在端侧完成，授权令牌仅暂存于浏览器内存。
+              实验室将通过 Google Fit 获取生理指标。所有计算均由 Gemini 安全驱动。授权令牌仅暂存于浏览器内存。
             </p>
           </div>
 
