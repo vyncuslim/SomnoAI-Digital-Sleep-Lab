@@ -31,24 +31,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
     try {
       await onSyncFit();
       setSyncStatus('success');
-      // 4秒后恢复初始状态
-      setTimeout(() => setSyncStatus('idle'), 4000);
+      // Reset back to idle after 5s
+      setTimeout(() => setSyncStatus('idle'), 5000);
     } catch (err: any) {
       console.error("Dashboard Sync error:", err);
       setSyncStatus('error');
       
-      // 针对不同类型的错误提供更详细的诊断
       let msg = "同步服务暂时不可用。";
-      if (err.message?.includes('权限')) {
-        msg = "未获得必要的健身权限。";
+      if (err.message?.includes('Missing access token')) {
+        msg = "请先连接 Google 健身账号。";
+      } else if (err.message?.includes('No sleep records')) {
+        msg = "未发现最近 24 小时的睡眠记录。";
       } else if (err.message?.includes('popup')) {
-        msg = "授权窗口被浏览器拦截。";
-      } else if (err.message?.includes('records')) {
-        msg = "未发现最近的睡眠数据。";
+        msg = "同步请求被拦截，请允许弹出窗口。";
       }
       
       setErrorMessage(msg);
-      // 8秒后重置错误状态
+      // Auto reset error after 8s
       setTimeout(() => {
         setSyncStatus('idle');
         setErrorMessage(null);
@@ -189,4 +188,115 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
             <p className="text-2xl font-black text-white">{data.heartRate.average}<span className="text-[10px] text-slate-500 ml-1">BPM</span></p>
           </div>
           <div className="text-center px-2 space-y-1">
-            <p className="text-[10px] text-slate-4
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">最低</p>
+            <p className="text-2xl font-black text-rose-400">{data.heartRate.min}<span className="text-[10px] text-slate-500 ml-1">BPM</span></p>
+          </div>
+          <div className="text-center px-2 space-y-1">
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">最高</p>
+            <p className="text-2xl font-black text-rose-300">{data.heartRate.max}<span className="text-[10px] text-slate-500 ml-1">BPM</span></p>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* AI Insights */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 px-1">
+          <div className="p-1.5 bg-indigo-500/20 rounded-lg text-indigo-400">
+            <Sparkles size={18} />
+          </div>
+          <h3 className="font-bold text-lg">AI 睡眠洞察</h3>
+        </div>
+        <GlassCard className="space-y-4 p-6 bg-slate-900/40 border-indigo-500/10">
+          {data.aiInsights.map((insight, i) => (
+            <div key={i} className="flex gap-4 group">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2.5 flex-shrink-0 group-hover:scale-150 transition-transform"></div>
+              <p className="text-sm text-slate-300 leading-relaxed font-medium">{insight}</p>
+            </div>
+          ))}
+        </GlassCard>
+      </div>
+
+      {/* Google Fit Sync Section */}
+      <div className="space-y-4">
+        <button 
+          onClick={onAddData}
+          className="w-full py-5 bg-white/5 border border-white/10 rounded-[2rem] font-bold flex items-center justify-center gap-2 text-slate-300 hover:bg-white/10 transition-all active:scale-95 group"
+        >
+          <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> 手动录入睡眠数据
+        </button>
+        
+        <div className={`
+          relative overflow-hidden p-8 rounded-[2.5rem] border transition-all duration-700
+          ${syncStatus === 'success' ? 'bg-emerald-950/20 border-emerald-500/30' : 
+            syncStatus === 'error' ? 'bg-rose-950/20 border-rose-500/30' : 
+            'bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border-indigo-500/20'}
+          group shadow-2xl
+        `}>
+          <div className={`absolute -top-20 -right-20 w-64 h-64 blur-[80px] rounded-full transition-colors duration-1000 ${
+            syncStatus === 'success' ? 'bg-emerald-500/10' : 
+            syncStatus === 'error' ? 'bg-rose-500/10' : 
+            'bg-indigo-500/5 group-hover:bg-indigo-500/10'
+          }`}></div>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-5">
+              <div className={`
+                p-4 rounded-2xl border transition-all duration-500
+                ${syncStatus === 'success' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 
+                  syncStatus === 'error' ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' : 
+                  'bg-indigo-600/20 text-indigo-400 border-indigo-500/20'}
+              `}>
+                {syncStatus === 'syncing' ? <RefreshCw className="animate-spin" size={32} /> : 
+                 syncStatus === 'success' ? <CheckCircle2 size={32} /> : 
+                 syncStatus === 'error' ? <AlertCircle size={32} /> : <CloudSync size={32} />}
+              </div>
+              <div className="text-center sm:text-left">
+                <h4 className="font-black text-xl flex items-center gap-2 justify-center sm:justify-start">
+                  Google Fit 云同步
+                </h4>
+                <p className={`text-sm font-medium transition-all duration-300 mt-1 max-w-[240px] ${
+                  syncStatus === 'success' ? 'text-emerald-400/90' : 
+                  syncStatus === 'error' ? 'text-rose-400/90' : 
+                  'text-slate-400'
+                }`}>
+                  {syncStatus === 'syncing' ? '正在连接实验室云端获取最新报告...' : 
+                   syncStatus === 'success' ? '同步成功！已更新最新睡眠生理指标' : 
+                   syncStatus === 'error' ? (errorMessage || '数据同步中断，请重试') : 
+                   '拉取云端健身记录以生成精准 AI 洞察'}
+                </p>
+              </div>
+            </div>
+
+            <button 
+              disabled={syncStatus === 'syncing'}
+              onClick={handleSync}
+              className={`
+                min-w-[150px] px-8 py-4 rounded-[1.25rem] text-sm font-black transition-all shadow-xl active:scale-90 flex items-center justify-center gap-2
+                ${syncStatus === 'syncing' ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-slate-700' : 
+                  syncStatus === 'success' ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30' : 
+                  syncStatus === 'error' ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30' : 
+                  'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30'}
+              `}
+            >
+              {syncStatus === 'syncing' && <Loader2 size={16} className="animate-spin" />}
+              {syncStatus === 'syncing' ? '处理中' : 
+               syncStatus === 'success' ? '更新完成' : 
+               syncStatus === 'error' ? '点击重试' : 
+               '立即同步'}
+              {syncStatus === 'idle' && <ArrowRight size={16} />}
+            </button>
+          </div>
+          
+          {syncStatus === 'error' && (
+            <div className="mt-4 pt-4 border-t border-rose-500/10 flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
+              <span className="text-[10px] text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">故障说明</span>
+              <p className="text-[11px] text-rose-400/70 font-medium leading-relaxed italic">
+                {errorMessage}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+};

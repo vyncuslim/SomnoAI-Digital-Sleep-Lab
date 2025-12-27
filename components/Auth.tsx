@@ -40,15 +40,20 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   const handleGoogleLogin = async () => {
     if (isLoggingIn) return;
+    
     setIsLoggingIn(true);
+    console.log("Attempting Google Fit connection...");
+    
     try {
-      console.log("Starting Google Fit Authorization...");
+      // Trigger authorize. 
+      // Note: We await it, but googleFitService now separates init and trigger to be faster.
       await googleFit.authorize();
-      console.log("Authorization success, proceeding to app...");
+      console.log("Authorization successful.");
       onLogin();
     } catch (error: any) {
-      console.error("Google Login Catch:", error);
-      alert(error.message || 'Google 授权已取消或失败。如果没看到弹窗，请检查是否被浏览器拦截。');
+      console.error("Google Login Error:", error);
+      const msg = error.message || 'Google 授权已取消或失败。';
+      alert(`${msg}\n\n提示：如果弹窗未出现，请检查浏览器是否拦截了弹出窗口。`);
     } finally {
       setIsLoggingIn(false);
     }
@@ -134,7 +139,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             ) : (
               <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
             )}
-            <span>{isLoggingIn ? '唤起 Google 授权中...' : '连接 Google 健身账号'}</span>
+            <span>{isLoggingIn ? '正在连接 Google...' : '连接 Google 健身账号'}</span>
           </button>
 
           <button 
