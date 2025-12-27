@@ -2,53 +2,55 @@
 import { GoogleGenAI } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
-const getAiClient = () => {
-  // 在 Vercel 部署时，API_KEY 将从 System Environment Variables 注入
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) {
-    throw new Error("Gemini API Key is missing. Please set it in Vercel environment variables.");
+/**
+ * 助手函数：按需创建 AI 实例
+ * 遵循指南：不应在顶层定义模型，而是直接在调用时初始化并传递 API_KEY
+ */
+const getAi = () => {
+  if (!process.env.API_KEY) {
+    throw new Error("Missing API_KEY in environment variables.");
   }
-  return new GoogleGenAI({ apiKey });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
   try {
-    const ai = getAiClient();
+    const ai = getAi();
     const prompt = `
-      As a senior sleep scientist, provide a critical, data-driven insight for today:
-      Total Sleep: ${Math.floor(data.totalDuration / 60)}h ${data.totalDuration % 60}m
-      Deep Sleep: ${data.deepRatio}% (Ideal: 20-25%)
-      REM: ${data.remRatio}% (Ideal: 20-25%)
-      Resting HR: ${data.heartRate.resting} BPM.
-      Efficiency: ${data.efficiency}%.
-
-      Instructions: One sentence only. Be highly specific. Use professional yet encouraging tone. Respond in Chinese.
+      As a professional sleep lab scientist, analyze this data:
+      Score: ${data.score}/100, Total Time: ${data.totalDuration}min, 
+      Deep Sleep: ${data.deepRatio}%, REM: ${data.remRatio}%, Efficiency: ${data.efficiency}%, 
+      Resting HR: ${data.heartRate.resting}bpm.
+      
+      Provide one concise, impactful, and scientific advice in Chinese.
     `;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        temperature: 0.7,
-        maxOutputTokens: 150,
+        temperature: 0.75,
+        maxOutputTokens: 200,
+        thinkingConfig: { thinkingBudget: 0 }
       }
     });
 
-    return response.text || "数据已更新，建议关注今晚的深睡连续性。";
+    // 遵循指南：直接访问 .text 属性
+    return response.text || "优化您的睡前习惯以提高深睡比例。";
   } catch (error: any) {
-    console.error("Insight Generation Error:", error);
-    return "AI 洞察暂时不可用，请检查网络连接或 API 配置。";
+    console.warn("AI Insight generation failed:", error.message);
+    return "已捕获最新的生理指标数据，请保持规律的作息。";
   }
 };
 
 export const chatWithCoach = async (history: { role: 'user' | 'assistant', content: string }[]): Promise<string> => {
   try {
-    const ai = getAiClient();
+    const ai = getAi();
     const systemInstruction = `
-      你叫 Somno，SomnoAI 实验室的首席睡眠研究员。
-      你擅长分析生理指标（HRV, 心率, 睡眠分期）并提供生物黑客式的优化方案。
-      你的回答风格：严谨、极简、高效。
-      始终使用中文交流，并在需要时引用最新的睡眠科学研究。
+      You are Somno, the Lead Sleep Scientist at SomnoAI Labs.
+      Your tone: Professional, concise, data-driven, and empathetic.
+      Goal: Help users understand their sleep architecture and bio-hack their recovery.
+      Always respond in Chinese.
     `;
 
     const chat = ai.chats.create({
@@ -59,13 +61,13 @@ export const chatWithCoach = async (history: { role: 'user' | 'assistant', conte
       },
     });
 
-    // 发送最后一条消息
-    const lastMsg = history[history.length - 1].content;
-    const response = await chat.sendMessage({ message: lastMsg });
+    const lastUserMessage = history[history.length - 1].content;
+    const response = await chat.sendMessage({ message: lastUserMessage });
     
-    return response.text || "我还在整理您的睡眠模型，请稍后再问。";
+    // 遵循指南：直接访问 .text 属性
+    return response.text || "正在处理您的咨询，请稍候。";
   } catch (error: any) {
-    console.error("Somno Coach Chat Error:", error);
-    return "Somno 目前离线，请稍后再试。";
+    console.error("Gemini Chat Failure:", error);
+    return "由于实验云端连接波动，我暂时无法回应。请稍后再试。";
   }
 };
