@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Key, AlertCircle, CheckCircle2, Eye, EyeOff, Save, ShieldCheck, Lock, Loader2 } from 'lucide-react';
+import { Moon, Key, AlertCircle, CheckCircle2, Eye, EyeOff, Save, ShieldCheck, Lock, Loader2, Info } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
@@ -51,7 +51,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       onLogin();
     } catch (error: any) {
       console.error("Authorization flow interrupted:", error);
-      alert(`${error.message || '连接失败'}\n\n建议：请确保浏览器没有拦截弹出窗口，并允许 Google 访问您的健身数据。`);
+      alert(`${error.message || '连接失败'}\n\n建议：请确保浏览器没有拦截弹出窗口，并在 Google 警告页面点击“高级 -> 前往 mgx.dev”进行授权。`);
     } finally {
       setIsLoggingIn(false);
     }
@@ -123,22 +123,31 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             </p>
           </div>
 
-          <button 
-            onClick={handleGoogleLogin}
-            disabled={isLoggingIn}
-            className={`w-full py-5 rounded-[1.5rem] flex items-center justify-center gap-4 transition-all shadow-xl font-bold active:scale-95 border ${
-              isLoggingIn 
-              ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed' 
-              : 'bg-white text-slate-950 border-white hover:bg-slate-100'
-            }`}
-          >
-            {isLoggingIn ? (
-              <Loader2 className="animate-spin text-indigo-500" size={20} />
-            ) : (
-              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-            )}
-            <span>{isLoggingIn ? '唤起 Google 授权中...' : '连接 Google 健身账号'}</span>
-          </button>
+          <div className="space-y-3">
+            <button 
+              onClick={handleGoogleLogin}
+              disabled={isLoggingIn}
+              className={`w-full py-5 rounded-[1.5rem] flex items-center justify-center gap-4 transition-all shadow-xl font-bold active:scale-95 border ${
+                isLoggingIn 
+                ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed' 
+                : 'bg-white text-slate-950 border-white hover:bg-slate-100'
+              }`}
+            >
+              {isLoggingIn ? (
+                <Loader2 className="animate-spin text-indigo-500" size={20} />
+              ) : (
+                <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+              )}
+              <span>{isLoggingIn ? '唤起 Google 授权中...' : '连接 Google 健身账号'}</span>
+            </button>
+
+            <div className="flex items-start gap-2 px-4 py-1">
+              <Info size={12} className="text-slate-500 mt-0.5 shrink-0" />
+              <p className="text-[10px] text-slate-500 leading-tight italic">
+                提示：若出现“应用未经验证”，请点击弹窗中的<span className="text-slate-400 font-bold"> 高级 -> 前往 mgx.dev </span>即可继续。
+              </p>
+            </div>
+          </div>
 
           <button 
             onClick={onLogin}
