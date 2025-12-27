@@ -21,7 +21,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isLoggedIn) {
-      handleSyncGoogleFit();
+      handleSyncGoogleFit(false); // 登录后尝试静默同步
     }
   }, [isLoggedIn]);
 
@@ -33,7 +33,7 @@ const App: React.FC = () => {
         aiInsights: [insight, ...prev.aiInsights.slice(0, 2)]
       }) : null);
     } catch (e) {
-      console.error("Failed to get AI insight", e);
+      console.error("AI Insight Refresh Failed", e);
     }
   };
 
@@ -43,11 +43,10 @@ const App: React.FC = () => {
     refreshInsight(record);
   };
 
-  const handleSyncGoogleFit = async () => {
+  const handleSyncGoogleFit = async (forcePrompt = true) => {
     setIsLoading(true);
     try {
-      // 尝试静默授权并抓取数据
-      await googleFit.authorize(false);
+      await googleFit.authorize(forcePrompt);
       const fitData = await googleFit.fetchSleepData();
       
       const updatedRecord: SleepRecord = {
@@ -57,13 +56,11 @@ const App: React.FC = () => {
       };
       
       setCurrentRecord(updatedRecord);
-      refreshInsight(updatedRecord);
+      await refreshInsight(updatedRecord);
     } catch (err: any) {
-      console.warn("Sync Issue, using fallback:", err.message);
-      // 如果从未有过数据，则加载 mock 数据作为演示
+      console.warn("Sync Issue:", err.message);
       if (!currentRecord) {
         setCurrentRecord(MOCK_RECORD);
-        refreshInsight(MOCK_RECORD);
       }
     } finally {
       setIsLoading(false);
@@ -73,12 +70,17 @@ const App: React.FC = () => {
   const renderView = () => {
     if (!isLoggedIn) return <Auth onLogin={() => setIsLoggedIn(true)} />;
     
-    // 全屏加载状态
     if (isLoading && !currentRecord) {
       return (
-        <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
-          <Loader2 className="animate-spin text-indigo-500" size={48} />
-          <p className="text-slate-400 font-bold animate-pulse">正在从 Google Fit 提取真实数据...</p>
+        <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
+          <div className="relative">
+            <Loader2 className="animate-spin text-indigo-500" size={64} />
+            <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full"></div>
+          </div>
+          <div>
+            <p className="text-xl font-bold text-white mb-2">正在接入数字化实验室...</p>
+            <p className="text-slate-400 text-sm">正在安全提取 Google Fit 生理特征流</p>
+          </div>
         </div>
       );
     }
@@ -90,12 +92,12 @@ const App: React.FC = () => {
         <Dashboard 
           data={currentRecord} 
           onAddData={() => setIsDataEntryOpen(true)} 
-          onSyncFit={handleSyncGoogleFit}
+          onSyncFit={() => handleSyncGoogleFit(true)}
         />
       );
       case 'calendar': return <Trends history={[currentRecord]} />;
       case 'assistant': return <AIAssistant />;
-      case 'alarm': return <div className="flex items-center justify-center h-[70vh] text-slate-500 font-bold text-lg">闹钟功能开发中</div>;
+      case 'alarm': return <div className="flex items-center justify-center h-[70vh] text-slate-500 font-bold text-lg">智能唤醒功能即将上线</div>;
       case 'profile': return <Settings />;
       default: return <Dashboard data={currentRecord} />;
     }
@@ -127,11 +129,11 @@ const App: React.FC = () => {
       {isLoggedIn && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-8 pt-4 pointer-events-none">
           <div className="max-w-md mx-auto backdrop-blur-3xl bg-slate-900/80 border border-white/5 rounded-[2.5rem] p-2 flex justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pointer-events-auto">
-            <NavItem view="dashboard" icon={LayoutGrid} label="首页" />
-            <NavItem view="calendar" icon={CalendarIcon} label="日历" />
-            <NavItem view="assistant" icon={Bot} label="AI助手" />
-            <NavItem view="alarm" icon={AlarmClock} label="闹钟" />
-            <NavItem view="profile" icon={User} label="我的" />
+            <NavItem view="dashboard" icon={LayoutGrid} label="实验室" />
+            <NavItem view="calendar" icon={CalendarIcon} label="趋势" />
+            <NavItem view="assistant" icon={Bot} label="Somno" />
+            <NavItem view="alarm" icon={AlarmClock} label="唤醒" />
+            <NavItem view="profile" icon={User} label="设置" />
           </div>
         </nav>
       )}
