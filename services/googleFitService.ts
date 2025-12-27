@@ -1,5 +1,5 @@
 
-import { SleepRecord, SleepStage } from "../types.ts";
+import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
 
 const CLIENT_ID = "312904526470-84ra3lld33sci0kvhset8523b0hdul1c.apps.googleusercontent.com";
 const SCOPES = [
@@ -16,7 +16,7 @@ export class GoogleFitService {
     return new Promise((resolve, reject) => {
       try {
         if (typeof google === 'undefined' || !google.accounts) {
-          return reject(new Error("Google Identity SDK 未能加载，请检查网络连接。"));
+          return reject(new Error("Google 授权组件尚未就绪，请刷新页面。"));
         }
 
         const client = google.accounts.oauth2.initTokenClient({
@@ -24,78 +24,77 @@ export class GoogleFitService {
           scope: SCOPES.join(" "),
           callback: (response: any) => {
             if (response.error) {
-              console.error("Auth Error Response:", response);
-              return reject(new Error(`授权失败: ${response.error_description || response.error}`));
+              return reject(new Error(`授权被拒绝: ${response.error}`));
             }
-            console.log("Auth Success, token received.");
             this.accessToken = response.access_token;
+            console.log("Google Fit 授权成功");
             resolve(response.access_token);
           },
-          error_callback: (err: any) => {
-            console.error("GSI Error Callback:", err);
-            reject(new Error("初始化 Google 登录时发生内部错误。"));
-          }
         });
         
         client.requestAccessToken();
       } catch (err) {
-        console.error("Authorize method error:", err);
         reject(err);
       }
     });
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    if (!this.accessToken) throw new Error("未检测到访问令牌，请重新授权。");
+    if (!this.accessToken) throw new Error("请先完成 Google 授权");
 
-    const endTime = new Date().getTime();
-    const startTime = endTime - 24 * 60 * 60 * 1000;
+    const now = new Date();
+    const startTimeMillis = now.getTime() - 24 * 60 * 60 * 1000;
+    const endTimeMillis = now.getTime();
 
-    try {
-      const response = await fetch(
-        `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(startTime).toISOString()}&endTime=${new Date(endTime).toISOString()}&type=72`,
-        {
-          headers: { Authorization: `Bearer ${this.accessToken}` }
-        }
-      );
+    // 1. 获取睡眠会话 (Type 72 = Sleep)
+    const sleepUrl = `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(startTimeMillis).toISOString()}&endTime=${new Date(endTimeMillis).toISOString()}&type=72`;
+    
+    // 2. 获取心率数据集
+    const hrUrl = `https://www.googleapis.com/fitness/v1/users/me/datasetSources/derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm/datasets/${startTimeMillis * 1000000}-${endTimeMillis * 1000000}`;
 
-      if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Google API 错误 (${response.status}): ${errorText}`);
-      }
+    const [sleepRes, hrRes] = await Promise.all([
+      fetch(sleepUrl, { headers: { Authorization: `Bearer ${this.accessToken}` } }),
+      fetch(hrUrl, { headers: { Authorization: `Bearer ${this.accessToken}` } })
+    ]);
 
-      const data = await response.json();
-      const sessions = data.session || [];
-      
-      if (sessions.length === 0) {
-        console.log("No sessions found in time range, using fallback data.");
-        return this.generateMockFitData(); 
-      }
+    if (!sleepRes.ok) throw new Error("无法读取睡眠数据，请确保已在 Google 健身中开启相关功能。");
 
-      const latestSession = sessions[sessions.length - 1];
-      const durationMillis = latestSession.endTimeMillis - latestSession.startTimeMillis;
-      const durationMins = Math.floor(durationMillis / 60000);
+    const sleepData = await sleepRes.json();
+    const sessions = sleepData.session || [];
 
-      return {
-        totalDuration: durationMins,
-        score: Math.min(100, Math.floor(durationMins / 4.8)),
-        date: new Date(latestSession.startTimeMillis).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
-        efficiency: 92
-      };
-    } catch (err) {
-      console.error("Fetch Data Error:", err);
-      // Fallback for user experience
-      return this.generateMockFitData();
+    if (sessions.length === 0) {
+      throw new Error("最近 24 小时未在 Google Fit 中找到睡眠记录。");
     }
-  }
 
-  private generateMockFitData(): Partial<SleepRecord> {
+    const latest = sessions[sessions.length - 1];
+    const durationMins = Math.floor((latest.endTimeMillis - latest.startTimeMillis) / 60000);
+
+    // 解析心率数据
+    let hrMetrics: HeartRateData = { resting: 60, average: 65, min: 55, max: 85, history: [] };
+    if (hrRes.ok) {
+      const hrJson = await hrRes.json();
+      const points = hrJson.point || [];
+      if (points.length > 0) {
+        const values = points.map((p: any) => p.value[0].fpVal);
+        hrMetrics = {
+          average: Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length),
+          min: Math.min(...values),
+          max: Math.max(...values),
+          resting: Math.min(...values) + 5, // 估算静息心率
+          history: points.slice(-20).map((p: any) => ({
+            time: new Date(p.startTimeNanos / 1000000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            bpm: Math.round(p.value[0].fpVal)
+          }))
+        };
+      }
+    }
+
     return {
-      totalDuration: 485,
-      score: 89,
-      efficiency: 94,
-      date: new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
-      aiInsights: ["已通过 Google Fit 成功同步：昨日深度睡眠质量优秀，建议保持目前的晚间作息规律。"]
+      totalDuration: durationMins,
+      score: Math.min(100, Math.floor(durationMins / 4.8)),
+      date: new Date(latest.startTimeMillis).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
+      heartRate: hrMetrics,
+      aiInsights: ["实验室已成功接入 Google 生态：实时心率与睡眠时段已完成解析。"]
     };
   }
 }

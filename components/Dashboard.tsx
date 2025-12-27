@@ -6,7 +6,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { 
   Bell, Settings, Clock, Moon, Zap, Activity, Heart, 
-  Sparkles, Plus, RefreshCw, CheckCircle2, AlertCircle 
+  Sparkles, Plus, RefreshCw, CheckCircle2, AlertCircle, CloudSync, ArrowRight
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -19,6 +19,7 @@ type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const scoreData = [{ value: data.score }, { value: 100 - data.score }];
   
@@ -36,14 +37,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
     if (!onSyncFit || syncStatus === 'syncing') return;
     
     setSyncStatus('syncing');
+    setErrorMessage(null);
+    
     try {
       await onSyncFit();
       setSyncStatus('success');
-      setTimeout(() => setSyncStatus('idle'), 3000);
-    } catch (err) {
+      // Auto-reset after success
+      setTimeout(() => setSyncStatus('idle'), 4000);
+    } catch (err: any) {
       console.error("Sync error:", err);
       setSyncStatus('error');
-      setTimeout(() => setSyncStatus('idle'), 5000);
+      setErrorMessage(err.message || "同步过程中发生错误");
+      // Reset error state after some time
+      setTimeout(() => {
+        setSyncStatus('idle');
+        setErrorMessage(null);
+      }, 6000);
     }
   };
 
@@ -231,29 +240,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
         </GlassCard>
       </div>
 
-      {/* Weekly Trend */}
-      <div className="space-y-4">
-        <div className="flex justify-between items-center px-1">
-          <h3 className="font-bold text-lg">本周趋势</h3>
-          <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-black">
-            平均 <span className="text-indigo-400">82分</span>
-          </div>
-        </div>
-        <GlassCard className="p-6 h-56 bg-slate-900/40">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={weekTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-              <XAxis dataKey="day" axisLine={false} tickLine={false} fontSize={10} stroke="#64748b" dy={10} fontWeight="bold" />
-              <YAxis axisLine={false} tickLine={false} fontSize={10} stroke="#64748b" hide />
-              <Tooltip 
-                cursor={{ fill: 'rgba(255,255,255,0.05)', radius: 10 }}
-                contentStyle={{ backgroundColor: '#0f172a', border: 'none', borderRadius: '12px', fontSize: '10px', color: '#fff' }}
-              />
-              <Bar dataKey="score" fill="#4f46e5" radius={[6, 6, 0, 0]} barSize={32} />
-            </BarChart>
-          </ResponsiveContainer>
-        </GlassCard>
-      </div>
-
       {/* AI Insights */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 px-1">
@@ -272,7 +258,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
         </GlassCard>
       </div>
 
-      {/* Google Fit Card */}
+      {/* Google Fit Card & Manual Entry */}
       <div className="space-y-4">
         <button 
           onClick={onAddData}
@@ -281,48 +267,81 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
           <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> 手动录入睡眠数据
         </button>
         
-        <div className={`bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border rounded-[2.5rem] p-8 flex items-center justify-between shadow-2xl shadow-indigo-900/20 relative overflow-hidden group transition-all duration-300 ${
-          syncStatus === 'success' ? 'border-emerald-500/50' : 
-          syncStatus === 'error' ? 'border-rose-500/50' : 'border-indigo-500/20'
-        }`}>
-          <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 blur-[50px] rounded-full group-hover:bg-indigo-500/10 transition-colors"></div>
-          <div className="flex items-center gap-5 relative z-10">
-            <div className={`p-4 rounded-2xl border transition-colors duration-300 ${
-              syncStatus === 'success' ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' :
-              syncStatus === 'error' ? 'bg-rose-600/20 text-rose-400 border-rose-500/30' :
-              'bg-indigo-600/20 text-indigo-400 border-indigo-500/20'
-            }`}>
-              {syncStatus === 'success' ? <CheckCircle2 size={28} /> : 
-               syncStatus === 'error' ? <AlertCircle size={28} /> : <Activity size={28} />}
+        <div className={`
+          relative overflow-hidden p-8 rounded-[2.5rem] border transition-all duration-500
+          ${syncStatus === 'success' ? 'bg-emerald-900/20 border-emerald-500/40 shadow-emerald-500/10' : 
+            syncStatus === 'error' ? 'bg-rose-900/20 border-rose-500/40 shadow-rose-500/10' : 
+            'bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border-indigo-500/20 shadow-2xl shadow-indigo-900/20'}
+          group
+        `}>
+          {/* Animated background highlights */}
+          <div className={`absolute -top-10 -right-10 w-40 h-40 blur-[50px] rounded-full transition-colors duration-700 ${
+            syncStatus === 'success' ? 'bg-emerald-500/10' : 
+            syncStatus === 'error' ? 'bg-rose-500/10' : 
+            'bg-indigo-500/5 group-hover:bg-indigo-500/10'
+          }`}></div>
+          
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-6 relative z-10">
+            <div className="flex items-center gap-5">
+              <div className={`
+                p-4 rounded-2xl border transition-all duration-500 scale-100 group-hover:scale-105
+                ${syncStatus === 'success' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 
+                  syncStatus === 'error' ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' : 
+                  'bg-indigo-600/20 text-indigo-400 border-indigo-500/20'}
+              `}>
+                {syncStatus === 'syncing' ? <RefreshCw className="animate-spin" size={28} /> : 
+                 syncStatus === 'success' ? <CheckCircle2 size={28} /> : 
+                 syncStatus === 'error' ? <AlertCircle size={28} /> : <CloudSync size={28} />}
+              </div>
+              <div className="text-center sm:text-left">
+                <h4 className="font-black text-lg flex items-center gap-2 justify-center sm:justify-start">
+                  Google Fit 
+                  {syncStatus === 'success' && <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/20">同步完成</span>}
+                </h4>
+                <p className={`text-xs font-medium transition-all duration-300 mt-0.5 ${
+                  syncStatus === 'success' ? 'text-emerald-400' : 
+                  syncStatus === 'error' ? 'text-rose-400' : 
+                  'text-slate-400'
+                }`}>
+                  {syncStatus === 'syncing' ? '正在与实验室同步数据...' : 
+                   syncStatus === 'success' ? '最新睡眠数据已同步至本地' : 
+                   syncStatus === 'error' ? (errorMessage || '同步失败，请检查授权') : 
+                   '连接您的健康中心，获取真实睡眠指标'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h4 className="font-black text-lg">Google Fit</h4>
-              <p className={`text-xs font-medium ${
-                syncStatus === 'success' ? 'text-emerald-400' :
-                syncStatus === 'error' ? 'text-rose-400' :
-                'text-slate-400'
-              }`}>
-                {syncStatus === 'syncing' ? '正在从云端拉取...' : 
-                 syncStatus === 'success' ? '数据同步成功' : 
-                 syncStatus === 'error' ? '同步失败，请检查授权' : '同步您的健康中心数据'}
+
+            <button 
+              disabled={syncStatus === 'syncing'}
+              onClick={handleSync}
+              className={`
+                min-w-[140px] px-8 py-3.5 rounded-2xl text-sm font-black transition-all shadow-xl active:scale-95 flex items-center justify-center gap-2
+                ${syncStatus === 'syncing' ? 'bg-slate-800 text-slate-500 cursor-not-allowed opacity-50' : 
+                  syncStatus === 'success' ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-600/30' : 
+                  syncStatus === 'error' ? 'bg-rose-600 hover:bg-rose-500 text-white shadow-rose-600/30' : 
+                  'bg-indigo-600 hover:bg-indigo-500 text-white shadow-indigo-600/30'}
+              `}
+            >
+              {syncStatus === 'syncing' ? (
+                <>拉取中...</>
+              ) : syncStatus === 'success' ? (
+                <>再次同步</>
+              ) : syncStatus === 'error' ? (
+                <>点击重试</>
+              ) : (
+                <>一键同步 <ArrowRight size={16} /></>
+              )}
+            </button>
+          </div>
+          
+          {/* Subtle error detail below if in error state */}
+          {syncStatus === 'error' && errorMessage && (
+            <div className="mt-4 pt-4 border-t border-rose-500/10 animate-in fade-in slide-in-from-top-1">
+              <p className="text-[10px] text-rose-400/80 font-medium leading-relaxed italic">
+                提示: 请确保您已在 Auth 页面正确配置 Google 授权并连接了稳定的网络环境。
               </p>
             </div>
-          </div>
-          <button 
-            disabled={syncStatus === 'syncing'}
-            onClick={handleSync}
-            className={`px-8 py-3 rounded-2xl text-sm font-black transition-all shadow-xl active:scale-90 relative z-10 flex items-center gap-2 ${
-              syncStatus === 'syncing' ? 'bg-slate-700 cursor-not-allowed text-slate-400' : 
-              syncStatus === 'success' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30 text-white' : 
-              syncStatus === 'error' ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white' : 
-              'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30 text-white'
-            }`}
-          >
-            {syncStatus === 'syncing' ? <RefreshCw className="animate-spin" size={16} /> : null}
-            {syncStatus === 'syncing' ? '同步中' : 
-             syncStatus === 'success' ? '已同步' : 
-             syncStatus === 'error' ? '重试' : '连接'}
-          </button>
+          )}
         </div>
       </div>
     </div>
