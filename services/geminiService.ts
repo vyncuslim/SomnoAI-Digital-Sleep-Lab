@@ -2,18 +2,8 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
-// Safely obtain the API key to prevent crashes in environments where 'process' is not defined globally.
-const getSafeApiKey = () => {
-  try {
-    return process.env.API_KEY || "";
-  } catch (e) {
-    return "";
-  }
-};
-
-// Always use const ai = new GoogleGenAI({apiKey: process.env.API_KEY});
-// Wrapped in a closure or safer access to handle browser environments gracefully.
-const ai = new GoogleGenAI({ apiKey: getSafeApiKey() });
+// Fix: Always use direct access to process.env.API_KEY as per guidelines
+const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
   try {
@@ -27,12 +17,13 @@ export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
       Keep it encouraging and scientific.
     `;
 
+    // Fix: Using correct model gemini-3-flash-preview and ensuring thinkingBudget is set with maxOutputTokens
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
         maxOutputTokens: 60,
-        temperature: 0.7,
+        thinkingConfig: { thinkingBudget: 0 } // Disable thinking for low-latency, short responses
       }
     });
 

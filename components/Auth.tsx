@@ -2,6 +2,10 @@
 import React, { useState } from 'react';
 import { Moon, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
+import { googleFit } from '../services/googleFitService.ts';
+
+// Declare google as a global variable provided by the Google Identity Services SDK script
+declare var google: any;
 
 interface AuthProps {
   onLogin: () => void;
@@ -10,6 +14,26 @@ interface AuthProps {
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<'login' | 'register'>('login');
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    if (isLoggingIn) return;
+    setIsLoggingIn(true);
+    try {
+      // Fix: Checked google object existence using the global declaration
+      if (typeof google === 'undefined') {
+        throw new Error('Google SDK 尚未加载，请稍后再试。');
+      }
+      
+      await googleFit.authorize();
+      onLogin();
+    } catch (error) {
+      console.error('Google Login Error:', error);
+      alert('无法通过 Google 登录，请重试或检查浏览器设置。');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
@@ -85,9 +109,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             <div className="flex-1 h-px bg-slate-800"></div>
           </div>
 
-          <button className="w-full py-5 bg-white/5 border border-slate-800 hover:bg-white/10 rounded-3xl flex items-center justify-center gap-4 transition-all group">
+          <button 
+            onClick={handleGoogleLogin}
+            disabled={isLoggingIn}
+            className={`w-full py-5 bg-white/5 border border-slate-800 hover:bg-white/10 rounded-3xl flex items-center justify-center gap-4 transition-all group ${isLoggingIn ? 'opacity-50 cursor-not-allowed' : ''}`}
+          >
             <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5 grayscale opacity-50 group-hover:grayscale-0 group-hover:opacity-100 transition-all" />
-            <span className="text-sm font-black text-slate-400 group-hover:text-slate-200">Google 账号登录</span>
+            <span className="text-sm font-black text-slate-400 group-hover:text-slate-200">
+              {isLoggingIn ? '正在连接...' : 'Google 账号登录'}
+            </span>
           </button>
         </div>
       </GlassCard>

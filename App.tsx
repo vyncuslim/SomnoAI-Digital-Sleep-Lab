@@ -10,6 +10,7 @@ import { ViewType, SleepRecord } from './types.ts';
 import { MOCK_RECORD } from './constants.tsx';
 import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
+import { googleFit } from './services/googleFitService.ts';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -42,11 +43,36 @@ const App: React.FC = () => {
     refreshInsight(record);
   };
 
+  const handleSyncGoogleFit = async () => {
+    try {
+      await googleFit.authorize();
+      const fitData = await googleFit.fetchSleepData();
+      
+      const updatedRecord = {
+        ...currentRecord,
+        ...fitData,
+        aiInsights: fitData.aiInsights || currentRecord.aiInsights
+      };
+      
+      setCurrentRecord(updatedRecord as SleepRecord);
+      refreshInsight(updatedRecord as SleepRecord);
+    } catch (err) {
+      console.error("Google Fit Sync Failed:", err);
+      alert("同步失败，请检查 Google 账号权限设置。");
+    }
+  };
+
   const renderView = () => {
     if (!isLoggedIn) return <Auth onLogin={() => setIsLoggedIn(true)} />;
 
     switch (activeView) {
-      case 'dashboard': return <Dashboard data={currentRecord} onAddData={() => setIsDataEntryOpen(true)} />;
+      case 'dashboard': return (
+        <Dashboard 
+          data={currentRecord} 
+          onAddData={() => setIsDataEntryOpen(true)} 
+          onSyncFit={handleSyncGoogleFit}
+        />
+      );
       case 'calendar': return <Trends history={[currentRecord]} />;
       case 'assistant': return <AIAssistant />;
       case 'alarm': return <div className="flex items-center justify-center h-[70vh] text-slate-500 font-bold text-lg">闹钟功能开发中</div>;

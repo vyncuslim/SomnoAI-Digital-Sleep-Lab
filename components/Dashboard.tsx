@@ -1,17 +1,19 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
 import { SleepRecord } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
-import { Bell, Settings, Clock, Moon, Zap, Activity, Heart, Sparkles, Plus } from 'lucide-react';
+import { Bell, Settings, Clock, Moon, Zap, Activity, Heart, Sparkles, Plus, RefreshCw } from 'lucide-react';
 
 interface DashboardProps {
   data: SleepRecord;
   onAddData?: () => void;
+  onSyncFit?: () => Promise<void>;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit }) => {
+  const [isSyncing, setIsSyncing] = useState(false);
   const scoreData = [{ value: data.score }, { value: 100 - data.score }];
   
   const weekTrendData = [
@@ -23,6 +25,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData }) => {
     { day: '周五', score: 88 },
     { day: '周六', score: 82 },
   ];
+
+  const handleSync = async () => {
+    if (!onSyncFit) return;
+    setIsSyncing(true);
+    try {
+      await onSyncFit();
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const formatDuration = (mins: number) => {
     const h = Math.floor(mins / 60);
@@ -272,11 +284,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData }) => {
             </div>
             <div>
               <h4 className="font-black text-lg">Google Fit</h4>
-              <p className="text-xs text-slate-400 font-medium">同步您的健康中心数据</p>
+              <p className="text-xs text-slate-400 font-medium">{isSyncing ? '正在同步数据...' : '同步您的健康中心数据'}</p>
             </div>
           </div>
-          <button className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-2xl text-sm font-black transition-all shadow-xl shadow-indigo-600/30 active:scale-90 relative z-10">
-            连接
+          <button 
+            disabled={isSyncing}
+            onClick={handleSync}
+            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 rounded-2xl text-sm font-black transition-all shadow-xl shadow-indigo-600/30 active:scale-90 relative z-10 flex items-center gap-2"
+          >
+            {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : null}
+            {isSyncing ? '同步中' : '连接'}
           </button>
         </div>
       </div>
