@@ -31,27 +31,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
     try {
       await onSyncFit();
       setSyncStatus('success');
-      // Reset back to idle after 5s
-      setTimeout(() => setSyncStatus('idle'), 5000);
+      // Reset after a celebratory period
+      setTimeout(() => setSyncStatus('idle'), 4000);
     } catch (err: any) {
-      console.error("Dashboard Sync error:", err);
+      console.error("Sync Operation Error:", err);
       setSyncStatus('error');
       
-      let msg = "同步服务暂时不可用。";
-      if (err.message?.includes('Missing access token')) {
-        msg = "请先连接 Google 健身账号。";
+      let diagnosticMsg = "连接实验室云端失败。";
+      if (err.message?.includes('popup')) {
+        diagnosticMsg = "弹窗被拦截。请检查浏览器设置并重试。";
       } else if (err.message?.includes('No sleep records')) {
-        msg = "未发现最近 24 小时的睡眠记录。";
-      } else if (err.message?.includes('popup')) {
-        msg = "同步请求被拦截，请允许弹出窗口。";
+        diagnosticMsg = "今日暂无记录。请确认设备已同步至 Google Fit。";
+      } else if (err.message?.includes('failed to fetch')) {
+        diagnosticMsg = "网络连接中断，请检查实验室环境。";
       }
       
-      setErrorMessage(msg);
-      // Auto reset error after 8s
+      setErrorMessage(diagnosticMsg);
+      // Auto-clear error after 6 seconds to restore UI
       setTimeout(() => {
         setSyncStatus('idle');
         setErrorMessage(null);
-      }, 8000);
+      }, 6000);
     }
   };
 
@@ -242,13 +242,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
             <div className="flex items-center gap-5">
               <div className={`
                 p-4 rounded-2xl border transition-all duration-500
-                ${syncStatus === 'success' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20' : 
-                  syncStatus === 'error' ? 'bg-rose-500/20 text-rose-400 border-rose-500/20' : 
+                ${syncStatus === 'success' ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20 shadow-lg shadow-emerald-500/20' : 
+                  syncStatus === 'error' ? 'bg-rose-500/20 text-rose-400 border-rose-500/20 shadow-lg shadow-rose-500/20' : 
                   'bg-indigo-600/20 text-indigo-400 border-indigo-500/20'}
               `}>
                 {syncStatus === 'syncing' ? <RefreshCw className="animate-spin" size={32} /> : 
-                 syncStatus === 'success' ? <CheckCircle2 size={32} /> : 
-                 syncStatus === 'error' ? <AlertCircle size={32} /> : <CloudSync size={32} />}
+                 syncStatus === 'success' ? <CheckCircle2 size={32} className="animate-in zoom-in" /> : 
+                 syncStatus === 'error' ? <AlertCircle size={32} className="animate-in bounce-in" /> : <CloudSync size={32} />}
               </div>
               <div className="text-center sm:text-left">
                 <h4 className="font-black text-xl flex items-center gap-2 justify-center sm:justify-start">
@@ -259,10 +259,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
                   syncStatus === 'error' ? 'text-rose-400/90' : 
                   'text-slate-400'
                 }`}>
-                  {syncStatus === 'syncing' ? '正在连接实验室云端获取最新报告...' : 
-                   syncStatus === 'success' ? '同步成功！已更新最新睡眠生理指标' : 
+                  {syncStatus === 'syncing' ? '实验室正在拉取您的云端生理记录...' : 
+                   syncStatus === 'success' ? '同步成功！已分析最新睡眠时段' : 
                    syncStatus === 'error' ? (errorMessage || '数据同步中断，请重试') : 
-                   '拉取云端健身记录以生成精准 AI 洞察'}
+                   '自动拉取健身记录以生成精准 AI 洞察'}
                 </p>
               </div>
             </div>
@@ -279,17 +279,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
               `}
             >
               {syncStatus === 'syncing' && <Loader2 size={16} className="animate-spin" />}
-              {syncStatus === 'syncing' ? '处理中' : 
+              {syncStatus === 'syncing' ? '分析中' : 
                syncStatus === 'success' ? '更新完成' : 
-               syncStatus === 'error' ? '点击重试' : 
+               syncStatus === 'error' ? '重新连接' : 
                '立即同步'}
-              {syncStatus === 'idle' && <ArrowRight size={16} />}
+              {syncStatus === 'idle' && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
             </button>
           </div>
           
           {syncStatus === 'error' && (
             <div className="mt-4 pt-4 border-t border-rose-500/10 flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
-              <span className="text-[10px] text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">故障说明</span>
+              <span className="text-[10px] text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">异常详情</span>
               <p className="text-[11px] text-rose-400/70 font-medium leading-relaxed italic">
                 {errorMessage}
               </p>

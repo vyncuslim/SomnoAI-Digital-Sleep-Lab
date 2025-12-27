@@ -15,8 +15,7 @@ declare var google: any;
 export class GoogleFitService {
   private accessToken: string | null = null;
   private tokenClient: any = null;
-  private resolveAuth: ((token: string) => void) | null = null;
-  private rejectAuth: ((error: Error) => void) | null = null;
+  private authPromise: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null;
 
   private async waitForGoogleReady(): Promise<void> {
     const maxAttempts = 50;
@@ -26,61 +25,55 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("Google Identity Service failed to load. Please check your internet connection.");
+    throw new Error("Google 身份验证组件加载失败，请刷新页面或检查网络。");
   }
 
-  /**
-   * Initializes the token client if not already done.
-   */
-  private async initClient() {
-    await this.waitForGoogleReady();
+  private async ensureClientInitialized() {
     if (this.tokenClient) return;
+    await this.waitForGoogleReady();
 
     this.tokenClient = google.accounts.oauth2.initTokenClient({
       client_id: CLIENT_ID,
       scope: SCOPES.join(" "),
       callback: (response: any) => {
         if (response.error) {
-          console.error("GSI Error callback:", response);
-          this.rejectAuth?.(new Error(`Authorization failed: ${response.error_description || response.error}`));
+          console.error("GSI Error:", response);
+          this.authPromise?.reject(new Error(`授权失败: ${response.error_description || response.error}`));
           return;
         }
         if (response.access_token) {
           this.accessToken = response.access_token;
-          console.log("Google Fit access token received.");
-          this.resolveAuth?.(response.access_token);
+          this.authPromise?.resolve(response.access_token);
         } else {
-          this.rejectAuth?.(new Error("No access token returned from Google."));
+          this.authPromise?.reject(new Error("未获得访问令牌。"));
         }
       },
       error_callback: (err: any) => {
-        console.error("GSI Error:", err);
-        this.rejectAuth?.(new Error("Google Authorization Client error."));
+        console.error("GSI Client Internal Error:", err);
+        this.authPromise?.reject(new Error("Google 授权客户端发生内部错误。"));
       }
     });
   }
 
   async authorize(): Promise<string> {
-    await this.initClient();
+    // We call this to make sure it's ready, but ideally it should have been pre-warmed
+    await this.ensureClientInitialized();
 
     return new Promise((resolve, reject) => {
-      this.resolveAuth = resolve;
-      this.rejectAuth = reject;
-
+      this.authPromise = { resolve, reject };
       try {
-        // Calling requestAccessToken triggers the popup.
-        // It's best to call this as directly as possible after a user action.
+        // requestAccessToken MUST be called directly in response to a user click
         this.tokenClient.requestAccessToken({ prompt: 'consent' });
       } catch (err: any) {
-        console.error("Error triggering popup:", err);
-        reject(new Error("Failed to open authorization popup."));
+        console.error("Popup trigger error:", err);
+        reject(new Error("无法启动授权弹窗，请检查浏览器是否拦截了弹出窗口。"));
       }
     });
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
     if (!this.accessToken) {
-      throw new Error("Missing access token. Please connect to Google Fit first.");
+      throw new Error("尚未授权，请先连接 Google 健身。");
     }
 
     const now = new Date();
@@ -99,18 +92,18 @@ export class GoogleFitService {
 
       if (sleepRes.status === 401 || hrRes.status === 401) {
         this.accessToken = null;
-        throw new Error("Access expired. Please re-sync.");
+        throw new Error("登录已过期，请重新同步。");
       }
 
       if (!sleepRes.ok) {
-        throw new Error("Could not retrieve sleep data from Google Fit.");
+        throw new Error("从 Google Fit 读取数据失败，请确保已开启相应权限。");
       }
 
       const sleepData = await sleepRes.json();
       const sessions = sleepData.session || [];
 
       if (sessions.length === 0) {
-        throw new Error("No sleep records found for the last 24 hours.");
+        throw new Error("最近 24 小时内未发现睡眠记录。");
       }
 
       const latest = sessions[sessions.length - 1];
@@ -140,10 +133,10 @@ export class GoogleFitService {
         score: Math.min(100, Math.max(40, Math.floor(durationMins / 4.8))),
         date: new Date(latest.startTimeMillis).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
         heartRate: hrMetrics,
-        aiInsights: ["实验室已成功同步：今日睡眠时段与实时脉搏曲线已更新。"]
+        aiInsights: ["同步成功：实验室已接入您的最新生理指标流。"]
       };
     } catch (error: any) {
-      console.error("Fetch Error:", error);
+      console.error("Data Fetch Error:", error);
       throw error;
     }
   }
