@@ -8,35 +8,30 @@ import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { MOCK_RECORD } from './constants.tsx';
-import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User, Loader2 } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
-  const [currentRecord, setCurrentRecord] = useState<SleepRecord>(MOCK_RECORD);
+  const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  // 登录后逻辑：如果已连接 Google，自动同步一次数据
   useEffect(() => {
     if (isLoggedIn) {
-      if (googleFit.hasToken()) {
-        console.log("Detecting Google Fit token, auto-syncing...");
-        handleSyncGoogleFit();
-      } else {
-        refreshInsight(currentRecord);
-      }
+      handleSyncGoogleFit();
     }
   }, [isLoggedIn]);
 
   const refreshInsight = async (record: SleepRecord) => {
     try {
       const insight = await getSleepInsight(record);
-      setCurrentRecord(prev => ({
+      setCurrentRecord(prev => prev ? ({
         ...prev,
         aiInsights: [insight, ...prev.aiInsights.slice(0, 2)]
-      }));
+      }) : null);
     } catch (e) {
       console.error("Failed to get AI insight", e);
     }
@@ -49,31 +44,46 @@ const App: React.FC = () => {
   };
 
   const handleSyncGoogleFit = async () => {
+    setIsLoading(true);
     try {
-      // 确保有 Token (如果是静默调用且没有 Token，authorize(false) 会尝试获取)
+      // 尝试静默授权并抓取数据
       await googleFit.authorize(false);
       const fitData = await googleFit.fetchSleepData();
       
-      const updatedRecord = {
-        ...currentRecord,
+      const updatedRecord: SleepRecord = {
+        ...(currentRecord || MOCK_RECORD),
         ...fitData,
-        // 如果有新的阶段数据则更新，否则保持默认
-        aiInsights: fitData.aiInsights || currentRecord.aiInsights
+        id: `fit-${Date.now()}`,
       };
       
-      setCurrentRecord(updatedRecord as SleepRecord);
-      refreshInsight(updatedRecord as SleepRecord);
+      setCurrentRecord(updatedRecord);
+      refreshInsight(updatedRecord);
     } catch (err: any) {
-      console.warn("Google Fit Sync Issue:", err.message);
-      // 如果是明确的授权错误，再弹出提示
-      if (err.message.includes("尚未授权") || err.message.includes("过期")) {
-        alert("Google 授权已失效，请尝试重新连接。");
+      console.warn("Sync Issue, using fallback:", err.message);
+      // 如果从未有过数据，则加载 mock 数据作为演示
+      if (!currentRecord) {
+        setCurrentRecord(MOCK_RECORD);
+        refreshInsight(MOCK_RECORD);
       }
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const renderView = () => {
     if (!isLoggedIn) return <Auth onLogin={() => setIsLoggedIn(true)} />;
+    
+    // 全屏加载状态
+    if (isLoading && !currentRecord) {
+      return (
+        <div className="flex flex-col items-center justify-center h-[70vh] gap-4">
+          <Loader2 className="animate-spin text-indigo-500" size={48} />
+          <p className="text-slate-400 font-bold animate-pulse">正在从 Google Fit 提取真实数据...</p>
+        </div>
+      );
+    }
+
+    if (!currentRecord) return null;
 
     switch (activeView) {
       case 'dashboard': return (
@@ -126,7 +136,7 @@ const App: React.FC = () => {
         </nav>
       )}
 
-      {isDataEntryOpen && (
+      {isDataEntryOpen && currentRecord && (
         <DataEntry onClose={() => setIsDataEntryOpen(false)} onSave={handleSaveData} />
       )}
     </div>

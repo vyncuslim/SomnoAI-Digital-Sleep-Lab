@@ -5,7 +5,7 @@ import { SleepRecord } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Bell, Settings, Clock, Moon, Zap, Activity, Heart, 
-  Sparkles, Plus, RefreshCw, CheckCircle2, AlertCircle, CloudSync, ArrowRight, Loader2
+  Sparkles, Plus, RefreshCw, CheckCircle2, AlertCircle, CloudSync, ArrowRight, Loader2, ShieldCheck
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -21,6 +21,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const scoreData = [{ value: data.score }, { value: 100 - data.score }];
+  const isRealData = data.id?.startsWith('fit-');
 
   const handleSync = async () => {
     if (!onSyncFit || syncStatus === 'syncing') return;
@@ -31,27 +32,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
     try {
       await onSyncFit();
       setSyncStatus('success');
-      // Reset after a celebratory period
       setTimeout(() => setSyncStatus('idle'), 4000);
     } catch (err: any) {
-      console.error("Sync Operation Error:", err);
       setSyncStatus('error');
-      
-      let diagnosticMsg = "连接实验室云端失败。";
-      if (err.message?.includes('popup')) {
-        diagnosticMsg = "弹窗被拦截。请检查浏览器设置并重试。";
-      } else if (err.message?.includes('No sleep records')) {
-        diagnosticMsg = "今日暂无记录。请确认设备已同步至 Google Fit。";
-      } else if (err.message?.includes('failed to fetch')) {
-        diagnosticMsg = "网络连接中断，请检查实验室环境。";
-      }
-      
-      setErrorMessage(diagnosticMsg);
-      // Auto-clear error after 6 seconds to restore UI
-      setTimeout(() => {
-        setSyncStatus('idle');
-        setErrorMessage(null);
-      }, 6000);
+      setErrorMessage(err.message || "同步失败，请确保设备数据已上传至 Google Fit。");
+      setTimeout(() => setSyncStatus('idle'), 6000);
     }
   };
 
@@ -66,14 +51,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
       {/* Header */}
       <header className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">睡眠AI</h1>
+          <div className="flex items-center gap-2">
+            <h1 className="text-2xl font-bold tracking-tight">睡眠AI</h1>
+            {isRealData && (
+              <div className="flex items-center gap-1 px-2 py-0.5 bg-indigo-500/20 border border-indigo-500/30 rounded-full">
+                <ShieldCheck size={10} className="text-indigo-400" />
+                <span className="text-[9px] font-black text-indigo-400 uppercase tracking-tighter">真实数据</span>
+              </div>
+            )}
+          </div>
           <p className="text-slate-400 text-sm font-medium">{data.date}</p>
         </div>
         <div className="flex gap-2">
-          <button className="p-2.5 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all" aria-label="通知">
+          <button className="p-2.5 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all">
             <Bell size={20} />
           </button>
-          <button className="p-2.5 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all" aria-label="设置">
+          <button className="p-2.5 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-white transition-all">
             <Settings size={20} />
           </button>
         </div>
@@ -259,10 +252,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
                   syncStatus === 'error' ? 'text-rose-400/90' : 
                   'text-slate-400'
                 }`}>
-                  {syncStatus === 'syncing' ? '实验室正在拉取您的云端生理记录...' : 
-                   syncStatus === 'success' ? '同步成功！已分析最新睡眠时段' : 
-                   syncStatus === 'error' ? (errorMessage || '数据同步中断，请重试') : 
-                   '自动拉取健身记录以生成精准 AI 洞察'}
+                  {syncStatus === 'syncing' ? '正在连接实验室云端获取生理信号...' : 
+                   syncStatus === 'success' ? '同步成功！检测到真实穿戴设备记录' : 
+                   syncStatus === 'error' ? (errorMessage || '数据同步中断') : 
+                   '拉取最新健身记录以生成真实 AI 洞察'}
                 </p>
               </div>
             </div>
@@ -281,15 +274,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
               {syncStatus === 'syncing' && <Loader2 size={16} className="animate-spin" />}
               {syncStatus === 'syncing' ? '分析中' : 
                syncStatus === 'success' ? '更新完成' : 
-               syncStatus === 'error' ? '重新连接' : 
-               '立即同步'}
+               syncStatus === 'error' ? '重试连接' : 
+               '立即抓取'}
               {syncStatus === 'idle' && <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
             </button>
           </div>
           
           {syncStatus === 'error' && (
             <div className="mt-4 pt-4 border-t border-rose-500/10 flex items-start gap-2 animate-in fade-in slide-in-from-top-1">
-              <span className="text-[10px] text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">异常详情</span>
+              <span className="text-[10px] text-rose-400 font-bold bg-rose-500/10 px-2 py-0.5 rounded-full uppercase tracking-tighter">错误排查</span>
               <p className="text-[11px] text-rose-400/70 font-medium leading-relaxed italic">
                 {errorMessage}
               </p>
