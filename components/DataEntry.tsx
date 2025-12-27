@@ -1,8 +1,8 @@
 
 import React, { useState } from 'react';
 import { X, Check, Clock, Heart, Star } from 'lucide-react';
-import { GlassCard } from './GlassCard';
-import { SleepRecord, SleepStage } from '../types';
+import { GlassCard } from './GlassCard.tsx';
+import { SleepRecord, SleepStage } from '../types.ts';
 
 interface DataEntryProps {
   onClose: () => void;

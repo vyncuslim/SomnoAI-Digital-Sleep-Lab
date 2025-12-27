@@ -1,15 +1,15 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2 } from 'lucide-react';
-import { GlassCard } from './GlassCard';
-import { ChatMessage } from '../types';
-import { chatWithCoach } from '../services/geminiService';
+import { GlassCard } from './GlassCard.tsx';
+import { ChatMessage } from '../types.ts';
+import { chatWithCoach } from '../services/geminiService.ts';
 
 export const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: "您好！我是您的 AI 睡眠教练。今天我可以帮您优化睡眠架构，或是分析您的最近趋势吗？",
+      content: "您好！我是您的 AI 睡眠教练。今天我可以帮您 optimize 睡眠架构，或是分析您的最近趋势吗？",
       timestamp: new Date()
     }
   ]);

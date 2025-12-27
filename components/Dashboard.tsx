@@ -1,9 +1,9 @@
 
 import React from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip } from 'recharts';
-import { SleepRecord } from '../types';
-import { GlassCard } from './GlassCard';
-import { COLORS } from '../constants';
+import { SleepRecord } from '../types.ts';
+import { GlassCard } from './GlassCard.tsx';
+import { COLORS } from '../constants.tsx';
 import { Bell, Settings, Clock, Moon, Zap, Activity, Heart, Sparkles, Plus } from 'lucide-react';
 
 interface DashboardProps {

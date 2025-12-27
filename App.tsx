@@ -1,15 +1,15 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { Dashboard } from './components/Dashboard';
-import { Trends } from './components/Trends';
-import { AIAssistant } from './components/AIAssistant';
-import { Settings } from './components/Settings';
-import { Auth } from './components/Auth';
-import { DataEntry } from './components/DataEntry';
-import { ViewType, SleepRecord } from './types';
-import { MOCK_RECORD } from './constants';
+import React, { useState, useEffect } from 'react';
+import { Dashboard } from './components/Dashboard.tsx';
+import { Trends } from './components/Trends.tsx';
+import { AIAssistant } from './components/AIAssistant.tsx';
+import { Settings } from './components/Settings.tsx';
+import { Auth } from './components/Auth.tsx';
+import { DataEntry } from './components/DataEntry.tsx';
+import { ViewType, SleepRecord } from './types.ts';
+import { MOCK_RECORD } from './constants.tsx';
 import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User } from 'lucide-react';
-import { getSleepInsight } from './services/geminiService';
+import { getSleepInsight } from './services/geminiService.ts';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -25,11 +25,15 @@ const App: React.FC = () => {
   }, [isLoggedIn]);
 
   const refreshInsight = async (record: SleepRecord) => {
-    const insight = await getSleepInsight(record);
-    setCurrentRecord(prev => ({
-      ...prev,
-      aiInsights: [insight, ...prev.aiInsights.slice(0, 2)]
-    }));
+    try {
+      const insight = await getSleepInsight(record);
+      setCurrentRecord(prev => ({
+        ...prev,
+        aiInsights: [insight, ...prev.aiInsights.slice(0, 2)]
+      }));
+    } catch (e) {
+      console.error("Failed to get AI insight", e);
+    }
   };
 
   const handleSaveData = (record: SleepRecord) => {
