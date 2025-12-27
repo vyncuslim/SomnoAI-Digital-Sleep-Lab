@@ -1,14 +1,34 @@
 
-// @google/genai Gemini API configuration
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
+const MANUAL_KEY_STORAGE = 'SOMNO_MANUAL_API_KEY';
+
 /**
- * Helper to get a fresh AI instance using process.env.API_KEY.
- * Following the guidelines: Use a new instance right before API calls.
+ * 优先级获取 API Key: 
+ * 1. 环境变量 (Vercel/系统注入)
+ * 2. 本地存储 (用户手动录入)
+ */
+const getApiKey = () => {
+  // 1. 尝试从 process 环境对象获取 (安全检查)
+  const envKey = (globalThis as any).process?.env?.API_KEY;
+  if (envKey) return envKey;
+
+  // 2. 尝试从本地存储获取
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem(MANUAL_KEY_STORAGE);
+  }
+  
+  return null;
+};
+
+/**
+ * 获取 AI 实例的辅助函数
  */
 const getAi = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const apiKey = getApiKey();
+  if (!apiKey) throw new Error("API_KEY_MISSING");
+  return new GoogleGenAI({ apiKey });
 };
 
 export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
@@ -35,8 +55,10 @@ export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
 
     return response.text || "倾听身体的律动；高质量睡眠是卓越表现的基石。";
   } catch (error: any) {
-    console.warn("Insight analysis skipped:", error.message);
-    // Silent fallback to avoid breaking the UI
+    console.warn("Insight skipped:", error.message);
+    if (error.message === "API_KEY_MISSING") {
+      return "请在“我的-设置”中配置 Gemini API Key 以激活 AI 深度洞察。";
+    }
     return "正在同步您的睡眠模式，请保持规律作息。";
   }
 };
@@ -65,6 +87,9 @@ export const chatWithCoach = async (history: { role: 'user' | 'assistant', conte
     return response.text || "我正在分析您的情况，请稍后再试。";
   } catch (error: any) {
     console.error("Gemini Chat Error:", error);
-    return "连接 AI 引擎时遇到一点问题，请检查网络后重试。";
+    if (error.message === "API_KEY_MISSING") {
+      return "抱歉，我需要配置 API Key 才能开始对话。";
+    }
+    return "连接 AI 引擎时遇到一点问题，请重试。";
   }
 };
