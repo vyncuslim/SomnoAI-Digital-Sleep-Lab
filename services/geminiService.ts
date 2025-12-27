@@ -1,19 +1,19 @@
 
+// @google/genai Gemini API configuration
 import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
-// 辅助函数：安全地获取 AI 实例，防止顶层访问 process 导致的崩溃
-const getAiInstance = () => {
-  const apiKey = typeof process !== 'undefined' ? process.env.API_KEY : undefined;
-  if (!apiKey) {
-    throw new Error("API_KEY_MISSING");
-  }
-  return new GoogleGenAI({ apiKey });
+/**
+ * Helper to get a fresh AI instance using process.env.API_KEY.
+ * Following the guidelines: Use a new instance right before API calls.
+ */
+const getAi = () => {
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
   try {
-    const ai = getAiInstance();
+    const ai = getAi();
     const prompt = `
       As a world-class sleep scientist, provide a single, punchy, and highly actionable sentence of insight based on these metrics:
       Sleep Score: ${data.score}/100
@@ -21,37 +21,34 @@ export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
       Stages: ${data.stages.map(s => `${s.name}: ${s.duration}m`).join(', ')}
       Resting Heart Rate: ${data.heartRate.resting} BPM.
       
-      Keep it encouraging and scientific.
+      Keep it encouraging and scientific. Respond in Chinese.
     `;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        maxOutputTokens: 60,
+        maxOutputTokens: 100,
         thinkingConfig: { thinkingBudget: 0 }
       }
     });
 
     return response.text || "倾听身体的律动；高质量睡眠是卓越表现的基石。";
   } catch (error: any) {
-    if (error.message === "API_KEY_MISSING") {
-      return "请在设置中配置 Gemini API Key 以激活 AI 深度洞察。";
-    }
-    console.error("Gemini Insight Error:", error);
-    return "正在分析您的模式... 请继续保持规律的作息。";
+    console.warn("Insight analysis skipped:", error.message);
+    // Silent fallback to avoid breaking the UI
+    return "正在同步您的睡眠模式，请保持规律作息。";
   }
 };
 
 export const chatWithCoach = async (history: { role: 'user' | 'assistant', content: string }[]): Promise<string> => {
   try {
-    const ai = getAiInstance();
+    const ai = getAi();
     const model = 'gemini-3-flash-preview';
     const systemInstruction = `
-      You are Somno, a high-performance Sleep Coach and Biohacking Expert. 
-      Your goal is to help users optimize their sleep architecture (Deep, REM, Light stages).
-      Use scientific terms like 'circadian rhythm', 'adenosine', 'melatonin', and 'HRV' when appropriate.
-      Be empathetic, concise, and professional. Respond in Chinese.
+      你叫 Somno，是一位顶尖的睡眠教练和生物黑客专家。
+      你的目标是帮助用户优化睡眠架构（深睡、REM、浅睡）。
+      回答应简明扼要、专业且富有同理心。使用中文回答。
     `;
 
     const chat = ai.chats.create({
@@ -65,12 +62,9 @@ export const chatWithCoach = async (history: { role: 'user' | 'assistant', conte
     const lastUserMessage = history[history.length - 1].content;
     const response = await chat.sendMessage({ message: lastUserMessage });
     
-    return response.text || "我正在处理您的信息。能告诉我更多关于您的晚间常规吗？";
+    return response.text || "我正在分析您的情况，请稍后再试。";
   } catch (error: any) {
-    if (error.message === "API_KEY_MISSING") {
-      return "抱歉，我需要配置 API Key 才能开始对话。请前往“我的 - 设置”进行配置。";
-    }
     console.error("Gemini Chat Error:", error);
-    return "连接知识库时遇到问题，请稍后再试。";
+    return "连接 AI 引擎时遇到一点问题，请检查网络后重试。";
   }
 };

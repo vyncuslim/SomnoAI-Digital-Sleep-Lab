@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Mail, Lock, Eye, EyeOff, Key, AlertCircle } from 'lucide-react';
+import { Moon, Mail, Key, AlertCircle } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
@@ -12,13 +12,11 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
-  const [mode, setMode] = useState<'login' | 'register'>('login');
-  const [showPassword, setShowPassword] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [hasApiKey, setHasApiKey] = useState(true);
 
   useEffect(() => {
-    // 检查是否已配置 Gemini API Key
+    // Check key status on mount
     const checkApiKey = async () => {
       if (window.aistudio?.hasSelectedApiKey) {
         const selected = await window.aistudio.hasSelectedApiKey();
@@ -31,9 +29,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const handleConfigureKey = async () => {
     if (window.aistudio?.openSelectKey) {
       await window.aistudio.openSelectKey();
+      // Proceed assuming success as per guidelines
       setHasApiKey(true);
-    } else {
-      alert("API Key 选择功能在此环境下不可用，请确保在支持的环境中运行。");
     }
   };
 
@@ -42,7 +39,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setIsLoggingIn(true);
     
     try {
-      // 等待 SDK 加载的简单重试逻辑
       let retries = 0;
       while (typeof google === 'undefined' && retries < 10) {
         await new Promise(resolve => setTimeout(resolve, 500));
@@ -50,14 +46,14 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       }
 
       if (typeof google === 'undefined' || !google.accounts) {
-        throw new Error('Google SDK 加载失败，请检查网络连接或刷新页面。');
+        throw new Error('Google SDK 加载失败，请检查网络。');
       }
       
       await googleFit.authorize();
       onLogin();
     } catch (error: any) {
       console.error('Google Login Error:', error);
-      alert(error.message || '登录失败，请重试。');
+      alert(error.message || '登录失败，请稍后重试。');
     } finally {
       setIsLoggingIn(false);
     }
@@ -80,15 +76,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           <div className="mb-6 p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3">
             <AlertCircle className="text-amber-500 shrink-0 mt-0.5" size={18} />
             <div className="text-left">
-              <p className="text-xs font-bold text-amber-200">未检测到 API Key</p>
+              <p className="text-xs font-bold text-amber-200">未授权 AI 引擎</p>
               <p className="text-[10px] text-amber-200/60 leading-tight mt-1">
-                AI 洞察功能需要配置 Gemini API Key。
+                AI 深度分析功能需要 Gemini API 授权方可激活。
               </p>
               <button 
                 onClick={handleConfigureKey}
                 className="mt-2 text-[10px] font-black uppercase tracking-widest text-amber-500 hover:text-amber-400 transition-colors"
               >
-                立即配置 →
+                立即授权 →
               </button>
             </div>
           </div>
@@ -123,7 +119,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               onClick={onLogin}
               className="w-full py-4 bg-indigo-600/10 border border-indigo-600/30 text-indigo-400 hover:bg-indigo-600/20 rounded-2xl font-bold transition-all"
             >
-              普通登录
+              访客模式登录
             </button>
           </div>
         </div>
@@ -133,7 +129,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             onClick={handleConfigureKey}
             className="flex items-center justify-center gap-2 w-full text-slate-500 hover:text-slate-300 transition-colors text-xs font-bold"
           >
-            <Key size={14} /> 配置 AI 引擎 (Gemini API Key)
+            <Key size={14} /> AI 引擎授权 (Gemini API)
           </button>
         </div>
       </GlassCard>
