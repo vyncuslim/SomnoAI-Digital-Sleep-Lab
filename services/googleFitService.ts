@@ -1,7 +1,7 @@
 
 import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
 
-// 注意：在生产环境中，请确保此 Client ID 已在 GCP 控制台配置了您的 Vercel 域名作为授权来源
+// 注意：请在 GCP 控制台将您的 Vercel 域名添加到“已授权的 JavaScript 来源”
 const CLIENT_ID = "312904526470-84ra3lld33sci0kvhset8523b0hdul1c.apps.googleusercontent.com";
 const SCOPES = [
   "https://www.googleapis.com/auth/fitness.sleep.read",
@@ -30,7 +30,7 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("Google 身份验证组件加载失败，请检查网络或关闭广告拦截。");
+    throw new Error("Google API 库加载超时，请检查网络连接。");
   }
 
   public async ensureClientInitialized() {
@@ -42,7 +42,6 @@ export class GoogleFitService {
       scope: SCOPES.join(" "),
       callback: (response: any) => {
         if (response.error) {
-          console.error("GIS Error:", response);
           this.authPromise?.reject(new Error(response.error_description || response.error));
           return;
         }
@@ -57,14 +56,15 @@ export class GoogleFitService {
     await this.ensureClientInitialized();
     return new Promise((resolve, reject) => {
       this.authPromise = { resolve, reject };
-      // requestAccessToken 必须由用户手势触发
+      // 必须由用户交互触发，否则会被浏览器拦截
       this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
     });
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    if (!this.accessToken) throw new Error("未授权 Google Fit 访问。");
+    if (!this.accessToken) throw new Error("未检测到有效的访问令牌。");
 
+    // 获取过去 7 天的数据以确保能找到最近的睡眠
     const now = new Date();
     const startTimeMillis = now.getTime() - 7 * 24 * 60 * 60 * 1000;
     const endTimeMillis = now.getTime();
@@ -77,16 +77,16 @@ export class GoogleFitService {
       const sessions = sleepData.session || [];
 
       if (sessions.length === 0) {
-        throw new Error("未检测到最近的睡眠记录。请确保穿戴设备已同步到 Google Fit。");
+        throw new Error("Google Fit 中未找到近期睡眠数据。请确保您的穿戴设备已同步。");
       }
 
-      // 获取最近一次记录
+      // 获取最近一次完成的记录
       const latest = sessions[sessions.length - 1];
       const sStart = BigInt(latest.startTimeMillis);
       const sEnd = BigInt(latest.endTimeMillis);
       const totalDuration = Number((sEnd - sStart) / BigInt(60000));
 
-      // 2. 获取分期数据 (使用大数据源)
+      // 2. 获取详尽的睡眠分期 (Dataset Source)
       const segmentSource = "derived:com.google.sleep.segment:com.google.android.gms:merged";
       const segmentUrl = `https://www.googleapis.com/fitness/v1/users/me/datasetSources/${segmentSource}/datasets/${sStart * BigInt(1000000)}-${sEnd * BigInt(1000000)}`;
       const segmentRes = await fetch(segmentUrl, { headers: { Authorization: `Bearer ${this.accessToken}` } });
@@ -107,7 +107,7 @@ export class GoogleFitService {
           const startTime = new Date(Number(pStart / BigInt(1000000))).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
           
           let name: '深睡' | 'REM' | '浅睡' | '清醒' = '浅睡';
-          // 睡眠类型代码：1=清醒, 4=浅睡, 5=深睡, 6=REM
+          // Google Fit 类型码: 5=Deep, 6=REM, 1=Awake, 4=Light
           if (type === 5) { name = '深睡'; deepMins += duration; }
           else if (type === 6) { name = 'REM'; remMins += duration; }
           else if (type === 1) { name = '清醒'; awakeMins += duration; }
@@ -116,10 +116,10 @@ export class GoogleFitService {
         });
       }
 
-      // 估算逻辑（如果无详细分期）
+      //  fallback 逻辑：如果无分期数据则进行科学估算
       if (stages.length === 0) {
-        deepMins = Math.floor(totalDuration * 0.22);
-        remMins = Math.floor(totalDuration * 0.18);
+        deepMins = Math.floor(totalDuration * 0.2);
+        remMins = Math.floor(totalDuration * 0.25);
         stages = [
           { name: '深睡', duration: deepMins, startTime: '--' },
           { name: 'REM', duration: remMins, startTime: '--' },
@@ -127,7 +127,7 @@ export class GoogleFitService {
         ];
       }
 
-      // 3. 获取心率数据
+      // 3. 获取心率动态
       const hrSource = "derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm";
       const hrUrl = `https://www.googleapis.com/fitness/v1/users/me/datasetSources/${hrSource}/datasets/${sStart * BigInt(1000000)}-${sEnd * BigInt(1000000)}`;
       const hrRes = await fetch(hrUrl, { headers: { Authorization: `Bearer ${this.accessToken}` } });
@@ -144,7 +144,7 @@ export class GoogleFitService {
             min: Math.round(Math.min(...values)),
             max: Math.round(Math.max(...values)),
             resting: Math.round(Math.min(...values)),
-            history: points.slice(-20).map((p: any) => ({
+            history: points.slice(-30).map((p: any) => ({
               time: new Date(Number(BigInt(p.startTimeNanos) / BigInt(1000000))).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               bpm: Math.round(p.value[0].fpVal)
             }))
@@ -154,17 +154,17 @@ export class GoogleFitService {
 
       return {
         totalDuration,
-        score: Math.min(100, Math.round((totalDuration / 480) * 80 + (deepMins / totalDuration) * 100)),
+        score: Math.min(100, Math.round((totalDuration / 480) * 70 + (deepMins / totalDuration) * 150)),
         deepRatio: Math.round((deepMins / totalDuration) * 100),
         remRatio: Math.round((remMins / totalDuration) * 100),
         efficiency: Math.round(((totalDuration - awakeMins) / totalDuration) * 100),
         date: new Date(Number(sStart)).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
         stages,
         heartRate: hrMetrics,
-        aiInsights: ["实验室：生理信号流已捕获，AI 正在分析您的恢复曲线。"]
+        aiInsights: ["实验室：正在分析真实的生理信号流..."]
       };
     } catch (error: any) {
-      console.error("Fetch Data Failed:", error);
+      console.error("Google Fit Sync Error:", error);
       throw error;
     }
   }
