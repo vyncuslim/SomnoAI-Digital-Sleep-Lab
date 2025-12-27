@@ -17,6 +17,10 @@ export class GoogleFitService {
   private tokenClient: any = null;
   private authPromise: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null;
 
+  public hasToken(): boolean {
+    return !!this.accessToken;
+  }
+
   private async waitForGoogleReady(): Promise<void> {
     const maxAttempts = 50;
     for (let i = 0; i < maxAttempts; i++) {
@@ -25,12 +29,9 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("Google 身份验证组件加载失败，请刷新页面或检查网络。");
+    throw new Error("Google 身份验证组件加载失败，请刷新页面。");
   }
 
-  /**
-   * Public initialization to be called during component mount to pre-warm the client.
-   */
   public async ensureClientInitialized() {
     if (this.tokenClient) return;
     await this.waitForGoogleReady();
@@ -40,62 +41,42 @@ export class GoogleFitService {
       scope: SCOPES.join(" "),
       callback: (response: any) => {
         if (response.error) {
-          console.error("GSI Error Callback:", response);
-          // If user closes popup, response.error is 'access_denied'
           const errorMsg = response.error === 'access_denied' 
-            ? "用户取消了授权或拒绝了权限请求。" 
+            ? "用户取消了授权。" 
             : `授权失败: ${response.error_description || response.error}`;
           this.authPromise?.reject(new Error(errorMsg));
           return;
         }
         if (response.access_token) {
           this.accessToken = response.access_token;
-          console.log("Google Fit access token acquired.");
           this.authPromise?.resolve(response.access_token);
         } else {
           this.authPromise?.reject(new Error("未获得访问令牌。"));
         }
-      },
-      error_callback: (err: any) => {
-        console.error("GSI Client Internal Error:", err);
-        this.authPromise?.reject(new Error("Google 授权客户端发生内部错误。"));
       }
     });
   }
 
-  /**
-   * Triggers the OAuth popup. Should be called directly from a user click handler.
-   */
   async authorize(forcePrompt = true): Promise<string> {
-    // Check if we already have a token and we are not forcing a prompt
-    if (this.accessToken && !forcePrompt) {
-      return this.accessToken;
-    }
-
-    // Ensure client is ready. If already initialized, this is instant.
+    if (this.accessToken && !forcePrompt) return this.accessToken;
     await this.ensureClientInitialized();
 
     return new Promise((resolve, reject) => {
       this.authPromise = { resolve, reject };
       try {
-        console.log("Requesting Google Fit access token...");
-        // Calling requestAccessToken as synchronously as possible relative to user gesture
         this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
       } catch (err: any) {
-        console.error("Popup trigger exception:", err);
-        reject(new Error("无法启动授权弹窗，请检查浏览器是否拦截了弹出窗口。"));
+        reject(new Error("无法启动授权弹窗。"));
       }
     });
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    if (!this.accessToken) {
-      // Try to re-authorize silently or prompt if needed
-      throw new Error("尚未授权，请先连接 Google 健身。");
-    }
+    if (!this.accessToken) throw new Error("尚未授权。");
 
     const now = new Date();
-    const startTimeMillis = now.getTime() - 24 * 60 * 60 * 1000;
+    // 扩大回溯范围至 7 天，确保能找到最近的一次睡眠
+    const startTimeMillis = now.getTime() - 7 * 24 * 60 * 60 * 1000;
     const endTimeMillis = now.getTime();
 
     try {
@@ -108,22 +89,19 @@ export class GoogleFitService {
         fetch(hrUrl, { headers: { Authorization: `Bearer ${this.accessToken}` } })
       ]);
 
-      if (sleepRes.status === 401 || hrRes.status === 401) {
+      if (sleepRes.status === 401) {
         this.accessToken = null;
-        throw new Error("登录已过期，请重新同步。");
-      }
-
-      if (!sleepRes.ok) {
-        throw new Error("从 Google Fit 读取数据失败，请确保已开启相应权限。");
+        throw new Error("登录已过期。");
       }
 
       const sleepData = await sleepRes.json();
       const sessions = sleepData.session || [];
 
       if (sessions.length === 0) {
-        throw new Error("最近 24 小时内未发现睡眠记录。");
+        throw new Error("最近 7 天内未发现睡眠记录。请确保您的穿戴设备已同步数据到 Google Fit 手机应用。");
       }
 
+      // 获取最近的一条记录
       const latest = sessions[sessions.length - 1];
       const durationMins = Math.floor((latest.endTimeMillis - latest.startTimeMillis) / 60000);
 
@@ -132,17 +110,19 @@ export class GoogleFitService {
         const hrJson = await hrRes.json();
         const points = hrJson.point || [];
         if (points.length > 0) {
-          const values = points.map((p: any) => p.value[0].fpVal);
-          hrMetrics = {
-            average: Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length),
-            min: Math.min(...values),
-            max: Math.max(...values),
-            resting: Math.min(...values) + 5,
-            history: points.slice(-24).map((p: any) => ({
-              time: new Date(p.startTimeNanos / 1000000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-              bpm: Math.round(p.value[0].fpVal)
-            }))
-          };
+          const values = points.filter((p: any) => p.value[0].fpVal > 30).map((p: any) => p.value[0].fpVal);
+          if (values.length > 0) {
+            hrMetrics = {
+              average: Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length),
+              min: Math.round(Math.min(...values)),
+              max: Math.round(Math.max(...values)),
+              resting: Math.round(Math.min(...values) + 2),
+              history: points.slice(-24).map((p: any) => ({
+                time: new Date(p.startTimeNanos / 1000000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                bpm: Math.round(p.value[0].fpVal)
+              }))
+            };
+          }
         }
       }
 
@@ -151,10 +131,10 @@ export class GoogleFitService {
         score: Math.min(100, Math.max(40, Math.floor(durationMins / 4.8))),
         date: new Date(latest.startTimeMillis).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
         heartRate: hrMetrics,
-        aiInsights: ["同步成功：实验室已接入您的最新生理指标流。"]
+        aiInsights: ["同步成功：已从 Google Fit 提取最新生理数据。"]
       };
     } catch (error: any) {
-      console.error("Data Fetch Error:", error);
+      console.error("Fit Fetch Error:", error);
       throw error;
     }
   }
