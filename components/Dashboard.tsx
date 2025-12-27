@@ -4,7 +4,10 @@ import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, 
 import { SleepRecord } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
-import { Bell, Settings, Clock, Moon, Zap, Activity, Heart, Sparkles, Plus, RefreshCw } from 'lucide-react';
+import { 
+  Bell, Settings, Clock, Moon, Zap, Activity, Heart, 
+  Sparkles, Plus, RefreshCw, CheckCircle2, AlertCircle 
+} from 'lucide-react';
 
 interface DashboardProps {
   data: SleepRecord;
@@ -12,8 +15,11 @@ interface DashboardProps {
   onSyncFit?: () => Promise<void>;
 }
 
+type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
+
 export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit }) => {
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  
   const scoreData = [{ value: data.score }, { value: 100 - data.score }];
   
   const weekTrendData = [
@@ -27,12 +33,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
   ];
 
   const handleSync = async () => {
-    if (!onSyncFit) return;
-    setIsSyncing(true);
+    if (!onSyncFit || syncStatus === 'syncing') return;
+    
+    setSyncStatus('syncing');
     try {
       await onSyncFit();
-    } finally {
-      setIsSyncing(false);
+      setSyncStatus('success');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    } catch (err) {
+      console.error("Sync error:", err);
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 5000);
     }
   };
 
@@ -184,23 +195,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
         <h3 className="font-bold text-lg px-1">睡眠阶段</h3>
         <GlassCard className="p-8 h-64 flex flex-col justify-between bg-slate-900/40">
           <div className="flex-1 flex relative">
-            {/* Left Labels */}
             <div className="absolute left-[-2.5rem] top-0 h-full flex flex-col justify-between text-[10px] text-slate-500 font-black py-1">
               <span>清醒</span>
               <span>浅睡</span>
               <span>REM</span>
               <span>深睡</span>
             </div>
-            
-            {/* Grid Lines */}
             <div className="absolute inset-0 flex flex-col justify-between pointer-events-none opacity-20">
               <div className="w-full border-t border-white/20"></div>
               <div className="w-full border-t border-white/20"></div>
               <div className="w-full border-t border-white/20"></div>
               <div className="w-full border-b border-white/20"></div>
             </div>
-
-            {/* Stepped Chart Area */}
             <div className="flex-1 ml-4 overflow-hidden">
               <svg viewBox="0 0 400 100" className="w-full h-full preserve-3d" preserveAspectRatio="none">
                 <path 
@@ -215,7 +221,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
               </svg>
             </div>
           </div>
-          {/* Time Labels */}
           <div className="flex justify-between text-[10px] text-slate-500 font-bold mt-6 ml-4">
             <span>23:00</span>
             <span>01:00</span>
@@ -276,24 +281,47 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onAddData, onSyncFit
           <Plus size={20} className="group-hover:rotate-90 transition-transform duration-300" /> 手动录入睡眠数据
         </button>
         
-        <div className="bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border border-indigo-500/20 rounded-[2.5rem] p-8 flex items-center justify-between shadow-2xl shadow-indigo-900/20 relative overflow-hidden group">
+        <div className={`bg-gradient-to-br from-[#1e1b4b] to-[#0f172a] border rounded-[2.5rem] p-8 flex items-center justify-between shadow-2xl shadow-indigo-900/20 relative overflow-hidden group transition-all duration-300 ${
+          syncStatus === 'success' ? 'border-emerald-500/50' : 
+          syncStatus === 'error' ? 'border-rose-500/50' : 'border-indigo-500/20'
+        }`}>
           <div className="absolute -top-10 -right-10 w-40 h-40 bg-indigo-500/5 blur-[50px] rounded-full group-hover:bg-indigo-500/10 transition-colors"></div>
           <div className="flex items-center gap-5 relative z-10">
-            <div className="p-4 bg-indigo-600/20 rounded-2xl text-indigo-400 border border-indigo-500/20">
-              <Activity size={28} />
+            <div className={`p-4 rounded-2xl border transition-colors duration-300 ${
+              syncStatus === 'success' ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30' :
+              syncStatus === 'error' ? 'bg-rose-600/20 text-rose-400 border-rose-500/30' :
+              'bg-indigo-600/20 text-indigo-400 border-indigo-500/20'
+            }`}>
+              {syncStatus === 'success' ? <CheckCircle2 size={28} /> : 
+               syncStatus === 'error' ? <AlertCircle size={28} /> : <Activity size={28} />}
             </div>
             <div>
               <h4 className="font-black text-lg">Google Fit</h4>
-              <p className="text-xs text-slate-400 font-medium">{isSyncing ? '正在同步数据...' : '同步您的健康中心数据'}</p>
+              <p className={`text-xs font-medium ${
+                syncStatus === 'success' ? 'text-emerald-400' :
+                syncStatus === 'error' ? 'text-rose-400' :
+                'text-slate-400'
+              }`}>
+                {syncStatus === 'syncing' ? '正在从云端拉取...' : 
+                 syncStatus === 'success' ? '数据同步成功' : 
+                 syncStatus === 'error' ? '同步失败，请检查授权' : '同步您的健康中心数据'}
+              </p>
             </div>
           </div>
           <button 
-            disabled={isSyncing}
+            disabled={syncStatus === 'syncing'}
             onClick={handleSync}
-            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-700 rounded-2xl text-sm font-black transition-all shadow-xl shadow-indigo-600/30 active:scale-90 relative z-10 flex items-center gap-2"
+            className={`px-8 py-3 rounded-2xl text-sm font-black transition-all shadow-xl active:scale-90 relative z-10 flex items-center gap-2 ${
+              syncStatus === 'syncing' ? 'bg-slate-700 cursor-not-allowed text-slate-400' : 
+              syncStatus === 'success' ? 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30 text-white' : 
+              syncStatus === 'error' ? 'bg-rose-600 hover:bg-rose-500 shadow-rose-600/30 text-white' : 
+              'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30 text-white'
+            }`}
           >
-            {isSyncing ? <RefreshCw className="animate-spin" size={16} /> : null}
-            {isSyncing ? '同步中' : '连接'}
+            {syncStatus === 'syncing' ? <RefreshCw className="animate-spin" size={16} /> : null}
+            {syncStatus === 'syncing' ? '同步中' : 
+             syncStatus === 'success' ? '已同步' : 
+             syncStatus === 'error' ? '重试' : '连接'}
           </button>
         </div>
       </div>
