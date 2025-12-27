@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, Key, AlertCircle, CheckCircle2, Eye, EyeOff, Save, ShieldCheck, Lock } from 'lucide-react';
+import { Moon, Key, AlertCircle, CheckCircle2, Eye, EyeOff, Save, ShieldCheck, Lock, Loader2 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
@@ -32,7 +32,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       localStorage.setItem(MANUAL_KEY_STORAGE, apiKey.trim());
       setHasStoredKey(true);
       setShowKeyInput(false);
-      alert("AI 密钥配置成功。");
+      alert("AI 核心配置成功。");
     } else {
       alert("请输入有效的 Gemini API 密钥");
     }
@@ -42,13 +42,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     if (isLoggingIn) return;
     setIsLoggingIn(true);
     try {
-      // 触发真实的 Google 授权弹窗
+      console.log("Starting Google Fit Authorization...");
       await googleFit.authorize();
-      // 授权成功后才调用回调切换页面
+      console.log("Authorization success, proceeding to app...");
       onLogin();
     } catch (error: any) {
-      console.error(error);
-      alert(error.message || 'Google 授权已取消或失败');
+      console.error("Google Login Catch:", error);
+      alert(error.message || 'Google 授权已取消或失败。如果没看到弹窗，请检查是否被浏览器拦截。');
     } finally {
       setIsLoggingIn(false);
     }
@@ -63,12 +63,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           <Moon className="text-indigo-400" size={56} />
         </div>
         <h1 className="text-4xl font-black tracking-tight text-white mb-2">SomnoAI</h1>
-        <p className="text-slate-400 font-medium px-4 leading-relaxed">数字化睡眠实验室系统</p>
+        <p className="text-slate-400 font-medium px-4 leading-relaxed tracking-wide">数字化睡眠实验室系统</p>
       </div>
 
       <GlassCard className="w-full max-w-md p-8 border-slate-700/50 bg-slate-900/60 shadow-2xl space-y-6">
         {/* Engine Config */}
-        <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all ${
+        <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all duration-500 ${
           hasStoredKey ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'
         }`}>
           {hasStoredKey ? <CheckCircle2 className="text-emerald-500" size={18} /> : <AlertCircle className="text-amber-500" size={18} />}
@@ -76,9 +76,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             <p className="text-xs font-bold text-white">AI 核心: {hasStoredKey ? '准备就绪' : '待配置'}</p>
             <button 
               onClick={() => setShowKeyInput(!showKeyInput)}
-              className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mt-0.5"
+              className="text-[10px] text-indigo-400 font-bold uppercase tracking-wider mt-0.5 hover:text-indigo-300 transition-colors"
             >
-              {showKeyInput ? '隐藏设置' : '配置 Gemini 密钥'}
+              {showKeyInput ? '收起设置' : '配置计算引擎'}
             </button>
           </div>
         </div>
@@ -90,57 +90,65 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 type={showKey ? "text" : "password"}
                 value={apiKey}
                 onChange={(e) => setApiKey(e.target.value)}
-                placeholder="AIza..."
-                className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-4 pl-4 pr-12 text-sm text-indigo-100 outline-none"
+                placeholder="Gemini API Key (AIza...)"
+                className="w-full bg-slate-950/50 border border-slate-800 rounded-xl py-4 pl-4 pr-12 text-sm text-indigo-100 outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
               />
               <button 
                 onClick={() => setShowKey(!showKey)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-slate-400"
               >
                 {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
             </div>
             <button 
               onClick={handleSaveKey}
-              className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2"
+              className="w-full py-3 bg-indigo-600 text-white rounded-xl text-xs font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20"
             >
-              <Save size={16} /> 保存配置
+              <Save size={16} /> 保存并激活
             </button>
           </div>
         )}
 
         <div className="space-y-4 pt-2">
-          <div className="p-4 bg-white/5 rounded-2xl border border-white/10 mb-4">
+          <div className="p-4 bg-white/5 rounded-2xl border border-white/10 mb-4 text-left">
             <div className="flex items-center gap-2 mb-2">
               <Lock size={14} className="text-indigo-400" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Google 身份确认</p>
+              <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">数据主权声明</p>
             </div>
-            <p className="text-[11px] text-slate-500 leading-relaxed text-left">
-              我们将请求访问您的 Google 健身数据以获取真实的睡眠时长与心率指标。授权过程完全由 Google 控制。
+            <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
+              实验室将通过 Google Fit 获取真实的生理指标。所有计算均在端侧完成，授权令牌仅暂存于内存。
             </p>
           </div>
 
           <button 
             onClick={handleGoogleLogin}
             disabled={isLoggingIn}
-            className="w-full py-5 bg-white text-slate-950 hover:bg-slate-100 rounded-[1.5rem] flex items-center justify-center gap-4 transition-all shadow-xl font-bold active:scale-95"
+            className={`w-full py-5 rounded-[1.5rem] flex items-center justify-center gap-4 transition-all shadow-xl font-bold active:scale-95 border ${
+              isLoggingIn 
+              ? 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed' 
+              : 'bg-white text-slate-950 border-white hover:bg-slate-100'
+            }`}
           >
-            <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
-            <span>{isLoggingIn ? '正在连接 Google...' : '连接 Google 健身账号'}</span>
+            {isLoggingIn ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <img src="https://www.google.com/favicon.ico" alt="Google" className="w-5 h-5" />
+            )}
+            <span>{isLoggingIn ? '唤起 Google 授权中...' : '连接 Google 健身账号'}</span>
           </button>
 
           <button 
             onClick={onLogin}
-            className="w-full py-4 text-slate-500 hover:text-slate-300 font-bold transition-all text-xs uppercase tracking-[0.2em]"
+            className="w-full py-4 text-slate-600 hover:text-slate-400 font-bold transition-all text-[10px] uppercase tracking-[0.3em]"
           >
-            以访客模式浏览
+            以实验室访客身份进入
           </button>
         </div>
       </GlassCard>
       
-      <div className="mt-8 flex items-center gap-2 text-slate-700 text-[10px] font-black uppercase tracking-[0.3em]">
-        <ShieldCheck size={12} />
-        Secure Lab Environment v2.5
+      <div className="mt-8 flex items-center gap-2 text-slate-800 text-[10px] font-black uppercase tracking-[0.4em]">
+        <ShieldCheck size={12} className="text-slate-700" />
+        Encrypted Lab Env 2.5
       </div>
     </div>
   );
