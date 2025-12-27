@@ -28,7 +28,10 @@ export class GoogleFitService {
     throw new Error("Google 身份验证组件加载失败，请刷新页面或检查网络。");
   }
 
-  private async ensureClientInitialized() {
+  /**
+   * Public initialization to be called during component mount to pre-warm the client.
+   */
+  public async ensureClientInitialized() {
     if (this.tokenClient) return;
     await this.waitForGoogleReady();
 
@@ -37,12 +40,17 @@ export class GoogleFitService {
       scope: SCOPES.join(" "),
       callback: (response: any) => {
         if (response.error) {
-          console.error("GSI Error:", response);
-          this.authPromise?.reject(new Error(`授权失败: ${response.error_description || response.error}`));
+          console.error("GSI Error Callback:", response);
+          // If user closes popup, response.error is 'access_denied'
+          const errorMsg = response.error === 'access_denied' 
+            ? "用户取消了授权或拒绝了权限请求。" 
+            : `授权失败: ${response.error_description || response.error}`;
+          this.authPromise?.reject(new Error(errorMsg));
           return;
         }
         if (response.access_token) {
           this.accessToken = response.access_token;
+          console.log("Google Fit access token acquired.");
           this.authPromise?.resolve(response.access_token);
         } else {
           this.authPromise?.reject(new Error("未获得访问令牌。"));
@@ -55,17 +63,26 @@ export class GoogleFitService {
     });
   }
 
-  async authorize(): Promise<string> {
-    // We call this to make sure it's ready, but ideally it should have been pre-warmed
+  /**
+   * Triggers the OAuth popup. Should be called directly from a user click handler.
+   */
+  async authorize(forcePrompt = true): Promise<string> {
+    // Check if we already have a token and we are not forcing a prompt
+    if (this.accessToken && !forcePrompt) {
+      return this.accessToken;
+    }
+
+    // Ensure client is ready. If already initialized, this is instant.
     await this.ensureClientInitialized();
 
     return new Promise((resolve, reject) => {
       this.authPromise = { resolve, reject };
       try {
-        // requestAccessToken MUST be called directly in response to a user click
-        this.tokenClient.requestAccessToken({ prompt: 'consent' });
+        console.log("Requesting Google Fit access token...");
+        // Calling requestAccessToken as synchronously as possible relative to user gesture
+        this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
       } catch (err: any) {
-        console.error("Popup trigger error:", err);
+        console.error("Popup trigger exception:", err);
         reject(new Error("无法启动授权弹窗，请检查浏览器是否拦截了弹出窗口。"));
       }
     });
@@ -73,6 +90,7 @@ export class GoogleFitService {
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
     if (!this.accessToken) {
+      // Try to re-authorize silently or prompt if needed
       throw new Error("尚未授权，请先连接 Google 健身。");
     }
 

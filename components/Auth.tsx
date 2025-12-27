@@ -18,6 +18,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [showKeyInput, setShowKeyInput] = useState(false);
 
   useEffect(() => {
+    // Check for existing API keys (Manual or Process Env)
     const checkKey = () => {
       const stored = localStorage.getItem(MANUAL_KEY_STORAGE);
       const env = (globalThis as any).process?.env?.API_KEY;
@@ -25,6 +26,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       if (stored) setApiKey(stored);
     };
     checkKey();
+
+    // Pre-initialize Google Fit client to avoid blocking popups later
+    googleFit.ensureClientInitialized().catch(err => {
+      console.warn("Google Identity Service pre-init background warning:", err);
+    });
   }, []);
 
   const handleSaveKey = () => {
@@ -32,26 +38,40 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       localStorage.setItem(MANUAL_KEY_STORAGE, apiKey.trim());
       setHasStoredKey(true);
       setShowKeyInput(false);
-      alert("AI 核心配置成功。");
+      alert("AI 核心计算引擎已成功激活。");
     } else {
-      alert("请输入有效的 Gemini API 密钥");
+      alert("请输入有效的 Gemini API 密钥 (通常以 AIza 开头)");
     }
   };
 
+  /**
+   * Primary entry point for Google Fit connection.
+   * Calls authorize and handles success/error.
+   */
   const handleGoogleLogin = async () => {
     if (isLoggingIn) return;
     
     setIsLoggingIn(true);
-    console.log("Initiating Google Fit authorization...");
+    console.log("Requesting user authorization for Google Fit...");
     
     try {
-      // Direct call to authorize to preserve user-gesture event
-      await googleFit.authorize();
-      console.log("Google Fit connected successfully.");
-      onLogin();
+      // Direct call to authorize. By having pre-warmed the client in useEffect,
+      // this invocation stays within the user-gesture window to avoid popup blocking.
+      await googleFit.authorize(true); 
+      
+      console.log("Authorization successful, advancing to dashboard.");
+      onLogin(); // Proceed to main app
     } catch (error: any) {
-      console.error("Authorization flow interrupted:", error);
-      alert(`${error.message || '连接失败'}\n\n建议：请确保浏览器没有拦截弹出窗口，并在 Google 警告页面点击“高级 -> 前往 mgx.dev”进行授权。`);
+      console.error("Login sequence failed:", error);
+      
+      let userMsg = error.message || '连接失败';
+      if (userMsg.includes('cancelled') || userMsg.includes('denied')) {
+        userMsg = "授权已取消。SomnoAI 需要访问权限才能展示您的生理指标。";
+      } else {
+        userMsg = `${userMsg}\n\n建议：请确保浏览器没有拦截弹出窗口，并在 Google 警告页面点击“高级 -> 前往 mgx.dev”进行授权。`;
+      }
+      
+      alert(userMsg);
     } finally {
       setIsLoggingIn(false);
     }
@@ -59,6 +79,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
+      {/* Background Orbs */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-600/10 blur-[120px] rounded-full"></div>
       
       <div className="w-full max-w-md space-y-8 text-center mb-8 animate-in slide-in-from-top duration-700">
@@ -70,7 +91,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       </div>
 
       <GlassCard className="w-full max-w-md p-8 border-slate-700/50 bg-slate-900/60 shadow-2xl space-y-6">
-        {/* Engine Config */}
+        {/* AI Engine Status Badge */}
         <div className={`p-4 rounded-2xl border flex items-center gap-3 transition-all duration-500 ${
           hasStoredKey ? 'bg-emerald-500/10 border-emerald-500/20' : 'bg-amber-500/10 border-amber-500/20'
         }`}>
@@ -119,7 +140,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">数据主权声明</p>
             </div>
             <p className="text-[11px] text-slate-500 leading-relaxed font-medium">
-              实验室将通过 Google Fit 获取真实的生理指标。所有计算均在端侧完成，授权令牌仅暂存于内存。
+              实验室将通过 Google Fit 获取真实的生理指标。所有计算均在端侧完成，授权令牌仅暂存于浏览器内存。
             </p>
           </div>
 
@@ -144,7 +165,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             <div className="flex items-start gap-2 px-4 py-1">
               <Info size={12} className="text-slate-500 mt-0.5 shrink-0" />
               <p className="text-[10px] text-slate-500 leading-tight italic">
-                提示：若出现“应用未经验证”，请点击弹窗中的<span className="text-slate-400 font-bold"> 高级 -> 前往 mgx.dev </span>即可继续。
+                提示：若出现“应用未经验证”，请点击弹窗中的<span className="text-slate-400 font-bold ml-1">高级 &gt; 前往 mgx.dev</span> 即可。
               </p>
             </div>
           </div>
