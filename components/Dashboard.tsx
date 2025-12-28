@@ -1,20 +1,18 @@
 
 import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area } from 'recharts';
-import { SleepRecord } from '../types.ts';
+import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { 
-  Heart, Sparkles, RefreshCw, CheckCircle2, AlertCircle, List, Zap, Clock, Activity, Loader2, Flame
+  Heart, Sparkles, RefreshCw, CheckCircle2, AlertCircle, List, Zap, Clock, Activity, Loader2, Flame, Shield
 } from 'lucide-react';
 
 interface DashboardProps {
   data: SleepRecord;
   onAddData?: () => void;
-  onSyncFit?: () => Promise<void>;
+  onSyncFit?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
 }
-
-type SyncStatus = 'idle' | 'syncing' | 'success' | 'error';
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
@@ -23,14 +21,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const scoreData = [{ value: data.score }, { value: 100 - data.score }];
 
   const handleSync = async () => {
-    if (!onSyncFit || syncStatus === 'syncing') return;
+    if (!onSyncFit || syncStatus !== 'idle') return;
     
-    setSyncStatus('syncing');
+    setSyncStatus('authorizing');
     setErrorMessage(null);
     
     try {
-      await onSyncFit();
-      setSyncStatus('success');
+      await onSyncFit((status) => {
+        setSyncStatus(status);
+      });
+      // onSyncFit will set status to 'success' or 'error' internally through the callback
       setTimeout(() => setSyncStatus('idle'), 3000);
     } catch (err: any) {
       setSyncStatus('error');
@@ -47,28 +47,45 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
   const totalStageMins = data.stages.reduce((acc, s) => acc + s.duration, 0);
 
+  const getSyncMessage = () => {
+    switch (syncStatus) {
+      case 'authorizing': return '正在请求 Google 权限授权...';
+      case 'fetching': return '正在从云端提取生理特征流...';
+      case 'analyzing': return '实验室 AI 正在分析代谢架构...';
+      case 'success': return '实验室数据同步成功';
+      case 'error': return errorMessage || '同步失败，请检查实验室连接';
+      default: return '';
+    }
+  };
+
+  const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
+
   return (
     <div className="space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-2 duration-700">
       {/* Header */}
       <header className="flex justify-between items-center">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black tracking-tighter text-white">数字化睡眠实验室</h1>
+            <h1 className="text-2xl font-black tracking-tighter text-white italic">SomnoAI Lab</h1>
             <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
               <Zap size={10} className="text-indigo-400 fill-indigo-400" />
               <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">特征流活跃</span>
             </div>
           </div>
           <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-            {data.date} • 生物信号同步中
+            {data.date} • 实时监测中
           </p>
         </div>
         <button 
           onClick={handleSync}
-          disabled={syncStatus === 'syncing'}
-          className="p-3 bg-white/5 border border-white/10 rounded-2xl text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition-all active:scale-95"
+          disabled={isProcessing}
+          className={`p-3 border rounded-2xl transition-all active:scale-95 ${
+            isProcessing 
+            ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400' 
+            : 'bg-white/5 border-white/10 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10'
+          }`}
         >
-          <RefreshCw size={18} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
+          <RefreshCw size={18} className={isProcessing ? 'animate-spin' : ''} />
         </button>
       </header>
 
@@ -103,7 +120,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
           </ResponsiveContainer>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-7xl font-black text-white tracking-tighter drop-shadow-2xl">{data.score}</span>
-            <span className="text-[10px] text-slate-500 font-black tracking-[0.4em] mt-2 uppercase">信号强度指标</span>
+            <span className="text-[10px] text-slate-500 font-black tracking-[0.4em] mt-2 uppercase">睡眠质量指数</span>
           </div>
         </div>
       </div>
@@ -182,7 +199,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             <Sparkles size={16} className="text-indigo-400" />
             <h3 className="font-black text-xs uppercase tracking-[0.3em] text-slate-400">AI 深度洞察实验室</h3>
           </div>
-          {syncStatus === 'syncing' && <Loader2 size={14} className="animate-spin text-indigo-500" />}
+          {syncStatus === 'analyzing' && <Loader2 size={14} className="animate-spin text-indigo-500" />}
         </div>
         <GlassCard className="p-7 bg-indigo-600/[0.03] border-indigo-500/20 shadow-[0_20px_60px_-15px_rgba(79,70,229,0.1)]">
           <div className="space-y-5">
@@ -246,11 +263,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
           syncStatus === 'error' ? 'bg-rose-950/90 border-rose-500/50 text-rose-400' : 
           'bg-indigo-950/90 border-indigo-500/50 text-indigo-400'
         }`}>
-          {syncStatus === 'syncing' ? <RefreshCw size={20} className="animate-spin" /> : 
-           syncStatus === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
+          {isProcessing ? (
+            syncStatus === 'authorizing' ? <Shield size={20} className="animate-pulse" /> :
+            syncStatus === 'fetching' ? <RefreshCw size={20} className="animate-spin" /> :
+            <Sparkles size={20} className="animate-pulse" />
+          ) : syncStatus === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
           <span className="text-sm font-black uppercase tracking-widest">
-            {syncStatus === 'syncing' ? '正在提取端侧生理流...' : 
-             syncStatus === 'success' ? '实验室数据已同步' : errorMessage}
+            {getSyncMessage()}
           </span>
         </div>
       )}

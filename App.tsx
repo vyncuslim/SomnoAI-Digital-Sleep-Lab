@@ -6,7 +6,7 @@ import { AIAssistant } from './components/AIAssistant.tsx';
 import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
-import { ViewType, SleepRecord } from './types.ts';
+import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User, Loader2, CloudSync, PlusCircle, AlertTriangle } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
@@ -37,13 +37,15 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSyncGoogleFit = useCallback(async (forcePrompt = false) => {
+  const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
     try {
-      // 1. 尝试授权（如果是刚从 Auth 回调过来，hasToken 应该为 true）
+      // 1. Authorization
+      onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
       
-      // 2. 抓取真实数据
+      // 2. Fetch data
+      onProgress?.('fetching');
       const fitData = await googleFit.fetchSleepData();
       
       const updatedRecord: SleepRecord = {
@@ -63,11 +65,16 @@ const App: React.FC = () => {
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev.filter(h => !h.id.startsWith('fit-'))]);
       setIsLoggedIn(true);
+
+      // 3. AI Analysis
+      onProgress?.('analyzing');
       await refreshInsight(updatedRecord);
+      
+      onProgress?.('success');
     } catch (err: any) {
       console.warn("实验室同步异常:", err.message);
+      onProgress?.('error');
       showToast(err.message);
-      // 如果报错是由于授权引起的，重置登录状态
       if (err.message.includes("过期") || err.message.includes("授权") || err.message.includes("令牌")) {
         setIsLoggedIn(false);
       }
@@ -76,7 +83,7 @@ const App: React.FC = () => {
     }
   }, [showToast]);
 
-  // 初始化检查
+  // Initial check
   useEffect(() => {
     if (googleFit.hasToken()) {
       handleSyncGoogleFit(false);
@@ -100,10 +107,8 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    // 强制先展示登录
     if (!isLoggedIn && !currentRecord) return <Auth onLogin={() => handleSyncGoogleFit(false)} />;
     
-    // 全局加载状态（仅在没有数据时展示）
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-pulse">
@@ -119,7 +124,6 @@ const App: React.FC = () => {
       );
     }
 
-    // 无数据占位符
     if (!currentRecord && activeView === 'dashboard') {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-8 text-center px-4 animate-in fade-in duration-700">
@@ -134,9 +138,9 @@ const App: React.FC = () => {
                  <span className="text-[10px] font-black uppercase tracking-widest">排障协议</span>
                </div>
                <ul className="text-[10px] text-slate-400 list-disc list-inside space-y-1 font-medium">
-                 <li>刚才授权是否<span className="text-slate-200">勾选了所有 4 个复选框</span>？</li>
-                 <li>手机端 Google Fit App 里的<span className="text-slate-200">设置-管理已连接的应用</span>里是否允许了 SomnoAI？</li>
-                 <li>第三方手表数据是否已经<span className="text-slate-200">成功同步</span>进 Google Fit？</li>
+                 <li>授权时是否勾选了<span className="text-slate-200">所有复选框</span>？</li>
+                 <li>Google Fit 是否有<span className="text-slate-200">最近 7 天</span>的活动记录？</li>
+                 <li>确保手机端已同步数据至云端。</li>
                </ul>
             </div>
           </div>
@@ -158,13 +162,12 @@ const App: React.FC = () => {
       );
     }
 
-    // 主视图切换
     switch (activeView) {
       case 'dashboard': return (
         <Dashboard 
           data={currentRecord!} 
           onAddData={() => setIsDataEntryOpen(true)} 
-          onSyncFit={() => handleSyncGoogleFit(false)} 
+          onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} 
         />
       );
       case 'calendar': return <Trends history={history} />;
@@ -205,7 +208,6 @@ const App: React.FC = () => {
         </nav>
       )}
 
-      {/* Persistent Status Toast */}
       {errorToast && (
         <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[100] px-6 py-5 bg-slate-900 border border-indigo-500/30 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col gap-2 animate-in slide-in-from-bottom-6 duration-400 max-w-[90vw] w-full">
           <div className="flex items-center gap-2 text-indigo-400">

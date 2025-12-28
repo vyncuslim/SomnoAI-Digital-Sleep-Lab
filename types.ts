@@ -36,3 +36,5 @@ export interface ChatMessage {
   content: string;
   timestamp: Date;
 }
+
+export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
