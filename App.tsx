@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Trends } from './components/Trends.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
@@ -12,7 +12,7 @@ import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
 const App: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
@@ -20,16 +20,10 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (isLoggedIn) {
-      handleSyncGoogleFit(false); 
-    }
-  }, [isLoggedIn]);
-
-  const showToast = (msg: string) => {
+  const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
-    setTimeout(() => setErrorToast(null), 5000);
-  };
+    setTimeout(() => setErrorToast(null), 6000);
+  }, []);
 
   const refreshInsight = async (record: SleepRecord) => {
     try {
@@ -43,20 +37,13 @@ const App: React.FC = () => {
     }
   };
 
-  const handleSaveData = (record: SleepRecord) => {
-    setCurrentRecord(record);
-    setHistory(prev => [record, ...prev]);
-    setIsDataEntryOpen(false);
-    setActiveView('dashboard');
-    refreshInsight(record);
-  };
-
-  const handleSyncGoogleFit = async (forcePrompt = true) => {
-    const shouldPrompt = forcePrompt || !googleFit.hasToken();
-    
+  const handleSyncGoogleFit = useCallback(async (forcePrompt = false) => {
     setIsLoading(true);
     try {
-      await googleFit.authorize(shouldPrompt);
+      // 1. 尝试授权（如果是刚从 Auth 回调过来，hasToken 应该为 true）
+      await googleFit.authorize(forcePrompt);
+      
+      // 2. 抓取真实数据
       const fitData = await googleFit.fetchSleepData();
       
       const updatedRecord: SleepRecord = {
@@ -69,24 +56,54 @@ const App: React.FC = () => {
         efficiency: 0,
         stages: [],
         heartRate: { resting: 0, average: 0, min: 0, max: 0, history: [] },
-        aiInsights: ["正在从实验室终端提取生理信号..."],
+        aiInsights: ["正在实验室终端解码生理特征流..."],
         ...fitData,
       } as SleepRecord;
       
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev.filter(h => !h.id.startsWith('fit-'))]);
+      setIsLoggedIn(true);
       await refreshInsight(updatedRecord);
     } catch (err: any) {
-      console.warn("Sync Issue:", err.message);
+      console.warn("实验室同步异常:", err.message);
       showToast(err.message);
+      // 如果报错是由于授权引起的，重置登录状态
+      if (err.message.includes("过期") || err.message.includes("授权") || err.message.includes("令牌")) {
+        setIsLoggedIn(false);
+      }
     } finally {
       setIsLoading(false);
     }
+  }, [showToast]);
+
+  // 初始化检查
+  useEffect(() => {
+    if (googleFit.hasToken()) {
+      handleSyncGoogleFit(false);
+    }
+  }, [handleSyncGoogleFit]);
+
+  const handleSaveData = (record: SleepRecord) => {
+    setCurrentRecord(record);
+    setHistory(prev => [record, ...prev]);
+    setIsDataEntryOpen(false);
+    setActiveView('dashboard');
+    setIsLoggedIn(true);
+    refreshInsight(record);
+  };
+
+  const handleLogout = () => {
+    googleFit.logout();
+    setIsLoggedIn(false);
+    setCurrentRecord(null);
+    window.location.reload();
   };
 
   const renderView = () => {
-    if (!isLoggedIn) return <Auth onLogin={() => setIsLoggedIn(true)} />;
+    // 强制先展示登录
+    if (!isLoggedIn && !currentRecord) return <Auth onLogin={() => handleSyncGoogleFit(false)} />;
     
+    // 全局加载状态（仅在没有数据时展示）
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-pulse">
@@ -95,13 +112,14 @@ const App: React.FC = () => {
             <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full"></div>
           </div>
           <div className="space-y-2">
-            <p className="text-xl font-black text-white tracking-tighter uppercase">信号采集边缘端已启动</p>
-            <p className="text-slate-500 text-sm font-medium">正在建立加密隧道连接 Google Fit 实验室...</p>
+            <p className="text-xl font-black text-white tracking-tighter uppercase italic">终端握手中</p>
+            <p className="text-slate-500 text-sm font-medium">正在尝试接入 Google Fit 的原始数据源...</p>
           </div>
         </div>
       );
     }
 
+    // 无数据占位符
     if (!currentRecord && activeView === 'dashboard') {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-8 text-center px-4 animate-in fade-in duration-700">
@@ -109,16 +127,16 @@ const App: React.FC = () => {
             <CloudSync size={80} className="text-indigo-400 mb-2" />
           </div>
           <div className="max-w-xs space-y-4">
-            <h2 className="text-3xl font-black text-white tracking-tight">等待信号接入</h2>
+            <h2 className="text-3xl font-black text-white tracking-tight italic">等待特征流锁定</h2>
             <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-left space-y-2">
                <div className="flex items-center gap-2 text-amber-400">
                  <AlertTriangle size={14} />
-                 <span className="text-[10px] font-black uppercase tracking-widest">排障清单</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest">排障协议</span>
                </div>
-               <ul className="text-[10px] text-slate-400 list-disc list-inside space-y-1">
-                 <li>授权时是否勾选了<span className="text-slate-200">全部复选框</span>？</li>
-                 <li>手机 Google Fit 是否有<span className="text-slate-200">近 7 天</span>睡眠记录？</li>
-                 <li>手机是否开启了<span className="text-slate-200">同步</span>功能？</li>
+               <ul className="text-[10px] text-slate-400 list-disc list-inside space-y-1 font-medium">
+                 <li>刚才授权是否<span className="text-slate-200">勾选了所有 4 个复选框</span>？</li>
+                 <li>手机端 Google Fit App 里的<span className="text-slate-200">设置-管理已连接的应用</span>里是否允许了 SomnoAI？</li>
+                 <li>第三方手表数据是否已经<span className="text-slate-200">成功同步</span>进 Google Fit？</li>
                </ul>
             </div>
           </div>
@@ -127,19 +145,20 @@ const App: React.FC = () => {
               onClick={() => handleSyncGoogleFit(true)}
               className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl shadow-indigo-600/30"
             >
-              重新连接并核对权限
+              重新连接并重置权限
             </button>
             <button 
               onClick={() => setIsDataEntryOpen(true)}
               className="w-full py-5 bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
             >
-              <PlusCircle size={18} /> 手动录入实验数据
+              <PlusCircle size={18} /> 录入离线实验数据
             </button>
           </div>
         </div>
       );
     }
 
+    // 主视图切换
     switch (activeView) {
       case 'dashboard': return (
         <Dashboard 
@@ -151,22 +170,10 @@ const App: React.FC = () => {
       case 'calendar': return <Trends history={history} />;
       case 'assistant': return <AIAssistant />;
       case 'alarm': return <div className="flex items-center justify-center h-[70vh] text-slate-500 font-bold text-lg uppercase tracking-widest italic opacity-50">Experimental waking system offline</div>;
-      case 'profile': return <Settings />;
+      case 'profile': return <Settings onLogout={handleLogout} />;
       default: return <Dashboard data={currentRecord!} />;
     }
   };
-
-  const NavItem = ({ view, icon: Icon, label }: { view: ViewType; icon: any; label: string }) => (
-    <button
-      onClick={() => setActiveView(view)}
-      className={`flex flex-col items-center justify-center gap-1 transition-all flex-1 py-3 px-1 rounded-2xl ${
-        activeView === view ? 'text-indigo-400 bg-indigo-500/10' : 'text-slate-500 hover:text-slate-300'
-      }`}
-    >
-      <Icon size={22} strokeWidth={activeView === view ? 2.5 : 2} />
-      <span className="text-[10px] font-black uppercase tracking-tighter">{label}</span>
-    </button>
-  );
 
   return (
     <div className="min-h-screen bg-[#020617] text-white selection:bg-indigo-500/30 overflow-x-hidden">
@@ -175,30 +182,37 @@ const App: React.FC = () => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-900/10 blur-[120px] rounded-full"></div>
       </div>
 
-      <main className={`max-w-xl mx-auto px-6 ${isLoggedIn ? 'pt-12 pb-32' : ''} min-h-screen transition-all duration-500`}>
+      <main className={`max-w-xl mx-auto px-6 ${(isLoggedIn || currentRecord) ? 'pt-12 pb-32' : ''} min-h-screen transition-all duration-500`}>
         {renderView()}
       </main>
 
-      {isLoggedIn && (
+      {(isLoggedIn || currentRecord) && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-8 pt-4 pointer-events-none">
           <div className="max-w-md mx-auto backdrop-blur-3xl bg-slate-900/80 border border-white/5 rounded-[2.5rem] p-2 flex justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pointer-events-auto">
-            <NavItem view="dashboard" icon={LayoutGrid} label="实验室" />
-            <NavItem view="calendar" icon={CalendarIcon} label="分析" />
-            <NavItem view="assistant" icon={Bot} label="SOMNO" />
-            <NavItem view="alarm" icon={AlarmClock} label="唤醒" />
-            <NavItem view="profile" icon={User} label="系统" />
+            <button onClick={() => setActiveView('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1 ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500'}`}>
+               <LayoutGrid size={22} /> <span className="text-[9px] font-black uppercase">实验室</span>
+            </button>
+            <button onClick={() => setActiveView('calendar')} className={`flex-1 py-3 flex flex-col items-center gap-1 ${activeView === 'calendar' ? 'text-indigo-400' : 'text-slate-500'}`}>
+               <CalendarIcon size={22} /> <span className="text-[9px] font-black uppercase">趋势分析</span>
+            </button>
+            <button onClick={() => setActiveView('assistant')} className={`flex-1 py-3 flex flex-col items-center gap-1 ${activeView === 'assistant' ? 'text-indigo-400' : 'text-slate-500'}`}>
+               <Bot size={22} /> <span className="text-[9px] font-black uppercase">AI SOMNO</span>
+            </button>
+            <button onClick={() => setActiveView('profile')} className={`flex-1 py-3 flex flex-col items-center gap-1 ${activeView === 'profile' ? 'text-indigo-400' : 'text-slate-500'}`}>
+               <User size={22} /> <span className="text-[9px] font-black uppercase">系统</span>
+            </button>
           </div>
         </nav>
       )}
 
-      {/* Error Toast */}
+      {/* Persistent Status Toast */}
       {errorToast && (
-        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[100] px-6 py-4 bg-slate-900 border border-indigo-500/30 backdrop-blur-xl rounded-2xl shadow-2xl flex flex-col gap-1 animate-in slide-in-from-bottom-4 duration-300 max-w-[80vw]">
+        <div className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[100] px-6 py-5 bg-slate-900 border border-indigo-500/30 backdrop-blur-xl rounded-2xl shadow-[0_20px_50px_rgba(0,0,0,0.8)] flex flex-col gap-2 animate-in slide-in-from-bottom-6 duration-400 max-w-[90vw] w-full">
           <div className="flex items-center gap-2 text-indigo-400">
-             <AlertTriangle size={16} />
-             <span className="text-xs font-black uppercase tracking-widest">同步反馈</span>
+             <AlertTriangle size={18} />
+             <span className="text-[11px] font-black uppercase tracking-[0.2em]">实验室通信反馈</span>
           </div>
-          <span className="text-slate-300 text-[10px] font-medium leading-relaxed">{errorToast}</span>
+          <span className="text-slate-300 text-[11px] font-bold leading-relaxed">{errorToast}</span>
         </div>
       )}
 

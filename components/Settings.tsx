@@ -6,9 +6,11 @@ import {
   ChevronRight, ShieldCheck
 } from 'lucide-react';
 
-declare var window: any;
+interface SettingsProps {
+  onLogout: () => void;
+}
 
-export const Settings: React.FC = () => {
+export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
   const SettingItem = ({ icon: Icon, label, value, color, onClick }: any) => (
     <button 
       onClick={onClick} 
@@ -41,7 +43,6 @@ export const Settings: React.FC = () => {
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">安全与计算引擎</h3>
         <GlassCard className="divide-y divide-white/5 py-2 border-indigo-500/20 bg-indigo-500/5">
-          {/* Fixed: Removed manual API Key entry and replaced with status display */}
           <div className="px-4 py-4 flex items-center gap-4">
             <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
               <ShieldCheck size={20} />
@@ -65,7 +66,7 @@ export const Settings: React.FC = () => {
 
       <div className="pt-4 px-2">
         <button 
-          onClick={() => window.location.reload()}
+          onClick={onLogout}
           className="w-full flex items-center justify-center gap-3 py-4 bg-red-500/10 border border-red-500/20 text-red-400 rounded-2xl font-bold hover:bg-red-500/20 transition-all active:scale-95"
         >
           <LogOut size={18} /> 退出并重载应用
