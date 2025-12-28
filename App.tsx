@@ -71,20 +71,20 @@ const App: React.FC = () => {
       console.error("Sync Error:", err);
       onProgress?.('error');
       
-      const errorMessage = err.message || "实验室通信异常";
-      const isAuthError = 
-        errorMessage.includes("过期") || 
-        errorMessage.includes("授权") || 
-        errorMessage.includes("token") || 
-        errorMessage.includes("invalid_grant") ||
-        errorMessage.includes("401");
-
-      if (isAuthError) {
+      const errMsg = err.message || "";
+      
+      if (errMsg.includes("AUTH_EXPIRED")) {
         googleFit.logout();
         setIsLoggedIn(false);
-        showToast("登录过期或权限未完整授予。请点击下方按钮重新连接，并在弹窗中勾选‘所有’复选框。");
+        showToast("登录已过期，请点击下方按钮重新连接。");
+      } else if (errMsg.includes("PERMISSION_DENIED") || errMsg.includes("DATA_NOT_FOUND")) {
+        // 如果是权限问题，不一定强制 logout，但需要提示重新连接并勾选权限
+        // 如果数据根本拿不到（通常也是权限没勾选），引导用户重试
+        googleFit.logout(); // 退出以允许重新拉起 Auth 界面
+        setIsLoggedIn(false);
+        showToast("权限未完整授予，请重新连接并在弹窗中务必‘手动勾选所有复选框’。");
       } else {
-        showToast(errorMessage);
+        showToast(errMsg || "实验室通信异常，请稍后重试。");
       }
     } finally {
       setIsLoading(false);
@@ -218,10 +218,6 @@ const App: React.FC = () => {
              <span className="text-[11px] font-black uppercase tracking-[0.2em]">实验室通信反馈</span>
           </div>
           <span className="text-slate-300 text-[11px] font-bold leading-relaxed">{errorToast}</span>
-          <div className="mt-2 flex items-center gap-1 text-slate-500 text-[10px] italic">
-            <HelpCircle size={12} />
-            若手机有数据但网页看不到，请务必在授权时“勾选所有复选框”。
-          </div>
         </div>
       )}
 
