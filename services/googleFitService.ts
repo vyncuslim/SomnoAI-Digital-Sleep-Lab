@@ -35,13 +35,9 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 50));
     }
-    throw new Error("Google Identity Service SDK 加载失败，请检查网络并刷新。");
+    throw new Error("Google 服务加载超时。");
   }
 
-  /**
-   * Ensures the Google Identity Services client is initialized.
-   * Uses a promise-based singleton pattern to prevent multiple initializations.
-   */
   public async ensureClientInitialized(): Promise<void> {
     if (this.tokenClient) return;
     if (this.initPromise) return this.initPromise;
@@ -49,110 +45,93 @@ export class GoogleFitService {
     this.initPromise = (async () => {
       try {
         await this.waitForGoogleReady();
-        console.log("Initializing Google OAuth2 Token Client...");
-        
         this.tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES.join(" "),
           callback: (response: any) => {
-            console.log("Google OAuth2 Callback Response:", response);
             if (response.error) {
-              console.error("Authorization Error:", response.error);
               this.authPromise?.reject(new Error(response.error_description || response.error));
               return;
             }
-            
             this.accessToken = response.access_token;
             if (this.accessToken) {
               sessionStorage.setItem('google_fit_token', this.accessToken);
-              console.log("Access token received and stored.");
               this.authPromise?.resolve(this.accessToken);
-            } else {
-              this.authPromise?.reject(new Error("未能获取有效的 Access Token"));
             }
           },
-          error_callback: (err: any) => {
-            console.error("GSI Token Client Error:", err);
-            this.authPromise?.reject(new Error(err.message || "OAuth 客户端错误"));
-          }
         });
       } catch (err) {
-        this.initPromise = null; // Allow retry on failure
+        this.initPromise = null;
         throw err;
       }
     })();
-
     return this.initPromise;
   }
 
-  /**
-   * Triggers the OAuth2 authorization flow.
-   * @param forcePrompt Whether to force account selection and consent screen.
-   */
   async authorize(forcePrompt = false): Promise<string> {
-    // If we have a token and no prompt is forced, return the existing token
     if (this.accessToken && !forcePrompt) return this.accessToken;
-    
     await this.ensureClientInitialized();
-
     return new Promise((resolve, reject) => {
       this.authPromise = { resolve, reject };
-      console.log("Requesting access token with prompt:", forcePrompt ? 'select_account consent' : 'none');
-      
-      try {
-        this.tokenClient.requestAccessToken({ 
-          prompt: forcePrompt ? 'select_account consent' : '' 
-        });
-      } catch (err: any) {
-        reject(new Error("发起授权请求失败: " + err.message));
-      }
+      this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'select_account consent' : '' });
     });
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    if (!this.accessToken) throw new Error("授权失效，请重新登录。");
+    if (!this.accessToken) throw new Error("授权失效。");
 
     const now = new Date();
-    const startTimeMillis = now.getTime() - 7 * 24 * 60 * 60 * 1000;
+    // 扩大搜索范围至 10 天
+    const startTimeMillis = now.getTime() - 10 * 24 * 60 * 60 * 1000;
     const endTimeMillis = now.getTime();
     const headers = { Authorization: `Bearer ${this.accessToken}` };
 
     try {
+      // --- 步骤 1: 尝试获取睡眠会话 (Sessions) ---
       const sessionsRes = await fetch(
         `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(startTimeMillis).toISOString()}&endTime=${new Date(endTimeMillis).toISOString()}&type=72`,
         { headers }
       );
-      
-      if (sessionsRes.status === 401) {
-        this.logout();
-        throw new Error("登录已过期，请重新连接。");
-      }
-
       const sessionsData = await sessionsRes.json();
       const sessions = sessionsData.session || [];
 
-      if (sessions.length === 0) {
-        throw new Error("Google Fit 实验室中暂无近期睡眠记录。请确保您的穿戴设备已同步数据到手机 Google Fit App。");
+      let startMs: bigint;
+      let endMs: bigint;
+      let dateLabel: string;
+
+      if (sessions.length > 0) {
+        const latest = sessions[sessions.length - 1];
+        startMs = BigInt(latest.startTimeMillis);
+        endMs = BigInt(latest.endTimeMillis);
+        dateLabel = latest.name || new Date(Number(startMs)).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
+      } else {
+        // --- 步骤 2: 穿透模式 - 直接搜索数据点 ---
+        // 如果没有会话，尝试直接从 com.google.sleep.segment 数据源找最近的数据点
+        const dsId = "derived:com.google.sleep.segment:com.google.android.gms:merged";
+        const datasetId = `${BigInt(startTimeMillis) * BigInt(1000000)}-${BigInt(endTimeMillis) * BigInt(1000000)}`;
+        const rawRes = await fetch(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${dsId}/datasets/${datasetId}`, { headers });
+        const rawData = await rawRes.json();
+        const points = rawData.point || [];
+
+        if (points.length === 0) {
+          throw new Error("未发现睡眠数据。请检查：1.手机 Google Fit 已同步 2.授权时勾选了所有复选框 3.设备支持睡眠分期写入。");
+        }
+
+        // 找到最后一段连续的数据点作为“模拟会house”
+        const lastPoint = points[points.length - 1];
+        endMs = BigInt(lastPoint.endTimeNanos) / BigInt(1000000);
+        // 往前找 8 小时内的数据点
+        const firstPoint = points.find((p: any) => BigInt(p.startTimeNanos) > BigInt(lastPoint.endTimeNanos) - BigInt(12 * 3600 * 1000000000)) || points[0];
+        startMs = BigInt(firstPoint.startTimeNanos) / BigInt(1000000);
+        dateLabel = new Date(Number(startMs)).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' });
       }
 
-      const latest = sessions[sessions.length - 1];
-      const startMs = BigInt(latest.startTimeMillis);
-      const endMs = BigInt(latest.endTimeMillis);
       const totalDuration = Number((endMs - startMs) / BigInt(60000));
 
-      const dsRes = await fetch("https://www.googleapis.com/fitness/v1/users/me/dataSources", { headers });
-      const dsData = await dsRes.json();
-      
-      const sleepDataSources = dsData.dataSource?.filter((d: any) => d.dataType.name === "com.google.sleep.segment") || [];
-      const sleepDsId = sleepDataSources.length > 0 
-        ? sleepDataSources[0].dataStreamId 
-        : "derived:com.google.sleep.segment:com.google.android.gms:merged";
-
+      // --- 步骤 3: 抓取精细分期 ---
+      const dsId = "derived:com.google.sleep.segment:com.google.android.gms:merged";
       const datasetId = `${startMs * BigInt(1000000)}-${endMs * BigInt(1000000)}`;
-      const segmentRes = await fetch(
-        `https://www.googleapis.com/fitness/v1/users/me/datasetSources/${sleepDsId}/datasets/${datasetId}`,
-        { headers }
-      );
+      const segmentRes = await fetch(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${dsId}/datasets/${datasetId}`, { headers });
       
       let stages: SleepStage[] = [];
       let deepMins = 0;
@@ -166,13 +145,12 @@ export class GoogleFitService {
           const type = p.value[0].intVal;
           const pStart = BigInt(p.startTimeNanos);
           const pEnd = BigInt(p.endTimeNanos);
-          const duration = Number((pEnd - pStart) / BigInt(60000000000));
-          const startTime = new Date(Number(pStart / BigInt(1000000))).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          
-          if (type === 5) { deepMins += duration; return { name: '深睡', duration, startTime }; }
-          if (type === 6) { remMins += duration; return { name: 'REM', duration, startTime }; }
-          if (type === 1) { awakeMins += duration; return { name: '清醒', duration, startTime }; }
-          return { name: '浅睡', duration, startTime };
+          const d = Number((pEnd - pStart) / BigInt(60000000000));
+          const st = new Date(Number(pStart / BigInt(1000000))).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+          if (type === 5) { deepMins += d; return { name: '深睡', duration: d, startTime: st }; }
+          if (type === 6) { remMins += d; return { name: 'REM', duration: d, startTime: st }; }
+          if (type === 1) { awakeMins += d; return { name: '清醒', duration: d, startTime: st }; }
+          return { name: '浅睡', duration: d, startTime: st };
         });
       }
 
@@ -180,27 +158,37 @@ export class GoogleFitService {
         stages = [{ name: '浅睡', duration: totalDuration, startTime: new Date(Number(startMs)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) }];
       }
 
+      // --- 步骤 4: 抓取心率与卡路里 ---
       const hrDsId = "derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm";
       const hrUrl = `https://www.googleapis.com/fitness/v1/users/me/datasetSources/${hrDsId}/datasets/${startMs * BigInt(1000000)}-${endMs * BigInt(1000000)}`;
       const hrRes = await fetch(hrUrl, { headers });
-      
       let hrMetrics: HeartRateData = { resting: 60, average: 65, min: 55, max: 85, history: [] };
       if (hrRes.ok) {
         const hrJson = await hrRes.json();
-        const points = hrJson.point || [];
-        const values = points.map((p: any) => p.value[0].fpVal).filter((v: number) => v > 30);
-        if (values.length > 0) {
+        const pts = hrJson.point || [];
+        const vals = pts.map((p: any) => p.value[0].fpVal).filter((v: number) => v > 30);
+        if (vals.length > 0) {
           hrMetrics = {
-            average: Math.round(values.reduce((a: number, b: number) => a + b, 0) / values.length),
-            min: Math.round(Math.min(...values)),
-            max: Math.round(Math.max(...values)),
-            resting: Math.round(Math.min(...values)),
-            history: points.slice(-30).map((p: any) => ({
+            average: Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length),
+            min: Math.round(Math.min(...vals)),
+            max: Math.round(Math.max(...vals)),
+            resting: Math.round(Math.min(...vals)),
+            history: pts.slice(-30).map((p: any) => ({
               time: new Date(Number(BigInt(p.startTimeNanos) / BigInt(1000000))).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               bpm: Math.round(p.value[0].fpVal)
             }))
           };
         }
+      }
+
+      // 抓取 24 小时卡路里
+      const calDs = "derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended";
+      const calTimeId = `${BigInt(now.getTime() - 86400000) * BigInt(1000000)}-${BigInt(now.getTime()) * BigInt(1000000)}`;
+      const calRes = await fetch(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${calDs}/datasets/${calTimeId}`, { headers });
+      let calories = 0;
+      if (calRes.ok) {
+        const calData = await calRes.json();
+        calories = Math.round(calData.point?.reduce((acc: number, p: any) => acc + (p.value[0].fpVal || 0), 0) || 0);
       }
 
       return {
@@ -209,9 +197,10 @@ export class GoogleFitService {
         deepRatio: Math.round((deepMins / Math.max(1, totalDuration)) * 100),
         remRatio: Math.round((remMins / Math.max(1, totalDuration)) * 100),
         efficiency: totalDuration > 0 ? Math.round(((totalDuration - awakeMins) / totalDuration) * 100) : 0,
-        date: latest.name || new Date(Number(startMs)).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
+        date: dateLabel,
         stages,
         heartRate: hrMetrics,
+        calories,
         aiInsights: ["实验室：生理信号特征流同步成功。"]
       };
 

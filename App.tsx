@@ -7,7 +7,7 @@ import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User, Loader2, CloudSync, PlusCircle, AlertTriangle } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Bot, AlarmClock, User, Loader2, CloudSync, PlusCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
@@ -22,7 +22,7 @@ const App: React.FC = () => {
 
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
-    setTimeout(() => setErrorToast(null), 6000);
+    setTimeout(() => setErrorToast(null), 8000);
   }, []);
 
   const refreshInsight = async (record: SleepRecord) => {
@@ -40,11 +40,9 @@ const App: React.FC = () => {
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
     try {
-      // 1. Authorization
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
       
-      // 2. Fetch data
       onProgress?.('fetching');
       const fitData = await googleFit.fetchSleepData();
       
@@ -66,16 +64,13 @@ const App: React.FC = () => {
       setHistory(prev => [updatedRecord, ...prev.filter(h => !h.id.startsWith('fit-'))]);
       setIsLoggedIn(true);
 
-      // 3. AI Analysis
       onProgress?.('analyzing');
       await refreshInsight(updatedRecord);
-      
       onProgress?.('success');
     } catch (err: any) {
-      console.warn("实验室同步异常:", err.message);
       onProgress?.('error');
       showToast(err.message);
-      if (err.message.includes("过期") || err.message.includes("授权") || err.message.includes("令牌")) {
+      if (err.message.includes("过期") || err.message.includes("授权")) {
         setIsLoggedIn(false);
       }
     } finally {
@@ -83,7 +78,6 @@ const App: React.FC = () => {
     }
   }, [showToast]);
 
-  // Initial check
   useEffect(() => {
     if (googleFit.hasToken()) {
       handleSyncGoogleFit(false);
@@ -112,13 +106,10 @@ const App: React.FC = () => {
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-pulse">
-          <div className="relative">
-            <Loader2 className="animate-spin text-indigo-500" size={64} />
-            <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full"></div>
-          </div>
+          <Loader2 className="animate-spin text-indigo-500" size={64} />
           <div className="space-y-2">
             <p className="text-xl font-black text-white tracking-tighter uppercase italic">终端握手中</p>
-            <p className="text-slate-500 text-sm font-medium">正在尝试接入 Google Fit 的原始数据源...</p>
+            <p className="text-slate-500 text-sm font-medium">正在建立加密隧道同步 Google 云端数据...</p>
           </div>
         </div>
       );
@@ -131,16 +122,17 @@ const App: React.FC = () => {
             <CloudSync size={80} className="text-indigo-400 mb-2" />
           </div>
           <div className="max-w-xs space-y-4">
-            <h2 className="text-3xl font-black text-white tracking-tight italic">等待特征流锁定</h2>
-            <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl text-left space-y-2">
+            <h2 className="text-3xl font-black text-white tracking-tight italic">信号尚未同步</h2>
+            <div className="p-5 bg-slate-900/60 border border-white/5 rounded-3xl text-left space-y-3">
                <div className="flex items-center gap-2 text-amber-400">
-                 <AlertTriangle size={14} />
-                 <span className="text-[10px] font-black uppercase tracking-widest">排障协议</span>
+                 <ShieldCheck size={16} />
+                 <span className="text-[10px] font-black uppercase tracking-widest">排障核查单</span>
                </div>
-               <ul className="text-[10px] text-slate-400 list-disc list-inside space-y-1 font-medium">
-                 <li>授权时是否勾选了<span className="text-slate-200">所有复选框</span>？</li>
-                 <li>Google Fit 是否有<span className="text-slate-200">最近 7 天</span>的活动记录？</li>
-                 <li>确保手机端已同步数据至云端。</li>
+               <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-2 font-medium">
+                 <li>刚才授权是否<span className="text-slate-200">勾选了所有权限复选框</span>？</li>
+                 <li>手机端 Google Fit 的“日记”里能看到昨晚的睡眠吗？</li>
+                 <li>第三方手表（小米/华为等）是否已成功同步到 Google Fit App？</li>
+                 <li>请在手机 Google Fit 设置中执行一次<span className="text-indigo-400">“手动同步”</span>。</li>
                </ul>
             </div>
           </div>
@@ -172,7 +164,6 @@ const App: React.FC = () => {
       );
       case 'calendar': return <Trends history={history} />;
       case 'assistant': return <AIAssistant />;
-      case 'alarm': return <div className="flex items-center justify-center h-[70vh] text-slate-500 font-bold text-lg uppercase tracking-widest italic opacity-50">Experimental waking system offline</div>;
       case 'profile': return <Settings onLogout={handleLogout} />;
       default: return <Dashboard data={currentRecord!} />;
     }
