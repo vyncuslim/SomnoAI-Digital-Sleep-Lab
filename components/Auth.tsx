@@ -11,49 +11,47 @@ interface AuthProps {
 export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
-  // 组件挂载时预初始化 Google 客户端，确保按钮点击时 SDK 已经就绪
   useEffect(() => {
+    console.log("Auth Component: Pre-initializing Google client...");
     googleFit.ensureClientInitialized().catch(err => {
-      console.warn("Google SDK 预初始化延迟:", err.message);
+      console.warn("Auth Component: Google SDK deferred initialization:", err.message);
     });
   }, []);
 
-  /**
-   * Handles the Google Login button click.
-   * Initiates the authorization flow and proceeds to login if successful.
-   */
   const handleGoogleLogin = async () => {
     if (isLoggingIn) return;
     
     setIsLoggingIn(true);
-    console.log("Starting Google Login Flow...");
+    console.log("Auth Component: Login button clicked. Triggering Google OAuth flow...");
     
     try {
-      // 强制提示 consent 以确保用户有机会勾选所有权限复选框
-      // This will open the Google Sign-In popup
+      // Step 1: Request authorization from Google
       const token = await googleFit.authorize(true); 
       
       if (token) {
-        console.log("Authorization successful. Proceeding to login...");
+        console.log("Auth Component: Authorization succeeded. Token received.");
         onLogin(); 
       } else {
-        throw new Error("未能在授权后获取令牌");
+        console.error("Auth Component: Authorization completed but returned no token.");
+        throw new Error("Could not retrieve access token after authorization.");
       }
     } catch (error: any) {
-      console.error("Google Auth Error Detail:", error);
+      console.error("Auth Component: OAuth Flow Failed. Full Error Object:", error);
       
-      let userMsg = error.message || '接入实验室失败';
+      let userMsg = error.message || 'Laboratory endpoint connection failed.';
       
-      // Common Google OAuth errors
+      // Categorize common OAuth cancellation/error scenarios
       if (
         userMsg.includes('cancelled') || 
         userMsg.includes('denied') || 
         userMsg.includes('popup_closed_by_user') ||
         userMsg.includes('access_denied')
       ) {
-        userMsg = "授权已被取消或弹窗被关闭。请务必勾选所有权限复选框以同步数据。";
+        userMsg = "授权已被取消或弹窗被关闭。请务必勾选所有复选框以同步数据。";
       } else if (userMsg.includes('popup_blocked')) {
         userMsg = "浏览器拦截了弹出窗口，请允许本站弹出窗口后重试。";
+      } else if (userMsg.includes('idpiframe_initialization_failed')) {
+        userMsg = "Google 服务初始化失败，请检查浏览器是否禁用了第三方 Cookie。";
       }
       
       alert(userMsg);
