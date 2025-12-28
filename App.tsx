@@ -13,6 +13,7 @@ import { googleFit } from './services/googleFitService.ts';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
+  const [isGuest, setIsGuest] = useState(false);
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
@@ -63,6 +64,7 @@ const App: React.FC = () => {
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev.filter(h => !h.id.startsWith('fit-'))]);
       setIsLoggedIn(true);
+      setIsGuest(false);
 
       onProgress?.('analyzing');
       await refreshInsight(updatedRecord);
@@ -78,18 +80,19 @@ const App: React.FC = () => {
         setIsLoggedIn(false);
         showToast("登录已过期，请点击下方按钮重新连接。");
       } else if (errMsg.includes("PERMISSION_DENIED") || errMsg.includes("DATA_NOT_FOUND")) {
-        // 如果是权限问题，不一定强制 logout，但需要提示重新连接并勾选权限
-        // 如果数据根本拿不到（通常也是权限没勾选），引导用户重试
-        googleFit.logout(); // 退出以允许重新拉起 Auth 界面
-        setIsLoggedIn(false);
-        showToast("权限未完整授予，请重新连接并在弹窗中务必‘手动勾选所有复选框’。");
+        // 如果是手动触发的同步失败，我们才需要退出并报错
+        if (forcePrompt || isLoggedIn) {
+          googleFit.logout();
+          setIsLoggedIn(false);
+          showToast("权限未完整授予，请重新连接并在弹窗中务必‘手动勾选所有复选框’。");
+        }
       } else {
         showToast(errMsg || "实验室通信异常，请稍后重试。");
       }
     } finally {
       setIsLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, isLoggedIn]);
 
   useEffect(() => {
     if (googleFit.hasToken()) {
@@ -109,12 +112,21 @@ const App: React.FC = () => {
   const handleLogout = () => {
     googleFit.logout();
     setIsLoggedIn(false);
+    setIsGuest(false);
     setCurrentRecord(null);
     window.location.reload();
   };
 
   const renderView = () => {
-    if (!isLoggedIn && !currentRecord) return <Auth onLogin={() => handleSyncGoogleFit(false)} />;
+    // 如果既没登录也没进访客模式，且没有历史记录，则显示 Auth 页面
+    if (!isLoggedIn && !isGuest && !currentRecord) {
+      return (
+        <Auth 
+          onLogin={() => handleSyncGoogleFit(false)} 
+          onGuest={() => setIsGuest(true)}
+        />
+      );
+    }
     
     if (isLoading && !currentRecord) {
       return (
@@ -139,12 +151,12 @@ const App: React.FC = () => {
             <div className="p-5 bg-slate-900/60 border border-white/5 rounded-3xl text-left space-y-3">
                <div className="flex items-center gap-2 text-amber-400">
                  <ShieldCheck size={16} />
-                 <span className="text-[10px] font-black uppercase tracking-widest">专家诊断建议</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest">实验室诊断建议</span>
                </div>
                <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-2 font-medium">
                  <li><span className="text-slate-200">关键权限：</span>刚才授权时是否勾选了所有复选框？若漏选，系统无法读取数据。</li>
                  <li><span className="text-slate-200">云端同步：</span>请打开手机 Google Fit App，下拉手动同步，确保“日记”页能看到最近的睡眠图表。</li>
-                 <li><span className="text-slate-200">第三方设备：</span>如使用小米/华为，需先通过‘Health Connect’将数据写入 Google Fit。</li>
+                 <li><span className="text-slate-200">离线模式：</span>如果您没有穿戴设备，可以点击下方按钮录入您的主观观察数据。</li>
                </ul>
             </div>
           </div>
@@ -153,7 +165,7 @@ const App: React.FC = () => {
               onClick={() => handleSyncGoogleFit(true)}
               className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl shadow-indigo-600/30"
             >
-              重新连接并重置权限
+              连接健康数据流
             </button>
             <button 
               onClick={() => setIsDataEntryOpen(true)}
@@ -188,11 +200,11 @@ const App: React.FC = () => {
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-900/10 blur-[120px] rounded-full"></div>
       </div>
 
-      <main className={`max-w-xl mx-auto px-6 ${(isLoggedIn || currentRecord) ? 'pt-12 pb-32' : ''} min-h-screen transition-all duration-500`}>
+      <main className={`max-w-xl mx-auto px-6 ${(isLoggedIn || isGuest || currentRecord) ? 'pt-12 pb-32' : ''} min-h-screen transition-all duration-500`}>
         {renderView()}
       </main>
 
-      {(isLoggedIn || currentRecord) && (
+      {(isLoggedIn || isGuest || currentRecord) && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-8 pt-4 pointer-events-none">
           <div className="max-w-md mx-auto backdrop-blur-3xl bg-slate-900/80 border border-white/5 rounded-[2.5rem] p-2 flex justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pointer-events-auto">
             <button onClick={() => setActiveView('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1 ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500'}`}>

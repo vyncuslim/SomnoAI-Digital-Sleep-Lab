@@ -6,9 +6,10 @@ import { googleFit } from '../services/googleFitService.ts';
 
 interface AuthProps {
   onLogin: () => void;
+  onGuest: () => void;
 }
 
-export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
+export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
@@ -25,36 +26,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     console.log("Auth Component: Login button clicked. Triggering Google OAuth flow...");
     
     try {
-      // Step 1: Request authorization from Google
       const token = await googleFit.authorize(true); 
       
       if (token) {
         console.log("Auth Component: Authorization succeeded. Token received.");
         onLogin(); 
-      } else {
-        console.error("Auth Component: Authorization completed but returned no token.");
-        throw new Error("Could not retrieve access token after authorization.");
       }
     } catch (error: any) {
-      console.error("Auth Component: OAuth Flow Failed. Full Error Object:", error);
-      
-      let userMsg = error.message || 'Laboratory endpoint connection failed.';
-      
-      // Categorize common OAuth cancellation/error scenarios
-      if (
-        userMsg.includes('cancelled') || 
-        userMsg.includes('denied') || 
-        userMsg.includes('popup_closed_by_user') ||
-        userMsg.includes('access_denied')
-      ) {
-        userMsg = "授权已被取消或弹窗被关闭。请务必勾选所有复选框以同步数据。";
-      } else if (userMsg.includes('popup_blocked')) {
-        userMsg = "浏览器拦截了弹出窗口，请允许本站弹出窗口后重试。";
-      } else if (userMsg.includes('idpiframe_initialization_failed')) {
-        userMsg = "Google 服务初始化失败，请检查浏览器是否禁用了第三方 Cookie。";
-      }
-      
-      alert(userMsg);
+      console.error("Auth Component: OAuth Flow Failed.", error);
+      // 这里的错误由 App.tsx 的 handleSync 捕获并显示 Toast
     } finally {
       setIsLoggingIn(false);
     }
@@ -66,13 +46,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       <div className="absolute top-[-10%] left-[-10%] w-[60%] h-[60%] bg-indigo-600/10 blur-[150px] rounded-full"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600/10 blur-[120px] rounded-full"></div>
       
-      <div className="w-full max-w-md space-y-10 text-center mb-10 relative z-10">
+      <div className="w-full max-w-md space-y-8 text-center mb-10 relative z-10">
         <div className="inline-flex p-6 bg-indigo-600/20 rounded-[3rem] mb-2 border border-indigo-500/30 shadow-2xl shadow-indigo-500/20">
           <Moon className="text-indigo-400 fill-indigo-400/20" size={64} />
         </div>
-        <div>
-          <h1 className="text-5xl font-black tracking-tighter text-white mb-3 italic">SomnoAI</h1>
-          <p className="text-slate-400 font-medium tracking-wide">数字化睡眠实验室系统 v2.8</p>
+        <div className="space-y-4">
+          <h1 className="text-5xl font-black tracking-tighter text-white italic">SomnoAI</h1>
+          <p className="text-slate-400 font-medium tracking-wide leading-relaxed px-4">
+            它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室。
+          </p>
         </div>
       </div>
 
@@ -115,7 +97,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </div>
 
           <button 
-            onClick={onLogin}
+            onClick={onGuest}
             className="w-full flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-400 font-black transition-all text-[10px] uppercase tracking-[0.3em] group"
           >
             以访客身份进入实验室 <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
