@@ -148,29 +148,29 @@ export class GoogleFitService {
       const dsData = await dsRes.json();
       const sleepSources = dsData.dataSource?.filter((d: any) => d.dataType.name === "com.google.sleep.segment") || [];
       
-      let allPoints: any[] = [];
+      let allSleepPoints: any[] = [];
       for (const source of sleepSources) {
         const sid = source.dataStreamId;
         const datasetId = `${BigInt(startTimeMillis) * 1000000n}-${BigInt(endTimeMillis) * 1000000n}`;
         const res = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${sid}/datasets/${datasetId}`, headers);
         if (res.ok) {
           const data = await res.json();
-          if (data.point?.length > 0) allPoints = [...allPoints, ...data.point];
+          if (data.point?.length > 0) allSleepPoints = [...allSleepPoints, ...data.point];
         }
       }
 
-      if (allPoints.length === 0) {
+      if (allSleepPoints.length === 0) {
         throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。请确认 Google Fit 账户已有最近的睡眠记录。");
       }
 
       // Latest session extraction logic
-      allPoints.sort((a, b) => Number(BigInt(a.startTimeNanos) - BigInt(b.startTimeNanos)));
-      const latestPoint = allPoints[allPoints.length - 1];
+      allSleepPoints.sort((a, b) => Number(BigInt(a.startTimeNanos) - BigInt(b.startTimeNanos)));
+      const latestPoint = allSleepPoints[allSleepPoints.length - 1];
       let sessionPoints = [latestPoint];
       let startNanos = BigInt(latestPoint.startTimeNanos);
       
-      for (let i = allPoints.length - 2; i >= 0; i--) {
-        const p = allPoints[i];
+      for (let i = allSleepPoints.length - 2; i >= 0; i--) {
+        const p = allSleepPoints[i];
         if (startNanos - BigInt(p.endTimeNanos) > 4n * 3600n * 1000000000n) break;
         sessionPoints.unshift(p);
         startNanos = BigInt(p.startTimeNanos);
