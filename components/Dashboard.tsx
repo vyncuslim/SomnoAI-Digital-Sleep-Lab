@@ -24,19 +24,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   useEffect(() => {
     if (syncStatus !== 'idle') {
       setShowStatus(true);
-      if (syncStatus === 'success' || syncStatus === 'error') {
+      // Success should stay visible for a while. 
+      // Errors stay visible unless user clicks sync again or a long time passes.
+      if (syncStatus === 'success') {
         const timer = setTimeout(() => {
           setShowStatus(false);
-          // Wait for exit animation before resetting status
           setTimeout(() => setSyncStatus('idle'), 600);
         }, 3500);
+        return () => clearTimeout(timer);
+      } else if (syncStatus === 'error') {
+        const timer = setTimeout(() => {
+          setShowStatus(false);
+          setTimeout(() => setSyncStatus('idle'), 600);
+        }, 8000); // Errors persist longer to be readable
         return () => clearTimeout(timer);
       }
     }
   }, [syncStatus]);
 
   const handleSync = async () => {
-    if (!onSyncFit || syncStatus !== 'idle') return;
+    if (!onSyncFit || isProcessing) return;
     
     setErrorMessage(null);
     try {
@@ -58,12 +65,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const totalStageMins = data.stages.reduce((acc, s) => acc + s.duration, 0);
 
   const getSyncMessage = () => {
+    if (syncStatus === 'error') {
+      if (errorMessage?.includes('PERMISSION_DENIED')) {
+        return '权限被拒绝。请重新授权并勾选所有健康数据复选框。';
+      }
+      if (errorMessage?.includes('AUTH_EXPIRED')) {
+        return '登录已过期。正在重定向至授权页面进行身份验证...';
+      }
+      return errorMessage || '终端连接异常，信号采集失败。';
+    }
+
     switch (syncStatus) {
-      case 'authorizing': return '正在验证实验室数字签名...';
-      case 'fetching': return '正在检索最新生理特征流数据...';
-      case 'analyzing': return 'Somno-AI 正在重构睡眠架构模型...';
-      case 'success': return '信号流同步成功，已更新实验室数据';
-      case 'error': return errorMessage || '终端连接异常，请重试';
+      case 'authorizing': return '安全终端：正在验证实验室数字签名...';
+      case 'fetching': return '特征提取：正在从 Google Fit 检索信号流...';
+      case 'analyzing': return 'AI 重构：Somno-AI 正在生成睡眠架构模型...';
+      case 'success': return '信号同步成功：实验室数据已根据最新体征重校准';
       default: return '';
     }
   };
