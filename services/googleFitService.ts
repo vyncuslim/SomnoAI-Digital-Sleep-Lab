@@ -1,7 +1,8 @@
 
 import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
 
-const CLIENT_ID = "312904526470-84ra3lld33sci0kvhset8523b0hdul1c.apps.googleusercontent.com";
+// Updated Client ID provided by user
+const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
 const SCOPES = [
   "https://www.googleapis.com/auth/fitness.sleep.read",
   "https://www.googleapis.com/auth/fitness.heart_rate.read",
@@ -36,7 +37,7 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("Google Identity Services SDK (GSI) 加载超时。请确认您的浏览器未拦截 accounts.google.com 的脚本。");
+    throw new Error("Google Identity Services SDK 加载超时。请确认已在 index.html 中正确引入脚本。");
   }
 
   public async ensureClientInitialized(): Promise<void> {
@@ -47,16 +48,16 @@ export class GoogleFitService {
       try {
         await this.waitForGoogleReady();
         
-        console.log("SomnoAI Auth: 正在配置 Google OAuth2 令牌客户端...");
+        console.log("SomnoAI Auth: 正在初始化令牌客户端，ID:", CLIENT_ID);
         this.tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES.join(" "),
           callback: (response: any) => {
-            console.log("SomnoAI Auth: 拦截到身份验证信号", response);
+            console.log("SomnoAI Auth: 收到回调响应", response);
             
             if (response.error) {
               const errorDesc = response.error_description || response.error;
-              console.error("SomnoAI Auth 授权终止:", errorDesc);
+              console.error("SomnoAI Auth 授权错误:", errorDesc);
               this.authPromise?.reject(new Error(errorDesc));
               this.authPromise = null;
               return;
@@ -64,23 +65,22 @@ export class GoogleFitService {
             
             this.accessToken = response.access_token;
             if (this.accessToken) {
-              console.log("SomnoAI Auth: 核心令牌提取成功。");
+              console.log("SomnoAI Auth: 授权令牌同步成功");
               sessionStorage.setItem('google_fit_token', this.accessToken);
               this.authPromise?.resolve(this.accessToken);
             } else {
-              this.authPromise?.reject(new Error("授权负载中未包含有效令牌。"));
+              this.authPromise?.reject(new Error("授权响应中缺失 access_token"));
             }
             this.authPromise = null;
           },
           error_callback: (err: any) => {
-            console.error("GSI Token Client Error:", err);
-            this.authPromise?.reject(new Error("Google 身份验证端点发生内部错误。"));
+            console.error("GSI Client Internal Error:", err);
+            this.authPromise?.reject(new Error("Google 服务内部错误"));
             this.authPromise = null;
           }
         });
-        console.log("SomnoAI Auth: 客户端初始化就绪。");
       } catch (err) {
-        console.error("SomnoAI Auth: 初始化链路中断", err);
+        console.error("SomnoAI Auth: 初始化链路失败", err);
         this.initPromise = null;
         throw err;
       }
@@ -89,8 +89,9 @@ export class GoogleFitService {
   }
 
   async authorize(forcePrompt = false): Promise<string> {
-    console.log(`SomnoAI Auth: 触发授权序列 (强制重置: ${forcePrompt})`);
+    console.log(`SomnoAI Auth: 开始授权过程 (强制提示: ${forcePrompt})`);
     
+    // If we have a token and don't need to force a prompt, just return it
     if (this.accessToken && !forcePrompt) {
       return this.accessToken;
     }
@@ -98,20 +99,24 @@ export class GoogleFitService {
     await this.ensureClientInitialized();
     
     return new Promise((resolve, reject) => {
+      // Clear previous hanging promises
       if (this.authPromise) {
-        this.authPromise.reject(new Error("当前请求已被新授权序列中断。"));
+        this.authPromise.reject(new Error("请求被新授权序列中断"));
       }
       
       this.authPromise = { resolve, reject };
       
       try {
-        // Use select_account for manual triggers to allow switching
-        this.tokenClient.requestAccessToken({ 
-          prompt: forcePrompt ? 'select_account' : '' 
-        });
+        // Strict prompt setting to ensure account selection and permission grant
+        const requestConfig = {
+          prompt: forcePrompt ? 'select_account consent' : '',
+        };
+        
+        console.log("SomnoAI Auth: 调起 Google 授权窗口...", requestConfig);
+        this.tokenClient.requestAccessToken(requestConfig);
       } catch (e) {
-        console.error("SomnoAI Auth: 弹窗调起失败", e);
-        reject(new Error("授权窗口被浏览器拦截，请在地址栏允许弹出窗口并重试。"));
+        console.error("SomnoAI Auth: 触发请求失败", e);
+        reject(new Error("授权窗口调用失败，请检查浏览器弹出拦截设置。"));
         this.authPromise = null;
       }
     });
@@ -120,25 +125,25 @@ export class GoogleFitService {
   private async fetchWithAuth(url: string, headers: any) {
     const res = await fetch(url, { headers });
     if (res.status === 401) {
-      throw new Error("AUTH_EXPIRED: 令牌已过期");
+      throw new Error("AUTH_EXPIRED: 访问令牌已失效");
     }
     if (res.status === 403) {
-      throw new Error("PERMISSION_DENIED: 权限拒绝。请务必勾选所有敏感数据复选框。");
+      throw new Error("PERMISSION_DENIED: 权限不足。请在登录时勾选所有健康数据权限。");
     }
     return res;
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    if (!this.accessToken) throw new Error("AUTH_EXPIRED: 令牌已过期");
+    if (!this.accessToken) throw new Error("AUTH_EXPIRED: 未检测到有效令牌");
 
     const now = new Date();
-    // Scan last 7 days for the most complete physiological stream
+    // Scan recent 7 days for the latest valid session
     const startTimeMillis = now.getTime() - 7 * 24 * 60 * 60 * 1000;
     const endTimeMillis = now.getTime();
     const headers = { Authorization: `Bearer ${this.accessToken}` };
 
     try {
-      console.log("SomnoAI Lab: 正在检索生理特征流元数据...");
+      console.log("SomnoAI Lab: 正在从 Google Fit 提取特征流...");
       const dsRes = await this.fetchWithAuth("https://www.googleapis.com/fitness/v1/users/me/dataSources", headers);
       const dsData = await dsRes.json();
       const sleepSources = dsData.dataSource?.filter((d: any) => d.dataType.name === "com.google.sleep.segment") || [];
@@ -155,10 +160,10 @@ export class GoogleFitService {
       }
 
       if (allPoints.length === 0) {
-        throw new Error("DATA_NOT_FOUND: 数据库中未发现睡眠信号。请检查 Google Fit 是否有最近的睡眠图表。");
+        throw new Error("DATA_NOT_FOUND: 数据库中未发现睡眠数据。请确保 Google Fit 手机端已有记录。");
       }
 
-      // Sort and extract the latest contiguous session
+      // Latest session extraction logic
       allPoints.sort((a, b) => Number(BigInt(a.startTimeNanos) - BigInt(b.startTimeNanos)));
       const latestPoint = allPoints[allPoints.length - 1];
       let sessionPoints = [latestPoint];
@@ -189,10 +194,10 @@ export class GoogleFitService {
         };
       });
 
-      // Heart Rate Analysis
+      // Detailed Heart Rate Stream
       const hrDsId = "derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm";
       const hrRes = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${hrDsId}/datasets/${startNanos}-${BigInt(latestPoint.endTimeNanos)}`, headers);
-      let hrMetrics: HeartRateData = { resting: 62, average: 68, min: 58, max: 90, history: [] };
+      let hrMetrics: HeartRateData = { resting: 60, average: 65, min: 55, max: 90, history: [] };
       if (hrRes.ok) {
         const hrJson = await hrRes.json();
         const vals = hrJson.point?.map((p: any) => p.value[0].fpVal || p.value[0].intVal) || [];
@@ -200,7 +205,7 @@ export class GoogleFitService {
           const avg = Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length);
           hrMetrics = {
             average: avg, resting: Math.min(...vals), min: Math.min(...vals), max: Math.max(...vals),
-            history: hrJson.point.slice(-24).map((p: any) => ({
+            history: hrJson.point.slice(-30).map((p: any) => ({
               time: new Date(Number(BigInt(p.startTimeNanos) / 1000000n)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
               bpm: Math.round(p.value[0].fpVal || p.value[0].intVal)
             }))
@@ -215,10 +220,10 @@ export class GoogleFitService {
         efficiency: Math.round(((totalDuration - awake) / Math.max(1, totalDuration)) * 100),
         date: new Date(startMs).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
         stages, heartRate: hrMetrics,
-        score: Math.min(100, Math.round((totalDuration / 480) * 40 + (deep / totalDuration) * 300 + (rem / totalDuration) * 200))
+        score: Math.min(100, Math.round((totalDuration / 480) * 45 + (deep / Math.max(1, totalDuration)) * 250 + (rem / Math.max(1, totalDuration)) * 150))
       };
     } catch (err: any) {
-      console.error("SomnoAI Lab Error:", err);
+      console.error("SomnoAI Lab Data Fetching Error:", err);
       throw err;
     }
   }
