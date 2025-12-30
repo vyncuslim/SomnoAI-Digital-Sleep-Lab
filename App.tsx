@@ -19,6 +19,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
   const showToast = useCallback((msg: string) => {
@@ -40,11 +41,12 @@ const App: React.FC = () => {
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
+    setHasAttemptedSync(true);
     try {
       onProgress?.('authorizing');
       const token = await googleFit.authorize(forcePrompt);
       
-      // CRITICAL: Update login state immediately after token receipt
+      // CRITICAL: Update login state immediately after token receipt to transition UI
       setIsLoggedIn(true);
       setIsGuest(false);
 
@@ -80,9 +82,10 @@ const App: React.FC = () => {
       if (errMsg.includes("AUTH_EXPIRED")) {
         googleFit.logout();
         setIsLoggedIn(false);
+        setHasAttemptedSync(false);
         showToast("登录会话已过期，请重新连接。");
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
-        // Stay logged in if authorized, but show toast
+        // Essential: Keep user logged in so they see the empty state instructions instead of the login screen
         setIsLoggedIn(true);
         showToast("未检测到最近的睡眠信号。请确认 Google Fit 中已有睡眠记录。");
       } else if (errMsg.includes("PERMISSION_DENIED")) {
@@ -95,11 +98,12 @@ const App: React.FC = () => {
     }
   }, [showToast]);
 
+  // Handle auto-sync on mount or login
   useEffect(() => {
-    if (googleFit.hasToken() && !currentRecord && !isLoading) {
+    if (googleFit.hasToken() && !currentRecord && !isLoading && !hasAttemptedSync) {
       handleSyncGoogleFit(false);
     }
-  }, [handleSyncGoogleFit, currentRecord, isLoading]);
+  }, [handleSyncGoogleFit, currentRecord, isLoading, hasAttemptedSync]);
 
   const handleSaveData = (record: SleepRecord) => {
     setCurrentRecord(record);
@@ -108,6 +112,7 @@ const App: React.FC = () => {
     setActiveView('dashboard');
     setIsLoggedIn(true);
     setIsGuest(false);
+    setHasAttemptedSync(true);
     refreshInsight(record);
   };
 
@@ -115,13 +120,14 @@ const App: React.FC = () => {
     googleFit.logout();
     setIsLoggedIn(false);
     setIsGuest(false);
+    setHasAttemptedSync(false);
     setCurrentRecord(null);
     setHistory([]);
     setActiveView('dashboard');
   };
 
   const renderView = () => {
-    // 1. Prioritize global loader for UX transitions
+    // 1. Loading state during active sync (when we don't have data yet)
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-pulse">
@@ -134,7 +140,7 @@ const App: React.FC = () => {
       );
     }
 
-    // 2. Auth view only if not logged in and not a guest
+    // 2. Auth view only if completely logged out and no progress made
     if (!isLoggedIn && !isGuest && !currentRecord) {
       return (
         <Auth 
@@ -144,7 +150,7 @@ const App: React.FC = () => {
       );
     }
     
-    // 3. Empty state handling (Dashboard active but no data)
+    // 3. Logged in but No Data found case (Empty State)
     if (!currentRecord && activeView === 'dashboard') {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-8 text-center px-4 animate-in fade-in duration-700">
@@ -183,7 +189,7 @@ const App: React.FC = () => {
       );
     }
 
-    // 4. View Switching
+    // 4. Normal Authenticated Views
     switch (activeView) {
       case 'dashboard': return (
         <Dashboard 
