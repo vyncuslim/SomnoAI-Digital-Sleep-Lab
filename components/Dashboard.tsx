@@ -5,7 +5,7 @@ import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { 
-  Heart, Sparkles, RefreshCw, CheckCircle2, AlertCircle, List, Zap, Clock, Activity, Loader2, Flame, Shield, DatabaseZap, Check
+  Heart, Sparkles, RefreshCw, CheckCircle2, AlertCircle, List, Zap, Clock, Activity, Loader2, Flame, Shield, DatabaseZap, Check, Satellite
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -27,9 +27,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
       if (syncStatus === 'success' || syncStatus === 'error') {
         const timer = setTimeout(() => {
           setShowStatus(false);
-          // Don't reset to idle immediately so button animation can finish
-          setTimeout(() => setSyncStatus('idle'), 500);
-        }, 3000);
+          // Wait for exit animation before resetting status
+          setTimeout(() => setSyncStatus('idle'), 600);
+        }, 3500);
         return () => clearTimeout(timer);
       }
     }
@@ -45,7 +45,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
       });
     } catch (err: any) {
       setSyncStatus('error');
-      setErrorMessage(err.message || "实验室信号中断");
+      setErrorMessage(err.message || "实验室信号同步中断");
     }
   };
 
@@ -59,11 +59,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
   const getSyncMessage = () => {
     switch (syncStatus) {
-      case 'authorizing': return '正在验证终端安全性...';
-      case 'fetching': return '正在提取生理特征流...';
-      case 'analyzing': return 'AI 架构推演引擎在线...';
-      case 'success': return '信号流同步成功';
-      case 'error': return errorMessage || '连接校准失败';
+      case 'authorizing': return '正在验证实验室数字签名...';
+      case 'fetching': return '正在检索最新生理特征流数据...';
+      case 'analyzing': return 'Somno-AI 正在重构睡眠架构模型...';
+      case 'success': return '信号流同步成功，已更新实验室数据';
+      case 'error': return errorMessage || '终端连接异常，请重试';
       default: return '';
     }
   };
@@ -79,18 +79,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             <h1 className="text-3xl font-black tracking-tighter text-white italic leading-none">SomnoAI Lab</h1>
             <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
               <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></div>
-              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">Stream Online</span>
+              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">Lab Online</span>
             </div>
           </div>
           <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
-            {data.date} • {isProcessing ? '特征采集实时同步' : '静态信号库分析'}
+            {data.date} • {isProcessing ? '特征流实时同步中' : '静态信号库分析模式'}
           </p>
         </div>
         
         <button 
           onClick={handleSync}
           disabled={isProcessing}
-          className={`p-4 rounded-[1.5rem] transition-all active:scale-[0.85] shadow-xl relative overflow-hidden group ${
+          className={`p-4 rounded-[1.5rem] transition-all active:scale-[0.85] shadow-xl relative overflow-hidden group border ${
             syncStatus === 'success' ? 'bg-emerald-600 border-emerald-500 text-white' :
             syncStatus === 'error' ? 'bg-rose-600 border-rose-500 text-white' :
             isProcessing 
@@ -105,7 +105,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </button>
       </header>
 
-      {/* Primary Score Ring */}
+      {/* Primary SQI Score Ring */}
       <div className="flex flex-col items-center justify-center py-4 relative">
         <div className="w-72 h-72 relative group">
           <div className="absolute inset-0 bg-indigo-600/10 blur-[120px] rounded-full animate-pulse"></div>
@@ -146,14 +146,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </div>
       </div>
 
-      {/* Stats Grid */}
+      {/* Physiological Stream Grid */}
       <div className="grid grid-cols-2 gap-5">
         <GlassCard className="col-span-2 p-0 overflow-hidden border-white/5 bg-slate-900/40 relative group">
            <div className="p-7 flex justify-between items-start relative z-10">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
                   <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">瞬时心率流 (BPM)</span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">生理脉搏流 (BPM)</span>
                 </div>
                 <div className="flex items-baseline gap-3">
                   <span className="text-4xl font-black text-white">{data.heartRate.average}</span>
@@ -161,7 +161,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
                 </div>
               </div>
               <div className="text-right">
-                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">最低静息</p>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">静息低值</p>
                 <p className="text-2xl font-black text-rose-400 italic">{data.heartRate.resting}</p>
               </div>
            </div>
@@ -193,7 +193,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             <div className="p-2 bg-blue-500/10 rounded-xl">
               <Clock size={16} className="text-blue-400" />
             </div>
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">监测周期</p>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">监测总时长</p>
           </div>
           <p className="text-2xl font-black text-white italic">{formatDuration(data.totalDuration)}</p>
         </GlassCard>
@@ -203,20 +203,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             <div className="p-2 bg-orange-500/10 rounded-xl">
               <Flame size={16} className="text-orange-400" />
             </div>
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">活动能耗</p>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">基础能耗</p>
           </div>
           <p className="text-2xl font-black text-white italic">{data.calories || 0} <span className="text-xs text-slate-500 not-italic ml-1">KCAL</span></p>
         </GlassCard>
       </div>
 
-      {/* AI Analysis */}
+      {/* AI Deep Insights */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-3">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-indigo-600/20 rounded-lg">
               <Sparkles size={14} className="text-indigo-400" />
             </div>
-            <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-slate-400">AI 睡眠科学家建议</h3>
+            <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-slate-400">AI 睡眠实验室洞察</h3>
           </div>
           {syncStatus === 'analyzing' && <Loader2 size={16} className="animate-spin text-indigo-500" />}
         </div>
@@ -235,11 +235,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </GlassCard>
       </div>
 
-      {/* Sleep Stages Architecture */}
+      {/* Architecture Plot */}
       <div className="space-y-4">
         <div className="flex items-center gap-2 px-3">
           <List size={16} className="text-slate-500" />
-          <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-slate-400">睡眠架构可视化图谱</h3>
+          <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-slate-400">睡眠架构可视化分布</h3>
         </div>
         <GlassCard className="p-8 space-y-8">
           <div className="w-full h-12 bg-slate-800/40 rounded-[1.5rem] overflow-hidden flex shadow-inner border border-white/5">
@@ -267,7 +267,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
               { label: '深层修复', color: COLORS.deep, val: data.deepRatio + '%' },
               { label: 'REM 认知', color: COLORS.rem, val: data.remRatio + '%' },
               { label: '浅层恢复', color: COLORS.light, val: (100 - data.deepRatio - data.remRatio - (100-data.efficiency)) + '%' },
-              { label: '清醒阶段', color: COLORS.awake, val: Math.round((100 - data.efficiency)) + '%' }
+              { label: '清醒间歇', color: COLORS.awake, val: Math.round((100 - data.efficiency)) + '%' }
             ].map(item => (
               <div key={item.label} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -281,24 +281,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </GlassCard>
       </div>
 
-      {/* Sync Status Banner */}
+      {/* Lab Sync Floating Status Banner */}
       {showStatus && (
-        <div className={`fixed bottom-28 left-6 right-6 z-[100] px-8 py-5 rounded-[2rem] border backdrop-blur-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] flex items-center justify-between animate-in slide-in-from-bottom-10 duration-500 exit:animate-out exit:slide-out-to-bottom-10 ${
-          syncStatus === 'success' ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-400' : 
-          syncStatus === 'error' ? 'bg-rose-950/90 border-rose-500/50 text-rose-400' : 
-          'bg-indigo-950/90 border-indigo-500/50 text-indigo-400'
+        <div className={`fixed bottom-28 left-6 right-6 z-[100] px-8 py-5 rounded-[2rem] border backdrop-blur-3xl shadow-[0_32px_128px_-16px_rgba(0,0,0,1)] flex items-center justify-between animate-in slide-in-from-bottom-12 duration-700 exit:animate-out exit:slide-out-to-bottom-12 ${
+          syncStatus === 'success' ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-400' : 
+          syncStatus === 'error' ? 'bg-rose-950/90 border-rose-500/40 text-rose-400' : 
+          'bg-indigo-950/90 border-indigo-500/40 text-indigo-400'
         }`}>
           <div className="flex items-center gap-5">
             {isProcessing ? (
               syncStatus === 'authorizing' ? <Shield size={24} className="animate-pulse" /> :
-              syncStatus === 'fetching' ? <DatabaseZap size={24} className="animate-bounce" /> :
-              <Sparkles size={24} className="animate-spin duration-[3000ms]" />
+              syncStatus === 'fetching' ? <Satellite size={24} className="animate-bounce" /> :
+              <DatabaseZap size={24} className="animate-spin duration-[4000ms]" />
             ) : syncStatus === 'success' ? <CheckCircle2 size={24} className="animate-in zoom-in" /> : <AlertCircle size={24} />}
             <div className="flex flex-col">
-              <span className="text-xs font-black uppercase tracking-[0.25em]">
-                {syncStatus === 'error' ? '终端连接故障' : '实验室同步状态'}
-              </span>
-              <span className="text-[10px] font-medium opacity-80 mt-1">
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-black uppercase tracking-[0.3em]">
+                  {syncStatus === 'error' ? '终端连接失效' : '实验室核心状态'}
+                </span>
+                {isProcessing && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>}
+              </div>
+              <span className="text-[10px] font-medium opacity-80 mt-1.5 tracking-wide leading-tight">
                 {getSyncMessage()}
               </span>
             </div>

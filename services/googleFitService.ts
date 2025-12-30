@@ -160,7 +160,7 @@ export class GoogleFitService {
       }
 
       if (allPoints.length === 0) {
-        throw new Error("DATA_NOT_FOUND: 数据库中未发现睡眠数据。请确保 Google Fit 手机端已有记录。");
+        throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。请确认 Google Fit 账户已有最近的睡眠记录。");
       }
 
       // Latest session extraction logic
