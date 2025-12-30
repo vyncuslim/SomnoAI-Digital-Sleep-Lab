@@ -85,15 +85,18 @@ const App: React.FC = () => {
         googleFit.logout();
         setIsLoggedIn(false);
         setHasAttemptedSync(false);
-        showToast("登录会话已过期，请点击重新连接。");
+        showToast("登录会话已过期。请点击同步按钮重新接入实验室隧道。");
       } else if (errMsg === "DATA_NOT_FOUND") {
         setIsLoggedIn(true);
-        showToast("未在 Fit 中检测到有效睡眠信号。请确认 Fit 应用中已有睡眠图表，或点击同步时勾选所有权限。");
+        showToast("实验室核心：未在 Fit 中检索到睡眠信号。请确认 Fit 应用中已有记录并已授予所有敏感数据权限。");
       } else if (errMsg === "PERMISSION_DENIED") {
-        showToast("访问受限。请重新登录并在 Google 授权页勾选所有复选框。");
+        showToast("隧道连接受限。请在 Google 授权页面务必勾选 [查看睡眠数据] 与 [查看心率数据] 复选框。");
       } else {
-        showToast(errMsg || "实验室通信异常，请检查网络并重试。");
+        showToast(errMsg || "实验室主干线路通信异常，请检查网络连接后重试。");
       }
+      
+      // Re-throw to allow Dashboard component's handleSync to catch the specific error message
+      throw err;
     } finally {
       setIsLoading(false);
     }
@@ -162,9 +165,9 @@ const App: React.FC = () => {
                  <span className="text-[10px] font-black uppercase tracking-widest">同步校准指南</span>
                </div>
                <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-2 font-medium">
-                 <li><span className="text-slate-200">授权：</span>登录时必须勾选所有敏感健康数据复选框。</li>
+                 <li><span className="text-slate-200">关键权限：</span>登录时务必勾选所有敏感健康数据复选框。</li>
                  <li><span className="text-slate-200">Fit 状态：</span>请确认手机端 Google Fit 应用已有最近的睡眠记录。</li>
-                 <li><span className="text-slate-200">备选方案：</span>若无设备，可点击下方手动录入感知数据。</li>
+                 <li><span className="text-slate-200">备选方案：</span>若无设备同步，可点击下方手动注入感知数据。</li>
                </ul>
             </div>
           </div>

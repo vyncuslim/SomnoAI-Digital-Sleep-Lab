@@ -5,7 +5,7 @@ import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { 
-  Heart, Sparkles, RefreshCw, CircleCheck, CircleAlert, List, Zap, Clock, Activity, Loader2, Flame, Shield, Database, Check, Satellite
+  Heart, Sparkles, RefreshCw, CircleCheck, CircleAlert, List, Zap, Clock, Activity, Loader2, Flame, Shield, Database, Check, Satellite, ShieldAlert, KeyRound, Info
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -31,14 +31,19 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
       if (syncStatus === 'success') {
         const timer = setTimeout(() => {
           setShowStatus(false);
+          // Wait for exit animation
           setTimeout(() => setSyncStatus('idle'), 600);
         }, 3500);
         return () => clearTimeout(timer);
       } else if (syncStatus === 'error') {
+        // Keep error visible longer
         const timer = setTimeout(() => {
           setShowStatus(false);
-          setTimeout(() => setSyncStatus('idle'), 600);
-        }, 8000);
+          setTimeout(() => {
+            setSyncStatus('idle');
+            setErrorMessage(null);
+          }, 600);
+        }, 12000);
         return () => clearTimeout(timer);
       }
     }
@@ -49,8 +54,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
     
     setErrorMessage(null);
     try {
+      // The onSyncFit function from App.tsx handles its own errors and sets status to 'error' via the callback.
+      // However, we wrap it in a try-catch to catch any unexpected failures during the orchestration.
       await onSyncFit((status) => {
         setSyncStatus(status);
+        if (status === 'error') {
+          // If the callback reports an error, we check common reasons
+          // Note: App.tsx also shows a global toast, but Dashboard banner is for contextual guidance.
+        }
       });
     } catch (err: any) {
       setSyncStatus('error');
@@ -67,27 +78,85 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
   const totalStageMins = data.stages?.reduce((acc, s) => acc + (s.duration || 0), 0) || 0;
 
-  const getSyncMessage = () => {
+  const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
+
+  const renderStatusDetails = () => {
     if (syncStatus === 'error') {
-      if (errorMessage?.includes('PERMISSION_DENIED')) {
-        return '权限被拒绝。请重新授权并勾选所有健康数据复选框。';
-      }
-      if (errorMessage?.includes('AUTH_EXPIRED')) {
-        return '登录已过期。正在重定向至授权页面进行身份验证...';
-      }
-      return errorMessage || '终端连接异常，信号采集失败。';
+      const isPermissionError = errorMessage?.includes('PERMISSION_DENIED') || !data.stages?.length;
+      const isAuthError = errorMessage?.includes('AUTH_EXPIRED');
+
+      return (
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-black uppercase tracking-[0.3em] text-rose-400">
+              {isAuthError ? '登录会话失效' : isPermissionError ? '权限授权不完整' : '实验室连接异常'}
+            </span>
+          </div>
+          <p className="text-[10px] font-medium opacity-90 leading-relaxed max-w-xs">
+            {isAuthError 
+              ? '您的 Google 令牌已过期。请点击同步按钮重新建立加密连接。' 
+              : isPermissionError 
+              ? '检测到数据读取受限。请在授权页手动勾选 [查看睡眠数据] 和 [心率数据] 复选框。' 
+              : errorMessage || '终端连接丢失，无法从 Google Fit 检索到有效的生理信号流。'}
+          </p>
+          {(isAuthError || isPermissionError) && (
+            <div className="flex items-center gap-1.5 mt-1 text-[9px] font-black uppercase text-rose-300">
+              <Info size={10} /> 点击右上角重新校准隧道
+            </div>
+          )}
+        </div>
+      );
     }
 
-    switch (syncStatus) {
-      case 'authorizing': return '安全终端：正在验证实验室数字签名...';
-      case 'fetching': return '特征提取：正在从 Google Fit 检索信号流...';
-      case 'analyzing': return 'AI 重构：Somno-AI 正在生成睡眠架构模型...';
-      case 'success': return '信号同步成功：实验室数据已根据最新体征重校准';
-      default: return '';
-    }
+    const messages = {
+      authorizing: {
+        title: '实验室安全握手',
+        desc: '正在通过 Google Identity Services 验证数字签名与访问令牌...',
+        icon: <Shield size={24} className="animate-pulse" />
+      },
+      fetching: {
+        title: '信号流特征提取',
+        desc: '正在通过加密隧道从远程生理数据库检索最近 7 天的睡眠会话记录...',
+        icon: <Satellite size={24} className="animate-bounce" />
+      },
+      analyzing: {
+        title: 'AI 核心架构重构',
+        desc: 'Somno-AI 正在根据心率变异性与代谢数据推演您的睡眠微架构分布...',
+        icon: <Database size={24} className="animate-spin duration-[4000ms]" />
+      },
+      success: {
+        title: '信号同步成功',
+        desc: '实验室数据已完成多维校准，最新的生理架构模型已部署至主终端。',
+        icon: <CircleCheck size={24} className="animate-in zoom-in" />
+      }
+    };
+
+    const current = messages[syncStatus as keyof typeof messages];
+    if (!current) return null;
+
+    return (
+      <div className="flex flex-col gap-1">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-black uppercase tracking-[0.3em]">
+            {current.title}
+          </span>
+          {isProcessing && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>}
+        </div>
+        <span className="text-[10px] font-medium opacity-80 mt-1 tracking-wide leading-tight max-w-[220px]">
+          {current.desc}
+        </span>
+      </div>
+    );
   };
 
-  const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
+  const getStatusIcon = () => {
+    if (syncStatus === 'authorizing') return <KeyRound size={24} className="animate-pulse" />;
+    if (syncStatus === 'fetching') return <Satellite size={24} className="animate-bounce" />;
+    if (syncStatus === 'analyzing') return <Database size={24} className="animate-spin duration-[3000ms]" />;
+    if (syncStatus === 'success') return <CircleCheck size={24} className="text-emerald-400" />;
+    if (syncStatus === 'error') return <ShieldAlert size={24} className="text-rose-400 animate-in shake" />;
+    return null;
+  };
 
   return (
     <div className="space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-1000">
@@ -117,7 +186,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
           }`}
         >
           {syncStatus === 'success' ? <Check size={20} className="animate-in zoom-in" /> :
-           syncStatus === 'error' ? <CircleAlert size={20} className="animate-in shake" /> :
+           syncStatus === 'error' ? <RefreshCw size={20} className="animate-in shake" /> :
            <RefreshCw size={20} className={isProcessing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-500'} />
           }
         </button>
@@ -296,30 +365,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
       </div>
 
       {showStatus && (
-        <div className={`fixed bottom-28 left-6 right-6 z-[100] px-8 py-5 rounded-[2rem] border backdrop-blur-3xl shadow-[0_32px_128px_-16px_rgba(0,0,0,1)] flex items-center justify-between animate-in slide-in-from-bottom-12 duration-700 exit:animate-out exit:slide-out-to-bottom-12 ${
-          syncStatus === 'success' ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-400' : 
-          syncStatus === 'error' ? 'bg-rose-950/90 border-rose-500/40 text-rose-400' : 
-          'bg-indigo-950/90 border-indigo-500/40 text-indigo-400'
+        <div className={`fixed bottom-28 left-6 right-6 z-[100] px-8 py-5 rounded-[2.5rem] border backdrop-blur-[40px] shadow-[0_32px_128px_-16px_rgba(0,0,0,1)] flex items-center justify-between animate-in slide-in-from-bottom-12 duration-700 exit:animate-out exit:slide-out-to-bottom-12 ${
+          syncStatus === 'success' ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-100' : 
+          syncStatus === 'error' ? 'bg-rose-950/90 border-rose-500/40 text-rose-100 shadow-[0_0_40px_rgba(244,63,94,0.1)]' : 
+          'bg-slate-900/95 border-indigo-500/40 text-indigo-100'
         }`}>
           <div className="flex items-center gap-5">
-            {isProcessing ? (
-              syncStatus === 'authorizing' ? <Shield size={24} className="animate-pulse" /> :
-              syncStatus === 'fetching' ? <Satellite size={24} className="animate-bounce" /> :
-              <Database size={24} className="animate-spin duration-[4000ms]" />
-            ) : syncStatus === 'success' ? <CircleCheck size={24} className="animate-in zoom-in" /> : <CircleAlert size={24} />}
-            <div className="flex flex-col">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-black uppercase tracking-[0.3em]">
-                  {syncStatus === 'error' ? '终端连接失效' : '实验室核心状态'}
-                </span>
-                {isProcessing && <span className="w-1.5 h-1.5 rounded-full bg-current animate-pulse"></span>}
-              </div>
-              <span className="text-[10px] font-medium opacity-80 mt-1.5 tracking-wide leading-tight">
-                {getSyncMessage()}
-              </span>
+            <div className={`p-3 rounded-2xl ${
+              syncStatus === 'success' ? 'bg-emerald-500/20' : 
+              syncStatus === 'error' ? 'bg-rose-500/20' : 
+              'bg-indigo-500/20'
+            }`}>
+              {getStatusIcon()}
             </div>
+            {renderStatusDetails()}
           </div>
-          {isProcessing && <Loader2 size={20} className="animate-spin opacity-40" />}
+          {isProcessing && <Loader2 size={20} className="animate-spin opacity-40 ml-4" />}
         </div>
       )}
     </div>
