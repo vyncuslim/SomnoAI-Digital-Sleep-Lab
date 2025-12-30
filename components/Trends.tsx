@@ -1,10 +1,14 @@
 
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { SleepRecord, TimeRange } from '../types';
-import { GlassCard } from './GlassCard';
-import { COLORS } from '../constants';
-import { Calendar, TrendingUp, Award, Share2, Check, Activity, Database } from 'lucide-react';
+import { SleepRecord, TimeRange } from '../types.ts';
+import { GlassCard } from './GlassCard.tsx';
+import { COLORS } from '../constants.tsx';
+import { 
+  Calendar, TrendingUp, Award, Share2, Check, Activity, Database, 
+  BrainCircuit, FileText, Loader2, Sparkles, ChevronRight 
+} from 'lucide-react';
+import { getWeeklySummary } from '../services/geminiService.ts';
 
 interface TrendsProps {
   history: SleepRecord[];
@@ -13,6 +17,8 @@ interface TrendsProps {
 export const Trends: React.FC<TrendsProps> = ({ history }) => {
   const [range, setRange] = useState<TimeRange>('week');
   const [isShared, setIsShared] = useState(false);
+  const [summary, setSummary] = useState<string | null>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const chartData = history.slice(0, 14).reverse().map(item => ({
     date: item.date.split(' ')[0],
@@ -25,6 +31,19 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
     setTimeout(() => setIsShared(false), 3000);
   };
 
+  const handleGenerateSummary = async () => {
+    if (isGenerating || history.length < 2) return;
+    setIsGenerating(true);
+    try {
+      const report = await getWeeklySummary(history);
+      setSummary(report);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
   if (history.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-in fade-in duration-700">
@@ -32,8 +51,8 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
           <Database size={48} className="text-slate-600" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-2xl font-black tracking-tight text-white">数据库为空</h2>
-          <p className="text-slate-500 text-sm max-w-xs font-medium">实验室需要至少一天的真实生理信号采集才能生成趋势分析报告。</p>
+          <h2 className="text-2xl font-black tracking-tight text-white">实验室数据库为空</h2>
+          <p className="text-slate-500 text-sm max-w-xs font-medium">需要至少 2 次真实的生理信号采集才能生成多维趋势分析。请前往“实验室”同步您的 Google Fit 数据。</p>
         </div>
       </div>
     );
@@ -42,7 +61,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
   return (
     <div className="space-y-6 pb-24 animate-in fade-in duration-500">
       <header className="flex justify-between items-center px-1">
-        <h1 className="text-3xl font-black tracking-tighter">生理趋势</h1>
+        <h1 className="text-3xl font-black tracking-tighter">趋势实验室</h1>
         <div className="flex bg-white/5 rounded-2xl p-1 border border-white/5">
           {(['week', 'month'] as TimeRange[]).map((r) => (
             <button
@@ -55,6 +74,48 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
           ))}
         </div>
       </header>
+
+      {/* AI Summary Section */}
+      {!summary ? (
+        <button 
+          onClick={handleGenerateSummary}
+          disabled={isGenerating || history.length < 2}
+          className="w-full relative overflow-hidden group py-6 px-8 rounded-3xl bg-indigo-600/10 border border-indigo-500/30 flex items-center justify-between transition-all active:scale-[0.98] disabled:opacity-50"
+        >
+          <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/5 to-indigo-500/0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000"></div>
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="w-12 h-12 bg-indigo-500/20 rounded-2xl flex items-center justify-center">
+              {isGenerating ? <Loader2 size={24} className="animate-spin text-indigo-400" /> : <BrainCircuit size={24} className="text-indigo-400" />}
+            </div>
+            <div className="text-left">
+              <p className="text-white font-black text-sm uppercase tracking-widest">生成 AI 实验室报告</p>
+              <p className="text-indigo-300/60 text-[10px] font-bold uppercase tracking-widest mt-1">
+                {isGenerating ? '正在聚合多维生理特征流...' : `基于 ${history.length} 次监测记录分析`}
+              </p>
+            </div>
+          </div>
+          <ChevronRight size={20} className="text-indigo-500 group-hover:translate-x-1 transition-transform" />
+        </button>
+      ) : (
+        <GlassCard className="p-8 border-indigo-500/30 bg-indigo-500/[0.02] space-y-4 animate-in zoom-in-95 duration-500">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText size={18} className="text-indigo-400" />
+              <h3 className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400">AI 实验室分析报告</h3>
+            </div>
+            <button onClick={() => setSummary(null)} className="text-[10px] font-black text-slate-500 uppercase hover:text-white transition-colors">清除报告</button>
+          </div>
+          <div className="prose prose-invert max-w-none">
+            <p className="text-sm text-slate-200 leading-relaxed font-medium tracking-wide whitespace-pre-wrap">
+              {summary}
+            </p>
+          </div>
+          <div className="pt-4 border-t border-white/5 flex items-center gap-2">
+            <Sparkles size={14} className="text-indigo-500" />
+            <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">SomnoAI 首席科学家签署</span>
+          </div>
+        </GlassCard>
+      )}
 
       <GlassCard className="h-72 w-full p-8">
         <div className="flex justify-between items-center mb-6">
@@ -100,6 +161,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
           <p className="text-3xl font-black mt-1">{Math.max(...history.map(h => h.score))}</p>
         </GlassCard>
 
+        {/* Fix: Changed </div> to </GlassCard> to correctly close the component */}
         <GlassCard className="flex flex-col items-center text-center py-8 relative overflow-hidden group">
           <div className="w-12 h-12 bg-blue-500/10 rounded-2xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
             <Calendar className="text-blue-500" size={24} />

@@ -41,6 +41,44 @@ export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
   }
 };
 
+export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> => {
+  try {
+    const ai = getAi();
+    const dataSummary = history.map(h => ({
+      date: h.date,
+      score: h.score,
+      hr: h.heartRate.resting,
+      deep: h.deepRatio,
+      duration: h.totalDuration
+    }));
+
+    const prompt = `
+      You are the Chief Scientist at SomnoAI Labs. Analyze the following sleep history of a user:
+      ${JSON.stringify(dataSummary)}
+
+      Task:
+      1. Identify the most significant trend in their sleep architecture or physiological recovery.
+      2. Provide a "Lab Conclusion" (实验室结论) and one "Optimization Protocol" (优化方案).
+      Keep it professional, data-driven, and concise. 
+      Language: Chinese.
+    `;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: {
+        temperature: 0.7,
+        maxOutputTokens: 500,
+      }
+    });
+
+    return response.text || "历史数据不足，请继续保持监测以生成趋势报告。";
+  } catch (error: any) {
+    console.error("Weekly Summary Failure:", error);
+    return "实验室引擎正在维护历史计算模块，请稍后再试。";
+  }
+};
+
 export const chatWithCoach = async (history: { role: 'user' | 'assistant', content: string }[]): Promise<string> => {
   try {
     const ai = getAi();
