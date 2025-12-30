@@ -19,7 +19,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showStatus, setShowStatus] = useState(false);
   
-  // 防御性数据计算
   const scoreData = useMemo(() => {
     const validScore = typeof data.score === 'number' && !isNaN(data.score) ? data.score : 0;
     return [{ value: validScore }, { value: 100 - validScore }];
@@ -31,19 +30,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
       if (syncStatus === 'success') {
         const timer = setTimeout(() => {
           setShowStatus(false);
-          // Wait for exit animation
           setTimeout(() => setSyncStatus('idle'), 600);
         }, 3500);
         return () => clearTimeout(timer);
       } else if (syncStatus === 'error') {
-        // Keep error visible longer
         const timer = setTimeout(() => {
           setShowStatus(false);
           setTimeout(() => {
             setSyncStatus('idle');
             setErrorMessage(null);
           }, 600);
-        }, 12000);
+        }, 15000);
         return () => clearTimeout(timer);
       }
     }
@@ -54,14 +51,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
     
     setErrorMessage(null);
     try {
-      // The onSyncFit function from App.tsx handles its own errors and sets status to 'error' via the callback.
-      // However, we wrap it in a try-catch to catch any unexpected failures during the orchestration.
       await onSyncFit((status) => {
         setSyncStatus(status);
-        if (status === 'error') {
-          // If the callback reports an error, we check common reasons
-          // Note: App.tsx also shows a global toast, but Dashboard banner is for contextual guidance.
-        }
       });
     } catch (err: any) {
       setSyncStatus('error');
@@ -77,31 +68,33 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   };
 
   const totalStageMins = data.stages?.reduce((acc, s) => acc + (s.duration || 0), 0) || 0;
-
   const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
 
   const renderStatusDetails = () => {
     if (syncStatus === 'error') {
       const isPermissionError = errorMessage?.includes('PERMISSION_DENIED') || !data.stages?.length;
       const isAuthError = errorMessage?.includes('AUTH_EXPIRED');
+      const isNoDataError = errorMessage?.includes('DATA_NOT_FOUND');
 
       return (
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black uppercase tracking-[0.3em] text-rose-400">
-              {isAuthError ? '登录会话失效' : isPermissionError ? '权限授权不完整' : '实验室连接异常'}
+              {isAuthError ? '会话已过期' : isPermissionError ? '权限未完全授予' : isNoDataError ? '未见睡眠记录' : '实验室连接异常'}
             </span>
           </div>
           <p className="text-[10px] font-medium opacity-90 leading-relaxed max-w-xs">
             {isAuthError 
-              ? '您的 Google 令牌已过期。请点击同步按钮重新建立加密连接。' 
+              ? '您的 Google 令牌已失效。请点击按钮重新授权连接。' 
               : isPermissionError 
-              ? '检测到数据读取受限。请在授权页手动勾选 [查看睡眠数据] 和 [心率数据] 复选框。' 
-              : errorMessage || '终端连接丢失，无法从 Google Fit 检索到有效的生理信号流。'}
+              ? '关键权限缺失：请在 Google 授权页面勾选【查看睡眠数据】和【心率数据】。' 
+              : isNoDataError 
+              ? 'Google Fit 中尚无有效睡眠数据。请确认手机端 Fit 应用已有最近的睡眠图表。'
+              : errorMessage || '终端连接丢失，无法从云端检索到有效的生理信号。'}
           </p>
-          {(isAuthError || isPermissionError) && (
+          {(isAuthError || isPermissionError || isNoDataError) && (
             <div className="flex items-center gap-1.5 mt-1 text-[9px] font-black uppercase text-rose-300">
-              <Info size={10} /> 点击右上角重新校准隧道
+              <Info size={10} /> 建议：点击右上角刷新重新触发授权隧道
             </div>
           )}
         </div>
@@ -110,23 +103,23 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
     const messages = {
       authorizing: {
-        title: '实验室安全握手',
-        desc: '正在通过 Google Identity Services 验证数字签名与访问令牌...',
-        icon: <Shield size={24} className="animate-pulse" />
+        title: '安全握手校验',
+        desc: '正在连接 Google 身份验证网关以验证访问权限...',
+        icon: <KeyRound size={24} className="animate-pulse" />
       },
       fetching: {
-        title: '信号流特征提取',
-        desc: '正在通过加密隧道从远程生理数据库检索最近 7 天的睡眠会话记录...',
+        title: '生理流数据提取',
+        desc: '正在从 Google Fit 检索最近 7 天的睡眠会话与聚合生理指标...',
         icon: <Satellite size={24} className="animate-bounce" />
       },
       analyzing: {
-        title: 'AI 核心架构重构',
-        desc: 'Somno-AI 正在根据心率变异性与代谢数据推演您的睡眠微架构分布...',
+        title: '架构重构分析',
+        desc: 'AI 引擎正在根据采集到的体征数据推演您的睡眠架构模型...',
         icon: <Database size={24} className="animate-spin duration-[4000ms]" />
       },
       success: {
-        title: '信号同步成功',
-        desc: '实验室数据已完成多维校准，最新的生理架构模型已部署至主终端。',
+        title: '同步部署完成',
+        desc: '实验室数据已成功校准并同步至当前终端。',
         icon: <CircleCheck size={24} className="animate-in zoom-in" />
       }
     };
@@ -170,7 +163,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             </div>
           </div>
           <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
-            {data.date} • {isProcessing ? '特征流实时同步中' : '静态信号库分析模式'}
+            {data.date} • {isProcessing ? '信号流实时捕获中' : '静态历史分析模式'}
           </p>
         </div>
         
