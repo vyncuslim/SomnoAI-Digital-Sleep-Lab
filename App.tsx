@@ -7,7 +7,7 @@ import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, CloudSync, PlusCircle, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, ShieldCheck } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
@@ -46,7 +46,6 @@ const App: React.FC = () => {
       onProgress?.('authorizing');
       const token = await googleFit.authorize(forcePrompt);
       
-      // CRITICAL: Update login state immediately after token receipt to transition UI
       setIsLoggedIn(true);
       setIsGuest(false);
 
@@ -61,14 +60,18 @@ const App: React.FC = () => {
         deepRatio: 0,
         remRatio: 0,
         efficiency: 0,
+        calories: 0,
         stages: [],
         heartRate: { resting: 0, average: 0, min: 0, max: 0, history: [] },
         aiInsights: ["正在实验室终端解码生理特征流..."],
-        ...fitData,
+        ...Object.fromEntries(Object.entries(fitData).filter(([_, v]) => v !== undefined))
       } as SleepRecord;
       
       setCurrentRecord(updatedRecord);
-      setHistory(prev => [updatedRecord, ...prev.filter(h => !h.id.startsWith('fit-'))]);
+      setHistory(prev => {
+        const newHist = [updatedRecord, ...prev.filter(h => !h.id.startsWith('fit-'))];
+        return newHist.slice(0, 30);
+      });
 
       onProgress?.('analyzing');
       await refreshInsight(updatedRecord);
@@ -78,14 +81,12 @@ const App: React.FC = () => {
       onProgress?.('error');
       
       const errMsg = err.message || "";
-      
       if (errMsg.includes("AUTH_EXPIRED")) {
         googleFit.logout();
         setIsLoggedIn(false);
         setHasAttemptedSync(false);
         showToast("登录会话已过期，请重新连接。");
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
-        // Essential: Keep user logged in so they see the empty state instructions instead of the login screen
         setIsLoggedIn(true);
         showToast("未检测到最近的睡眠信号。请确认 Google Fit 中已有睡眠记录。");
       } else if (errMsg.includes("PERMISSION_DENIED")) {
@@ -98,7 +99,6 @@ const App: React.FC = () => {
     }
   }, [showToast]);
 
-  // Handle auto-sync on mount or login
   useEffect(() => {
     if (googleFit.hasToken() && !currentRecord && !isLoading && !hasAttemptedSync) {
       handleSyncGoogleFit(false);
@@ -127,7 +127,6 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    // 1. Loading state during active sync (when we don't have data yet)
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-pulse">
@@ -140,7 +139,6 @@ const App: React.FC = () => {
       );
     }
 
-    // 2. Auth view only if completely logged out and no progress made
     if (!isLoggedIn && !isGuest && !currentRecord) {
       return (
         <Auth 
@@ -150,12 +148,11 @@ const App: React.FC = () => {
       );
     }
     
-    // 3. Logged in but No Data found case (Empty State)
     if (!currentRecord && activeView === 'dashboard') {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-8 text-center px-4 animate-in fade-in duration-700">
           <div className="p-8 bg-indigo-500/10 border border-indigo-500/20 rounded-[3rem] shadow-2xl shadow-indigo-500/10">
-            <CloudSync size={80} className="text-indigo-400 mb-2" />
+            <Cloud size={80} className="text-indigo-400 mb-2" />
           </div>
           <div className="max-w-xs space-y-4">
             <h2 className="text-3xl font-black text-white tracking-tight italic">特征信号未锁定</h2>
@@ -189,7 +186,6 @@ const App: React.FC = () => {
       );
     }
 
-    // 4. Normal Authenticated Views
     switch (activeView) {
       case 'dashboard': return (
         <Dashboard 
@@ -206,7 +202,6 @@ const App: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-[#020617] text-white selection:bg-indigo-500/30 overflow-x-hidden">
-      {/* Global Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden -z-10">
         <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-indigo-900/10 blur-[150px] rounded-full"></div>
         <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-900/10 blur-[120px] rounded-full"></div>
@@ -238,8 +233,8 @@ const App: React.FC = () => {
       {errorToast && (
         <div className="fixed bottom-32 left-6 right-6 z-[100] max-w-md mx-auto px-6 py-5 bg-slate-900/90 border border-indigo-500/30 backdrop-blur-xl rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,1)] flex flex-col gap-2 animate-in slide-in-from-bottom-6 duration-400">
           <div className="flex items-center gap-2 text-indigo-400">
-             <AlertTriangle size={18} />
-             <span className="text-[11px] font-black uppercase tracking-[0.2em]">系统反馈反馈反馈</span>
+             <TriangleAlert size={18} />
+             <span className="text-[11px] font-black uppercase tracking-[0.2em]">系统反馈</span>
           </div>
           <span className="text-slate-200 text-[11px] font-bold leading-relaxed">{errorToast}</span>
         </div>

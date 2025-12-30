@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, CheckCircle2, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, CircleCheck, TriangleAlert, ShieldAlert } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
@@ -59,7 +59,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
         <div className="space-y-6">
           <div className="p-5 bg-indigo-500/5 rounded-3xl border border-indigo-500/20 text-left">
             <div className="flex items-center gap-2 mb-2">
-              <CheckCircle2 size={16} className="text-indigo-400" />
+              <CircleCheck size={16} className="text-indigo-400" />
               <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">特征流接入指南</p>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed">
@@ -81,7 +81,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
 
           {localError && (
             <div className="p-5 bg-rose-500/10 rounded-3xl border border-rose-500/30 text-left flex gap-3 animate-in shake duration-500">
-              <AlertTriangle size={18} className="text-rose-400 shrink-0" />
+              <TriangleAlert size={18} className="text-rose-400 shrink-0" />
               <p className="text-[11px] text-rose-300 font-bold leading-relaxed">{localError}</p>
             </div>
           )}
