@@ -5,7 +5,7 @@ import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { 
-  Heart, Sparkles, RefreshCw, CheckCircle2, AlertCircle, List, Zap, Clock, Activity, Loader2, Flame, Shield
+  Heart, Sparkles, RefreshCw, CheckCircle2, AlertCircle, List, Zap, Clock, Activity, Loader2, Flame, Shield, DatabaseZap
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -30,12 +30,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
       await onSyncFit((status) => {
         setSyncStatus(status);
       });
-      // onSyncFit will set status to 'success' or 'error' internally through the callback
-      setTimeout(() => setSyncStatus('idle'), 3000);
+      setTimeout(() => setSyncStatus('idle'), 4000);
     } catch (err: any) {
       setSyncStatus('error');
-      setErrorMessage(err.message || "接入失败，请检查同步通路。");
-      setTimeout(() => setSyncStatus('idle'), 5000);
+      setErrorMessage(err.message || "接入端点响应超时");
+      setTimeout(() => setSyncStatus('idle'), 6000);
     }
   };
 
@@ -49,11 +48,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
   const getSyncMessage = () => {
     switch (syncStatus) {
-      case 'authorizing': return '正在请求 Google 权限授权...';
-      case 'fetching': return '正在从云端提取生理特征流...';
-      case 'analyzing': return '实验室 AI 正在分析代谢架构...';
-      case 'success': return '实验室数据同步成功';
-      case 'error': return errorMessage || '同步失败，请检查实验室连接';
+      case 'authorizing': return '安全终端身份确认中...';
+      case 'fetching': return '正在提取原始生理特征流...';
+      case 'analyzing': return 'Somno-AI 架构推演引擎在线...';
+      case 'success': return '实验室数据对齐成功';
+      case 'error': return errorMessage || '信号流丢失，请重新校准';
       default: return '';
     }
   };
@@ -61,152 +60,158 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
 
   return (
-    <div className="space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-2 duration-700">
+    <div className="space-y-8 pb-32 animate-in fade-in slide-in-from-bottom-4 duration-1000">
       {/* Header */}
-      <header className="flex justify-between items-center">
-        <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-2xl font-black tracking-tighter text-white italic">SomnoAI Lab</h1>
-            <div className="flex items-center gap-1.5 px-2.5 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
-              <Zap size={10} className="text-indigo-400 fill-indigo-400" />
-              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">特征流活跃</span>
+      <header className="flex justify-between items-center px-1">
+        <div className="space-y-1">
+          <div className="flex items-center gap-3">
+            <h1 className="text-3xl font-black tracking-tighter text-white italic leading-none">SomnoAI Lab</h1>
+            <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></div>
+              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">Stream Active</span>
             </div>
           </div>
-          <p className="text-slate-500 text-xs font-bold uppercase tracking-widest mt-1">
-            {data.date} • 实时监测中
+          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">
+            {data.date} • {isProcessing ? '特征扫描中' : '静态信号分析'}
           </p>
         </div>
         <button 
           onClick={handleSync}
           disabled={isProcessing}
-          className={`p-3 border rounded-2xl transition-all active:scale-95 ${
+          className={`p-4 border rounded-[1.5rem] transition-all active:scale-[0.85] shadow-xl ${
             isProcessing 
-            ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-400' 
-            : 'bg-white/5 border-white/10 text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10'
+            ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-400' 
+            : 'bg-white/5 border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
           }`}
         >
-          <RefreshCw size={18} className={isProcessing ? 'animate-spin' : ''} />
+          <RefreshCw size={20} className={isProcessing ? 'animate-spin' : ''} />
         </button>
       </header>
 
-      {/* Score Section */}
-      <div className="flex flex-col items-center justify-center py-2 relative">
-        <div className="w-64 h-64 relative group">
-          <div className="absolute inset-0 bg-indigo-600/10 blur-[100px] rounded-full animate-pulse"></div>
+      {/* Primary SQI Score Display */}
+      <div className="flex flex-col items-center justify-center py-4 relative">
+        <div className="w-72 h-72 relative group">
+          <div className="absolute inset-0 bg-indigo-600/10 blur-[120px] rounded-full animate-pulse"></div>
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
                 data={scoreData}
                 cx="50%"
                 cy="50%"
-                innerRadius={85}
-                outerRadius={110}
+                innerRadius={95}
+                outerRadius={125}
                 paddingAngle={0}
                 dataKey="value"
                 startAngle={90}
                 endAngle={450}
                 stroke="none"
               >
-                <Cell fill="url(#scoreGradient)" />
-                <Cell fill="rgba(255,255,255,0.02)" />
+                <Cell fill="url(#labGradient)" />
+                <Cell fill="rgba(255,255,255,0.03)" />
               </Pie>
               <defs>
-                <linearGradient id="scoreGradient" x1="0" y1="0" x2="0" y2="1">
+                <linearGradient id="labGradient" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#818cf8" />
-                  <stop offset="100%" stopColor="#4f46e5" />
+                  <stop offset="100%" stopColor="#4338ca" />
                 </linearGradient>
               </defs>
             </PieChart>
           </ResponsiveContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-7xl font-black text-white tracking-tighter drop-shadow-2xl">{data.score}</span>
-            <span className="text-[10px] text-slate-500 font-black tracking-[0.4em] mt-2 uppercase">睡眠质量指数</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+            <span className="text-8xl font-black text-white tracking-tighter italic drop-shadow-[0_0_30px_rgba(79,70,229,0.5)]">
+              {data.score}
+            </span>
+            <div className="flex items-center gap-2 mt-2 opacity-50">
+              <Shield size={10} className="text-indigo-400" />
+              <span className="text-[10px] text-slate-400 font-black tracking-[0.5em] uppercase">SQI-Index</span>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Main Metrics Grid */}
-      <div className="grid grid-cols-2 gap-4">
-        <GlassCard className="col-span-2 p-0 overflow-hidden border-indigo-500/10 bg-slate-900/40">
-           <div className="p-6 flex justify-between items-start">
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-2 gap-5">
+        <GlassCard className="col-span-2 p-0 overflow-hidden border-white/5 bg-slate-900/40 relative group">
+           <div className="p-7 flex justify-between items-start relative z-10">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <Heart size={14} className="text-rose-500 animate-pulse" />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">生理脉搏流 (BPM)</span>
+                  <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">生理脉搏特征 (BPM)</span>
                 </div>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-3xl font-black text-white">{data.heartRate.average}</span>
-                  <span className="text-[10px] text-slate-500 font-black">AVG</span>
+                <div className="flex items-baseline gap-3">
+                  <span className="text-4xl font-black text-white">{data.heartRate.average}</span>
+                  <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">Global Avg</span>
                 </div>
               </div>
               <div className="text-right">
-                <div className="text-[10px] text-slate-500 font-black uppercase tracking-widest">RHR</div>
-                <div className="text-xl font-black text-rose-400">{data.heartRate.resting}</div>
+                <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">最低 RHR</p>
+                <p className="text-2xl font-black text-rose-400 italic">{data.heartRate.resting}</p>
               </div>
            </div>
-           <div className="h-28 w-full px-1">
+           <div className="h-32 w-full mt-[-20px] opacity-80 group-hover:opacity-100 transition-opacity">
              <ResponsiveContainer width="100%" height="100%">
                <AreaChart data={data.heartRate.history}>
                  <defs>
-                   <linearGradient id="colorHr" x1="0" y1="0" x2="0" y2="1">
-                     <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.2}/>
-                     <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
+                   <linearGradient id="hrStream" x1="0" y1="0" x2="0" y2="1">
+                     <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.25}/>
+                     <stop offset="100%" stopColor="#f43f5e" stopOpacity={0}/>
                    </linearGradient>
                  </defs>
-                 <Area type="monotone" dataKey="bpm" stroke="#f43f5e" fillOpacity={1} fill="url(#colorHr)" strokeWidth={3} isAnimationActive={true} />
+                 <Area 
+                  type="monotone" 
+                  dataKey="bpm" 
+                  stroke="#f43f5e" 
+                  strokeWidth={4} 
+                  fill="url(#hrStream)" 
+                  isAnimationActive={true} 
+                  animationDuration={1500}
+                />
                </AreaChart>
              </ResponsiveContainer>
            </div>
         </GlassCard>
 
-        <GlassCard className="p-6 space-y-3 group hover:border-blue-500/30">
-          <div className="flex items-center gap-2">
-            <Clock size={16} className="text-blue-400" />
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">睡眠时长</p>
+        <GlassCard className="p-7 space-y-4 hover:border-blue-500/30 group">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-blue-500/10 rounded-xl">
+              <Clock size={16} className="text-blue-400" />
+            </div>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">监测时长</p>
           </div>
-          <p className="text-xl font-black text-white">{formatDuration(data.totalDuration)}</p>
+          <p className="text-2xl font-black text-white italic">{formatDuration(data.totalDuration)}</p>
         </GlassCard>
 
-        <GlassCard className="p-6 space-y-3 group hover:border-orange-500/30">
-          <div className="flex items-center gap-2">
-            <Flame size={16} className="text-orange-400" />
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">能量代谢</p>
+        <GlassCard className="p-7 space-y-4 hover:border-orange-500/30 group">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-orange-500/10 rounded-xl">
+              <Flame size={16} className="text-orange-400" />
+            </div>
+            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">基础能耗</p>
           </div>
-          <p className="text-xl font-black text-white">{data.calories || 0} <span className="text-[10px] text-slate-500 uppercase">kcal</span></p>
-        </GlassCard>
-
-        <GlassCard className="p-6 space-y-3 group hover:border-emerald-500/30">
-          <div className="flex items-center gap-2">
-            <Activity size={16} className="text-emerald-400" />
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">提取效率</p>
-          </div>
-          <p className="text-xl font-black text-white">{data.efficiency}%</p>
-        </GlassCard>
-
-        <GlassCard className="p-6 space-y-3 group hover:border-indigo-500/30">
-          <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-indigo-400" />
-            <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">深睡占比</p>
-          </div>
-          <p className="text-xl font-black text-white">{data.deepRatio}%</p>
+          <p className="text-2xl font-black text-white italic">{data.calories || 0} <span className="text-xs text-slate-500 not-italic ml-1">KCAL</span></p>
         </GlassCard>
       </div>
 
       {/* AI Intelligence Lab */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
+        <div className="flex items-center justify-between px-3">
           <div className="flex items-center gap-2">
-            <Sparkles size={16} className="text-indigo-400" />
-            <h3 className="font-black text-xs uppercase tracking-[0.3em] text-slate-400">AI 深度洞察实验室</h3>
+            <div className="p-1.5 bg-indigo-600/20 rounded-lg">
+              <Sparkles size={14} className="text-indigo-400" />
+            </div>
+            <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-slate-400">AI 深度实验室洞察</h3>
           </div>
-          {syncStatus === 'analyzing' && <Loader2 size={14} className="animate-spin text-indigo-500" />}
+          {syncStatus === 'analyzing' && <Loader2 size={16} className="animate-spin text-indigo-500" />}
         </div>
-        <GlassCard className="p-7 bg-indigo-600/[0.03] border-indigo-500/20 shadow-[0_20px_60px_-15px_rgba(79,70,229,0.1)]">
-          <div className="space-y-5">
+        <GlassCard className="p-8 bg-indigo-600/[0.03] border-indigo-500/20 shadow-[0_32px_80px_-20px_rgba(79,70,229,0.15)] relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-4 opacity-10">
+            <DatabaseZap size={64} className="text-indigo-500" />
+          </div>
+          <div className="space-y-6 relative z-10">
             {data.aiInsights.map((insight, i) => (
-              <div key={i} className="flex gap-4 items-start animate-in fade-in slide-in-from-bottom-2 duration-700" style={{ animationDelay: `${i * 200}ms` }}>
-                <div className="w-1 h-1 rounded-full bg-indigo-500 mt-2.5 shrink-0 shadow-[0_0_8px_#6366f1]"></div>
-                <p className="text-sm text-slate-200 leading-relaxed font-medium tracking-wide">{insight}</p>
+              <div key={i} className="flex gap-5 items-start animate-in fade-in slide-in-from-left-4 duration-700" style={{ animationDelay: `${i * 300}ms` }}>
+                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2.5 shrink-0 shadow-[0_0_12px_#6366f1]"></div>
+                <p className="text-[13px] text-slate-200 leading-relaxed font-semibold tracking-wide">{insight}</p>
               </div>
             ))}
           </div>
@@ -215,62 +220,73 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
       {/* Sleep Architecture */}
       <div className="space-y-4">
-        <div className="flex items-center gap-2 px-2">
+        <div className="flex items-center gap-2 px-3">
           <List size={16} className="text-slate-500" />
-          <h3 className="font-black text-xs uppercase tracking-[0.3em] text-slate-400">生理架构分层</h3>
+          <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-slate-400">生理架构层次分布</h3>
         </div>
-        <GlassCard className="p-6 space-y-6">
-          <div className="w-full h-10 bg-slate-800/40 rounded-3xl overflow-hidden flex shadow-inner border border-white/5">
+        <GlassCard className="p-8 space-y-8">
+          <div className="w-full h-12 bg-slate-800/40 rounded-[1.5rem] overflow-hidden flex shadow-inner border border-white/5">
             {data.stages.map((stage, idx) => {
               const width = `${(stage.duration / Math.max(1, totalStageMins)) * 100}%`;
               let color = COLORS.light;
               if (stage.name === '深睡') color = COLORS.deep;
               if (stage.name === 'REM') color = COLORS.rem;
               if (stage.name === '清醒') color = COLORS.awake;
-              
               return (
                 <div 
                   key={idx} 
                   style={{ width, backgroundColor: color }}
-                  className="h-full relative transition-all hover:brightness-125"
-                />
+                  className="h-full relative transition-all hover:brightness-125 cursor-help group/stage"
+                >
+                   <div className="absolute top-[-40px] left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-900 rounded-lg text-[8px] font-black opacity-0 group-hover/stage:opacity-100 transition-opacity whitespace-nowrap pointer-events-none border border-white/10">
+                    {stage.name} {stage.duration}M
+                   </div>
+                </div>
               );
             })}
           </div>
-          <div className="grid grid-cols-2 gap-y-3 gap-x-6">
+          <div className="grid grid-cols-2 gap-y-5 gap-x-8">
             {[
-              { label: '深层睡眠', color: COLORS.deep, val: data.deepRatio + '%' },
-              { label: 'REM 阶段', color: COLORS.rem, val: data.remRatio + '%' },
-              { label: '浅层睡眠', color: COLORS.light, val: (100 - data.deepRatio - data.remRatio) + '%' },
-              { label: '清醒阶段', color: COLORS.awake, val: Math.round((100 - data.efficiency)) + '%' }
+              { label: '深层修复', color: COLORS.deep, val: data.deepRatio + '%' },
+              { label: 'REM 认知', color: COLORS.rem, val: data.remRatio + '%' },
+              { label: '浅层恢复', color: COLORS.light, val: (100 - data.deepRatio - data.remRatio - (100-data.efficiency)) + '%' },
+              { label: '清醒间歇', color: COLORS.awake, val: Math.round((100 - data.efficiency)) + '%' }
             ].map(item => (
               <div key={item.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 rounded-full" style={{ backgroundColor: item.color }}></div>
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 rounded-full shadow-[0_0_8px_rgba(0,0,0,0.5)]" style={{ backgroundColor: item.color }}></div>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{item.label}</span>
                 </div>
-                <span className="text-xs font-black text-slate-300 font-mono">{item.val}</span>
+                <span className="text-xs font-black text-slate-300 font-mono tracking-tighter">{item.val}</span>
               </div>
             ))}
           </div>
         </GlassCard>
       </div>
 
-      {/* Sync Status Banner */}
+      {/* Sync Status Floating Banner */}
       {syncStatus !== 'idle' && (
-        <div className={`fixed top-12 left-1/2 -translate-x-1/2 z-[100] px-8 py-4 rounded-3xl border backdrop-blur-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-top-4 duration-500 ${
+        <div className={`fixed bottom-28 left-6 right-6 z-[100] px-8 py-5 rounded-[2rem] border backdrop-blur-3xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.8)] flex items-center justify-between animate-in slide-in-from-bottom-10 duration-500 ${
           syncStatus === 'success' ? 'bg-emerald-950/90 border-emerald-500/50 text-emerald-400' : 
           syncStatus === 'error' ? 'bg-rose-950/90 border-rose-500/50 text-rose-400' : 
           'bg-indigo-950/90 border-indigo-500/50 text-indigo-400'
         }`}>
-          {isProcessing ? (
-            syncStatus === 'authorizing' ? <Shield size={20} className="animate-pulse" /> :
-            syncStatus === 'fetching' ? <RefreshCw size={20} className="animate-spin" /> :
-            <Sparkles size={20} className="animate-pulse" />
-          ) : syncStatus === 'success' ? <CheckCircle2 size={20} /> : <AlertCircle size={20} />}
-          <span className="text-sm font-black uppercase tracking-widest">
-            {getSyncMessage()}
-          </span>
+          <div className="flex items-center gap-5">
+            {isProcessing ? (
+              syncStatus === 'authorizing' ? <Shield size={24} className="animate-pulse" /> :
+              syncStatus === 'fetching' ? <DatabaseZap size={24} className="animate-bounce" /> :
+              <Sparkles size={24} className="animate-spin duration-[3000ms]" />
+            ) : syncStatus === 'success' ? <CheckCircle2 size={24} className="animate-in zoom-in" /> : <AlertCircle size={24} />}
+            <div className="flex flex-col">
+              <span className="text-xs font-black uppercase tracking-[0.25em]">
+                {syncStatus === 'error' ? '信号中断' : '实验室状态'}
+              </span>
+              <span className="text-[10px] font-medium opacity-80 mt-1">
+                {getSyncMessage()}
+              </span>
+            </div>
+          </div>
+          {isProcessing && <Loader2 size={20} className="animate-spin opacity-40" />}
         </div>
       )}
     </div>

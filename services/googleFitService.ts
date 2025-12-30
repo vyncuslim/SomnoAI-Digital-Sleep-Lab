@@ -36,7 +36,7 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("Google Identity Services SDK (GSI) 加载超时。请检查网络或是否启用了广告拦截插件。");
+    throw new Error("Google Identity Services SDK (GSI) 加载超时。请确认您的浏览器未拦截 accounts.google.com 的脚本。");
   }
 
   public async ensureClientInitialized(): Promise<void> {
@@ -47,16 +47,16 @@ export class GoogleFitService {
       try {
         await this.waitForGoogleReady();
         
-        console.log("SomnoAI Auth: 正在初始化 Google OAuth2 令牌客户端...");
+        console.log("SomnoAI Auth: 正在配置 Google OAuth2 令牌客户端...");
         this.tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES.join(" "),
           callback: (response: any) => {
-            console.log("SomnoAI Auth: 收到身份验证响应", response);
+            console.log("SomnoAI Auth: 拦截到身份验证信号", response);
             
             if (response.error) {
               const errorDesc = response.error_description || response.error;
-              console.error("SomnoAI Auth 授权异常:", errorDesc);
+              console.error("SomnoAI Auth 授权终止:", errorDesc);
               this.authPromise?.reject(new Error(errorDesc));
               this.authPromise = null;
               return;
@@ -64,18 +64,23 @@ export class GoogleFitService {
             
             this.accessToken = response.access_token;
             if (this.accessToken) {
-              console.log("SomnoAI Auth: 授权令牌提取成功。");
+              console.log("SomnoAI Auth: 核心令牌提取成功。");
               sessionStorage.setItem('google_fit_token', this.accessToken);
               this.authPromise?.resolve(this.accessToken);
             } else {
-              this.authPromise?.reject(new Error("授权响应中未找到有效的访问令牌。"));
+              this.authPromise?.reject(new Error("授权负载中未包含有效令牌。"));
             }
+            this.authPromise = null;
+          },
+          error_callback: (err: any) => {
+            console.error("GSI Token Client Error:", err);
+            this.authPromise?.reject(new Error("Google 身份验证端点发生内部错误。"));
             this.authPromise = null;
           }
         });
         console.log("SomnoAI Auth: 客户端初始化就绪。");
       } catch (err) {
-        console.error("SomnoAI Auth: 初始化关键错误", err);
+        console.error("SomnoAI Auth: 初始化链路中断", err);
         this.initPromise = null;
         throw err;
       }
@@ -84,7 +89,7 @@ export class GoogleFitService {
   }
 
   async authorize(forcePrompt = false): Promise<string> {
-    console.log(`SomnoAI Auth: 执行授权逻辑 (强制弹窗: ${forcePrompt})`);
+    console.log(`SomnoAI Auth: 触发授权序列 (强制重置: ${forcePrompt})`);
     
     if (this.accessToken && !forcePrompt) {
       return this.accessToken;
@@ -94,22 +99,19 @@ export class GoogleFitService {
     
     return new Promise((resolve, reject) => {
       if (this.authPromise) {
-        this.authPromise.reject(new Error("授权请求已被后续请求覆盖。"));
+        this.authPromise.reject(new Error("当前请求已被新授权序列中断。"));
       }
       
       this.authPromise = { resolve, reject };
       
-      const config = { 
-        prompt: forcePrompt ? 'select_account consent' : '',
-        ux_mode: 'popup'
-      };
-      
       try {
-        console.log("SomnoAI Auth: 正在请求访问令牌...");
-        this.tokenClient.requestAccessToken(config);
+        // Use select_account for manual triggers to allow switching
+        this.tokenClient.requestAccessToken({ 
+          prompt: forcePrompt ? 'select_account' : '' 
+        });
       } catch (e) {
-        console.error("SomnoAI Auth: 调起弹窗失败", e);
-        reject(new Error("无法打开授权弹窗，请检查浏览器是否拦截了弹出窗口。"));
+        console.error("SomnoAI Auth: 弹窗调起失败", e);
+        reject(new Error("授权窗口被浏览器拦截，请在地址栏允许弹出窗口并重试。"));
         this.authPromise = null;
       }
     });
@@ -121,7 +123,7 @@ export class GoogleFitService {
       throw new Error("AUTH_EXPIRED: 令牌已过期");
     }
     if (res.status === 403) {
-      throw new Error("PERMISSION_DENIED: 权限不足。请在授权时务必勾选所有复选框。");
+      throw new Error("PERMISSION_DENIED: 权限拒绝。请务必勾选所有敏感数据复选框。");
     }
     return res;
   }
@@ -130,140 +132,93 @@ export class GoogleFitService {
     if (!this.accessToken) throw new Error("AUTH_EXPIRED: 令牌已过期");
 
     const now = new Date();
-    // Look back 7 days to find the most recent session
+    // Scan last 7 days for the most complete physiological stream
     const startTimeMillis = now.getTime() - 7 * 24 * 60 * 60 * 1000;
     const endTimeMillis = now.getTime();
     const headers = { Authorization: `Bearer ${this.accessToken}` };
 
     try {
-      console.log("SomnoAI Lab: 探测生理特征流...");
+      console.log("SomnoAI Lab: 正在检索生理特征流元数据...");
       const dsRes = await this.fetchWithAuth("https://www.googleapis.com/fitness/v1/users/me/dataSources", headers);
       const dsData = await dsRes.json();
       const sleepSources = dsData.dataSource?.filter((d: any) => d.dataType.name === "com.google.sleep.segment") || [];
       
-      let allSleepPoints: any[] = [];
+      let allPoints: any[] = [];
       for (const source of sleepSources) {
         const sid = source.dataStreamId;
         const datasetId = `${BigInt(startTimeMillis) * 1000000n}-${BigInt(endTimeMillis) * 1000000n}`;
         const res = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${sid}/datasets/${datasetId}`, headers);
         if (res.ok) {
           const data = await res.json();
-          if (data.point && data.point.length > 0) {
-            allSleepPoints = [...allSleepPoints, ...data.point];
-          }
+          if (data.point?.length > 0) allPoints = [...allPoints, ...data.point];
         }
       }
 
-      if (allSleepPoints.length === 0) {
-        throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。请确认 Google Fit 账户已有最近的睡眠记录。");
+      if (allPoints.length === 0) {
+        throw new Error("DATA_NOT_FOUND: 数据库中未发现睡眠信号。请检查 Google Fit 是否有最近的睡眠图表。");
       }
 
-      // Sort points by start time to reconstruct session
-      allSleepPoints.sort((a, b) => Number(BigInt(a.startTimeNanos) - BigInt(b.startTimeNanos)));
-
-      // Reconstruct the most recent session (points closer than 4 hours apart)
-      let lastPoint = allSleepPoints[allSleepPoints.length - 1];
-      let sessionPoints: any[] = [lastPoint];
-      let sessionStartNanos = BigInt(lastPoint.startTimeNanos);
-      const sessionEndNanos = BigInt(lastPoint.endTimeNanos);
-
-      for (let i = allSleepPoints.length - 2; i >= 0; i--) {
-        const p = allSleepPoints[i];
-        const gap = sessionStartNanos - BigInt(p.endTimeNanos);
-        if (gap > 4n * 3600n * 1000000000n) break; 
+      // Sort and extract the latest contiguous session
+      allPoints.sort((a, b) => Number(BigInt(a.startTimeNanos) - BigInt(b.startTimeNanos)));
+      const latestPoint = allPoints[allPoints.length - 1];
+      let sessionPoints = [latestPoint];
+      let startNanos = BigInt(latestPoint.startTimeNanos);
+      
+      for (let i = allPoints.length - 2; i >= 0; i--) {
+        const p = allPoints[i];
+        if (startNanos - BigInt(p.endTimeNanos) > 4n * 3600n * 1000000000n) break;
         sessionPoints.unshift(p);
-        sessionStartNanos = BigInt(p.startTimeNanos);
+        startNanos = BigInt(p.startTimeNanos);
       }
 
-      const startMs = Number(sessionStartNanos / 1000000n);
-      const endMs = Number(sessionEndNanos / 1000000n);
+      const startMs = Number(startNanos / 1000000n);
+      const endMs = Number(BigInt(latestPoint.endTimeNanos) / 1000000n);
       const totalDuration = Math.round((endMs - startMs) / 60000);
 
-      let deepMins = 0;
-      let remMins = 0;
-      let awakeMins = 0;
-      
+      let deep = 0, rem = 0, awake = 0;
       const stages: SleepStage[] = sessionPoints.map((p: any) => {
         const type = p.value[0].intVal;
-        const pStart = Number(BigInt(p.startTimeNanos) / 1000000n);
-        const pEnd = Number(BigInt(p.endTimeNanos) / 1000000n);
-        const duration = Math.round((pEnd - pStart) / 60000);
-        
-        let stageName: SleepStage['name'] = '浅睡';
-        if (type === 5) { stageName = '深睡'; deepMins += duration; }
-        else if (type === 6) { stageName = 'REM'; remMins += duration; }
-        else if (type === 1 || type === 3) { stageName = '清醒'; awakeMins += duration; }
-
+        const dur = Math.round((Number(BigInt(p.endTimeNanos) - BigInt(p.startTimeNanos)) / 1000000) / 60000);
+        let name: SleepStage['name'] = '浅睡';
+        if (type === 5) { name = '深睡'; deep += dur; }
+        else if (type === 6) { name = 'REM'; rem += dur; }
+        else if (type === 1 || type === 3) { name = '清醒'; awake += dur; }
         return { 
-          name: stageName, 
-          duration, 
-          startTime: new Date(pStart).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+          name, duration: dur, 
+          startTime: new Date(Number(BigInt(p.startTimeNanos) / 1000000n)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
         };
       });
 
-      // Heart Rate Parsing
+      // Heart Rate Analysis
       const hrDsId = "derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm";
-      const hrDatasetId = `${sessionStartNanos}-${sessionEndNanos}`;
-      const hrRes = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${hrDsId}/datasets/${hrDatasetId}`, headers);
-      
-      let hrMetrics: HeartRateData = { resting: 60, average: 65, min: 55, max: 85, history: [] };
+      const hrRes = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${hrDsId}/datasets/${startNanos}-${BigInt(latestPoint.endTimeNanos)}`, headers);
+      let hrMetrics: HeartRateData = { resting: 62, average: 68, min: 58, max: 90, history: [] };
       if (hrRes.ok) {
         const hrJson = await hrRes.json();
-        const pts = hrJson.point || [];
-        const vals = pts.map((p: any) => p.value[0].fpVal || p.value[0].intVal).filter((v: number) => v > 30 && v < 220);
-        
+        const vals = hrJson.point?.map((p: any) => p.value[0].fpVal || p.value[0].intVal) || [];
         if (vals.length > 0) {
           const avg = Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length);
-          const min = Math.round(Math.min(...vals));
-          const max = Math.round(Math.max(...vals));
-          const step = Math.max(1, Math.floor(pts.length / 50));
-          const history = pts.filter((_: any, i: number) => i % step === 0).map((p: any) => ({
-            time: new Date(Number(BigInt(p.startTimeNanos) / 1000000n)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-            bpm: Math.round(p.value[0].fpVal || p.value[0].intVal)
-          }));
-          hrMetrics = { average: avg, min, max, resting: min, history };
+          hrMetrics = {
+            average: avg, resting: Math.min(...vals), min: Math.min(...vals), max: Math.max(...vals),
+            history: hrJson.point.slice(-24).map((p: any) => ({
+              time: new Date(Number(BigInt(p.startTimeNanos) / 1000000n)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              bpm: Math.round(p.value[0].fpVal || p.value[0].intVal)
+            }))
+          };
         }
       }
 
-      // 24H Calories Parsing
-      const calDsId = "derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended";
-      const calStart = BigInt(now.getTime() - 24 * 3600 * 1000) * 1000000n;
-      const calEnd = BigInt(now.getTime()) * 1000000n;
-      const calRes = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${calDsId}/datasets/${calStart}-${calEnd}`, headers);
-      let calories = 0;
-      if (calRes.ok) {
-        const calJson = await calRes.json();
-        calories = Math.round(calJson.point?.reduce((acc: number, p: any) => acc + (p.value[0].fpVal || 0), 0) || 0);
-      }
-
-      // Quality Score Calculation
-      const durationHours = totalDuration / 60;
-      let durationScore = 0;
-      if (durationHours >= 7 && durationHours <= 9) durationScore = 100;
-      else if (durationHours > 9) durationScore = 90 - (durationHours - 9) * 10;
-      else durationScore = (durationHours / 7) * 100;
-
-      const efficiency = totalDuration > 0 ? Math.round(((totalDuration - awakeMins) / totalDuration) * 100) : 0;
-      const archRatio = (deepMins + remMins) / Math.max(1, totalDuration);
-      const architectureScore = Math.min(100, archRatio * 200);
-
-      const finalScore = Math.max(0, Math.min(100, Math.round(durationScore * 0.4 + efficiency * 0.3 + architectureScore * 0.3)));
-
       return {
         totalDuration,
-        score: finalScore,
-        deepRatio: Math.round((deepMins / Math.max(1, totalDuration)) * 100),
-        remRatio: Math.round((remMins / Math.max(1, totalDuration)) * 100),
-        efficiency,
+        deepRatio: Math.round((deep / Math.max(1, totalDuration)) * 100),
+        remRatio: Math.round((rem / Math.max(1, totalDuration)) * 100),
+        efficiency: Math.round(((totalDuration - awake) / Math.max(1, totalDuration)) * 100),
         date: new Date(startMs).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
-        stages,
-        heartRate: hrMetrics,
-        calories,
-        aiInsights: ["实验室：生理信号解码完成，同步代谢模型中。"]
+        stages, heartRate: hrMetrics,
+        score: Math.min(100, Math.round((totalDuration / 480) * 40 + (deep / totalDuration) * 300 + (rem / totalDuration) * 200))
       };
-
     } catch (err: any) {
-      console.error("[SomnoAI Engine Critical Failure]", err);
+      console.error("SomnoAI Lab Error:", err);
       throw err;
     }
   }
