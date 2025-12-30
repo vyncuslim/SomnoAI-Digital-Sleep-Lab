@@ -125,7 +125,7 @@ export class GoogleFitService {
   private async fetchWithAuth(url: string, headers: any) {
     const res = await fetch(url, { headers });
     if (res.status === 401) {
-      throw new Error("AUTH_EXPIRED: 访问令牌已失效");
+      throw new Error("AUTH_EXPIRED: 令牌已过期");
     }
     if (res.status === 403) {
       throw new Error("PERMISSION_DENIED: 权限不足。请在登录时勾选所有健康数据权限。");
