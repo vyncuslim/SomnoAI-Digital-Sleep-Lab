@@ -44,7 +44,7 @@ const App: React.FC = () => {
       onProgress?.('authorizing');
       const token = await googleFit.authorize(forcePrompt);
       
-      // Once authorized, we are effectively logged in
+      // CRITICAL: Update login state immediately after token receipt
       setIsLoggedIn(true);
       setIsGuest(false);
 
@@ -82,7 +82,8 @@ const App: React.FC = () => {
         setIsLoggedIn(false);
         showToast("登录会话已过期，请重新连接。");
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
-        // Stay logged in, but show toast
+        // Stay logged in if authorized, but show toast
+        setIsLoggedIn(true);
         showToast("未检测到最近的睡眠信号。请确认 Google Fit 中已有睡眠记录。");
       } else if (errMsg.includes("PERMISSION_DENIED")) {
         showToast("权限未完整授予。请在登录时勾选所有敏感健康数据复选框。");
@@ -120,17 +121,7 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    // Show Auth if not logged in AND not a guest AND no data is loaded
-    if (!isLoggedIn && !isGuest && !currentRecord) {
-      return (
-        <Auth 
-          onLogin={() => handleSyncGoogleFit(false)} 
-          onGuest={() => setIsGuest(true)}
-        />
-      );
-    }
-    
-    // Show general loading only if we have NO data at all
+    // 1. Prioritize global loader for UX transitions
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-pulse">
@@ -143,7 +134,17 @@ const App: React.FC = () => {
       );
     }
 
-    // Dashboard handling
+    // 2. Auth view only if not logged in and not a guest
+    if (!isLoggedIn && !isGuest && !currentRecord) {
+      return (
+        <Auth 
+          onLogin={() => handleSyncGoogleFit(false)} 
+          onGuest={() => setIsGuest(true)}
+        />
+      );
+    }
+    
+    // 3. Empty state handling (Dashboard active but no data)
     if (!currentRecord && activeView === 'dashboard') {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-8 text-center px-4 animate-in fade-in duration-700">
@@ -182,6 +183,7 @@ const App: React.FC = () => {
       );
     }
 
+    // 4. View Switching
     switch (activeView) {
       case 'dashboard': return (
         <Dashboard 
