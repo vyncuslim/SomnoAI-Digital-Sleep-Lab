@@ -47,23 +47,15 @@ export class GoogleFitService {
     this.initPromise = (async () => {
       try {
         await this.waitForGoogleReady();
-        
-        console.log("SomnoAI Auth: 正在初始化令牌客户端，ID:", CLIENT_ID);
         this.tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES.join(" "),
           callback: (response: any) => {
-            console.group("SomnoAI Auth: 授权响应");
-            console.log(response);
-            console.groupEnd();
-            
             if (response.error) {
-              const errorDesc = response.error_description || response.error;
-              this.authPromise?.reject(new Error(errorDesc));
+              this.authPromise?.reject(new Error(response.error_description || response.error));
               this.authPromise = null;
               return;
             }
-            
             this.accessToken = response.access_token;
             if (this.accessToken) {
               sessionStorage.setItem('google_fit_token', this.accessToken);
@@ -72,15 +64,10 @@ export class GoogleFitService {
               this.authPromise?.reject(new Error("授权响应中缺失 access_token"));
             }
             this.authPromise = null;
-          },
-          error_callback: (err: any) => {
-            console.error("GSI Client Internal Error:", err);
-            this.authPromise?.reject(new Error("Google 服务内部错误"));
-            this.authPromise = null;
           }
         });
       } catch (err) {
-        console.error("SomnoAI Auth: 初始化链路失败", err);
+        console.error("SomnoAI Auth Init Failed", err);
         this.initPromise = null;
         throw err;
       }
@@ -89,183 +76,162 @@ export class GoogleFitService {
   }
 
   async authorize(forcePrompt = false): Promise<string> {
-    if (this.accessToken && !forcePrompt) {
-      return this.accessToken;
-    }
-    
+    if (this.accessToken && !forcePrompt) return this.accessToken;
     await this.ensureClientInitialized();
-    
     return new Promise((resolve, reject) => {
-      if (this.authPromise) {
-        this.authPromise.reject(new Error("请求被新授权序列中断"));
-      }
-      
       this.authPromise = { resolve, reject };
-      
-      try {
-        const requestConfig = {
-          prompt: forcePrompt ? 'select_account consent' : '',
-        };
-        this.tokenClient.requestAccessToken(requestConfig);
-      } catch (e) {
-        reject(new Error("授权窗口调用失败，请检查浏览器弹出拦截设置。"));
-        this.authPromise = null;
-      }
+      this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'select_account consent' : '' });
     });
   }
 
   private async fetchWithAuth(url: string, headers: any) {
     const res = await fetch(url, { headers });
-    if (res.status === 401) {
-      throw new Error("AUTH_EXPIRED: 令牌已过期");
-    }
-    if (res.status === 403) {
-      throw new Error("PERMISSION_DENIED: 权限不足。请在登录时勾选所有健康数据权限。");
-    }
+    if (res.status === 401) throw new Error("AUTH_EXPIRED");
+    if (res.status === 403) throw new Error("PERMISSION_DENIED");
     return res;
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    if (!this.accessToken) throw new Error("AUTH_EXPIRED: 未检测到有效令牌");
+    if (!this.accessToken) throw new Error("AUTH_EXPIRED");
 
-    console.group("SomnoAI Lab: 数据特征流提取开始");
-    
+    console.group("SomnoAI Lab: 信号深度检索模式");
     const now = new Date();
     const startTimeMillis = now.getTime() - 7 * 24 * 60 * 60 * 1000;
     const endTimeMillis = now.getTime();
     const headers = { Authorization: `Bearer ${this.accessToken}` };
 
     try {
-      // 1. 获取数据源
+      // 1. 扫描所有可用数据源以定位睡眠信号
       const dsRes = await this.fetchWithAuth("https://www.googleapis.com/fitness/v1/users/me/dataSources", headers);
       const dsData = await dsRes.json();
-      const sleepSources = dsData.dataSource?.filter((d: any) => d.dataType.name === "com.google.sleep.segment") || [];
-      console.log(`SomnoAI Lab: 发现 ${sleepSources.length} 个睡眠数据源`);
       
-      let allSleepPoints: any[] = [];
-      const startTimeNanos = BigInt(startTimeMillis) * 1000000n;
-      const endTimeNanos = BigInt(endTimeMillis) * 1000000n;
+      // 这里的改进：同时支持 segment 和 session 数据类型，有些 App 记录方式不同
+      const sleepSources = dsData.dataSource?.filter((d: any) => 
+        d.dataType.name === "com.google.sleep.segment" || 
+        d.dataType.name === "com.google.sleep.session"
+      ) || [];
+      
+      console.log(`SomnoAI Lab: 检索到 ${sleepSources.length} 个潜在睡眠信号隧道`);
+      
+      let allPoints: any[] = [];
+      const startNanos = BigInt(startTimeMillis) * 1000000n;
+      const endNanos = BigInt(endTimeMillis) * 1000000n;
 
-      // 2. 遍历数据源抓取点位
       for (const source of sleepSources) {
         const sid = source.dataStreamId;
-        console.log(`SomnoAI Lab: 正在从 ${sid} 检索点位...`);
-        const res = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${sid}/datasets/${startTimeNanos}-${endTimeNanos}`, headers);
+        const res = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${sid}/datasets/${startNanos}-${endNanos}`, headers);
         if (res.ok) {
           const data = await res.json();
           if (data.point?.length > 0) {
-            console.log(`SomnoAI Lab: 从 ${sid} 捕获到 ${data.point.length} 个点位`);
-            allSleepPoints = [...allSleepPoints, ...data.point];
+            console.log(`SomnoAI Lab: 成功从隧道 [${sid.split(':').pop()}] 提取 ${data.point.length} 组特征`);
+            allPoints = [...allPoints, ...data.point];
           }
         }
       }
 
-      if (allSleepPoints.length === 0) {
-        console.warn("SomnoAI Lab: 最终信号池为空");
+      // 如果 dataSource 中没找到，尝试直接请求“合并后的睡眠段”派生数据 (这通常是 Fit 的最终结果)
+      if (allPoints.length === 0) {
+        console.log("SomnoAI Lab: 尝试直接访问派生睡眠信号池...");
+        const mergedSid = "derived:com.google.sleep.segment:com.google.android.gms:merged";
+        try {
+           const res = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${mergedSid}/datasets/${startNanos}-${endNanos}`, headers);
+           if (res.ok) {
+             const data = await res.json();
+             if (data.point?.length > 0) {
+               console.log(`SomnoAI Lab: 从派生池捕获到 ${data.point.length} 组特征`);
+               allPoints = data.point;
+             }
+           }
+        } catch (e) {
+          console.warn("SomnoAI Lab: 派生池访问受限");
+        }
+      }
+
+      if (allPoints.length === 0) {
         console.groupEnd();
-        throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。请确认 Google Fit 账户已有最近的睡眠记录。");
+        throw new Error("DATA_NOT_FOUND");
       }
 
-      // 3. 时间序列分析：锁定最近的一次连贯会话
-      allSleepPoints.sort((a, b) => Number(BigInt(a.startTimeNanos) - BigInt(b.startTimeNanos)));
-      const latestPoint = allSleepPoints[allSleepPoints.length - 1];
-      let sessionPoints = [latestPoint];
-      let clusterStartTimeNanos = BigInt(latestPoint.startTimeNanos);
+      // 2. 信号聚类分析：寻找最近的睡眠窗口
+      allPoints.sort((a, b) => Number(BigInt(a.startTimeNanos) - BigInt(b.startTimeNanos)));
+      const latest = allPoints[allPoints.length - 1];
+      let session = [latest];
+      let currentStartNanos = BigInt(latest.startTimeNanos);
       
-      for (let i = allSleepPoints.length - 2; i >= 0; i--) {
-        const p = allSleepPoints[i];
-        const gap = clusterStartTimeNanos - BigInt(p.endTimeNanos);
-        if (gap > 4n * 3600n * 1000000000n) break; // 超过4小时断开
-        sessionPoints.unshift(p);
-        clusterStartTimeNanos = BigInt(p.startTimeNanos);
+      for (let i = allPoints.length - 2; i >= 0; i--) {
+        const p = allPoints[i];
+        const gap = currentStartNanos - BigInt(p.endTimeNanos);
+        if (gap > 4n * 3600n * 1000000000n) break; // 超过4小时则视为不同会话
+        session.unshift(p);
+        currentStartNanos = BigInt(p.startTimeNanos);
       }
 
-      const sessionStartMs = Number(clusterStartTimeNanos / 1000000n);
-      const sessionEndMs = Number(BigInt(latestPoint.endTimeNanos) / 1000000n);
-      const totalDurationMins = Math.round((sessionEndMs - sessionStartMs) / 60000);
-      console.log(`SomnoAI Lab: 锁定会话架构，总时长 ${totalDurationMins} 分钟`);
+      const sessionStartMs = Number(currentStartNanos / 1000000n);
+      const sessionEndMs = Number(BigInt(latest.endTimeNanos) / 1000000n);
+      const durationMins = Math.round((sessionEndMs - sessionStartMs) / 60000);
 
-      // 4. 解析睡眠阶段
-      let deepMins = 0, remMins = 0, awakeMins = 0;
-      const stages: SleepStage[] = sessionPoints.map((p: any) => {
+      // 3. 解析睡眠架构阶段
+      let deep = 0, rem = 0, awake = 0;
+      const stages: SleepStage[] = session.map((p: any) => {
         const type = p.value[0].intVal;
-        const start = Number(BigInt(p.startTimeNanos) / 1000000n);
-        const end = Number(BigInt(p.endTimeNanos) / 1000000n);
-        const dur = Math.round((end - start) / 60000);
+        const s = Number(BigInt(p.startTimeNanos) / 1000000n);
+        const e = Number(BigInt(p.endTimeNanos) / 1000000n);
+        const d = Math.round((e - s) / 60000);
         
         let name: SleepStage['name'] = '浅睡';
-        if (type === 5) { name = '深睡'; deepMins += dur; }
-        else if (type === 6) { name = 'REM'; remMins += dur; }
-        else if (type === 1 || type === 3) { name = '清醒'; awakeMins += dur; }
+        if (type === 5) { name = '深睡'; deep += d; }
+        else if (type === 6) { name = 'REM'; rem += d; }
+        else if (type === 1 || type === 3) { name = '清醒'; awake += d; }
         
-        return { name, duration: dur, startTime: new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
+        return { name, duration: d, startTime: new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
       });
 
-      // 5. 获取心率数据
-      let hrMetrics: HeartRateData = { resting: 60, average: 65, min: 55, max: 90, history: [] };
+      // 4. 生理体征同步 (心率/卡路里)
+      let heartRate: HeartRateData = { resting: 60, average: 65, min: 55, max: 90, history: [] };
       try {
-        console.log("SomnoAI Lab: 正在拉取心率特征流...");
-        const hrDsId = "derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm";
-        const hrRes = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${hrDsId}/datasets/${clusterStartTimeNanos}-${BigInt(latestPoint.endTimeNanos)}`, headers);
+        const hrSid = "derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm";
+        const hrRes = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${hrSid}/datasets/${currentStartNanos}-${BigInt(latest.endTimeNanos)}`, headers);
         if (hrRes.ok) {
           const hrJson = await hrRes.json();
           const vals = hrJson.point?.map((p: any) => p.value[0].fpVal || p.value[0].intVal) || [];
           if (vals.length > 0) {
-            hrMetrics = {
+            heartRate = {
               average: Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length),
-              resting: Math.min(...vals), 
-              min: Math.min(...vals), 
-              max: Math.max(...vals),
-              history: hrJson.point.slice(-30).map((p: any) => ({
+              resting: Math.min(...vals), min: Math.min(...vals), max: Math.max(...vals),
+              history: hrJson.point.slice(-20).map((p: any) => ({
                 time: new Date(Number(BigInt(p.startTimeNanos) / 1000000n)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
                 bpm: Math.round(p.value[0].fpVal || p.value[0].intVal)
               }))
             };
-            console.log(`SomnoAI Lab: 心率特征解析完成，均值 ${hrMetrics.average} BPM`);
           }
         }
-      } catch (hrErr) { 
-        console.warn("SomnoAI Lab: 心率特征流读取受限", hrErr); 
-      }
+      } catch (e) { console.warn("SomnoAI Lab: 心率同步跳过"); }
 
-      // 6. 获取今日卡路里消耗 (代谢指标)
-      let dailyCalories = 0;
+      let calories = 0;
       try {
-        console.log("SomnoAI Lab: 正在检索代谢能耗...");
-        const calDsId = "derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended";
-        const dayStart = new Date(sessionStartMs);
-        dayStart.setHours(0,0,0,0);
-        const dayEnd = new Date(sessionStartMs);
-        dayEnd.setHours(23,59,59,999);
-        const calDatasetId = `${BigInt(dayStart.getTime()) * 1000000n}-${BigInt(dayEnd.getTime()) * 1000000n}`;
-        const calRes = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${calDsId}/datasets/${calDatasetId}`, headers);
+        const calSid = "derived:com.google.calories.expended:com.google.android.gms:merge_calories_expended";
+        const calRes = await this.fetchWithAuth(`https://www.googleapis.com/fitness/v1/users/me/datasetSources/${calSid}/datasets/${currentStartNanos}-${BigInt(latest.endTimeNanos)}`, headers);
         if (calRes.ok) {
           const calJson = await calRes.json();
-          dailyCalories = Math.round(calJson.point?.reduce((sum: number, p: any) => sum + (p.value[0].fpVal || 0), 0) || 0);
-          console.log(`SomnoAI Lab: 代谢能耗锁定为 ${dailyCalories} KCAL`);
+          calories = Math.round(calJson.point?.reduce((sum: number, p: any) => sum + (p.value[0].fpVal || 0), 0) || 0);
         }
-      } catch (calErr) { 
-        console.warn("SomnoAI Lab: 代谢流读取受限", calErr); 
-      }
+      } catch (e) { console.warn("SomnoAI Lab: 代谢同步跳过"); }
 
-      // 7. 计算综合评分
+      // 5. 质量评分计算
       const score = Math.min(100, Math.round(
-        (Math.min(480, totalDurationMins) / 480) * 45 + 
-        (Math.min(25, (deepMins / Math.max(1, totalDurationMins)) * 100) / 25) * 30 + 
-        (Math.min(20, (remMins / Math.max(1, totalDurationMins)) * 100) / 20) * 25
+        (Math.min(480, durationMins) / 480) * 40 + 
+        (Math.min(25, (deep / Math.max(1, durationMins)) * 100) / 25) * 35 + 
+        (Math.min(20, (rem / Math.max(1, durationMins)) * 100) / 20) * 25
       ));
 
       console.groupEnd();
       return {
-        totalDuration: totalDurationMins,
-        deepRatio: Math.round((deepMins / Math.max(1, totalDurationMins)) * 100),
-        remRatio: Math.round((remMins / Math.max(1, totalDurationMins)) * 100),
-        efficiency: Math.round(((totalDurationMins - awakeMins) / Math.max(1, totalDurationMins)) * 100),
+        totalDuration: durationMins,
+        deepRatio: Math.round((deep / Math.max(1, durationMins)) * 100),
+        remRatio: Math.round((rem / Math.max(1, durationMins)) * 100),
+        efficiency: Math.round(((durationMins - awake) / Math.max(1, durationMins)) * 100),
         date: new Date(sessionStartMs).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
-        stages, 
-        heartRate: hrMetrics, 
-        calories: dailyCalories,
-        score
+        stages, heartRate, calories, score
       };
     } catch (err: any) {
       console.groupEnd();

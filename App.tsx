@@ -44,7 +44,7 @@ const App: React.FC = () => {
     setHasAttemptedSync(true);
     try {
       onProgress?.('authorizing');
-      const token = await googleFit.authorize(forcePrompt);
+      await googleFit.authorize(forcePrompt);
       
       setIsLoggedIn(true);
       setIsGuest(false);
@@ -81,18 +81,18 @@ const App: React.FC = () => {
       onProgress?.('error');
       
       const errMsg = err.message || "";
-      if (errMsg.includes("AUTH_EXPIRED")) {
+      if (errMsg === "AUTH_EXPIRED") {
         googleFit.logout();
         setIsLoggedIn(false);
         setHasAttemptedSync(false);
-        showToast("登录会话已过期，请重新连接。");
-      } else if (errMsg.includes("DATA_NOT_FOUND")) {
+        showToast("登录会话已过期，请点击重新连接。");
+      } else if (errMsg === "DATA_NOT_FOUND") {
         setIsLoggedIn(true);
-        showToast("未检测到最近的睡眠信号。请确认 Google Fit 中已有睡眠记录。");
-      } else if (errMsg.includes("PERMISSION_DENIED")) {
-        showToast("权限未完整授予。请在登录时勾选所有敏感健康数据复选框。");
+        showToast("未在 Fit 中检测到有效睡眠信号。请确认 Fit 应用中已有睡眠图表，或点击同步时勾选所有权限。");
+      } else if (errMsg === "PERMISSION_DENIED") {
+        showToast("访问受限。请重新登录并在 Google 授权页勾选所有复选框。");
       } else {
-        showToast(errMsg || "实验室通信异常，请检查网络连接。");
+        showToast(errMsg || "实验室通信异常，请检查网络并重试。");
       }
     } finally {
       setIsLoading(false);
@@ -162,9 +162,9 @@ const App: React.FC = () => {
                  <span className="text-[10px] font-black uppercase tracking-widest">同步校准指南</span>
                </div>
                <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-2 font-medium">
-                 <li><span className="text-slate-200">授权检查：</span>确认登录时已勾选所有数据读取权限。</li>
-                 <li><span className="text-slate-200">Google Fit：</span>请确保手机端 Fit 应用中已有最近 7 天的睡眠图表。</li>
-                 <li><span className="text-slate-200">手动注入：</span>若无穿戴设备，可点击下方按钮手动录入感知数据。</li>
+                 <li><span className="text-slate-200">授权：</span>登录时必须勾选所有敏感健康数据复选框。</li>
+                 <li><span className="text-slate-200">Fit 状态：</span>请确认手机端 Google Fit 应用已有最近的睡眠记录。</li>
+                 <li><span className="text-slate-200">备选方案：</span>若无设备，可点击下方手动录入感知数据。</li>
                </ul>
             </div>
           </div>
@@ -173,7 +173,7 @@ const App: React.FC = () => {
               onClick={() => handleSyncGoogleFit(true)}
               className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl shadow-indigo-600/30"
             >
-              重新连接特征流
+              重新连接并授权
             </button>
             <button 
               onClick={() => setIsDataEntryOpen(true)}
