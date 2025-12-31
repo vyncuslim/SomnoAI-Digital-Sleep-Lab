@@ -12,10 +12,13 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onLogout, onLegalPage }) => {
-  const SettingItem = ({ icon: Icon, label, value, color, onClick }: any) => {
+  const SettingItem = ({ icon: Icon, label, value, color, onClick, href }: any) => {
+    const Component = href ? 'a' : 'button';
     return (
-      <button 
+      <Component 
         onClick={onClick} 
+        href={href}
+        target={href ? "_blank" : undefined}
         className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98] cursor-pointer"
       >
         <div className="flex items-center gap-4">
@@ -32,7 +35,7 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout, onLegalPage }) => 
           </div>
         </div>
         <ChevronRight size={18} className="text-slate-600 group-hover:text-slate-400 group-hover:translate-x-1 transition-all" />
-      </button>
+      </Component>
     );
   };
 
@@ -70,8 +73,8 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout, onLegalPage }) => 
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">法律与合规</h3>
         <GlassCard className="divide-y divide-white/5 py-2">
-          <SettingItem icon={FileText} label="隐私权政策" value="查看详细声明" color="indigo" onClick={() => onLegalPage?.('privacy')} />
-          <SettingItem icon={Info} label="服务条款" value="查看使用约定" color="indigo" onClick={() => onLegalPage?.('terms')} />
+          <SettingItem icon={FileText} label="隐私权政策" value="查看详细声明" color="indigo" href="https://vyncuslim.github.io/privacy.html" />
+          <SettingItem icon={Info} label="服务条款" value="查看使用约定" color="indigo" href="https://vyncuslim.github.io/terms.html" />
         </GlassCard>
       </div>
 

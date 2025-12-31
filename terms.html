@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -12,23 +11,53 @@
         .glass { backdrop-filter: blur(16px); background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); }
     </style>
 </head>
-<body class="p-6 md:p-12">
-    <div class="max-w-3xl mx-auto space-y-12">
+<body class="p-6 md:p-12 min-h-screen bg-[#020617]">
+    <div class="max-w-3xl mx-auto space-y-12 animate-in fade-in duration-1000">
         <header class="space-y-4">
-            <a href="./" class="text-indigo-400 font-bold text-sm uppercase tracking-widest hover:text-indigo-300 transition-colors">← 返回应用</a>
-            <h1 class="text-4xl font-black italic tracking-tighter">服务条款</h1>
-            <p class="text-slate-400 text-sm">更新日期：2024年3月20日</p>
+            <a href="./" class="text-indigo-400 font-bold text-sm uppercase tracking-widest hover:text-indigo-300 transition-colors inline-flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+                返回实验室
+            </a>
+            <h1 class="text-4xl font-black italic tracking-tighter text-white">服务条款</h1>
+            <p class="text-slate-500 text-xs font-black uppercase tracking-[0.2em]">SomnoAI Lab • 更新日期：2024年3月20日</p>
         </header>
 
-        <div class="glass p-8 rounded-[2.5rem] space-y-8 leading-relaxed text-slate-300">
+        <div class="glass p-8 rounded-[2.5rem] space-y-10 leading-relaxed text-slate-300 shadow-2xl">
             <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white">1. 服务定义</h2>
-                <p>SomnoAI 是一款实验性的数字化睡眠实验室工具。它通过可视化技术和 AI 模型处理生理数据，以提供个人参考价值的健康洞察。</p>
+                <div class="flex items-center gap-3 text-white">
+                    <div class="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/><path d="M16 13H8"/><path d="M16 17H8"/><path d="M10 9H8"/></svg>
+                    </div>
+                    <h2 class="text-xl font-bold italic">1. 服务定义</h2>
+                </div>
+                <p>SomnoAI Lab 是一个用于个人睡眠数据可视化和 AI 生成式洞察的数字化实验平台。本应用旨在帮助用户更好地理解自己的生理作息。</p>
             </section>
+
             <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white">2. 非医疗建议声明</h2>
-                <p class="text-amber-400 font-bold">重要：本应用并非医疗设备，不能用于疾病的诊断或治疗。做出任何医疗决策前请咨询专业医生。</p>
+                <div class="p-6 bg-amber-500/10 border border-amber-500/20 rounded-3xl space-y-3">
+                    <div class="flex items-center gap-2 text-amber-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/></svg>
+                        <h2 class="text-sm font-black uppercase tracking-widest">2. 非医疗免责声明</h2>
+                    </div>
+                    <p class="text-xs text-amber-300/80 font-bold leading-relaxed italic">
+                        重要提示：本应用生成的睡眠分数和 AI 建议仅供参考。本应用并非医疗设备，不能用于疾病的诊断或治疗。做出任何医疗决策前请咨询专业医生。
+                    </p>
+                </div>
             </section>
+
+            <section class="space-y-4">
+                <div class="flex items-center gap-3 text-white">
+                    <div class="p-2 bg-indigo-500/10 rounded-lg text-indigo-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                    </div>
+                    <h2 class="text-xl font-bold italic">3. 数据同步协议</h2>
+                </div>
+                <p>通过使用 Google Fit 同步功能，您确认已授权本应用访问必要的健康指标。SomnoAI 仅作为数据展示接口，不对第三方数据源的准确性负责。</p>
+            </section>
+
+            <footer class="pt-8 border-t border-white/5 flex flex-col gap-4">
+                <p class="text-[10px] text-slate-600 font-black uppercase tracking-widest">© 2024 SomnoAI Digital Sleep Lab.</p>
+            </footer>
         </div>
     </div>
 </body>

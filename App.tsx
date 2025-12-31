@@ -28,8 +28,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const page = params.get('page');
-    if (page === 'privacy') setActiveView('privacy');
-    else if (page === 'terms') setActiveView('terms');
+    if (page === 'privacy') {
+      setPrevView(activeView);
+      setActiveView('privacy');
+    } else if (page === 'terms') {
+      setPrevView(activeView);
+      setActiveView('terms');
+    }
   }, []);
 
   const showToast = useCallback((msg: string) => {
@@ -38,7 +43,9 @@ const App: React.FC = () => {
   }, []);
 
   const navigateTo = (view: ViewType) => {
-    setPrevView(activeView);
+    if (view === 'privacy' || view === 'terms') {
+      setPrevView(activeView);
+    }
     setActiveView(view);
   };
 
@@ -164,7 +171,7 @@ const App: React.FC = () => {
         <Auth 
           onLogin={() => handleSyncGoogleFit(false)} 
           onGuest={() => setIsGuest(true)}
-          onLegalPage={(page) => setActiveView(page)}
+          onLegalPage={(page) => navigateTo(page)}
         />
       );
     }

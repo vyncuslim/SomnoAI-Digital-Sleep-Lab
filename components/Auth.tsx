@@ -119,12 +119,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
           </div>
 
           <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
-            <button onClick={() => onLegalPage?.('privacy')} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            <a href="https://vyncuslim.github.io/privacy.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
               <FileText size={10} /> 隐私权政策
-            </button>
-            <button onClick={() => onLegalPage?.('terms')} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            </a>
+            <a href="https://vyncuslim.github.io/terms.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
               <ShieldCheck size={10} /> 服务条款
-            </button>
+            </a>
           </div>
         </div>
       </GlassCard>
