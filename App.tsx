@@ -7,7 +7,7 @@ import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, ShieldCheck, CheckCircle2, Info } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
@@ -85,16 +85,16 @@ const App: React.FC = () => {
       if (errMsg.includes("PERMISSION_DENIED")) {
         setIsLoggedIn(false);
         setHasAttemptedSync(false);
-        showToast("【核心权限拦截】Google 要求您在登录时手动勾选 [睡眠] 和 [心率] 复选框。权限足但未勾选也会报错。请点击重新连接。");
+        showToast("【关键权限拦截】您可能未点击“查看已拥有的服务”并勾选睡眠/心率框。即使已登录，不勾选也会失败。");
       } else if (errMsg.includes("AUTH_EXPIRED")) {
         setIsLoggedIn(false);
         setHasAttemptedSync(false);
-        showToast("【连接失效】身份令牌已过期。请重新接入实验室隧道。");
+        showToast("【令牌失效】连接已超时。请重新接入实验室隧道。");
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
         setIsLoggedIn(true);
-        showToast("【信号空置】已建立连接，但 Fit 云端没有任何最近记录。请确认手机 Fit 应用中已有今日睡眠数据。");
+        showToast("【信号空置】权限正常，但 Fit 云端没有任何最近记录。请确保 Fit App 此时已有数据。");
       } else {
-        showToast(errMsg || "【链路故障】无法与 Fit 通信。请检查网络后手动刷新。");
+        showToast(errMsg || "【链路故障】无法与 Fit 通信。请检查网络。");
       }
       
       throw err;
@@ -163,31 +163,32 @@ const App: React.FC = () => {
             <div className="p-6 bg-slate-900/60 border border-white/5 rounded-3xl text-left space-y-4 shadow-xl">
                <div className="flex items-center gap-2 text-rose-400">
                  <ShieldCheck size={18} />
-                 <span className="text-[11px] font-black uppercase tracking-widest">修复指引 (重要)</span>
+                 <span className="text-[11px] font-black uppercase tracking-widest">如何修复权限 (必看)</span>
                </div>
                <div className="space-y-3">
                   <div className="flex gap-2">
                     <CheckCircle2 size={12} className="text-indigo-400 shrink-0 mt-0.5" />
                     <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
-                      Google 登录弹出后，点击 <span className="text-white font-bold italic">查看详细信息</span>
+                      在弹出的授权页，点击中间的 <span className="text-white italic">“查看...拥有部分访问权限的服务”</span>
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <CheckCircle2 size={12} className="text-indigo-400 shrink-0 mt-0.5" />
                     <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
-                      务必 <span className="text-rose-400 font-black italic underline">手动勾选</span> 「查看您的睡眠数据」和「心率数据」
+                      务必 <span className="text-rose-400 font-black italic underline">手动勾选</span> 每一项「查看睡眠数据」和「心率数据」
                     </p>
                   </div>
                   <div className="flex gap-2">
                     <CheckCircle2 size={12} className="text-indigo-400 shrink-0 mt-0.5" />
                     <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
-                      点击 <span className="text-white font-bold italic">继续 (Continue)</span> 确认
+                      滑动到最底部点击 <span className="text-white font-bold italic">继续 (Continue)</span>
                     </p>
                   </div>
                </div>
-               <div className="pt-2 border-t border-white/5">
+               <div className="pt-2 border-t border-white/5 flex gap-2">
+                 <Info size={14} className="text-slate-500 shrink-0 mt-0.5" />
                  <p className="text-[10px] text-slate-500 italic leading-snug">
-                   如果不勾选复选框，即使登录成功，系统也会因权限不足 (403) 被拦截。
+                   Google 默认不勾选任何健康复选框。如果您只是“继续”而未勾选，系统将返回 403 权限错误。
                  </p>
                </div>
             </div>
@@ -203,7 +204,7 @@ const App: React.FC = () => {
               onClick={() => setIsDataEntryOpen(true)}
               className="w-full py-5 bg-white/5 border border-white/10 text-slate-300 hover:bg-white/10 rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 flex items-center justify-center gap-2"
             >
-              <PlusCircle size={18} /> 录入感知实验数据
+              <PlusCircle size={18} /> 手动录入实验数据
             </button>
           </div>
         </div>
