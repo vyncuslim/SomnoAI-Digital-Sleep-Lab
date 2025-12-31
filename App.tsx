@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Trends } from './components/Trends.tsx';
@@ -24,7 +23,7 @@ const App: React.FC = () => {
   const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
-  // Enhanced routing logic to handle different URL structures and avoid 404s
+  // Robust URL routing for SPA support and Google verification
   useEffect(() => {
     const handleRouting = () => {
       const path = window.location.pathname.toLowerCase();
@@ -32,32 +31,35 @@ const App: React.FC = () => {
       const pageParam = params.get('page');
 
       if (path === '/privacy' || path === '/privacy.html' || pageParam === 'privacy') {
-        // Use string comparison to avoid TS narrowing issues when checking against legal views
-        if ((activeView as string) !== 'privacy') {
-          // If we are coming from another legal view, preserve 'dashboard' as the back target
-          const isFromOtherLegal = (activeView as string) === 'terms';
-          setPrevView(isFromOtherLegal ? 'dashboard' : activeView);
-          setActiveView('privacy');
-        }
+        setActiveView((current) => {
+          if (current !== 'privacy') {
+            setPrevView(current === 'terms' ? 'dashboard' : current);
+            return 'privacy';
+          }
+          return current;
+        });
       } else if (path === '/terms' || path === '/terms.html' || pageParam === 'terms') {
-        // Use string comparison to avoid TS narrowing issues when checking against legal views
-        if ((activeView as string) !== 'terms') {
-          // If we are coming from another legal view, preserve 'dashboard' as the back target
-          const isFromOtherLegal = (activeView as string) === 'privacy';
-          setPrevView(isFromOtherLegal ? 'dashboard' : activeView);
-          setActiveView('terms');
-        }
+        setActiveView((current) => {
+          if (current !== 'terms') {
+            setPrevView(current === 'privacy' ? 'dashboard' : current);
+            return 'terms';
+          }
+          return current;
+        });
       } else if (path === '/' || path === '/index.html' || path === '') {
-        if (activeView === 'privacy' || activeView === 'terms') {
-          setActiveView('dashboard');
-        }
+        setActiveView((current) => {
+          if (current === 'privacy' || current === 'terms') {
+            return 'dashboard';
+          }
+          return current;
+        });
       }
     };
 
     handleRouting();
     window.addEventListener('popstate', handleRouting);
     return () => window.removeEventListener('popstate', handleRouting);
-  }, [activeView]);
+  }, []);
 
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
@@ -70,13 +72,12 @@ const App: React.FC = () => {
     setPrevView(activeView);
     setActiveView(view);
     
-    // We update the URL to match the SPA clean path
+    // Use pushState to update the URL without full page reload
     const path = view === 'privacy' ? '/privacy' : view === 'terms' ? '/terms' : '/';
     window.history.pushState({}, '', path);
   };
 
   const handleBackFromLegal = () => {
-    // Go back to the view we were on before visiting legal pages
     const target = (prevView === 'privacy' || prevView === 'terms') ? 'dashboard' : prevView;
     setActiveView(target);
     window.history.pushState({}, '', '/');
@@ -156,7 +157,8 @@ const App: React.FC = () => {
   }, [showToast]);
 
   useEffect(() => {
-    if (googleFit.hasToken() && !currentRecord && !isLoading && !hasAttemptedSync && !['privacy', 'terms'].includes(activeView)) {
+    const isLegalView = activeView === 'privacy' || activeView === 'terms';
+    if (googleFit.hasToken() && !currentRecord && !isLoading && !hasAttemptedSync && !isLegalView) {
       handleSyncGoogleFit(false);
     }
   }, [handleSyncGoogleFit, currentRecord, isLoading, hasAttemptedSync, activeView]);
