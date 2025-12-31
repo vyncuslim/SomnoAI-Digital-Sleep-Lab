@@ -27,7 +27,7 @@ export interface SleepRecord {
   aiInsights: string[];
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'privacy' | 'terms';
 
 export type TimeRange = 'week' | 'month' | 'year';
 

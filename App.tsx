@@ -6,6 +6,7 @@ import { AIAssistant } from './components/AIAssistant.tsx';
 import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
+import { LegalView } from './components/LegalView.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, ShieldCheck, CheckCircle2, Info } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
@@ -15,6 +16,7 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [isGuest, setIsGuest] = useState(false);
   const [activeView, setActiveView] = useState('dashboard' as ViewType);
+  const [prevView, setPrevView] = useState('dashboard' as ViewType);
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
@@ -22,10 +24,23 @@ const App: React.FC = () => {
   const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
+  // Handle URL parameters for Google Verification (e.g. ?page=privacy)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const page = params.get('page');
+    if (page === 'privacy') setActiveView('privacy');
+    else if (page === 'terms') setActiveView('terms');
+  }, []);
+
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
     setTimeout(() => setErrorToast(null), 12000); 
   }, []);
+
+  const navigateTo = (view: ViewType) => {
+    setPrevView(activeView);
+    setActiveView(view);
+  };
 
   const refreshInsight = async (record: SleepRecord) => {
     try {
@@ -79,9 +94,7 @@ const App: React.FC = () => {
     } catch (err: any) {
       console.error("Lab Sync Error:", err);
       onProgress?.('error');
-      
       const errMsg = err.message || "";
-      
       if (errMsg.includes("PERMISSION_DENIED")) {
         setIsLoggedIn(false);
         setHasAttemptedSync(false);
@@ -96,7 +109,6 @@ const App: React.FC = () => {
       } else {
         showToast(errMsg || "【链路故障】无法与 Fit 通信。请检查网络。");
       }
-      
       throw err;
     } finally {
       setIsLoading(false);
@@ -104,10 +116,10 @@ const App: React.FC = () => {
   }, [showToast]);
 
   useEffect(() => {
-    if (googleFit.hasToken() && !currentRecord && !isLoading && !hasAttemptedSync) {
+    if (googleFit.hasToken() && !currentRecord && !isLoading && !hasAttemptedSync && !['privacy', 'terms'].includes(activeView)) {
       handleSyncGoogleFit(false);
     }
-  }, [handleSyncGoogleFit, currentRecord, isLoading, hasAttemptedSync]);
+  }, [handleSyncGoogleFit, currentRecord, isLoading, hasAttemptedSync, activeView]);
 
   const handleSaveData = (record: SleepRecord) => {
     setCurrentRecord(record);
@@ -131,6 +143,10 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
+    if (activeView === 'privacy' || activeView === 'terms') {
+      return <LegalView type={activeView} onBack={() => setActiveView(prevView)} />;
+    }
+
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-pulse">
@@ -148,6 +164,7 @@ const App: React.FC = () => {
         <Auth 
           onLogin={() => handleSyncGoogleFit(false)} 
           onGuest={() => setIsGuest(true)}
+          onLegalPage={(page) => setActiveView(page)}
         />
       );
     }
@@ -220,10 +237,12 @@ const App: React.FC = () => {
       );
       case 'calendar': return <Trends history={history} />;
       case 'assistant': return <AIAssistant />;
-      case 'profile': return <Settings onLogout={handleLogout} />;
+      case 'profile': return <Settings onLogout={handleLogout} onLegalPage={(p) => navigateTo(p)} />;
       default: return <Dashboard data={currentRecord!} />;
     }
   };
+
+  const showNav = (isLoggedIn || isGuest || currentRecord) && !['privacy', 'terms'].includes(activeView);
 
   return (
     <div className="min-h-screen bg-[#020617] text-white selection:bg-indigo-500/30 overflow-x-hidden">
@@ -236,7 +255,7 @@ const App: React.FC = () => {
         {renderView()}
       </main>
 
-      {(isLoggedIn || isGuest || currentRecord) && (
+      {showNav && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-8 pt-4 pointer-events-none">
           <div className="max-w-md mx-auto backdrop-blur-3xl bg-slate-900/80 border border-white/5 rounded-[2.5rem] p-2 flex justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pointer-events-auto">
             <button onClick={() => setActiveView('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>

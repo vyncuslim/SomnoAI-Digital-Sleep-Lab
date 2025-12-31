@@ -7,9 +7,10 @@ import { googleFit } from '../services/googleFitService.ts';
 interface AuthProps {
   onLogin: () => void;
   onGuest: () => void;
+  onLegalPage?: (page: 'privacy' | 'terms') => void;
 }
 
-export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
+export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [showHint, setShowHint] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
@@ -22,14 +23,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
 
   const handleGoogleLogin = async () => {
     if (isLoggingIn) return;
-    
     setIsLoggingIn(true);
     setShowHint(true);
     setLocalError(null);
-    
     try {
       await googleFit.ensureClientInitialized();
-      // 强制弹出 consent 页面以让用户重新勾选
       const token = await googleFit.authorize(true); 
       if (token) onLogin(); 
     } catch (error: any) {
@@ -59,7 +57,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
 
       <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-900/40 shadow-[0_40px_100px_rgba(0,0,0,0.6)] space-y-6 relative z-10 overflow-visible">
         <div className="space-y-6">
-          {/* Detailed Google UI Guide based on user's screenshot */}
           <div className="p-6 bg-amber-500/5 rounded-3xl border border-amber-500/20 text-left space-y-4">
             <div className="flex items-center gap-2">
               <div className="p-1.5 bg-amber-500/20 rounded-lg">
@@ -67,7 +64,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
               </div>
               <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-300">Google 授权页避坑指南</p>
             </div>
-            
             <div className="space-y-3">
                <div className="flex gap-3 items-start">
                  <div className="mt-1 w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center text-[10px] font-black text-amber-400 border border-amber-500/30">1</div>
@@ -78,7 +74,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
                <div className="flex gap-3 items-start">
                  <div className="mt-1 w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-black text-white shadow-[0_0_10px_rgba(244,63,94,0.4)]">2</div>
                  <p className="text-[11px] text-rose-300 font-black leading-snug">
-                   点击中间的 <span className="text-white italic">“查看已拥有的部分访问权限”</span> (或 7 项服务)，<span className="underline decoration-rose-500 decoration-2 underline-offset-4">手动勾选全部复选框</span>。
+                   点击中间的 <span className="text-white italic">“查看已拥有的部分访问权限”</span>，<span className="underline decoration-rose-500 decoration-2 underline-offset-4">手动勾选全部复选框</span>。
                  </p>
                </div>
                <div className="flex gap-3 items-start">
@@ -122,14 +118,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
             </button>
           </div>
 
-          {/* Legal Links Footer */}
           <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
-            <a href="/privacy.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            <button onClick={() => onLegalPage?.('privacy')} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
               <FileText size={10} /> 隐私权政策
-            </a>
-            <a href="/terms.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            </button>
+            <button onClick={() => onLegalPage?.('terms')} className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
               <ShieldCheck size={10} /> 服务条款
-            </a>
+            </button>
           </div>
         </div>
       </GlassCard>
