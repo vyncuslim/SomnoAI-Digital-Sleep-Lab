@@ -3,7 +3,7 @@ import React from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Shield, Smartphone, Globe, LogOut, 
-  ChevronRight, ShieldCheck
+  ChevronRight, ShieldCheck, FileText, Info
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -11,27 +11,32 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
-  const SettingItem = ({ icon: Icon, label, value, color, onClick }: any) => (
-    <button 
-      onClick={onClick} 
-      className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98]"
-    >
-      <div className="flex items-center gap-4">
-        <div className={`p-2.5 rounded-xl bg-${color}-500/10 text-${color}-400 group-hover:scale-110 transition-transform`}>
-          <Icon size={20} />
-        </div>
-        <div className="text-left">
-          <p className="font-semibold text-white group-hover:text-indigo-200 transition-colors">{label}</p>
-          <div className="flex items-center gap-1.5 mt-0.5">
-            <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
-              {value}
-            </p>
+  const SettingItem = ({ icon: Icon, label, value, color, onClick, href }: any) => {
+    const Component = href ? 'a' : 'button';
+    return (
+      <Component 
+        onClick={onClick} 
+        href={href}
+        target={href ? "_blank" : undefined}
+        className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98] cursor-pointer"
+      >
+        <div className="flex items-center gap-4">
+          <div className={`p-2.5 rounded-xl bg-${color}-500/10 text-${color}-400 group-hover:scale-110 transition-transform`}>
+            <Icon size={20} />
+          </div>
+          <div className="text-left">
+            <p className="font-semibold text-white group-hover:text-indigo-200 transition-colors">{label}</p>
+            <div className="flex items-center gap-1.5 mt-0.5">
+              <p className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                {value}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
-      <ChevronRight size={18} className="text-slate-600 group-hover:text-slate-400 group-hover:translate-x-1 transition-all" />
-    </button>
-  );
+        <ChevronRight size={18} className="text-slate-600 group-hover:text-slate-400 group-hover:translate-x-1 transition-all" />
+      </Component>
+    );
+  };
 
   return (
     <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -59,8 +64,16 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">健康生态集成</h3>
         <GlassCard className="divide-y divide-white/5 py-2">
-          <SettingItem icon={Smartphone} label="Google Fit" value="已同步健康数据" color="emerald" />
-          <SettingItem icon={Globe} label="自动更新" value="每 6 小时同步" color="slate" />
+          <SettingItem icon={Smartphone} label="Google Fit" value="同步最近 7 天记录" color="emerald" />
+          <SettingItem icon={Globe} label="自动更新" value="会话级实时同步" color="slate" />
+        </GlassCard>
+      </div>
+
+      <div className="space-y-3">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">法律与合规</h3>
+        <GlassCard className="divide-y divide-white/5 py-2">
+          <SettingItem icon={FileText} label="隐私权政策" value="数据访问与安全声明" color="indigo" href="/privacy.html" />
+          <SettingItem icon={Info} label="服务条款" value="实验性应用使用约定" color="indigo" href="/terms.html" />
         </GlassCard>
       </div>
 

@@ -1,0 +1,56 @@
+
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>隐私权政策 - SomnoAI Lab</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; }
+        .glass { backdrop-filter: blur(16px); background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); }
+    </style>
+</head>
+<body class="p-6 md:p-12">
+    <div class="max-w-3xl mx-auto space-y-12">
+        <header class="space-y-4">
+            <a href="/" class="text-indigo-400 font-bold text-sm uppercase tracking-widest hover:text-indigo-300 transition-colors">← 返回应用</a>
+            <h1 class="text-4xl font-black italic tracking-tighter">隐私权政策</h1>
+            <p class="text-slate-400 text-sm">生效日期：2024年3月20日</p>
+        </header>
+
+        <div class="glass p-8 rounded-[2.5rem] space-y-8 leading-relaxed text-slate-300">
+            <section class="space-y-4">
+                <h2 class="text-xl font-bold text-white">1. 数据收集声明</h2>
+                <p>SomnoAI Lab (以下简称“应用”) 仅在您明确授权的情况下通过 Google Fit API 访问以下数据：</p>
+                <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li>睡眠分段数据 (Sleep segments)</li>
+                    <li>心率数据 (Heart rate)</li>
+                    <li>能量消耗数据 (Calories expended)</li>
+                </ul>
+            </section>
+
+            <section class="space-y-4">
+                <h2 class="text-xl font-bold text-white">2. 数据使用用途</h2>
+                <p>我们访问上述数据的唯一目的是为您提供数字化的睡眠架构可视化分析、生理特征趋势报告以及由 AI 驱动的健康建议。所有分析均在应用运行时实时生成。</p>
+            </section>
+
+            <section class="space-y-4">
+                <h2 class="text-xl font-bold text-white">3. 数据存储与共享</h2>
+                <p><strong>不共享数据：</strong>我们承诺不会向任何第三方销售、共享或披露您的个人健康数据。</p>
+                <p><strong>本地处理：</strong>您的 Google Fit 访问令牌 (Access Token) 仅存储在您浏览器的 SessionStorage 中，并在您关闭页面或退出登录时清除。我们不设后端数据库长期存储您的原始生理特征流。</p>
+            </section>
+
+            <section class="space-y-4">
+                <h2 class="text-xl font-bold text-white">4. 用户权利</h2>
+                <p>您可以随时在应用设置中点击“退出”来撤销授权并清除本地缓存。您也可以通过 Google 账号的安全设置随时管理或彻底移除本应用的访问权限。</p>
+            </section>
+
+            <section class="space-y-4 pt-6 border-t border-white/5">
+                <p class="text-xs text-slate-500 italic">开发者联系方式: ongyuze1401@gmail.com</p>
+            </section>
+        </div>
+    </div>
+</body>
+</html>

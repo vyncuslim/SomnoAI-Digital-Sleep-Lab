@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, TriangleAlert, ShieldAlert, CheckCircle2, ChevronDown, ExternalLink } from 'lucide-react';
+import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, TriangleAlert, ShieldAlert, CheckCircle2, ChevronDown, ExternalLink, FileText } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
@@ -120,6 +120,16 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
             >
               以访客身份浏览实验室 <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
             </button>
+          </div>
+
+          {/* Legal Links Footer */}
+          <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
+            <a href="/privacy.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+              <FileText size={10} /> 隐私权政策
+            </a>
+            <a href="/terms.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+              <ShieldCheck size={10} /> 服务条款
+            </a>
           </div>
         </div>
       </GlassCard>
