@@ -14,7 +14,7 @@ import { googleFit } from './services/googleFitService.ts';
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [isGuest, setIsGuest] = useState(false);
-  const [activeView, setActiveView] = useState<ViewType>('dashboard');
+  const [activeView, setActiveView] = useState('dashboard' as ViewType);
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
@@ -77,25 +77,26 @@ const App: React.FC = () => {
       await refreshInsight(updatedRecord);
       onProgress?.('success');
     } catch (err: any) {
-      console.error("Sync Error:", err);
+      console.error("Sync Error Details:", err);
       onProgress?.('error');
       
       const errMsg = err.message || "";
-      if (errMsg === "AUTH_EXPIRED") {
+      // Enhanced detection using .includes() to match error codes sent by googleFitService
+      if (errMsg.includes("AUTH_EXPIRED") || errMsg.includes("invalid_token")) {
         googleFit.logout();
         setIsLoggedIn(false);
-        setHasAttemptedSync(false);
-        showToast("登录会话已过期。请点击同步按钮重新接入实验室隧道。");
-      } else if (errMsg === "DATA_NOT_FOUND") {
+        setHasAttemptedSync(false); // Reset to allow re-authentication prompt
+        showToast("身份令牌已过期或失效。请重新接入 Google Fit 实验室以恢复数据同步。");
+      } else if (errMsg.includes("DATA_NOT_FOUND")) {
         setIsLoggedIn(true);
-        showToast("实验室核心：未在 Fit 中检索到睡眠信号。请确认 Fit 应用中已有记录并已授予所有敏感数据权限。");
-      } else if (errMsg === "PERMISSION_DENIED") {
-        showToast("隧道连接受限。请在 Google 授权页面务必勾选 [查看睡眠数据] 与 [查看心率数据] 复选框。");
+        showToast("同步完成，但未发现睡眠信号。请确认手机端 Google Fit 应用已有最近的睡眠记录，且已完成数据同步。");
+      } else if (errMsg.includes("PERMISSION_DENIED")) {
+        showToast("同步权限受限。为了生成精准的睡眠图谱，请务必在授权页面勾选【查看睡眠数据】与【心率数据】。");
       } else {
-        showToast(errMsg || "实验室主干线路通信异常，请检查网络连接后重试。");
+        showToast(errMsg || "实验室主干线路通信异常。请检查网络状态并尝试手动刷新同步。");
       }
       
-      // Re-throw to allow Dashboard component's handleSync to catch the specific error message
+      // Re-throw to allow component-level handling (e.g., Dashboard banner)
       throw err;
     } finally {
       setIsLoading(false);
