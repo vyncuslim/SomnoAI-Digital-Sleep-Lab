@@ -36,7 +36,7 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("GOOGLE_SDK_LOAD_FAILED");
+    throw new Error("GOOGLE_SDK_LOAD_FAILED: 无法加载 Google 身份服务，请检查网络或代理。");
   }
 
   public async ensureClientInitialized(): Promise<void> {
@@ -60,7 +60,7 @@ export class GoogleFitService {
               sessionStorage.setItem('google_fit_token', this.accessToken);
               this.authPromise?.resolve(this.accessToken);
             } else {
-              this.authPromise?.reject(new Error("MISSING_TOKEN"));
+              this.authPromise?.reject(new Error("MISSING_TOKEN: 授权响应中缺少访问令牌。"));
             }
             this.authPromise = null;
           }
@@ -73,16 +73,11 @@ export class GoogleFitService {
     return this.initPromise;
   }
 
-  /**
-   * 显式授权请求。
-   * 不再尝试静默刷新。如果 forcePrompt 为真，则强制触发带有权限勾选框的完整流程。
-   */
   async authorize(forcePrompt = false): Promise<string> {
     await this.ensureClientInitialized();
     
-    // 如果是强制提示，或者当前根本没有 Token，则发起请求
     if (forcePrompt || !this.accessToken) {
-      this.logout(); // 清除现有可能失效的 Token
+      this.logout(); 
       return new Promise((resolve, reject) => {
         this.authPromise = { resolve, reject };
         this.tokenClient.requestAccessToken({ 
@@ -99,14 +94,13 @@ export class GoogleFitService {
     
     if (res.status === 401) {
       this.logout();
-      throw new Error("AUTH_EXPIRED");
+      throw new Error("AUTH_EXPIRED: 令牌失效，请重新登录。");
     }
     
     if (res.status === 403) {
-      // 403 明确意味着“已登录但未勾选权限”。
-      // 我们不在这里处理重定向，只抛出特定错误供 UI 层引导用户。
       this.logout(); 
-      throw new Error("PERMISSION_DENIED");
+      // Important: Specifically mention the checkbox issue for Google Fit
+      throw new Error("PERMISSION_DENIED: 虽然已登录，但您未在 Google 授权页面勾选「查看睡眠」或「查看心率」复选框。Google Fit 要求手动开启这些权限。");
     }
     
     return res;
@@ -115,7 +109,7 @@ export class GoogleFitService {
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
     if (!this.accessToken) throw new Error("AUTH_EXPIRED");
 
-    console.group("SomnoAI Lab: 信号捕获");
+    console.group("SomnoAI Lab: 信号聚合引擎");
     const now = new Date();
     const endTimeMillis = now.getTime();
     const startTimeMillis = endTimeMillis - 7 * 24 * 60 * 60 * 1000;
@@ -161,7 +155,7 @@ export class GoogleFitService {
         }
         
         console.groupEnd();
-        throw new Error("DATA_NOT_FOUND");
+        throw new Error("DATA_NOT_FOUND: 权限正常，但 Fit 中最近 7 天没有任何睡眠数据。");
       }
 
       const sleepPoints = targetBucket.dataset[0].point;

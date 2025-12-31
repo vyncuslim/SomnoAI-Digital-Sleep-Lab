@@ -7,7 +7,7 @@ import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, ShieldCheck } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, ShieldCheck, CheckCircle2 } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
@@ -24,7 +24,7 @@ const App: React.FC = () => {
 
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
-    setTimeout(() => setErrorToast(null), 12000); // 增加时间让用户看清
+    setTimeout(() => setErrorToast(null), 12000); 
   }, []);
 
   const refreshInsight = async (record: SleepRecord) => {
@@ -39,16 +39,11 @@ const App: React.FC = () => {
     }
   };
 
-  /**
-   * 严格的同步流程。
-   * 不再做“模拟刷新”。
-   */
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
     setHasAttemptedSync(true);
     try {
       onProgress?.('authorizing');
-      // 直接通过 SDK 获取或刷新 Access Token
       await googleFit.authorize(forcePrompt);
       
       setIsLoggedIn(true);
@@ -87,21 +82,19 @@ const App: React.FC = () => {
       
       const errMsg = err.message || "";
       
-      // 这里的逻辑非常显式，不再尝试自动重试
       if (errMsg.includes("PERMISSION_DENIED")) {
-        // 403 意味着权限足但未勾选
         setIsLoggedIn(false);
         setHasAttemptedSync(false);
-        showToast("【权限拦截】检测到您在登录时未勾选睡眠或心率数据权限。请重新接入，并务必手动勾选复选框。");
+        showToast("【核心权限拦截】Google 要求您在登录时手动勾选 [睡眠] 和 [心率] 复选框。权限足但未勾选也会报错。请点击重新连接。");
       } else if (errMsg.includes("AUTH_EXPIRED")) {
         setIsLoggedIn(false);
         setHasAttemptedSync(false);
-        showToast("【会话失效】身份令牌已过期。请重新连接 Google 实验室以获取新令牌。");
+        showToast("【连接失效】身份令牌已过期。请重新接入实验室隧道。");
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
         setIsLoggedIn(true);
-        showToast("【信号缺失】未发现有效睡眠会话。请确保 Google Fit 手机端已有最近记录且已完成云同步。");
+        showToast("【信号空置】已建立连接，但 Fit 云端没有任何最近记录。请确认手机 Fit 应用中已有今日睡眠数据。");
       } else {
-        showToast("【链路异常】无法建立与 Fit API 的安全连接。请检查网络后重试。");
+        showToast(errMsg || "【链路故障】无法与 Fit 通信。请检查网络后手动刷新。");
       }
       
       throw err;
@@ -111,7 +104,6 @@ const App: React.FC = () => {
   }, [showToast]);
 
   useEffect(() => {
-    // 首次载入尝试静默获取数据
     if (googleFit.hasToken() && !currentRecord && !isLoading && !hasAttemptedSync) {
       handleSyncGoogleFit(false);
     }
@@ -145,7 +137,7 @@ const App: React.FC = () => {
           <Loader2 className="animate-spin text-indigo-500" size={64} />
           <div className="space-y-2">
             <p className="text-xl font-black text-white tracking-tighter uppercase italic">实验室终端启动中</p>
-            <p className="text-slate-500 text-sm font-medium">正在尝试获取有效令牌并同步信号流...</p>
+            <p className="text-slate-500 text-sm font-medium">正在建立加密隧道同步特征流...</p>
           </div>
         </div>
       );
@@ -167,15 +159,37 @@ const App: React.FC = () => {
             <Cloud size={80} className="text-indigo-400 mb-2" />
           </div>
           <div className="max-w-xs space-y-4">
-            <h2 className="text-3xl font-black text-white tracking-tight italic text-center leading-tight">未检测到同步信号</h2>
-            <div className="p-5 bg-slate-900/60 border border-white/5 rounded-3xl text-left space-y-3 shadow-xl">
+            <h2 className="text-3xl font-black text-white tracking-tight italic leading-tight text-center">信号同步受限</h2>
+            <div className="p-6 bg-slate-900/60 border border-white/5 rounded-3xl text-left space-y-4 shadow-xl">
                <div className="flex items-center gap-2 text-rose-400">
-                 <ShieldCheck size={16} />
-                 <span className="text-[10px] font-black uppercase tracking-widest">权限注入关键说明</span>
+                 <ShieldCheck size={18} />
+                 <span className="text-[11px] font-black uppercase tracking-widest">修复指引 (重要)</span>
                </div>
-               <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
-                 Google Fit 的敏感数据（睡眠/心率）需要用户在授权弹出框中<span className="text-white font-bold">手动勾选对应的复选框</span>。默认通常不勾选，这会导致 403 错误。
-               </p>
+               <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <CheckCircle2 size={12} className="text-indigo-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                      Google 登录弹出后，点击 <span className="text-white font-bold italic">查看详细信息</span>
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <CheckCircle2 size={12} className="text-indigo-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                      务必 <span className="text-rose-400 font-black italic underline">手动勾选</span> 「查看您的睡眠数据」和「心率数据」
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <CheckCircle2 size={12} className="text-indigo-400 shrink-0 mt-0.5" />
+                    <p className="text-[11px] text-slate-300 leading-relaxed font-medium">
+                      点击 <span className="text-white font-bold italic">继续 (Continue)</span> 确认
+                    </p>
+                  </div>
+               </div>
+               <div className="pt-2 border-t border-white/5">
+                 <p className="text-[10px] text-slate-500 italic leading-snug">
+                   如果不勾选复选框，即使登录成功，系统也会因权限不足 (403) 被拦截。
+                 </p>
+               </div>
             </div>
           </div>
           <div className="flex flex-col w-full max-w-xs gap-3">
@@ -183,7 +197,7 @@ const App: React.FC = () => {
               onClick={() => handleSyncGoogleFit(true)}
               className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl shadow-indigo-600/30"
             >
-              重新连接并补全权限
+              重新连接并补全勾选
             </button>
             <button 
               onClick={() => setIsDataEntryOpen(true)}
@@ -241,12 +255,12 @@ const App: React.FC = () => {
       )}
 
       {errorToast && (
-        <div className="fixed bottom-32 left-6 right-6 z-[100] max-w-md mx-auto px-6 py-5 bg-slate-900/90 border border-rose-500/30 backdrop-blur-xl rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,1)] flex flex-col gap-2 animate-in slide-in-from-bottom-6 duration-400">
+        <div className="fixed bottom-32 left-6 right-6 z-[100] max-w-md mx-auto px-6 py-5 bg-slate-900/95 border border-rose-500/30 backdrop-blur-xl rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,1)] flex flex-col gap-2 animate-in slide-in-from-bottom-6 duration-400">
           <div className="flex items-center gap-2 text-rose-400">
              <TriangleAlert size={18} />
-             <span className="text-[11px] font-black uppercase tracking-[0.2em]">实验室警告</span>
+             <span className="text-[11px] font-black uppercase tracking-[0.2em]">实验室同步核心反馈</span>
           </div>
-          <span className="text-slate-200 text-[11px] font-bold leading-relaxed">{errorToast}</span>
+          <span className="text-slate-100 text-[11px] font-bold leading-relaxed">{errorToast}</span>
         </div>
       )}
 
