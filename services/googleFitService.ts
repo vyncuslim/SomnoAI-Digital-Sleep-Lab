@@ -36,7 +36,7 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("Google SDK 加载失败，请检查网络连接并刷新页面。");
+    throw new Error("Google SDK 加载失败，请检查网络。");
   }
 
   public async ensureClientInitialized(): Promise<void> {
@@ -73,17 +73,24 @@ export class GoogleFitService {
     return this.initPromise;
   }
 
+  /**
+   * 授权逻辑优化：
+   * 如果发生过 403，必须使用 forcePrompt=true 来强制显示权限勾选页面。
+   */
   async authorize(forcePrompt = false): Promise<string> {
-    if (forcePrompt) {
-      this.logout(); // Clear existing token to force a fresh session
-    }
-    
-    if (this.accessToken && !forcePrompt) return this.accessToken;
-    
     await this.ensureClientInitialized();
+    
+    // 如果是强制刷新（通常用于解决 403 或 401），先清除旧状态
+    if (forcePrompt) {
+      this.accessToken = null;
+      sessionStorage.removeItem('google_fit_token');
+    }
+
     return new Promise((resolve, reject) => {
       this.authPromise = { resolve, reject };
-      // prompt: 'consent' forces the user to re-grant permissions and see checkboxes
+      
+      // prompt: 'consent' 是解决“权限足但是 403”的关键
+      // 它确保用户能看到那些之前被漏选的复选框
       this.tokenClient.requestAccessToken({ 
         prompt: forcePrompt ? 'select_account consent' : '' 
       });
@@ -95,22 +102,23 @@ export class GoogleFitService {
     
     if (res.status === 401) {
       this.logout();
-      throw new Error("AUTH_EXPIRED: 令牌已过期或失效");
+      throw new Error("AUTH_EXPIRED");
     }
     
     if (res.status === 403) {
-      // Keep the token but note that it's partial? No, better to clear and force re-auth
-      // because the user needs to check the boxes they missed.
-      throw new Error("PERMISSION_DENIED: 权限不足。请在授权页面勾选所有敏感数据复选框。");
+      // 核心：如果是 403，说明当前的 Token 权限集不完整
+      // 必须让用户重新勾选权限，所以直接 logout 强制重新授权
+      this.logout();
+      throw new Error("PERMISSION_DENIED");
     }
     
     return res;
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    if (!this.accessToken) throw new Error("AUTH_EXPIRED: 令牌缺失");
+    if (!this.accessToken) throw new Error("AUTH_EXPIRED");
 
-    console.group("SomnoAI Lab: 深度信号检索模式");
+    console.group("SomnoAI Lab: 数据聚合同步");
     const now = new Date();
     const endTimeMillis = now.getTime();
     const startTimeMillis = endTimeMillis - 7 * 24 * 60 * 60 * 1000;
@@ -145,7 +153,6 @@ export class GoogleFitService {
       }
 
       if (!targetBucket) {
-        console.warn("SomnoAI Lab: 聚合分段为空，尝试 Session API...");
         const sessionUrl = `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(startTimeMillis).toISOString()}&endTime=${now.toISOString()}&activityType=72`;
         const sRes = await this.fetchWithAuth(sessionUrl, headers);
         const sData = await sRes.json();
@@ -157,7 +164,7 @@ export class GoogleFitService {
         }
         
         console.groupEnd();
-        throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。");
+        throw new Error("DATA_NOT_FOUND");
       }
 
       const sleepPoints = targetBucket.dataset[0].point;

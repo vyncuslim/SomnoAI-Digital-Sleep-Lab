@@ -24,7 +24,7 @@ const App: React.FC = () => {
 
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
-    setTimeout(() => setErrorToast(null), 8000);
+    setTimeout(() => setErrorToast(null), 10000); // 延长提示时间
   }, []);
 
   const refreshInsight = async (record: SleepRecord) => {
@@ -44,6 +44,7 @@ const App: React.FC = () => {
     setHasAttemptedSync(true);
     try {
       onProgress?.('authorizing');
+      // forcePrompt 为 true 时会强制 Google 弹出带有复选框的权限选择界面
       await googleFit.authorize(forcePrompt);
       
       setIsLoggedIn(true);
@@ -77,26 +78,29 @@ const App: React.FC = () => {
       await refreshInsight(updatedRecord);
       onProgress?.('success');
     } catch (err: any) {
-      console.error("Sync Error Details:", err);
+      console.error("Sync Error:", err);
       onProgress?.('error');
       
       const errMsg = err.message || "";
-      // Enhanced detection using .includes() to match error codes sent by googleFitService
-      if (errMsg.includes("AUTH_EXPIRED") || errMsg.includes("invalid_token")) {
+      
+      if (errMsg.includes("PERMISSION_DENIED")) {
+        // 关键点：403 意味着用户登录了但是没给具体数据的权限
         googleFit.logout();
         setIsLoggedIn(false);
-        setHasAttemptedSync(false); // Reset to allow re-authentication prompt
-        showToast("身份令牌已过期或失效。请重新接入 Google Fit 实验室以恢复数据同步。");
+        setHasAttemptedSync(false);
+        showToast("检测到 403 权限不足：请重新点击接入，并在 Google 授权页面【务必手动勾选】所有健康数据复选框！");
+      } else if (errMsg.includes("AUTH_EXPIRED")) {
+        googleFit.logout();
+        setIsLoggedIn(false);
+        setHasAttemptedSync(false);
+        showToast("登录已失效，请重新连接 Google 实验室。");
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
         setIsLoggedIn(true);
-        showToast("同步完成，但未发现睡眠信号。请确认手机端 Google Fit 应用已有最近的睡眠记录，且已完成数据同步。");
-      } else if (errMsg.includes("PERMISSION_DENIED")) {
-        showToast("同步权限受限。为了生成精准的睡眠图谱，请务必在授权页面勾选【查看睡眠数据】与【心率数据】。");
+        showToast("实验室：未在 Fit 中发现睡眠信号。请确认手机端已有记录并已开启数据同步。");
       } else {
-        showToast(errMsg || "实验室主干线路通信异常。请检查网络状态并尝试手动刷新同步。");
+        showToast("连接异常。请检查网络或点击按钮尝试强制重新校准。");
       }
       
-      // Re-throw to allow component-level handling (e.g., Dashboard banner)
       throw err;
     } finally {
       setIsLoading(false);
@@ -104,6 +108,7 @@ const App: React.FC = () => {
   }, [showToast]);
 
   useEffect(() => {
+    // 首次进入时尝试静默同步
     if (googleFit.hasToken() && !currentRecord && !isLoading && !hasAttemptedSync) {
       handleSyncGoogleFit(false);
     }
@@ -137,7 +142,7 @@ const App: React.FC = () => {
           <Loader2 className="animate-spin text-indigo-500" size={64} />
           <div className="space-y-2">
             <p className="text-xl font-black text-white tracking-tighter uppercase italic">实验室终端启动中</p>
-            <p className="text-slate-500 text-sm font-medium">正在建立加密隧道同步特征流...</p>
+            <p className="text-slate-500 text-sm font-medium">正在尝试安全刷新令牌并同步特征流...</p>
           </div>
         </div>
       );
@@ -159,17 +164,15 @@ const App: React.FC = () => {
             <Cloud size={80} className="text-indigo-400 mb-2" />
           </div>
           <div className="max-w-xs space-y-4">
-            <h2 className="text-3xl font-black text-white tracking-tight italic">特征信号未锁定</h2>
+            <h2 className="text-3xl font-black text-white tracking-tight italic">信号锁定失败</h2>
             <div className="p-5 bg-slate-900/60 border border-white/5 rounded-3xl text-left space-y-3 shadow-xl">
-               <div className="flex items-center gap-2 text-amber-400">
+               <div className="flex items-center gap-2 text-rose-400">
                  <ShieldCheck size={16} />
-                 <span className="text-[10px] font-black uppercase tracking-widest">同步校准指南</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest">权限校准指南</span>
                </div>
-               <ul className="text-[11px] text-slate-400 list-disc list-inside space-y-2 font-medium">
-                 <li><span className="text-slate-200">关键权限：</span>登录时务必勾选所有敏感健康数据复选框。</li>
-                 <li><span className="text-slate-200">Fit 状态：</span>请确认手机端 Google Fit 应用已有最近的睡眠记录。</li>
-                 <li><span className="text-slate-200">备选方案：</span>若无设备同步，可点击下方手动注入感知数据。</li>
-               </ul>
+               <p className="text-[11px] text-slate-400 font-medium">
+                 如果您已登录但看到 403 错误，这是因为 Google 默认不勾选敏感权限。请点击下方按钮，在弹出框中<span className="text-white font-bold">手动勾选所有复选框</span>。
+               </p>
             </div>
           </div>
           <div className="flex flex-col w-full max-w-xs gap-3">
@@ -177,7 +180,7 @@ const App: React.FC = () => {
               onClick={() => handleSyncGoogleFit(true)}
               className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl shadow-indigo-600/30"
             >
-              重新连接并授权
+              重新连接并完整授权
             </button>
             <button 
               onClick={() => setIsDataEntryOpen(true)}
@@ -236,9 +239,9 @@ const App: React.FC = () => {
 
       {errorToast && (
         <div className="fixed bottom-32 left-6 right-6 z-[100] max-w-md mx-auto px-6 py-5 bg-slate-900/90 border border-indigo-500/30 backdrop-blur-xl rounded-2xl shadow-[0_20px_80px_rgba(0,0,0,1)] flex flex-col gap-2 animate-in slide-in-from-bottom-6 duration-400">
-          <div className="flex items-center gap-2 text-indigo-400">
+          <div className="flex items-center gap-2 text-rose-400">
              <TriangleAlert size={18} />
-             <span className="text-[11px] font-black uppercase tracking-[0.2em]">系统反馈</span>
+             <span className="text-[11px] font-black uppercase tracking-[0.2em]">实验室警告</span>
           </div>
           <span className="text-slate-200 text-[11px] font-bold leading-relaxed">{errorToast}</span>
         </div>
