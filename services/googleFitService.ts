@@ -36,7 +36,7 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("GOOGLE_SDK_LOAD_FAILED: 无法加载 Google 身份服务，请检查网络或代理。");
+    throw new Error("GOOGLE_SDK_LOAD_FAILED: 无法加载 Google 身份服务，请检查网络。");
   }
 
   public async ensureClientInitialized(): Promise<void> {
@@ -46,21 +46,27 @@ export class GoogleFitService {
     this.initPromise = (async () => {
       try {
         await this.waitForGoogleReady();
+        console.log("SomnoAI: Initializing Google Token Client...");
+        
         this.tokenClient = google.accounts.oauth2.initTokenClient({
           client_id: CLIENT_ID,
           scope: SCOPES.join(" "),
           callback: (response: any) => {
+            console.log("SomnoAI: Received Auth Response", response);
             if (response.error) {
-              this.authPromise?.reject(new Error(response.error_description || response.error));
+              const errorMsg = response.error_description || response.error;
+              console.error("SomnoAI Auth Error Callback:", errorMsg);
+              this.authPromise?.reject(new Error(errorMsg));
               this.authPromise = null;
               return;
             }
+            
             this.accessToken = response.access_token;
             if (this.accessToken) {
               sessionStorage.setItem('google_fit_token', this.accessToken);
               this.authPromise?.resolve(this.accessToken);
             } else {
-              this.authPromise?.reject(new Error("MISSING_TOKEN: 授权响应中缺少访问令牌。"));
+              this.authPromise?.reject(new Error("MISSING_TOKEN: 响应中缺少访问令牌。"));
             }
             this.authPromise = null;
           }
@@ -76,12 +82,22 @@ export class GoogleFitService {
   async authorize(forcePrompt = false): Promise<string> {
     await this.ensureClientInitialized();
     
+    // 如果已有 Promise 在等待，先处理它
+    if (this.authPromise) {
+      this.authPromise.reject(new Error("REQUEST_CANCELLED: 新的授权请求已发起。"));
+    }
+
     if (forcePrompt || !this.accessToken) {
-      this.logout(); 
+      if (forcePrompt) this.logout(); // 强制模式下先登出
+      
       return new Promise((resolve, reject) => {
         this.authPromise = { resolve, reject };
+        console.log("SomnoAI: Requesting Access Token with prompt mode:", forcePrompt);
+        
+        // 对于未验证的应用，必须强制 prompt='select_account consent' 
+        // 这样用户才能看到权限勾选列表，并点击“高级”按钮
         this.tokenClient.requestAccessToken({ 
-          prompt: forcePrompt ? 'select_account consent' : '' 
+          prompt: forcePrompt ? 'select_account consent' : ''
         });
       });
     }
@@ -98,9 +114,8 @@ export class GoogleFitService {
     }
     
     if (res.status === 403) {
-      this.logout(); 
-      // Important: Specifically mention the checkbox issue for Google Fit
-      throw new Error("PERMISSION_DENIED: 虽然已登录，但您未在 Google 授权页面勾选「查看睡眠」或「查看心率」复选框。Google Fit 要求手动开启这些权限。");
+      // 特别注意：对于 Google Fit，403 通常意味着用户没有在授权页手动勾选对应的权限框
+      throw new Error("PERMISSION_DENIED: 您未在 Google 授权页面手动勾选「查看睡眠」或「查看心率」复选框。请重新授权并确保勾选所有权限。");
     }
     
     return res;

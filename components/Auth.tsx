@@ -28,11 +28,18 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
     setLocalError(null);
     try {
       await googleFit.ensureClientInitialized();
+      // 总是使用 forcePrompt=true 以确保在未验证阶段强制显示勾选列表
       const token = await googleFit.authorize(true); 
       if (token) onLogin(); 
     } catch (error: any) {
       console.error("Auth Failure:", error);
-      const cleanMsg = error.message?.replace("PERMISSION_DENIED: ", "") || "身份验证连接中断";
+      let cleanMsg = error.message?.replace("PERMISSION_DENIED: ", "") || "身份验证连接中断，请重试。";
+      
+      // 捕获常见的 OAuth 来源错误
+      if (cleanMsg.includes("idpiframe_initialization_failed") || cleanMsg.includes("origin_mismatch")) {
+        cleanMsg = "【域名未注册】请在 Google Cloud Console 中将当前域名添加到“已授权的 JavaScript 来源”列表中。";
+      }
+      
       setLocalError(cleanMsg);
     } finally {
       setIsLoggingIn(false);
@@ -90,7 +97,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
             <div className="p-5 bg-rose-500/10 rounded-2xl border border-rose-500/30 text-left flex gap-3 animate-in shake duration-500">
               <TriangleAlert size={18} className="text-rose-400 shrink-0" />
               <div className="space-y-1">
-                 <p className="text-[11px] text-rose-300 font-black leading-relaxed">连接被拦截</p>
+                 <p className="text-[11px] text-rose-300 font-black leading-relaxed">连接异常</p>
                  <p className="text-[10px] text-rose-300/70 font-medium leading-relaxed">{localError}</p>
               </div>
             </div>
@@ -119,10 +126,10 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
           </div>
 
           <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
-            <a href="https://vyncuslim.github.io/privacy.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            <a href="./privacy.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
               <FileText size={10} /> 隐私权政策
             </a>
-            <a href="https://vyncuslim.github.io/terms.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            <a href="./terms.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
               <ShieldCheck size={10} /> 服务条款
             </a>
           </div>
