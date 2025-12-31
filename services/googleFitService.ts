@@ -36,7 +36,7 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("Google SDK 加载失败，请检查网络。");
+    throw new Error("GOOGLE_SDK_LOAD_FAILED");
   }
 
   public async ensureClientInitialized(): Promise<void> {
@@ -60,7 +60,7 @@ export class GoogleFitService {
               sessionStorage.setItem('google_fit_token', this.accessToken);
               this.authPromise?.resolve(this.accessToken);
             } else {
-              this.authPromise?.reject(new Error("Missing access_token"));
+              this.authPromise?.reject(new Error("MISSING_TOKEN"));
             }
             this.authPromise = null;
           }
@@ -74,27 +74,24 @@ export class GoogleFitService {
   }
 
   /**
-   * 授权逻辑优化：
-   * 如果发生过 403，必须使用 forcePrompt=true 来强制显示权限勾选页面。
+   * 显式授权请求。
+   * 不再尝试静默刷新。如果 forcePrompt 为真，则强制触发带有权限勾选框的完整流程。
    */
   async authorize(forcePrompt = false): Promise<string> {
     await this.ensureClientInitialized();
     
-    // 如果是强制刷新（通常用于解决 403 或 401），先清除旧状态
-    if (forcePrompt) {
-      this.accessToken = null;
-      sessionStorage.removeItem('google_fit_token');
+    // 如果是强制提示，或者当前根本没有 Token，则发起请求
+    if (forcePrompt || !this.accessToken) {
+      this.logout(); // 清除现有可能失效的 Token
+      return new Promise((resolve, reject) => {
+        this.authPromise = { resolve, reject };
+        this.tokenClient.requestAccessToken({ 
+          prompt: forcePrompt ? 'select_account consent' : '' 
+        });
+      });
     }
 
-    return new Promise((resolve, reject) => {
-      this.authPromise = { resolve, reject };
-      
-      // prompt: 'consent' 是解决“权限足但是 403”的关键
-      // 它确保用户能看到那些之前被漏选的复选框
-      this.tokenClient.requestAccessToken({ 
-        prompt: forcePrompt ? 'select_account consent' : '' 
-      });
-    });
+    return this.accessToken;
   }
 
   private async fetchWithAuth(url: string, headers: any, options: RequestInit = {}) {
@@ -106,9 +103,9 @@ export class GoogleFitService {
     }
     
     if (res.status === 403) {
-      // 核心：如果是 403，说明当前的 Token 权限集不完整
-      // 必须让用户重新勾选权限，所以直接 logout 强制重新授权
-      this.logout();
+      // 403 明确意味着“已登录但未勾选权限”。
+      // 我们不在这里处理重定向，只抛出特定错误供 UI 层引导用户。
+      this.logout(); 
       throw new Error("PERMISSION_DENIED");
     }
     
@@ -118,7 +115,7 @@ export class GoogleFitService {
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
     if (!this.accessToken) throw new Error("AUTH_EXPIRED");
 
-    console.group("SomnoAI Lab: 数据聚合同步");
+    console.group("SomnoAI Lab: 信号捕获");
     const now = new Date();
     const endTimeMillis = now.getTime();
     const startTimeMillis = endTimeMillis - 7 * 24 * 60 * 60 * 1000;
