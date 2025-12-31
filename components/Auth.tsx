@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, CircleCheck, TriangleAlert, ShieldAlert } from 'lucide-react';
+import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, CircleCheck, TriangleAlert, ShieldAlert, CheckCircle2 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
@@ -29,6 +29,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
     
     try {
       await googleFit.ensureClientInitialized();
+      // Using true to force the consent screen
       const token = await googleFit.authorize(true); 
       if (token) onLogin(); 
     } catch (error: any) {
@@ -57,14 +58,29 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
 
       <GlassCard className="w-full max-w-md p-10 border-white/10 bg-slate-900/40 shadow-[0_40px_100px_rgba(0,0,0,0.6)] space-y-8 relative z-10 overflow-visible">
         <div className="space-y-6">
-          <div className="p-5 bg-indigo-500/5 rounded-3xl border border-indigo-500/20 text-left">
-            <div className="flex items-center gap-2 mb-2">
-              <CircleCheck size={16} className="text-indigo-400" />
-              <p className="text-[10px] font-black uppercase tracking-widest text-indigo-300">特征流接入指南</p>
+          <div className="p-5 bg-indigo-500/5 rounded-3xl border border-indigo-500/30 text-left space-y-4">
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={18} className="text-indigo-400" />
+              <p className="text-[11px] font-black uppercase tracking-widest text-indigo-300">关键：权限授予清单</p>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              请务必在授权页 <span className="text-white font-bold underline decoration-indigo-500">手动勾选所有数据复选框</span>。漏选将导致生理架构推演引擎无法接收信号。
-            </p>
+            <div className="space-y-2">
+              {[
+                "在 Google 授权页面点击「查看详细信息」",
+                "手动勾选「查看您的睡眠数据」",
+                "手动勾选「查看您的心率数据」",
+                "点击「继续」以建立数据隧道"
+              ].map((step, i) => (
+                <div key={i} className="flex items-start gap-3">
+                  <div className="mt-0.5"><CheckCircle2 size={12} className="text-indigo-500" /></div>
+                  <p className="text-[10px] text-slate-300 font-medium leading-tight">{step}</p>
+                </div>
+              ))}
+            </div>
+            <div className="pt-2 border-t border-white/5">
+              <p className="text-[10px] text-rose-400 font-bold leading-relaxed flex items-center gap-1.5">
+                <TriangleAlert size={12} /> 漏选复选框将导致 403 权限错误。
+              </p>
+            </div>
           </div>
 
           {showHint && !localError && (
@@ -82,7 +98,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
           {localError && (
             <div className="p-5 bg-rose-500/10 rounded-3xl border border-rose-500/30 text-left flex gap-3 animate-in shake duration-500">
               <TriangleAlert size={18} className="text-rose-400 shrink-0" />
-              <p className="text-[11px] text-rose-300 font-bold leading-relaxed">{localError}</p>
+              <p className="text-[11px] text-rose-300 font-bold leading-relaxed">
+                {localError.includes("PERMISSION_DENIED") 
+                  ? "权限被拒：请确保在 Google 界面手动勾选了所有数据框。" 
+                  : localError}
+              </p>
             </div>
           )}
 
@@ -103,7 +123,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
             <div className="flex items-start gap-3 px-4 py-1 opacity-40">
               <Info size={14} className="text-slate-400 mt-0.5 shrink-0" />
               <p className="text-[9px] text-slate-400 leading-snug italic uppercase tracking-widest">
-                提示：若无响应，请允许浏览器弹出窗口。
+                提示：若点击无反应，请检查浏览器是否拦截了弹出窗口。
               </p>
             </div>
           </div>

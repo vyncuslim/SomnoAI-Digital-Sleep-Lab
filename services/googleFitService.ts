@@ -74,27 +74,41 @@ export class GoogleFitService {
   }
 
   async authorize(forcePrompt = false): Promise<string> {
+    if (forcePrompt) {
+      this.logout(); // Clear existing token to force a fresh session
+    }
+    
     if (this.accessToken && !forcePrompt) return this.accessToken;
+    
     await this.ensureClientInitialized();
     return new Promise((resolve, reject) => {
       this.authPromise = { resolve, reject };
-      this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'select_account consent' : '' });
+      // prompt: 'consent' forces the user to re-grant permissions and see checkboxes
+      this.tokenClient.requestAccessToken({ 
+        prompt: forcePrompt ? 'select_account consent' : '' 
+      });
     });
   }
 
   private async fetchWithAuth(url: string, headers: any, options: RequestInit = {}) {
     const res = await fetch(url, { ...options, headers: { ...headers, ...options.headers } });
+    
     if (res.status === 401) {
-      throw new Error("AUTH_EXPIRED: 令牌已过期");
+      this.logout();
+      throw new Error("AUTH_EXPIRED: 令牌已过期或失效");
     }
+    
     if (res.status === 403) {
-      throw new Error("PERMISSION_DENIED: 权限不足");
+      // Keep the token but note that it's partial? No, better to clear and force re-auth
+      // because the user needs to check the boxes they missed.
+      throw new Error("PERMISSION_DENIED: 权限不足。请在授权页面勾选所有敏感数据复选框。");
     }
+    
     return res;
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    if (!this.accessToken) throw new Error("AUTH_EXPIRED: 令牌已过期");
+    if (!this.accessToken) throw new Error("AUTH_EXPIRED: 令牌缺失");
 
     console.group("SomnoAI Lab: 深度信号检索模式");
     const now = new Date();
@@ -103,7 +117,6 @@ export class GoogleFitService {
     const headers = { Authorization: `Bearer ${this.accessToken}`, "Content-Type": "application/json" };
 
     try {
-      // 1. 发起聚合请求 (这是获取睡眠分段最稳健的方式)
       const aggregateUrl = "https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate";
       const body = {
         aggregateBy: [
@@ -131,9 +144,8 @@ export class GoogleFitService {
         }
       }
 
-      // 2. 如果聚合分段为空，尝试 Session API (适配第三方 App 录入数据)
       if (!targetBucket) {
-        console.warn("SomnoAI Lab: 聚合分段为空，切换至 Session 嗅探模式...");
+        console.warn("SomnoAI Lab: 聚合分段为空，尝试 Session API...");
         const sessionUrl = `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(startTimeMillis).toISOString()}&endTime=${now.toISOString()}&activityType=72`;
         const sRes = await this.fetchWithAuth(sessionUrl, headers);
         const sData = await sRes.json();
@@ -141,15 +153,13 @@ export class GoogleFitService {
         if (sData.session && sData.session.length > 0) {
           sData.session.sort((a: any, b: any) => Number(b.startTimeMillis) - Number(a.startTimeMillis));
           const latestS = sData.session[0];
-          console.log(`SomnoAI Lab: 从 Session API 锁定最新会话: ${latestS.name}`);
           return await this.fetchRecordFromSession(latestS, headers);
         }
         
         console.groupEnd();
-        throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。请确认 Google Fit 账户已有最近的睡眠记录。");
+        throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。");
       }
 
-      // 3. 解析聚合数据
       const sleepPoints = targetBucket.dataset[0].point;
       const hrPoints = targetBucket.dataset[1].point;
       const calPoints = targetBucket.dataset[2].point;
@@ -178,7 +188,6 @@ export class GoogleFitService {
       const hrVals = hrPoints.map((p: any) => p.value[0].fpVal || p.value[0].intVal) || [];
       const heartRate: HeartRateData = hrVals.length > 0 ? {
         average: Math.round(hrVals.reduce((a: number, b: number) => a + b, 0) / hrVals.length),
-        // Fix: Use 'hrVals' instead of undefined 'vals' to calculate min and max heart rate.
         resting: Math.min(...hrVals), min: Math.min(...hrVals), max: Math.max(...hrVals),
         history: hrPoints.slice(-15).map((p: any) => ({
           time: new Date(Number(BigInt(p.startTimeNanos) / 1000000n)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),

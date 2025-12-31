@@ -72,7 +72,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
   const renderStatusDetails = () => {
     if (syncStatus === 'error') {
-      const isPermissionError = errorMessage?.includes('PERMISSION_DENIED') || !data.stages?.length;
+      const isPermissionError = errorMessage?.includes('PERMISSION_DENIED');
       const isAuthError = errorMessage?.includes('AUTH_EXPIRED');
       const isNoDataError = errorMessage?.includes('DATA_NOT_FOUND');
 
@@ -80,21 +80,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2">
             <span className="text-xs font-black uppercase tracking-[0.3em] text-rose-400">
-              {isAuthError ? '会话已过期' : isPermissionError ? '权限未完全授予' : isNoDataError ? '未见睡眠记录' : '实验室连接异常'}
+              {isAuthError ? '会话已过期' : isPermissionError ? '关键权限缺失' : isNoDataError ? '未见睡眠记录' : '实验室连接异常'}
             </span>
           </div>
           <p className="text-[10px] font-medium opacity-90 leading-relaxed max-w-xs">
             {isAuthError 
               ? '您的 Google 令牌已失效。请点击按钮重新授权连接。' 
               : isPermissionError 
-              ? '关键权限缺失：请在 Google 授权页面勾选【查看睡眠数据】和【心率数据】。' 
+              ? '检测到 403 权限错误。请务必在授权页面勾选【查看睡眠数据】复选框，否则无法提取信号。' 
               : isNoDataError 
               ? 'Google Fit 中尚无有效睡眠数据。请确认手机端 Fit 应用已有最近的睡眠图表。'
               : errorMessage || '终端连接丢失，无法从云端检索到有效的生理信号。'}
           </p>
           {(isAuthError || isPermissionError || isNoDataError) && (
             <div className="flex items-center gap-1.5 mt-1 text-[9px] font-black uppercase text-rose-300">
-              <Info size={10} /> 建议：点击右上角刷新重新触发授权隧道
+              <Info size={10} /> 建议：点击右上角刷新按钮强制重新触发授权隧道
             </div>
           )}
         </div>
