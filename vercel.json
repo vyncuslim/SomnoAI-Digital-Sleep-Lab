@@ -1,8 +1,7 @@
 
 {
-  "cleanUrls": true,
-  "trailingSlash": false,
   "rewrites": [
+    { "source": "/googlee47ef5d2eacdf45a.html", "destination": "/googlee47ef5d2eacdf45a.html" },
     { "source": "/privacy.html", "destination": "/privacy.html" },
     { "source": "/terms.html", "destination": "/terms.html" },
     { "source": "/(.*)", "destination": "/index.html" }

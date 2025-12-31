@@ -36,7 +36,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
       let cleanMsg = error.message?.replace("PERMISSION_DENIED: ", "") || "身份验证连接中断，请重试。";
       
       // 捕获常见的 OAuth 来源错误
-      if (cleanMsg.includes("idpiframe_initialization_failed") || cleanMsg.includes("origin_mismatch")) {
+      if (cleanMsg.includes("idpiframe_initialization_failed") || cleanMsg.includes("origin_mismatch") || cleanMsg.includes("unregistered_origin")) {
         cleanMsg = "【域名未注册】请在 Google Cloud Console 中将当前域名添加到“已授权的 JavaScript 来源”列表中。";
       }
       
@@ -55,7 +55,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
           <Moon className="text-indigo-400 fill-indigo-400/20" size={64} />
         </div>
         <div className="space-y-3">
-          <h1 className="text-5xl font-black tracking-tighter text-white italic drop-shadow-2xl">SomnoAI</h1>
+          <h1 className="text-4xl font-black tracking-tighter text-white italic drop-shadow-2xl leading-tight">SomnoAI Digital Sleep Lab</h1>
           <p className="text-slate-400 font-medium tracking-wide leading-relaxed px-4 text-xs">
             通过 Google Fit 生态聚合生理特征流，构建您的数字化睡眠实验室。
           </p>
@@ -126,10 +126,10 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
           </div>
 
           <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
-            <a href="./privacy.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            <a href="/privacy.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
               <FileText size={10} /> 隐私权政策
             </a>
-            <a href="./terms.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            <a href="/terms.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
               <ShieldCheck size={10} /> 服务条款
             </a>
           </div>

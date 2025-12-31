@@ -42,7 +42,7 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout, onLegalPage }) => 
   return (
     <div className="space-y-6 pb-24 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <header className="px-1">
-        <h1 className="text-3xl font-black tracking-tight text-white">设置</h1>
+        <h1 className="text-3xl font-black tracking-tight text-white leading-tight">SomnoAI Digital Sleep Lab</h1>
         <p className="text-slate-400 mt-1">实验室引擎与数据同步偏好</p>
       </header>
 
@@ -73,8 +73,8 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout, onLegalPage }) => 
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">法律与合规</h3>
         <GlassCard className="divide-y divide-white/5 py-2">
-          <SettingItem icon={FileText} label="隐私权政策" value="查看详细声明" color="indigo" href="./privacy.html" />
-          <SettingItem icon={Info} label="服务条款" value="查看使用约定" color="indigo" href="./terms.html" />
+          <SettingItem icon={FileText} label="隐私权政策" value="查看详细声明" color="indigo" href="/privacy.html" />
+          <SettingItem icon={Info} label="服务条款" value="查看使用约定" color="indigo" href="/terms.html" />
         </GlassCard>
       </div>
 
