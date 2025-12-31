@@ -24,18 +24,40 @@ const App: React.FC = () => {
   const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
-  // Handle URL parameters for Google Verification (e.g. ?page=privacy)
+  // Enhanced routing logic to handle different URL structures and avoid 404s
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const page = params.get('page');
-    if (page === 'privacy') {
-      setPrevView(activeView);
-      setActiveView('privacy');
-    } else if (page === 'terms') {
-      setPrevView(activeView);
-      setActiveView('terms');
-    }
-  }, []);
+    const handleRouting = () => {
+      const path = window.location.pathname.toLowerCase();
+      const params = new URLSearchParams(window.location.search);
+      const pageParam = params.get('page');
+
+      if (path === '/privacy' || path === '/privacy.html' || pageParam === 'privacy') {
+        // Use string comparison to avoid TS narrowing issues when checking against legal views
+        if ((activeView as string) !== 'privacy') {
+          // If we are coming from another legal view, preserve 'dashboard' as the back target
+          const isFromOtherLegal = (activeView as string) === 'terms';
+          setPrevView(isFromOtherLegal ? 'dashboard' : activeView);
+          setActiveView('privacy');
+        }
+      } else if (path === '/terms' || path === '/terms.html' || pageParam === 'terms') {
+        // Use string comparison to avoid TS narrowing issues when checking against legal views
+        if ((activeView as string) !== 'terms') {
+          // If we are coming from another legal view, preserve 'dashboard' as the back target
+          const isFromOtherLegal = (activeView as string) === 'privacy';
+          setPrevView(isFromOtherLegal ? 'dashboard' : activeView);
+          setActiveView('terms');
+        }
+      } else if (path === '/' || path === '/index.html' || path === '') {
+        if (activeView === 'privacy' || activeView === 'terms') {
+          setActiveView('dashboard');
+        }
+      }
+    };
+
+    handleRouting();
+    window.addEventListener('popstate', handleRouting);
+    return () => window.removeEventListener('popstate', handleRouting);
+  }, [activeView]);
 
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
@@ -43,10 +65,21 @@ const App: React.FC = () => {
   }, []);
 
   const navigateTo = (view: ViewType) => {
-    if (view === 'privacy' || view === 'terms') {
-      setPrevView(activeView);
-    }
+    if (view === activeView) return;
+    
+    setPrevView(activeView);
     setActiveView(view);
+    
+    // We update the URL to match the SPA clean path
+    const path = view === 'privacy' ? '/privacy' : view === 'terms' ? '/terms' : '/';
+    window.history.pushState({}, '', path);
+  };
+
+  const handleBackFromLegal = () => {
+    // Go back to the view we were on before visiting legal pages
+    const target = (prevView === 'privacy' || prevView === 'terms') ? 'dashboard' : prevView;
+    setActiveView(target);
+    window.history.pushState({}, '', '/');
   };
 
   const refreshInsight = async (record: SleepRecord) => {
@@ -147,11 +180,12 @@ const App: React.FC = () => {
     setCurrentRecord(null);
     setHistory([]);
     setActiveView('dashboard');
+    window.history.pushState({}, '', '/');
   };
 
   const renderView = () => {
     if (activeView === 'privacy' || activeView === 'terms') {
-      return <LegalView type={activeView} onBack={() => setActiveView(prevView)} />;
+      return <LegalView type={activeView} onBack={handleBackFromLegal} />;
     }
 
     if (isLoading && !currentRecord) {
@@ -265,16 +299,16 @@ const App: React.FC = () => {
       {showNav && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-8 pt-4 pointer-events-none">
           <div className="max-w-md mx-auto backdrop-blur-3xl bg-slate-900/80 border border-white/5 rounded-[2.5rem] p-2 flex justify-between shadow-[0_-10px_40px_rgba(0,0,0,0.5)] pointer-events-auto">
-            <button onClick={() => setActiveView('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>
+            <button onClick={() => navigateTo('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>
                <LayoutGrid size={22} /> <span className="text-[9px] font-black uppercase tracking-widest">实验室</span>
             </button>
-            <button onClick={() => setActiveView('calendar')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'calendar' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>
+            <button onClick={() => navigateTo('calendar')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'calendar' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>
                <CalendarIcon size={22} /> <span className="text-[9px] font-black uppercase tracking-widest">趋势图谱</span>
             </button>
-            <button onClick={() => setActiveView('assistant')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'assistant' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>
+            <button onClick={() => navigateTo('assistant')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'assistant' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>
                <Bot size={22} /> <span className="text-[9px] font-black uppercase tracking-widest">AI 智囊</span>
             </button>
-            <button onClick={() => setActiveView('profile')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'profile' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>
+            <button onClick={() => navigateTo('profile')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'profile' ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-400'}`}>
                <User size={22} /> <span className="text-[9px] font-black uppercase tracking-widest">设置</span>
             </button>
           </div>

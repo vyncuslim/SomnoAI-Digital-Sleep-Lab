@@ -46,6 +46,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
     }
   };
 
+  const handleLegalClick = (e: React.MouseEvent, page: 'privacy' | 'terms') => {
+    if (onLegalPage) {
+      e.preventDefault();
+      onLegalPage(page);
+    }
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
       <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-indigo-600/10 blur-[150px] rounded-full animate-pulse"></div>
@@ -126,10 +133,18 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
           </div>
 
           <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
-            <a href="/privacy.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            <a 
+              href="/privacy.html" 
+              onClick={(e) => handleLegalClick(e, 'privacy')}
+              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors"
+            >
               <FileText size={10} /> 隐私权政策
             </a>
-            <a href="/terms.html" target="_blank" className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors">
+            <a 
+              href="/terms.html" 
+              onClick={(e) => handleLegalClick(e, 'terms')}
+              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors"
+            >
               <ShieldCheck size={10} /> 服务条款
             </a>
           </div>

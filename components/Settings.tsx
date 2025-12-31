@@ -14,11 +14,20 @@ interface SettingsProps {
 export const Settings: React.FC<SettingsProps> = ({ onLogout, onLegalPage }) => {
   const SettingItem = ({ icon: Icon, label, value, color, onClick, href }: any) => {
     const Component = href ? 'a' : 'button';
+    const handleClick = (e: React.MouseEvent) => {
+      if (href && onLegalPage) {
+        e.preventDefault();
+        const page = href.includes('privacy') ? 'privacy' : 'terms';
+        onLegalPage(page as 'privacy' | 'terms');
+      } else if (onClick) {
+        onClick(e);
+      }
+    };
+
     return (
       <Component 
-        onClick={onClick} 
+        onClick={handleClick} 
         href={href}
-        target={href ? "_blank" : undefined}
         className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98] cursor-pointer"
       >
         <div className="flex items-center gap-4">
