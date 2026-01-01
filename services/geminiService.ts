@@ -1,12 +1,15 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
 const getAi = () => {
-  if (!process.env.API_KEY) {
+  // 使用更安全的检测方式获取 API_KEY
+  const env = (typeof process !== 'undefined' && process.env) ? process.env : (window as any).process?.env;
+  const apiKey = env?.API_KEY;
+
+  if (!apiKey) {
     throw new Error("Missing API_KEY in environment variables.");
   }
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return new GoogleGenAI({ apiKey: apiKey });
 };
 
 export const getSleepInsight = async (data: SleepRecord): Promise<string> => {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, TriangleAlert, ShieldAlert, CheckCircle2, ChevronDown, ExternalLink, FileText } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
@@ -28,16 +27,14 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
     setLocalError(null);
     try {
       await googleFit.ensureClientInitialized();
-      // 总是使用 forcePrompt=true 以确保在未验证阶段强制显示勾选列表
       const token = await googleFit.authorize(true); 
       if (token) onLogin(); 
     } catch (error: any) {
       console.error("Auth Failure:", error);
       let cleanMsg = error.message?.replace("PERMISSION_DENIED: ", "") || "身份验证连接中断，请重试。";
       
-      // 捕获常见的 OAuth 来源错误
       if (cleanMsg.includes("idpiframe_initialization_failed") || cleanMsg.includes("origin_mismatch") || cleanMsg.includes("unregistered_origin")) {
-        cleanMsg = "【域名未注册】请在 Google Cloud Console 中将当前域名添加到“已授权的 JavaScript 来源”列表中。";
+        cleanMsg = "【域名验证异常】请检查您的 Google Cloud Console JavaScript 来源配置是否包含此域名。";
       }
       
       setLocalError(cleanMsg);
@@ -64,37 +61,37 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
         <div className="space-y-3">
           <h1 className="text-4xl font-black tracking-tighter text-white italic drop-shadow-2xl leading-tight">SomnoAI Digital Sleep Lab</h1>
           <p className="text-slate-400 font-medium tracking-wide leading-relaxed px-4 text-xs">
-            通过 Google Fit 生态聚合生理特征流，构建您的数字化睡眠实验室。
+            数字化睡眠指标监控、AI 深度洞察与健康建议。
           </p>
         </div>
       </div>
 
       <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-900/40 shadow-[0_40px_100px_rgba(0,0,0,0.6)] space-y-6 relative z-10 overflow-visible">
         <div className="space-y-6">
-          <div className="p-6 bg-amber-500/5 rounded-3xl border border-amber-500/20 text-left space-y-4">
+          <div className="p-6 bg-indigo-500/5 rounded-3xl border border-indigo-500/10 text-left space-y-4">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-amber-500/20 rounded-lg">
-                <ShieldAlert size={16} className="text-amber-400" />
+              <div className="p-1.5 bg-indigo-500/20 rounded-lg">
+                <Info size={16} className="text-indigo-400" />
               </div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-amber-300">Google 授权页避坑指南</p>
+              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-300">Google Fit 连接说明</p>
             </div>
             <div className="space-y-3">
                <div className="flex gap-3 items-start">
-                 <div className="mt-1 w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center text-[10px] font-black text-amber-400 border border-amber-500/30">1</div>
-                 <p className="text-[11px] text-slate-200 font-bold leading-snug">
-                   若提示“应用未验证”：点击页面左下角的 <span className="text-white italic">高级 (Advanced)</span>，选择 <span className="text-white underline italic">转到 SomnoAI (不安全)</span>。
+                 <div className="mt-1 w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-indigo-500/30">1</div>
+                 <p className="text-[11px] text-slate-200 font-medium leading-snug">
+                   应用审核期间，若提示“未验证”，请点击页面下方的 <span className="text-white font-bold italic">高级 (Advanced)</span> 选项继续。
                  </p>
                </div>
                <div className="flex gap-3 items-start">
-                 <div className="mt-1 w-5 h-5 rounded-full bg-rose-500 flex items-center justify-center text-[10px] font-black text-white shadow-[0_0_10px_rgba(244,63,94,0.4)]">2</div>
-                 <p className="text-[11px] text-rose-300 font-black leading-snug">
-                   点击中间的 <span className="text-white italic">“查看已拥有的部分访问权限”</span>，<span className="underline decoration-rose-500 decoration-2 underline-offset-4">手动勾选全部复选框</span>。
+                 <div className="mt-1 w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-indigo-500/30">2</div>
+                 <p className="text-[11px] text-slate-200 font-medium leading-snug">
+                   在权限确认页，请展开 <span className="text-white italic">“查看权限”</span> 列表并确保勾选所有健康数据项。
                  </p>
                </div>
                <div className="flex gap-3 items-start">
-                 <div className="mt-1 w-5 h-5 rounded-full bg-amber-500/20 flex items-center justify-center text-[10px] font-black text-amber-400 border border-amber-500/30">3</div>
-                 <p className="text-[11px] text-slate-200 font-bold leading-snug">
-                   滑动到底部点击 <span className="text-white italic">继续 (Continue)</span>。
+                 <div className="mt-1 w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-indigo-500/30">3</div>
+                 <p className="text-[11px] text-slate-200 font-medium leading-snug">
+                   点击 <span className="text-white italic">继续 (Continue)</span> 完成实验室信号流同步。
                  </p>
                </div>
             </div>
@@ -104,7 +101,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
             <div className="p-5 bg-rose-500/10 rounded-2xl border border-rose-500/30 text-left flex gap-3 animate-in shake duration-500">
               <TriangleAlert size={18} className="text-rose-400 shrink-0" />
               <div className="space-y-1">
-                 <p className="text-[11px] text-rose-300 font-black leading-relaxed">连接异常</p>
+                 <p className="text-[11px] text-rose-300 font-black leading-relaxed">连接状态异常</p>
                  <p className="text-[10px] text-rose-300/70 font-medium leading-relaxed">{localError}</p>
               </div>
             </div>
@@ -121,27 +118,27 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
               }`}
             >
               {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} className="fill-indigo-600 text-indigo-600" />}
-              <span>{isLoggingIn ? '正在校准实验室隧道...' : '接入 Google Fit 实验室'}</span>
+              <span>{isLoggingIn ? '正在同步实验室...' : '接入 Google Fit'}</span>
             </button>
 
             <button 
               onClick={onGuest}
               className="w-full flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-400 font-black transition-all text-[10px] uppercase tracking-[0.4em] group"
             >
-              以访客身份浏览实验室 <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+              访客模式浏览 <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
             </button>
           </div>
 
           <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
             <a 
-              href="/privacy.html" 
+              href="/privacy" 
               onClick={(e) => handleLegalClick(e, 'privacy')}
               className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors"
             >
-              <FileText size={10} /> 隐私权政策
+              <FileText size={10} /> 隐私政策
             </a>
             <a 
-              href="/terms.html" 
+              href="/terms" 
               onClick={(e) => handleLegalClick(e, 'terms')}
               className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors"
             >
@@ -153,7 +150,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
       
       <div className="mt-12 flex items-center gap-4 text-slate-800 text-[10px] font-black uppercase tracking-[0.6em] opacity-40">
         <Lock size={12} />
-        Secure Lab Encryption
+        Secure Connection Established
       </div>
     </div>
   );

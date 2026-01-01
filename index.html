@@ -1,10 +1,22 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SomnoAI Digital Sleep Lab</title>
+    <title>SomnoAI Digital Sleep Lab - 数字化睡眠实验平台</title>
+    <meta name="description" content="它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验服务。" />
     <meta name="google-site-verification" content="uYmJ_568JPu-rjsyRzA2KU2vQpiQDOvN97G5Qgd5-38" />
+    
+    <!-- Open Graph for Brand Verification -->
+    <meta property="og:title" content="SomnoAI Digital Sleep Lab" />
+    <meta property="og:description" content="全方位的数字化睡眠实验与 AI 健康洞察服务。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://somno-ai-digital-sleep-lab.vercel.app/" />
+
+    <script>
+      // 预先注入 process 对象防止 ReferenceError
+      window.process = window.process || { env: {} };
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -47,7 +59,7 @@
 <body>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
-    <!-- Critical for Google Verification: Static Links -->
+    <!-- 法律页面与域名验证关键入口 -->
     <footer style="position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border-width: 0;">
         <a href="/privacy">Privacy Policy</a>
         <a href="/terms">Terms of Service</a>

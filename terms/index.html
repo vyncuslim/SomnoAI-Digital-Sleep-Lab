@@ -9,52 +9,80 @@
     <style>
         body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; margin: 0; }
         .glass { backdrop-filter: blur(16px); background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); }
+        section h2 { border-left: 4px solid #818cf8; padding-left: 1rem; margin-bottom: 1rem; }
     </style>
 </head>
 <body class="p-6 md:p-12 min-h-screen">
-    <div class="max-w-3xl mx-auto space-y-12">
+    <div class="max-w-4xl mx-auto space-y-12">
         <header class="space-y-4">
             <a href="/" class="text-indigo-400 font-bold text-sm uppercase tracking-widest hover:text-indigo-300 transition-colors inline-flex items-center gap-2">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
                 返回主页
             </a>
             <h1 class="text-4xl font-black italic tracking-tighter text-white">服务条款 (Terms of Service)</h1>
-            <p class="text-slate-500 text-xs font-black uppercase tracking-[0.2em]">生效日期：2024年3月20日</p>
+            <p class="text-slate-500 text-xs font-black uppercase tracking-[0.2em]">生效日期：2024年3月20日 | 版本：1.1</p>
         </header>
 
-        <div class="glass p-8 rounded-[2.5rem] space-y-10 leading-relaxed text-slate-300 shadow-2xl">
+        <div class="glass p-8 md:p-12 rounded-[2.5rem] space-y-12 leading-relaxed text-slate-300 shadow-2xl">
             <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">1. 服务协议</h2>
-                <p>欢迎使用 SomnoAI Digital Sleep Lab。访问或使用本服务，即表示您同意遵守本条款。本平台是一个用于个人睡眠数据可视化与 AI 洞察的数字化实验环境。</p>
+                <h2 class="text-xl font-bold text-white italic">1. 协议的接受</h2>
+                <p>欢迎访问 SomnoAI Digital Sleep Lab。访问或使用本应用，即表示您已阅读、理解并同意受本服务条款的约束。如果您不同意本条款的任何部分，请立即停止使用本应用。</p>
             </section>
 
             <section class="space-y-4">
-                <div class="p-6 bg-amber-500/10 border border-amber-500/20 rounded-3xl">
-                    <h2 class="text-sm font-black uppercase tracking-widest text-amber-400 mb-2">2. 医疗免责声明</h2>
-                    <p class="text-xs text-amber-300/80 font-bold leading-relaxed italic">
-                        本应用提供的任何数据、分析及 AI 建议仅供参考。我们并非医疗机构，本服务不能替代专业的医疗诊断。做出任何健康决策前，请务必咨询持有执照的医生。
+                <div class="p-8 bg-amber-500/10 border border-amber-500/20 rounded-[2rem] space-y-4">
+                    <div class="flex items-center gap-3 text-amber-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 14 4-4"/><path d="M3.34 19a10 10 0 1 1 17.32 0"/><path d="m9.07 13 4.33-4.33a2 2 0 0 1 2.83 0l.03.03a2 2 0 0 1 0 2.83L11.93 16a2 2 0 0 1-2.83 0l-.03-.03a2 2 0 0 1 0-2.83Z"/><path d="m14 10 4-4"/></svg>
+                        <h2 class="text-lg font-black uppercase tracking-widest m-0 border-none p-0">2. 核心医疗免责声明</h2>
+                    </div>
+                    <p class="text-sm text-amber-200/90 font-bold italic leading-relaxed">
+                        本应用（SomnoAI Digital Sleep Lab）提供的所有内容，包括但不限于睡眠分数、生理图表、AI 生成的洞察和建议，仅供个人信息参考和一般健康管理之用。本服务不是医疗设备，也不提供任何形式的医疗诊断、建议或治疗方案。
+                    </p>
+                    <p class="text-xs text-amber-200/70 leading-relaxed">
+                        在根据本应用的数据做出任何生活方式调整、药物改变或进行任何医疗决策前，您必须咨询持有执照的医生或其他专业医疗人员。严禁将本应用的数据用于紧急情况监测或危及生命的情况。
                     </p>
                 </div>
             </section>
 
             <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">3. Google Fit 数据集成</h2>
-                <p>通过授权 Google Fit 同步，您确认允许本应用以“只读”方式访问您的睡眠、心率和代谢数据。本应用不对此类第三方数据的准确性负责。</p>
+                <h2 class="text-xl font-bold text-white italic">3. 服务说明</h2>
+                <p>SomnoAI 是一个数字化的个人睡眠实验平台，其功能包括：</p>
+                <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li>集成 Google Fit 数据进行可视化展示。</li>
+                    <li>使用生成式 AI（Google Gemini）进行数据解释。</li>
+                    <li>提供基于历史趋势的睡眠质量评估。</li>
+                </ul>
+                <p>我们保留随时修改、暂停或终止本服务（或其任何部分）的权利，恕不另行通知。</p>
             </section>
 
             <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">4. 用户责任</h2>
-                <p>您不得利用本服务从事违法行为。本应用旨在提升用户对睡眠健康的认知，而非作为诊断工具使用。</p>
+                <h2 class="text-xl font-bold text-white italic">4. Google API 的使用</h2>
+                <p>本应用依赖 Google Fit API 获取您的健康指标。您理解并同意：</p>
+                <ul class="list-disc list-inside space-y-2 ml-4">
+                    <li>本应用对 Google 平台数据的准确性、完整性或可用性不承担责任。</li>
+                    <li>您必须遵守 Google 自己的服务条款和隐私政策。</li>
+                    <li>任何因 Google API 故障导致的数据同步中断属于第三方责任范围。</li>
+                </ul>
             </section>
 
             <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">5. 联系方式</h2>
-                <p>如有任何疑问，请联系我们的实验维护团队：<br />
-                <a href="mailto:lynnesom26@gmail.com" class="text-indigo-400 font-bold underline">lynnesom26@gmail.com</a></p>
+                <h2 class="text-xl font-bold text-white italic">5. 知识产权</h2>
+                <p>本应用的所有代码、设计、品牌资产、界面逻辑及内容（不包括用户个人健康数据）均为 SomnoAI Digital Sleep Lab 开发者所有，受国际著作权及商标法保护。未经明确书面许可，严禁复制、逆向工程或分发。</p>
             </section>
 
-            <footer class="pt-8 border-t border-white/5">
-                <p class="text-[10px] text-slate-600 font-black uppercase tracking-widest">© 2024 SomnoAI Digital Sleep Lab. 版权所有.</p>
+            <section class="space-y-4">
+                <h2 class="text-xl font-bold text-white italic">6. 责任限制</h2>
+                <p>在法律允许的最大范围内，本应用及其开发者不对任何因使用或无法使用本服务而产生的直接、间接、偶发或后果性损害承担责任。本应用按“原样”和“可用性”提供，不提供任何明示或暗示的保证。</p>
+            </section>
+
+            <section class="space-y-4">
+                <h2 class="text-xl font-bold text-white italic">7. 终止</h2>
+                <p>如果您违反本条款，我们有权立即终止您对本服务的访问。您也可以随时通过清除浏览器缓存并撤销 Google Fit 授权来停止使用服务。</p>
+            </section>
+
+            <footer class="pt-8 border-t border-white/5 space-y-4">
+                <p class="text-xs text-slate-400">如有疑问或需进行法律沟通，请垂询：<a href="mailto:lynnesom26@gmail.com" class="text-indigo-400 font-bold">lynnesom26@gmail.com</a></p>
+                <p class="text-[10px] text-slate-600 font-black uppercase tracking-widest">© 2024 SomnoAI Digital Sleep Lab. All rights reserved.</p>
             </footer>
         </div>
     </div>
