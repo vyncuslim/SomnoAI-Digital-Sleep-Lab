@@ -7,82 +7,111 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; margin: 0; }
-        .glass { backdrop-filter: blur(16px); background: rgba(30, 41, 59, 0.5); border: 1px solid rgba(255, 255, 255, 0.1); }
-        section h2 { border-left: 4px solid #6366f1; padding-left: 1rem; margin-bottom: 1rem; }
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; margin: 0; line-height: 1.8; }
+        .glass { backdrop-filter: blur(24px); background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); }
+        section h2 { border-left: 5px solid #6366f1; padding-left: 1.25rem; margin-top: 2.5rem; margin-bottom: 1.5rem; font-style: italic; color: #fff; }
+        p, li { color: #94a3b8; font-size: 0.95rem; }
+        strong { color: #e2e8f0; }
     </style>
 </head>
-<body class="p-6 md:p-12 min-h-screen">
-    <div class="max-w-4xl mx-auto space-y-12">
-        <header class="space-y-4">
-            <a href="/" class="text-indigo-400 font-bold text-sm uppercase tracking-widest hover:text-indigo-300 transition-colors inline-flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
-                返回主页
+<body class="p-6 md:p-16 lg:p-24 min-h-screen">
+    <div class="max-w-5xl mx-auto space-y-16">
+        <header class="space-y-6">
+            <a href="/" class="text-indigo-400 font-bold text-sm uppercase tracking-widest hover:text-indigo-300 transition-all inline-flex items-center gap-2 group">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6"/></svg>
+                返回实验室
             </a>
-            <h1 class="text-4xl font-black italic tracking-tighter text-white">隐私权政策 (Privacy Policy)</h1>
-            <p class="text-slate-500 text-xs font-black uppercase tracking-[0.2em]">生效日期：2024年3月20日 | 最近更新：2024年3月22日</p>
+            <h1 class="text-5xl font-black italic tracking-tighter text-white leading-tight">隐私权政策<br><span class="text-indigo-500/80 text-3xl not-italic font-medium">Privacy Policy</span></h1>
+            <div class="flex flex-wrap gap-4 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
+                <span>版本号：v2024.03.R3</span>
+                <span>|</span>
+                <span>最后修订：2024年3月22日</span>
+            </div>
         </header>
 
-        <div class="glass p-8 md:p-12 rounded-[2.5rem] space-y-12 leading-relaxed text-slate-300 shadow-2xl relative overflow-hidden">
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">1. 引言</h2>
-                <p>SomnoAI Digital Sleep Lab（以下简称“本应用”）非常重视您的隐私。本政策旨在说明我们如何收集、使用、存储及保护您的健康数据。本应用是一个纯前端驱动的实验性工具，旨在通过可视化与 AI 洞察提升您的睡眠健康意识。</p>
+        <div class="glass p-10 md:p-20 rounded-[3rem] shadow-[0_60px_120px_-20px_rgba(0,0,0,0.8)] relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500"></div>
+            
+            <section>
+                <h2>1. 我们如何看待您的隐私</h2>
+                <p>SomnoAI Digital Sleep Lab（以下简称“本应用”或“我们”）深知健康数据的敏感性。本应用被设计为一个<strong>“端侧优先” (Client-Side First)</strong> 的实验平台。我们的核心价值观是：您的数据属于您，且仅属于您的设备。我们不会在任何云端服务器上持久化存储您的原始生理信号。</p>
             </section>
 
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">2. 数据收集范围与目的</h2>
-                <p>我们仅在您通过 Google OAuth 授权后，访问以下特定范围的健康数据：</p>
-                <ul class="list-disc list-inside space-y-2 ml-4 text-slate-400">
-                  <li><strong>睡眠分段 (Sleep segments)</strong>：用于重构您的睡眠架构图谱（如深睡、REM、浅睡）。</li>
-                  <li><strong>心率数据 (Heart rate)</strong>：用于分析睡眠期间的静息心率趋势。</li>
-                  <li><strong>能量消耗 (Calories expended)</strong>：用于评估日间代谢与睡眠质量的关联。</li>
-                </ul>
-                <p>收集上述数据的唯一目的是在您的浏览器端生成个人健康洞察和可视化报告。</p>
-            </section>
-
-            <section class="space-y-4">
-                <div class="p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl">
-                    <h2 class="text-sm font-black uppercase tracking-widest text-indigo-400 mb-2">3. Google API 有限使用政策合规声明</h2>
-                    <p class="text-xs text-indigo-300 font-medium leading-relaxed italic">
-                        SomnoAI 对从 Google API 接收到的信息的使用和传输将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" class="underline">Google API 服务用户数据政策</a>，包括其“有限使用”要求。我们不会将您的 Google Fit 数据用于广告、用户分析或任何与增强本应用核心功能无关的目的。
-                    </p>
-                </div>
-            </section>
-
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">4. 数据存储与共享</h2>
-                <p><strong>零服务器存储：</strong>本应用不设任何后端服务器。所有从 Google Fit 提取的数据仅在您浏览器的 SessionStorage 中进行临时缓存，一旦您关闭标签页或点击“退出”，数据即被销毁。</p>
-                <p><strong>禁止第三方共享：</strong>我们绝不会向任何第三方（包括广告商、数据经纪人或保险商）出售、租赁或披露您的健康数据。您的数据永远保留在您的设备本地。</p>
-            </section>
-
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">5. AI 处理说明</h2>
-                <p>本应用使用 Google Gemini API 生成睡眠建议。在此过程中，我们会将匿名化的指标（如睡眠分数、心率数值）发送至 Gemini 引擎进行逻辑推演。我们不会在发送给 AI 的 Prompt 中包含您的个人身份信息（如姓名或电子邮箱）。</p>
-            </section>
-
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">6. 您的权利与选择</h2>
-                <p>您可以随时：</p>
-                <ul class="list-disc list-inside space-y-2 ml-4">
-                    <li>拒绝授权或在授权时取消勾选特定的数据类型。</li>
-                    <li>在应用设置中点击“退出并重载”以清除所有本地缓存。</li>
-                    <li>在您的 <a href="https://myaccount.google.com/permissions" class="text-indigo-400 underline">Google 账号设置</a> 中撤销对 SomnoAI 的全部访问权限。</li>
-                </ul>
-            </section>
-
-            <section class="space-y-4">
-                <h2 class="text-xl font-bold text-white italic">7. 政策变更</h2>
-                <p>我们可能会不时更新本隐私权政策。任何变更都将通过在本页面发布新政策并更新“生效日期”的方式通知您。建议您定期查看。</p>
-            </section>
-
-            <footer class="pt-8 border-t border-white/5 flex flex-col gap-4">
-                <div class="flex items-center gap-3">
-                    <div class="p-2 bg-indigo-500/10 rounded-full text-indigo-400">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5C2 7 4 5 6.5 5H18c2.2 0 4 1.8 4 4v8Z"/><path d="m22 7-10.8 7L2 7"/></svg>
+            <section>
+                <h2>2. 数据收集深度说明</h2>
+                <p>当且仅当您明确点击“接入 Google Fit”并完成 OAuth 授权后，我们才会请求访问以下作用域 (Scopes) 下的数据：</p>
+                <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="p-6 bg-white/5 rounded-3xl border border-white/5">
+                        <h3 class="text-indigo-400 font-bold mb-3">睡眠架构数据</h3>
+                        <p class="text-sm">访问 <code>fitness.sleep.read</code> 以提取睡眠分段。这包括您入睡、醒来以及处于深睡、REM、浅睡阶段的精确时间戳，用于生成睡眠架构图谱。</p>
                     </div>
-                    <p class="text-xs text-slate-400 font-bold">隐私合规垂询：<a href="mailto:lynnesom26@gmail.com" class="text-indigo-400">lynnesom26@gmail.com</a></p>
+                    <div class="p-6 bg-white/5 rounded-3xl border border-white/5">
+                        <h3 class="text-rose-400 font-bold mb-3">生物节律与代谢数据</h3>
+                        <p class="text-sm">访问 <code>fitness.heart_rate.read</code> 和 <code>fitness.activity.read</code>。我们提取静息心率与周期能耗数值，以分析代谢效率对睡眠恢复的影响。</p>
+                    </div>
                 </div>
-                <p class="text-[10px] text-slate-600 font-black uppercase tracking-widest">© 2024 SomnoAI Digital Sleep Lab. 版权所有.</p>
+            </section>
+
+            <section>
+                <div class="p-8 bg-indigo-600/10 border border-indigo-500/30 rounded-[2.5rem] space-y-6">
+                    <h2 class="mt-0 border-none p-0 text-indigo-300">3. Google API 有限使用政策 (Limited Use)</h2>
+                    <p class="text-indigo-100 font-medium leading-relaxed italic">
+                        本应用对从 Google API 接收到的信息的使用和传输将严格遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" class="text-white underline decoration-indigo-400">Google API 服务用户数据政策</a>，包括其“有限使用”要求：
+                    </p>
+                    <ul class="list-disc list-inside space-y-3 text-indigo-200/80 text-sm">
+                        <li><strong>不用于广告</strong>：绝不将您的 Google Fit 数据共享或出售给广告平台、数据经纪人或任何第三方营销机构。</li>
+                        <li><strong>不用于个性化推荐</strong>：数据仅用于本应用内显示的睡眠洞察，不会用于构建您的跨平台广告画像。</li>
+                        <li><strong>不用于信贷/保险</strong>：您的健康指标不会被用于评估您的信贷资格、保险定价或任何具有法律效力的决定。</li>
+                    </ul>
+                </div>
+            </section>
+
+            <section>
+                <h2>4. 数据处理逻辑与 AI 引擎</h2>
+                <p>本应用集成了 Google Gemini 系列模型（如 gemini-3-flash-preview）来生成个性化的睡眠洞察：</p>
+                <ul class="list-disc list-inside space-y-2 mt-4 ml-4">
+                    <li><strong>匿名化处理</strong>：在发送数据给 AI 引擎前，我们会去除所有身份识别符（如姓名、邮箱、地理位置）。</li>
+                    <li><strong>仅处理指标</strong>：AI 仅接收数值化的睡眠分数、心率均值和能量消耗百分比，而非原始的生物波形数据。</li>
+                    <li><strong>非训练声明</strong>：我们通过 API 配置确保您的数据不会被用于训练 Google 的基础大型语言模型。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>5. 数据存储、安全与生命周期</h2>
+                <p><strong>临时性存储：</strong>为了提升交互流畅度，我们会将提取的数据临时缓存于浏览器的 <code>sessionStorage</code> 中。这种存储方式具有临时性，当您关闭浏览器标签页或手动点击“退出”时，缓存将被操作系统自动抹除。</p>
+                <p><strong>传输安全：</strong>所有从 Google 服务器到您浏览器的通信均采用 <strong>TLS 1.2/1.3 加密协议</strong>。在数据流经本应用的前端逻辑时，始终处于隔离的沙箱环境内。</p>
+            </section>
+
+            <section>
+                <h2>6. 用户的绝对控制权</h2>
+                <p>您可以随时行使以下权利：</p>
+                <ul class="list-disc list-inside space-y-2 mt-4 ml-4">
+                    <li><strong>访问与导出</strong>：您可以在应用界面实时查看所有提取的数据项。</li>
+                    <li><strong>撤销授权</strong>：随时在您的 <a href="https://myaccount.google.com/permissions" class="text-indigo-400 underline">Google 账号安全设置</a> 中撤销对 SomnoAI 的授权，撤销后应用将立即失去访问权限。</li>
+                    <li><strong>一键抹除</strong>：点击应用内“设置”->“退出并重载”，将立即清除本地所有 Session 缓存。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2>7. 儿童隐私保护</h2>
+                <p>本应用主要面向追求健康生活的成年用户（18岁及以上）。我们不会故意收集 13 岁以下儿童（或您所在司法管辖区规定的相关年龄）的个人数据。如果您发现有未成年人未经授权使用本应用，请通过下方邮件联系我们。</p>
+            </section>
+
+            <footer class="mt-20 pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
+                <div class="space-y-4">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
+                        </div>
+                        <div>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">隐私权与合规专用通道</p>
+                            <a href="mailto:lynnesom26@gmail.com" class="text-lg font-bold text-white hover:text-indigo-400 transition-colors">lynnesom26@gmail.com</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="text-right">
+                    <p class="text-[10px] text-slate-600 font-black uppercase tracking-[0.4em]">© 2024 SomnoAI Digital Sleep Lab.<br>Built with Integrity for Health Sovereignty.</p>
+                </div>
             </footer>
         </div>
     </div>
