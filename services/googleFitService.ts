@@ -170,15 +170,21 @@ export class GoogleFitService {
         }
         
         console.groupEnd();
-        throw new Error("DATA_NOT_FOUND: 权限正常，但 Fit 中最近 7 天没有任何睡眠数据。");
+        throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。请确认 Google Fit 账户已有最近的睡眠记录。");
       }
 
-      const sleepPoints = targetBucket.dataset[0].point;
+      const allSleepPoints = targetBucket.dataset[0].point;
+      
+      if (!allSleepPoints || allSleepPoints.length === 0) {
+        console.groupEnd();
+        throw new Error("DATA_NOT_FOUND: 未检测到睡眠信号。请确认 Google Fit 账户已有最近的睡眠记录。");
+      }
+
       const hrPoints = targetBucket.dataset[1].point;
       const calPoints = targetBucket.dataset[2].point;
 
       let deep = 0, rem = 0, awake = 0;
-      const stages: SleepStage[] = sleepPoints.map((p: any) => {
+      const stages: SleepStage[] = allSleepPoints.map((p: any) => {
         const type = p.value[0].intVal;
         const s = Number(BigInt(p.startTimeNanos) / 1000000n);
         const e = Number(BigInt(p.endTimeNanos) / 1000000n);
@@ -192,8 +198,8 @@ export class GoogleFitService {
         return { name, duration: d, startTime: new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
       });
 
-      const firstPoint = sleepPoints[0];
-      const lastPoint = sleepPoints[sleepPoints.length - 1];
+      const firstPoint = allSleepPoints[0];
+      const lastPoint = allSleepPoints[allSleepPoints.length - 1];
       const sessionStartMs = Number(BigInt(firstPoint.startTimeNanos) / 1000000n);
       const sessionEndMs = Number(BigInt(lastPoint.endTimeNanos) / 1000000n);
       const totalDuration = Math.round((sessionEndMs - sessionStartMs) / 60000);
