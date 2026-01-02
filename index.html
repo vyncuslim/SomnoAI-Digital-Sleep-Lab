@@ -63,6 +63,19 @@
             border-bottom: 1px solid #818cf8;
         }
         .dev-info { margin-top: 1.5rem; opacity: 0.6; font-size: 0.7rem; font-weight: 600; }
+
+        /* Custom high-end UI Utilities */
+        .glass-morphism {
+            backdrop-filter: blur(20px);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+        }
+        .text-gradient {
+            background: linear-gradient(to right, #818cf8, #c084fc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
     </style>
 <script type="importmap">
 {
@@ -72,7 +85,10 @@
     "react/": "https://esm.sh/react@^19.2.3/",
     "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
     "recharts": "https://esm.sh/recharts@2.15.0",
-    "lucide-react": "https://esm.sh/lucide-react@0.470.0"
+    "lucide-react": "https://esm.sh/lucide-react@0.470.0",
+    "framer-motion": "https://esm.sh/framer-motion@^11.11.11",
+    "clsx": "https://esm.sh/clsx@^2.1.1",
+    "tailwind-merge": "https://esm.sh/tailwind-merge@^2.5.4"
   }
 }
 </script>
@@ -84,7 +100,6 @@
     <footer class="legal-footer">
         <div>&copy; 2024 SomnoAI Digital Sleep Lab. All rights reserved.</div>
         <div class="mt-4">
-            <!-- Ensure href matches vercel.json routes for static serving -->
             <a href="/privacy">隐私权政策 (Privacy Policy)</a>
             <a href="/terms">服务条款 (Terms of Service)</a>
         </div>

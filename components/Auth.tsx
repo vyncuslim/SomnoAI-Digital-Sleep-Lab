@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { Moon, ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
@@ -29,12 +29,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
       if (token) onLogin(); 
     } catch (error: any) {
       console.error("Auth Failure:", error);
-      let cleanMsg = error.message?.replace("PERMISSION_DENIED: ", "") || "身份验证连接中断，请重试。";
-      
-      if (cleanMsg.includes("idpiframe_initialization_failed") || cleanMsg.includes("origin_mismatch") || cleanMsg.includes("unregistered_origin")) {
-        cleanMsg = "【域名验证异常】请检查您的 Google Cloud Console JavaScript 来源配置是否包含此域名。";
-      }
-      
+      let cleanMsg = error.message?.replace("PERMISSION_DENIED: ", "") || "身份验证失败";
       setLocalError(cleanMsg);
     } finally {
       setIsLoggingIn(false);
@@ -43,108 +38,117 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
-      <div className="absolute top-[-10%] left-[-10%] w-[70%] h-[70%] bg-indigo-600/10 blur-[150px] rounded-full animate-pulse"></div>
+      {/* High-end Holographic Background */}
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.2, 1],
+          opacity: [0.1, 0.2, 0.1],
+          x: [0, 50, 0],
+          y: [0, -50, 0]
+        }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+        className="absolute top-[-20%] left-[-10%] w-[100%] h-[100%] bg-indigo-600/10 blur-[180px] rounded-full"
+      />
+      <motion.div 
+        animate={{ 
+          scale: [1, 1.3, 1],
+          opacity: [0.05, 0.15, 0.05],
+          x: [0, -30, 0],
+          y: [0, 60, 0]
+        }}
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+        className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] bg-blue-600/10 blur-[150px] rounded-full"
+      />
       
-      <div className="w-full max-w-md space-y-6 text-center mb-6 relative z-10">
-        <div className="inline-flex p-6 bg-indigo-600/10 rounded-[3rem] mb-2 border border-indigo-500/20 shadow-[0_0_80px_rgba(79,70,229,0.1)] animate-in zoom-in duration-1000">
-          <Moon className="text-indigo-400 fill-indigo-400/20" size={64} />
-        </div>
-        <div className="space-y-3">
-          <h1 className="text-4xl font-black tracking-tighter text-white italic drop-shadow-2xl leading-tight">SomnoAI Digital Sleep Lab</h1>
-          <p className="text-slate-400 font-medium tracking-wide leading-relaxed px-4 text-xs">
-            数字化睡眠指标监控、AI 深度洞察与健康建议。
+      <motion.div 
+        initial={{ opacity: 0, y: 30 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1, ease: [0.22, 1, 0.36, 1] }}
+        className="w-full max-w-md space-y-8 text-center mb-8 relative z-10"
+      >
+        <motion.div 
+          animate={{ y: [0, -10, 0] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          className="inline-flex p-8 bg-indigo-600/10 rounded-[3rem] border border-indigo-500/20 shadow-[0_0_100px_rgba(79,70,229,0.2)]"
+        >
+          <Moon className="text-indigo-400 fill-indigo-400/20" size={80} />
+        </motion.div>
+        
+        <div className="space-y-4">
+          <h1 className="text-4xl font-black tracking-tighter text-white italic leading-tight">
+            SomnoAI <span className="text-indigo-400">Lab</span>
+          </h1>
+          <p className="text-slate-400 font-medium tracking-wide leading-relaxed px-8 text-sm">
+            全方位的数字化睡眠实验分析平台
           </p>
         </div>
-      </div>
+      </motion.div>
 
-      <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-900/40 shadow-[0_40px_100px_rgba(0,0,0,0.6)] space-y-6 relative z-10 overflow-visible">
-        <div className="space-y-6">
-          <div className="p-6 bg-indigo-500/5 rounded-3xl border border-indigo-500/10 text-left space-y-4">
-            <div className="flex items-center gap-2">
-              <div className="p-1.5 bg-indigo-500/20 rounded-lg">
-                <Info size={16} className="text-indigo-400" />
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.3, duration: 0.8 }}
+        className="w-full max-w-md"
+      >
+        <GlassCard className="p-10 border-white/10 bg-slate-900/40 shadow-[0_40px_100px_rgba(0,0,0,0.6)] space-y-8 relative z-10">
+          <div className="space-y-6">
+            <div className="p-6 bg-indigo-500/5 rounded-[2rem] border border-indigo-500/10 text-left space-y-4">
+              <div className="flex items-center gap-2">
+                <ShieldCheck size={16} className="text-indigo-400" />
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">安全性声明</p>
               </div>
-              <p className="text-[11px] font-black uppercase tracking-[0.2em] text-indigo-300">Google Fit 连接说明</p>
+              <p className="text-[11px] text-slate-300 leading-relaxed">
+                您的健康数据仅在浏览器本地会话中同步处理。我们不设任何后端服务器，数据在页面关闭后立即清除。
+              </p>
             </div>
-            <div className="space-y-3">
-               <div className="flex gap-3 items-start">
-                 <div className="mt-1 w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-indigo-500/30">1</div>
-                 <p className="text-[11px] text-slate-200 font-medium leading-snug">
-                   应用审核期间，若提示“未验证”，请点击页面下方的 <span className="text-white font-bold italic">高级 (Advanced)</span> 选项继续。
-                 </p>
-               </div>
-               <div className="flex gap-3 items-start">
-                 <div className="mt-1 w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-indigo-500/30">2</div>
-                 <p className="text-[11px] text-slate-200 font-medium leading-snug">
-                   在权限确认页，请展开 <span className="text-white italic">“查看权限”</span> 列表并确保勾选所有健康数据项。
-                 </p>
-               </div>
-               <div className="flex gap-3 items-start">
-                 <div className="mt-1 w-5 h-5 rounded-full bg-indigo-500/20 flex items-center justify-center text-[10px] font-black text-indigo-400 border border-indigo-500/30">3</div>
-                 <p className="text-[11px] text-slate-200 font-medium leading-snug">
-                   点击 <span className="text-white italic">继续 (Continue)</span> 完成实验室信号流同步。
-                 </p>
-               </div>
+
+            {localError && (
+              <motion.div 
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-left flex gap-3"
+              >
+                <TriangleAlert size={18} className="text-rose-400 shrink-0" />
+                <p className="text-[11px] text-rose-300 font-bold leading-relaxed">{localError}</p>
+              </motion.div>
+            )}
+
+            <div className="space-y-4">
+              <motion.button 
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={handleGoogleLogin}
+                disabled={isLoggingIn}
+                className={`w-full py-5 rounded-[2rem] flex items-center justify-center gap-4 transition-all shadow-2xl font-black text-sm uppercase tracking-widest border ${
+                  isLoggingIn 
+                  ? 'bg-slate-800 text-slate-500 border-white/5' 
+                  : 'bg-white text-slate-950 border-white'
+                }`}
+              >
+                {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} className="fill-indigo-600 text-indigo-600" />}
+                <span>接入 Google Fit</span>
+              </motion.button>
+
+              <button 
+                onClick={onGuest}
+                className="w-full py-2 flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-400 font-black transition-all text-[10px] uppercase tracking-[0.4em] group"
+              >
+                访客实验室浏览 <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+              </button>
             </div>
           </div>
-
-          {localError && (
-            <div className="p-5 bg-rose-500/10 rounded-2xl border border-rose-500/30 text-left flex gap-3 animate-in shake duration-500">
-              <TriangleAlert size={18} className="text-rose-400 shrink-0" />
-              <div className="space-y-1">
-                 <p className="text-[11px] text-rose-300 font-black leading-relaxed">连接状态异常</p>
-                 <p className="text-[10px] text-rose-300/70 font-medium leading-relaxed">{localError}</p>
-              </div>
-            </div>
-          )}
-
-          <div className="space-y-4">
-            <button 
-              onClick={handleGoogleLogin}
-              disabled={isLoggingIn}
-              className={`w-full py-5 rounded-2xl flex items-center justify-center gap-4 transition-all shadow-2xl font-black text-sm uppercase tracking-widest active:scale-[0.97] border ${
-                isLoggingIn 
-                ? 'bg-slate-800 text-slate-500 border-white/5 cursor-not-allowed' 
-                : 'bg-white text-slate-950 border-white hover:bg-slate-100'
-              }`}
-            >
-              {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} className="fill-indigo-600 text-indigo-600" />}
-              <span>{isLoggingIn ? '正在同步实验室...' : '接入 Google Fit'}</span>
-            </button>
-
-            <button 
-              onClick={onGuest}
-              className="w-full flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-400 font-black transition-all text-[10px] uppercase tracking-[0.4em] group"
-            >
-              访客模式浏览 <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-            </button>
-          </div>
-
-          <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
-            <a 
-              href="/privacy" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              <ShieldCheck size={10} /> 隐私政策
-            </a>
-            <a 
-              href="/terms" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 hover:text-indigo-300 transition-colors"
-            >
-              <ShieldCheck size={10} /> 服务条款
-            </a>
-          </div>
-        </div>
-      </GlassCard>
+        </GlassCard>
+      </motion.div>
       
-      <div className="mt-12 flex items-center gap-4 text-slate-800 text-[10px] font-black uppercase tracking-[0.6em] opacity-40">
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 0.4 }}
+        transition={{ delay: 1 }}
+        className="mt-12 flex items-center gap-3 text-slate-600 text-[10px] font-black uppercase tracking-[0.4em]"
+      >
         <ShieldCheck size={12} />
-        Secure Connection Established
-      </div>
+        Encrypted Endpoint Connection
+      </motion.div>
     </div>
   );
 };
