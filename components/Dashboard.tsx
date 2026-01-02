@@ -18,7 +18,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showStatus, setShowStatus] = useState(false);
 
-  // 防御性检查：如果数据尚未准备好，渲染占位符或返回 null 防止崩溃
+  // 防御性检查：如果数据尚未准备好，渲染占位符
   if (!data) return (
     <div className="flex items-center justify-center h-[60vh] text-slate-500">
       <Loader2 className="animate-spin mr-2" /> 正在加载实验室环境...
@@ -26,7 +26,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   );
   
   const scoreData = useMemo(() => {
-    const validScore = typeof data.score === 'number' && !isNaN(data.score) ? data.score : 0;
+    // 强制转换为有效数字，防止 Recharts 内部报错
+    const validScore = typeof data.score === 'number' && !isNaN(data.score) ? Math.min(100, Math.max(0, data.score)) : 0;
     return [{ value: validScore }, { value: 100 - validScore }];
   }, [data.score]);
 

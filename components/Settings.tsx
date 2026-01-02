@@ -7,26 +7,18 @@ import {
 
 interface SettingsProps {
   onLogout: () => void;
-  onLegalPage?: (page: 'privacy' | 'terms') => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ onLogout, onLegalPage }) => {
+export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
   const SettingItem = ({ icon: Icon, label, value, color, onClick, href }: any) => {
     const Component = href ? 'a' : 'button';
-    const handleClick = (e: React.MouseEvent) => {
-      if (href && onLegalPage) {
-        e.preventDefault();
-        const page = href.includes('privacy') ? 'privacy' : 'terms';
-        onLegalPage(page as 'privacy' | 'terms');
-      } else if (onClick) {
-        onClick(e);
-      }
-    };
+    const extraProps = href ? { target: "_blank", rel: "noopener noreferrer" } : {};
 
     return (
       <Component 
-        onClick={handleClick} 
+        onClick={onClick} 
         href={href}
+        {...extraProps}
         className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98] cursor-pointer"
       >
         <div className="flex items-center gap-4">

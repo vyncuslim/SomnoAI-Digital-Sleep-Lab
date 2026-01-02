@@ -5,60 +5,67 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Privacy Policy - SomnoAI Digital Sleep Lab</title>
     <style>
-        :root { --bg: #020617; --text: #f1f5f9; --primary: #818cf8; --card: #0f172a; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 2rem; }
+        :root { --bg: #020617; --text: #f1f5f9; --primary: #818cf8; --card: #0f172a; --border: rgba(255,255,255,0.1); }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.6; margin: 0; padding: 2rem; -webkit-font-smoothing: antialiased; }
         .wrapper { max-width: 800px; margin: 0 auto; }
-        .legal-content { background: var(--card); border: 1px solid rgba(255,255,255,0.1); border-radius: 1.5rem; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
-        h1 { font-size: 2.5rem; font-weight: 800; font-style: italic; margin-bottom: 0.5rem; color: #fff; letter-spacing: -0.05em; }
+        .legal-content { background: var(--card); border: 1px solid var(--border); border-radius: 1.5rem; padding: 2.5rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        h1 { font-size: 2.25rem; font-weight: 800; font-style: italic; margin-bottom: 0.5rem; color: #fff; letter-spacing: -0.05em; }
         h2 { color: var(--primary); font-size: 1.25rem; margin-top: 2rem; border-bottom: 1px solid rgba(129, 140, 248, 0.2); padding-bottom: 0.5rem; }
         p, ul { color: #94a3b8; font-size: 0.95rem; }
-        li { margin-bottom: 0.5rem; }
+        li { margin-bottom: 0.6rem; }
         .badge { background: rgba(79, 70, 229, 0.15); color: #c7d2fe; padding: 1.5rem; border-radius: 1rem; border: 1px solid rgba(79, 70, 229, 0.3); margin: 1.5rem 0; }
         a { color: var(--primary); text-decoration: none; font-weight: bold; }
         a:hover { text-decoration: underline; }
         .footer { margin-top: 3rem; text-align: center; font-size: 0.8rem; opacity: 0.5; }
+        .last-updated { color: var(--primary); font-weight: bold; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.2em; margin-bottom: 2rem; display: block; }
     </style>
 </head>
 <body>
     <div class="wrapper">
-        <header style="margin-bottom: 2rem;">
+        <header>
             <h1>Privacy Policy</h1>
-            <p style="color: var(--primary); font-weight: bold; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.2em;">Effective Date: March 23, 2024</p>
+            <span class="last-updated">Last Updated: March 24, 2024</span>
         </header>
+
         <div class="legal-content">
             <section>
-                <h2>1. Overview</h2>
-                <p>SomnoAI Digital Sleep Lab ("the App") respects user privacy. This policy explains how we process health data obtained through Google Fit APIs.</p>
+                <h2>1. Introduction</h2>
+                <p>SomnoAI Digital Sleep Lab ("the App") is a wellness tool designed to help you understand your sleep patterns. This Privacy Policy explains how we process data accessed via Google Fit APIs.</p>
             </section>
+
             <section class="badge">
                 <h3 style="margin-top:0; color:#fff; font-size:1.1rem;">Google API Limited Use Disclosure</h3>
-                <p style="color:#e0e7ff; font-style:italic;">
+                <p style="color:#e0e7ff; font-style:italic; margin-bottom:0;">
                     SomnoAI's use and transfer to any other app of information received from Google APIs will adhere to the 
-                    <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" target="_blank">Google API Service User Data Policy</a>, 
+                    <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" target="_blank" rel="noopener">Google API Service User Data Policy</a>, 
                     including the Limited Use requirements.
                 </p>
             </section>
+
             <section>
-                <h2>2. Data Collection & Use</h2>
-                <p>We access the following categories of data only after your explicit consent:</p>
+                <h2>2. Data Collection & Usage</h2>
+                <p>We only access data categories you explicitly authorize via the Google OAuth consent screen:</p>
                 <ul>
-                    <li><strong>Sleep Data</strong>: Used to visualize sleep stages and calculate sleep quality scores.</li>
-                    <li><strong>Heart Rate</strong>: Used to analyze recovery and resting heart rate patterns.</li>
-                    <li><strong>Activity Data</strong>: Correlated with sleep duration to provide health insights.</li>
+                    <li><strong>Sleep Sessions</strong>: To visualize your sleep stages (Deep, REM, Light, Awake).</li>
+                    <li><strong>Heart Rate</strong>: To calculate resting heart rate and analyze recovery.</li>
+                    <li><strong>Activity/Calories</strong>: To correlate physical activity with sleep quality.</li>
                 </ul>
-                <p style="color:#fff; font-weight:bold;">We do not share your health data with third-party advertisers or use it for AI model training.</p>
+                <p style="color:#fff; font-weight:600;">We do NOT sell your data, use it for advertising, or use your health data for training artificial intelligence models.</p>
             </section>
+
             <section>
-                <h2>3. Local Storage & Security</h2>
-                <p>All health data processing occurs locally in your browser session. Data is stored in <strong>Session Storage</strong> and is automatically erased when you log out or close the browser tab. We do not maintain any persistent external databases.</p>
+                <h2>3. Data Storage & Security</h2>
+                <p>All data processing happens locally in your browser. We use <strong>Session Storage</strong> to temporarily store metrics while you use the app. This data is automatically purged when you log out or close your browser tab. We do not store your health data on any external servers.</p>
             </section>
+
             <section>
-                <h2>4. Contact</h2>
-                <p>For privacy-related inquiries: <strong>lynnesom26@gmail.com</strong></p>
+                <h2>4. Contact Us</h2>
+                <p>If you have any questions regarding your privacy, please contact: <strong>ongyuze1401@gmail.com</strong></p>
             </section>
         </div>
+
         <div class="footer">
-            <a href="/">← Return to Laboratory</a><br><br>
+            <a href="/">← Return to Dashboard</a><br><br>
             © 2024 SomnoAI Digital Sleep Lab. All rights reserved.
         </div>
     </div>

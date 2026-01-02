@@ -5,9 +5,8 @@ import { AIAssistant } from './components/AIAssistant.tsx';
 import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
-import { LegalView } from './components/LegalView.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, ShieldCheck, CheckCircle2, Info } from 'lucide-react';
+import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
@@ -15,7 +14,6 @@ const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [isGuest, setIsGuest] = useState(false);
   const [activeView, setActiveView] = useState('dashboard' as ViewType);
-  const [prevView, setPrevView] = useState('dashboard' as ViewType);
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
@@ -23,46 +21,33 @@ const App: React.FC = () => {
   const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
-  useEffect(() => {
-    const handleRouting = () => {
-      const path = window.location.pathname.toLowerCase();
-      const params = new URLSearchParams(window.location.search);
-      const pageParam = params.get('page');
-
-      if (path === '/privacy' || pageParam === 'privacy') {
-        setActiveView('privacy');
-      } else if (path === '/terms' || pageParam === 'terms') {
-        setActiveView('terms');
-      } else {
-        if (activeView === 'privacy' || activeView === 'terms') {
-          setActiveView('dashboard');
-        }
-      }
-    };
-
-    handleRouting();
-    window.addEventListener('popstate', handleRouting);
-    return () => window.removeEventListener('popstate', handleRouting);
-  }, [activeView]);
-
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
     setTimeout(() => setErrorToast(null), 8000); 
   }, []);
 
   const navigateTo = (view: ViewType) => {
-    setPrevView(activeView);
     setActiveView(view);
-    const path = view === 'privacy' ? '/privacy' : view === 'terms' ? '/terms' : '/';
-    window.history.pushState({}, '', path);
-  };
+    
+    try {
+      const isRestricted = 
+        !window.location.origin || 
+        window.location.origin === 'null' ||
+        window.location.protocol === 'blob:' || 
+        window.location.hostname.includes('usercontent.goog') || 
+        window.location.hostname.includes('ai.studio');
 
-  const handleBackFromLegal = () => {
-    setActiveView(prevView === 'privacy' || prevView === 'terms' ? 'dashboard' : prevView);
-    window.history.pushState({}, '', '/');
+      // 仅在主功能视图切换时保持 URL 简洁。法律页面已由 Vercel 服务端静态分发。
+      if (!isRestricted && typeof window.history.pushState === 'function') {
+        window.history.pushState({ view }, '', '/');
+      }
+    } catch (err) {
+      console.warn("History API restricted");
+    }
   };
 
   const refreshInsight = async (record: SleepRecord) => {
+    if (!record) return;
     try {
       const insight = await getSleepInsight(record);
       setCurrentRecord(prev => prev && prev.id === record.id ? ({
@@ -119,7 +104,6 @@ const App: React.FC = () => {
       } else {
         showToast("【链路故障】无法连接至实验室服务器，请稍后重试。");
       }
-      // 如果没有已有数据，清除加载状态回到登录/提示页
       if (!currentRecord) setIsLoading(false);
     } finally {
       setIsLoading(false);
@@ -151,14 +135,9 @@ const App: React.FC = () => {
     setCurrentRecord(null);
     setHistory([]);
     setActiveView('dashboard');
-    window.history.pushState({}, '', '/');
   };
 
   const renderView = () => {
-    if (activeView === 'privacy' || activeView === 'terms') {
-      return <LegalView type={activeView} onBack={handleBackFromLegal} />;
-    }
-
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
@@ -176,7 +155,6 @@ const App: React.FC = () => {
         <Auth 
           onLogin={() => handleSyncGoogleFit(false)} 
           onGuest={() => setIsGuest(true)}
-          onLegalPage={(page) => navigateTo(page)}
         />
       );
     }
@@ -215,16 +193,16 @@ const App: React.FC = () => {
       case 'dashboard': return <Dashboard data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} />;
       case 'calendar': return <Trends history={history} />;
       case 'assistant': return <AIAssistant />;
-      case 'profile': return <Settings onLogout={handleLogout} onLegalPage={(p) => navigateTo(p)} />;
+      case 'profile': return <Settings onLogout={handleLogout} />;
       default: return <Dashboard data={currentRecord!} />;
     }
   };
 
-  const showNav = (isLoggedIn || isGuest || currentRecord) && !['privacy', 'terms'].includes(activeView);
+  const showNav = (isLoggedIn || isGuest || currentRecord);
 
   return (
     <div className="min-h-screen bg-[#020617] text-white overflow-x-hidden">
-      <main className={`max-w-xl mx-auto px-6 ${(isLoggedIn || isGuest || currentRecord) ? 'pt-12 pb-32' : ''} min-h-screen`}>
+      <main className={`max-w-xl mx-auto px-6 ${showNav ? 'pt-12 pb-32' : 'pt-8'} min-h-screen`}>
         {renderView()}
       </main>
 

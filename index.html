@@ -4,19 +4,29 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SomnoAI Digital Sleep Lab - 数字化睡眠实验平台</title>
-    <!-- Google Domain Verification - Crucial for OAuth Review -->
+    <!-- Google Site Verification - OAuth Audit Required -->
     <meta name="google-site-verification" content="uYmJ_568JPu-rjsyRzA2KU2vQpiQDOvN97G5Qgd5-38" />
+    <meta name="google-site-verification" content="googlee47ef5d2eacdf45a" />
     
     <meta name="description" content="SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验服务。" />
     
+    <!-- Ownership Proof for Google Review -->
+    <!-- Application Name: somno-ai-digital-sleep-lab -->
+    <!-- Developer Contact: ongyuze1401@gmail.com -->
+
     <script>
-      // 深度加固的 process 对象，确保任何库在检测环境时都不会抛出 Uncaught 错误
-      window.process = { 
-        env: { NODE_ENV: 'production' }, 
-        versions: { node: '1.0.0' },
-        nextTick: function(fn) { setTimeout(fn, 0); },
-        browser: true
-      };
+      (function() {
+        const env = { NODE_ENV: 'production', API_KEY: '' };
+        const processPolyfill = {
+          env: env,
+          versions: { node: '1.0.0' },
+          nextTick: function(fn) { setTimeout(fn, 0); },
+          browser: true,
+          platform: 'browser'
+        };
+        window.process = processPolyfill;
+        globalThis.process = processPolyfill;
+      })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -33,6 +43,24 @@
         ::-webkit-scrollbar { width: 8px; }
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        .legal-footer {
+            padding: 4rem 0;
+            text-align: center;
+            font-size: 0.75rem;
+            color: #475569;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: 4rem;
+            background: rgba(2, 6, 23, 0.9);
+        }
+        .legal-footer a {
+            margin: 0 1rem;
+            color: #818cf8;
+            text-decoration: none;
+            font-weight: 700;
+            transition: opacity 0.2s;
+        }
+        .legal-footer a:hover { opacity: 0.8; text-decoration: underline; }
+        .dev-info { margin-top: 1rem; opacity: 0.6; font-size: 0.7rem; font-weight: 600; }
     </style>
 <script type="importmap">
 {
@@ -50,10 +78,18 @@
 <body>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
-    <!-- Hidden but crawlable links for policy indexing -->
-    <footer style="display:none">
-        <a href="/privacy">Privacy Policy</a>
-        <a href="/terms">Terms of Service</a>
+    
+    <footer class="legal-footer">
+        <div>&copy; 2024 SomnoAI Digital Sleep Lab. All rights reserved.</div>
+        <div class="mt-2">
+            <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>
+            <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a>
+        </div>
+        <div class="dev-info">
+            Developer: ongyuze1401@gmail.com | 
+            Registered App ID: somno-ai-digital-sleep-lab | 
+            Homepage: https://somno-ai-digital-sleep-lab.vercel.app
+        </div>
     </footer>
 </body>
 </html>

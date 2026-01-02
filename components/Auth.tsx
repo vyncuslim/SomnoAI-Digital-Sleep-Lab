@@ -1,17 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, TriangleAlert, ShieldAlert, CheckCircle2, ChevronDown, ExternalLink, FileText } from 'lucide-react';
+import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, TriangleAlert } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
 interface AuthProps {
   onLogin: () => void;
   onGuest: () => void;
-  onLegalPage?: (page: 'privacy' | 'terms') => void;
 }
 
-export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => {
+export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [showHint, setShowHint] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -23,7 +21,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
   const handleGoogleLogin = async () => {
     if (isLoggingIn) return;
     setIsLoggingIn(true);
-    setShowHint(true);
     setLocalError(null);
     try {
       await googleFit.ensureClientInitialized();
@@ -40,13 +37,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
       setLocalError(cleanMsg);
     } finally {
       setIsLoggingIn(false);
-    }
-  };
-
-  const handleLegalClick = (e: React.MouseEvent, page: 'privacy' | 'terms') => {
-    if (onLegalPage) {
-      e.preventDefault();
-      onLegalPage(page);
     }
   };
 
@@ -132,15 +122,17 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest, onLegalPage }) => 
           <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
             <a 
               href="/privacy" 
-              onClick={(e) => handleLegalClick(e, 'privacy')}
-              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 hover:text-indigo-300 transition-colors"
             >
-              <FileText size={10} /> 隐私政策
+              <ShieldCheck size={10} /> 隐私政策
             </a>
             <a 
               href="/terms" 
-              onClick={(e) => handleLegalClick(e, 'terms')}
-              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-slate-600 hover:text-slate-400 transition-colors"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 hover:text-indigo-300 transition-colors"
             >
               <ShieldCheck size={10} /> 服务条款
             </a>
