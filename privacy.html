@@ -7,12 +7,12 @@
     <title>隐私政策 (Privacy Policy) - SomnoAI Digital Sleep Lab</title>
     <style>
         :root { --bg: #020617; --card: #0f172a; --accent: #818cf8; --text: #f1f5f9; --subtext: #94a3b8; --border: rgba(255,255,255,0.1); }
-        body { font-family: 'Inter', -apple-system, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.7; margin: 0; padding: 20px; display: flex; justify-content: center; }
+        body { font-family: 'Inter', -apple-system, system-ui, sans-serif; background-color: var(--bg); color: var(--text); line-height: 1.7; margin: 0; padding: 20px; display: flex; justify-content: center; }
         .container { max-width: 850px; width: 100%; background: var(--card); border: 1px solid var(--border); border-radius: 32px; padding: 50px; box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.7); margin: 2rem 0; }
-        h1 { font-size: 2.2rem; font-weight: 900; color: #fff; margin: 0 0 1rem; letter-spacing: -0.02em; border-bottom: 3px solid var(--accent); display: inline-block; padding-bottom: 8px; }
+        h1 { font-size: 2.2rem; font-weight: 900; color: #fff; margin: 0 0 1rem; border-bottom: 3px solid var(--accent); display: inline-block; padding-bottom: 8px; }
         .meta { color: var(--subtext); font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 3rem; }
         .disclosure-box { background: rgba(129, 140, 248, 0.1); border: 1px solid rgba(129, 140, 248, 0.3); padding: 25px; border-radius: 20px; margin: 30px 0; }
-        .disclosure-box h3 { margin-top: 0; color: #fff; font-size: 1.1rem; }
+        .disclosure-box h3 { margin-top: 0; color: #fff; font-size: 1.1rem; display: flex; align-items: center; gap: 10px; }
         h2 { color: var(--accent); font-size: 1.4rem; margin-top: 3rem; font-weight: 800; border-left: 4px solid var(--accent); padding-left: 15px; }
         p, li { color: var(--subtext); font-size: 1rem; margin-bottom: 1.2rem; }
         a { color: var(--accent); text-decoration: none; font-weight: 700; }
@@ -22,11 +22,11 @@
 <body>
     <div class="container">
         <h1>隐私权政策 / Privacy Policy</h1>
-        <div class="meta">最后更新日期：2024年3月25日</div>
+        <div class="meta">最后更新日期：2024年3月25日 | Last Updated: March 25, 2024</div>
 
         <section>
-            <p>SomnoAI Digital Sleep Lab（以下简称“我们”或“本应用”）非常重视您的隐私。本政策旨在说明我们如何处理通过 Google Fit 访问的健康数据。</p>
-            <p>SomnoAI Digital Sleep Lab ("we", "us", or "the App") values your privacy. This policy explains how we handle health data accessed via Google Fit.</p>
+            <p>SomnoAI Digital Sleep Lab（以下简称“我们”或“本应用”）尊重并保护您的隐私。本应用通过访问 Google Fit 的健康数据为您提供睡眠分析服务。</p>
+            <p>SomnoAI Digital Sleep Lab ("we", "us", or "the App") respects your privacy. We provide sleep analysis by accessing Google Fit data.</p>
         </section>
 
         <div class="disclosure-box">
@@ -35,22 +35,23 @@
             <p><strong>ZH:</strong> SomnoAI 对从 Google API 接收到的信息的使用和传输将严格遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" target="_blank">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。</p>
         </div>
 
-        <h2>1. 数据收集范围 / Data Collection</h2>
-        <p>当您授权连接 Google Fit 时，我们会访问以下数据：</p>
+        <h2>1. 数据访问与收集 / Data Access</h2>
+        <p>我们仅在获得您明确授权后访问以下 Google Fit 数据：</p>
         <ul>
-            <li><strong>睡眠数据 (Sleep Data):</strong> 睡眠时间、睡眠阶段（深睡、REM、浅睡）。</li>
-            <li><strong>生理指标 (Vital Signs):</strong> 心率 (Heart Rate)。</li>
-            <li><strong>活动数据 (Activity Data):</strong> 每日卡路里消耗量。</li>
+            <li><strong>睡眠段 (Sleep Segments):</strong> 用于分析您的睡眠时长和阶段。</li>
+            <li><strong>心率 (Heart Rate):</strong> 用于推算静息心率和健康趋势。</li>
+            <li><strong>活动消耗 (Calories):</strong> 辅助评估全天代谢水平。</li>
         </ul>
 
         <h2>2. 数据用途 / Data Usage</h2>
-        <p>我们收集的数据仅用于生成可视化的睡眠质量图表和通过 AI 提供健康建议。我们<strong>绝不</strong>将您的健康数据用于广告或任何形式的第三方营销。</p>
+        <p>您的健康数据仅用于在应用内生成可视化图表和 AI 建议。我们<strong>绝不会</strong>将这些数据出售给第三方，也<strong>绝不会</strong>将其用于广告定位。</p>
 
-        <h2>3. 数据存储与安全 / Storage & Security</h2>
-        <p><strong>端侧处理声明：</strong>本应用不设后端服务器。所有数据仅存储在您浏览器本地的 Session Storage 中，一旦关闭标签页，数据将立即被抹除。我们不具备在云端持久化存储您个人健康数据的技术架构。</p>
+        <h2>3. 数据存储 / Data Storage</h2>
+        <p><strong>零服务器存储 (Zero Server Storage):</strong> 本应用没有后端服务器。所有获取的数据仅存储在您浏览器本地的 <code>sessionStorage</code> 中，且仅在当前会话有效。关闭浏览器标签页或退出登录后，数据将立即被永久删除。</p>
 
         <h2>4. 联系我们 / Contact</h2>
-        <p>如果您对隐私政策有任何疑问，请联系开发者：<br><strong>Email: ongyuze1401@gmail.com</strong></p>
+        <p>如有疑问，请通过以下方式联系开发者：<br>
+        <strong>Email: ongyuze1401@gmail.com</strong></p>
 
         <div class="footer">
             &copy; 2024 SomnoAI Digital Sleep Lab. <a href="/">返回首页 / Back to Home</a>

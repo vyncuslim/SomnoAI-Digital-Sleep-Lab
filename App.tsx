@@ -6,25 +6,15 @@ import { AIAssistant } from './components/AIAssistant.tsx';
 import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
-import { LegalView } from './components/LegalView.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
-const APP_DOMAIN = "https://somno-ai-digital-sleep-lab.vercel.app";
-
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [isGuest, setIsGuest] = useState(false);
-  
-  // 更加鲁棒的初始状态设置，防止 Auth 闪烁
-  const [activeView, setActiveView] = useState<ViewType>(() => {
-    const path = window.location.pathname;
-    if (path.includes('/privacy')) return 'privacy';
-    if (path.includes('/terms')) return 'terms';
-    return 'dashboard';
-  });
+  const [activeView, setActiveView] = useState<ViewType>('dashboard');
 
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
@@ -37,31 +27,6 @@ const App: React.FC = () => {
     setErrorToast(msg);
     setTimeout(() => setErrorToast(null), 8000); 
   }, []);
-
-  const navigateTo = (view: ViewType) => {
-    // 强制跳转到托管域名的绝对地址，彻底解决嵌入环境中的 404 问题
-    if (view === 'privacy' || view === 'terms') {
-      window.open(`${APP_DOMAIN}/${view}`, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    setActiveView(view);
-    
-    try {
-      const isRestricted = 
-        !window.location.origin || 
-        window.location.origin === 'null' ||
-        window.location.protocol === 'blob:' || 
-        window.location.hostname.includes('usercontent.goog') || 
-        window.location.hostname.includes('ai.studio');
-
-      if (!isRestricted && typeof window.history.pushState === 'function') {
-        window.history.pushState({ view }, '', '/');
-      }
-    } catch (err) {
-      console.warn("History API restricted");
-    }
-  };
 
   const refreshInsight = async (record: SleepRecord) => {
     if (!record) return;
@@ -156,10 +121,6 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    // 法律视图优先级最高，确保用户访问对应路径能看到内容
-    if (activeView === 'privacy') return <LegalView type="privacy" onBack={() => setActiveView('dashboard')} />;
-    if (activeView === 'terms') return <LegalView type="terms" onBack={() => setActiveView('dashboard')} />;
-
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
@@ -215,12 +176,12 @@ const App: React.FC = () => {
       case 'dashboard': return <Dashboard data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} />;
       case 'calendar': return <Trends history={history} />;
       case 'assistant': return <AIAssistant />;
-      case 'profile': return <Settings onLogout={handleLogout} onNavigate={setActiveView} />;
+      case 'profile': return <Settings onLogout={handleLogout} />;
       default: return <Dashboard data={currentRecord!} />;
     }
   };
 
-  const showNav = (isLoggedIn || isGuest || currentRecord) && activeView !== 'privacy' && activeView !== 'terms';
+  const showNav = (isLoggedIn || isGuest || currentRecord);
 
   return (
     <div className="min-h-screen bg-[#020617] text-white overflow-x-hidden">
