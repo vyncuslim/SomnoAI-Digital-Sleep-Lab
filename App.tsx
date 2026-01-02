@@ -29,7 +29,7 @@ const App: React.FC = () => {
   }, []);
 
   const navigateTo = (view: ViewType) => {
-    // 关键修复：法律页面强制进行完整的页面重载，确保加载静态 HTML 且不触发 pushState 错误
+    // 强制进行完整页面跳转以服务静态法律文件，这是为了通过 Google OAuth 审核的最高级安全方案
     if (view === 'privacy' || view === 'terms') {
       window.location.href = `/${view}`;
       return;
