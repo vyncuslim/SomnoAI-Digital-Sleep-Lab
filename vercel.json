@@ -1,22 +1,21 @@
-
 {
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/privacy",
-      "destination": "/privacy.html"
-    },
-    {
-      "source": "/terms",
-      "destination": "/terms.html"
-    },
-    {
       "source": "/googlee47ef5d2eacdf45a.html",
       "destination": "/googlee47ef5d2eacdf45a.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/privacy",
+      "destination": "/public/privacy/index.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/public/terms/index.html"
+    },
+    {
+      "source": "/((?!privacy|terms|googlee47ef5d2eacdf45a).*)",
       "destination": "/index.html"
     }
   ]
