@@ -4,19 +4,19 @@
   "trailingSlash": false,
   "rewrites": [
     {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
       "source": "/googlee47ef5d2eacdf45a.html",
       "destination": "/googlee47ef5d2eacdf45a.html"
     },
     {
-      "source": "/privacy",
-      "destination": "/privacy/index.html"
-    },
-    {
-      "source": "/terms",
-      "destination": "/terms/index.html"
-    },
-    {
-      "source": "/((?!privacy|terms|googlee47ef5d2eacdf45a).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
