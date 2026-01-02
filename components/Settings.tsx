@@ -3,7 +3,7 @@ import React from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Shield, Smartphone, Globe, LogOut, 
-  ChevronRight, ShieldCheck, FileText, Info
+  ChevronRight, ShieldCheck, FileText, Info, Sparkles
 } from 'lucide-react';
 
 interface SettingsProps {
@@ -11,16 +11,11 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
-  const SettingItem = ({ icon: Icon, label, value, color, href }: any) => {
+  const SettingItem = ({ icon: Icon, label, value, color, href, onClick }: any) => {
     const isExternal = !!href;
 
-    return (
-      <a 
-        href={href || '#'}
-        target={isExternal ? "_blank" : undefined}
-        rel={isExternal ? "noopener noreferrer" : undefined}
-        className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98] cursor-pointer"
-      >
+    const content = (
+      <div className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98] cursor-pointer">
         <div className="flex items-center gap-4">
           <div className={`p-2.5 rounded-xl bg-${color}-500/10 text-${color}-400 group-hover:scale-110 transition-transform`}>
             <Icon size={20} />
@@ -35,8 +30,26 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
           </div>
         </div>
         <ChevronRight size={18} className="text-slate-600 group-hover:text-slate-400 group-hover:translate-x-1 transition-all" />
-      </a>
+      </div>
     );
+
+    if (isExternal) {
+      return (
+        <a href={href} target="_blank" rel="noopener noreferrer" className="block w-full">
+          {content}
+        </a>
+      );
+    }
+
+    return (
+      <button onClick={onClick} className="block w-full text-left">
+        {content}
+      </button>
+    );
+  };
+
+  const handleGeminiInfo = () => {
+    alert("Gemini 核心引擎已通过环境变量安全载入。实验室计算处于最高优先级运行状态。");
   };
 
   return (
@@ -49,15 +62,13 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">安全与计算引擎</h3>
         <GlassCard className="divide-y divide-white/5 py-2 border-indigo-500/20 bg-indigo-500/5">
-          <div className="px-4 py-4 flex items-center gap-4">
-            <div className="p-2.5 rounded-xl bg-indigo-500/10 text-indigo-400">
-              <ShieldCheck size={20} />
-            </div>
-            <div className="text-left">
-              <p className="font-semibold text-white">Gemini 核心引擎</p>
-              <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">系统已自动授权</p>
-            </div>
-          </div>
+          <SettingItem 
+            icon={ShieldCheck} 
+            label="Gemini 核心引擎" 
+            value="系统已自动授权 • 正常运行" 
+            color="indigo" 
+            onClick={handleGeminiInfo}
+          />
           <SettingItem icon={Shield} label="数据隐私" value="端侧加密存储" color="blue" />
         </GlassCard>
       </div>
