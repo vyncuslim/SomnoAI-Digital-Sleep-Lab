@@ -1,3 +1,4 @@
+
 import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
 
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
@@ -13,28 +14,23 @@ const SCOPES = [
 declare var google: any;
 
 /**
- * 工业级健壮的时间戳转换函数
- * 绝不使用 BigInt 处理非数字，防止 Uncaught RangeError
+ * Robust timestamp conversion for Google Fit API
  */
 const toMillis = (nanos: any): number => {
   if (nanos === null || nanos === undefined) return Date.now();
   
-  // 如果已经是毫秒级数字
-  if (typeof nanos === 'number' && !isNaN(nanos) && nanos < 2000000000000) {
-    return Math.floor(nanos);
+  if (typeof nanos === 'number' && !isNaN(nanos)) {
+    // If nanos is already a millisecond timestamp (less than 2000-01-01 in nanos)
+    if (nanos < 2000000000000) return Math.floor(nanos);
+    return Math.floor(nanos / 1000000);
   }
 
   try {
     const str = String(nanos).replace(/[^0-9]/g, '');
     if (str.length === 0) return Date.now();
 
-    // 如果长度超过 13 位，说明是纳秒
     if (str.length > 13) {
-      try {
-        return Number(BigInt(str) / 1000000n);
-      } catch (e) {
-        return Date.now();
-      }
+      return Number(BigInt(str) / 1000000n);
     }
     
     const val = parseInt(str, 10);
@@ -126,9 +122,32 @@ export class GoogleFitService {
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
     if (!this.accessToken) throw new Error("AUTH_EXPIRED");
     const now = Date.now();
+    const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
     const headers = { Authorization: `Bearer ${this.accessToken}`, "Content-Type": "application/json" };
 
     try {
+      // Step 1: Query Sleep Sessions (Activity Type 72)
+      // This is the most reliable way to find sleep events recorded by watches or health apps.
+      const sessionsUrl = `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(sevenDaysAgo).toISOString()}&endTime=${new Date(now).toISOString()}&activityType=72`;
+      const sessionsRes = await this.fetchWithAuth(sessionsUrl, headers);
+      const sessionsData = await sessionsRes.json();
+      
+      const latestSession = sessionsData.session?.length > 0 
+        ? sessionsData.session.sort((a: any, b: any) => toMillis(b.startTimeMillis) - toMillis(a.startTimeMillis))[0] 
+        : null;
+
+      let startTime, endTime;
+      
+      if (latestSession) {
+        startTime = toMillis(latestSession.startTimeMillis);
+        endTime = toMillis(latestSession.endTimeMillis);
+      } else {
+        // Fallback: If no sessions, try to find raw sleep segments in the last 48 hours
+        startTime = now - 48 * 60 * 60 * 1000;
+        endTime = now;
+      }
+
+      // Step 2: Query granular segments and heart rate for this window
       const aggregateUrl = "https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate";
       const body = {
         aggregateBy: [
@@ -136,20 +155,21 @@ export class GoogleFitService {
           { dataTypeName: "com.google.heart_rate.bpm" },
           { dataTypeName: "com.google.calories.expended" }
         ],
-        startTimeMillis: now - 7 * 24 * 60 * 60 * 1000,
-        endTimeMillis: now,
-        bucketByTime: { durationMillis: 86400000 }
+        startTimeMillis: startTime,
+        endTimeMillis: endTime
       };
 
       const aggRes = await this.fetchWithAuth(aggregateUrl, headers, { method: 'POST', body: JSON.stringify(body) });
       const aggData = await aggRes.json();
+      const bucket = aggData.bucket?.[0];
 
-      let targetBucket = aggData?.bucket?.slice().reverse().find((b: any) => b.dataset?.[0]?.point?.length > 0);
-      if (!targetBucket) throw new Error("DATA_NOT_FOUND");
+      if (!bucket || (!bucket.dataset?.[0]?.point?.length && !latestSession)) {
+        throw new Error("DATA_NOT_FOUND");
+      }
 
-      const allSleepPoints = targetBucket.dataset?.[0]?.point || [];
-      const hrPoints = targetBucket.dataset?.[1]?.point || [];
-      const calPoints = targetBucket.dataset?.[2]?.point || [];
+      const allSleepPoints = bucket.dataset?.[0]?.point || [];
+      const hrPoints = bucket.dataset?.[1]?.point || [];
+      const calPoints = bucket.dataset?.[2]?.point || [];
 
       let deep = 0, rem = 0, awake = 0;
       const stages: SleepStage[] = allSleepPoints.map((p: any) => {
@@ -158,13 +178,18 @@ export class GoogleFitService {
         const e = toMillis(p.endTimeNanos);
         const d = Math.max(0, Math.round((e - s) / 60000));
         let name: SleepStage['name'] = '浅睡';
+        // 5: Deep, 6: REM, 4: Light (usually), 1: Awake
         if (type === 5) { name = '深睡'; deep += d; }
         else if (type === 6) { name = 'REM'; rem += d; }
         else if (type === 1 || type === 3) { name = '清醒'; awake += d; }
         return { name, duration: d, startTime: new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
       });
 
-      const totalDuration = stages.reduce((acc, s) => acc + s.duration, 0) || 1;
+      // If no granular segments but we have a session, use session duration as light sleep
+      const totalDuration = stages.length > 0 
+        ? stages.reduce((acc, s) => acc + s.duration, 0) 
+        : Math.round((endTime - startTime) / 60000);
+
       const hrVals = hrPoints.map((p: any) => p.value?.[0]?.fpVal || p.value?.[0]?.intVal).filter((v: any) => typeof v === 'number');
       
       const heartRate: HeartRateData = {
@@ -178,14 +203,23 @@ export class GoogleFitService {
         }))
       };
 
+      // Ensure at least some data structure even if segments are missing
+      if (stages.length === 0 && totalDuration > 0) {
+        stages.push({ name: '浅睡', duration: totalDuration, startTime: new Date(startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+      }
+
       return {
         totalDuration,
-        deepRatio: Math.round((deep / totalDuration) * 100),
-        remRatio: Math.round((rem / totalDuration) * 100),
-        efficiency: Math.round(((totalDuration - awake) / totalDuration) * 100),
-        date: new Date(toMillis(allSleepPoints[0]?.startTimeNanos)).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
-        stages, heartRate, calories: Math.round(calPoints.reduce((acc: number, p: any) => acc + (p.value?.[0]?.fpVal || 0), 0)),
-        score: Math.min(100, Math.round((deep / totalDuration) * 200 + (rem / totalDuration) * 150 + (heartRate.resting < 70 ? 10 : 0)))
+        deepRatio: totalDuration > 0 ? Math.round((deep / totalDuration) * 100) : 0,
+        remRatio: totalDuration > 0 ? Math.round((rem / totalDuration) * 100) : 0,
+        efficiency: totalDuration > 0 ? Math.round(((totalDuration - awake) / totalDuration) * 100) : 100,
+        date: new Date(startTime).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
+        stages, 
+        heartRate, 
+        calories: Math.round(calPoints.reduce((acc: number, p: any) => acc + (p.value?.[0]?.fpVal || 0), 0)),
+        score: totalDuration > 0 
+          ? Math.min(100, Math.round((deep / totalDuration) * 200 + (rem / totalDuration) * 150 + (heartRate.resting < 70 ? 10 : 0) + (totalDuration > 420 ? 20 : 0)))
+          : 0
       };
     } catch (err) {
       throw err;
