@@ -1,4 +1,3 @@
-
 import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
 
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
@@ -20,7 +19,6 @@ const toMillis = (nanos: any): number => {
   if (nanos === null || nanos === undefined) return Date.now();
   
   if (typeof nanos === 'number' && !isNaN(nanos)) {
-    // If nanos is already a millisecond timestamp (less than 2000-01-01 in nanos)
     if (nanos < 2000000000000) return Math.floor(nanos);
     return Math.floor(nanos / 1000000);
   }
@@ -28,11 +26,7 @@ const toMillis = (nanos: any): number => {
   try {
     const str = String(nanos).replace(/[^0-9]/g, '');
     if (str.length === 0) return Date.now();
-
-    if (str.length > 13) {
-      return Number(BigInt(str) / 1000000n);
-    }
-    
+    if (str.length > 13) return Number(BigInt(str) / 1000000n);
     const val = parseInt(str, 10);
     return isNaN(val) ? Date.now() : val;
   } catch (e) {
@@ -57,9 +51,7 @@ export class GoogleFitService {
   private async waitForGoogleReady(): Promise<void> {
     const maxAttempts = 100;
     for (let i = 0; i < maxAttempts; i++) {
-      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
-        return;
-      }
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) return;
       await new Promise(resolve => setTimeout(resolve, 100));
     }
     throw new Error("GOOGLE_SDK_NOT_LOADED");
@@ -127,7 +119,7 @@ export class GoogleFitService {
 
     try {
       // Step 1: Query Sleep Sessions (Activity Type 72)
-      // This is the most reliable way to find sleep events recorded by watches or health apps.
+      // This solves the "Signal Not Found" issue for irregular sleep or multi-device sync.
       const sessionsUrl = `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(sevenDaysAgo).toISOString()}&endTime=${new Date(now).toISOString()}&activityType=72`;
       const sessionsRes = await this.fetchWithAuth(sessionsUrl, headers);
       const sessionsData = await sessionsRes.json();
@@ -137,17 +129,16 @@ export class GoogleFitService {
         : null;
 
       let startTime, endTime;
-      
       if (latestSession) {
         startTime = toMillis(latestSession.startTimeMillis);
         endTime = toMillis(latestSession.endTimeMillis);
       } else {
-        // Fallback: If no sessions, try to find raw sleep segments in the last 48 hours
+        // Fallback: Query 48 hours for raw segments if no formal sessions
         startTime = now - 48 * 60 * 60 * 1000;
         endTime = now;
       }
 
-      // Step 2: Query granular segments and heart rate for this window
+      // Step 2: Query granular segments and HR for this specific window
       const aggregateUrl = "https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate";
       const body = {
         aggregateBy: [
@@ -178,20 +169,17 @@ export class GoogleFitService {
         const e = toMillis(p.endTimeNanos);
         const d = Math.max(0, Math.round((e - s) / 60000));
         let name: SleepStage['name'] = '浅睡';
-        // 5: Deep, 6: REM, 4: Light (usually), 1: Awake
         if (type === 5) { name = '深睡'; deep += d; }
         else if (type === 6) { name = 'REM'; rem += d; }
         else if (type === 1 || type === 3) { name = '清醒'; awake += d; }
         return { name, duration: d, startTime: new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
       });
 
-      // If no granular segments but we have a session, use session duration as light sleep
       const totalDuration = stages.length > 0 
         ? stages.reduce((acc, s) => acc + s.duration, 0) 
         : Math.round((endTime - startTime) / 60000);
 
       const hrVals = hrPoints.map((p: any) => p.value?.[0]?.fpVal || p.value?.[0]?.intVal).filter((v: any) => typeof v === 'number');
-      
       const heartRate: HeartRateData = {
         average: hrVals.length ? Math.round(hrVals.reduce((a: number, b: number) => a + b, 0) / hrVals.length) : 70,
         resting: hrVals.length ? Math.min(...hrVals) : 65,
@@ -203,7 +191,6 @@ export class GoogleFitService {
         }))
       };
 
-      // Ensure at least some data structure even if segments are missing
       if (stages.length === 0 && totalDuration > 0) {
         stages.push({ name: '浅睡', duration: totalDuration, startTime: new Date(startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
       }
@@ -214,16 +201,10 @@ export class GoogleFitService {
         remRatio: totalDuration > 0 ? Math.round((rem / totalDuration) * 100) : 0,
         efficiency: totalDuration > 0 ? Math.round(((totalDuration - awake) / totalDuration) * 100) : 100,
         date: new Date(startTime).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
-        stages, 
-        heartRate, 
-        calories: Math.round(calPoints.reduce((acc: number, p: any) => acc + (p.value?.[0]?.fpVal || 0), 0)),
-        score: totalDuration > 0 
-          ? Math.min(100, Math.round((deep / totalDuration) * 200 + (rem / totalDuration) * 150 + (heartRate.resting < 70 ? 10 : 0) + (totalDuration > 420 ? 20 : 0)))
-          : 0
+        stages, heartRate, calories: Math.round(calPoints.reduce((acc: number, p: any) => acc + (p.value?.[0]?.fpVal || 0), 0)),
+        score: totalDuration > 0 ? Math.min(100, Math.round((deep / totalDuration) * 200 + (rem / totalDuration) * 150 + (heartRate.resting < 70 ? 10 : 0) + (totalDuration > 420 ? 20 : 0))) : 0
       };
-    } catch (err) {
-      throw err;
-    }
+    } catch (err) { throw err; }
   }
 
   public logout() {
@@ -231,5 +212,4 @@ export class GoogleFitService {
     sessionStorage.removeItem('google_fit_token');
   }
 }
-
 export const googleFit = new GoogleFitService();

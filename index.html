@@ -1,11 +1,10 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SomnoAI Digital Sleep Lab - 数字化睡眠实验平台</title>
-    <!-- Google Site Verification - OAuth Audit Required -->
+    <!-- Google Search Console Verification -->
     <meta name="google-site-verification" content="uYmJ_568JPu-rjsyRzA2KU2vQpiQDOvN97G5Qgd5-38" />
     <meta name="google-site-verification" content="googlee47ef5d2eacdf45a" />
     
@@ -41,7 +40,7 @@
         ::-webkit-scrollbar-track { background: #0f172a; }
         ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
         .legal-footer {
-            padding: 4rem 0;
+            padding: 4rem 2rem;
             text-align: center;
             font-size: 0.75rem;
             color: #475569;
@@ -50,14 +49,20 @@
             background: rgba(2, 6, 23, 0.9);
         }
         .legal-footer a {
-            margin: 0 1rem;
+            margin: 0 1.5rem;
             color: #818cf8;
             text-decoration: none;
             font-weight: 700;
-            transition: opacity 0.2s;
+            transition: color 0.2s, opacity 0.2s;
+            display: inline-block;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid transparent;
         }
-        .legal-footer a:hover { opacity: 0.8; text-decoration: underline; }
-        .dev-info { margin-top: 1rem; opacity: 0.6; font-size: 0.7rem; font-weight: 600; }
+        .legal-footer a:hover { 
+            color: #a5b4fc;
+            border-bottom: 1px solid #818cf8;
+        }
+        .dev-info { margin-top: 1.5rem; opacity: 0.6; font-size: 0.7rem; font-weight: 600; }
     </style>
 <script type="importmap">
 {
@@ -78,12 +83,13 @@
     
     <footer class="legal-footer">
         <div>&copy; 2024 SomnoAI Digital Sleep Lab. All rights reserved.</div>
-        <div class="mt-2">
-            <a href="/privacy" target="_blank" rel="noopener noreferrer">隐私权政策 (Privacy Policy)</a>
-            <a href="/terms" target="_blank" rel="noopener noreferrer">服务条款 (Terms)</a>
+        <div class="mt-4">
+            <!-- These links are mandatory for Google OAuth Audit - Must be easily visible -->
+            <a href="/privacy">隐私权政策 (Privacy Policy)</a>
+            <a href="/terms">服务条款 (Terms of Service)</a>
         </div>
         <div class="dev-info">
-            开发者: ongyuze1401@gmail.com | 
+            开发者联系方式: ongyuze1401@gmail.com | 
             官方主页: https://somno-ai-digital-sleep-lab.vercel.app
         </div>
     </footer>
