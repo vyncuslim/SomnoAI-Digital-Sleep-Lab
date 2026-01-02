@@ -76,7 +76,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
         
         <div className="space-y-4">
           <h1 className="text-4xl font-black tracking-tighter text-white italic leading-tight">
-            SomnoAI <span className="text-indigo-400">Lab</span>
+            SomnoAI Digital <span className="text-indigo-400">Sleep Lab</span>
           </h1>
           <p className="text-slate-400 font-medium tracking-wide leading-relaxed px-8 text-sm">
             全方位的数字化睡眠实验分析平台

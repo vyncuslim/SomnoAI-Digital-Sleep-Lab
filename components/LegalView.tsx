@@ -23,7 +23,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, onBack }) => {
             {isPrivacy ? '隐私权政策' : '服务条款'}
           </h1>
           <p className="text-[10px] text-indigo-400 font-black uppercase tracking-[0.2em] mt-0.5">
-            SomnoAI Lab • 生效日期：2024年3月20日
+            SomnoAI Digital Sleep Lab • 生效日期：2024年3月20日
           </p>
         </div>
       </header>
