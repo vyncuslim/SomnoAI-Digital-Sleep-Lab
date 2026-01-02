@@ -19,7 +19,7 @@
         <header class="space-y-6">
             <a href="/" class="text-indigo-400 font-bold text-sm uppercase tracking-widest hover:text-indigo-300 transition-all inline-flex items-center gap-2 group">
                 <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="group-hover:-translate-x-1 transition-transform"><path d="m15 18-6-6 6-6"/></svg>
-                返回实验室
+                返回实验室主页
             </a>
             <h1 class="text-5xl font-black italic tracking-tighter text-white leading-tight">隐私权政策<br><span class="text-indigo-500/80 text-3xl not-italic font-medium">Privacy Policy</span></h1>
             <div class="flex flex-wrap gap-4 text-[11px] font-black uppercase tracking-[0.2em] text-slate-500">
@@ -33,68 +33,42 @@
             <div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-blue-500"></div>
             
             <section>
-                <h2>1. 我们如何看待您的隐私</h2>
-                <p>SomnoAI Digital Sleep Lab（以下简称“本应用”或“我们”）深知健康数据的敏感性。本应用被设计为一个<strong>“端侧优先” (Client-Side First)</strong> 的实验平台。我们的核心价值观是：您的数据属于您，且仅属于您的设备。我们不会在任何云端服务器上持久化存储您的原始生理信号。</p>
+                <h2>1. 隐私承诺</h2>
+                <p>SomnoAI Digital Sleep Lab（以下简称“本应用”）深知健康数据的敏感性。本应用被设计为一个<strong>“端侧优先” (Client-Side First)</strong> 的实验平台。我们不会在任何云端服务器上持久化存储您的原始生理信号，所有分析均在您的浏览器本地完成。</p>
             </section>
 
             <section>
-                <h2>2. 数据收集深度说明</h2>
-                <p>当且仅当您明确点击“接入 Google Fit”并完成 OAuth 授权后，我们才会请求访问以下作用域 (Scopes) 下的数据：</p>
+                <h2>2. 数据收集与 Google Fit 集成</h2>
+                <p>当且仅当您明确授权后，我们才会请求访问以下 Google Fit 数据：</p>
                 <div class="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="p-6 bg-white/5 rounded-3xl border border-white/5">
-                        <h3 class="text-indigo-400 font-bold mb-3">睡眠架构数据</h3>
-                        <p class="text-sm">访问 <code>fitness.sleep.read</code> 以提取睡眠分段。这包括您入睡、醒来以及处于深睡、REM、浅睡阶段的精确时间戳，用于生成睡眠架构图谱。</p>
+                        <h3 class="text-indigo-400 font-bold mb-3">睡眠分段数据 (Sleep Read)</h3>
+                        <p class="text-sm">访问 <code>fitness.sleep.read</code>。这包括您的入睡、醒来以及深睡、REM、浅睡阶段的时间戳，用于生成可视化睡眠架构。</p>
                     </div>
                     <div class="p-6 bg-white/5 rounded-3xl border border-white/5">
-                        <h3 class="text-rose-400 font-bold mb-3">生物节律与代谢数据</h3>
-                        <p class="text-sm">访问 <code>fitness.heart_rate.read</code> 和 <code>fitness.activity.read</code>。我们提取静息心率与周期能耗数值，以分析代谢效率对睡眠恢复的影响。</p>
+                        <h3 class="text-rose-400 font-bold mb-3">心率与能耗 (HR/Activity)</h3>
+                        <p class="text-sm">访问 <code>fitness.heart_rate.read</code> 和 <code>fitness.activity.read</code>。我们提取静息心率与周期能耗数值，以分析代谢效率对恢复的影响。</p>
                     </div>
                 </div>
             </section>
 
             <section>
                 <div class="p-8 bg-indigo-600/10 border border-indigo-500/30 rounded-[2.5rem] space-y-6">
-                    <h2 class="mt-0 border-none p-0 text-indigo-300">3. Google API 有限使用政策 (Limited Use)</h2>
+                    <h2 class="mt-0 border-none p-0 text-indigo-300">3. Google API 有限使用政策合规</h2>
                     <p class="text-indigo-100 font-medium leading-relaxed italic">
                         本应用对从 Google API 接收到的信息的使用和传输将严格遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" class="text-white underline decoration-indigo-400">Google API 服务用户数据政策</a>，包括其“有限使用”要求：
                     </p>
                     <ul class="list-disc list-inside space-y-3 text-indigo-200/80 text-sm">
-                        <li><strong>不用于广告</strong>：绝不将您的 Google Fit 数据共享或出售给广告平台、数据经纪人或任何第三方营销机构。</li>
-                        <li><strong>不用于个性化推荐</strong>：数据仅用于本应用内显示的睡眠洞察，不会用于构建您的跨平台广告画像。</li>
-                        <li><strong>不用于信贷/保险</strong>：您的健康指标不会被用于评估您的信贷资格、保险定价或任何具有法律效力的决定。</li>
+                        <li><strong>严禁广告用途</strong>：绝不将您的 Google Fit 数据共享或出售给广告平台或数据经纪人。</li>
+                        <li><strong>非训练声明</strong>：数据仅用于即时生成睡眠报告，绝不会用于训练任何基础 AI 模型。</li>
+                        <li><strong>用户隔离</strong>：所有数据均存储在浏览器的 <code>sessionStorage</code> 中，应用注销后数据即刻抹除。</li>
                     </ul>
                 </div>
             </section>
 
             <section>
-                <h2>4. 数据处理逻辑与 AI 引擎</h2>
-                <p>本应用集成了 Google Gemini 系列模型（如 gemini-3-flash-preview）来生成个性化的睡眠洞察：</p>
-                <ul class="list-disc list-inside space-y-2 mt-4 ml-4">
-                    <li><strong>匿名化处理</strong>：在发送数据给 AI 引擎前，我们会去除所有身份识别符（如姓名、邮箱、地理位置）。</li>
-                    <li><strong>仅处理指标</strong>：AI 仅接收数值化的睡眠分数、心率均值和能量消耗百分比，而非原始的生物波形数据。</li>
-                    <li><strong>非训练声明</strong>：我们通过 API 配置确保您的数据不会被用于训练 Google 的基础大型语言模型。</li>
-                </ul>
-            </section>
-
-            <section>
-                <h2>5. 数据存储、安全与生命周期</h2>
-                <p><strong>临时性存储：</strong>为了提升交互流畅度，我们会将提取的数据临时缓存于浏览器的 <code>sessionStorage</code> 中。这种存储方式具有临时性，当您关闭浏览器标签页或手动点击“退出”时，缓存将被操作系统自动抹除。</p>
-                <p><strong>传输安全：</strong>所有从 Google 服务器到您浏览器的通信均采用 <strong>TLS 1.2/1.3 加密协议</strong>。在数据流经本应用的前端逻辑时，始终处于隔离的沙箱环境内。</p>
-            </section>
-
-            <section>
-                <h2>6. 用户的绝对控制权</h2>
-                <p>您可以随时行使以下权利：</p>
-                <ul class="list-disc list-inside space-y-2 mt-4 ml-4">
-                    <li><strong>访问与导出</strong>：您可以在应用界面实时查看所有提取的数据项。</li>
-                    <li><strong>撤销授权</strong>：随时在您的 <a href="https://myaccount.google.com/permissions" class="text-indigo-400 underline">Google 账号安全设置</a> 中撤销对 SomnoAI 的授权，撤销后应用将立即失去访问权限。</li>
-                    <li><strong>一键抹除</strong>：点击应用内“设置”->“退出并重载”，将立即清除本地所有 Session 缓存。</li>
-                </ul>
-            </section>
-
-            <section>
-                <h2>7. 儿童隐私保护</h2>
-                <p>本应用主要面向追求健康生活的成年用户（18岁及以上）。我们不会故意收集 13 岁以下儿童（或您所在司法管辖区规定的相关年龄）的个人数据。如果您发现有未成年人未经授权使用本应用，请通过下方邮件联系我们。</p>
+                <h2>4. 数据处理安全</h2>
+                <p>本应用集成了 Google Gemini 系列模型生成个性化洞察。在发送数据给 AI 前，我们会去除所有身份识别符（如姓名、邮箱），仅传输匿名化的指标数值。所有通信均通过 TLS 1.3 加密协议完成。</p>
             </section>
 
             <footer class="mt-20 pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
@@ -104,13 +78,10 @@
                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg>
                         </div>
                         <div>
-                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">隐私权与合规专用通道</p>
-                            <a href="mailto:lynnesom26@gmail.com" class="text-lg font-bold text-white hover:text-indigo-400 transition-colors">lynnesom26@gmail.com</a>
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-500">开发者联系方式</p>
+                            <a href="mailto:lynnesom26@gmail.com" class="text-lg font-bold text-white hover:text-indigo-400">lynnesom26@gmail.com</a>
                         </div>
                     </div>
-                </div>
-                <div class="text-right">
-                    <p class="text-[10px] text-slate-600 font-black uppercase tracking-[0.4em]">© 2024 SomnoAI Digital Sleep Lab.<br>Built with Integrity for Health Sovereignty.</p>
                 </div>
             </footer>
         </div>

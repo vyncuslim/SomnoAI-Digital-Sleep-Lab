@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useMemo } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area } from 'recharts';
 import { SleepRecord, SyncStatus } from '../types.ts';
@@ -18,6 +17,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showStatus, setShowStatus] = useState(false);
+
+  // 防御性检查：如果数据尚未准备好，渲染占位符或返回 null 防止崩溃
+  if (!data) return (
+    <div className="flex items-center justify-center h-[60vh] text-slate-500">
+      <Loader2 className="animate-spin mr-2" /> 正在加载实验室环境...
+    </div>
+  );
   
   const scoreData = useMemo(() => {
     const validScore = typeof data.score === 'number' && !isNaN(data.score) ? data.score : 0;
@@ -92,11 +98,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
               ? 'Google Fit 中尚无有效睡眠数据。请确认手机端 Fit 应用已有最近的睡眠图表。'
               : errorMessage || '终端连接丢失，无法从云端检索到有效的生理信号。'}
           </p>
-          {(isAuthError || isPermissionError || isNoDataError) && (
-            <div className="flex items-center gap-1.5 mt-1 text-[9px] font-black uppercase text-rose-300">
-              <Info size={10} /> 建议：点击右上角刷新按钮强制重新触发授权隧道
-            </div>
-          )}
         </div>
       );
     }

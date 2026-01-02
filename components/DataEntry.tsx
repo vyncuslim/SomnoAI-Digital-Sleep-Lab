@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { X, Check, Clock, Heart, Star, Flame, Info, ShieldAlert, Activity, Zap, BrainCircuit, Waves } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
@@ -20,7 +19,9 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
   // Derived metrics for real-time preview using heuristic algorithms
   const previewData = useMemo(() => {
     // Basic heuristics to make the manual data feel scientifically derived
-    const deepBase = 0.22;
+    // Factor in calories: high activity generally increases deep sleep pressure
+    const activityFactor = Math.min(0.05, (calories - 2000) / 40000);
+    const deepBase = 0.22 + activityFactor;
     const remBase = 0.20;
     
     // Efficiency impacts awake time
@@ -33,7 +34,7 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
     const efficiency = Math.round(((duration - awake) / Math.max(1, duration)) * 100);
     
     return { deep, rem, awake, efficiency };
-  }, [duration, score]);
+  }, [duration, score, calories]);
 
   const handleSave = () => {
     // Enhanced Validation
@@ -96,6 +97,13 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
     if (h >= 7 && h <= 9) return { label: '最佳时长', color: 'text-emerald-400', bg: 'bg-emerald-500/10' };
     if (h > 9) return { label: '过度修眠', color: 'text-amber-400', bg: 'bg-amber-500/10' };
     return { label: '恢复受限', color: 'text-rose-400', bg: 'bg-rose-500/10' };
+  };
+
+  const getCalorieStatus = (cal: number) => {
+    if (cal > 4000) return "高强度代谢";
+    if (cal > 2500) return "活跃状态";
+    if (cal > 1500) return "标准代谢";
+    return "基础代谢模式";
   };
 
   return (
@@ -202,13 +210,16 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
                     <Flame size={16} className="text-orange-400" />
                     <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">全天能耗水平</span>
                   </div>
+                  <div className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase text-orange-400 bg-orange-500/10">
+                    {getCalorieStatus(calories)}
+                  </div>
                 </div>
                 <div className="flex items-baseline gap-2">
                   <span className="text-5xl font-black text-white">{calories}</span>
                   <span className="text-xs font-black text-slate-500 uppercase">KCAL</span>
                 </div>
                 <input 
-                  type="range" min="1000" max="4500" step="50" 
+                  type="range" min="500" max="8000" step="50" 
                   value={calories} onChange={(e) => setCalories(parseInt(e.target.value))}
                   className="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-orange-500 hover:accent-orange-400 transition-all"
                 />

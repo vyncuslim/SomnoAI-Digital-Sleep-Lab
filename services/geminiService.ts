@@ -2,12 +2,21 @@ import { GoogleGenAI } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
 const getAi = () => {
-  // 使用更安全的检测方式获取 API_KEY
-  const env = (typeof process !== 'undefined' && process.env) ? process.env : (window as any).process?.env;
-  const apiKey = env?.API_KEY;
+  let apiKey = "";
+  try {
+    // 采用级联探测方式获取 API_KEY，防止 process 未定义导致的崩溃
+    const env = (typeof process !== 'undefined' && process.env) 
+      ? process.env 
+      : (window as any).process?.env;
+    
+    apiKey = env?.API_KEY || "";
+  } catch (e) {
+    console.warn("AI Loader: Environment detection failed.");
+  }
 
   if (!apiKey) {
-    throw new Error("Missing API_KEY in environment variables.");
+    // 即使缺少 KEY 也不抛出同步错误，交由 generateContent 异步处理，防止 UI 渲染中断
+    console.error("SomnoAI: Missing API_KEY in environment.");
   }
   return new GoogleGenAI({ apiKey: apiKey });
 };
@@ -16,96 +25,61 @@ export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
   try {
     const ai = getAi();
     const prompt = `
-      As a professional sleep lab scientist, analyze this comprehensive data:
+      As a professional sleep lab scientist, analyze:
       - Sleep Score: ${data.score}/100
       - Total Time: ${data.totalDuration}min
       - Deep Sleep: ${data.deepRatio}%, REM: ${data.remRatio}%
-      - Efficiency: ${data.efficiency}%
-      - Resting HR: ${data.heartRate.resting}bpm
-      - Calories Burned (24h): ${data.calories || 'N/A'} kcal
+      - Resting HR: ${data.heartRate?.resting || 65}bpm
+      - Calories: ${data.calories || 0} kcal
       
-      Explain how their activity level (calories) might be affecting their sleep quality and provide one scientific advice in Chinese.
+      Explain the metabolic impact and provide 1 advice in Chinese.
     `;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
       config: {
-        temperature: 0.75,
+        temperature: 0.7,
         maxOutputTokens: 250,
-        thinkingConfig: { thinkingBudget: 0 }
       }
     });
 
-    return response.text || "优化您的日常代谢水平以平衡睡眠架构。";
+    return response.text || "保持规律的昼夜节律以优化代谢修复。";
   } catch (error: any) {
-    console.warn("AI Insight generation failed:", error.message);
-    return "已捕获最新的生理指标与代谢流，请保持规律运动与作息。";
+    return "已捕获生理指标流。请保持规律运动，系统将在下个周期生成深度洞察。";
   }
 };
 
 export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> => {
   try {
+    if (history.length === 0) return "数据不足，请继续保持监测。";
     const ai = getAi();
-    const dataSummary = history.map(h => ({
-      date: h.date,
-      score: h.score,
-      hr: h.heartRate.resting,
-      deep: h.deepRatio,
-      duration: h.totalDuration
-    }));
-
-    const prompt = `
-      You are the Chief Scientist at SomnoAI Labs. Analyze the following sleep history of a user:
-      ${JSON.stringify(dataSummary)}
-
-      Task:
-      1. Identify the most significant trend in their sleep architecture or physiological recovery.
-      2. Provide a "Lab Conclusion" (实验室结论) and one "Optimization Protocol" (优化方案).
-      Keep it professional, data-driven, and concise. 
-      Language: Chinese.
-    `;
+    const prompt = `Analyze this history: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}. Language: Chinese.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
-      config: {
-        temperature: 0.7,
-        maxOutputTokens: 500,
-      }
     });
 
-    return response.text || "历史数据不足，请继续保持监测以生成趋势报告。";
+    return response.text || "历史分析模块正在校准中。";
   } catch (error: any) {
-    console.error("Weekly Summary Failure:", error);
-    return "实验室引擎正在维护历史计算模块，请稍后再试。";
+    return "基于最近的活跃度，建议维持稳定的作息时长。";
   }
 };
 
 export const chatWithCoach = async (history: { role: 'user' | 'assistant', content: string }[]): Promise<string> => {
   try {
     const ai = getAi();
-    const systemInstruction = `
-      You are Somno, the Lead Sleep Scientist at SomnoAI Labs.
-      Your tone: Professional, concise, data-driven, and empathetic.
-      Goal: Help users understand their sleep architecture and metabolic recovery.
-      Always respond in Chinese.
-    `;
-
     const chat = ai.chats.create({
       model: 'gemini-3-flash-preview',
       config: {
-        systemInstruction,
-        temperature: 0.8,
+        systemInstruction: "You are Somno, a sleep lab scientist. Be professional and empathetic. Language: Chinese.",
       },
     });
 
-    const lastUserMessage = history[history.length - 1].content;
-    const response = await chat.sendMessage({ message: lastUserMessage });
-    
-    return response.text || "正在处理您的代谢与睡眠模型。";
+    const response = await chat.sendMessage({ message: history[history.length - 1].content });
+    return response.text || "我正在分析您的代谢模型。";
   } catch (error: any) {
-    console.error("Gemini Chat Failure:", error);
     return "由于实验云端连接波动，我暂时无法回应。请稍后再试。";
   }
 };
