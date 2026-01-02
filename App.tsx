@@ -17,7 +17,15 @@ const APP_DOMAIN = "https://somno-ai-digital-sleep-lab.vercel.app";
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [isGuest, setIsGuest] = useState(false);
-  const [activeView, setActiveView] = useState('dashboard' as ViewType);
+  
+  // 更加鲁棒的初始状态设置，防止 Auth 闪烁
+  const [activeView, setActiveView] = useState<ViewType>(() => {
+    const path = window.location.pathname;
+    if (path.includes('/privacy')) return 'privacy';
+    if (path.includes('/terms')) return 'terms';
+    return 'dashboard';
+  });
+
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
@@ -25,23 +33,13 @@ const App: React.FC = () => {
   const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
-  // 初始化路由检测：处理直接访问 /privacy 或 /terms 的情况
-  useEffect(() => {
-    const path = window.location.pathname;
-    if (path.includes('/privacy')) {
-      setActiveView('privacy');
-    } else if (path.includes('/terms')) {
-      setActiveView('terms');
-    }
-  }, []);
-
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
     setTimeout(() => setErrorToast(null), 8000); 
   }, []);
 
   const navigateTo = (view: ViewType) => {
-    // 强制跳转到托管域名的绝对地址，解决嵌入环境（如 AI Studio）中的 404 跳转问题
+    // 强制跳转到托管域名的绝对地址，彻底解决嵌入环境中的 404 问题
     if (view === 'privacy' || view === 'terms') {
       window.open(`${APP_DOMAIN}/${view}`, '_blank', 'noopener,noreferrer');
       return;
