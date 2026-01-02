@@ -18,12 +18,15 @@ declare var google: any;
 const toMillis = (nanos: any): number => {
   if (!nanos) return Date.now();
   try {
-    // 兼容字符串和数字输入
-    const bigNanos = typeof nanos === 'string' ? BigInt(nanos) : BigInt(Math.floor(nanos));
+    // 兼容字符串和数字输入，优先尝试 BigInt 转换
+    const bigNanos = typeof nanos === 'string' 
+      ? BigInt(nanos.replace(/[^0-9]/g, '')) 
+      : BigInt(Math.floor(Number(nanos)));
     return Number(bigNanos / 1000000n);
   } catch (e) {
-    console.warn("Time Conversion Error:", e);
-    return Date.now();
+    console.warn("SomnoAI: Time Conversion fallback used for", nanos);
+    // 退回到普通数字处理
+    return Math.floor(Number(nanos) / 1000000) || Date.now();
   }
 };
 
