@@ -6,29 +6,40 @@ import {
   ChevronRight, ShieldCheck, FileText, Info
 } from 'lucide-react';
 
+const APP_DOMAIN = "https://somno-ai-digital-sleep-lab.vercel.app";
+
 interface SettingsProps {
   onLogout: () => void;
-  // 增加导航回调
   onNavigate?: (view: any) => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
-  const SettingItem = ({ icon: Icon, label, value, color, onClick, href }: any) => {
-    // 如果是内部路由，拦截点击事件
+export const Settings: React.FC<SettingsProps> = ({ onLogout, onNavigate }) => {
+  const SettingItem = ({ icon: Icon, label, value, color, onClick, type }: any) => {
+    const isLegal = type === 'privacy' || type === 'terms';
+    const finalHref = isLegal ? `${APP_DOMAIN}/${type}` : '#';
+
     const handleClick = (e: React.MouseEvent) => {
-      if (href && (href === '/privacy' || href === '/terms')) {
-        e.preventDefault();
-        // 如果父组件没有提供 navigate 逻辑，则退回到普通的 window.location
-        window.location.href = href;
+      if (isLegal) {
+        // 如果我们能进行内部导航（即 App.tsx 传了 onNavigate），则在应用内打开
+        if (onNavigate) {
+          e.preventDefault();
+          onNavigate(type);
+        } else {
+          // 否则退回到新窗口打开绝对路径
+          window.open(finalHref, '_blank', 'noopener,noreferrer');
+        }
       } else if (onClick) {
+        e.preventDefault();
         onClick();
       }
     };
 
     return (
       <a 
-        href={href || '#'}
+        href={finalHref}
         onClick={handleClick}
+        target={isLegal ? "_blank" : undefined}
+        rel={isLegal ? "noopener noreferrer" : undefined}
         className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98] cursor-pointer"
       >
         <div className="flex items-center gap-4">
@@ -83,8 +94,8 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
       <div className="space-y-3">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] px-2">法律与合规</h3>
         <GlassCard className="divide-y divide-white/5 py-2">
-          <SettingItem icon={FileText} label="隐私权政策" value="查看详细声明" color="indigo" href="/privacy" />
-          <SettingItem icon={Info} label="服务条款" value="查看使用约定" color="indigo" href="/terms" />
+          <SettingItem icon={FileText} label="隐私权政策" value="查看详细声明" color="indigo" type="privacy" />
+          <SettingItem icon={Info} label="服务条款" value="查看使用约定" color="indigo" type="terms" />
         </GlassCard>
       </div>
 

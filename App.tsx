@@ -12,6 +12,8 @@ import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCi
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 
+const APP_DOMAIN = "https://somno-ai-digital-sleep-lab.vercel.app";
+
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [isGuest, setIsGuest] = useState(false);
@@ -23,15 +25,25 @@ const App: React.FC = () => {
   const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
+  // 初始化路由检测：处理直接访问 /privacy 或 /terms 的情况
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes('/privacy')) {
+      setActiveView('privacy');
+    } else if (path.includes('/terms')) {
+      setActiveView('terms');
+    }
+  }, []);
+
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
     setTimeout(() => setErrorToast(null), 8000); 
   }, []);
 
   const navigateTo = (view: ViewType) => {
-    // 强制进行完整页面跳转以服务静态法律文件，这是为了通过 Google OAuth 审核的最高级安全方案
+    // 强制跳转到托管域名的绝对地址，解决嵌入环境（如 AI Studio）中的 404 跳转问题
     if (view === 'privacy' || view === 'terms') {
-      window.location.href = `/${view}`;
+      window.open(`${APP_DOMAIN}/${view}`, '_blank', 'noopener,noreferrer');
       return;
     }
 
@@ -146,6 +158,10 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
+    // 法律视图优先级最高，确保用户访问对应路径能看到内容
+    if (activeView === 'privacy') return <LegalView type="privacy" onBack={() => setActiveView('dashboard')} />;
+    if (activeView === 'terms') return <LegalView type="terms" onBack={() => setActiveView('dashboard')} />;
+
     if (isLoading && !currentRecord) {
       return (
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
@@ -201,12 +217,12 @@ const App: React.FC = () => {
       case 'dashboard': return <Dashboard data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} />;
       case 'calendar': return <Trends history={history} />;
       case 'assistant': return <AIAssistant />;
-      case 'profile': return <Settings onLogout={handleLogout} />;
+      case 'profile': return <Settings onLogout={handleLogout} onNavigate={setActiveView} />;
       default: return <Dashboard data={currentRecord!} />;
     }
   };
 
-  const showNav = (isLoggedIn || isGuest || currentRecord);
+  const showNav = (isLoggedIn || isGuest || currentRecord) && activeView !== 'privacy' && activeView !== 'terms';
 
   return (
     <div className="min-h-screen bg-[#020617] text-white overflow-x-hidden">
@@ -217,16 +233,16 @@ const App: React.FC = () => {
       {showNav && (
         <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-8 pt-4 pointer-events-none">
           <div className="max-w-md mx-auto backdrop-blur-3xl bg-slate-900/80 border border-white/5 rounded-[2.5rem] p-2 flex justify-between shadow-2xl pointer-events-auto">
-            <button onClick={() => navigateTo('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500'}`}>
+            <button onClick={() => setActiveView('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500'}`}>
                <LayoutGrid size={22} /> <span className="text-[9px] font-black uppercase tracking-widest">实验室</span>
             </button>
-            <button onClick={() => navigateTo('calendar')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'calendar' ? 'text-indigo-400' : 'text-slate-500'}`}>
+            <button onClick={() => setActiveView('calendar')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'calendar' ? 'text-indigo-400' : 'text-slate-500'}`}>
                <CalendarIcon size={22} /> <span className="text-[9px] font-black uppercase tracking-widest">趋势图谱</span>
             </button>
-            <button onClick={() => navigateTo('assistant')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'assistant' ? 'text-indigo-400' : 'text-slate-500'}`}>
+            <button onClick={() => setActiveView('assistant')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'assistant' ? 'text-indigo-400' : 'text-slate-500'}`}>
                <Bot size={22} /> <span className="text-[9px] font-black uppercase tracking-widest">AI 智囊</span>
             </button>
-            <button onClick={() => navigateTo('profile')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'profile' ? 'text-indigo-400' : 'text-slate-500'}`}>
+            <button onClick={() => setActiveView('profile')} className={`flex-1 py-3 flex flex-col items-center gap-1 transition-colors ${activeView === 'profile' ? 'text-indigo-400' : 'text-slate-500'}`}>
                <User size={22} /> <span className="text-[9px] font-black uppercase tracking-widest">设置</span>
             </button>
           </div>

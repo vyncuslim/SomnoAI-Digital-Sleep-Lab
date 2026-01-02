@@ -4,6 +4,8 @@ import { Moon, ShieldCheck, Lock, Loader2, Info, ArrowRight, Zap, TriangleAlert 
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
 
+const APP_DOMAIN = "https://somno-ai-digital-sleep-lab.vercel.app";
+
 interface AuthProps {
   onLogin: () => void;
   onGuest: () => void;
@@ -18,6 +20,13 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
       console.warn("Auth Component: SDK 预热推迟", err.message);
     });
   }, []);
+
+  const openLegal = (e: React.MouseEvent, type: 'privacy' | 'terms') => {
+    e.preventDefault();
+    // 强制使用绝对路径并开启新窗口，防止 AI Studio 容器将相对路径解析为 google.com
+    const url = `${APP_DOMAIN}/${type}`;
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
 
   const handleGoogleLogin = async () => {
     if (isLoggingIn) return;
@@ -122,7 +131,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
 
           <div className="pt-2 flex justify-center gap-6 border-t border-white/5">
             <a 
-              href="/privacy" 
+              href={`${APP_DOMAIN}/privacy`} 
+              onClick={(e) => openLegal(e, 'privacy')}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 hover:text-indigo-300 transition-colors"
@@ -130,7 +140,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
               <ShieldCheck size={10} /> 隐私政策
             </a>
             <a 
-              href="/terms" 
+              href={`${APP_DOMAIN}/terms`} 
+              onClick={(e) => openLegal(e, 'terms')}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 hover:text-indigo-300 transition-colors"
