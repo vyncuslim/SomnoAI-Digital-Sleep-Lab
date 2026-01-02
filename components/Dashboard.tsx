@@ -1,73 +1,29 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { PieChart, Pie, Cell, ResponsiveContainer, AreaChart, Area } from 'recharts';
+import { PieChart, Pie, Cell, ResponsiveContainer } from 'recharts';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Heart, Sparkles, RefreshCw, CircleCheck, CircleAlert, List, Zap, Clock, Activity, Loader2, Flame, Shield, Database, Check, Satellite, ShieldAlert, KeyRound, Info
+  Sparkles, RefreshCw, Activity, Loader2, Shield, Binary, ChevronRight, Info, Zap, Waves, Brain
 } from 'lucide-react';
 
 interface DashboardProps {
   data: SleepRecord;
-  onAddData?: () => void;
   onSyncFit?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
 }
 
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.1
-    }
-  }
-};
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } }
-};
+const labTransition = { duration: 0.6, ease: [0.22, 1, 0.36, 1] };
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showStatus, setShowStatus] = useState(false);
-
-  if (!data) return (
-    <div className="flex flex-col items-center justify-center h-[60vh] text-slate-500 gap-4">
-      <motion.div 
-        animate={{ rotate: 360 }}
-        transition={{ duration: 2, repeat: Infinity, ease: "linear" }}
-      >
-        <Loader2 size={32} />
-      </motion.div>
-      <p className="text-sm font-bold uppercase tracking-widest animate-pulse">正在初始化实验室环境</p>
-    </div>
-  );
-  
-  const scoreData = useMemo(() => {
-    const validScore = typeof data.score === 'number' && !isNaN(data.score) ? Math.min(100, Math.max(0, data.score)) : 0;
-    return [{ value: validScore }, { value: 100 - validScore }];
-  }, [data.score]);
 
   useEffect(() => {
     if (syncStatus !== 'idle') {
       setShowStatus(true);
       if (syncStatus === 'success') {
-        const timer = setTimeout(() => {
-          setShowStatus(false);
-          setTimeout(() => setSyncStatus('idle'), 600);
-        }, 4000);
-        return () => clearTimeout(timer);
-      } else if (syncStatus === 'error') {
-        const timer = setTimeout(() => {
-          setShowStatus(false);
-          setTimeout(() => {
-            setSyncStatus('idle');
-            setErrorMessage(null);
-          }, 600);
-        }, 15000);
+        const timer = setTimeout(() => setShowStatus(false), 4000);
         return () => clearTimeout(timer);
       }
     }
@@ -75,284 +31,199 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
   const handleSync = async () => {
     if (!onSyncFit || isProcessing) return;
-    setErrorMessage(null);
     try {
       await onSyncFit((status) => setSyncStatus(status));
-    } catch (err: any) {
+    } catch (err) {
       setSyncStatus('error');
-      setErrorMessage(err.message || "实验室信号同步中断");
     }
   };
 
-  const formatDuration = (mins: number) => {
-    if (typeof mins !== 'number' || isNaN(mins)) return '0h 0m';
-    const h = Math.floor(mins / 60);
-    const m = mins % 60;
-    return `${h}h ${m}m`;
-  };
-
-  const totalStageMins = data.stages?.reduce((acc, s) => acc + (s.duration || 0), 0) || 0;
   const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
 
-  const renderStatusDetails = () => {
-    if (syncStatus === 'error') {
-      return (
-        <div className="flex flex-col gap-2">
-          <span className="text-xs font-black uppercase tracking-[0.3em] text-rose-400">同步异常</span>
-          <p className="text-[10px] font-medium opacity-90 leading-relaxed max-w-xs">{errorMessage || '终端连接丢失'}</p>
-        </div>
-      );
-    }
-
-    const messages = {
-      authorizing: { title: '身份校验', desc: '建立加密握手...', icon: <KeyRound size={20} /> },
-      fetching: { title: '特征提取', desc: '检索生理流数据...', icon: <Satellite size={20} /> },
-      analyzing: { title: '架构推演', desc: 'AI 引擎校准中...', icon: <Database size={20} /> },
-      success: { title: '同步完成', desc: '实验数据已部署', icon: <CircleCheck size={20} /> }
-    };
-
-    const current = messages[syncStatus as keyof typeof messages];
-    if (!current) return null;
-
-    return (
-      <div className="flex flex-col gap-1">
-        <span className="text-xs font-black uppercase tracking-[0.3em]">{current.title}</span>
-        <span className="text-[10px] font-medium opacity-80">{current.desc}</span>
-      </div>
-    );
-  };
-
   return (
-    <motion.div 
-      variants={containerVariants}
-      initial="hidden"
-      animate="visible"
-      className="space-y-8 pb-32"
-    >
-      <motion.header variants={itemVariants} className="flex justify-between items-center px-1">
-        <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-black tracking-tighter text-white italic leading-none">SomnoAI Lab</h1>
-            <div className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
-              <motion.div 
-                animate={{ scale: [1, 1.3, 1] }}
-                transition={{ duration: 2, repeat: Infinity }}
-                className="w-1.5 h-1.5 rounded-full bg-indigo-400"
-              />
-              <span className="text-[9px] font-black text-indigo-400 uppercase tracking-[0.2em]">Live Signal</span>
-            </div>
-          </div>
-          <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] mt-1">{data.date}</p>
+    <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6 pb-32">
+      {/* 1. AI 结论先行 (Natural Language Summary) */}
+      <motion.section 
+        initial={{ y: -10, opacity: 0 }} 
+        animate={{ y: 0, opacity: 1 }}
+        className="px-1"
+      >
+        <div className="flex items-center gap-2 mb-3">
+          <div className="w-1 h-1 rounded-full bg-indigo-400 animate-ping"></div>
+          <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400/80">Laboratory Intelligence Post</span>
         </div>
-        
-        <motion.button 
-          whileTap={{ scale: 0.9 }}
-          onClick={handleSync}
-          disabled={isProcessing}
-          className={`p-4 rounded-[1.5rem] shadow-xl border transition-colors ${
-            syncStatus === 'success' ? 'bg-emerald-600 border-emerald-500 text-white' :
-            syncStatus === 'error' ? 'bg-rose-600 border-rose-500 text-white' :
-            isProcessing ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-400' : 
-            'bg-white/5 border-white/10 text-slate-400'
-          }`}
-        >
-          <RefreshCw size={20} className={isProcessing ? 'animate-spin' : ''} />
-        </motion.button>
-      </motion.header>
-
-      <motion.div variants={itemVariants} className="flex flex-col items-center justify-center py-4 relative">
-        <div className="w-72 h-72 relative group">
-          <motion.div 
-            animate={{ scale: [1, 1.05, 1], opacity: [0.1, 0.2, 0.1] }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="absolute inset-0 bg-indigo-600/30 blur-[100px] rounded-full"
-          />
-          <ResponsiveContainer width="100%" height="100%">
-            <PieChart>
-              <Pie
-                data={scoreData}
-                cx="50%"
-                cy="50%"
-                innerRadius={100}
-                outerRadius={125}
-                dataKey="value"
-                startAngle={90}
-                endAngle={450}
-                stroke="none"
-              >
-                <Cell fill="url(#labGradient)" />
-                <Cell fill="rgba(255,255,255,0.03)" />
-              </Pie>
-              <defs>
-                <linearGradient id="labGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#818cf8" />
-                  <stop offset="100%" stopColor="#4338ca" />
-                </linearGradient>
-              </defs>
-            </PieChart>
-          </ResponsiveContainer>
-          <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
-            <motion.span 
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ delay: 0.5, type: 'spring' }}
-              className="text-8xl font-black text-white tracking-tighter italic drop-shadow-[0_0_30px_rgba(79,70,229,0.5)]"
-            >
-              {data.score ?? 0}
-            </motion.span>
-            <div className="flex items-center gap-2 mt-2 opacity-50">
-              <Shield size={10} className="text-indigo-400" />
-              <span className="text-[10px] text-slate-400 font-black tracking-[0.5em] uppercase">Lab SQI</span>
-            </div>
+        <div className="space-y-3">
+          <h2 className="text-xl font-bold leading-snug text-slate-100 italic">
+            {data.aiInsights?.[0]?.split('。')[0]}。
+          </h2>
+          <div className="flex items-center gap-2 opacity-40">
+            <Shield size={10} />
+            <span className="text-[9px] font-mono tracking-tighter uppercase">Verified by Somno-v3 Architecture</span>
           </div>
         </div>
-      </motion.div>
+      </motion.section>
 
-      <div className="grid grid-cols-2 gap-5">
-        <motion.div variants={itemVariants} className="col-span-2">
-          <GlassCard className="p-0 overflow-hidden border-white/5 bg-slate-900/40 relative group">
-             <div className="p-7 flex justify-between items-start relative z-10">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
-                    <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em]">脉搏信号 (BPM)</span>
-                  </div>
-                  <div className="flex items-baseline gap-3">
-                    <span className="text-4xl font-black text-white">{data.heartRate?.average ?? 0}</span>
-                    <span className="text-[11px] text-slate-500 font-black uppercase tracking-widest">AVG</span>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.2em] mb-1">低值校正</p>
-                  <p className="text-2xl font-black text-rose-400 italic">{data.heartRate?.resting ?? 0}</p>
-                </div>
-             </div>
-             <div className="h-32 w-full mt-[-20px] opacity-80">
-               <ResponsiveContainer width="100%" height="100%">
-                 <AreaChart data={data.heartRate?.history || []}>
-                   <defs>
-                     <linearGradient id="hrStream" x1="0" y1="0" x2="0" y2="1">
-                       <stop offset="0%" stopColor="#f43f5e" stopOpacity={0.2}/>
-                       <stop offset="100%" stopColor="#f43f5e" stopOpacity={0}/>
-                     </linearGradient>
-                   </defs>
-                   <Area 
-                    type="monotone" 
-                    dataKey="bpm" 
-                    stroke="#f43f5e" 
-                    strokeWidth={3} 
-                    fill="url(#hrStream)" 
-                    animationDuration={2000}
-                  />
-                 </AreaChart>
-               </ResponsiveContainer>
-             </div>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <GlassCard className="p-7 space-y-4">
-            <div className="flex items-center gap-3">
-              <Clock size={16} className="text-blue-400" />
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">监控时长</p>
+      {/* 2. 中央评分与核心因子 (Score & Factors) */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <GlassCard className="py-10 flex flex-col items-center justify-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-full opacity-[0.03] pointer-events-none">
+            <Waves className="w-full h-full scale-150 rotate-45" />
+          </div>
+          <div className="relative w-48 h-48">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[{v: data.score}, {v: 100 - data.score}]}
+                  cx="50%" cy="50%" innerRadius={70} outerRadius={85}
+                  dataKey="v" startAngle={90} endAngle={450} stroke="none"
+                >
+                  <Cell fill="url(#labScoreGrad)" />
+                  <Cell fill="rgba(255,255,255,0.03)" />
+                </Pie>
+                <defs>
+                  <linearGradient id="labScoreGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor={COLORS.primary} />
+                    <stop offset="100%" stopColor="#4338ca" />
+                  </linearGradient>
+                </defs>
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center">
+              <span className="text-6xl font-black font-mono italic text-white text-glow-indigo">
+                {data.score}
+              </span>
+              <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em] mt-1">Lab Index</span>
             </div>
-            <p className="text-2xl font-black text-white italic">{formatDuration(data.totalDuration)}</p>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div variants={itemVariants}>
-          <GlassCard className="p-7 space-y-4">
-            <div className="flex items-center gap-3">
-              <Flame size={16} className="text-orange-400" />
-              <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">静态能耗</p>
-            </div>
-            <p className="text-2xl font-black text-white italic">{data.calories || 0} <span className="text-xs text-slate-500 not-italic ml-1">KCAL</span></p>
-          </GlassCard>
-        </motion.div>
-      </div>
-
-      <motion.div variants={itemVariants} className="space-y-4">
-        <div className="flex items-center gap-2 px-3">
-          <Sparkles size={14} className="text-indigo-400" />
-          <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-slate-400">AI 实验室分析</h3>
-        </div>
-        <GlassCard className="p-8 bg-indigo-600/[0.03] border-indigo-500/20 relative overflow-hidden">
-          <div className="space-y-6 relative z-10">
-            {data.aiInsights?.map((insight, i) => (
-              <motion.div 
-                key={i} 
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.8 + i * 0.2 }}
-                className="flex gap-4 items-start"
-              >
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-2 shrink-0" />
-                <p className="text-[13px] text-slate-200 leading-relaxed font-semibold italic">{insight}</p>
-              </motion.div>
-            ))}
           </div>
         </GlassCard>
-      </motion.div>
 
-      <motion.div variants={itemVariants} className="space-y-4">
-        <div className="flex items-center gap-2 px-3">
-          <List size={14} className="text-slate-500" />
-          <h3 className="font-black text-[11px] uppercase tracking-[0.4em] text-slate-400">睡眠架构可视化</h3>
-        </div>
-        <GlassCard className="p-8 space-y-8">
-          <div className="w-full h-10 bg-slate-800/40 rounded-2xl overflow-hidden flex border border-white/5">
-            {data.stages?.map((stage, idx) => {
-              const width = `${(stage.duration / Math.max(1, totalStageMins)) * 100}%`;
-              let color = COLORS.light;
-              if (stage.name === '深睡') color = COLORS.deep;
-              if (stage.name === 'REM') color = COLORS.rem;
-              if (stage.name === '清醒') color = COLORS.awake;
-              return (
-                <motion.div 
-                  key={idx} 
-                  initial={{ width: 0 }}
-                  animate={{ width }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                  style={{ backgroundColor: color }}
-                  className="h-full relative group/stage"
-                />
-              );
-            })}
-          </div>
-          <div className="grid grid-cols-2 gap-y-4 gap-x-8">
+        <div className="space-y-4">
+          <h3 className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] px-2">三大核心修复因子</h3>
+          <div className="space-y-3">
             {[
-              { label: '深层修复', color: COLORS.deep, val: (data.deepRatio ?? 0) + '%' },
-              { label: '认知巩固', color: COLORS.rem, val: (data.remRatio ?? 0) + '%' }
-            ].map(item => (
-              <div key={item.label} className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: item.color }} />
-                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{item.label}</span>
+              { label: '神经修复 (Deep)', val: data.deepRatio, icon: Brain, color: COLORS.deep },
+              { label: '认知巩固 (REM)', val: data.remRatio, icon: Zap, color: COLORS.rem },
+              { label: '心血管冗余 (RHR)', val: Math.round(100 - ((data.heartRate.resting - 40)/60)*100), icon: Activity, color: '#f43f5e' }
+            ].map(factor => (
+              <GlassCard key={factor.label} className="p-4 border-white/5 bg-white/[0.01]">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-slate-800/50">
+                      <factor.icon size={14} style={{ color: factor.color }} />
+                    </div>
+                    <span className="text-[11px] font-bold text-slate-400">{factor.label}</span>
+                  </div>
+                  <span className="text-sm font-black font-mono text-slate-200">{factor.val}%</span>
                 </div>
-                <span className="text-xs font-black text-slate-300">{item.val}</span>
+                <div className="mt-3 h-1 w-full bg-slate-800 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }} 
+                    animate={{ width: `${factor.val}%` }} 
+                    transition={{ delay: 0.5, duration: 1 }}
+                    className="h-full rounded-full" 
+                    style={{ backgroundColor: factor.color }}
+                  />
+                </div>
+              </GlassCard>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* 3. 睡眠实验室时间轴 (Sleep Timeline Lab) */}
+      <section className="space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <Binary size={14} className="text-slate-500" />
+            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">睡眠特征推演图谱</h3>
+          </div>
+          <span className="text-[9px] font-mono text-slate-600">RESOLUTION: 1MIN/PX</span>
+        </div>
+        <GlassCard className="p-6 md:p-8 space-y-8">
+          <div className="relative pt-6 pb-2">
+            {/* 时间标记 */}
+            <div className="absolute top-0 left-0 w-full flex justify-between text-[8px] font-mono text-slate-600 uppercase tracking-widest">
+               <span>Inflow</span>
+               <span>Midpoint</span>
+               <span>Wake-up</span>
+            </div>
+            
+            <div className="h-6 w-full bg-slate-800/20 rounded-lg overflow-hidden flex border border-white/5">
+              {data.stages?.map((stage, idx) => (
+                <div 
+                  key={idx}
+                  style={{ 
+                    width: `${(stage.duration / Math.max(1, data.totalDuration)) * 100}%`,
+                    backgroundColor: stage.name === '深睡' ? COLORS.deep : stage.name === 'REM' ? COLORS.rem : stage.name === '清醒' ? COLORS.awake : COLORS.light
+                  }}
+                  className="h-full relative group cursor-help"
+                >
+                  <div className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 px-2 py-1.5 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-opacity z-50 pointer-events-none shadow-2xl">
+                    <p className="text-[8px] font-black uppercase tracking-widest text-indigo-400">{stage.name}</p>
+                    <p className="text-[10px] font-mono text-white">{stage.duration}m</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pt-4 border-t border-white/5">
+            {[
+              { l: '深睡', c: COLORS.deep, v: data.deepRatio },
+              { l: 'REM', c: COLORS.rem, v: data.remRatio },
+              { l: '浅睡', c: COLORS.light, v: 100 - data.deepRatio - data.remRatio - (100 - data.efficiency) },
+              { l: '觉醒', c: COLORS.awake, v: 100 - data.efficiency }
+            ].map(item => (
+              <div key={item.l} className="space-y-1">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.c }} />
+                  <span className="text-[9px] font-black text-slate-500 uppercase">{item.l}</span>
+                </div>
+                <p className="text-lg font-black font-mono text-slate-200">{Math.round(item.v)}%</p>
               </div>
             ))}
           </div>
         </GlassCard>
-      </motion.div>
+      </section>
+
+      {/* 4. 实验室操作区 */}
+      <div className="grid grid-cols-2 gap-4">
+        <GlassCard 
+          onClick={handleSync}
+          className="p-5 flex items-center justify-between group cursor-pointer border-indigo-500/10 hover:border-indigo-500/30 transition-all active:scale-[0.98]"
+        >
+          <div className="space-y-1">
+             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">特征流同步</p>
+             <p className="text-xs font-bold text-indigo-400 uppercase tracking-tighter">Sync Stream</p>
+          </div>
+          <RefreshCw size={16} className={`text-indigo-400 ${isProcessing ? 'animate-spin' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
+        </GlassCard>
+
+        <GlassCard className="p-5 flex items-center justify-between border-white/5 opacity-60">
+          <div className="space-y-1">
+             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">导出实验报告</p>
+             <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter">Export PDF</p>
+          </div>
+          <Binary size={16} className="text-slate-500" />
+        </GlassCard>
+      </div>
 
       <AnimatePresence>
         {showStatus && (
           <motion.div 
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            className={`fixed bottom-28 left-6 right-6 z-[100] px-6 py-4 rounded-3xl border backdrop-blur-3xl flex items-center justify-between shadow-2xl ${
-              syncStatus === 'success' ? 'bg-emerald-950/80 border-emerald-500/30 text-emerald-100' : 
-              syncStatus === 'error' ? 'bg-rose-950/80 border-rose-500/30 text-rose-100' : 
-              'bg-slate-900/90 border-indigo-500/30 text-indigo-100'
-            }`}
+            initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }}
+            className="fixed bottom-28 left-6 right-6 z-[100] px-6 py-4 rounded-2xl border glass-morphism border-indigo-500/20 text-indigo-100 flex items-center gap-4 shadow-2xl"
           >
-            <div className="flex items-center gap-4">
-              <div className="p-2.5 rounded-2xl bg-white/5">
-                {isProcessing ? <Loader2 size={20} className="animate-spin" /> : <Shield size={20} />}
-              </div>
-              {renderStatusDetails()}
+            <div className="p-2 rounded-xl bg-white/5">
+              {isProcessing ? <Loader2 size={16} className="animate-spin" /> : <Shield size={16} />}
+            </div>
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black uppercase tracking-widest">
+                {isProcessing ? '实验室计算中...' : '同步已验证'}
+              </span>
+              <span className="text-[9px] opacity-70">
+                Somno-v3 引擎已成功挂载生物特征流
+              </span>
             </div>
           </motion.div>
         )}

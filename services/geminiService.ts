@@ -1,26 +1,17 @@
+
 import { GoogleGenAI } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
+// Fix: Initializing GoogleGenAI using strictly process.env.API_KEY as per the library requirements.
 const getAi = () => {
-  let apiKey = "DUMMY_KEY"; // 默认占位符，防止构造函数由于 undefined 崩溃
-  try {
-    const env = (window as any).process?.env || (typeof process !== 'undefined' ? process.env : {});
-    apiKey = env.API_KEY || "DUMMY_KEY";
-  } catch (e) {
-    console.warn("SomnoAI: Could not read API key");
-  }
-
-  return new GoogleGenAI({ apiKey: apiKey });
+  return new GoogleGenAI({ apiKey: process.env.API_KEY as string });
 };
 
 export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
   try {
     const ai = getAi();
-    // 检查是否为有效 Key，否则直接返回回退文本
-    if (!(window as any).process?.env?.API_KEY && (typeof process === 'undefined' || !process.env.API_KEY)) {
-      return "实验室正在校准您的睡眠节奏。规律作息有助于身心修复。";
-    }
-
+    
+    // Fix: Using a plain text prompt for generation as per standard task guidelines.
     const prompt = `
       As a sleep scientist, analyze:
       Score: ${data.score}/100, Duration: ${data.totalDuration}min, 
@@ -34,6 +25,7 @@ export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
       config: { temperature: 0.7 }
     });
 
+    // Fix: Accessing .text property directly instead of calling it as a method.
     return response.text || "保持规律的睡眠节奏是改善质量的基础。";
   } catch (error) {
     return "系统分析中。建议睡前一小时减少电子设备使用。";
@@ -50,6 +42,7 @@ export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> 
       model: 'gemini-3-pro-preview',
       contents: prompt,
     });
+    // Fix: Extracting text using the .text getter.
     return response.text || "趋势分析显示您的状态稳定。";
   } catch (error) {
     return "由于信号校准中，暂无法生成周报。";
@@ -63,7 +56,9 @@ export const chatWithCoach = async (history: { role: 'user' | 'assistant', conte
       model: 'gemini-3-flash-preview',
       config: { systemInstruction: "You are Somno, a sleep lab scientist. Keep responses brief and helpful. Use Chinese." }
     });
+    // Fix: sendMessage correctly takes an object with a message property.
     const response = await chat.sendMessage({ message: history[history.length - 1].content });
+    // Fix: Extracting text using the .text getter.
     return response.text || "收到，我正在分析您的疑惑。";
   } catch (error) {
     return "实验室连接稍有延迟，建议稍后再试。";
