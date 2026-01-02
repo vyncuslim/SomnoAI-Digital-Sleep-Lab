@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Trends } from './components/Trends.tsx';
@@ -5,6 +6,7 @@ import { AIAssistant } from './components/AIAssistant.tsx';
 import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
+import { LegalView } from './components/LegalView.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
@@ -27,6 +29,12 @@ const App: React.FC = () => {
   }, []);
 
   const navigateTo = (view: ViewType) => {
+    // 关键修复：法律页面强制进行完整的页面重载，确保加载静态 HTML 且不触发 pushState 错误
+    if (view === 'privacy' || view === 'terms') {
+      window.location.href = `/${view}`;
+      return;
+    }
+
     setActiveView(view);
     
     try {
@@ -37,7 +45,6 @@ const App: React.FC = () => {
         window.location.hostname.includes('usercontent.goog') || 
         window.location.hostname.includes('ai.studio');
 
-      // 仅在主功能视图切换时保持 URL 简洁。法律页面已由 Vercel 服务端静态分发。
       if (!isRestricted && typeof window.history.pushState === 'function') {
         window.history.pushState({ view }, '', '/');
       }
@@ -135,6 +142,7 @@ const App: React.FC = () => {
     setCurrentRecord(null);
     setHistory([]);
     setActiveView('dashboard');
+    window.history.pushState({}, '', '/');
   };
 
   const renderView = () => {

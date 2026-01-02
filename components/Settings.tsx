@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
@@ -7,18 +8,27 @@ import {
 
 interface SettingsProps {
   onLogout: () => void;
+  // 增加导航回调
+  onNavigate?: (view: any) => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
   const SettingItem = ({ icon: Icon, label, value, color, onClick, href }: any) => {
-    const Component = href ? 'a' : 'button';
-    const extraProps = href ? { target: "_blank", rel: "noopener noreferrer" } : {};
+    // 如果是内部路由，拦截点击事件
+    const handleClick = (e: React.MouseEvent) => {
+      if (href && (href === '/privacy' || href === '/terms')) {
+        e.preventDefault();
+        // 如果父组件没有提供 navigate 逻辑，则退回到普通的 window.location
+        window.location.href = href;
+      } else if (onClick) {
+        onClick();
+      }
+    };
 
     return (
-      <Component 
-        onClick={onClick} 
-        href={href}
-        {...extraProps}
+      <a 
+        href={href || '#'}
+        onClick={handleClick}
         className="w-full flex items-center justify-between py-4 group transition-all active:scale-[0.98] cursor-pointer"
       >
         <div className="flex items-center gap-4">
@@ -35,7 +45,7 @@ export const Settings: React.FC<SettingsProps> = ({ onLogout }) => {
           </div>
         </div>
         <ChevronRight size={18} className="text-slate-600 group-hover:text-slate-400 group-hover:translate-x-1 transition-all" />
-      </Component>
+      </a>
     );
   };
 
