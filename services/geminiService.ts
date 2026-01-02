@@ -2,68 +2,57 @@ import { GoogleGenAI } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 
 const getAi = () => {
-  let apiKey = "";
+  let apiKey = "DUMMY_KEY"; // 默认占位符，防止构造函数由于 undefined 崩溃
   try {
-    // 采用级联探测方式获取 API_KEY，防止 process 未定义导致的崩溃
-    const env = (typeof process !== 'undefined' && process.env) 
-      ? process.env 
-      : (window as any).process?.env;
-    
-    apiKey = env?.API_KEY || "";
+    const env = (window as any).process?.env || (typeof process !== 'undefined' ? process.env : {});
+    apiKey = env.API_KEY || "DUMMY_KEY";
   } catch (e) {
-    console.warn("AI Loader: Environment detection failed.");
+    console.warn("SomnoAI: Could not read API key");
   }
 
-  if (!apiKey) {
-    // 即使缺少 KEY 也不抛出同步错误，交由 generateContent 异步处理，防止 UI 渲染中断
-    console.error("SomnoAI: Missing API_KEY in environment.");
-  }
   return new GoogleGenAI({ apiKey: apiKey });
 };
 
 export const getSleepInsight = async (data: SleepRecord): Promise<string> => {
   try {
     const ai = getAi();
+    // 检查是否为有效 Key，否则直接返回回退文本
+    if (!(window as any).process?.env?.API_KEY && (typeof process === 'undefined' || !process.env.API_KEY)) {
+      return "实验室正在校准您的睡眠节奏。规律作息有助于身心修复。";
+    }
+
     const prompt = `
-      As a professional sleep lab scientist, analyze:
-      - Sleep Score: ${data.score}/100
-      - Total Time: ${data.totalDuration}min
-      - Deep Sleep: ${data.deepRatio}%, REM: ${data.remRatio}%
-      - Resting HR: ${data.heartRate?.resting || 65}bpm
-      - Calories: ${data.calories || 0} kcal
-      
-      Explain the metabolic impact and provide 1 advice in Chinese.
+      As a sleep scientist, analyze:
+      Score: ${data.score}/100, Duration: ${data.totalDuration}min, 
+      Deep: ${data.deepRatio}%, REM: ${data.remRatio}%, RHR: ${data.heartRate?.resting || 65}bpm.
+      Provide one short advice in Chinese.
     `;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
       contents: prompt,
-      config: {
-        temperature: 0.7,
-        maxOutputTokens: 250,
-      }
+      config: { temperature: 0.7 }
     });
 
-    return response.text || "保持规律的昼夜节律以优化代谢修复。";
-  } catch (error: any) {
-    return "已捕获生理指标流。请保持规律运动，系统将在下个周期生成深度洞察。";
+    return response.text || "保持规律的睡眠节奏是改善质量的基础。";
+  } catch (error) {
+    return "系统分析中。建议睡前一小时减少电子设备使用。";
   }
 };
 
 export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> => {
   try {
-    if (history.length === 0) return "数据不足，请继续保持监测。";
+    if (history.length === 0) return "数据不足。";
     const ai = getAi();
-    const prompt = `Analyze this history: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}. Language: Chinese.`;
+    const prompt = `Analyze sleep history trends: ${JSON.stringify(history.map(h => ({ s: h.score, d: h.date })))}. Provide summary in Chinese.`;
 
     const response = await ai.models.generateContent({
       model: 'gemini-3-pro-preview',
       contents: prompt,
     });
-
-    return response.text || "历史分析模块正在校准中。";
-  } catch (error: any) {
-    return "基于最近的活跃度，建议维持稳定的作息时长。";
+    return response.text || "趋势分析显示您的状态稳定。";
+  } catch (error) {
+    return "由于信号校准中，暂无法生成周报。";
   }
 };
 
@@ -72,14 +61,11 @@ export const chatWithCoach = async (history: { role: 'user' | 'assistant', conte
     const ai = getAi();
     const chat = ai.chats.create({
       model: 'gemini-3-flash-preview',
-      config: {
-        systemInstruction: "You are Somno, a sleep lab scientist. Be professional and empathetic. Language: Chinese.",
-      },
+      config: { systemInstruction: "You are Somno, a sleep lab scientist. Keep responses brief and helpful. Use Chinese." }
     });
-
     const response = await chat.sendMessage({ message: history[history.length - 1].content });
-    return response.text || "我正在分析您的代谢模型。";
-  } catch (error: any) {
-    return "由于实验云端连接波动，我暂时无法回应。请稍后再试。";
+    return response.text || "收到，我正在分析您的疑惑。";
+  } catch (error) {
+    return "实验室连接稍有延迟，建议稍后再试。";
   }
 };

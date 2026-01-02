@@ -13,20 +13,34 @@ const SCOPES = [
 declare var google: any;
 
 /**
- * 安全地将纳米级时间戳转换为毫秒
+ * 工业级健壮的时间戳转换函数
+ * 绝不使用 BigInt 处理非数字，防止 Uncaught RangeError
  */
 const toMillis = (nanos: any): number => {
-  if (!nanos) return Date.now();
+  if (nanos === null || nanos === undefined) return Date.now();
+  
+  // 如果已经是毫秒级数字
+  if (typeof nanos === 'number' && !isNaN(nanos) && nanos < 2000000000000) {
+    return Math.floor(nanos);
+  }
+
   try {
-    // 兼容字符串和数字输入，优先尝试 BigInt 转换
-    const bigNanos = typeof nanos === 'string' 
-      ? BigInt(nanos.replace(/[^0-9]/g, '')) 
-      : BigInt(Math.floor(Number(nanos)));
-    return Number(bigNanos / 1000000n);
+    const str = String(nanos).replace(/[^0-9]/g, '');
+    if (str.length === 0) return Date.now();
+
+    // 如果长度超过 13 位，说明是纳秒
+    if (str.length > 13) {
+      try {
+        return Number(BigInt(str) / 1000000n);
+      } catch (e) {
+        return Date.now();
+      }
+    }
+    
+    const val = parseInt(str, 10);
+    return isNaN(val) ? Date.now() : val;
   } catch (e) {
-    console.warn("SomnoAI: Time Conversion fallback used for", nanos);
-    // 退回到普通数字处理
-    return Math.floor(Number(nanos) / 1000000) || Date.now();
+    return Date.now();
   }
 };
 
@@ -45,14 +59,14 @@ export class GoogleFitService {
   }
 
   private async waitForGoogleReady(): Promise<void> {
-    const maxAttempts = 50;
+    const maxAttempts = 100;
     for (let i = 0; i < maxAttempts; i++) {
       if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
         return;
       }
-      await new Promise(resolve => setTimeout(resolve, 150));
+      await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("GOOGLE_SDK_TIMEOUT: Google 身份验证组件加载超时，请检查网络。");
+    throw new Error("GOOGLE_SDK_NOT_LOADED");
   }
 
   public async ensureClientInitialized(): Promise<void> {
@@ -67,18 +81,16 @@ export class GoogleFitService {
           scope: SCOPES.join(" "),
           callback: (response: any) => {
             if (response.error) {
-              const errorMsg = response.error_description || response.error;
-              this.authPromise?.reject(new Error(errorMsg));
+              this.authPromise?.reject(new Error(response.error_description || response.error));
               this.authPromise = null;
               return;
             }
-            
             this.accessToken = response.access_token;
             if (this.accessToken) {
               sessionStorage.setItem('google_fit_token', this.accessToken);
               this.authPromise?.resolve(this.accessToken);
             } else {
-              this.authPromise?.reject(new Error("MISSING_TOKEN"));
+              this.authPromise?.reject(new Error("EMPTY_TOKEN"));
             }
             this.authPromise = null;
           }
@@ -93,20 +105,12 @@ export class GoogleFitService {
 
   async authorize(forcePrompt = false): Promise<string> {
     await this.ensureClientInitialized();
-    
-    if (this.authPromise) {
-      this.authPromise.reject(new Error("CANCELLED: New Auth Request"));
-    }
-
     if (forcePrompt || !this.accessToken) {
       return new Promise((resolve, reject) => {
         this.authPromise = { resolve, reject };
-        this.tokenClient.requestAccessToken({ 
-          prompt: forcePrompt ? 'select_account consent' : ''
-        });
+        this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'select_account consent' : '' });
       });
     }
-
     return this.accessToken;
   }
 
@@ -116,18 +120,12 @@ export class GoogleFitService {
       this.logout();
       throw new Error("AUTH_EXPIRED");
     }
-    if (res.status === 403) {
-      throw new Error("PERMISSION_DENIED");
-    }
     return res;
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
     if (!this.accessToken) throw new Error("AUTH_EXPIRED");
-
-    const now = new Date();
-    const endTimeMillis = now.getTime();
-    const startTimeMillis = endTimeMillis - 7 * 24 * 60 * 60 * 1000;
+    const now = Date.now();
     const headers = { Authorization: `Bearer ${this.accessToken}`, "Content-Type": "application/json" };
 
     try {
@@ -138,32 +136,20 @@ export class GoogleFitService {
           { dataTypeName: "com.google.heart_rate.bpm" },
           { dataTypeName: "com.google.calories.expended" }
         ],
-        startTimeMillis,
-        endTimeMillis,
+        startTimeMillis: now - 7 * 24 * 60 * 60 * 1000,
+        endTimeMillis: now,
         bucketByTime: { durationMillis: 86400000 }
       };
 
       const aggRes = await this.fetchWithAuth(aggregateUrl, headers, { method: 'POST', body: JSON.stringify(body) });
       const aggData = await aggRes.json();
 
-      let targetBucket: any = null;
-      if (aggData && Array.isArray(aggData.bucket)) {
-        for (let i = aggData.bucket.length - 1; i >= 0; i--) {
-          const bucket = aggData.bucket[i];
-          if (bucket.dataset?.[0]?.point?.length > 0) {
-            targetBucket = bucket;
-            break;
-          }
-        }
-      }
+      let targetBucket = aggData?.bucket?.slice().reverse().find((b: any) => b.dataset?.[0]?.point?.length > 0);
+      if (!targetBucket) throw new Error("DATA_NOT_FOUND");
 
-      if (!targetBucket) {
-        throw new Error("DATA_NOT_FOUND");
-      }
-
-      const allSleepPoints = targetBucket.dataset[0].point || [];
-      const hrPoints = targetBucket.dataset[1]?.point || [];
-      const calPoints = targetBucket.dataset[2]?.point || [];
+      const allSleepPoints = targetBucket.dataset?.[0]?.point || [];
+      const hrPoints = targetBucket.dataset?.[1]?.point || [];
+      const calPoints = targetBucket.dataset?.[2]?.point || [];
 
       let deep = 0, rem = 0, awake = 0;
       const stages: SleepStage[] = allSleepPoints.map((p: any) => {
@@ -171,54 +157,37 @@ export class GoogleFitService {
         const s = toMillis(p.startTimeNanos);
         const e = toMillis(p.endTimeNanos);
         const d = Math.max(0, Math.round((e - s) / 60000));
-        
         let name: SleepStage['name'] = '浅睡';
         if (type === 5) { name = '深睡'; deep += d; }
         else if (type === 6) { name = 'REM'; rem += d; }
         else if (type === 1 || type === 3) { name = '清醒'; awake += d; }
-        
-        return { 
-          name, 
-          duration: d, 
-          startTime: new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-        };
+        return { name, duration: d, startTime: new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
       });
 
-      const sessionStartMs = allSleepPoints.length > 0 ? toMillis(allSleepPoints[0].startTimeNanos) : Date.now();
-      const sessionEndMs = allSleepPoints.length > 0 ? toMillis(allSleepPoints[allSleepPoints.length - 1].endTimeNanos) : Date.now();
-      const totalDuration = Math.max(1, Math.round((sessionEndMs - sessionStartMs) / 60000));
-
-      const hrVals = hrPoints.map((p: any) => p.value?.[0]?.fpVal || p.value?.[0]?.intVal).filter((v: any) => typeof v === 'number') || [];
+      const totalDuration = stages.reduce((acc, s) => acc + s.duration, 0) || 1;
+      const hrVals = hrPoints.map((p: any) => p.value?.[0]?.fpVal || p.value?.[0]?.intVal).filter((v: any) => typeof v === 'number');
+      
       const heartRate: HeartRateData = {
-        average: hrVals.length > 0 ? Math.round(hrVals.reduce((a: number, b: number) => a + b, 0) / hrVals.length) : 70,
-        resting: hrVals.length > 0 ? Math.min(...hrVals) : 65,
-        min: hrVals.length > 0 ? Math.min(...hrVals) : 60,
-        max: hrVals.length > 0 ? Math.max(...hrVals) : 100,
-        history: hrPoints.slice(-15).map((p: any) => ({
+        average: hrVals.length ? Math.round(hrVals.reduce((a: number, b: number) => a + b, 0) / hrVals.length) : 70,
+        resting: hrVals.length ? Math.min(...hrVals) : 65,
+        min: hrVals.length ? Math.min(...hrVals) : 60,
+        max: hrVals.length ? Math.max(...hrVals) : 100,
+        history: hrPoints.slice(-12).map((p: any) => ({
           time: new Date(toMillis(p.startTimeNanos)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           bpm: Math.round(p.value?.[0]?.fpVal || p.value?.[0]?.intVal || 70)
         }))
       };
 
-      const calories = Math.round(calPoints.reduce((acc: number, p: any) => acc + (p.value?.[0]?.fpVal || 0), 0)) || 0;
-
-      const score = Math.min(100, Math.round(
-        (Math.min(480, totalDuration) / 480) * 40 + 
-        (Math.min(25, (deep / (totalDuration || 1)) * 100) / 25) * 35 + 
-        (Math.min(20, (rem / (totalDuration || 1)) * 100) / 20) * 25
-      )) || 70;
-
       return {
         totalDuration,
-        deepRatio: totalDuration > 0 ? Math.round((deep / totalDuration) * 100) : 0,
-        remRatio: totalDuration > 0 ? Math.round((rem / totalDuration) * 100) : 0,
-        efficiency: totalDuration > 0 ? Math.round(((totalDuration - awake) / totalDuration) * 100) : 0,
-        date: new Date(sessionStartMs).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
-        stages, heartRate, calories, score
+        deepRatio: Math.round((deep / totalDuration) * 100),
+        remRatio: Math.round((rem / totalDuration) * 100),
+        efficiency: Math.round(((totalDuration - awake) / totalDuration) * 100),
+        date: new Date(toMillis(allSleepPoints[0]?.startTimeNanos)).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
+        stages, heartRate, calories: Math.round(calPoints.reduce((acc: number, p: any) => acc + (p.value?.[0]?.fpVal || 0), 0)),
+        score: Math.min(100, Math.round((deep / totalDuration) * 200 + (rem / totalDuration) * 150 + (heartRate.resting < 70 ? 10 : 0)))
       };
-
-    } catch (err: any) {
-      console.error("Fetch Data Failed:", err);
+    } catch (err) {
       throw err;
     }
   }
