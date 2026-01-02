@@ -16,7 +16,7 @@
       "destination": "/googlee47ef5d2eacdf45a.html"
     },
     {
-      "source": "/((?!privacy|terms|googlee47ef5d2eacdf45a|privacy\\.html|terms\\.html|googlee47ef5d2eacdf45a\\.html).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
