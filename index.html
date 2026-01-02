@@ -10,7 +10,13 @@
     <meta name="description" content="SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验服务。" />
     
     <script>
-      window.process = window.process || { env: {}, versions: { node: "1.0.0" } };
+      // 深度加固的 process 对象，确保任何库在检测环境时都不会抛出 Uncaught 错误
+      window.process = { 
+        env: { NODE_ENV: 'production' }, 
+        versions: { node: '1.0.0' },
+        nextTick: function(fn) { setTimeout(fn, 0); },
+        browser: true
+      };
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -46,8 +52,8 @@
     <script type="module" src="index.tsx"></script>
     <!-- Hidden but crawlable links for policy indexing -->
     <footer style="display:none">
-        <a href="/privacy/index.html">Privacy Policy</a>
-        <a href="/terms/index.html">Terms of Service</a>
+        <a href="/privacy">Privacy Policy</a>
+        <a href="/terms">Terms of Service</a>
     </footer>
 </body>
 </html>
