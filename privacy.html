@@ -32,11 +32,11 @@
 
             <section>
                 <h2>1. 数据访问 (Data Access)</h2>
-                <p>SomnoAI 仅在您通过 Google 授权的情况下，访问以下 Google 用户数据：</p>
+                <p>SomnoAI 仅在您通过 Google 明确授权的情况下，访问以下 Google 用户数据：</p>
                 <ul>
-                    <li><strong>睡眠分段 (Sleep Segments)</strong>：用于计算您的总睡眠时长及各个睡眠阶段。</li>
-                    <li><strong>心率 (Heart Rate)</strong>：用于分析您的静息心率及其在睡眠中的变化趋势。</li>
-                    <li><strong>活动能量 (Activity Energy)</strong>：用于评估您的日常活动如何影响您的睡眠质量。</li>
+                    <li><strong>睡眠分段 (Sleep Segments)</strong>：用于解析您的睡眠阶段（深度睡眠、REM、浅睡）及持续时间。</li>
+                    <li><strong>心率 (Heart Rate)</strong>：用于评估睡眠期间的静息心率及其生理恢复趋势。</li>
+                    <li><strong>活动能量 (Activity Energy)</strong>：用于关联日常活动水平对睡眠质量的潜在影响。</li>
                 </ul>
             </section>
 
@@ -44,35 +44,37 @@
                 <h2>2. 数据用途 (Data Usage)</h2>
                 <p>我们对获取的数据有严格的使用限制：</p>
                 <ul>
-                    <li><strong>本地分析</strong>：数据仅用于生成您的个人健康报告及睡眠可视化图表。</li>
-                    <li><strong>AI 洞察</strong>：数据将提供给 AI 模型以生成个性化的睡眠建议（仅限当前会话）。</li>
-                    <li><strong>不用于广告</strong>：您的数据绝不会用于投放广告、进行用户画像或出售给第三方。</li>
+                    <li><strong>本地分析与可视化</strong>：数据仅用于在您的浏览器内生成个人睡眠报告。</li>
+                    <li><strong>AI 驱动洞察</strong>：数据将传输至 Gemini AI 模型以生成个性化的健康建议。</li>
+                    <li><strong>不用于广告或营销</strong>：我们绝不将您的个人健康数据用于投放广告、进行用户画像或出售给第三方。</li>
+                    <li><strong>合规声明</strong>：本应用的使用完全符合 <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener">Google API 服务用户数据政策</a>。</li>
                 </ul>
             </section>
 
             <section>
                 <h2>3. 数据存储 (Data Storage)</h2>
-                <p>SomnoAI 采用“隐私优先”的零后端架构：</p>
+                <p>SomnoAI 采用“隐私优先”的边缘计算架构：</p>
                 <ul>
-                    <li><strong>无服务器存储</strong>：我们没有任何服务器用于存储您的生理或健康数据。</li>
-                    <li><strong>SessionStorage</strong>：数据仅临时保存在您浏览器的 <code>sessionStorage</code> 中。</li>
-                    <li><strong>即刻销毁</strong>：一旦您关闭浏览器标签页或退出登录，所有本地缓存的数据将立即被彻底删除。</li>
+                    <li><strong>无后端存储</strong>：我们没有任何服务器用于持久化存储您的 Google Fit 生理数据。</li>
+                    <li><strong>SessionStorage 临时存储</strong>：数据仅保存在您浏览器的 <code>sessionStorage</code> 中。</li>
+                    <li><strong>自动销毁</strong>：一旦您关闭浏览器标签页或点击“登出”，所有本地会话数据将被立即且不可恢复地清除。</li>
                 </ul>
             </section>
 
             <section>
                 <h2>4. 撤销权限 (Revoking Access)</h2>
-                <p>您可以随时停止 SomnoAI 访问您的数据：</p>
+                <p>您可以随时通过以下方式停止本应用访问您的数据：</p>
                 <ul>
-                    <li>访问您的 <a href="https://myaccount.google.com/permissions" target="_blank">Google 账号权限管理页面</a> 撤销 SomnoAI 的授权。</li>
-                    <li>在应用内点击“登出”按钮以清理所有本地会话令牌。</li>
+                    <li>访问您的 <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener">Google 账号权限管理页面</a> 并移除 SomnoAI 的授权。</li>
+                    <li>在应用内的设置页面点击“退出并重载”以清除本地会话。</li>
                 </ul>
             </section>
 
             <section>
-                <h2>5. 联系与支持</h2>
-                <p>如果您对数据处理有任何疑问，请通过邮件联系开发者：<a href="mailto:ongyuze1401@gmail.com">ongyuze1401@gmail.com</a></p>
-                <p>查阅详细的 <a href="/terms.html">服务条款</a> 以了解更多。 </p>
+                <h2>5. 联系与支持 (Contact)</h2>
+                <p>如果您对数据处理有任何疑问或反馈，请联系开发者：<br>
+                <a href="mailto:ongyuze1401@gmail.com">ongyuze1401@gmail.com</a></p>
+                <p>查阅详细的 <a href="/terms.html">服务条款</a> 以了解更多。</p>
             </section>
 
             <div style="margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">

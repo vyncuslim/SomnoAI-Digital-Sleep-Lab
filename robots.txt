@@ -1,8 +1,6 @@
-
+# https://www.robotstxt.org/robotstxt.html
 User-agent: *
 Allow: /
-Disallow: /auth/
-Disallow: /api/
-Disallow: /dist/
 
+# Sitemap Location
 Sitemap: https://sleepsomno.com/sitemap.xml

@@ -320,10 +320,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit }) =
 
       <footer className="mt-20 py-12 border-t border-white/5 flex flex-col items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
         <div className="flex items-center gap-8">
-          <a href="https://sleepsomno.com/privacy" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
+          <a href="/privacy.html" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <Shield size={12} /> {lang === 'zh' ? '隐私政策' : 'Privacy'}
           </a>
-          <a href="https://sleepsomno.com/terms" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
+          <a href="/terms.html" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <FileText size={12} /> {lang === 'zh' ? '服务条款' : 'Terms'}
           </a>
           <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
