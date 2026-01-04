@@ -6,9 +6,10 @@ interface LogoProps {
   size?: number;
   className?: string;
   animated?: boolean;
+  threeD?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated = false }) => {
+export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated = false, threeD = true }) => {
   return (
     <motion.svg
       width={size}
@@ -53,7 +54,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated 
         <motion.circle
           cx="50" cy="50" r="35"
           fill="url(#moonGlow)"
-          filter="url(#moonHalo)"
+          filter={threeD ? "url(#moonHalo)" : "none"}
           animate={animated ? {
             opacity: [0.7, 1, 0.7],
             scale: [0.98, 1.02, 0.98]
@@ -81,14 +82,16 @@ export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated 
         transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
         style={{ originX: '50px', originY: '50px' }}
       >
-        <circle cx="50" cy="5" r="2.5" fill="#818cf8" filter="url(#moonHalo)" />
-        <motion.circle 
-          cx="50" cy="5" r="5" 
-          stroke="#818cf8" 
-          strokeWidth="0.5" 
-          animate={{ scale: [1, 2], opacity: [0.5, 0] }}
-          transition={{ duration: 2, repeat: Infinity }}
-        />
+        <circle cx="50" cy="5" r="2.5" fill="#818cf8" filter={threeD ? "url(#moonHalo)" : "none"} />
+        {threeD && (
+          <motion.circle 
+            cx="50" cy="5" r="5" 
+            stroke="#818cf8" 
+            strokeWidth="0.5" 
+            animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+            transition={{ duration: 2, repeat: Infinity }}
+          />
+        )}
       </motion.g>
 
       {/* 4. 底部脉冲线条 - 模拟睡眠脑波 */}

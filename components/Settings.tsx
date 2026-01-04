@@ -3,20 +3,32 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Shield, Smartphone, Globe, LogOut, 
-  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon, CreditCard, Key, Trash2, CheckCircle2, X, Loader2
+  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon, CreditCard, Key, Trash2, CheckCircle2, X, Loader2, RefreshCw, Sun, Moon, Palette, Box
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
-import { ViewType } from '../types.ts';
+import { ViewType, ThemeMode, AccentColor } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface SettingsProps {
   lang: Language;
   onLanguageChange: (l: Language) => void;
   onLogout: () => void;
-  onNavigate: (view: ViewType | 'privacy' | 'terms') => void;
+  onNavigate: (view: ViewType | 'privacy' | 'terms' | 'about') => void;
+  theme: ThemeMode;
+  onThemeChange: (t: ThemeMode) => void;
+  accentColor: AccentColor;
+  onAccentChange: (c: AccentColor) => void;
+  threeDEnabled: boolean;
+  onThreeDChange: (enabled: boolean) => void;
+  lastSyncTime: string | null;
+  onManualSync: () => void;
 }
 
-export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLogout, onNavigate }) => {
+export const Settings: React.FC<SettingsProps> = ({ 
+  lang, onLanguageChange, onLogout, onNavigate,
+  theme, onThemeChange, accentColor, onAccentChange,
+  threeDEnabled, onThreeDChange, lastSyncTime, onManualSync
+}) => {
   const t = translations[lang].settings;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [telemetry, setTelemetry] = useState("0x000000");
@@ -99,6 +111,119 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
         </div>
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em] px-4">{t.subtitle}</p>
       </header>
+
+      {/* About Section */}
+      <GlassCard 
+        onClick={() => onNavigate('about')}
+        className="p-6 border-indigo-500/20 bg-indigo-500/5 group cursor-pointer"
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform">
+              <Info size={24} />
+            </div>
+            <div>
+              <p className="font-bold text-slate-100">{t.about}</p>
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Mission & Neural Architecture</p>
+            </div>
+          </div>
+          <ChevronRight size={18} className="text-indigo-400 group-hover:translate-x-1 transition-all" />
+        </div>
+      </GlassCard>
+
+      {/* Theme Customization */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+          <Palette size={14} className="text-indigo-400" />
+          {t.theme}
+        </h3>
+        <GlassCard className="p-6 space-y-6">
+          <div className="flex gap-4">
+            <button 
+              onClick={() => onThemeChange('dark')}
+              className={`flex-1 p-4 rounded-2xl border transition-all flex items-center justify-center gap-3 ${theme === 'dark' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-300'}`}
+            >
+              <Moon size={18} />
+              <span className="text-[10px] font-black uppercase tracking-widest">{t.darkMode}</span>
+            </button>
+            <button 
+              onClick={() => onThemeChange('light')}
+              className={`flex-1 p-4 rounded-2xl border transition-all flex items-center justify-center gap-3 ${theme === 'light' ? 'bg-white text-slate-900 border-slate-200' : 'bg-white/5 border-white/5 text-slate-500 hover:text-slate-300'}`}
+            >
+              <Sun size={18} />
+              <span className="text-[10px] font-black uppercase tracking-widest">{t.lightMode}</span>
+            </button>
+          </div>
+          <div className="space-y-3">
+            <p className="text-[9px] font-black uppercase tracking-widest text-slate-500 px-1">{t.accentColor}</p>
+            <div className="flex justify-between items-center px-2">
+              {(['indigo', 'emerald', 'rose', 'amber', 'sky'] as AccentColor[]).map((c) => (
+                <button 
+                  key={c}
+                  onClick={() => onAccentChange(c)}
+                  className={`w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center ${accentColor === c ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
+                  style={{ backgroundColor: translations.en.settings.duitNowId === '' ? '#000' : (c === 'indigo' ? '#818cf8' : c === 'emerald' ? '#10b981' : c === 'rose' ? '#f43f5e' : c === 'amber' ? '#f59e0b' : '#0ea5e9') }}
+                >
+                  {accentColor === c && <Check size={16} className="text-white" />}
+                </button>
+              ))}
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* Visualizations (3D Icons) */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+          <Box size={14} className="text-indigo-400" />
+          {t.visualizations}
+        </h3>
+        <GlassCard className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                <Smartphone size={20} />
+              </div>
+              <div>
+                <p className="font-bold text-slate-100">{t.enable3D}</p>
+                <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Interactive depth icons</p>
+              </div>
+            </div>
+            <button 
+              onClick={() => onThreeDChange(!threeDEnabled)}
+              className={`w-12 h-6 rounded-full transition-all relative ${threeDEnabled ? 'bg-indigo-600' : 'bg-slate-800'}`}
+            >
+              <motion.div 
+                animate={{ x: threeDEnabled ? 24 : 2 }}
+                className="w-5 h-5 bg-white rounded-full absolute top-0.5"
+              />
+            </button>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* Data Management Section */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+          <RefreshCw size={14} className="text-indigo-400" />
+          {t.dataManagement}
+        </h3>
+        <GlassCard className="p-6 space-y-6">
+          <div className="flex items-center justify-between px-2">
+            <div className="space-y-1">
+              <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">{t.lastSync}</p>
+              <p className="text-sm font-bold text-white">{lastSyncTime || t.never}</p>
+            </div>
+            <button 
+              onClick={onManualSync}
+              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center gap-2"
+            >
+              <RefreshCw size={14} />
+              {t.manualSync}
+            </button>
+          </div>
+        </GlassCard>
+      </div>
 
       {/* 支持实验室模块 */}
       <div className="space-y-6">
@@ -209,26 +334,19 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
         <GlassCard className="divide-y divide-white/5 border-indigo-500/20">
           <div className="w-full py-8 px-6 space-y-6">
             <div className="grid grid-cols-2 gap-3 p-1.5 bg-slate-950/80 rounded-[1.75rem] border border-white/5 shadow-inner relative overflow-hidden">
-              <button 
-                onClick={() => onLanguageChange('en')}
-                className={`relative flex items-center justify-center gap-3 py-4 rounded-[1.25rem] transition-all duration-500 overflow-hidden ${lang === 'en' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                {lang === 'en' && (
-                  <motion.div layoutId="activeLangIndicator" className="absolute inset-0 bg-indigo-600 shadow-[0_0_30px_rgba(79,70,229,0.4)]" transition={{ type: "spring", stiffness: 300, damping: 30 }} />
-                )}
-                <Globe2 size={14} className="relative z-10" />
-                <span className="relative z-10 text-[11px] font-black tracking-widest uppercase">English</span>
-              </button>
-              <button 
-                onClick={() => onLanguageChange('zh')}
-                className={`relative flex items-center justify-center gap-3 py-4 rounded-[1.25rem] transition-all duration-500 overflow-hidden ${lang === 'zh' ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                {lang === 'zh' && (
-                  <motion.div layoutId="activeLangIndicator" className="absolute inset-0 bg-indigo-600 shadow-[0_0_30px_rgba(79,70,229,0.4)]" transition={{ type: "spring", stiffness: 300, damping: 30 }} />
-                )}
-                <span className="relative z-10 text-sm font-black">中</span>
-                <span className="relative z-10 text-[11px] font-black tracking-widest uppercase">简体中文</span>
-              </button>
+              {(['en', 'zh', 'de', 'fr'] as Language[]).map((l) => (
+                <button 
+                  key={l}
+                  onClick={() => onLanguageChange(l)}
+                  className={`relative flex items-center justify-center gap-3 py-4 rounded-[1.25rem] transition-all duration-500 overflow-hidden ${lang === l ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  {lang === l && (
+                    <motion.div layoutId="activeLangIndicator" className="absolute inset-0 bg-indigo-600 shadow-[0_0_30px_rgba(79,70,229,0.4)]" transition={{ type: "spring", stiffness: 300, damping: 30 }} />
+                  )}
+                  <Globe2 size={14} className="relative z-10" />
+                  <span className="relative z-10 text-[11px] font-black tracking-widest uppercase">{l.toUpperCase()}</span>
+                </button>
+              ))}
             </div>
           </div>
         </GlassCard>
