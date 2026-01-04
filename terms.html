@@ -1,71 +1,42 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service - SomnoAI Digital Sleep Lab</title>
+    <title>服务条款 - SomnoAI Digital Sleep Lab</title>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: #020617; 
-            color: #f1f5f9; 
-            padding: 2rem; 
-            display: flex; 
-            justify-content: center; 
-            line-height: 1.6; 
-        }
-        .wrapper { 
-            max-width: 800px; 
-            width: 100%; 
-            background: #0f172a; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 24px; 
-            padding: 40px; 
-            margin-top: 2rem; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
-        }
-        h1 { 
-            font-size: 2rem; 
-            color: #fff; 
-            border-bottom: 2px solid #4f46e5; 
-            display: inline-block; 
-            padding-bottom: 12px; 
-            margin-bottom: 1.5rem; 
-        }
-        h2 { 
-            color: #818cf8; 
-            margin-top: 2.5rem; 
-            font-size: 1.3rem; 
-            font-weight: 700; 
-        }
-        p { 
-            color: #94a3b8; 
-            font-size: 0.95rem; 
-        }
-        a { 
-            color: #818cf8; 
-            text-decoration: none; 
-            font-weight: bold; 
-        }
-        .footer { 
-            margin-top: 50px; 
-            text-align: center; 
-            border-top: 1px solid rgba(255,255,255,0.05); 
-            padding-top: 20px; 
-            font-size: 0.8rem; 
-            opacity: 0.6;
-        }
+        :root { --bg: #020617; --surface: #0f172a; --primary: #4f46e5; --text: #f1f5f9; --text-dim: #94a3b8; }
+        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; margin: 0; padding: 2rem; display: flex; justify-content: center; }
+        .wrapper { max-width: 800px; width: 100%; background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; padding: 3rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        h1 { font-size: 2.2rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 2rem; }
+        .disclaimer { background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; padding: 2rem; border-radius: 1.5rem; color: #fbbf24; font-weight: 600; margin: 2rem 0; font-size: 0.95rem; }
+        h2 { color: #818cf8; margin-top: 2.5rem; font-size: 1.4rem; }
+        p, li { color: var(--text-dim); }
+        a { color: #818cf8; text-decoration: none; }
+        hr { border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 3rem 0; }
+        .footer { text-align: center; font-size: 0.85rem; color: #475569; }
     </style>
 </head>
 <body>
     <div class="wrapper">
-        <h1>服务条款 / Terms of Service</h1>
-        <h2>1. 医疗免责声明</h2>
-        <p>本应用不是医疗设备，不提供医疗诊断。所有建议仅供实验参考。在做出任何医疗决策前，请务必咨询专业医生。</p>
-        <h2>2. 平台服务</h2>
-        <p>SomnoAI 仅作为本地分析工具。由于不进行云端备份，您应对本地会话的数据安全性负责。</p>
+        <h1>服务条款 (Terms of Service)</h1>
+        <p><strong>生效日期：</strong> 2024年3月25日</p>
+
+        <div class="disclaimer">
+            <strong>医疗免责声明：</strong> SomnoAI Digital Sleep Lab 提供的所有睡眠分析、AI 建议和生理图表仅供科学参考和个人实验。本应用不是医疗设备，不提供医疗诊断。
+        </div>
+
+        <h2>1. 平台声明</h2>
+        <p>sleepsomno.com 作为一个数字化实验平台，旨在帮助用户理解生理数据。我们不对因使用本平台信息而做出的健康决策负责。</p>
+
+        <h2>2. 授权使用</h2>
+        <p>通过使用本平台，您同意遵守 Google API 服务条款，并确认该 Google 账号为您本人所有。</p>
+
+        <hr>
         <div class="footer">
-            &copy; 2024 SomnoAI Digital Sleep Lab. <a href="/">← 返回主页 / Back to Home</a>
+            &copy; 2024 SomnoAI Digital Sleep Lab | 域名: sleepsomno.com <br>
+            <a href="https://sleepsomno.com">← 返回首页</a>
         </div>
     </div>
 </body>

@@ -1,5 +1,7 @@
+
 import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
 
+// 提示：请确保此 CLIENT_ID 在 Google Cloud Console 中已配置 sleepsomno.com 为授权来源
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
 const SCOPES = [
   "https://www.googleapis.com/auth/fitness.sleep.read",
@@ -12,17 +14,12 @@ const SCOPES = [
 
 declare var google: any;
 
-/**
- * Robust timestamp conversion for Google Fit API
- */
 const toMillis = (nanos: any): number => {
   if (nanos === null || nanos === undefined) return Date.now();
-  
   if (typeof nanos === 'number' && !isNaN(nanos)) {
     if (nanos < 2000000000000) return Math.floor(nanos);
     return Math.floor(nanos / 1000000);
   }
-
   try {
     const str = String(nanos).replace(/[^0-9]/g, '');
     if (str.length === 0) return Date.now();
@@ -118,8 +115,6 @@ export class GoogleFitService {
     const headers = { Authorization: `Bearer ${this.accessToken}`, "Content-Type": "application/json" };
 
     try {
-      // Step 1: Query Sleep Sessions (Activity Type 72)
-      // This solves the "Signal Not Found" issue for irregular sleep or multi-device sync.
       const sessionsUrl = `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(sevenDaysAgo).toISOString()}&endTime=${new Date(now).toISOString()}&activityType=72`;
       const sessionsRes = await this.fetchWithAuth(sessionsUrl, headers);
       const sessionsData = await sessionsRes.json();
@@ -133,12 +128,10 @@ export class GoogleFitService {
         startTime = toMillis(latestSession.startTimeMillis);
         endTime = toMillis(latestSession.endTimeMillis);
       } else {
-        // Fallback: Query 48 hours for raw segments if no formal sessions
         startTime = now - 48 * 60 * 60 * 1000;
         endTime = now;
       }
 
-      // Step 2: Query granular segments and HR for this specific window
       const aggregateUrl = "https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate";
       const body = {
         aggregateBy: [

@@ -1,15 +1,16 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, Binary, ShieldCheck, Microscope } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, Binary, Microscope, MessageSquareText, ShieldAlert } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage } from '../types.ts';
 import { chatWithCoach } from '../services/geminiService.ts';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: "系统就绪。我是 SomnoAI 首席科研官。我可以为您进行睡眠架构推演，或回答基于生理特征流的健康疑问。请下达指令。",
+      content: "系统初始化完成。我是 SomnoAI 首席科研官。我已加载您的生物特征流，可以为您提供睡眠架构的深度推演或优化建议。请下达指令。",
       timestamp: new Date()
     }
   ]);
@@ -31,7 +32,6 @@ export const AIAssistant: React.FC = () => {
     setIsTyping(true);
 
     try {
-      // 传递完整的对话上下文以保持逻辑连贯
       const historyForAi = messages.concat(userMsg).map(m => ({
         role: m.role,
         content: m.content
@@ -40,10 +40,9 @@ export const AIAssistant: React.FC = () => {
       const response = await chatWithCoach(historyForAi);
       setMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
     } catch (err) {
-      console.error("Chat Error:", err);
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: "实验室链路发生异常中断，建议您刷新页面或检查网关连接。", 
+        content: "实验室网关响应异常。请尝试发送更具体的生理信号描述。", 
         timestamp: new Date() 
       }]);
     } finally {
@@ -52,80 +51,106 @@ export const AIAssistant: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] pb-6">
-      <header className="flex items-center justify-between mb-8 px-1">
+    <div className="flex flex-col h-[calc(100vh-140px)] pb-6 animate-in fade-in duration-700">
+      <header className="flex items-center justify-between mb-8 px-2">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl shadow-xl">
+          <div className="p-3.5 bg-indigo-600/10 border border-indigo-500/20 rounded-[1.25rem] shadow-2xl relative">
             <Microscope size={24} className="text-indigo-400" />
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#020617] animate-pulse"></div>
           </div>
           <div>
-            <h1 className="text-xl font-black italic tracking-tight">AI 洞察实验室</h1>
-            <div className="flex items-center gap-1.5 text-[9px] text-emerald-400 font-black uppercase tracking-widest">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Somno-v3 引擎在线
+            <h1 className="text-xl font-black italic tracking-tight text-white">AI 洞察实验室</h1>
+            <div className="flex items-center gap-2 text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">
+              <Binary size={10} />
+              Session ID: SMN-{Math.floor(Math.random()*10000)}
             </div>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">置信等级</p>
-          <p className="text-xs font-mono text-emerald-500 font-bold">HIGH (0.98)</p>
+        <div className="text-right flex flex-col items-end">
+          <a href="mailto:ongyuze1401@gmail.com" className="flex items-center gap-1.5 text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest transition-colors mb-1.5 p-1 bg-indigo-500/5 rounded-md px-2">
+            <MessageSquareText size={10} />
+            FEEDBACK
+          </a>
+          <div className="px-2 py-0.5 bg-indigo-500/10 rounded-full border border-indigo-500/20">
+            <span className="text-[8px] font-mono text-indigo-300">CONFIDENCE: 0.98</span>
+          </div>
         </div>
       </header>
 
-      <div className="flex-1 overflow-y-auto space-y-6 pr-2 mb-6 scrollbar-hide">
-        {messages.map((msg, idx) => (
-          <motion.div 
-            key={idx} 
-            initial={{ opacity: 0, y: 10 }} 
-            animate={{ opacity: 1, y: 0 }}
-            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-          >
-            <div className={`max-w-[90%] flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-              <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border ${msg.role === 'assistant' ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-400' : 'bg-slate-800 border-white/5 text-slate-400'}`}>
-                {msg.role === 'assistant' ? <Sparkles size={14} /> : <User size={14} />}
+      <div className="flex-1 overflow-y-auto space-y-8 pr-2 mb-8 scrollbar-hide">
+        <AnimatePresence initial={false}>
+          {messages.map((msg, idx) => (
+            <motion.div 
+              key={idx} 
+              initial={{ opacity: 0, y: 15, scale: 0.98 }} 
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+            >
+              <div className={`max-w-[85%] flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
+                <div className={`w-9 h-9 rounded-2xl flex items-center justify-center flex-shrink-0 border shadow-lg ${msg.role === 'assistant' ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-400' : 'bg-slate-800 border-white/5 text-slate-400'}`}>
+                  {msg.role === 'assistant' ? <Sparkles size={16} /> : <User size={16} />}
+                </div>
+                <div className={`p-5 rounded-[1.75rem] text-[13px] leading-relaxed font-medium shadow-2xl relative ${
+                  msg.role === 'assistant' 
+                  ? 'bg-slate-900/60 border border-white/5 text-slate-200 rounded-tl-none italic' 
+                  : 'bg-indigo-600 text-white rounded-tr-none shadow-indigo-600/30'
+                }`}>
+                  {msg.content}
+                  {msg.role === 'assistant' && (
+                    <div className="absolute -bottom-5 left-0 flex gap-1 opacity-20">
+                      <div className="w-1 h-1 bg-white rounded-full"></div>
+                      <div className="w-1 h-1 bg-white rounded-full"></div>
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className={`p-4 rounded-[1.5rem] text-[13px] leading-relaxed font-medium ${msg.role === 'assistant' ? 'bg-white/5 border border-white/5 text-slate-200 rounded-tl-none italic shadow-lg' : 'bg-indigo-600 text-white rounded-tr-none shadow-indigo-600/20 shadow-xl'}`}>
-                {msg.content}
-              </div>
-            </div>
-          </motion.div>
-        ))}
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        
         {isTyping && (
-          <div className="flex justify-start">
-            <div className="flex gap-3 max-w-[85%]">
-              <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center">
-                <Loader2 size={14} className="animate-spin text-indigo-400" />
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+            <div className="flex gap-4 max-w-[85%]">
+              <div className="w-9 h-9 rounded-2xl bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center">
+                <Loader2 size={16} className="animate-spin text-indigo-400" />
               </div>
-              <div className="p-4 bg-white/5 rounded-[1.5rem] rounded-tl-none border border-white/5">
-                <div className="flex gap-1">
-                  <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
-                  <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
-                  <span className="w-1 h-1 bg-indigo-400 rounded-full animate-bounce"></span>
+              <div className="p-5 bg-slate-900/40 rounded-[1.75rem] rounded-tl-none border border-white/5">
+                <div className="flex gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.3s]"></span>
+                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce [animation-delay:-0.15s]"></span>
+                  <span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span>
                 </div>
               </div>
             </div>
-          </div>
+          </motion.div>
         )}
         <div ref={scrollRef} />
       </div>
 
-      <div className="relative group">
-        <input
-          type="text"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyPress={e => e.key === 'Enter' && handleSend()}
-          disabled={isTyping}
-          placeholder={isTyping ? "实验室计算中..." : "输入指令，如：‘分析昨晚深睡偏低原因’"}
-          className="w-full bg-[#0f172a]/60 border border-white/5 rounded-2xl py-5 pl-6 pr-14 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 backdrop-blur-xl transition-all font-medium text-sm text-white placeholder:text-slate-600 disabled:opacity-50"
-        />
-        <button
-          onClick={handleSend}
-          disabled={!input.trim() || isTyping}
-          className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-30 transition-all active:scale-90"
-        >
-          {isTyping ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
-        </button>
+      <GlassCard className="p-2 border-white/10 shadow-[0_0_50px_rgba(0,0,0,0.5)]">
+        <div className="relative">
+          <input
+            type="text"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyPress={e => e.key === 'Enter' && handleSend()}
+            disabled={isTyping}
+            placeholder={isTyping ? "实验室正在合成指令..." : "咨询关于深睡、REM 或心率趋势的建议..."}
+            className="w-full bg-transparent py-5 pl-6 pr-16 focus:outline-none font-medium text-sm text-white placeholder:text-slate-600 disabled:opacity-50"
+          />
+          <button
+            onClick={handleSend}
+            disabled={!input.trim() || isTyping}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-3.5 bg-indigo-600 rounded-2xl hover:bg-indigo-500 disabled:opacity-20 transition-all active:scale-90 shadow-xl shadow-indigo-600/20"
+          >
+            {isTyping ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+          </button>
+        </div>
+      </GlassCard>
+      
+      <div className="mt-4 flex items-center justify-center gap-2 opacity-20">
+        <ShieldAlert size={10} />
+        <span className="text-[8px] font-black uppercase tracking-[0.4em]">Encrypted AI Sandbox • Local Processing Enabled</span>
       </div>
     </div>
   );

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Trends } from './components/Trends.tsx';
@@ -6,9 +7,13 @@ import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, Info, Microscope, Activity, Zap } from 'lucide-react';
+import { 
+  User, Loader2, Cloud, PlusCircle, TriangleAlert, 
+  Microscope, Activity, Zap, Compass 
+} from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
@@ -55,7 +60,7 @@ const App: React.FC = () => {
         date: new Date().toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
         score: 70, totalDuration: 480, deepRatio: 20, remRatio: 20, efficiency: 85, calories: 2000,
         stages: [], heartRate: { resting: 65, average: 70, min: 60, max: 100, history: [] },
-        aiInsights: ["实验室正在重构生理特征流..."],
+        aiInsights: ["实验室正在同步生物特征流..."],
         ...fitData
       } as SleepRecord;
       setCurrentRecord(updatedRecord);
@@ -67,11 +72,11 @@ const App: React.FC = () => {
       onProgress?.('error');
       const errMsg = err.message || "";
       if (errMsg.includes("PERMISSION_DENIED")) {
-        showToast("【关键权限缺失】请确保已勾选睡眠和心率访问权限。");
+        showToast("【关键权限缺失】请确保已在授权页面勾选睡眠和心率访问权限。");
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
         showToast("【信号未找到】Google Fit 中尚无最近的有效睡眠记录。");
       } else {
-        showToast("【链路故障】无法连接至实验室服务器。");
+        showToast("【网关异常】暂时无法建立安全连接，请稍后再试。");
       }
       if (!currentRecord) setIsLoading(false);
     } finally {
@@ -109,97 +114,123 @@ const App: React.FC = () => {
   const renderView = () => {
     if (isLoading && !currentRecord) {
       return (
-        <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-in fade-in duration-700">
-          <Loader2 className="animate-spin text-indigo-500" size={64} />
-          <div className="space-y-2">
-            <p className="text-xl font-black text-white tracking-tighter uppercase italic">SomnoAI Digital Sleep Lab 启动中</p>
-            <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Encrypting Session Handshake...</p>
+        <div className="flex flex-col items-center justify-center h-[70vh] gap-10 text-center px-8">
+          <div className="relative">
+             <div className="w-24 h-24 border-4 border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin"></div>
+             <Microscope size={32} className="absolute inset-0 m-auto text-indigo-400 animate-pulse" />
+          </div>
+          <div className="space-y-4">
+            <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">实验室计算中</h2>
+            <div className="flex flex-col items-center gap-2">
+              <div className="h-1 w-32 bg-slate-800 rounded-full overflow-hidden">
+                <motion.div animate={{ x: [-128, 128] }} transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }} className="w-1/2 h-full bg-indigo-500 shadow-[0_0_10px_#6366f1]" />
+              </div>
+              <p className="text-slate-500 text-[9px] font-black uppercase tracking-[0.4em]">Negotiating Bio-Auth Protocol...</p>
+            </div>
           </div>
         </div>
       );
     }
 
     if (!isLoggedIn && !isGuest && !currentRecord) {
-      return (
-        <Auth onLogin={() => handleSyncGoogleFit(false)} onGuest={() => setIsGuest(true)} />
-      );
+      return <Auth onLogin={() => handleSyncGoogleFit(false)} onGuest={() => setIsGuest(true)} />;
     }
     
     if (!currentRecord && activeView === 'dashboard') {
       return (
-        <div className="flex flex-col items-center justify-center h-[75vh] gap-8 text-center px-4 animate-in zoom-in-95">
-          <div className="relative p-8 bg-indigo-500/10 border border-indigo-500/20 rounded-[3rem]">
-            <Cloud size={80} className="text-indigo-400 opacity-40" />
-            <div className="absolute inset-0 bg-indigo-500/10 blur-[60px] rounded-full animate-pulse"></div>
-          </div>
-          <div className="max-w-xs space-y-4">
-            <h2 className="text-2xl font-black text-white italic tracking-tight text-glow-indigo">生理特征流未就绪</h2>
-            <p className="text-[11px] text-slate-500 leading-relaxed font-black uppercase tracking-[0.2em]">
-              等待 Google Fit 信号同步<br/>或手动注入体征数据进行推演
+        <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center px-6">
+          <motion.div 
+            animate={{ y: [0, -15, 0] }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+            className="relative p-12 bg-indigo-600/5 border border-indigo-500/10 rounded-[4rem]"
+          >
+            <Cloud size={96} className="text-indigo-400 opacity-20" />
+            <div className="absolute inset-0 bg-indigo-500/10 blur-[80px] rounded-full animate-pulse"></div>
+          </motion.div>
+          <div className="space-y-4">
+            <h2 className="text-3xl font-black text-white italic tracking-tighter text-glow-indigo uppercase">生理信号离线</h2>
+            <p className="text-[11px] text-slate-500 leading-relaxed font-black uppercase tracking-[0.3em] max-w-xs mx-auto">
+              请同步 Google Fit 云端数据<br/>或通过实验室终端注入模拟信号
             </p>
           </div>
-          <div className="flex flex-col w-full max-w-xs gap-3">
+          <div className="flex flex-col w-full max-w-xs gap-4">
             <button 
               onClick={() => handleSyncGoogleFit(true)}
-              className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] shadow-2xl active:scale-[0.98]"
+              className="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] shadow-[0_20px_40px_-10px_rgba(79,70,229,0.4)] transition-all active:scale-[0.98]"
             >
-              重新连接实验室网关
+              同步 Google Fit
             </button>
             <button 
               onClick={() => setIsDataEntryOpen(true)}
-              className="w-full py-5 bg-white/5 border border-white/10 text-slate-400 rounded-3xl font-black text-[11px] uppercase tracking-[0.3em] flex items-center justify-center gap-2"
+              className="w-full py-6 bg-white/5 border border-white/10 text-slate-400 rounded-[2rem] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-white/10 transition-all"
             >
-              <PlusCircle size={14} /> 注入实验数据
+              <PlusCircle size={16} /> 手动参数注入
             </button>
           </div>
         </div>
       );
     }
 
-    switch (activeView) {
-      case 'dashboard': return <Dashboard data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} />;
-      case 'calendar': return <Trends history={history} />;
-      case 'assistant': return <AIAssistant />;
-      case 'profile': return <Settings onLogout={handleLogout} />;
-      default: return <Dashboard data={currentRecord!} />;
-    }
+    return (
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={activeView}
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        >
+          {activeView === 'dashboard' && <Dashboard data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} />}
+          {activeView === 'calendar' && <Trends history={history} />}
+          {activeView === 'assistant' && <AIAssistant />}
+          {activeView === 'profile' && <Settings onLogout={handleLogout} />}
+        </motion.div>
+      </AnimatePresence>
+    );
   };
 
   const showNav = (isLoggedIn || isGuest || currentRecord);
 
   return (
-    <div className="min-h-screen bg-[#020617] text-white overflow-x-hidden selection:bg-indigo-500/30">
-      <main className={`max-w-xl mx-auto px-6 ${showNav ? 'pt-16 pb-32' : 'pt-8'} min-h-screen`}>
+    <div className="min-h-screen bg-[#020617] text-white overflow-x-hidden selection:bg-indigo-500/30 font-['Plus_Jakarta_Sans']">
+      <main className={`max-w-xl mx-auto px-6 ${showNav ? 'pt-20 pb-40' : 'pt-8'} min-h-screen`}>
         {renderView()}
       </main>
 
       {showNav && (
-        <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-8 pt-4 pointer-events-none">
-          <div className="max-w-md mx-auto glass-morphism border border-white/5 rounded-[2.5rem] p-2 flex justify-between shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] pointer-events-auto">
-            <button onClick={() => setActiveView('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1.5 transition-all ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500'}`}>
-               <Microscope size={20} className={activeView === 'dashboard' ? 'scale-110' : ''} />
-               <span className="text-[8px] font-black uppercase tracking-widest">实验室</span>
-            </button>
-            <button onClick={() => setActiveView('calendar')} className={`flex-1 py-3 flex flex-col items-center gap-1.5 transition-all ${activeView === 'calendar' ? 'text-indigo-400' : 'text-slate-500'}`}>
-               <Activity size={20} className={activeView === 'calendar' ? 'scale-110' : ''} />
-               <span className="text-[8px] font-black uppercase tracking-widest">图谱</span>
-            </button>
-            <button onClick={() => setActiveView('assistant')} className={`flex-1 py-3 flex flex-col items-center gap-1.5 transition-all ${activeView === 'assistant' ? 'text-indigo-400' : 'text-slate-500'}`}>
-               <Zap size={20} className={activeView === 'assistant' ? 'scale-110' : ''} />
-               <span className="text-[8px] font-black uppercase tracking-widest">洞察</span>
-            </button>
-            <button onClick={() => setActiveView('profile')} className={`flex-1 py-3 flex flex-col items-center gap-1.5 transition-all ${activeView === 'profile' ? 'text-indigo-400' : 'text-slate-500'}`}>
-               <User size={20} className={activeView === 'profile' ? 'scale-110' : ''} />
-               <span className="text-[8px] font-black uppercase tracking-widest">核心</span>
-            </button>
+        <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-10 pt-4 pointer-events-none">
+          <div className="max-w-md mx-auto glass-morphism border border-white/10 rounded-[3rem] p-2 flex justify-between shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] pointer-events-auto">
+            {[
+              { id: 'dashboard', icon: Microscope, label: '实验室' },
+              { id: 'calendar', icon: Activity, label: '趋势' },
+              { id: 'assistant', icon: Zap, label: '洞察' },
+              { id: 'profile', icon: User, label: '设置' }
+            ].map((nav) => (
+              <button 
+                key={nav.id}
+                onClick={() => setActiveView(nav.id as ViewType)} 
+                className={`flex-1 py-4 flex flex-col items-center gap-2 transition-all relative ${activeView === nav.id ? 'text-indigo-400' : 'text-slate-500'}`}
+              >
+                {activeView === nav.id && (
+                  <motion.div 
+                    layoutId="navGlow"
+                    className="absolute -top-1 w-12 h-1 bg-indigo-500 rounded-full shadow-[0_0_15px_#6366f1]"
+                  />
+                )}
+                <nav.icon size={22} className={activeView === nav.id ? 'scale-110' : ''} />
+                <span className="text-[9px] font-black uppercase tracking-[0.2em]">{nav.label}</span>
+              </button>
+            ))}
           </div>
         </nav>
       )}
 
       {errorToast && (
-        <div className="fixed top-8 left-6 right-6 z-[100] max-w-md mx-auto px-6 py-4 glass-morphism border border-rose-500/30 rounded-2xl shadow-2xl flex items-center gap-4 animate-in slide-in-from-top-4">
-          <TriangleAlert size={18} className="text-rose-400 shrink-0" />
-          <span className="text-slate-200 text-[10px] font-black uppercase tracking-widest leading-relaxed">{errorToast}</span>
+        <div className="fixed top-10 left-6 right-6 z-[100] max-w-md mx-auto px-8 py-5 glass-morphism border border-rose-500/30 rounded-3xl shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] flex items-center gap-5 animate-in slide-in-from-top-6">
+          <div className="w-10 h-10 rounded-2xl bg-rose-500/10 flex items-center justify-center text-rose-400">
+            <TriangleAlert size={20} />
+          </div>
+          <span className="text-slate-100 text-[11px] font-black uppercase tracking-widest leading-relaxed">{errorToast}</span>
         </div>
       )}
 
