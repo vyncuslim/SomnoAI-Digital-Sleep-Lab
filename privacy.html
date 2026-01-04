@@ -26,8 +26,8 @@
     <div class="max-w-4xl w-full">
         <div class="mb-12 flex justify-between items-end">
             <div>
-                <h1 class="text-4xl font-black tracking-tighter italic mb-2">Privacy <span class="text-indigo-500">Protocol</span></h1>
-                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Data Security Standard</p>
+                <h1 class="text-4xl font-black tracking-tighter italic mb-2">Privacy <span class="text-indigo-500">Policy</span></h1>
+                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Privacy Policy</p>
             </div>
             <div class="text-right">
                 <a href="/" class="text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors">← Back to Lab</a>
@@ -35,60 +35,75 @@
         </div>
 
         <div class="glass rounded-[2.5rem] p-8 md:p-16 space-y-12 shadow-2xl relative overflow-hidden">
+            <div class="flex items-center gap-3">
+                <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] mono font-bold rounded-md border border-indigo-500/20 uppercase tracking-widest">最后更新：2026 年 1 月 4 日</span>
+            </div>
+
             <section>
-                <div class="flex items-center gap-3 mb-4">
-                    <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] mono font-bold rounded-md border border-indigo-500/20 uppercase tracking-widest">最后更新：2026 年 1 月 4 日</span>
+                <div class="section-header py-2">
+                    <h2 class="text-xl font-bold tracking-tight uppercase">1. 数据访问 (Data Access)</h2>
                 </div>
-                <div class="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-6 md:p-8 space-y-4">
-                    <div class="flex items-center gap-2 mb-2">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#818cf8"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-indigo-300">Google API 数据访问说明</h3>
-                    </div>
-                    <p class="text-sm text-slate-300 leading-relaxed font-medium">
-                        当您授权连接 Google Fit，本应用会访问您的 <span class="text-indigo-400">睡眠分段 (sleep segments)</span>、<span class="text-indigo-400">心率 (heart rate)</span> 及 <span class="text-indigo-400">活动能量 (activity energy)</span> 数据，仅用于数字睡眠分析。
-                    </p>
+                <div class="space-y-4">
+                    <p class="text-slate-300 leading-relaxed">SomnoAI 会在您明确授权的情况下访问以下 Google 用户数据：</p>
+                    <ul class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <li class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <span class="text-indigo-400 font-bold block mb-1">睡眠分段</span>
+                            <span class="text-[11px] text-slate-500 uppercase">Sleep Segments</span>
+                        </li>
+                        <li class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <span class="text-indigo-400 font-bold block mb-1">心率</span>
+                            <span class="text-[11px] text-slate-500 uppercase">Heart Rate</span>
+                        </li>
+                        <li class="p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <span class="text-indigo-400 font-bold block mb-1">活动能量</span>
+                            <span class="text-[11px] text-slate-500 uppercase">Activity Energy</span>
+                        </li>
+                    </ul>
+                    <p class="text-sm text-slate-400 italic">这些数据仅用于在应用内进行数字化睡眠分析和个性化 AI 洞察。</p>
                 </div>
             </section>
 
             <section>
                 <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">数据使用 (Data Usage)</h2>
+                    <h2 class="text-xl font-bold tracking-tight uppercase">2. 数据使用 (Data Usage)</h2>
                 </div>
-                <p class="text-slate-400 leading-relaxed">
-                    所有数据仅用于应用内可视化与 AI 分析，不会用于广告投放、个人画像或任何形式的第三方分享。Somno 对从 Google API 接收的信息的使用将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" class="text-indigo-400 underline" target="_blank">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。
+                <ul class="list-disc pl-5 space-y-3 text-slate-300">
+                    <li>所有数据仅用于分析您的个人睡眠模式和生成可视化报告。</li>
+                    <li>数据不会用于广告、营销或出售给第三方。</li>
+                    <li>数据处理仅在您本地浏览器会话中完成，且遵守 Google API 的“有限使用”政策。</li>
+                </ul>
+            </section>
+
+            <section>
+                <div class="section-header py-2">
+                    <h2 class="text-xl font-bold tracking-tight uppercase">3. 数据存储 (Data Storage)</h2>
+                </div>
+                <p class="text-slate-300 leading-relaxed">
+                    SomnoAI 不设后端服务器存储数据。所有数据仅保存在浏览器的本地会话（<code class="mono bg-white/5 px-1 rounded">sessionStorage</code>）中。一旦关闭页面或退出登录，数据会被立即删除。我们不保留任何用户生理数据的永久副本。
                 </p>
             </section>
 
             <section>
                 <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">数据存储 (Data Storage)</h2>
+                    <h2 class="text-xl font-bold tracking-tight uppercase">4. 您的权利 (Your Rights)</h2>
                 </div>
-                <p class="text-slate-400 leading-relaxed">
-                    数据只存储在浏览器本地 <code class="mono bg-white/5 px-1 rounded">sessionStorage</code> 中。本应用不设立任何后端数据库，一旦关闭页面或手动登出，所有数据将立即从内存中彻底删除。
+                <p class="text-slate-300 leading-relaxed">
+                    您可以随时在 Google 账号设置中的“管理第三方访问权限”部分撤销对 SomnoAI 的访问授权。
                 </p>
             </section>
 
             <section>
                 <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">用户权利 (Your Rights)</h2>
+                    <h2 class="text-xl font-bold tracking-tight uppercase">5. 联系方式 (Contact)</h2>
                 </div>
-                <p class="text-slate-400 leading-relaxed">
-                    您可随时在 Google 账号设置中的“第三方应用与服务”部分撤回对本应用的授权。撤销后应用将立即失去访问您健康数据的权限。
-                </p>
-            </section>
-
-            <section>
-                <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">开发者联系信息 (Contact)</h2>
-                </div>
-                <p class="text-slate-400 leading-relaxed">
-                    如对本隐私政策或数据处理有任何疑问，请通过以下方式联系开发者：<br>
+                <p class="text-slate-300">
+                    如有任何问题或数据处理疑问，请联系开发者：<br>
                     <a href="mailto:ongyuze1401@gmail.com" class="text-indigo-400 font-bold underline">ongyuze1401@gmail.com</a>
                 </p>
             </section>
 
             <footer class="pt-12 border-t border-white/5 text-center opacity-40">
-                <p class="text-[10px] mono uppercase tracking-widest">© 2026 SOMNO LAB • Secure Health Environment</p>
+                <p class="text-[10px] mono uppercase tracking-widest">© 2026 SOMNO LAB • Secure Health Protocol</p>
             </footer>
         </div>
     </div>
