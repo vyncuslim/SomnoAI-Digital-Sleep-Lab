@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
@@ -139,45 +140,36 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
         </GlassCard>
       </div>
 
-      {/* 法律与支持 */}
       <div className="space-y-4">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4">{t.legal}</h3>
         <GlassCard className="divide-y divide-white/5 border-slate-700/20">
           <SettingItem 
             icon={Shield} 
             label={t.privacy} 
-            value="sleepsomno.com/privacy" 
-            href="https://sleepsomno.com/privacy"
-            badge={lang === 'zh' ? "官方链接" : "OFFICIAL"}
+            value={lang === 'zh' ? '查看内部隐私协议' : 'View Internal Protocol'} 
+            onClick={() => onNavigate('privacy')}
+            badge={lang === 'zh' ? "本地模式" : "LOCAL"}
             statusColor="indigo" 
           />
           <SettingItem 
             icon={FileText} 
             label={t.terms} 
-            value="sleepsomno.com/terms" 
-            href="https://sleepsomno.com/terms"
-            badge={lang === 'zh' ? "官方链接" : "OFFICIAL"}
+            value={lang === 'zh' ? '查看内部服务条款' : 'View Internal Terms'} 
+            onClick={() => onNavigate('terms')}
+            badge={lang === 'zh' ? "本地模式" : "LOCAL"}
             statusColor="indigo" 
           />
-          <div className="flex bg-slate-950/20 py-2 px-6 justify-between items-center group/fallback">
-             <span className="text-[9px] font-bold text-slate-500 group-hover/fallback:text-indigo-400 transition-colors">{lang === 'zh' ? '无法访问链接？尝试本地版本：' : 'Link not opening? Try local version:'}</span>
-             <div className="flex gap-2">
-                <button onClick={() => onNavigate('privacy')} className="text-[8px] font-black text-slate-600 hover:text-white uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md">{lang === 'zh' ? '隐私' : 'PRIVACY'}</button>
-                <button onClick={() => onNavigate('terms')} className="text-[8px] font-black text-slate-600 hover:text-white uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md">{lang === 'zh' ? '条款' : 'TERMS'}</button>
-             </div>
-          </div>
           <SettingItem 
             icon={Github} 
             label={t.repo} 
             value="vyncuslim/SomnoAI" 
             href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab"
-            badge={lang === 'zh' ? "同步就绪" : "Sync-Ready"}
+            badge={lang === 'zh' ? "源码" : "SOURCE"}
             statusColor="slate"
           />
         </GlassCard>
       </div>
 
-      {/* 资助支持 (增强 DuitNow, TNG & PayPal) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-4">
            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">{t.funding}</h3>
@@ -187,7 +179,6 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
            </div>
         </div>
         <GlassCard className="divide-white/5 border-slate-700/20 bg-white/[0.01]">
-          {/* DuitNow 模块 */}
           <div className="p-6 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -222,13 +213,8 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
             >
               {t.duitNowCopy}
             </button>
-            
-            <p className="text-[9px] text-slate-500 leading-normal italic px-1">
-              {t.duitNowInstructions}
-            </p>
           </div>
 
-          {/* TNG eWallet 模块 */}
           <div className="p-6 space-y-4 border-t border-white/5 bg-cyan-500/[0.02]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -263,13 +249,8 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
             >
               {t.tngCopy}
             </button>
-            
-            <p className="text-[9px] text-slate-500 leading-normal italic px-1">
-              {t.tngInstructions}
-            </p>
           </div>
 
-          {/* PayPal 模块 */}
           <div className="p-6 space-y-4 border-t border-white/5 bg-blue-500/[0.02]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -285,7 +266,6 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
 
             <div className="flex justify-center py-4">
                <div className="p-4 bg-white rounded-3xl shadow-2xl relative group overflow-hidden">
-                  {/* 使用公开的 QR 生成服务展示 PayPal.me/vyncuslim */}
                   <img 
                     src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://paypal.me/vyncuslim" 
                     alt="PayPal QR" 
@@ -304,10 +284,6 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
               <ExternalLink size={12} />
               {t.paypalLink}
             </button>
-            
-            <p className="text-[9px] text-slate-500 leading-normal italic px-1">
-              {t.paypalInstructions}
-            </p>
           </div>
 
           <div className="border-t border-white/5">
@@ -340,7 +316,6 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
         </GlassCard>
       </div>
 
-      {/* 登出确认 */}
       <div className="pt-6 px-2 space-y-4">
         <AnimatePresence mode="wait">
           {showLogoutConfirm ? (
@@ -367,9 +342,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
               </p>
               <div className="flex gap-4">
                 <button 
-                  onClick={() => {
-                    onLogout();
-                  }} 
+                  onClick={onLogout} 
                   className="flex-1 py-5 bg-rose-600 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest shadow-[0_10px_30px_-5px_rgba(225,29,72,0.4)] hover:bg-rose-500 transition-all active:scale-95"
                 >
                   {lang === 'en' ? 'Purge Now' : '确认净化'}
