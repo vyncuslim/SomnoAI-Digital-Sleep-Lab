@@ -7,7 +7,7 @@ import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { User, Loader2, PlusCircle, TriangleAlert, Activity, Zap } from 'lucide-react';
+import { User, Loader2, PlusCircle, Activity, Zap } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,7 +21,6 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isDataEntryOpen, setIsDataEntryOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -44,7 +43,6 @@ const App: React.FC = () => {
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
-    setHasAttemptedSync(true);
     try {
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
@@ -122,16 +120,32 @@ const App: React.FC = () => {
               { id: 'calendar', icon: Activity, label: 'Trends' },
               { id: 'assistant', icon: Zap, label: 'Insights' },
               { id: 'profile', icon: User, label: 'Settings' }
-            ].map((nav) => (
-              <button key={nav.id} onClick={() => handleViewChange(nav.id as ViewType)} className={`flex-1 py-4 flex flex-col items-center gap-2 transition-all ${activeView === nav.id ? 'text-indigo-400' : 'text-slate-500'}`}>
-                {nav.id === 'dashboard' ? <nav.icon size={22} animated={activeView === nav.id} /> : <nav.icon size={22} />}
-                <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>
-              </button>
-            ))}
+            ].map((nav) => {
+              const IconComponent = nav.icon;
+              return (
+                <button 
+                  key={nav.id} 
+                  onClick={() => handleViewChange(nav.id as ViewType)} 
+                  className={`flex-1 py-4 flex flex-col items-center gap-2 transition-all ${activeView === nav.id ? 'text-indigo-400' : 'text-slate-500'}`}
+                >
+                  <IconComponent 
+                    size={22} 
+                    {...(nav.id === 'dashboard' ? { animated: activeView === nav.id } : {})} 
+                  />
+                  <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>
+                </button>
+              );
+            })}
           </div>
         </nav>
       )}
       {isDataEntryOpen && <DataEntry onClose={() => setIsDataEntryOpen(false)} onSave={(r) => { setCurrentRecord(r); setHistory(prev => [r, ...prev]); setIsDataEntryOpen(false); }} />}
+      
+      {errorToast && (
+        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white text-xs font-black uppercase tracking-widest rounded-full shadow-2xl animate-in slide-in-from-top-4">
+          {errorToast}
+        </div>
+      )}
     </div>
   );
 };

@@ -23,8 +23,15 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script>
-        // Global shim for process.env to prevent ReferenceErrors in environments where it's not pre-defined.
-        window.process = window.process || { env: {} };
+        // Global shim for process to prevent ReferenceErrors in library environments.
+        window.process = {
+            env: { 
+                NODE_ENV: 'production',
+                API_KEY: '' // Injected by the environment
+            },
+            cwd: () => '/',
+            browser: true
+        };
     </script>
     <style>
         @keyframes gridScroll {
