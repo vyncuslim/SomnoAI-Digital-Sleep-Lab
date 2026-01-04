@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, FileText, ShieldCheck, Lock, ShieldAlert, Globe, Search, Eye, AlertTriangle, Cpu, Terminal, Activity, Zap } from 'lucide-react';
+import { ArrowLeft, FileText, ShieldCheck, Lock, ShieldAlert, Eye, AlertTriangle, Cpu, Terminal, Activity, Zap } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 
 interface LegalViewProps {
@@ -81,7 +81,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed font-medium italic">
                   {isZh 
-                    ? '本应用严格遵守 Google API 服务用户数据政策，包括有限使用要求。我们绝不将您的健康数据用于广告、画像或任何第三方数据交易。' 
+                    ? 'Somno 对从 Google API 接收的信息的使用，将遵守 Google API 服务用户数据政策，包括其中的“有限使用”要求。我们绝不将您的健康数据用于广告、画像或任何第三方数据交易。' 
                     : "Somno adheres to the Google API Services User Data Policy, ensuring health data is never shared for advertising, profiling, or third-party brokers."}
                 </p>
               </div>
@@ -133,7 +133,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
 
             <footer className="pt-12 border-t border-white/5 flex justify-between items-center opacity-50">
               <p className="text-[9px] mono uppercase tracking-widest">Protocol v3.4.L</p>
-              <p className="text-[9px] mono uppercase tracking-widest">2025.01.10</p>
+              <p className="text-[9px] mono uppercase tracking-widest">2025.01.12</p>
             </footer>
           </>
         )}
