@@ -1,15 +1,47 @@
+<!-- 此文件内容与根目录 privacy.html 完全一致，确保访问 /privacy/ 时能正确显示 -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=/privacy.html">
-    <script>window.location.href = "/privacy.html";</script>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>隐私政策 - Somno Digital Sleep Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Plus Jakarta Sans', sans-serif; background-color: #020617; color: #f1f5f9; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; padding: 4rem 1.5rem; }
+        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2rem; padding: 3rem; }
+        h1 { font-size: 2.5rem; font-weight: 800; italic: true; letter-spacing: -0.05em; margin-bottom: 2rem; color: #fff; }
+        h2 { font-size: 1.25rem; font-weight: 700; color: #818cf8; margin-top: 2rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.1em; }
+        p, li { color: #94a3b8; font-size: 0.95rem; margin-bottom: 1rem; }
+        ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; }
+        a { color: #818cf8; text-decoration: underline; font-weight: 600; }
+        .footer { margin-top: 4rem; text-align: center; font-size: 0.75rem; color: #475569; text-transform: uppercase; letter-spacing: 0.2em; }
+    </style>
 </head>
-<body style="background:#020617; color:#fff; font-family: sans-serif; display:flex; justify-content:center; align-items:center; height:100vh;">
-    <div style="text-align:center;">
-        <p>正在载入隐私政策...</p>
-        <a href="/privacy.html" style="color:#818cf8;">点击此处直接访问</a>
+<body>
+    <div class="container">
+        <div class="glass">
+            <h1>SomnoAI <span style="color: #818cf8;">Privacy Policy</span></h1>
+            <p style="font-weight: 700; color: #fff; margin-bottom: 2rem;">最后更新日期：2026 年 1 月 4 日</p>
+            <section>
+                <h2>1. 数据访问（Data Access）</h2>
+                <p>SomnoAI 会在您明确授权的情况下访问以下 Google 用户数据：睡眠分段、心率、活动能量。这些数据仅用于在应用内进行数字化睡眠分析和个性化 AI 洞察。</p>
+            </section>
+            <section>
+                <h2>2. 数据使用（Data Usage）</h2>
+                <p>所有数据仅用于分析您的个人睡眠模式和生成可视化报告。数据不会用于广告、营销或出售给第三方。数据处理仅在您本地浏览器会话中完成。</p>
+            </section>
+            <section>
+                <h2>3. 数据存储（Data Storage）</h2>
+                <p>SomnoAI 不设后端服务器存储数据。所有数据仅保存在浏览器的本地会话（sessionStorage）中，一旦关闭页面或退出登录，数据会被立即删除。</p>
+            </section>
+            <section>
+                <h2>4. 您的权利（Your Rights）</h2>
+                <p>您可以随时在 Google 账号设置中撤销对 SomnoAI 的访问授权。联系开发者：ongyuze1401@gmail.com</p>
+            </section>
+        </div>
+        <p class="footer">© 2026 Somno Lab</p>
     </div>
 </body>
 </html>
