@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Trends } from './components/Trends.tsx';
@@ -106,7 +107,8 @@ const App: React.FC = () => {
     return (
       <AnimatePresence mode="wait">
         <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={handleSyncGoogleFit} />}
+          {/* Fix: Wrapped handleSyncGoogleFit to match Dashboard's expected (onProgress) => Promise signature */}
+          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} />}
           {activeView === 'calendar' && <Trends history={history} />}
           {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} onSync={() => handleSyncGoogleFit()} />}
           {activeView === 'profile' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} />}

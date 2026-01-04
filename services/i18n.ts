@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'zh';
 
 export const translations = {
@@ -80,16 +81,16 @@ export const translations = {
       privacy: 'Privacy Policy',
       terms: 'Terms of Service',
       legal: 'Legal & Documentation',
-      duitNowId: 'DuitNow ID (Mobile)',
-      transferVia: 'Instant Transfer',
-      duitNowInstructions: 'To support: Copy this ID and paste it into the "DuitNow" or "Transfer" section of your Malaysian banking app.',
-      duitNowCopy: 'Copy ID Code',
-      tngId: 'TNG eWallet ID (Mobile)',
-      tngInstructions: 'To support via TNG: Copy this number and paste it into the "Transfer" section of your TNG eWallet app.',
+      duitNowId: 'DuitNow ID (Malaysia Only)',
+      transferVia: 'Instant Transfer (MY)',
+      duitNowInstructions: 'To support (MY): Copy this ID and paste it into the "DuitNow" section of your Malaysian banking app.',
+      duitNowCopy: 'Copy DuitNow ID',
+      tngId: 'TNG eWallet (Malaysia Only)',
+      tngInstructions: 'To support (MY): Copy this number and paste it into the "Transfer" section of your TNG eWallet app.',
       tngCopy: 'Copy TNG Number',
-      paypalId: 'PayPal Support',
+      paypalId: 'PayPal (Global Support)',
       paypalLink: 'PayPal Profile',
-      paypalInstructions: 'To support via PayPal: Scan the QR code or click the button to visit the PayPal profile (vyncuslim).',
+      paypalInstructions: 'To support via PayPal: Visit the link below to donate via global payment gateway.',
       paypalCopy: 'Copy PayPal Link'
     },
     dataEntry: {
@@ -187,16 +188,16 @@ export const translations = {
       privacy: '隐私政策',
       terms: '服务条款',
       legal: '法律与文档',
-      duitNowId: 'DuitNow ID (手机号)',
-      transferVia: '即时转账',
-      duitNowInstructions: '如何支持：请复制此 ID，并将其粘贴到马来西亚银行 App 的“DuitNow”或“转账”部分。',
-      duitNowCopy: '复制 ID 代码',
-      tngId: 'TNG 手机号支持',
-      tngInstructions: '如何通过 TNG 支持：请复制此手机号，并将其粘贴到 TNG eWallet 应用的“转账”部分。',
+      duitNowId: 'DuitNow ID (仅限马来西亚)',
+      transferVia: '即时转账 (MY)',
+      duitNowInstructions: '如何支持 (MY)：请复制此 ID，并将其粘贴到马来西亚银行 App 的“DuitNow”部分。',
+      duitNowCopy: '复制 DuitNow ID',
+      tngId: 'TNG 手机号支持 (仅限马来西亚)',
+      tngInstructions: '如何通过 TNG 支持 (MY)：请复制此手机号，并将其粘贴到 TNG eWallet 应用的“转账”部分。',
       tngCopy: '复制 TNG 号码',
       paypalId: 'PayPal 全球支持',
       paypalLink: 'PayPal 个人资料',
-      paypalInstructions: '如何通过 PayPal 支持：请扫描二维码或点击按钮访问 PayPal 个人资料 (vyncuslim)。',
+      paypalInstructions: '如何通过 PayPal 支持：请访问下方链接，通过全球支付网关进行捐赠。',
       paypalCopy: '复制 PayPal 链接'
     },
     dataEntry: {
