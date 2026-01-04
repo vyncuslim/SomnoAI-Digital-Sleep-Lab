@@ -3,38 +3,23 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Privacy Protocol - Somno Digital Sleep Lab</title>
+    <title>隐私政策 - Somno Digital Sleep Lab</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes gridScroll {
-            from { background-position: 0 0; }
-            to { background-position: 30px 30px; }
-        }
+        @keyframes gridScroll { from { background-position: 0 0; } to { background-position: 30px 30px; } }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #020617;
-            color: #f1f5f9;
-            background-image: 
-                radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+            background-color: #020617; color: #f1f5f9;
+            background-image: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 100% 100%, 30px 30px, 30px 30px;
             animation: gridScroll 15s linear infinite;
         }
-        .glass {
-            backdrop-filter: blur(24px);
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
-        .section-header {
-            border-left: 4px solid #4f46e5;
-            padding-left: 1.5rem;
-            margin-bottom: 2rem;
-            background: linear-gradient(90deg, rgba(79, 70, 229, 0.05), transparent);
-        }
+        .glass { backdrop-filter: blur(24px); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .section-header { border-left: 4px solid #4f46e5; padding-left: 1.5rem; margin-bottom: 2rem; background: linear-gradient(90deg, rgba(79, 70, 229, 0.05), transparent); }
         .mono { font-family: 'JetBrains Mono', monospace; }
-        .highlight { color: #818cf8; font-weight: 700; }
     </style>
 </head>
 <body class="min-h-screen py-12 px-6 flex justify-center">
@@ -42,7 +27,7 @@
         <div class="mb-12 flex justify-between items-end">
             <div>
                 <h1 class="text-4xl font-black tracking-tighter italic mb-2">Privacy <span class="text-indigo-500">Protocol</span></h1>
-                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Data Security Compliance v2.1</p>
+                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Data Security Standard</p>
             </div>
             <div class="text-right">
                 <a href="/" class="text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors">← Back to Lab</a>
@@ -52,94 +37,52 @@
         <div class="glass rounded-[2.5rem] p-8 md:p-16 space-y-12 shadow-2xl relative overflow-hidden">
             <section>
                 <div class="flex items-center gap-3 mb-4">
-                    <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] mono font-bold rounded-md border border-indigo-500/20 uppercase tracking-widest">更新日期: 2025.01.12</span>
+                    <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] mono font-bold rounded-md border border-indigo-500/20 uppercase tracking-widest">最后更新：2026 年 1 月 4 日</span>
                 </div>
-                <p class="text-slate-400 leading-relaxed italic">
-                    Somno Digital Sleep Lab (sleepsomno.com) 承诺保护您的个人隐私。本协议详细披露我们如何通过 Google API 访问您的健康数据，以及我们如何利用这些生理信号提供科研级的睡眠分析。
-                </p>
-            </section>
-
-            <!-- MANDATORY GOOGLE DISCLOSURE -->
-            <div class="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-6 md:p-8 space-y-4">
-                <div class="flex items-center gap-2 mb-2">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#818cf8"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-                    <h3 class="text-xs font-black uppercase tracking-[0.3em] text-indigo-300">Google API 有限使用披露 (Limited Use Disclosure)</h3>
-                </div>
-                <p class="text-sm text-slate-300 leading-relaxed font-medium">
-                    Somno 对从 Google API 接收的信息的使用和向任何其他应用的转移，将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" class="underline hover:text-white transition-colors">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。
-                </p>
-                <p class="text-xs text-slate-400 leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5">
-                    <strong>隐私承诺：</strong> 我们绝不将您的 Google Fit 数据用于广告投放、个人画像或任何形式的第三方商业交易。您的所有健康指标仅用于生成本应用内的睡眠报告。
-                </p>
-            </div>
-
-            <section>
-                <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">1. 数据访问范围 (Data Accessed)</h2>
-                </div>
-                <p class="text-slate-400 mb-6 leading-relaxed">本实验室仅请求访问以下数据集的只读权限：</p>
-                <ul class="space-y-6 text-slate-400">
-                    <li class="flex gap-4 bg-white/[0.02] p-5 rounded-2xl border border-white/5">
-                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">SCOPE_01</div>
-                        <div>
-                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">睡眠架构 (com.google.sleep.segment)</strong>
-                            <p class="text-xs leading-relaxed">用于提取深度睡眠、REM、浅睡及清醒阶段。这些数据是 AI 合成睡眠评分的核心。 </p>
-                        </div>
-                    </li>
-                    <li class="flex gap-4 bg-white/[0.02] p-5 rounded-2xl border border-white/5">
-                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">SCOPE_02</div>
-                        <div>
-                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">生理频率 (com.google.heart_rate.bpm)</strong>
-                            <p class="text-xs leading-relaxed">用于读取静息心率及其波动。我们利用此数据评估您的自主神经系统恢复状态。</p>
-                        </div>
-                    </li>
-                    <li class="flex gap-4 bg-white/[0.02] p-5 rounded-2xl border border-white/5">
-                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">SCOPE_03</div>
-                        <div>
-                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">能量代谢 (com.google.calories.expended)</strong>
-                            <p class="text-xs leading-relaxed">用于将全天能量消耗与睡眠效率进行交叉对比，为您提供更精准的恢复建议。</p>
-                        </div>
-                    </li>
-                </ul>
-            </section>
-
-            <section>
-                <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">2. 处理逻辑与用途 (Usage)</h2>
-                </div>
-                <p class="text-slate-400 leading-relaxed mb-4">
-                    访问的数据通过以下流程进行处理：
-                </p>
-                <ul class="list-disc pl-6 space-y-3 text-sm text-slate-400">
-                    <li><span class="text-white font-bold">睡眠架构深度分析：</span> 分析不同睡眠阶段的连续性，合成您的每日数字化睡眠得分。</li>
-                    <li><span class="text-white font-bold">生理恢复投影：</span> 利用 AI 神经引擎预测次日的认知负荷、专注力水平及体能恢复程度。</li>
-                    <li><span class="text-white font-bold">个性化建议：</span> 基于脱敏后的指标，为您提供包括睡眠环境优化、营养补充（如镁）等在内的科学建议。</li>
-                </ul>
-            </section>
-
-            <section>
-                <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">3. 零后端与边缘计算架构 (Zero-Backend)</h2>
-                </div>
-                <p class="text-slate-400 leading-relaxed mb-6">
-                    本实验室采用 <span class="highlight">隐私优先的分布式设计</span>，确保您的数据绝对主权：
-                </p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="p-5 bg-black/40 border border-white/5 rounded-2xl">
-                        <p class="text-[10px] mono uppercase text-indigo-400 font-black tracking-widest mb-3">无后端数据库</p>
-                        <p class="text-xs text-slate-500 leading-relaxed">Somno 绝不在云端存储您的生理指标。数据仅存在于您的设备前端。</p>
+                <div class="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-6 md:p-8 space-y-4">
+                    <div class="flex items-center gap-2 mb-2">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#818cf8"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
+                        <h3 class="text-xs font-black uppercase tracking-[0.3em] text-indigo-300">Google API 数据访问说明</h3>
                     </div>
-                    <div class="p-5 bg-black/40 border border-white/5 rounded-2xl">
-                        <p class="text-[10px] mono uppercase text-indigo-400 font-black tracking-widest mb-3">会话级隔离</p>
-                        <p class="text-xs text-slate-500 leading-relaxed">所有健康数据流仅暂存于 <code class="mono bg-white/5 px-1 rounded">sessionStorage</code>。页面关闭或手动登出，所有数据即刻物理销毁。</p>
-                    </div>
+                    <p class="text-sm text-slate-300 leading-relaxed font-medium">
+                        当您授权连接 Google Fit，本应用会访问您的 <span class="text-indigo-400">睡眠分段 (sleep segments)</span>、<span class="text-indigo-400">心率 (heart rate)</span> 及 <span class="text-indigo-400">活动能量 (activity energy)</span> 数据，仅用于数字睡眠分析。
+                    </p>
                 </div>
+            </section>
+
+            <section>
+                <div class="section-header py-2">
+                    <h2 class="text-xl font-bold tracking-tight uppercase">数据使用 (Data Usage)</h2>
+                </div>
+                <p class="text-slate-400 leading-relaxed">
+                    所有数据仅用于应用内可视化与 AI 分析，不会用于广告投放、个人画像或任何形式的第三方分享。Somno 对从 Google API 接收的信息的使用将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" class="text-indigo-400 underline">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。
+                </p>
+            </section>
+
+            <section>
+                <div class="section-header py-2">
+                    <h2 class="text-xl font-bold tracking-tight uppercase">数据存储 (Data Storage)</h2>
+                </div>
+                <p class="text-slate-400 leading-relaxed">
+                    数据只存储在浏览器本地 <code class="mono bg-white/5 px-1 rounded">sessionStorage</code> 中。本应用不设立任何后端数据库，一旦关闭页面或手动登出，所有数据将立即从内存中彻底删除。
+                </p>
+            </section>
+
+            <section>
+                <div class="section-header py-2">
+                    <h2 class="text-xl font-bold tracking-tight uppercase">用户权利 (Your Rights)</h2>
+                </div>
+                <p class="text-slate-400 leading-relaxed">
+                    您可随时在 Google 账号设置中的“第三方应用与服务”部分撤销对本应用的授权。
+                </p>
             </section>
 
             <footer class="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
-                <p class="text-[10px] mono uppercase tracking-widest">首席隐私官: Vyncus Lim</p>
-                <p class="text-[10px] mono uppercase tracking-widest">ongyuze1401@gmail.com</p>
-                <p class="text-[10px] mono uppercase tracking-widest">© 2025 SOMNO LAB</p>
+                <p class="text-[10px] mono uppercase tracking-widest">© 2026 SOMNO LAB</p>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] mono uppercase tracking-widest">开发者联系信息:</span>
+                    <a href="mailto:ongyuze1401@gmail.com" class="text-[10px] mono text-indigo-400 font-bold underline">ongyuze1401@gmail.com</a>
+                </div>
             </footer>
         </div>
     </div>

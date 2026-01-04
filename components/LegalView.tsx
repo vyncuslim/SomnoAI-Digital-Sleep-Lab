@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, FileText, ShieldCheck, Lock, ShieldAlert, Eye, AlertTriangle, Cpu, Terminal, Activity, Zap } from 'lucide-react';
+import { ArrowLeft, FileText, ShieldCheck, Lock, ShieldAlert, Activity, AlertTriangle, Zap, Mail, ExternalLink } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 
 interface LegalViewProps {
@@ -26,7 +26,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
             {isPrivacy ? (isZh ? '隐私协议' : 'Privacy Protocol') : (isZh ? '服务条款' : 'Usage Terms')}
           </h1>
           <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-0.5">
-            Somno Lab • {isZh ? '合规版本 v2025.1' : 'Compliance v2025.1'}
+            Somno Lab • {isZh ? '2026.01.04 版' : 'v2026.01.04'}
           </p>
         </div>
       </header>
@@ -43,46 +43,29 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
                   <Activity size={20} />
                 </div>
-                <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '1. 遥测架构 (访问数据披露)' : '1. Telemetry Schema'}</h2>
+                <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '数据访问与使用' : 'Data Access & Usage'}</h2>
               </div>
-              <p className="font-medium text-slate-400">
-                {isZh ? '本实验室仅请求访问以下 Google Fit 数据集的只读权限：' : 'The lab requests read-only access to the following Google Fit datasets:'}
-              </p>
-              <ul className="space-y-6">
-                <li className="flex gap-4 items-start bg-white/[0.03] p-4 rounded-2xl border border-white/5">
-                  <span className="mono text-indigo-500 font-bold mt-1 shrink-0">0x01</span>
-                  <div>
-                    <strong className="text-white uppercase text-[10px] tracking-widest block mb-1">{isZh ? '睡眠分段 (com.google.sleep.segment)' : 'Sleep Segments'}</strong>
-                    <span className="text-[11px] opacity-70">{isZh ? '用于 AI 深度解析深度、REM 和浅睡阶段。' : 'Used for identifying sleep architecture layers.'}</span>
-                  </div>
-                </li>
-                <li className="flex gap-4 items-start bg-white/[0.03] p-4 rounded-2xl border border-white/5">
-                  <span className="mono text-indigo-500 font-bold mt-1 shrink-0">0x02</span>
-                  <div>
-                    <strong className="text-white uppercase text-[10px] tracking-widest block mb-1">{isZh ? '心率遥测 (com.google.heart_rate.bpm)' : 'Heart Rate Telemetry'}</strong>
-                    <span className="text-[11px] opacity-70">{isZh ? '用于计算 RHR 及生理恢复投影评分。' : 'Used for recovery and RHR projections.'}</span>
-                  </div>
-                </li>
-                <li className="flex gap-4 items-start bg-white/[0.03] p-4 rounded-2xl border border-white/5">
-                  <span className="mono text-indigo-500 font-bold mt-1 shrink-0">0x03</span>
-                  <div>
-                    <strong className="text-white uppercase text-[10px] tracking-widest block mb-1">{isZh ? '代谢流 (com.google.calories.expended)' : 'Metabolic Flow'}</strong>
-                    <span className="text-[11px] opacity-70">{isZh ? '用于衡量代谢水平与睡眠质量的相关性。' : 'Correlates expenditure with efficiency.'}</span>
-                  </div>
-                </li>
-              </ul>
+              <div className="space-y-4 text-slate-300">
+                <p className="font-bold text-white italic">最后更新：2026 年 1 月 4 日</p>
+                <p>
+                  <strong className="text-indigo-400 block mb-1">Google API 数据访问说明</strong>
+                  当您授权连接 Google Fit，本应用会访问您的 <span className="text-white">睡眠分段、心率及活动能量</span> 数据，仅用于数字睡眠分析。
+                </p>
+                <p>
+                  <strong className="text-indigo-400 block mb-1">数据使用</strong>
+                  所有数据仅用于应用内可视化与 AI 分析，不会用于广告或第三方分享。
+                </p>
+              </div>
             </section>
 
             <section className="space-y-4 relative z-10">
               <div className="p-8 bg-indigo-500/10 border border-indigo-500/20 rounded-[2rem] space-y-4 shadow-inner">
                 <div className="flex items-center gap-3 text-indigo-400">
                   <ShieldAlert size={20} />
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{isZh ? 'Google API 有限使用披露' : 'Google API Limited Use Disclosure'}</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">Limited Use Disclosure</h3>
                 </div>
                 <p className="text-[11px] text-slate-300 leading-relaxed font-medium italic">
-                  {isZh 
-                    ? 'Somno 严格遵守 Google API 服务用户数据政策。我们承诺不将接收的数据用于广告、画像或任何第三方交易。' 
-                    : "Somno adheres to the Google API Services User Data Policy. Health data is never shared for advertising, profiling, or third-party brokers."}
+                  Somno 对从 Google API 接收的信息的使用将遵守 Google API 服务用户数据政策，包括其中的“有限使用”要求。
                 </p>
               </div>
             </section>
@@ -92,51 +75,57 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
                   <Lock size={20} />
                 </div>
-                <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '2. 零后端边缘架构' : '2. Zero-Backend Protocol'}</h2>
+                <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '数据存储与权利' : 'Storage & Rights'}</h2>
               </div>
-              <p className="font-medium text-slate-400">
-                {isZh 
-                  ? '所有健康数据仅在浏览器临时内存 (sessionStorage) 中流动，不上传至服务器。页面关闭即刻物理销毁。' 
-                  : 'Somno executes total isolation. Data exists in transient memory (sessionStorage) and is purged upon session termination.'}
-              </p>
+              <div className="space-y-4">
+                <p>
+                  <strong className="text-white block">数据存储</strong>
+                  数据只存储在浏览器本地 sessionStorage 中，一旦关闭页面即删除。
+                </p>
+                <p>
+                  <strong className="text-white block">用户权利</strong>
+                  您可随时在 Google 账号中撤销应用访问权限。
+                </p>
+              </div>
             </section>
-
-            <footer className="pt-12 border-t border-white/5 text-center opacity-40">
-              <p className="text-[9px] font-black uppercase tracking-widest">© 2025 SOMNO DIGITAL LAB • vyncus.lim</p>
-            </footer>
           </>
         ) : (
           <>
-            <section className="space-y-8 relative z-10">
-              <div className="bg-rose-500/10 border border-rose-500/20 rounded-[2rem] p-8 space-y-4">
+            <section className="space-y-8 relative z-10 text-[12px]">
+              <div className="bg-rose-500/10 border border-rose-500/20 rounded-[2rem] p-8 space-y-4 shadow-lg shadow-rose-950/20">
                 <div className="flex items-center gap-3 text-rose-400">
                   <AlertTriangle size={20} />
-                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{isZh ? '关键医疗免责声明' : 'Medical Disclaimer'}</h3>
+                  <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{isZh ? '数据使用与责任声明' : 'Disclaimer'}</h3>
                 </div>
-                <p className="text-[12px] text-slate-300 leading-relaxed font-bold italic">
-                  {isZh ? '本应用是科研实验分析工具，不提供临床诊断建议。分析结果严禁代替医生咨询。' : 'SOMNO IS A RESEARCH TOOL. All projections are for personal insight and not for clinical diagnosis.'}
+                <p className="text-slate-300 leading-relaxed font-bold italic">
+                  本应用仅用于分析和个性化建议。我们不对因 Google Fit 数据不完整造成的分析结果准确性负责。AI 洞察不作为医疗诊断依据。
                 </p>
               </div>
 
-              <div className="space-y-6">
+              <div className="space-y-6 text-slate-400">
                 <div className="flex items-center gap-3 text-white">
                   <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
                     <Zap size={20} />
                   </div>
-                  <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '1. 平台定位' : '1. Digital Environment'}</h2>
+                  <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '核心服务条款' : 'Terms Summary'}</h2>
                 </div>
-                <p className="font-medium text-slate-400 leading-relaxed">
-                  {isZh ? '您同意本平台仅作为数字化生理指标的可视化与实验性 AI 洞察工具使用。' : 'You agree this platform is purely for physiological telemetry visualization and experimental insight.'}
-                </p>
+                <ul className="list-disc pl-5 space-y-4">
+                  <li>使用即表示您同意遵守本服务条款及隐私政策。</li>
+                  <li>基于您授权的数据（睡眠分段、心率、活动能量）提供洞察。</li>
+                  <li>您需妥善保管 Google 账号授权，自行承担安全责任。</li>
+                  <li>禁止干扰系统、非法侵权或未经允许的数据收集行为。</li>
+                </ul>
               </div>
             </section>
-
-            <footer className="pt-12 border-t border-white/5 flex justify-between items-center opacity-50">
-              <p className="text-[9px] mono uppercase tracking-widest">Protocol v3.5.LAB</p>
-              <p className="text-[9px] mono uppercase tracking-widest">2025.01.12</p>
-            </footer>
           </>
         )}
+        <footer className="pt-12 border-t border-white/5 flex flex-col items-center gap-4 opacity-40">
+          <div className="flex items-center gap-2 text-indigo-400">
+            <Mail size={12} />
+            <span className="text-[10px] font-bold">ongyuze1401@gmail.com</span>
+          </div>
+          <p className="text-[9px] font-black uppercase tracking-widest">© 2026 SOMNO Lab • {isZh ? '最后更新日期： 2026.01.04' : 'Last Updated: 2026.01.04'}</p>
+        </footer>
       </div>
     </div>
   );

@@ -2,10 +2,36 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta http-equiv="refresh" content="0; url=/privacy.html">
-    <title>Privacy Protocol - Somno Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>隐私政策 - Somno Digital Sleep Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes gridScroll { from { background-position: 0 0; } to { background-position: 30px 30px; } }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020617; color: #f1f5f9;
+            background-image: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            animation: gridScroll 15s linear infinite;
+        }
+        .glass { backdrop-filter: blur(24px); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .section-header { border-left: 4px solid #4f46e5; padding-left: 1.5rem; margin-bottom: 2rem; background: linear-gradient(90deg, rgba(79, 70, 229, 0.05), transparent); }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+    </style>
 </head>
-<body>
-    <p>正在跳转至隐私协议页面... <a href="/privacy.html">点击此处手动跳转</a></p>
+<body class="min-h-screen py-12 px-6 flex justify-center">
+    <div class="max-w-4xl w-full">
+        <div class="glass rounded-[2.5rem] p-8 md:p-16 space-y-12">
+            <section>
+                <span class="text-xs mono text-indigo-400 font-bold">Google API 合规更新日期： 2024年5月22日</span>
+                <p class="text-sm mt-4 text-slate-300">SomnoAI 严格遵守 Google API 服务用户数据政策。不设立任何后端健康数据库。</p>
+            </section>
+            <section><h2 class="text-white font-bold border-l-4 border-indigo-500 pl-4 mb-4">数据访问与使用</h2><p class="text-slate-400 text-sm">访问 Google Fit 睡眠分期、心率脉搏及能量代谢数据，仅用于本地计算和可视化。</p></section>
+            <section><h2 class="text-white font-bold border-l-4 border-indigo-500 pl-4 mb-4">存储</h2><p class="text-slate-400 text-sm">仅限本地浏览器环境，关闭页面即销毁。</p></section>
+        </div>
+    </div>
 </body>
 </html>

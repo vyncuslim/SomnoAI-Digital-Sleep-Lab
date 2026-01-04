@@ -3,30 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-    <title>Service Protocols - Somno Digital Sleep Lab</title>
+    <title>服务条款 - Somno Digital Sleep Lab</title>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @keyframes gridScroll {
-            from { background-position: 0 0; }
-            to { background-position: 30px 30px; }
-        }
+        @keyframes gridScroll { from { background-position: 0 0; } to { background-position: 30px 30px; } }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
-            background-color: #020617;
-            color: #f1f5f9;
-            background-image: 
-                radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+            background-color: #020617; color: #f1f5f9;
+            background-image: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
                 linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 100% 100%, 30px 30px, 30px 30px;
             animation: gridScroll 15s linear infinite;
         }
-        .glass {
-            backdrop-filter: blur(24px);
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-        }
+        .glass { backdrop-filter: blur(24px); background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); }
         .mono { font-family: 'JetBrains Mono', monospace; }
         .alert { border: 1px solid rgba(244, 63, 94, 0.3); background: rgba(244, 63, 94, 0.1); }
     </style>
@@ -35,50 +26,70 @@
     <div class="max-w-4xl w-full">
         <div class="mb-12 flex justify-between items-end">
             <div>
-                <h1 class="text-4xl font-black tracking-tighter italic mb-2">Service <span class="text-indigo-500">Terms</span></h1>
-                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Usage Protocols v3.5.0</p>
+                <h1 class="text-4xl font-black tracking-tighter italic mb-2">Usage <span class="text-indigo-500">Terms</span></h1>
+                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Usage Protocols</p>
             </div>
             <div class="text-right">
                 <a href="/" class="text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors">← Back to Lab</a>
             </div>
         </div>
 
-        <div class="glass rounded-[2.5rem] p-8 md:p-16 space-y-12 shadow-2xl relative overflow-hidden">
-            <div class="alert rounded-2xl p-6 md:p-8 space-y-4">
-                <div class="flex items-center gap-3">
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="#f43f5e"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>
-                    <h3 class="text-xs font-black uppercase tracking-[0.3em] text-rose-400">关键医疗免责声明</h3>
-                </div>
-                <p class="text-sm text-slate-300 leading-relaxed font-bold italic">
-                    Somno Digital Sleep Lab 是一个 <span class="text-rose-400 uppercase">实验性科研分析工具</span>。它不是医疗设备，不提供任何临床诊断。应用生成的 AI 洞察和预测评分仅供个人参考，<span class="text-white underline">严禁代替专业医疗咨询。</span>
-                </p>
+        <div class="glass rounded-[2.5rem] p-8 md:p-16 space-y-10 shadow-2xl relative overflow-hidden">
+            <div class="flex items-center gap-3">
+                <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] mono font-bold rounded-md border border-indigo-500/20 uppercase tracking-widest">最后更新日期：2026 年 1 月 4 日</span>
             </div>
 
-            <section class="space-y-6">
-                <h2 class="text-xl font-bold tracking-tight uppercase border-b border-white/5 pb-4">1. 实验室授权与合规</h2>
-                <p class="text-slate-400 leading-relaxed">
-                    初始化实验室即表示您理解并同意参加一项数字化生理实验。本平台利用 Google Fit API 提供的脱敏数据进行二次分析。我们授予您有限的许可，仅供个人非商业研究之用。
-                </p>
-            </section>
+            <div class="space-y-8 text-slate-400 text-sm leading-relaxed">
+                <section>
+                    <h2 class="text-white font-bold text-base mb-3">1. 接受条款 (Acceptance of Terms)</h2>
+                    <p>使用 SomnoAI（包括网站和应用服务）即表示您同意遵守本服务条款及隐私政策。若您不同意，请勿使用本服务。</p>
+                </section>
 
-            <section class="space-y-6">
-                <h2 class="text-xl font-bold tracking-tight uppercase border-b border-white/5 pb-4">2. 遥测信号精确度</h2>
-                <p class="text-slate-400 leading-relaxed">
-                    本实验室的分析精度完全取决于您的穿戴设备提供给 Google Fit 的数据质量。Somno 及其开发者不对因传感器误差、Google 同步延迟或 AI 模型偏差导致的分析错误承担责任。
-                </p>
-            </section>
+                <section>
+                    <h2 class="text-white font-bold text-base mb-3">2. 服务内容 (Services)</h2>
+                    <p>SomnoAI 提供数字化睡眠分析和 AI 洞察服务，基于您授权访问的 Google Fit 数据，包括睡眠分段、心率和活动能量。</p>
+                </section>
 
-            <section class="space-y-6">
-                <h2 class="text-xl font-bold tracking-tight uppercase border-b border-white/5 pb-4">3. 责任限制</h2>
-                <p class="text-slate-400 leading-relaxed">
-                    在任何情况下，Somno 均不对因解读实验信号而产生的直接、间接或后果性损害负责。使用本实验室即表示您完全接受其作为实验工具的局限性及其零后端隐私架构。
-                </p>
-            </section>
+                <section>
+                    <h2 class="text-white font-bold text-base mb-3">3. 用户账户 (User Accounts)</h2>
+                    <p>您需要使用 Google 账号授权才能使用 SomnoAI。您需妥善保管账号信息，不得与他人共享。对因账号安全疏忽导致的数据或服务问题，用户需自行承担责任。</p>
+                </section>
 
-            <footer class="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
-                <p class="text-[10px] mono uppercase tracking-widest">生效日期: 2025.01.12</p>
-                <p class="text-[10px] mono uppercase tracking-widest">版本: 3.5.0-LAB</p>
-                <p class="text-[10px] mono uppercase tracking-widest">© 2025 SOMNO LAB</p>
+                <section>
+                    <h2 class="text-white font-bold text-base mb-3">4. 用户行为 (User Conduct)</h2>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li>不上传非法或侵权内容；</li>
+                        <li>不试图干扰、破坏或未经授权访问 SomnoAI 系统；</li>
+                        <li>不用于广告、营销或任何未经允许的数据收集行为。</li>
+                    </ul>
+                </section>
+
+                <section class="alert p-6 rounded-2xl">
+                    <h2 class="text-rose-400 font-bold text-base mb-3 flex items-center gap-2">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>
+                        5. 数据使用与责任 (Data Usage & Liability)
+                    </h2>
+                    <p class="text-slate-300 font-medium italic">SomnoAI 根据隐私政策处理用户数据，仅用于应用内分析和个性化建议。我们不对因 Google Fit 数据不完整或设备异常造成的分析结果准确性负责。用户需自行判断和使用 AI 提供的睡眠洞察，不作为医疗诊断依据。</p>
+                </section>
+
+                <section>
+                    <h2 class="text-white font-bold text-base mb-3">6. 知识产权 (Intellectual Property)</h2>
+                    <p>SomnoAI 的软件、界面设计、Logo、内容及代码均属于 SomnoAI 或授权方所有。未经授权，用户不得复制、修改、分发或用于商业用途。</p>
+                </section>
+
+                <section>
+                    <h2 class="text-white font-bold text-base mb-3">7. 修改与终止 (Modifications and Termination)</h2>
+                    <p>SomnoAI 保留随时修改服务条款、隐私政策或服务内容的权利。若用户违反条款，SomnoAI 有权终止其服务访问。</p>
+                </section>
+
+                <section>
+                    <h2 class="text-white font-bold text-base mb-3">8. 联系方式 (Contact Information)</h2>
+                    <p>如对服务条款或数据使用有疑问，请联系：<a href="mailto:ongyuze1401@gmail.com" class="text-indigo-400 underline">ongyuze1401@gmail.com</a></p>
+                </section>
+            </div>
+            
+            <footer class="pt-8 border-t border-white/5 opacity-40 text-center">
+                <p class="text-[10px] mono uppercase tracking-widest">© 2026 SOMNO LAB</p>
             </footer>
         </div>
     </div>
