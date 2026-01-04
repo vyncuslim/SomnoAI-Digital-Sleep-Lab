@@ -4,9 +4,14 @@ import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
 const getAIInstance = () => {
-  // 按照规范：每次调用前创建新实例，确保使用最新的 API_KEY
-  // 这里优先使用 process.env.API_KEY，它会在 Auth 组件保存手动输入时被更新
+  // 按照规范：每次调用前创建新实例
+  // 优先级：Window 全局变量 (由 Auth 组件设置) > 环境注入
   const apiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY || "";
+  
+  if (!apiKey || apiKey.length < 20) {
+    throw new Error("GATEWAY_NOT_FOUND");
+  }
+  
   return new GoogleGenAI({ apiKey });
 };
 
@@ -45,13 +50,11 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
           : ["睡眠架构已分析。请优化环境。", "今天的认知负荷可能会升高。", "尝试补充镁以促进恢复。"]);
   } catch (err: any) {
     console.error("Gemini Insight Error:", err);
-    // 如果错误信息包含 entity was not found，说明 Key 无效
-    if (err.message?.toLowerCase().includes("not found") || err.message?.includes("404")) {
-      throw new Error("GATEWAY_NOT_FOUND");
-    }
+    if (err.message === "GATEWAY_NOT_FOUND") throw err;
+    
     return lang === 'en' 
-      ? ["Insight synthesis offline.", "Biometric link stable.", "Awaiting next stream."] 
-      : ["洞察合成离线。", "生物识别链路稳定。", "等待下一流数据。"];
+      ? ["Insight synthesis offline. Please check API Key.", "Biometric link stable.", "Awaiting next stream."] 
+      : ["洞察合成离线。请检查 API 密钥配置。", "生物识别链路稳定。", "等待下一流数据。"];
   }
 };
 
@@ -71,8 +74,9 @@ export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> 
     });
 
     return response.text || "Trend analysis inconclusive.";
-  } catch (err) {
-    return "Historical synthesis error.";
+  } catch (err: any) {
+    if (err.message === "GATEWAY_NOT_FOUND") throw err;
+    return "Historical synthesis error. API Key missing.";
   }
 };
 
@@ -121,9 +125,7 @@ export const chatWithCoach = async (
     };
   } catch (err: any) {
     console.error("Chat Error:", err);
-    if (err.message?.toLowerCase().includes("not found") || err.message?.includes("404")) {
-      throw new Error("GATEWAY_NOT_FOUND");
-    }
+    if (err.message === "GATEWAY_NOT_FOUND") throw err;
     throw err;
   }
 };
