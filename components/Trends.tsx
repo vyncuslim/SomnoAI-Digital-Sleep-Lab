@@ -6,14 +6,74 @@ import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { 
   Calendar, TrendingUp, Award, Share2, Check, Activity, Database, 
-  BrainCircuit, FileText, Loader2, Sparkles, ChevronRight, Binary
+  BrainCircuit, FileText, Loader2, Sparkles, ChevronRight, Binary, Clock
 } from 'lucide-react';
 import { getWeeklySummary } from '../services/geminiService.ts';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface TrendsProps {
   history: SleepRecord[];
 }
+
+// 自定义高保真 Tooltip 组件
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    const data = payload[0].payload;
+    return (
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        className="bg-slate-950/90 backdrop-blur-xl border border-white/10 p-5 rounded-2xl shadow-2xl min-w-[180px] space-y-4"
+      >
+        <div className="flex justify-between items-center border-b border-white/5 pb-2">
+          <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">{label}</p>
+          <div className="flex items-center gap-1">
+             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse"></div>
+             <span className="text-[8px] font-black text-indigo-400 uppercase">Live Trace</span>
+          </div>
+        </div>
+        
+        <div className="space-y-1">
+          <p className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">Sleep Architecture Score</p>
+          <p className="text-3xl font-black text-white italic">{data.score}<span className="text-sm font-bold text-slate-600 ml-1">/100</span></p>
+        </div>
+
+        <div className="space-y-3 pt-1">
+          {/* 深睡比例条 */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
+              <span className="text-indigo-400">Deep Sleep</span>
+              <span className="text-white">{data.deepRatio}%</span>
+            </div>
+            <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-full bg-indigo-500 shadow-[0_0_8px_#4f46e5]" style={{ width: `${data.deepRatio}%` }} />
+            </div>
+          </div>
+
+          {/* REM 比例条 */}
+          <div className="space-y-1">
+            <div className="flex justify-between text-[8px] font-black uppercase tracking-widest">
+              <span className="text-purple-400">REM Sleep</span>
+              <span className="text-white">{data.remRatio}%</span>
+            </div>
+            <div className="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+              <div className="h-full bg-purple-500 shadow-[0_0_8px_#a855f7]" style={{ width: `${data.remRatio}%` }} />
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Clock size={10} className="text-slate-500" />
+            <span className="text-[9px] font-mono text-slate-400 uppercase tracking-widest">{data.duration}H Total</span>
+          </div>
+          <Binary size={10} className="text-slate-800" />
+        </div>
+      </motion.div>
+    );
+  }
+  return null;
+};
 
 export const Trends: React.FC<TrendsProps> = ({ history }) => {
   const [range, setRange] = useState<TimeRange>('week');
@@ -21,10 +81,13 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
   const [summary, setSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  // 增强数据映射，包含深睡与 REM 指标
   const chartData = history.slice(0, 14).reverse().map(item => ({
     date: item.date.split(' ')[0],
     score: item.score,
     duration: Math.round(item.totalDuration / 60 * 10) / 10,
+    deepRatio: item.deepRatio || 0,
+    remRatio: item.remRatio || 0
   }));
 
   const handleShare = () => {
@@ -134,7 +197,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
         </div>
         <div className="h-64 w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData}>
+            <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
               <XAxis 
                 dataKey="date" 
@@ -143,6 +206,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
                 tickLine={false} 
                 axisLine={false} 
                 fontFamily="JetBrains Mono"
+                dy={10}
               />
               <YAxis 
                 stroke="#475569" 
@@ -152,17 +216,18 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
                 domain={[0, 100]} 
                 fontFamily="JetBrains Mono"
               />
+              {/* 使用自定义的 CustomTooltip */}
               <Tooltip 
-                contentStyle={{backgroundColor: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '16px', fontSize: '12px', fontFamily: 'JetBrains Mono'}}
-                itemStyle={{color: COLORS.primary}}
+                content={<CustomTooltip />}
+                cursor={{ stroke: 'rgba(79, 70, 229, 0.2)', strokeWidth: 1 }}
               />
               <Line 
                 type="monotone" 
                 dataKey="score" 
                 stroke={COLORS.primary} 
                 strokeWidth={3} 
-                dot={{ fill: COLORS.primary, strokeWidth: 0, r: 3 }}
-                activeDot={{ r: 5, strokeWidth: 3, stroke: 'rgba(129, 140, 248, 0.2)', fill: '#fff' }}
+                dot={{ fill: COLORS.primary, strokeWidth: 0, r: 4 }}
+                activeDot={{ r: 6, strokeWidth: 4, stroke: 'rgba(129, 140, 248, 0.2)', fill: '#fff' }}
                 animationDuration={1500}
               />
             </LineChart>

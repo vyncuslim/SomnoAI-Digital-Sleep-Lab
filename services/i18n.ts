@@ -23,7 +23,7 @@ export const translations = {
     },
     auth: {
       lab: 'Lab',
-      tagline: 'Digital Sleep & Physiological Projections',
+      tagline: 'Integrates physiological monitoring, AI deep insights, and health recommendations to provide a comprehensive digital sleep experiment platform.',
       securityStatement: 'Security Statement',
       securityDetail: 'Data synced locally. Zero backend storage. Sensitive metrics cleared upon session termination.',
       connect: 'Connect Google Fit',
@@ -130,7 +130,7 @@ export const translations = {
     },
     auth: {
       lab: '实验室',
-      tagline: '数字睡眠与生理预测系统',
+      tagline: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验平台。',
       securityStatement: '安全声明',
       securityDetail: '数据本地同步。无后端存储。会话结束时即时清除敏感指标。',
       connect: '连接 Google Fit',
