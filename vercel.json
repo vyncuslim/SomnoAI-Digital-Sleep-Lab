@@ -20,6 +20,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/setting",
+      "destination": "/index.html"
+    },
+    {
       "source": "/AIAssistant",
       "destination": "/index.html"
     },
@@ -28,7 +32,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?!privacy|terms|Settings|AIAssistant|AlAssistant|googlee47ef5d2eacdf45a|assets|favicon).*)",
+      "source": "/((?!privacy|terms|Settings|setting|AIAssistant|AlAssistant|googlee47ef5d2eacdf45a|assets|favicon).*)",
       "destination": "/index.html"
     }
   ]

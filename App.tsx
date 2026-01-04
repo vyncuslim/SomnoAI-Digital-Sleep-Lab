@@ -32,7 +32,8 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleLocationChange = () => {
       const path = window.location.pathname.toLowerCase();
-      if (path === '/settings' || path === '/profile') {
+      // 支持 /settings, /setting, /profile 等多种进入设置页面的路径
+      if (path === '/settings' || path === '/setting' || path === '/profile') {
         setActiveView('profile');
       } else if (path === '/aiassistant' || path === '/alassistant' || path === '/assistant' || path === '/zap') {
         setActiveView('assistant');

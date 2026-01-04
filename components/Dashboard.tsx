@@ -43,7 +43,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
           </div>
           <span className="text-[10px] font-black uppercase tracking-[0.5em] text-indigo-400/80">AI Synthesis Report</span>
         </div>
-        <GlassCard className="p-8 border-indigo-500/20 bg-indigo-500/5 shadow-[0_0_80px_-20px_rgba(79,70,229,0.15)]">
+        <GlassCard className="p-8 border-indigo-500/10 bg-indigo-500/5 shadow-[0_0_80px_-20px_rgba(79,70,229,0.1)]">
           <div className="relative">
             <Sparkles className="absolute -top-1 -left-1 text-indigo-400 opacity-20" size={32} />
             <h2 className="text-2xl font-black leading-tight text-white italic tracking-tight relative z-10">
@@ -67,7 +67,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <GlassCard className="aspect-square flex flex-col items-center justify-center p-8 relative">
           <motion.div 
-            animate={{ scale: [1, 1.05, 1], opacity: [0.1, 0.2, 0.1] }}
+            animate={{ scale: [1, 1.05, 1], opacity: [0.05, 0.1, 0.05] }}
             transition={{ duration: 4, repeat: Infinity }}
             className="absolute inset-0 bg-indigo-600/10 blur-[60px] rounded-full"
           />
@@ -76,11 +76,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
               <PieChart>
                 <Pie
                   data={[{v: data.score}, {v: 100 - data.score}]}
-                  cx="50%" cy="50%" innerRadius="70%" outerRadius="85%"
+                  cx="50%" cy="50%" innerRadius="70%" outerRadius="82%"
                   dataKey="v" startAngle={90} endAngle={450} stroke="none"
+                  paddingAngle={4}
                 >
-                  <Cell fill="url(#scoreGrad)" />
-                  <Cell fill="rgba(255,255,255,0.02)" />
+                  <Cell fill="url(#scoreGrad)" cornerRadius={10} />
+                  <Cell fill="rgba(255,255,255,0.015)" />
                 </Pie>
                 <defs>
                   <linearGradient id="scoreGrad" x1="0" y1="0" x2="0" y2="1">
