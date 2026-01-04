@@ -11,9 +11,10 @@ interface AuthProps {
   lang: Language;
   onLogin: () => void;
   onGuest: () => void;
+  onNavigate?: (view: string) => void;
 }
 
-export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
+export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [hasKey, setHasKey] = useState(false);
   const [isCheckingKey, setIsCheckingKey] = useState(true);
@@ -28,8 +29,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
   const checkApiKey = async () => {
     try {
-      // @google/genai: Use the pre-configured window.aistudio instance.
-      // Casting to any avoids conflict with the platform's global AIStudio type.
       const selected = await (window as any).aistudio.hasSelectedApiKey();
       setHasKey(selected);
     } catch (e) {
@@ -41,9 +40,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
   const handleSelectKey = async () => {
     try {
-      // @google/genai: Use the pre-configured window.aistudio instance.
       await (window as any).aistudio.openSelectKey();
-      // 激活后根据规范直接进行下一步，不再重新检查以避免竞争
       setHasKey(true);
     } catch (e) {
       setLocalError("Gateway Activation Failed");
@@ -144,12 +141,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
       <footer className="mt-16 flex flex-col items-center gap-6 opacity-30 hover:opacity-100 transition-opacity pb-8">
         <div className="flex items-center gap-8">
-          <a href="/privacy.html" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
+          <button onClick={() => onNavigate?.('privacy')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <Shield size={12} /> Privacy
-          </a>
-          <a href="/terms.html" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
+          </button>
+          <button onClick={() => onNavigate?.('terms')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <FileText size={12} /> Terms
-          </a>
+          </button>
           <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <Github size={12} /> Source
           </a>

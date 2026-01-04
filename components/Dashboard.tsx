@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -12,9 +13,10 @@ interface DashboardProps {
   data: SleepRecord;
   lang: Language;
   onSyncFit?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
+  onNavigate?: (view: any) => void;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onNavigate }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [ticker, setTicker] = useState("FF00AA11");
   const [isExporting, setIsExporting] = useState(false);
@@ -320,12 +322,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit }) =
 
       <footer className="mt-20 py-12 border-t border-white/5 flex flex-col items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
         <div className="flex items-center gap-8">
-          <a href="/privacy.html" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
+          <button onClick={() => onNavigate?.('privacy')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <Shield size={12} /> {lang === 'zh' ? '隐私政策' : 'Privacy'}
-          </a>
-          <a href="/terms.html" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
+          </button>
+          <button onClick={() => onNavigate?.('terms')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <FileText size={12} /> {lang === 'zh' ? '服务条款' : 'Terms'}
-          </a>
+          </button>
           <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <Github size={12} /> {lang === 'zh' ? '源代码' : 'Source'}
           </a>

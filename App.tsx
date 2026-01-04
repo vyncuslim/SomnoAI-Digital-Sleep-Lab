@@ -57,12 +57,9 @@ const App: React.FC = () => {
       
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
-      
-      // 数据抓取成功后即可关闭全屏加载
       setIsLoading(false);
       onProgress?.('analyzing');
       
-      // AI 洞察作为后台异步过程
       try {
         const insights = await getSleepInsight(updatedRecord, lang);
         setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
@@ -73,18 +70,14 @@ const App: React.FC = () => {
           setIsLoggedIn(false);
           setErrorToast(lang === 'zh' ? "神经网关已断开，请重新激活" : "Neural Gateway Disconnected");
         }
-        onProgress?.('success'); // 即使 AI 失败，基础数据也已展示
+        onProgress?.('success');
       }
-      
     } catch (err: any) {
       console.error("App: Sync Error", err);
       setIsLoading(false);
       onProgress?.('error');
-      
       let msg = err.message;
-      if (msg === "DATA_NOT_FOUND") msg = (lang === 'zh' ? "未发现睡眠数据，请确认 Google Fit 中有记录" : "No sleep data found in Google Fit");
-      if (msg === "GOOGLE_SDK_TIMEOUT") msg = (lang === 'zh' ? "Google 服务初始化超时" : "Google SDK Initialization Timeout");
-      
+      if (msg === "DATA_NOT_FOUND") msg = (lang === 'zh' ? "未发现睡眠数据" : "No sleep data found");
       setErrorToast(msg || (lang === 'zh' ? "同步失败" : "Sync Failed"));
       setTimeout(() => setErrorToast(null), 5000);
     }
@@ -101,26 +94,38 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
+    // CRITICAL: 法律视图置于最顶层，不受登录状态限制
     if (activeView === 'privacy' || activeView === 'terms') {
-      return <LegalView type={activeView} lang={lang} onBack={() => setActiveView('profile')} />;
+      return (
+        <LegalView 
+          type={activeView} 
+          lang={lang} 
+          onBack={() => setActiveView(isLoggedIn ? 'profile' : 'dashboard')} 
+        />
+      );
     }
 
-    // 只有在完全没有数据且正在加载时才显示全屏转圈
     if (isLoading && !currentRecord) return (
       <div className="flex flex-col items-center justify-center h-[70vh] gap-10 text-center">
         <Loader2 size={48} className="animate-spin text-indigo-500" />
         <div className="space-y-2">
           <p className="text-white font-bold">{lang === 'en' ? 'Authenticating...' : '身份验证中...'}</p>
           <p className="text-slate-500 text-[9px] uppercase tracking-widest leading-relaxed">
-            {lang === 'en' ? 'Establishing Bio-Auth Protocol' : '正在建立生物特征识别授权协议'}
-            <br/>
+            {lang === 'en' ? 'Establishing Bio-Auth Protocol' : '正在建立生物特征识别授权协议'}<br/>
             {lang === 'en' ? '(Check for popup windows)' : '(请检查浏览器弹出窗口)'}
           </p>
         </div>
       </div>
     );
     
-    if (!isLoggedIn && !isGuest) return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={() => setIsGuest(true)} />;
+    if (!isLoggedIn && !isGuest) return (
+      <Auth 
+        lang={lang} 
+        onLogin={() => handleSyncGoogleFit()} 
+        onGuest={() => setIsGuest(true)} 
+        onNavigate={(view: any) => setActiveView(view)}
+      />
+    );
     
     if (!currentRecord && activeView === 'dashboard') return (
       <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center px-4">
@@ -141,7 +146,7 @@ const App: React.FC = () => {
     return (
       <AnimatePresence mode="wait">
         <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} />}
+          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} onNavigate={setActiveView} />}
           {activeView === 'calendar' && <Trends history={history} />}
           {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} onSync={() => handleSyncGoogleFit()} />}
           {activeView === 'profile' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} />}
