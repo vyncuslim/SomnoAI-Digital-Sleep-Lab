@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Shield, Smartphone, Globe, LogOut, 
-  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon, CreditCard, Key, Trash2, CheckCircle2, X
+  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon, CreditCard, Key, Trash2, CheckCircle2, X, Loader2
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ViewType } from '../types.ts';
@@ -22,6 +22,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
   const [telemetry, setTelemetry] = useState("0x000000");
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [showPaypalQR, setShowPaypalQR] = useState(false);
+  const [qrLoaded, setQrLoaded] = useState(false);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -43,7 +44,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
     setTimeout(() => setCopyToast(null), 2000);
   };
 
-  const SettingItem = ({ icon: Icon, label, value, href, onClick, badge, statusColor = 'indigo' }: any) => {
+  const SettingItem = ({ icon: Icon, label, value, href, onClick, badge }: any) => {
     const isExternal = !!href;
     const content = (
       <div className="w-full flex items-center justify-between py-5 px-6 group transition-all active:scale-[0.98] cursor-pointer relative overflow-hidden">
@@ -134,7 +135,10 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
                    <ExternalLink size={14} className="text-slate-600 group-hover:text-blue-400" />
                  </button>
                  <button 
-                  onClick={() => setShowPaypalQR(true)}
+                  onClick={() => {
+                    setQrLoaded(false);
+                    setShowPaypalQR(true);
+                  }}
                   className="px-5 bg-white/5 border border-white/5 rounded-2xl hover:bg-indigo-600/10 hover:border-indigo-500/30 text-slate-500 hover:text-indigo-400 transition-all"
                   title="Show QR Code"
                  >
@@ -318,8 +322,8 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
               <GlassCard className="p-10 border-indigo-500/40 shadow-[0_0_100px_rgba(79,70,229,0.3)] bg-white overflow-hidden" intensity={1.2}>
                 <div className="flex justify-between items-center mb-8 border-b border-slate-100 pb-6">
                   <div className="space-y-1">
-                    <h2 className="text-xl font-black text-slate-900 tracking-tight italic">Vyncuslim vyncuslim</h2>
-                    <p className="text-[10px] font-black uppercase tracking-widest text-indigo-600">PayPal Researcher Support</p>
+                    <h2 className="text-xl font-black text-slate-950 tracking-tight italic">Vyncuslim vyncuslim</h2>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-blue-600">PayPal Researcher Support</p>
                   </div>
                   <button 
                     onClick={() => setShowPaypalQR(false)}
@@ -329,18 +333,27 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
                   </button>
                 </div>
 
-                <div className="relative aspect-square w-full bg-slate-50 rounded-3xl border border-slate-100 flex items-center justify-center p-8 group shadow-inner">
-                  {/* 模拟数字化扫描效果 */}
-                  <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(79,70,229,0.05)_0%,transparent_70%)] opacity-50"></div>
-                  
-                  {/* 二维码占位符，模拟高科技感 */}
-                  <div className="w-full h-full relative">
-                    <QrCode size="100%" className="text-slate-900 opacity-90" strokeWidth={1.5} />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                       <div className="w-16 h-16 bg-white rounded-2xl shadow-2xl flex items-center justify-center border border-slate-100">
-                          <CreditCard size={32} className="text-blue-600" />
-                       </div>
+                <div className="relative aspect-square w-full bg-white rounded-3xl border border-slate-100 flex items-center justify-center p-6 group shadow-[inset_0_2px_10px_rgba(0,0,0,0.05)]">
+                  {!qrLoaded && (
+                    <div className="absolute inset-0 flex items-center justify-center z-10">
+                       <Loader2 size={32} className="animate-spin text-blue-600" />
                     </div>
+                  )}
+                  
+                  {/* 使用真实的 QR Code 生成 API */}
+                  <img 
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(t.paypalLink)}&color=000000&bgcolor=ffffff&qzone=1`}
+                    alt="PayPal QR Code"
+                    className={`w-full h-full object-contain transition-opacity duration-500 ${qrLoaded ? 'opacity-100' : 'opacity-0'}`}
+                    onLoad={() => setQrLoaded(true)}
+                  />
+                  
+                  <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                     <div className="w-12 h-12 bg-white rounded-xl shadow-lg flex items-center justify-center border border-slate-100/50">
+                        <svg viewBox="0 0 24 24" className="w-8 h-8" fill="#003087">
+                          <path d="M20.007 21.003c-.303 1.34-1.353 1.997-3.15 1.997H11.25c-.5 0-.916-.36-.988-.857l-2.223-14.28c-.027-.184.116-.36.302-.36h4.524c3.085 0 5.174-1.285 5.86-4.505.027-.13.14-.23.272-.23h3.04c.18 0 .323.167.284.342l-2.404 18.003zM15.42 2.76C14.73 6.04 12.61 7.35 9.48 7.35H5.06l-.272 1.76h3.41c3.085 0 5.174-1.285 5.86-4.505.102-.48.163-.92.194-1.334.025-.333.344-.567.668-.51z" />
+                        </svg>
+                     </div>
                   </div>
                 </div>
 
@@ -350,8 +363,9 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
                   </p>
                   <button 
                     onClick={() => window.open(t.paypalLink, '_blank')}
-                    className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
+                    className="w-full py-4 bg-[#003087] text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.2em] shadow-lg shadow-blue-900/20 active:scale-95 transition-all flex items-center justify-center gap-3"
                   >
+                    <ExternalLink size={14} />
                     {t.paypalCopy}
                   </button>
                 </div>

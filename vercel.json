@@ -1,10 +1,21 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        }
+      ]
+    }
+  ],
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
     { "source": "/sitemap", "destination": "/sitemap.xml" },
-    { "source": "/((?!privacy|terms|sitemap|robots|assets|favicon|google|sw|manifest).*)", "destination": "/index.html" }
+    { "source": "/((?!privacy|terms|sitemap|robots|assets|favicon|google|sw|manifest|.*\\.xml|.*\\.txt).*)", "destination": "/index.html" }
   ]
 }
