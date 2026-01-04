@@ -9,13 +9,13 @@
   "theme_color": "#020617",
   "icons": [
     {
-      "src": "https://sleepsomno.com/assets/logo.png",
+      "src": "https://raw.githubusercontent.com/vyncuslim/SomnoAI-Digital-Sleep-Lab/main/public/logo.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "https://sleepsomno.com/assets/logo.png",
+      "src": "https://raw.githubusercontent.com/vyncuslim/SomnoAI-Digital-Sleep-Lab/main/public/logo.png",
       "sizes": "512x512",
       "type": "image/png"
     }

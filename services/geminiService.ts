@@ -4,9 +4,10 @@ import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
 const getAIInstance = () => {
-  const apiKey = process.env.API_KEY;
-  // 注意：在 AI Studio 环境中，API_KEY 会被自动注入到 process.env
-  return new GoogleGenAI({ apiKey: apiKey || "" });
+  // 按照规范：每次调用前创建新实例，确保使用最新的 API_KEY
+  // 这里优先使用 process.env.API_KEY，它会在 Auth 组件保存手动输入时被更新
+  const apiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY || "";
+  return new GoogleGenAI({ apiKey });
 };
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
@@ -44,8 +45,8 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
           : ["睡眠架构已分析。请优化环境。", "今天的认知负荷可能会升高。", "尝试补充镁以促进恢复。"]);
   } catch (err: any) {
     console.error("Gemini Insight Error:", err);
-    if (err.message?.includes("entity was not found")) {
-      // 触发 API Key 重新选择逻辑的信号
+    // 如果错误信息包含 entity was not found，说明 Key 无效
+    if (err.message?.toLowerCase().includes("not found") || err.message?.includes("404")) {
       throw new Error("GATEWAY_NOT_FOUND");
     }
     return lang === 'en' 
@@ -120,7 +121,7 @@ export const chatWithCoach = async (
     };
   } catch (err: any) {
     console.error("Chat Error:", err);
-    if (err.message?.includes("entity was not found")) {
+    if (err.message?.toLowerCase().includes("not found") || err.message?.includes("404")) {
       throw new Error("GATEWAY_NOT_FOUND");
     }
     throw err;

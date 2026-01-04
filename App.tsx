@@ -37,7 +37,6 @@ const App: React.FC = () => {
   }, [lang]);
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
-    console.log("App: Sync Triggered");
     setIsLoading(true);
     try {
       onProgress?.('authorizing');
@@ -66,9 +65,11 @@ const App: React.FC = () => {
         onProgress?.('success');
       } catch (aiErr: any) {
         console.error("App: AI Analytics failed", aiErr);
+        // 如果是密钥失效错误，强制用户重新授权
         if (aiErr.message === "GATEWAY_NOT_FOUND") {
           setIsLoggedIn(false);
-          setErrorToast(lang === 'zh' ? "神经网关已断开，请重新激活" : "Neural Gateway Disconnected");
+          setIsGuest(false);
+          setErrorToast(lang === 'zh' ? "密钥已失效，请重新激活神经网关" : "Key expired, please reactivate Neural Gateway");
         }
         onProgress?.('success');
       }
@@ -94,7 +95,6 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    // CRITICAL: 法律视图置于最顶层，不受登录状态限制
     if (activeView === 'privacy' || activeView === 'terms') {
       return (
         <LegalView 
@@ -109,10 +109,9 @@ const App: React.FC = () => {
       <div className="flex flex-col items-center justify-center h-[70vh] gap-10 text-center">
         <Loader2 size={48} className="animate-spin text-indigo-500" />
         <div className="space-y-2">
-          <p className="text-white font-bold">{lang === 'en' ? 'Authenticating...' : '身份验证中...'}</p>
+          <p className="text-white font-bold">{lang === 'en' ? 'Biometric Syncing...' : '生物识别同步中...'}</p>
           <p className="text-slate-500 text-[9px] uppercase tracking-widest leading-relaxed">
-            {lang === 'en' ? 'Establishing Bio-Auth Protocol' : '正在建立生物特征识别授权协议'}<br/>
-            {lang === 'en' ? '(Check for popup windows)' : '(请检查浏览器弹出窗口)'}
+            {lang === 'en' ? 'Establishing Bio-Auth Protocol' : '正在建立生物特征识别授权协议'}
           </p>
         </div>
       </div>
@@ -135,8 +134,8 @@ const App: React.FC = () => {
           <p className="text-[11px] text-slate-500 uppercase tracking-widest">{lang === 'en' ? 'Sync cloud data or inject manual signals' : '同步云端数据或手动注入信号'}</p>
         </div>
         <div className="flex flex-col w-full max-w-xs gap-4">
-          <button onClick={() => handleSyncGoogleFit(true)} className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl">{lang === 'en' ? 'Sync Google Fit' : '同步 Google Fit'}</button>
-          <button onClick={() => setIsDataEntryOpen(true)} className="w-full py-6 bg-white/5 border border-white/10 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3">
+          <button onClick={() => handleSyncGoogleFit(true)} className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-500 transition-all">{lang === 'en' ? 'Sync Google Fit' : '同步 Google Fit'}</button>
+          <button onClick={() => setIsDataEntryOpen(true)} className="w-full py-6 bg-white/5 border border-white/10 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all">
             <PlusCircle size={16} /> {lang === 'en' ? 'Manual Injection' : '手动注入'}
           </button>
         </div>
