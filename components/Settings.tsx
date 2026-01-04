@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Shield, Smartphone, Globe, LogOut, 
-  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon
+  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon, CreditCard
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ViewType } from '../types.ts';
@@ -177,7 +177,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
         </GlassCard>
       </div>
 
-      {/* 资助支持 (增强 DuitNow & TNG 支持) */}
+      {/* 资助支持 (增强 DuitNow & TNG & PayPal 支持) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-4">
            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">{t.funding}</h3>
@@ -279,6 +279,53 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
               <Info size={14} className="text-cyan-500 shrink-0 mt-0.5" />
               <p className="text-[9px] text-slate-400 leading-normal font-medium italic">
                 {t.tngInstructions}
+              </p>
+            </div>
+          </div>
+
+          {/* PayPal 模块 (New) */}
+          <div className="p-6 space-y-4 border-t border-white/5 bg-blue-500/[0.02]">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-blue-500/10 text-blue-400 rounded-2xl border border-blue-500/20 shadow-lg">
+                  <CreditCard size={20} />
+                </div>
+                <div>
+                  <p className="font-bold text-slate-100 tracking-tight">{t.paypalId}</p>
+                  <p className="text-[9px] text-blue-400 font-black uppercase tracking-[0.2em]">PayPal.me</p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
+                 <span className="text-[8px] font-mono text-blue-400/60 uppercase tracking-widest">Global</span>
+              </div>
+            </div>
+
+            <div className="flex justify-center py-4">
+               <div className="p-4 bg-white rounded-3xl shadow-2xl relative group overflow-hidden">
+                  <img 
+                    src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://paypal.me/vyncuslim" 
+                    alt="PayPal QR" 
+                    className="w-40 h-40 opacity-90 group-hover:opacity-100 transition-opacity"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all bg-white/80 backdrop-blur-sm pointer-events-none">
+                     <p className="text-[10px] font-black uppercase text-blue-600 tracking-widest">Scan to Pay</p>
+                  </div>
+               </div>
+            </div>
+
+            <button 
+              onClick={() => window.open("https://paypal.me/vyncuslim", "_blank")}
+              className="w-full py-3 bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/20 rounded-xl text-blue-400 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98] flex items-center justify-center gap-2"
+            >
+              <ExternalLink size={12} />
+              {t.paypalLink}
+            </button>
+
+            <div className="flex gap-3 items-start px-1 opacity-80">
+              <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
+              <p className="text-[9px] text-slate-400 leading-normal font-medium italic">
+                {t.paypalInstructions}
               </p>
             </div>
           </div>

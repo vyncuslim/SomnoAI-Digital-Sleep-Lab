@@ -86,7 +86,11 @@ export const translations = {
       duitNowCopy: 'Copy ID Code',
       tngId: 'TNG eWallet ID (Mobile)',
       tngInstructions: 'To support via TNG: Copy this number and paste it into the "Transfer" section of your TNG eWallet app.',
-      tngCopy: 'Copy TNG Number'
+      tngCopy: 'Copy TNG Number',
+      paypalId: 'PayPal Support',
+      paypalLink: 'PayPal Profile',
+      paypalInstructions: 'To support via PayPal: Scan the QR code or click the button to visit the PayPal profile (vyncuslim).',
+      paypalCopy: 'Copy PayPal Link'
     },
     dataEntry: {
       title: 'Manual Injection Terminal',
@@ -189,7 +193,11 @@ export const translations = {
       duitNowCopy: '复制 ID 代码',
       tngId: 'TNG 手机号支持',
       tngInstructions: '如何通过 TNG 支持：请复制此手机号，并将其粘贴到 TNG eWallet 应用的“转账”部分。',
-      tngCopy: '复制 TNG 号码'
+      tngCopy: '复制 TNG 号码',
+      paypalId: 'PayPal 全球支持',
+      paypalLink: 'PayPal 个人资料',
+      paypalInstructions: '如何通过 PayPal 支持：请扫描二维码或点击按钮访问 PayPal 个人资料（vyncuslim）。',
+      paypalCopy: '复制 PayPal 链接'
     },
     dataEntry: {
       title: '手动注入终端',
