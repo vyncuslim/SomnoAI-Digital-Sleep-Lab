@@ -45,12 +45,16 @@ export class GoogleFitService {
   }
 
   private async waitForGoogleReady(): Promise<void> {
-    const maxAttempts = 100;
+    console.log("GFit: Waiting for Google SDK...");
+    const maxAttempts = 50; // 5 seconds total
     for (let i = 0; i < maxAttempts; i++) {
-      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) return;
+      if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
+        console.log("GFit: Google SDK Ready.");
+        return;
+      }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
-    throw new Error("GOOGLE_SDK_NOT_LOADED");
+    throw new Error("GOOGLE_SDK_TIMEOUT");
   }
 
   public async ensureClientInitialized(): Promise<void> {
@@ -64,6 +68,7 @@ export class GoogleFitService {
           client_id: CLIENT_ID,
           scope: SCOPES.join(" "),
           callback: (response: any) => {
+            console.log("GFit: Auth callback received", response);
             if (response.error) {
               this.authPromise?.reject(new Error(response.error_description || response.error));
               this.authPromise = null;
@@ -80,6 +85,7 @@ export class GoogleFitService {
           }
         });
       } catch (err) {
+        console.error("GFit: Init failed", err);
         this.initPromise = null;
         throw err;
       }
@@ -88,18 +94,41 @@ export class GoogleFitService {
   }
 
   async authorize(forcePrompt = false): Promise<string> {
+    console.log("GFit: Starting authorization flow...");
     await this.ensureClientInitialized();
+    
     if (forcePrompt || !this.accessToken) {
       return new Promise((resolve, reject) => {
-        this.authPromise = { resolve, reject };
-        this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'select_account consent' : '' });
+        // 防止 Promise 永久挂起：设置 2 分钟超时（给予用户足够的登录时间）
+        const timeout = setTimeout(() => {
+          if (this.authPromise) {
+            reject(new Error("AUTH_WINDOW_TIMEOUT"));
+            this.authPromise = null;
+          }
+        }, 120000);
+
+        this.authPromise = { 
+          resolve: (t) => { clearTimeout(timeout); resolve(t); }, 
+          reject: (e) => { clearTimeout(timeout); reject(e); } 
+        };
+        
+        try {
+          this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'select_account consent' : '' });
+        } catch (e) {
+          clearTimeout(timeout);
+          reject(e);
+        }
       });
     }
     return this.accessToken;
   }
 
   private async fetchWithAuth(url: string, headers: any, options: RequestInit = {}) {
-    const res = await fetch(url, { ...options, headers: { ...headers, ...options.headers } });
+    const res = await fetch(url, { 
+      ...options, 
+      headers: { ...headers, ...options.headers },
+      signal: AbortSignal.timeout(15000) // 15秒请求超时
+    });
     if (res.status === 401) {
       this.logout();
       throw new Error("AUTH_EXPIRED");
@@ -108,6 +137,7 @@ export class GoogleFitService {
   }
 
   async fetchSleepData(): Promise<Partial<SleepRecord>> {
+    console.log("GFit: Fetching biometric data...");
     if (!this.accessToken) throw new Error("AUTH_EXPIRED");
     const now = Date.now();
     const sevenDaysAgo = now - 7 * 24 * 60 * 60 * 1000;
@@ -147,6 +177,7 @@ export class GoogleFitService {
       const bucket = aggData.bucket?.[0];
 
       if (!bucket || (!bucket.dataset?.[0]?.point?.length && !latestSession)) {
+        console.warn("GFit: No sleep data found in buckets.");
         throw new Error("DATA_NOT_FOUND");
       }
 
@@ -187,6 +218,7 @@ export class GoogleFitService {
         stages.push({ name: 'Light', duration: totalDuration, startTime: new Date(startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
       }
 
+      console.log("GFit: Fetch complete.");
       return {
         totalDuration,
         deepRatio: totalDuration > 0 ? Math.round((deep / totalDuration) * 100) : 0,
@@ -196,7 +228,10 @@ export class GoogleFitService {
         stages, heartRate, calories: Math.round(calPoints.reduce((acc: number, p: any) => acc + (p.value?.[0]?.fpVal || 0), 0)),
         score: totalDuration > 0 ? Math.min(100, Math.round((deep / totalDuration) * 200 + (rem / totalDuration) * 150 + (heartRate.resting < 70 ? 10 : 0) + (totalDuration > 420 ? 20 : 0))) : 0
       };
-    } catch (err) { throw err; }
+    } catch (err) { 
+      console.error("GFit: Data fetch error", err);
+      throw err; 
+    }
   }
 
   public logout() {

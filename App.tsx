@@ -37,40 +37,56 @@ const App: React.FC = () => {
   }, [lang]);
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
+    console.log("App: Sync Triggered");
     setIsLoading(true);
     try {
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
+      
       setIsLoggedIn(true);
       setIsGuest(false);
+      
       onProgress?.('fetching');
       const fitData = await googleFit.fetchSleepData();
+      
       const updatedRecord = {
         id: `fit-${Date.now()}`,
         aiInsights: [lang === 'en' ? "Lab syncing biometric streams..." : "实验室同步生物识别流中..."],
         ...fitData
       } as SleepRecord;
+      
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
+      
+      // 数据抓取成功后即可关闭全屏加载
+      setIsLoading(false);
       onProgress?.('analyzing');
       
+      // AI 洞察作为后台异步过程
       try {
         const insights = await getSleepInsight(updatedRecord, lang);
         setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
+        onProgress?.('success');
       } catch (aiErr: any) {
+        console.error("App: AI Analytics failed", aiErr);
         if (aiErr.message === "GATEWAY_NOT_FOUND") {
-          setIsLoggedIn(false); // 强制重新授权以激活 Key
+          setIsLoggedIn(false);
           setErrorToast(lang === 'zh' ? "神经网关已断开，请重新激活" : "Neural Gateway Disconnected");
         }
+        onProgress?.('success'); // 即使 AI 失败，基础数据也已展示
       }
       
-      onProgress?.('success');
     } catch (err: any) {
-      onProgress?.('error');
-      setErrorToast(err.message || (lang === 'zh' ? "网关异常" : "Gateway Exception"));
-      setTimeout(() => setErrorToast(null), 5000);
-    } finally {
+      console.error("App: Sync Error", err);
       setIsLoading(false);
+      onProgress?.('error');
+      
+      let msg = err.message;
+      if (msg === "DATA_NOT_FOUND") msg = (lang === 'zh' ? "未发现睡眠数据，请确认 Google Fit 中有记录" : "No sleep data found in Google Fit");
+      if (msg === "GOOGLE_SDK_TIMEOUT") msg = (lang === 'zh' ? "Google 服务初始化超时" : "Google SDK Initialization Timeout");
+      
+      setErrorToast(msg || (lang === 'zh' ? "同步失败" : "Sync Failed"));
+      setTimeout(() => setErrorToast(null), 5000);
     }
   }, [lang]);
 
@@ -89,10 +105,18 @@ const App: React.FC = () => {
       return <LegalView type={activeView} lang={lang} onBack={() => setActiveView('profile')} />;
     }
 
+    // 只有在完全没有数据且正在加载时才显示全屏转圈
     if (isLoading && !currentRecord) return (
       <div className="flex flex-col items-center justify-center h-[70vh] gap-10 text-center">
         <Loader2 size={48} className="animate-spin text-indigo-500" />
-        <p className="text-slate-500 text-[9px] uppercase tracking-widest">{lang === 'en' ? 'Negotiating Bio-Auth Protocol...' : '正在进行生物特征识别授权...'}</p>
+        <div className="space-y-2">
+          <p className="text-white font-bold">{lang === 'en' ? 'Authenticating...' : '身份验证中...'}</p>
+          <p className="text-slate-500 text-[9px] uppercase tracking-widest leading-relaxed">
+            {lang === 'en' ? 'Establishing Bio-Auth Protocol' : '正在建立生物特征识别授权协议'}
+            <br/>
+            {lang === 'en' ? '(Check for popup windows)' : '(请检查浏览器弹出窗口)'}
+          </p>
+        </div>
       </div>
     );
     
