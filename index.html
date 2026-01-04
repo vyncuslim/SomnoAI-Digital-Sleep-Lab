@@ -15,50 +15,7 @@
 
     <!-- 基础 SEO 核心 -->
     <title>Somno Digital Sleep Lab - 数字化睡眠实验平台 | AI 生理监控与健康洞察</title>
-    <meta name="description" content="Somno Digital Sleep Lab (sleepsomno.com) 是一款集生理指标监控、AI 深度洞察与健康建议于一体的数字化睡眠实验平台。利用 Gemini AI 技术深度解析睡眠架构，通过 Google Fit 同步实现隐私优先、零后端存储的专业健康分析。">
-    <meta name="keywords" content="Somno, 睡眠分析, AI健康洞察, 睡眠实验室, 生理指标, Google Fit 同步, 数字化健康">
-    <meta name="robots" content="index, follow">
-    <meta name="author" content="Vyncus Lim">
-    
-    <!-- 规范链接 -->
-    <link rel="canonical" href="https://sleepsomno.com/" />
-    <link rel="sitemap" type="application/xml" title="Sitemap" href="sitemap.xml" />
-    
-    <!-- 社交媒体预览 (Open Graph) -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="Somno Digital Sleep Lab - 数字化睡眠科学实验平台">
-    <meta property="og:description" content="隐私优先的数字化睡眠分析系统。集成 Google Fit 核心数据，通过 AI 解析您的睡眠质量。">
-    <meta property="og:image" content="https://sleepsomno.com/assets/og-image.png">
-
-    <!-- Twitter 卡片 -->
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Somno Digital Sleep Lab">
-    <meta name="twitter:description" content="AI 驱动的数字化睡眠监测与生理指标分析实验室。高度隐私的边缘计算架构。">
-    
-    <!-- 结构化数据 (JSON-LD) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebApplication",
-      "name": "Somno Digital Sleep Lab",
-      "url": "https://sleepsomno.com",
-      "logo": "https://sleepsomno.com/assets/logo.png",
-      "description": "Somno Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health recommendations into a comprehensive digital sleep experiment platform.",
-      "applicationCategory": "HealthApplication",
-      "operatingSystem": "Web, Android, iOS",
-      "author": {
-        "@type": "Person",
-        "name": "Vyncus Lim"
-      },
-      "featureList": [
-        "Google Fit Biometric Sync",
-        "AI Sleep Architecture Analysis",
-        "Zero-Backend Privacy Design",
-        "Manual Signal Injection Laboratory"
-      ]
-    }
-    </script>
+    <meta name="description" content="Somno Digital Sleep Lab (sleepsomno.com) 是一款集生理指标监控、AI 深度洞察与健康建议于一体的数字化睡眠实验平台。利用 Gemini AI 技术深度解析睡眠架构。">
     
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -74,30 +31,81 @@
     </script>
     
     <style>
-        @keyframes gridScroll {
-            from { background-position: 0 0; }
-            to { background-position: 30px 30px; }
+        :root {
+            --perspective: 1200px;
         }
+
+        @keyframes nebulaPulse {
+            0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.15; }
+            50% { transform: scale(1.1) translate(-2%, 2%); opacity: 0.25; }
+        }
+
+        @keyframes grid3DScroll {
+            from { transform: rotateX(60deg) translateY(0); }
+            to { transform: rotateX(60deg) translateY(30px); }
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0; padding: 0;
             background-color: #020617;
             color: white;
             overflow-x: hidden;
+            perspective: var(--perspective);
+            min-height: 100vh;
+        }
+
+        /* 3D 空间背景 */
+        #spatial-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            overflow: hidden;
+            background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+        }
+
+        .nebula {
+            position: absolute;
+            width: 150%;
+            height: 150%;
+            top: -25%;
+            left: -25%;
+            background: radial-gradient(circle at center, rgba(79, 70, 229, 0.15) 0%, transparent 60%);
+            filter: blur(80px);
+            animation: nebulaPulse 15s ease-in-out infinite;
+        }
+
+        .grid-plane {
+            position: absolute;
+            bottom: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
             background-image: 
-                radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(79, 70, 229, 0.15) 0%, transparent 40%),
-                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-            background-size: 100% 100%, 30px 30px, 30px 30px;
-            animation: gridScroll 10s linear infinite;
+                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px;
+            transform: rotateX(65deg);
+            transform-origin: center bottom;
+            animation: grid3DScroll 10s linear infinite;
+            mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
         }
+
         .font-mono { font-family: 'JetBrains Mono', monospace; }
-        .glass-morphism {
-            backdrop-filter: blur(24px);
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        
+        #root {
+            position: relative;
+            transform-style: preserve-3d;
+            z-index: 1;
         }
-        .safe-area-inset-bottom { padding-bottom: env(safe-area-inset-bottom); }
+
+        /* 统一 3D 悬浮阴影 */
+        .shadow-3d {
+            box-shadow: 
+                0 20px 50px -10px rgba(0, 0, 0, 0.8),
+                0 10px 20px -5px rgba(0, 0, 0, 0.5),
+                inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        }
     </style>
 <script type="importmap">
 {
@@ -119,51 +127,22 @@
 </script>
 </head>
 <body>
-    <div id="root">
-        <article style="max-width: 800px; margin: 0 auto; padding: 120px 24px; display: block;">
-            <header style="text-align: center; margin-bottom: 80px;">
-                <h1 style="font-size: 3.5rem; letter-spacing: -0.05em; font-weight: 800; color: #fff;">Somno Digital Sleep Lab</h1>
-                <p style="font-size: 1.25rem; color: #818cf8; text-transform: uppercase; letter-spacing: 0.3em; font-weight: 800;">全方位数字化睡眠实验平台</p>
-            </header>
-
-            <section style="margin-bottom: 60px; border-left: 5px solid #4f46e5; padding-left: 30px;">
-                <h2 style="font-size: 2rem; color: #fff; margin-bottom: 24px;">AI 驱动的生理洞察系统</h2>
-                <p style="font-size: 1.15rem; line-height: 1.8; color: #94a3b8;">
-                    Somno Digital Sleep Lab (sleepsomno.com) 将生理指标监控、AI 深度洞察与健康建议融为一体。通过集成 Google Fit 的高精度生物识别数据，我们的系统利用 Gemini AI 深度解析睡眠架构。
-                </p>
-                <p style="font-size: 1.15rem; line-height: 1.8; color: #94a3b8; margin-top: 20px;">
-                    我们的核心理念是<strong>隐私优先</strong>：所有计算在您的浏览器边缘完成，零后端存储，确保您的敏感健康数据绝对安全。
-                </p>
-            </section>
-
-            <footer style="margin-top: 100px; padding-top: 40px; border-top: 1px solid rgba(255,255,255,0.05); text-align: center;">
-                <div style="font-size: 0.8rem; color: #475569; letter-spacing: 0.1em; text-transform: uppercase;">
-                    © 2025 Somno Lab • 首席研究官: Vyncus Lim
-                </div>
-                <nav style="margin-top: 20px;">
-                    <a href="/privacy" style="color: #818cf8; text-decoration: none; margin: 0 15px; font-weight: bold;">隐私政策</a>
-                    <a href="/terms" style="color: #818cf8; text-decoration: none; margin: 0 15px; font-weight: bold;">服务条款</a>
-                </nav>
-            </footer>
-        </article>
+    <!-- 3D 空间感背景层 -->
+    <div id="spatial-bg">
+        <div class="nebula"></div>
+        <div class="grid-plane"></div>
     </div>
+
+    <div id="root"></div>
     
     <script type="module" src="index.tsx"></script>
     <script>
         document.addEventListener('mousemove', (e) => {
             const x = (e.clientX / window.innerWidth) * 100;
             const y = (e.clientY / window.innerHeight) * 100;
-            document.body.style.setProperty('--mouse-x', x + '%');
-            document.body.style.setProperty('--mouse-y', y + '%');
+            document.documentElement.style.setProperty('--mouse-x', x + '%');
+            document.documentElement.style.setProperty('--mouse-y', y + '%');
         });
-        
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('sw.js').catch(err => {
-                    console.debug('ServiceWorker error suppressed for this environment.');
-                });
-            });
-        }
     </script>
 </body>
 </html>
