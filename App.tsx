@@ -27,6 +27,42 @@ const App: React.FC = () => {
   const [hasAttemptedSync, setHasAttemptedSync] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
+  // 路径解析与状态同步
+  useEffect(() => {
+    const handleLocationChange = () => {
+      const path = window.location.pathname.toLowerCase();
+      if (path === '/settings' || path === '/profile') {
+        setActiveView('profile');
+      } else if (path === '/aiassistant' || path === '/alassistant' || path === '/assistant' || path === '/zap') {
+        setActiveView('assistant');
+      } else if (path === '/trends' || path === '/calendar') {
+        setActiveView('calendar');
+      } else if (path === '/' || path === '/dashboard') {
+        setActiveView('dashboard');
+      }
+    };
+
+    // 初始加载检查
+    handleLocationChange();
+
+    // 监听后退/前进按钮
+    window.addEventListener('popstate', handleLocationChange);
+    return () => window.removeEventListener('popstate', handleLocationChange);
+  }, []);
+
+  // 切换视图并更新 URL
+  const handleViewChange = (view: ViewType) => {
+    setActiveView(view);
+    const pathMap: Record<ViewType, string> = {
+      dashboard: '/dashboard',
+      calendar: '/Trends',
+      assistant: '/AIAssistant',
+      profile: '/Settings',
+      alarm: '/Alarm'
+    };
+    window.history.pushState({}, '', pathMap[view]);
+  };
+
   const showToast = useCallback((msg: string) => {
     setErrorToast(msg);
     setTimeout(() => setErrorToast(null), 8000); 
@@ -94,7 +130,7 @@ const App: React.FC = () => {
     setCurrentRecord(record);
     setHistory(prev => [record, ...prev]);
     setIsDataEntryOpen(false);
-    setActiveView('dashboard');
+    handleViewChange('dashboard');
     setIsLoggedIn(true);
     setIsGuest(false);
     setHasAttemptedSync(true);
@@ -108,7 +144,7 @@ const App: React.FC = () => {
     setHasAttemptedSync(false);
     setCurrentRecord(null);
     setHistory([]);
-    setActiveView('dashboard');
+    handleViewChange('dashboard');
   };
 
   const renderView = () => {
@@ -208,7 +244,7 @@ const App: React.FC = () => {
             ].map((nav) => (
               <button 
                 key={nav.id}
-                onClick={() => setActiveView(nav.id as ViewType)} 
+                onClick={() => handleViewChange(nav.id as ViewType)} 
                 className={`flex-1 py-4 flex flex-col items-center gap-2 transition-all relative ${activeView === nav.id ? 'text-indigo-400' : 'text-slate-500'}`}
               >
                 {activeView === nav.id && (

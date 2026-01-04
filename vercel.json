@@ -16,7 +16,19 @@
       "destination": "/terms.html"
     },
     {
-      "source": "/((?!privacy|terms|googlee47ef5d2eacdf45a|assets|favicon).*)",
+      "source": "/Settings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/AIAssistant",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/AlAssistant",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!privacy|terms|Settings|AIAssistant|AlAssistant|googlee47ef5d2eacdf45a|assets|favicon).*)",
       "destination": "/index.html"
     }
   ]
