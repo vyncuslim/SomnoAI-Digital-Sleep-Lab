@@ -5,7 +5,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     
-    <!-- PWA 与 移动端适配 -->
     <meta name="theme-color" content="#020617">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -13,83 +12,83 @@
     <link rel="apple-touch-icon" href="https://raw.githubusercontent.com/vyncuslim/SomnoAI-Digital-Sleep-Lab/main/public/logo.png">
     <link rel="manifest" href="manifest.json">
 
-    <!-- 基础 SEO 核心 -->
-    <title>Somno Digital Sleep Lab - 数字化睡眠实验平台 | AI 生理监控与健康洞察</title>
-    <meta name="description" content="Somno Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验平台。利用 Gemini AI 技术深度解析睡眠架构。">
+    <title>Somno Digital Sleep Lab - 数字化睡眠实验平台</title>
+    <meta name="description" content="Somno Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体。">
     <link rel="canonical" href="https://sleepsomno.com/">
     
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <script>
-        window.process = window.process || {};
-        window.process.env = window.process.env || {};
-        window.process.env.NODE_ENV = 'production';
-        window.process.env.API_KEY = '';
-        window.process.cwd = () => '/';
-        window.process.browser = true;
+        window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
     </script>
     
     <style>
         :root {
-            --perspective: 1200px;
+            --perspective: 1500px;
+            --accent-glow: rgba(79, 70, 229, 0.4);
         }
 
         @keyframes nebulaPulse {
-            0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.15; }
-            50% { transform: scale(1.1) translate(-2%, 2%); opacity: 0.25; }
+            0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.1; }
+            50% { transform: scale(1.2) translate(-5%, 5%); opacity: 0.2; }
         }
 
-        @keyframes grid3DScroll {
-            from { transform: rotateX(60deg) translateY(0); }
-            to { transform: rotateX(60deg) translateY(30px); }
+        @keyframes scanline {
+            0% { transform: translateY(-100%); }
+            100% { transform: translateY(100%); }
         }
 
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0; padding: 0;
-            background-color: #020617;
-            color: white;
+            background-color: #01040a;
+            color: #e2e8f0;
             overflow-x: hidden;
             perspective: var(--perspective);
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* 3D 空间背景 */
+        /* 赛博生物实验室背景 */
         #spatial-bg {
             position: fixed;
             inset: 0;
             z-index: -1;
-            overflow: hidden;
-            background: radial-gradient(circle at 50% 50%, #0f172a 0%, #020617 100%);
+            background: radial-gradient(circle at 50% 50%, #050a1f 0%, #01040a 100%);
         }
 
         .nebula {
             position: absolute;
-            width: 150%;
-            height: 150%;
-            top: -25%;
-            left: -25%;
-            background: radial-gradient(circle at center, rgba(79, 70, 229, 0.15) 0%, transparent 60%);
-            filter: blur(80px);
-            animation: nebulaPulse 15s ease-in-out infinite;
+            width: 200%; height: 200%;
+            top: -50%; left: -50%;
+            background: radial-gradient(circle at center, rgba(79, 70, 229, 0.12) 0%, transparent 50%),
+                        radial-gradient(circle at 30% 20%, rgba(168, 85, 247, 0.08) 0%, transparent 40%);
+            filter: blur(100px);
+            animation: nebulaPulse 20s ease-in-out infinite;
         }
 
-        .grid-plane {
+        .grid-floor {
             position: absolute;
-            bottom: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
+            bottom: -20%; left: -50%;
+            width: 200%; height: 100%;
             background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
-            background-size: 30px 30px;
-            transform: rotateX(65deg);
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 50px 50px;
+            transform: rotateX(75deg);
             transform-origin: center bottom;
-            animation: grid3DScroll 10s linear infinite;
-            mask-image: radial-gradient(circle at center, black 0%, transparent 80%);
+            mask-image: linear-gradient(to top, black, transparent);
+        }
+
+        .scanline-overlay {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 100;
+            background: linear-gradient(to bottom, transparent 50%, rgba(0,0,0,0.1) 50%);
+            background-size: 100% 4px;
+            opacity: 0.1;
         }
 
         .font-mono { font-family: 'JetBrains Mono', monospace; }
@@ -100,41 +99,11 @@
             z-index: 10;
         }
 
-        /* 统一 3D 悬浮阴影 */
-        .shadow-3d {
-            box-shadow: 
-                0 20px 50px -10px rgba(0, 0, 0, 0.8),
-                0 10px 20px -5px rgba(0, 0, 0, 0.5),
-                inset 0 1px 1px rgba(255, 255, 255, 0.1);
-        }
-
-        /* 静态链接页脚 */
-        .static-footer {
-            position: fixed;
-            bottom: 16px;
-            left: 0;
-            right: 0;
-            text-align: center;
-            z-index: 5;
-            pointer-events: none;
-        }
-
-        .static-footer a {
-            pointer-events: auto;
-            color: rgba(148, 163, 184, 0.3);
-            font-size: 9px;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 0.15em;
-            text-decoration: none;
-            margin: 0 10px;
-            transition: all 0.3s ease;
-        }
-
-        .static-footer a:hover {
-            color: rgba(129, 140, 248, 0.8);
-            text-shadow: 0 0 10px rgba(79, 70, 229, 0.3);
-        }
+        /* 滚动条美化 */
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
     </style>
 <script type="importmap">
 {
@@ -147,37 +116,25 @@
     "@google/genai": "https://esm.sh/@google/genai@1.34.0",
     "lucide-react": "https://esm.sh/lucide-react@0.470.0?deps=react@18.3.1",
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
-    "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1"
   }
 }
 </script>
 </head>
 <body>
-    <!-- 3D 空间感背景层 -->
     <div id="spatial-bg">
         <div class="nebula"></div>
-        <div class="grid-plane"></div>
+        <div class="grid-floor"></div>
     </div>
+    <div class="scanline-overlay"></div>
 
     <div id="root"></div>
 
-    <!-- 静态 SEO 导航页脚 -->
-    <footer class="static-footer">
-        <a href="/privacy.html">Privacy Policy</a>
-        <a href="/terms.html">Terms of Service</a>
+    <footer class="static-footer fixed bottom-4 left-0 right-0 text-center z-5 pointer-events-none opacity-20 hover:opacity-100 transition-opacity">
+        <a href="/privacy" class="pointer-events-auto text-[10px] uppercase tracking-widest font-bold mx-4 text-slate-500 hover:text-indigo-400">Privacy</a>
+        <a href="/terms" class="pointer-events-auto text-[10px] uppercase tracking-widest font-bold mx-4 text-slate-500 hover:text-indigo-400">Terms</a>
     </footer>
     
     <script type="module" src="index.tsx"></script>
-    <script>
-        document.addEventListener('mousemove', (e) => {
-            const x = (e.clientX / window.innerWidth) * 100;
-            const y = (e.clientY / window.innerHeight) * 100;
-            document.documentElement.style.setProperty('--mouse-x', x + '%');
-            document.documentElement.style.setProperty('--mouse-y', y + '%');
-        });
-    </script>
 </body>
 </html>

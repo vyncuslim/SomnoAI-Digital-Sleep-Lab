@@ -1,19 +1,20 @@
 
 export const COLORS = {
-  // 核心睡眠阶段 - 科学辨识度
-  deep: '#4f46e5',   // 深度靛蓝
-  rem: '#a855f7',    // 认知紫
-  light: '#0ea5e9',  // 浅层天蓝
-  awake: '#64748b',  // 觉醒板岩灰
+  // 核心睡眠架构 - 荧光色系
+  deep: '#6366f1',   // 靛蓝 (Deep)
+  rem: '#d946ef',    // 荧光紫 (REM)
+  light: '#06b6d4',  // 青蓝 (Light)
+  awake: '#94a3b8',  // 板岩灰 (Awake)
   
-  // 系统 UI
+  // 系统核心
   primary: '#818cf8',
-  background: '#020617',
-  surface: '#0f172a',
+  secondary: '#a78bfa',
+  background: '#01040a',
+  surface: '#050a1f',
   
-  // 实验室状态流
+  // 状态反馈
   success: '#10b981',
   warning: '#f59e0b',
   danger: '#ef4444',
-  accent: '#c084fc'
+  accent: '#f472b6' // 亮粉色点缀
 };
