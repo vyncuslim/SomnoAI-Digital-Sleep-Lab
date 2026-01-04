@@ -9,11 +9,15 @@
   <style>
     :root {
       --bg-core: #020617;
-      --indigo-glow: rgba(79, 70, 229, 0.12);
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --accent: #818cf8;
-      --glass: rgba(15, 23, 42, 0.8);
+      --glass: rgba(15, 23, 42, 0.85);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotateY(0); }
+      50% { transform: translateY(-12px) rotateY(10deg); }
     }
 
     html, body {
@@ -21,10 +25,12 @@
       padding: 0;
       background-color: var(--bg-core);
       background-image: 
-        radial-gradient(circle at 50% 100%, var(--indigo-glow) 0%, transparent 60%),
+        radial-gradient(circle at 80% 20%, rgba(129, 140, 248, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(79, 70, 229, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.15) 0%, transparent 60%),
         linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 100% 100%, 30px 30px, 30px 30px;
+      background-size: 100% 100%, 100% 100%, 100% 100%, 30px 30px, 30px 30px;
       color: var(--text-primary);
       font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
       line-height: 1.7;
@@ -33,23 +39,40 @@
     body {
       max-width: 900px;
       margin: 0 auto;
-      padding: 80px 24px;
+      padding: 100px 24px;
+    }
+
+    /* 3D 图标样式 */
+    .icon-container {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 40px;
+      perspective: 1000px;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .icon-3d {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 20px 40px rgba(129, 140, 248, 0.4));
     }
 
     .glass-card {
       background: var(--glass);
-      backdrop-filter: blur(32px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 2.5rem;
-      padding: 4rem;
-      box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 3rem;
+      padding: 5rem;
+      box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.9);
+      position: relative;
     }
 
     h1 {
-      font-size: 2.5rem;
+      font-size: 3rem;
       font-weight: 800;
-      letter-spacing: -0.05em;
+      letter-spacing: -0.06em;
       margin-bottom: 0.5rem;
+      text-align: center;
       font-style: italic;
     }
 
@@ -58,64 +81,119 @@
       font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.3em;
-      margin-bottom: 3rem;
+      letter-spacing: 0.4em;
+      margin-bottom: 4rem;
       display: block;
+      text-align: center;
     }
 
     h2 {
-      margin-top: 2.5rem;
+      margin-top: 3.5rem;
       font-size: 1.1rem;
       font-weight: 800;
       color: var(--accent);
       text-transform: uppercase;
-      letter-spacing: 0.2em;
-      margin-bottom: 1.25rem;
+      letter-spacing: 0.25em;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    h2::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(129, 140, 248, 0.2), transparent);
     }
 
     p, li {
       color: var(--text-secondary);
-      font-size: 0.95rem;
-      margin-bottom: 1.2rem;
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
     }
 
     .disclaimer-box {
-      border: 1px solid rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.3);
       background: rgba(239, 68, 68, 0.05);
-      padding: 2rem;
-      border-radius: 1.5rem;
-      margin-bottom: 3rem;
+      padding: 2.5rem;
+      border-radius: 2rem;
+      margin-bottom: 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .disclaimer-box::before {
+      content: '⚠️';
+      position: absolute;
+      top: -10px; right: -10px;
+      font-size: 5rem;
+      opacity: 0.05;
     }
 
     .disclaimer-title {
       color: #ef4444;
       font-weight: 800;
-      font-size: 0.8rem;
+      font-size: 0.85rem;
       text-transform: uppercase;
-      letter-spacing: 0.1em;
-      margin-bottom: 0.75rem;
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
       display: block;
     }
 
     .footer {
-      margin-top: 4rem;
+      margin-top: 5rem;
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       color: #475569;
       text-transform: uppercase;
-      letter-spacing: 0.4em;
+      letter-spacing: 0.5em;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    a:hover {
+      color: #fff;
+      text-shadow: 0 0 15px var(--accent);
     }
   </style>
 </head>
 <body>
+  <!-- 3D 浮动图标 (Document Bundle) -->
+  <div class="icon-container">
+    <svg class="icon-3d" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="docGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#a5b4fc" />
+          <stop offset="100%" stop-color="#818cf8" />
+        </linearGradient>
+      </defs>
+      <!-- 背景纸张 -->
+      <rect x="25" y="15" width="55" height="70" rx="4" fill="white" opacity="0.1" transform="rotate(-5 50 50)" />
+      <!-- 主纸张 -->
+      <rect x="20" y="10" width="60" height="80" rx="4" fill="url(#docGrad)" />
+      <!-- 内部装饰线条 -->
+      <rect x="30" y="25" width="40" height="2" rx="1" fill="white" opacity="0.5" />
+      <rect x="30" y="35" width="40" height="2" rx="1" fill="white" opacity="0.5" />
+      <rect x="30" y="45" width="40" height="2" rx="1" fill="white" opacity="0.5" />
+      <rect x="30" y="55" width="25" height="2" rx="1" fill="white" opacity="0.5" />
+      <!-- 右下角折角 -->
+      <path d="M80 80 L70 90 L80 90 Z" fill="#4f46e5" />
+    </svg>
+  </div>
+
   <div class="glass-card">
-    <h1>Somno Lab</h1>
-    <span class="subtitle">Terms of Service • v2025.01.04</span>
+    <h1>Terms of Service</h1>
+    <span class="subtitle">Somno Digital Sleep Lab • v2025.01.04</span>
     
     <div class="disclaimer-box">
       <span class="disclaimer-title">Medical Disclaimer</span>
-      <p style="color: #fca5a5; font-weight: bold; margin-bottom: 0.5rem;">Somno Lab is an informational platform, not a medical device.</p>
-      <p style="color: #f8fafc; font-size: 0.85rem; opacity: 0.9;">The insights generated by our AI system are for educational purposes only and do not constitute professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified healthcare provider with any questions regarding a medical condition.</p>
+      <p style="color: #fca5a5; font-weight: bold; margin-bottom: 0.5rem; font-size: 1.1rem;">Somno Lab is an informational platform, not a medical device.</p>
+      <p style="color: #f8fafc; font-size: 0.95rem; opacity: 0.9; line-height: 1.8;">The insights generated by our AI system are for educational purposes only and do not constitute professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified healthcare provider with any questions regarding a medical condition.</p>
     </div>
 
     <h2>1. Acceptance of Terms</h2>
@@ -132,10 +210,10 @@
 
     <h2>5. Contact</h2>
     <p>For inquiries regarding these terms, contact:<br />
-    <strong style="color: var(--accent);">ongyuze1401@gmail.com</strong></p>
+    <strong style="color: var(--accent); font-size: 1.2rem;">ongyuze1401@gmail.com</strong></p>
 
-    <div style="margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">
-      <a href="/" style="text-decoration: none; border: none; font-size: 0.8rem; color: #475569;">← Back to Somno Lab</a>
+    <div style="margin-top: 4rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem; text-align: center;">
+      <a href="/" style="text-decoration: none; font-size: 0.9rem; color: #64748b;">← Back to Somno Terminal</a>
     </div>
   </div>
   <p class="footer">© 2025 Somno Lab • Digital Health Exploration</p>

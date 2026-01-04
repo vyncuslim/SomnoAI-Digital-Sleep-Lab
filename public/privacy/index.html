@@ -9,22 +9,29 @@
   <style>
     :root {
       --bg-core: #020617;
-      --indigo-glow: rgba(79, 70, 229, 0.12);
       --text-primary: #f8fafc;
       --text-secondary: #94a3b8;
       --accent: #818cf8;
-      --glass: rgba(15, 23, 42, 0.8);
+      --glass: rgba(15, 23, 42, 0.85);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotateX(0); }
+      50% { transform: translateY(-10px) rotateX(5deg); }
     }
 
     html, body {
       margin: 0;
       padding: 0;
       background-color: var(--bg-core);
+      /* 多层星云光影背景 */
       background-image: 
-        radial-gradient(circle at 50% 0%, var(--indigo-glow) 0%, transparent 60%),
+        radial-gradient(circle at 10% 10%, rgba(79, 70, 229, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 90% 90%, rgba(168, 85, 247, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15) 0%, transparent 60%),
         linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
         linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 100% 100%, 30px 30px, 30px 30px;
+      background-size: 100% 100%, 100% 100%, 100% 100%, 30px 30px, 30px 30px;
       color: var(--text-primary);
       font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
       line-height: 1.7;
@@ -33,23 +40,48 @@
     body {
       max-width: 900px;
       margin: 0 auto;
-      padding: 80px 24px;
+      padding: 100px 24px;
+    }
+
+    /* 3D 图标样式 */
+    .icon-container {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 40px;
+      perspective: 1000px;
+      animation: float 5s ease-in-out infinite;
+    }
+
+    .icon-3d {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 20px 30px rgba(79, 70, 229, 0.4));
     }
 
     .glass-card {
       background: var(--glass);
-      backdrop-filter: blur(32px);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 2.5rem;
-      padding: 4rem;
-      box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.8);
+      backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 3rem;
+      padding: 5rem;
+      box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.9);
+      position: relative;
+    }
+
+    .glass-card::before {
+      content: '';
+      position: absolute;
+      top: -1px; left: 50%; transform: translateX(-50%);
+      width: 40%; height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
     }
 
     h1 {
-      font-size: 2.5rem;
+      font-size: 3rem;
       font-weight: 800;
-      letter-spacing: -0.05em;
+      letter-spacing: -0.06em;
       margin-bottom: 0.5rem;
+      text-align: center;
       font-style: italic;
     }
 
@@ -58,70 +90,94 @@
       font-size: 0.75rem;
       font-weight: 800;
       text-transform: uppercase;
-      letter-spacing: 0.3em;
-      margin-bottom: 3rem;
+      letter-spacing: 0.4em;
+      margin-bottom: 4rem;
       display: block;
+      text-align: center;
     }
 
     h2 {
-      margin-top: 2.5rem;
-      font-size: 1.25rem;
+      margin-top: 3.5rem;
+      font-size: 1.4rem;
       font-weight: 700;
       color: var(--accent);
-      border-bottom: 1px solid rgba(129, 140, 248, 0.2);
-      padding-bottom: 0.5rem;
-      margin-bottom: 1.25rem;
+      border-left: 4px solid var(--accent);
+      padding-left: 1.25rem;
+      margin-bottom: 1.5rem;
+      background: linear-gradient(90deg, rgba(129, 140, 248, 0.05), transparent);
     }
 
     p, li {
       color: var(--text-secondary);
-      font-size: 1rem;
-      margin-bottom: 1.2rem;
+      font-size: 1.05rem;
+      margin-bottom: 1.5rem;
     }
 
-    ul {
-      padding-left: 1.25rem;
+    .compliance-box {
+      background: rgba(79, 70, 229, 0.08);
+      border: 1px solid rgba(79, 70, 229, 0.2);
+      padding: 2rem;
+      border-radius: 1.5rem;
+      margin: 3rem 0;
+      box-shadow: inset 0 0 20px rgba(79, 70, 229, 0.05);
     }
 
     a {
       color: var(--accent);
       text-decoration: none;
       border-bottom: 1px solid rgba(129, 140, 248, 0.3);
-      transition: all 0.2s;
+      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     a:hover {
       color: #a5b4fc;
       border-bottom-color: #a5b4fc;
-    }
-
-    .compliance-box {
-      background: rgba(79, 70, 229, 0.05);
-      border: 1px solid rgba(79, 70, 229, 0.2);
-      padding: 1.5rem;
-      border-radius: 1.25rem;
-      margin: 2rem 0;
+      text-shadow: 0 0 10px rgba(129, 140, 248, 0.5);
     }
 
     .footer {
-      margin-top: 4rem;
+      margin-top: 5rem;
       text-align: center;
-      font-size: 0.75rem;
+      font-size: 0.8rem;
       color: #475569;
       text-transform: uppercase;
-      letter-spacing: 0.4em;
+      letter-spacing: 0.5em;
     }
   </style>
 </head>
 <body>
+  <!-- 3D 浮动图标 (Security Shield) -->
+  <div class="icon-container">
+    <svg class="icon-3d" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#818cf8" />
+          <stop offset="100%" stop-color="#4f46e5" />
+        </linearGradient>
+        <filter id="f1" x="-20%" y="-20%" width="140%" height="140%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="2" />
+        </filter>
+      </defs>
+      <!-- 背景层 -->
+      <path d="M50 10 L85 25 V55 C85 75 50 90 50 90 C50 90 15 75 15 55 V25 L50 10Z" fill="#1e293b" opacity="0.5" />
+      <!-- 主体层 -->
+      <path d="M50 15 L80 28 V53 C80 70 50 83 50 83 C50 83 20 70 20 53 V28 L50 15Z" fill="url(#shieldGrad)" />
+      <!-- 高光层 -->
+      <path d="M50 15 L20 28 V53 C20 60 30 70 50 83" fill="white" opacity="0.1" filter="url(#f1)" />
+      <!-- 数字化装饰 -->
+      <circle cx="50" cy="45" r="12" stroke="white" stroke-width="2" opacity="0.3" fill="none" />
+      <rect x="47" y="40" width="6" height="12" fill="white" opacity="0.8" />
+    </svg>
+  </div>
+
   <div class="glass-card">
-    <h1>Somno Lab</h1>
-    <span class="subtitle">Privacy Policy • v2025.01.04</span>
+    <h1>Privacy Policy</h1>
+    <span class="subtitle">Somno Digital Sleep Lab • v2025.01.04</span>
     
-    <p><strong>Last Updated:</strong> January 4, 2025</p>
+    <p style="text-align: center; font-weight: 700;">Last Updated: January 4, 2025</p>
 
     <div class="compliance-box">
-      <p style="margin: 0; color: #cbd5e1; font-size: 0.9rem;">
+      <p style="margin: 0; color: #cbd5e1; font-size: 0.95rem; line-height: 1.8;">
         Somno Lab’s use of information received from Google APIs will adhere to the 
         <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use" target="_blank">Google API Services User Data Policy</a>, 
         including the Limited Use requirements.
@@ -161,8 +217,8 @@
     <h2>5. User Rights</h2>
     <p>You may revoke Somno Lab’s access at any time via your <a href="https://myaccount.google.com/permissions" target="_blank">Google Account Permissions</a>.</p>
 
-    <div style="margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">
-      <a href="/" style="border: none; font-size: 0.8rem; color: #475569;">← Back to Somno Lab</a>
+    <div style="margin-top: 4rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem; text-align: center;">
+      <a href="/" style="border: none; font-size: 0.9rem; color: #64748b;">← Back to Somno Lab Terminal</a>
     </div>
   </div>
   <p class="footer">© 2025 Somno Lab • Secure Edge Environment</p>
