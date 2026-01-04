@@ -23,6 +23,11 @@
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
+        @keyframes gridScroll {
+            from { background-position: 0 0; }
+            to { background-position: 30px 30px; }
+        }
+
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             margin: 0;
@@ -30,11 +35,13 @@
             background-color: #020617;
             color: white;
             overflow-x: hidden;
+            /* 动态滚动的背景网格 */
             background-image: 
-                radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.05) 0%, transparent 50%),
-                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+                radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(79, 70, 229, 0.15) 0%, transparent 40%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
             background-size: 100% 100%, 30px 30px, 30px 30px;
+            animation: gridScroll 10s linear infinite;
         }
 
         /* 扫描线效果 */
@@ -46,13 +53,13 @@
             background-size: 100% 2px, 3px 100%;
             pointer-events: none;
             z-index: 9999;
-            opacity: 0.3;
+            opacity: 0.2;
         }
 
         .font-mono {
             font-family: 'JetBrains Mono', monospace;
         }
-        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-track { background: #020617; }
         ::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 10px; }
         
@@ -73,31 +80,25 @@
             color: #475569;
             border-top: 1px solid rgba(255,255,255,0.05);
             margin-top: 4rem;
-            background: rgba(2, 6, 23, 0.9);
+            background: rgba(2, 6, 23, 0.95);
             position: relative;
             z-index: 10;
         }
-        .legal-footer a {
-            margin: 0 1.5rem;
-            color: #818cf8;
-            text-decoration: none;
-            font-weight: 700;
-            transition: color 0.2s;
-            display: inline-block;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid transparent;
-        }
-        .legal-footer a:hover { 
-            color: #a5b4fc;
-            border-bottom: 1px solid #818cf8;
-        }
-        .dev-info { margin-top: 1.5rem; opacity: 0.6; font-size: 0.7rem; font-weight: 600; }
-        .dev-info a { margin: 0; color: inherit; font-weight: inherit; border: none; padding: 0; }
-        .dev-info a:hover { color: #818cf8; border: none; }
 
-        /* 隐藏 Recharts 水印 */
-        .recharts-legend-item-text { font-size: 10px !important; text-transform: uppercase; font-weight: 800; }
+        /* 3D 卡片容器效果 */
+        .perspective-1000 {
+            perspective: 1000px;
+        }
     </style>
+    <script>
+        // 鼠标跟随灯光逻辑
+        document.addEventListener('mousemove', (e) => {
+            const x = (e.clientX / window.innerWidth) * 100;
+            const y = (e.clientY / window.innerHeight) * 100;
+            document.body.style.setProperty('--mouse-x', x + '%');
+            document.body.style.setProperty('--mouse-y', y + '%');
+        });
+    </script>
 <script type="importmap">
 {
   "imports": {
@@ -117,17 +118,5 @@
 <body>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
-    
-    <footer class="legal-footer">
-        <div class="opacity-30">&copy; 2024 SomnoAI Digital Sleep Lab. All rights reserved.</div>
-        <div class="mt-4">
-            <a href="/privacy">隐私权政策</a>
-            <a href="/terms">服务条款</a>
-        </div>
-        <div class="dev-info">
-            开发者联系方式: <a href="mailto:ongyuze1401@gmail.com">ongyuze1401@gmail.com</a> | 
-            官方域名: <a href="https://sleepsomno.com">https://sleepsomno.com</a>
-        </div>
-    </footer>
 </body>
 </html>

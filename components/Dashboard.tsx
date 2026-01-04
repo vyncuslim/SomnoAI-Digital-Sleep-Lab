@@ -6,7 +6,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Sparkles, RefreshCw, Activity, Loader2, ShieldCheck, Binary, Zap, Waves, BrainCircuit, HeartPulse, Scan, Target
+  Sparkles, RefreshCw, Activity, Loader2, ShieldCheck, Binary, Zap, Waves, BrainCircuit, HeartPulse, Scan, Target, Cpu
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -16,6 +16,16 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [ticker, setTicker] = useState("");
+
+  // 模拟不断滚动的 16 进制数据流
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const hex = Array.from({length: 8}, () => Math.floor(Math.random() * 16).toString(16)).join('').toUpperCase();
+      setTicker(prev => (prev + " " + hex).slice(-100));
+    }, 200);
+    return () => clearInterval(interval);
+  }, []);
 
   const handleSync = async () => {
     if (!onSyncFit || isProcessing) return;
@@ -30,46 +40,64 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
 
   return (
     <motion.div 
-      initial={{ opacity: 0, y: 20 }} 
+      initial={{ opacity: 0, y: 30 }} 
       animate={{ opacity: 1, y: 0 }} 
-      className="space-y-8 pb-32"
+      className="space-y-8 pb-40"
     >
-      {/* 顶部状态条 */}
+      {/* 顶部状态条 - 动态微光 */}
       <div className="flex justify-between items-center px-2">
         <div className="flex items-center gap-3">
-          <div className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg">
+          <motion.div 
+            animate={{ scale: [1, 1.1, 1], opacity: [0.5, 1, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="p-2 bg-indigo-500/10 border border-indigo-500/20 rounded-lg"
+          >
              <Scan size={14} className="text-indigo-400" />
-          </div>
+          </motion.div>
           <div>
-            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">System Live Status</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Neural Network Active</p>
             <p className="text-[9px] font-mono text-emerald-400 flex items-center gap-1.5 uppercase">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-              Synchronized: {new Date().toLocaleTimeString()}
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
+              Live Link: 0x{ticker.split(' ')[0]}
             </p>
           </div>
         </div>
         <div className="text-right">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Unit ID</p>
-          <p className="text-[9px] font-mono text-slate-300 uppercase">LAB-NODE-ALPHA-01</p>
+          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Processor Load</p>
+          <div className="flex items-center gap-2 justify-end">
+            <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
+               <motion.div 
+                 animate={{ width: ["20%", "65%", "40%"] }} 
+                 transition={{ duration: 4, repeat: Infinity }}
+                 className="h-full bg-indigo-500" 
+               />
+            </div>
+            <p className="text-[9px] font-mono text-slate-300 uppercase">1.24 GFlops</p>
+          </div>
         </div>
       </div>
 
-      {/* AI 顶置研判报告 */}
+      {/* AI 顶置研判报告 - 磁力悬浮感 */}
       <section className="px-1">
-        <GlassCard className="p-8 border-indigo-500/10 bg-indigo-500/5 shadow-[0_0_80px_-20px_rgba(79,70,229,0.1)]">
+        <GlassCard className="p-8 border-indigo-500/10 bg-indigo-500/5 shadow-[0_0_80px_-20px_rgba(79,70,229,0.15)] hoverScale">
           <div className="flex items-start gap-6">
             <div className="mt-1">
               <div className="relative">
-                <Sparkles className="text-indigo-400 animate-pulse" size={24} />
-                <div className="absolute inset-0 bg-indigo-400/20 blur-xl"></div>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
+                >
+                  <Cpu className="text-indigo-400" size={24} />
+                </motion.div>
+                <div className="absolute inset-0 bg-indigo-400/30 blur-xl animate-pulse"></div>
               </div>
             </div>
             <div className="flex-1 space-y-4">
               <div className="flex items-center gap-2">
-                <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[8px] font-black uppercase tracking-widest border border-indigo-500/20">Critical Insight</span>
+                <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[8px] font-black uppercase tracking-widest border border-indigo-500/20">AI Neural Synthesis</span>
               </div>
               <h2 className="text-2xl font-black leading-snug text-white italic tracking-tight font-['Plus_Jakarta_Sans']">
-                {data.aiInsights?.[0] || "正在通过神经元网络合成深度睡眠推演报告..."}
+                {data.aiInsights?.[0] || "系统正在通过多维卷积神经网络合成深度睡眠推演报告..."}
               </h2>
             </div>
           </div>
@@ -77,29 +105,35 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             <div className="flex items-center gap-6">
               <div className="flex items-center gap-2">
                 <ShieldCheck size={12} className="text-emerald-400/60" />
-                <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">Biometric Encrypted</span>
+                <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">Secure Handshake</span>
               </div>
               <div className="flex items-center gap-2">
                 <Binary size={12} className="text-slate-500" />
-                <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">Somno-V3.2 Engine</span>
+                <span className="text-[8px] font-mono text-slate-500 uppercase tracking-widest">Somno-V3.2-Stable</span>
               </div>
             </div>
-            <span className="text-[8px] font-mono text-slate-700">SIG: 0.98522</span>
+            <div className="flex items-center gap-1.5">
+               <span className="text-[8px] font-mono text-indigo-500/40">CALC_ERR: 0.0001</span>
+            </div>
           </div>
         </GlassCard>
       </section>
 
-      {/* 核心生理指标网格 */}
+      {/* 核心生理指标网格 - 3D 互动 */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <GlassCard className="aspect-square flex flex-col items-center justify-center p-8 relative overflow-hidden">
-          {/* 背景雷达装饰 */}
-          <div className="absolute inset-0 flex items-center justify-center opacity-10 pointer-events-none">
+        <GlassCard className="aspect-square flex flex-col items-center justify-center p-8 relative overflow-hidden" hoverScale>
+          {/* 背景雷达装饰 - 旋转 */}
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 flex items-center justify-center opacity-[0.03] pointer-events-none scale-150"
+          >
             <div className="w-[80%] h-[80%] border border-white/20 rounded-full"></div>
             <div className="w-[60%] h-[60%] border border-white/20 rounded-full"></div>
             <div className="w-[40%] h-[40%] border border-white/20 rounded-full"></div>
-            <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-white/10"></div>
-            <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white/10"></div>
-          </div>
+            <div className="absolute top-0 bottom-0 left-1/2 w-[1px] bg-white"></div>
+            <div className="absolute left-0 right-0 top-1/2 h-[1px] bg-white"></div>
+          </motion.div>
 
           <div className="relative w-full h-full">
             <ResponsiveContainer width="100%" height="100%">
@@ -122,22 +156,25 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
               </PieChart>
             </ResponsiveContainer>
             <div className="absolute inset-0 flex flex-col items-center justify-center">
-              <div className="relative">
+              <motion.div 
+                animate={{ scale: [1, 1.05, 1] }}
+                transition={{ duration: 3, repeat: Infinity }}
+                className="relative"
+              >
                 <span className="text-8xl font-black font-mono italic text-white text-glow-indigo tabular-nums">
                   {data.score}
                 </span>
                 <span className="absolute -top-2 -right-6 text-indigo-400 font-black font-mono text-sm opacity-50">%</span>
-              </div>
+              </motion.div>
               <div className="flex flex-col items-center gap-1 mt-4">
                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">Sleep Score</span>
-                <div className="w-8 h-[2px] bg-indigo-500/30"></div>
+                <motion.div 
+                  animate={{ width: [0, 32, 16] }}
+                  className="h-[2px] bg-indigo-500/30"
+                ></motion.div>
               </div>
             </div>
           </div>
-          
-          {/* 得分外围刻度装饰 */}
-          <div className="absolute top-6 left-6 text-[8px] font-mono text-slate-700">RNG: 00-100</div>
-          <div className="absolute bottom-6 right-6 text-[8px] font-mono text-slate-700 uppercase tracking-widest">Target: Opt-90</div>
         </GlassCard>
 
         <div className="space-y-4 flex flex-col justify-between">
@@ -146,12 +183,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
               { label: 'Deep Repair', val: data.deepRatio, icon: BrainCircuit, color: COLORS.deep, id: 'D-01' },
               { label: 'REM Consolid', val: data.remRatio, icon: Zap, color: COLORS.rem, id: 'R-01' },
               { label: 'Efficiency', val: Math.round(data.efficiency), icon: HeartPulse, color: COLORS.success, id: 'E-01' }
-            ].map(f => (
-              <GlassCard key={f.label} className="p-6 flex items-center justify-between group flex-1">
+            ].map((f, i) => (
+              <GlassCard key={f.label} className="p-6 flex items-center justify-between group flex-1" hoverScale>
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center group-hover:bg-slate-800 transition-colors">
+                  <motion.div 
+                    whileHover={{ rotate: [0, -10, 10, 0] }}
+                    className="w-12 h-12 rounded-xl bg-slate-800/80 border border-white/5 flex items-center justify-center group-hover:bg-slate-800 transition-colors"
+                  >
                     <f.icon size={20} style={{ color: f.color }} className="opacity-80" />
-                  </div>
+                  </motion.div>
                   <div>
                     <div className="flex items-center gap-2">
                        <span className="text-[8px] font-mono text-slate-600 uppercase tracking-tighter">{f.id}</span>
@@ -165,11 +205,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
                       <motion.div 
                         initial={{ width: 0 }}
                         animate={{ width: `${f.val}%` }}
+                        transition={{ delay: 0.5 + i * 0.1, duration: 1.5, ease: "circOut" }}
                         className="h-full rounded-none shadow-[0_0_8px_rgba(255,255,255,0.2)]"
                         style={{ backgroundColor: f.color }}
                       />
                    </div>
-                   <span className="text-[7px] font-mono text-slate-600 uppercase">Normalized</span>
+                   <span className="text-[7px] font-mono text-slate-600 uppercase">Verified Stage</span>
                 </div>
               </GlassCard>
             ))}
@@ -177,83 +218,24 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </div>
       </div>
 
-      {/* 睡眠架构时序推演 */}
-      <section className="space-y-5">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-3">
-            <Target size={14} className="text-indigo-400" />
-            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">Architecture Chronology</h3>
-          </div>
-          <div className="flex gap-4">
-            <span className="text-[8px] font-mono text-indigo-400/50 uppercase tracking-widest">Mode: Analytics</span>
-            <span className="text-[8px] font-mono text-slate-600 uppercase tracking-widest">Buffer: 4096Kb</span>
-          </div>
-        </div>
-        <GlassCard className="p-8 border-white/5">
-          {/* 时间轴刻度 */}
-          <div className="flex justify-between mb-4 px-1 opacity-20">
-             {[...Array(6)].map((_, i) => (
-               <div key={i} className="h-2 w-[1px] bg-white"></div>
-             ))}
-          </div>
-          
-          <div className="h-14 w-full bg-slate-900/40 rounded-lg overflow-hidden flex border border-white/5 mb-10 relative">
-            {/* 动态扫描线 */}
-            <motion.div 
-              animate={{ left: ['-10%', '110%'] }}
-              transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-              className="absolute top-0 bottom-0 w-[2px] bg-white/20 z-10 blur-sm pointer-events-none"
-            />
-            
-            {data.stages?.map((stage, idx) => (
-              <motion.div 
-                key={idx}
-                initial={{ opacity: 0, scaleX: 0 }}
-                animate={{ opacity: 1, scaleX: 1 }}
-                transition={{ delay: idx * 0.05 }}
-                style={{ 
-                  width: `${(stage.duration / Math.max(1, data.totalDuration)) * 100}%`,
-                  backgroundColor: stage.name === '深睡' ? COLORS.deep : stage.name === 'REM' ? COLORS.rem : stage.name === '清醒' ? COLORS.awake : COLORS.light
-                }}
-                className="h-full relative group cursor-crosshair origin-left border-r border-black/20 last:border-0"
-              >
-                <div className="absolute -top-12 left-1/2 -translate-x-1/2 bg-slate-900 px-3 py-2 rounded-lg border border-white/10 opacity-0 group-hover:opacity-100 transition-all z-50 pointer-events-none shadow-2xl scale-90 group-hover:scale-100 flex flex-col items-center">
-                  <p className="text-[8px] font-black uppercase text-indigo-400 tracking-widest mb-0.5">{stage.name}</p>
-                  <p className="text-[10px] font-mono text-white whitespace-nowrap">{stage.duration}m</p>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+      {/* 底部实时遥测流 - 新增动态元素 */}
+      <div className="px-2 py-4 border-y border-white/[0.03] overflow-hidden whitespace-nowrap bg-slate-900/20">
+         <div className="flex gap-8 items-center animate-pulse">
+            <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Telemetric Flow:</span>
+            <span className="text-[8px] font-mono text-slate-600 opacity-50 uppercase tracking-tighter italic">
+              {ticker} {ticker}
+            </span>
+         </div>
+      </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            {[
-              { l: 'Deep', c: COLORS.deep, v: data.deepRatio },
-              { l: 'REM', c: COLORS.rem, v: data.remRatio },
-              { l: 'Light', c: COLORS.light, v: 100 - data.deepRatio - data.remRatio - (100 - data.efficiency) },
-              { l: 'Awake', c: COLORS.awake, v: 100 - data.efficiency }
-            ].map(item => (
-              <div key={item.l} className="space-y-3 relative">
-                <div className="flex items-center gap-2">
-                  <div className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: item.c }} />
-                  <span className="text-[9px] font-black text-slate-500 uppercase tracking-[0.2em]">{item.l}</span>
-                </div>
-                <div className="flex items-baseline gap-1">
-                  <p className="text-3xl font-black font-mono text-slate-200 tabular-nums">{Math.round(item.v)}</p>
-                  <span className="text-[10px] font-mono text-slate-600">%</span>
-                </div>
-              </div>
-            ))}
-          </div>
-        </GlassCard>
-      </section>
-
-      {/* 控制中心 */}
+      {/* 控制中心 - 动态悬浮 */}
       <div className="grid grid-cols-2 gap-5 pt-4">
         <GlassCard 
           onClick={handleSync}
           className="p-6 flex items-center gap-6 group cursor-pointer border-indigo-500/20 bg-indigo-500/5 hover:bg-indigo-500/10 active:bg-indigo-500/20"
+          hoverScale
         >
-          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 transition-transform">
+          <div className="w-12 h-12 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400 group-hover:scale-110 group-hover:rotate-12 transition-all">
             {isProcessing ? <Loader2 size={24} className="animate-spin" /> : <RefreshCw size={24} />}
           </div>
           <div>
@@ -262,7 +244,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
           </div>
         </GlassCard>
 
-        <GlassCard className="p-6 flex items-center gap-6 border-white/5 opacity-40 grayscale">
+        <GlassCard className="p-6 flex items-center gap-6 border-white/5 opacity-40 grayscale" hoverScale>
           <div className="w-12 h-12 rounded-xl bg-slate-800/50 border border-white/5 flex items-center justify-center text-slate-500">
             <Waves size={24} />
           </div>
@@ -280,7 +262,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             initial={{ y: 50, opacity: 0 }} 
             animate={{ y: 0, opacity: 1 }} 
             exit={{ y: 50, opacity: 0 }}
-            className="fixed bottom-32 left-6 right-6 z-[100] px-8 py-6 rounded-2xl border border-indigo-500/30 glass-morphism shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] flex items-center gap-6"
+            className="fixed bottom-32 left-6 right-6 z-[100] px-8 py-6 rounded-3xl border border-indigo-500/30 glass-morphism shadow-[0_40px_100px_-20px_rgba(0,0,0,1)] flex items-center gap-6"
           >
             <div className="relative">
               <div className="w-12 h-12 border-2 border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin"></div>
