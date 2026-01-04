@@ -1,7 +1,6 @@
 
 import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
 
-// 提示：请确保此 CLIENT_ID 在 Google Cloud Console 中已配置 sleepsomno.com 为授权来源
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
 const SCOPES = [
   "https://www.googleapis.com/auth/fitness.sleep.read",
@@ -161,10 +160,10 @@ export class GoogleFitService {
         const s = toMillis(p.startTimeNanos);
         const e = toMillis(p.endTimeNanos);
         const d = Math.max(0, Math.round((e - s) / 60000));
-        let name: SleepStage['name'] = '浅睡';
-        if (type === 5) { name = '深睡'; deep += d; }
+        let name: SleepStage['name'] = 'Light';
+        if (type === 5) { name = 'Deep'; deep += d; }
         else if (type === 6) { name = 'REM'; rem += d; }
-        else if (type === 1 || type === 3) { name = '清醒'; awake += d; }
+        else if (type === 1 || type === 3) { name = 'Awake'; awake += d; }
         return { name, duration: d, startTime: new Date(s).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) };
       });
 
@@ -185,7 +184,7 @@ export class GoogleFitService {
       };
 
       if (stages.length === 0 && totalDuration > 0) {
-        stages.push({ name: '浅睡', duration: totalDuration, startTime: new Date(startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
+        stages.push({ name: 'Light', duration: totalDuration, startTime: new Date(startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) });
       }
 
       return {
@@ -193,7 +192,7 @@ export class GoogleFitService {
         deepRatio: totalDuration > 0 ? Math.round((deep / totalDuration) * 100) : 0,
         remRatio: totalDuration > 0 ? Math.round((rem / totalDuration) * 100) : 0,
         efficiency: totalDuration > 0 ? Math.round(((totalDuration - awake) / totalDuration) * 100) : 100,
-        date: new Date(startTime).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
+        date: new Date(startTime).toLocaleDateString('en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
         stages, heartRate, calories: Math.round(calPoints.reduce((acc: number, p: any) => acc + (p.value?.[0]?.fpVal || 0), 0)),
         score: totalDuration > 0 ? Math.min(100, Math.round((deep / totalDuration) * 200 + (rem / totalDuration) * 150 + (heartRate.resting < 70 ? 10 : 0) + (totalDuration > 420 ? 20 : 0))) : 0
       };

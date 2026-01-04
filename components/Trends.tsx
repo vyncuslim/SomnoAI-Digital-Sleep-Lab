@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { SleepRecord, TimeRange } from '../types.ts';
@@ -51,8 +52,8 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
           <Database size={48} className="text-slate-700" />
         </div>
         <div className="space-y-2">
-          <h2 className="text-xl font-black italic tracking-tight text-white">数据库就绪但无信号</h2>
-          <p className="text-slate-500 text-[11px] max-w-xs font-black uppercase tracking-widest leading-relaxed">需要 2 次以上的有效采样<br/>才能生成多维趋势推演</p>
+          <h2 className="text-xl font-black italic tracking-tight text-white">Database Ready - No Signal</h2>
+          <p className="text-slate-500 text-[11px] max-w-xs font-black uppercase tracking-widest leading-relaxed">At least 2 sampling points required<br/>for multi-dimensional trend analysis</p>
         </div>
       </div>
     );
@@ -62,7 +63,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
     <div className="space-y-6 pb-24">
       <header className="flex justify-between items-center px-1">
         <div className="space-y-0.5">
-           <h1 className="text-2xl font-black tracking-tight italic">趋势图谱</h1>
+           <h1 className="text-2xl font-black tracking-tight italic">Trend Atlas</h1>
            <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em]">Historical Analysis Lab</p>
         </div>
         <div className="flex bg-white/5 rounded-2xl p-1 border border-white/5">
@@ -89,9 +90,9 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
               {isGenerating ? <Loader2 size={24} className="animate-spin text-indigo-400" /> : <BrainCircuit size={24} className="text-indigo-400" />}
             </div>
             <div>
-              <p className="text-sm font-black italic text-slate-100">生成实验趋势报告</p>
+              <p className="text-sm font-black italic text-slate-100">Synthesize Lab Trend Report</p>
               <p className="text-[9px] text-indigo-400/60 font-black uppercase tracking-[0.2em] mt-0.5">
-                {isGenerating ? '聚合多维生理特征流...' : 'Synthesis Analysis Report'}
+                {isGenerating ? 'Aggregating feature streams...' : 'Synthesis Analysis Report'}
               </p>
             </div>
           </div>
@@ -102,12 +103,12 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-indigo-400" />
-              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">首席科研官结论</h3>
+              <h3 className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400">CRO Conclusion</h3>
             </div>
             <button onClick={() => setSummary(null)} className="text-[9px] font-black text-slate-600 uppercase hover:text-white transition-colors">Dismiss</button>
           </div>
           <p className="text-sm text-slate-300 leading-relaxed font-medium italic">
-            “{summary}”
+            "{summary}"
           </p>
           <div className="pt-4 border-t border-white/5 flex items-center justify-between opacity-30">
             <span className="text-[8px] font-mono uppercase">Somno-Report v3.2</span>
@@ -121,7 +122,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
           <div className="space-y-1">
             <h3 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 flex items-center gap-2">
               <Binary size={14} className="text-indigo-400" />
-              信号质量指数 (SQI)
+              Signal Quality Index (SQI)
             </h3>
           </div>
           <button 
@@ -172,12 +173,12 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
       <div className="grid grid-cols-2 gap-4">
         <GlassCard className="p-6 flex flex-col items-center text-center">
           <Award className="text-amber-500/50 mb-3" size={20} />
-          <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">历史峰值</p>
+          <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">Historical Peak</p>
           <p className="text-2xl font-black font-mono mt-1">{Math.max(...history.map(h => h.score))}</p>
         </GlassCard>
         <GlassCard className="p-6 flex flex-col items-center text-center">
           <Calendar className="text-blue-500/50 mb-3" size={20} />
-          <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">采样点总数</p>
+          <p className="text-slate-500 text-[9px] font-black uppercase tracking-widest">Sampling Total</p>
           <p className="text-2xl font-black font-mono mt-1">{history.length}</p>
         </GlassCard>
       </div>

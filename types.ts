@@ -1,7 +1,7 @@
 
 export interface SleepStage {
-  name: '深睡' | 'REM' | '浅睡' | '清醒';
-  duration: number; // 分钟
+  name: 'Deep' | 'REM' | 'Light' | 'Awake';
+  duration: number; // minutes
   startTime: string;
 }
 
@@ -17,11 +17,11 @@ export interface SleepRecord {
   id: string;
   date: string;
   score: number;
-  totalDuration: number; // 分钟
-  deepRatio: number; // 百分比
+  totalDuration: number; // minutes
+  deepRatio: number; // percentage
   remRatio: number;
   efficiency: number;
-  calories?: number; // 卡路里消耗 (kcal)
+  calories?: number; // kcal
   stages: SleepStage[];
   heartRate: HeartRateData;
   aiInsights: string[];

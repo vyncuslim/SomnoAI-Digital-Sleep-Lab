@@ -11,7 +11,7 @@ export const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: "系统初始化完成。我是 SomnoAI 首席科研官。我已加载您的生物特征流，可以为您提供睡眠架构的深度推演或优化建议。请下达指令。",
+      content: "System initialized. I am SomnoAI Chief Research Officer. Biometric streams loaded. I can provide sleep architecture projections or optimization recommendations. Awaiting instructions.",
       timestamp: new Date()
     }
   ]);
@@ -43,7 +43,7 @@ export const AIAssistant: React.FC = () => {
     } catch (err) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
-        content: "实验室网关响应异常。请尝试发送更具体的生理信号描述。", 
+        content: "Lab gateway response exception. Try providing more specific biometric signal descriptions.", 
         timestamp: new Date() 
       }]);
     } finally {
@@ -60,7 +60,7 @@ export const AIAssistant: React.FC = () => {
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#020617] animate-pulse"></div>
           </div>
           <div>
-            <h1 className="text-xl font-black italic tracking-tight text-white">AI 洞察实验室</h1>
+            <h1 className="text-xl font-black italic tracking-tight text-white">AI Insights Lab</h1>
             <div className="flex items-center gap-2 text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">
               <Binary size={10} />
               Session ID: SMN-{Math.floor(Math.random()*10000)}
@@ -97,12 +97,6 @@ export const AIAssistant: React.FC = () => {
                   : 'bg-indigo-600 text-white rounded-tr-none shadow-indigo-600/30'
                 }`}>
                   {msg.content}
-                  {msg.role === 'assistant' && (
-                    <div className="absolute -bottom-5 left-0 flex gap-1 opacity-20">
-                      <div className="w-1 h-1 bg-white rounded-full"></div>
-                      <div className="w-1 h-1 bg-white rounded-full"></div>
-                    </div>
-                  )}
                 </div>
               </div>
             </motion.div>
@@ -136,7 +130,7 @@ export const AIAssistant: React.FC = () => {
             onChange={e => setInput(e.target.value)}
             onKeyPress={e => e.key === 'Enter' && handleSend()}
             disabled={isTyping}
-            placeholder={isTyping ? "实验室正在合成指令..." : "咨询关于深睡、REM 或心率趋势的建议..."}
+            placeholder={isTyping ? "Synthesizing lab instruction..." : "Ask about Deep, REM, or heart rate trends..."}
             className="w-full bg-transparent py-5 pl-6 pr-16 focus:outline-none font-medium text-sm text-white placeholder:text-slate-600 disabled:opacity-50"
           />
           <button

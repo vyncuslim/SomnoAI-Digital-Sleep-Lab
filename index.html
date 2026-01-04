@@ -1,16 +1,16 @@
 
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SomnoAI Digital Sleep Lab - 数字化睡眠实验平台</title>
+    <title>SomnoAI Digital Sleep Lab - Digital Sleep Science Platform</title>
     
     <!-- Canonical Link for sleepsomno.com -->
     <link rel="canonical" href="https://sleepsomno.com/" />
     
     <!-- SEO & Social Meta -->
-    <meta name="description" content="SomnoAI Digital Sleep Lab (sleepsomno.com) 提供全方位的数字化睡眠实验服务，融合生理监控与 AI 深度洞察。" />
+    <meta name="description" content="SomnoAI Digital Sleep Lab (sleepsomno.com) integrates biometric monitoring, AI insights, and health recommendations for a comprehensive digital sleep experience." />
     <meta property="og:url" content="https://sleepsomno.com/" />
     <meta property="og:type" content="website" />
     <meta property="og:title" content="SomnoAI Digital Sleep Lab" />
@@ -35,7 +35,6 @@
             background-color: #020617;
             color: white;
             overflow-x: hidden;
-            /* 动态滚动的背景网格 */
             background-image: 
                 radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(79, 70, 229, 0.15) 0%, transparent 40%),
                 linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
@@ -44,7 +43,6 @@
             animation: gridScroll 10s linear infinite;
         }
 
-        /* 扫描线效果 */
         body::after {
             content: "";
             position: fixed;
@@ -84,14 +82,27 @@
             position: relative;
             z-index: 10;
         }
-
-        /* 3D 卡片容器效果 */
+        .legal-footer a {
+            margin: 0 1.5rem;
+            color: #818cf8;
+            text-decoration: none;
+            font-weight: 700;
+            transition: color 0.2s;
+            display: inline-block;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid transparent;
+        }
+        .legal-footer a:hover { 
+            color: #a5b4fc;
+            border-bottom: 1px solid #818cf8;
+        }
+        .dev-info { margin-top: 1.5rem; opacity: 0.6; font-size: 0.7rem; font-weight: 600; }
+        .dev-info a { margin: 0; color: inherit; font-weight: inherit; border: none; padding: 0; }
         .perspective-1000 {
             perspective: 1000px;
         }
     </style>
     <script>
-        // 鼠标跟随灯光逻辑
         document.addEventListener('mousemove', (e) => {
             const x = (e.clientX / window.innerWidth) * 100;
             const y = (e.clientY / window.innerHeight) * 100;
@@ -118,5 +129,17 @@
 <body>
     <div id="root"></div>
     <script type="module" src="index.tsx"></script>
+    
+    <footer class="legal-footer">
+        <div class="opacity-30">&copy; 2024 SomnoAI Digital Sleep Lab. All rights reserved.</div>
+        <div class="mt-4">
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+        </div>
+        <div class="dev-info">
+            Developer Contact: <a href="mailto:ongyuze1401@gmail.com">ongyuze1401@gmail.com</a> | 
+            Domain: <a href="https://sleepsomno.com">https://sleepsomno.com</a>
+        </div>
+    </footer>
 </body>
 </html>

@@ -16,9 +16,8 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [ticker, setTicker] = useState("");
+  const [ticker, setTicker] = useState("FF00AA11");
 
-  // 模拟不断滚动的 16 进制数据流
   useEffect(() => {
     const interval = setInterval(() => {
       const hex = Array.from({length: 8}, () => Math.floor(Math.random() * 16).toString(16)).join('').toUpperCase();
@@ -37,6 +36,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
   };
 
   const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
+  const liveLinkId = ticker.split(' ').filter(Boolean)[0] || "00000000";
 
   return (
     <motion.div 
@@ -44,7 +44,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
       animate={{ opacity: 1, y: 0 }} 
       className="space-y-8 pb-40"
     >
-      {/* 顶部状态条 - 动态微光 */}
+      {/* Top Status Bar */}
       <div className="flex justify-between items-center px-2">
         <div className="flex items-center gap-3">
           <motion.div 
@@ -58,7 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Neural Network Active</p>
             <p className="text-[9px] font-mono text-emerald-400 flex items-center gap-1.5 uppercase">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span>
-              Live Link: 0x{ticker.split(' ')[0]}
+              Live Link: 0x{liveLinkId}
             </p>
           </div>
         </div>
@@ -77,7 +77,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </div>
       </div>
 
-      {/* AI 顶置研判报告 - 磁力悬浮感 */}
+      {/* AI Insight Section */}
       <section className="px-1">
         <GlassCard className="p-8 border-indigo-500/10 bg-indigo-500/5 shadow-[0_0_80px_-20px_rgba(79,70,229,0.15)] hoverScale">
           <div className="flex items-start gap-6">
@@ -97,7 +97,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
                 <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 rounded text-[8px] font-black uppercase tracking-widest border border-indigo-500/20">AI Neural Synthesis</span>
               </div>
               <h2 className="text-2xl font-black leading-snug text-white italic tracking-tight font-['Plus_Jakarta_Sans']">
-                {data.aiInsights?.[0] || "系统正在通过多维卷积神经网络合成深度睡眠推演报告..."}
+                {data.aiInsights?.[0] || "Synthesizing deep sleep projection report via multi-dimensional CNN..."}
               </h2>
             </div>
           </div>
@@ -119,10 +119,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </GlassCard>
       </section>
 
-      {/* 核心生理指标网格 - 3D 互动 */}
+      {/* Metrics Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <GlassCard className="aspect-square flex flex-col items-center justify-center p-8 relative overflow-hidden" hoverScale>
-          {/* 背景雷达装饰 - 旋转 */}
           <motion.div 
             animate={{ rotate: 360 }}
             transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
@@ -218,7 +217,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
         </div>
       </div>
 
-      {/* 底部实时遥测流 - 新增动态元素 */}
+      {/* Telemetry Stream */}
       <div className="px-2 py-4 border-y border-white/[0.03] overflow-hidden whitespace-nowrap bg-slate-900/20">
          <div className="flex gap-8 items-center animate-pulse">
             <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Telemetric Flow:</span>
@@ -228,7 +227,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
          </div>
       </div>
 
-      {/* 控制中心 - 动态悬浮 */}
+      {/* Commands Control */}
       <div className="grid grid-cols-2 gap-5 pt-4">
         <GlassCard 
           onClick={handleSync}
@@ -240,7 +239,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
           </div>
           <div>
             <p className="text-[8px] font-mono text-indigo-400/60 uppercase mb-0.5 tracking-tighter">Command: Sync</p>
-            <p className="text-sm font-black text-white uppercase tracking-wider">实时特征同步</p>
+            <p className="text-sm font-black text-white uppercase tracking-wider">Sync Feature Stream</p>
           </div>
         </GlassCard>
 
@@ -250,12 +249,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
           </div>
           <div>
             <p className="text-[8px] font-mono text-slate-700 uppercase mb-0.5 tracking-tighter">Command: Export</p>
-            <p className="text-sm font-black text-slate-400 uppercase tracking-wider">报告存档</p>
+            <p className="text-sm font-black text-slate-400 uppercase tracking-wider">Archive Report</p>
           </div>
         </GlassCard>
       </div>
 
-      {/* 同步状态浮窗 */}
+      {/* Progress Overlay */}
       <AnimatePresence>
         {isProcessing && (
           <motion.div 
