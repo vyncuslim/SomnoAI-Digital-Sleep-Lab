@@ -1,3 +1,4 @@
+
 {
   "cleanUrls": true,
   "trailingSlash": false,
@@ -7,7 +8,20 @@
       "headers": [
         {
           "key": "Content-Type",
-          "value": "application/xml"
+          "value": "application/xml; charset=utf-8"
+        },
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain; charset=utf-8"
         }
       ]
     }
@@ -15,7 +29,9 @@
   "rewrites": [
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/sitemap", "destination": "/sitemap.xml" },
-    { "source": "/((?!privacy|terms|sitemap|robots|assets|favicon|google|sw|manifest|.*\\.xml|.*\\.txt).*)", "destination": "/index.html" }
+    {
+      "source": "/((?!privacy|terms|robots\\.txt|sitemap\\.xml|.*\\.png|.*\\.jpg|.*\\.js|.*\\.css|.*\\.json|.*\\.ico).*)",
+      "destination": "/index.html"
+    }
   ]
 }

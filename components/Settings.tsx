@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Shield, Smartphone, Globe, LogOut, 
-  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon, CreditCard, Key, Trash2, CheckCircle2, X, Loader2, RefreshCw, Sun, Moon, Palette, Box
+  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon, CreditCard, Key, Trash2, CheckCircle2, X, Loader2, RefreshCw, Sun, Moon, Palette, Box, Check
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ViewType, ThemeMode, AccentColor } from '../types.ts';
@@ -162,7 +162,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   key={c}
                   onClick={() => onAccentChange(c)}
                   className={`w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center ${accentColor === c ? 'border-white scale-110 shadow-lg' : 'border-transparent opacity-50 hover:opacity-100'}`}
-                  style={{ backgroundColor: translations.en.settings.duitNowId === '' ? '#000' : (c === 'indigo' ? '#818cf8' : c === 'emerald' ? '#10b981' : c === 'rose' ? '#f43f5e' : c === 'amber' ? '#f59e0b' : '#0ea5e9') }}
+                  style={{ backgroundColor: c === 'indigo' ? '#818cf8' : c === 'emerald' ? '#10b981' : c === 'rose' ? '#f43f5e' : c === 'amber' ? '#f59e0b' : '#0ea5e9' }}
                 >
                   {accentColor === c && <Check size={16} className="text-white" />}
                 </button>
