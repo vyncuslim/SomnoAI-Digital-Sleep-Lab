@@ -1,4 +1,3 @@
-
 {
   "name": "somno-digital-sleep-lab",
   "version": "1.0.0",
@@ -11,7 +10,13 @@
     "recharts": "2.15.0",
     "clsx": "2.1.1",
     "tailwind-merge": "2.5.4",
-    "@google/genai": "1.34.0"
+    "@google/genai": "1.34.0",
+    "vite": "^6.0.0"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "engines": {
     "node": ">=18.0.0"

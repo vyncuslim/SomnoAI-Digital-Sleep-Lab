@@ -254,7 +254,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
             </div>
 
             <div 
-              onClick={() => handleCopy("+600187807388")}
+              onClick={() => handleCopy("+60 0187807388")}
               className="relative group cursor-pointer"
             >
               <div className="p-5 bg-slate-950/80 rounded-[1.5rem] border border-white/5 text-center transition-all group-hover:border-cyan-500/30 active:scale-[0.98]">
@@ -269,7 +269,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
             </div>
 
             <button 
-              onClick={() => handleCopy("+600187807388")}
+              onClick={() => handleCopy("+60 0187807388")}
               className="w-full py-3 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 rounded-xl text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98]"
             >
               {t.tngCopy}
@@ -283,7 +283,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
             </div>
           </div>
 
-          {/* PayPal 模块 (New) */}
+          {/* PayPal 模块 */}
           <div className="p-6 space-y-4 border-t border-white/5 bg-blue-500/[0.02]">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
