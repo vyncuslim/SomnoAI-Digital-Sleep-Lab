@@ -53,8 +53,17 @@ const App: React.FC = () => {
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
       onProgress?.('analyzing');
-      const insights = await getSleepInsight(updatedRecord, lang);
-      setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
+      
+      try {
+        const insights = await getSleepInsight(updatedRecord, lang);
+        setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
+      } catch (aiErr: any) {
+        if (aiErr.message === "GATEWAY_NOT_FOUND") {
+          setIsLoggedIn(false); // 强制重新授权以激活 Key
+          setErrorToast(lang === 'zh' ? "神经网关已断开，请重新激活" : "Neural Gateway Disconnected");
+        }
+      }
+      
       onProgress?.('success');
     } catch (err: any) {
       onProgress?.('error');
@@ -86,6 +95,7 @@ const App: React.FC = () => {
         <p className="text-slate-500 text-[9px] uppercase tracking-widest">{lang === 'en' ? 'Negotiating Bio-Auth Protocol...' : '正在进行生物特征识别授权...'}</p>
       </div>
     );
+    
     if (!isLoggedIn && !isGuest) return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={() => setIsGuest(true)} />;
     
     if (!currentRecord && activeView === 'dashboard') return (
@@ -107,7 +117,6 @@ const App: React.FC = () => {
     return (
       <AnimatePresence mode="wait">
         <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {/* Fix: Wrapped handleSyncGoogleFit to match Dashboard's expected (onProgress) => Promise signature */}
           {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} />}
           {activeView === 'calendar' && <Trends history={history} />}
           {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} onSync={() => handleSyncGoogleFit()} />}

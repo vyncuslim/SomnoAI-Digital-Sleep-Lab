@@ -1,11 +1,12 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
 const getAIInstance = () => {
   const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API_KEY_MISSING");
-  return new GoogleGenAI({ apiKey });
+  // 注意：在 AI Studio 环境中，API_KEY 会被自动注入到 process.env
+  return new GoogleGenAI({ apiKey: apiKey || "" });
 };
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
@@ -41,8 +42,12 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
       : (lang === 'en' 
           ? ["Sleep architecture analyzed. Optimize environment.", "Cognitive load may be elevated today.", "Try magnesium for recovery."] 
           : ["睡眠架构已分析。请优化环境。", "今天的认知负荷可能会升高。", "尝试补充镁以促进恢复。"]);
-  } catch (err) {
+  } catch (err: any) {
     console.error("Gemini Insight Error:", err);
+    if (err.message?.includes("entity was not found")) {
+      // 触发 API Key 重新选择逻辑的信号
+      throw new Error("GATEWAY_NOT_FOUND");
+    }
     return lang === 'en' 
       ? ["Insight synthesis offline.", "Biometric link stable.", "Awaiting next stream."] 
       : ["洞察合成离线。", "生物识别链路稳定。", "等待下一流数据。"];
@@ -113,8 +118,11 @@ export const chatWithCoach = async (
       text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
     };
-  } catch (err) {
+  } catch (err: any) {
     console.error("Chat Error:", err);
+    if (err.message?.includes("entity was not found")) {
+      throw new Error("GATEWAY_NOT_FOUND");
+    }
     throw err;
   }
 };
