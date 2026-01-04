@@ -45,8 +45,9 @@ export class GoogleFitService {
   }
 
   private async waitForGoogleReady(): Promise<void> {
-    console.log("GFit: Waiting for Google SDK...");
-    const maxAttempts = 50; // 5 seconds total
+    console.log("GFit: Waiting for Google Identity Services SDK...");
+    // 增加等待时间至 15 秒 (150 * 100ms)
+    const maxAttempts = 150; 
     for (let i = 0; i < maxAttempts; i++) {
       if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
         console.log("GFit: Google SDK Ready.");
@@ -54,6 +55,7 @@ export class GoogleFitService {
       }
       await new Promise(resolve => setTimeout(resolve, 100));
     }
+    console.error("GFit: Google SDK load timed out. Check network or ad-blockers.");
     throw new Error("GOOGLE_SDK_TIMEOUT");
   }
 
@@ -99,7 +101,7 @@ export class GoogleFitService {
     
     if (forcePrompt || !this.accessToken) {
       return new Promise((resolve, reject) => {
-        // 防止 Promise 永久挂起：设置 2 分钟超时（给予用户足够的登录时间）
+        // 超时处理：2 分钟
         const timeout = setTimeout(() => {
           if (this.authPromise) {
             reject(new Error("AUTH_WINDOW_TIMEOUT"));
@@ -127,7 +129,7 @@ export class GoogleFitService {
     const res = await fetch(url, { 
       ...options, 
       headers: { ...headers, ...options.headers },
-      signal: AbortSignal.timeout(15000) // 15秒请求超时
+      signal: AbortSignal.timeout(15000) 
     });
     if (res.status === 401) {
       this.logout();
