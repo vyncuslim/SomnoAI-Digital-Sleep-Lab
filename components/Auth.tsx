@@ -43,7 +43,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
           <Logo size={120} animated />
         </motion.div>
         <div className="space-y-4">
-          <h1 className="text-5xl font-black tracking-tighter text-white italic">SomnoAI <span className="text-indigo-400">Lab</span></h1>
+          <h1 className="text-5xl font-black tracking-tighter text-white italic">Somno <span className="text-indigo-400">Lab</span></h1>
           <p className="text-slate-400 font-medium uppercase text-sm tracking-widest">Digital Sleep & Physiological Projections</p>
         </div>
       </motion.div>

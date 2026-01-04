@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, Binary, MessageSquareText, ShieldAlert } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, Binary, MessageSquareText, ShieldAlert, Github } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage } from '../types.ts';
 import { chatWithCoach } from '../services/geminiService.ts';
@@ -11,7 +11,7 @@ export const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
     {
       role: 'assistant',
-      content: "System initialized. I am SomnoAI Chief Research Officer. Biometric streams loaded. I can provide sleep architecture projections or optimization recommendations. Awaiting instructions.",
+      content: "System initialized. I am Somno Chief Research Officer. Biometric streams loaded. I can provide sleep architecture projections or optimization recommendations. Awaiting instructions.",
       timestamp: new Date()
     }
   ]);
@@ -68,10 +68,15 @@ export const AIAssistant: React.FC = () => {
           </div>
         </div>
         <div className="text-right flex flex-col items-end">
-          <a href="mailto:ongyuze1401@gmail.com" className="flex items-center gap-1.5 text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest transition-colors mb-1.5 p-1 bg-indigo-500/5 rounded-md px-2">
-            <MessageSquareText size={10} />
-            FEEDBACK
-          </a>
+          <div className="flex items-center gap-3 mb-1.5">
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="p-1.5 rounded-md bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all">
+              <Github size={12} />
+            </a>
+            <a href="mailto:ongyuze1401@gmail.com" className="flex items-center gap-1.5 text-[9px] font-black text-indigo-400 hover:text-indigo-300 uppercase tracking-widest transition-colors p-1 bg-indigo-500/5 rounded-md px-2">
+              <MessageSquareText size={10} />
+              FEEDBACK
+            </a>
+          </div>
           <div className="px-2 py-0.5 bg-indigo-500/10 rounded-full border border-indigo-500/20">
             <span className="text-[8px] font-mono text-indigo-300">CONFIDENCE: 0.98</span>
           </div>

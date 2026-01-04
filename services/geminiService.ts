@@ -56,7 +56,7 @@ export const chatWithCoach = async (history: { role: 'user' | 'assistant', conte
 
     const ai = new GoogleGenAI({ apiKey });
     
-    const systemInstruction = "You are the Chief Research Officer of SomnoAI Lab. You are calm, professional, and rigorous. Respond to user sleep inquiries in concise English. If input is vague, guide the user to provide more details.";
+    const systemInstruction = "You are the Chief Research Officer of Somno Lab. You are calm, professional, and rigorous. Respond to user sleep inquiries in concise English. If input is vague, guide the user to provide more details.";
     const lastUserMessage = history[history.length - 1].content;
     
     const historyText = history.slice(0, -1).map(m => `${m.role === 'user' ? 'User' : 'CRO'}: ${m.content}`).join('\n');

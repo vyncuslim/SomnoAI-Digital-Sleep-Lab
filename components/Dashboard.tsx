@@ -6,7 +6,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Sparkles, RefreshCw, Activity, Loader2, ShieldCheck, Binary, Zap, Waves, BrainCircuit, HeartPulse, Scan, Target, Cpu
+  Sparkles, RefreshCw, Activity, Loader2, ShieldCheck, Binary, Zap, Waves, BrainCircuit, HeartPulse, Scan, Target, Cpu, Github
 } from 'lucide-react';
 
 interface DashboardProps {
@@ -62,17 +62,22 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, onSyncFit }) => {
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Processor Load</p>
-          <div className="flex items-center gap-2 justify-end">
-            <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
-               <motion.div 
-                 animate={{ width: ["20%", "65%", "40%"] }} 
-                 transition={{ duration: 4, repeat: Infinity }}
-                 className="h-full bg-indigo-500" 
-               />
+        <div className="flex items-center gap-4">
+          <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all">
+            <Github size={16} />
+          </a>
+          <div className="text-right">
+            <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Processor Load</p>
+            <div className="flex items-center gap-2 justify-end">
+              <div className="w-12 h-1 bg-slate-800 rounded-full overflow-hidden">
+                 <motion.div 
+                   animate={{ width: ["20%", "65%", "40%"] }} 
+                   transition={{ duration: 4, repeat: Infinity }}
+                   className="h-full bg-indigo-500" 
+                 />
+              </div>
+              <p className="text-[9px] font-mono text-slate-300 uppercase">1.24 GFlops</p>
             </div>
-            <p className="text-[9px] font-mono text-slate-300 uppercase">1.24 GFlops</p>
           </div>
         </div>
       </div>

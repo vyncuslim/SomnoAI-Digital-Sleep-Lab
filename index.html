@@ -4,16 +4,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SomnoAI Digital Sleep Lab - Digital Sleep Science Platform</title>
+    <title>Somno Digital Sleep Lab - Digital Sleep Science Platform</title>
     
     <!-- Canonical Link for sleepsomno.com -->
     <link rel="canonical" href="https://sleepsomno.com/" />
     
     <!-- SEO & Social Meta -->
-    <meta name="description" content="SomnoAI Digital Sleep Lab (sleepsomno.com) integrates biometric monitoring, AI insights, and health recommendations for a comprehensive digital sleep experience." />
+    <meta name="description" content="Somno Digital Sleep Lab (sleepsomno.com) integrates biometric monitoring, AI insights, and health recommendations for a comprehensive digital sleep experience." />
     <meta property="og:url" content="https://sleepsomno.com/" />
     <meta property="og:type" content="website" />
-    <meta property="og:title" content="SomnoAI Digital Sleep Lab" />
+    <meta property="og:title" content="Somno Digital Sleep Lab" />
     
     <!-- Google Verification -->
     <meta name="google-site-verification" content="uYmJ_568JPu-rjsyRzA2KU2vQpiQDOvN97G5Qgd5-38" />
@@ -22,6 +22,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script>
+        // Global shim for process.env to prevent ReferenceErrors in environments where it's not pre-defined.
+        window.process = window.process || { env: {} };
+    </script>
     <style>
         @keyframes gridScroll {
             from { background-position: 0 0; }
@@ -83,7 +87,7 @@
             z-index: 10;
         }
         .legal-footer a {
-            margin: 0 1.5rem;
+            margin: 0 1rem;
             color: #818cf8;
             text-decoration: none;
             font-weight: 700;
@@ -113,15 +117,17 @@
 <script type="importmap">
 {
   "imports": {
-    "react": "https://esm.sh/react@^19.2.3",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@google/genai": "https://esm.sh/@google/genai@^1.34.0",
-    "recharts": "https://esm.sh/recharts@2.15.0",
-    "lucide-react": "https://esm.sh/lucide-react@0.470.0",
-    "framer-motion": "https://esm.sh/framer-motion@^11.11.11",
-    "clsx": "https://esm.sh/clsx@^2.1.1",
-    "tailwind-merge": "https://esm.sh/tailwind-merge@^2.5.4"
+    "react": "https://esm.sh/react@19.0.0",
+    "react/": "https://esm.sh/react@19.0.0/",
+    "react-dom": "https://esm.sh/react-dom@19.0.0",
+    "react-dom/": "https://esm.sh/react-dom@19.0.0/",
+    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
+    "recharts": "https://esm.sh/recharts@2.15.0?external=react,react-dom",
+    "lucide-react": "https://esm.sh/lucide-react@0.470.0?external=react",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.11?external=react,react-dom",
+    "clsx": "https://esm.sh/clsx@2.1.1",
+    "tailwind-merge": "https://esm.sh/tailwind-merge@2.5.4"
   }
 }
 </script>
@@ -131,10 +137,11 @@
     <script type="module" src="index.tsx"></script>
     
     <footer class="legal-footer">
-        <div class="opacity-30">&copy; 2024 SomnoAI Digital Sleep Lab. All rights reserved.</div>
-        <div class="mt-4">
+        <div class="opacity-30">&copy; 2024 Somno Digital Sleep Lab. All rights reserved.</div>
+        <div class="mt-4 flex flex-wrap justify-center gap-2">
             <a href="/privacy">Privacy Policy</a>
             <a href="/terms">Terms of Service</a>
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer">GitHub Project</a>
         </div>
         <div class="dev-info">
             Developer Contact: <a href="mailto:ongyuze1401@gmail.com">ongyuze1401@gmail.com</a> | 
