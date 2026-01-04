@@ -139,7 +139,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
         </GlassCard>
       </div>
 
-      {/* 法律与支持 - Using Absolute Links with Internal Fallback */}
+      {/* 法律与支持 */}
       <div className="space-y-4">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4">{t.legal}</h3>
         <GlassCard className="divide-y divide-white/5 border-slate-700/20">
@@ -160,7 +160,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
             statusColor="indigo" 
           />
           <div className="flex bg-slate-950/20 py-2 px-6 justify-between items-center group/fallback">
-             <span className="text-[9px] font-bold text-slate-500 group-hover/fallback:text-indigo-400 transition-colors">{lang === 'zh' ? '无法访问链接？尝试本地净化版本：' : 'Link not opening? Try local version:'}</span>
+             <span className="text-[9px] font-bold text-slate-500 group-hover/fallback:text-indigo-400 transition-colors">{lang === 'zh' ? '无法访问链接？尝试本地版本：' : 'Link not opening? Try local version:'}</span>
              <div className="flex gap-2">
                 <button onClick={() => onNavigate('privacy')} className="text-[8px] font-black text-slate-600 hover:text-white uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md">{lang === 'zh' ? '隐私' : 'PRIVACY'}</button>
                 <button onClick={() => onNavigate('terms')} className="text-[8px] font-black text-slate-600 hover:text-white uppercase tracking-tighter bg-white/5 px-2 py-1 rounded-md">{lang === 'zh' ? '条款' : 'TERMS'}</button>
@@ -177,7 +177,7 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
         </GlassCard>
       </div>
 
-      {/* 资助支持 (增强 DuitNow & TNG & PayPal 支持) */}
+      {/* 资助支持 (增强 DuitNow, TNG & PayPal) */}
       <div className="space-y-4">
         <div className="flex items-center justify-between px-4">
            <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em]">{t.funding}</h3>
@@ -198,10 +198,6 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
                   <p className="font-bold text-slate-100 tracking-tight">{t.duitNowId}</p>
                   <p className="text-[9px] text-rose-400 font-black uppercase tracking-[0.2em]">{t.transferVia}</p>
                 </div>
-              </div>
-              <div className="flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                 <span className="text-[8px] font-mono text-emerald-400/60 uppercase tracking-widest">Secure</span>
               </div>
             </div>
 
@@ -226,13 +222,10 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
             >
               {t.duitNowCopy}
             </button>
-
-            <div className="flex gap-3 items-start px-1 opacity-80">
-              <Info size={14} className="text-rose-500 shrink-0 mt-0.5" />
-              <p className="text-[9px] text-slate-400 leading-normal font-medium italic">
-                {t.duitNowInstructions}
-              </p>
-            </div>
+            
+            <p className="text-[9px] text-slate-500 leading-normal italic px-1">
+              {t.duitNowInstructions}
+            </p>
           </div>
 
           {/* TNG eWallet 模块 */}
@@ -247,14 +240,10 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
                   <p className="text-[9px] text-cyan-400 font-black uppercase tracking-[0.2em]">TNG eWallet</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-cyan-500 animate-pulse" />
-                 <span className="text-[8px] font-mono text-cyan-400/60 uppercase tracking-widest">Active</span>
-              </div>
             </div>
 
             <div 
-              onClick={() => handleCopy("+60 0187807388")}
+              onClick={() => handleCopy("+600187807388")}
               className="relative group cursor-pointer"
             >
               <div className="p-5 bg-slate-950/80 rounded-[1.5rem] border border-white/5 text-center transition-all group-hover:border-cyan-500/30 active:scale-[0.98]">
@@ -269,18 +258,15 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
             </div>
 
             <button 
-              onClick={() => handleCopy("+60 0187807388")}
+              onClick={() => handleCopy("+600187807388")}
               className="w-full py-3 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/20 rounded-xl text-cyan-400 text-[10px] font-black uppercase tracking-[0.2em] transition-all active:scale-[0.98]"
             >
               {t.tngCopy}
             </button>
-
-            <div className="flex gap-3 items-start px-1 opacity-80">
-              <Info size={14} className="text-cyan-500 shrink-0 mt-0.5" />
-              <p className="text-[9px] text-slate-400 leading-normal font-medium italic">
-                {t.tngInstructions}
-              </p>
-            </div>
+            
+            <p className="text-[9px] text-slate-500 leading-normal italic px-1">
+              {t.tngInstructions}
+            </p>
           </div>
 
           {/* PayPal 模块 */}
@@ -295,14 +281,11 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
                   <p className="text-[9px] text-blue-400 font-black uppercase tracking-[0.2em]">PayPal.me</p>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                 <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
-                 <span className="text-[8px] font-mono text-blue-400/60 uppercase tracking-widest">Global</span>
-              </div>
             </div>
 
             <div className="flex justify-center py-4">
                <div className="p-4 bg-white rounded-3xl shadow-2xl relative group overflow-hidden">
+                  {/* 使用公开的 QR 生成服务展示 PayPal.me/vyncuslim */}
                   <img 
                     src="https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=https://paypal.me/vyncuslim" 
                     alt="PayPal QR" 
@@ -321,13 +304,10 @@ export const Settings: React.FC<SettingsProps> = ({ lang, onLanguageChange, onLo
               <ExternalLink size={12} />
               {t.paypalLink}
             </button>
-
-            <div className="flex gap-3 items-start px-1 opacity-80">
-              <Info size={14} className="text-blue-500 shrink-0 mt-0.5" />
-              <p className="text-[9px] text-slate-400 leading-normal font-medium italic">
-                {t.paypalInstructions}
-              </p>
-            </div>
+            
+            <p className="text-[9px] text-slate-500 leading-normal italic px-1">
+              {t.paypalInstructions}
+            </p>
           </div>
 
           <div className="border-t border-white/5">

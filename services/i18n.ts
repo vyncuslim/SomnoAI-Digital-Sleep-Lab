@@ -73,7 +73,7 @@ export const translations = {
       source: 'View Source Code',
       funding: 'Research Funding',
       fundingDesc: 'Support Lab Maintenance',
-      fundingDisclaimer: 'Transactions are processed by third-party platforms. Somno Lab is an experimental digital environment for research and personal insight only. It is NOT a medical service and does not provide clinical diagnoses.',
+      fundingDisclaimer: 'Somno Lab is an experimental digital environment for research and personal insight only. It is NOT a medical service and does not provide clinical diagnoses. Transactions are processed by third-party platforms.',
       copySuccess: 'ID Copied to Clipboard',
       coffee: 'Buy Me a Coffee',
       coffeeDesc: 'Support with Coffee',
@@ -180,7 +180,7 @@ export const translations = {
       source: '查看源代码',
       funding: '实验室支持计划',
       fundingDesc: '支持日常运作与算力开销',
-      fundingDisclaimer: '所有转账均通过第三方支付平台完成。Somno 实验室是一个仅用于研究和个人见解的实验性数字环境。它不是医疗服务，也不提供临床诊断。',
+      fundingDisclaimer: 'Somno 实验室是一个仅用于研究和个人见解的实验性数字环境。它不是医疗服务，也不提供临床诊断。转账由第三方平台处理。',
       copySuccess: 'ID 已复制到剪贴板',
       coffee: '请作者喝杯咖啡',
       coffeeDesc: '通过咖啡支持开发者',
@@ -196,7 +196,7 @@ export const translations = {
       tngCopy: '复制 TNG 号码',
       paypalId: 'PayPal 全球支持',
       paypalLink: 'PayPal 个人资料',
-      paypalInstructions: '如何通过 PayPal 支持：请扫描二维码或点击按钮访问 PayPal 个人资料（vyncuslim）。',
+      paypalInstructions: '如何通过 PayPal 支持：请扫描二维码或点击按钮访问 PayPal 个人资料 (vyncuslim)。',
       paypalCopy: '复制 PayPal 链接'
     },
     dataEntry: {
