@@ -42,7 +42,7 @@
         <div class="mb-12 flex justify-between items-end">
             <div>
                 <h1 class="text-4xl font-black tracking-tighter italic mb-2">Privacy <span class="text-indigo-500">Protocol</span></h1>
-                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Data Security Standard v2.0</p>
+                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Data Security Compliance v2.1</p>
             </div>
             <div class="text-right">
                 <a href="/" class="text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors">← Back to Lab</a>
@@ -52,10 +52,10 @@
         <div class="glass rounded-[2.5rem] p-8 md:p-16 space-y-12 shadow-2xl relative overflow-hidden">
             <section>
                 <div class="flex items-center gap-3 mb-4">
-                    <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] mono font-bold rounded-md border border-indigo-500/20 uppercase tracking-widest">Compliance: 2025.01.12</span>
+                    <span class="px-2 py-0.5 bg-indigo-500/10 text-indigo-400 text-[10px] mono font-bold rounded-md border border-indigo-500/20 uppercase tracking-widest">更新日期: 2025.01.12</span>
                 </div>
                 <p class="text-slate-400 leading-relaxed italic">
-                    Somno Digital Sleep Lab 运行在 <strong>零后端边缘加密架构</strong> 之上。我们深知生理数据的敏感性，本协议旨在透明化说明我们如何通过 Google Fit API 访问数据以及我们对 Google “有限使用”政策的坚定承诺。
+                    Somno Digital Sleep Lab (sleepsomno.com) 承诺保护您的个人隐私。本协议详细披露我们如何通过 Google API 访问您的健康数据，以及我们如何利用这些生理信号提供科研级的睡眠分析。
                 </p>
             </section>
 
@@ -63,41 +63,41 @@
             <div class="bg-indigo-600/10 border border-indigo-500/20 rounded-2xl p-6 md:p-8 space-y-4">
                 <div class="flex items-center gap-2 mb-2">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="#818cf8"><path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z"/></svg>
-                    <h3 class="text-xs font-black uppercase tracking-[0.3em] text-indigo-300">Google API 有限使用披露</h3>
+                    <h3 class="text-xs font-black uppercase tracking-[0.3em] text-indigo-300">Google API 有限使用披露 (Limited Use Disclosure)</h3>
                 </div>
                 <p class="text-sm text-slate-300 leading-relaxed font-medium">
                     Somno 对从 Google API 接收的信息的使用和向任何其他应用的转移，将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" class="underline hover:text-white transition-colors">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。
                 </p>
                 <p class="text-xs text-slate-400 leading-relaxed bg-black/20 p-4 rounded-xl border border-white/5">
-                    <strong>核心承诺：</strong> 我们绝不将您的健康数据用于广告投放、用户画像或共享给任何第三方数据经纪人。所有数据仅用于在本应用内提供睡眠分析。
+                    <strong>隐私承诺：</strong> 我们绝不将您的 Google Fit 数据用于广告投放、个人画像或任何形式的第三方商业交易。您的所有健康指标仅用于生成本应用内的睡眠报告。
                 </p>
             </div>
 
             <section>
                 <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">1. 遥测架构 (数据访问范围)</h2>
+                    <h2 class="text-xl font-bold tracking-tight uppercase">1. 数据访问范围 (Data Accessed)</h2>
                 </div>
-                <p class="text-slate-400 mb-6 leading-relaxed">为了合成您的“睡眠架构图谱”，实验室请求访问以下只读数据集：</p>
+                <p class="text-slate-400 mb-6 leading-relaxed">本实验室仅请求访问以下数据集的只读权限：</p>
                 <ul class="space-y-6 text-slate-400">
-                    <li class="flex gap-4 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
-                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">DATA_SEG_01</div>
+                    <li class="flex gap-4 bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">SCOPE_01</div>
                         <div>
-                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">睡眠阶段 (com.google.sleep.segment)</strong>
-                            <p class="text-xs leading-relaxed">读取深度睡眠、快速眼动 (REM) 和浅睡阶段。这是 AI 解析睡眠架构的基础输入。</p>
+                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">睡眠架构 (com.google.sleep.segment)</strong>
+                            <p class="text-xs leading-relaxed">用于提取深度睡眠、REM、浅睡及清醒阶段。这些数据是 AI 合成睡眠评分的核心。 </p>
                         </div>
                     </li>
-                    <li class="flex gap-4 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
-                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">DATA_SEG_02</div>
+                    <li class="flex gap-4 bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">SCOPE_02</div>
                         <div>
-                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">心率遥测 (com.google.heart_rate.bpm)</strong>
-                            <p class="text-xs leading-relaxed">读取静息心率 (RHR) 及波动，用于评估生理恢复程度和心血管系统在睡眠中的状态。</p>
+                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">生理频率 (com.google.heart_rate.bpm)</strong>
+                            <p class="text-xs leading-relaxed">用于读取静息心率及其波动。我们利用此数据评估您的自主神经系统恢复状态。</p>
                         </div>
                     </li>
-                    <li class="flex gap-4 bg-white/[0.02] p-4 rounded-2xl border border-white/5">
-                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">DATA_SEG_03</div>
+                    <li class="flex gap-4 bg-white/[0.02] p-5 rounded-2xl border border-white/5">
+                        <div class="mono text-indigo-500 text-sm font-bold mt-1 shrink-0">SCOPE_03</div>
                         <div>
-                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">代谢流量 (com.google.calories.expended)</strong>
-                            <p class="text-xs leading-relaxed">将能量消耗与睡眠效率关联，从代谢维度提供多维度的健康洞察。</p>
+                            <strong class="text-white uppercase text-xs tracking-widest block mb-1">能量代谢 (com.google.calories.expended)</strong>
+                            <p class="text-xs leading-relaxed">用于将全天能量消耗与睡眠效率进行交叉对比，为您提供更精准的恢复建议。</p>
                         </div>
                     </li>
                 </ul>
@@ -105,39 +105,39 @@
 
             <section>
                 <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">2. 处理逻辑 (数据用途)</h2>
+                    <h2 class="text-xl font-bold tracking-tight uppercase">2. 处理逻辑与用途 (Usage)</h2>
                 </div>
                 <p class="text-slate-400 leading-relaxed mb-4">
                     访问的数据通过以下流程进行处理：
                 </p>
-                <ul class="list-disc pl-6 space-y-2 text-sm text-slate-400">
-                    <li><span class="text-white font-bold">睡眠架构分析：</span> 计算睡眠阶段比例，生成主观“睡眠分数”。</li>
-                    <li><span class="text-white font-bold">生理投影：</span> 利用本地 AI 逻辑预测次日的认知状态和体力恢复情况。</li>
-                    <li><span class="text-white font-bold">神经合成：</span> 将脱敏后的指标作为加密瞬时负载发送至 Gemini API，生成个性化的健康建议。</li>
+                <ul class="list-disc pl-6 space-y-3 text-sm text-slate-400">
+                    <li><span class="text-white font-bold">睡眠架构深度分析：</span> 分析不同睡眠阶段的连续性，合成您的每日数字化睡眠得分。</li>
+                    <li><span class="text-white font-bold">生理恢复投影：</span> 利用 AI 神经引擎预测次日的认知负荷、专注力水平及体能恢复程度。</li>
+                    <li><span class="text-white font-bold">个性化建议：</span> 基于脱敏后的指标，为您提供包括睡眠环境优化、营养补充（如镁）等在内的科学建议。</li>
                 </ul>
             </section>
 
             <section>
                 <div class="section-header py-2">
-                    <h2 class="text-xl font-bold tracking-tight uppercase">3. 零后端与持久化策略</h2>
+                    <h2 class="text-xl font-bold tracking-tight uppercase">3. 零后端与边缘计算架构 (Zero-Backend)</h2>
                 </div>
                 <p class="text-slate-400 leading-relaxed mb-6">
-                    本实验室采用 <span class="highlight">隐私优先架构</span>，确保数据仅在您的浏览器中流动：
+                    本实验室采用 <span class="highlight">隐私优先的分布式设计</span>，确保您的数据绝对主权：
                 </p>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div class="p-5 bg-black/40 border border-white/5 rounded-2xl">
-                        <p class="text-[10px] mono uppercase text-indigo-400 font-black tracking-widest mb-3">传输安全</p>
-                        <p class="text-xs text-slate-500 leading-relaxed">数据通过 SSL/TLS 直接从 Google 服务器同步到您的浏览器。Somno 不设立任何后端数据库。</p>
+                        <p class="text-[10px] mono uppercase text-indigo-400 font-black tracking-widest mb-3">无后端数据库</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">Somno 绝不在云端存储您的生理指标。数据仅存在于您的设备前端。</p>
                     </div>
                     <div class="p-5 bg-black/40 border border-white/5 rounded-2xl">
-                        <p class="text-[10px] mono uppercase text-indigo-400 font-black tracking-widest mb-3">瞬时存储</p>
-                        <p class="text-xs text-slate-500 leading-relaxed">生理指标仅暂存于内存 (sessionStorage) 中，页面关闭或手动退出时即刻物理销毁。</p>
+                        <p class="text-[10px] mono uppercase text-indigo-400 font-black tracking-widest mb-3">会话级隔离</p>
+                        <p class="text-xs text-slate-500 leading-relaxed">所有健康数据流仅暂存于 <code class="mono bg-white/5 px-1 rounded">sessionStorage</code>。页面关闭或手动登出，所有数据即刻物理销毁。</p>
                     </div>
                 </div>
             </section>
 
             <footer class="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
-                <p class="text-[10px] mono uppercase tracking-widest">Chief Privacy Officer: Vyncus Lim</p>
+                <p class="text-[10px] mono uppercase tracking-widest">首席隐私官: Vyncus Lim</p>
                 <p class="text-[10px] mono uppercase tracking-widest">ongyuze1401@gmail.com</p>
                 <p class="text-[10px] mono uppercase tracking-widest">© 2025 SOMNO LAB</p>
             </footer>
