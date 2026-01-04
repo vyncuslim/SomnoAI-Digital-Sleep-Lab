@@ -9,11 +9,12 @@ import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { 
   User, Loader2, Cloud, PlusCircle, TriangleAlert, 
-  Microscope, Activity, Zap, Compass 
+  Activity, Zap, Compass 
 } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './components/Logo.tsx';
 
 const App: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
@@ -42,15 +43,11 @@ const App: React.FC = () => {
       }
     };
 
-    // 初始加载检查
     handleLocationChange();
-
-    // 监听后退/前进按钮
     window.addEventListener('popstate', handleLocationChange);
     return () => window.removeEventListener('popstate', handleLocationChange);
   }, []);
 
-  // 切换视图并更新 URL
   const handleViewChange = (view: ViewType) => {
     setActiveView(view);
     const pathMap: Record<ViewType, string> = {
@@ -108,7 +105,7 @@ const App: React.FC = () => {
       onProgress?.('error');
       const errMsg = err.message || "";
       if (errMsg.includes("PERMISSION_DENIED")) {
-        showToast("【关键权限缺失】请确保已在授权页面勾选睡眠和心率访问权限。");
+        showToast("【关键权限缺失】请勾选睡眠和心率访问权限。");
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
         showToast("【信号未找到】Google Fit 中尚无最近的有效睡眠记录。");
       } else {
@@ -153,7 +150,7 @@ const App: React.FC = () => {
         <div className="flex flex-col items-center justify-center h-[70vh] gap-10 text-center px-8">
           <div className="relative">
              <div className="w-24 h-24 border-4 border-indigo-500/10 border-t-indigo-500 rounded-full animate-spin"></div>
-             <Microscope size={32} className="absolute inset-0 m-auto text-indigo-400 animate-pulse" />
+             <Logo size={40} className="absolute inset-0 m-auto" animated />
           </div>
           <div className="space-y-4">
             <h2 className="text-2xl font-black text-white italic tracking-tighter uppercase">实验室计算中</h2>
@@ -180,7 +177,7 @@ const App: React.FC = () => {
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
             className="relative p-12 bg-indigo-600/5 border border-indigo-500/10 rounded-[4rem]"
           >
-            <Cloud size={96} className="text-indigo-400 opacity-20" />
+            <Logo size={96} className="opacity-40" animated />
             <div className="absolute inset-0 bg-indigo-500/10 blur-[80px] rounded-full animate-pulse"></div>
           </motion.div>
           <div className="space-y-4">
@@ -237,7 +234,7 @@ const App: React.FC = () => {
         <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-10 pt-4 pointer-events-none">
           <div className="max-w-md mx-auto glass-morphism border border-white/10 rounded-[3rem] p-2 flex justify-between shadow-[0_40px_80px_-20px_rgba(0,0,0,1)] pointer-events-auto">
             {[
-              { id: 'dashboard', icon: Microscope, label: '实验室' },
+              { id: 'dashboard', icon: Logo, label: '实验室' },
               { id: 'calendar', icon: Activity, label: '趋势' },
               { id: 'assistant', icon: Zap, label: '洞察' },
               { id: 'profile', icon: User, label: '设置' }
@@ -253,7 +250,12 @@ const App: React.FC = () => {
                     className="absolute -top-1 w-12 h-1 bg-indigo-500 rounded-full shadow-[0_0_15px_#6366f1]"
                   />
                 )}
-                <nav.icon size={22} className={activeView === nav.id ? 'scale-110' : ''} />
+                {nav.id === 'dashboard' ? (
+                  <nav.icon size={22} className={activeView === nav.id ? 'scale-110 grayscale-0' : 'grayscale opacity-70'} />
+                ) : (
+                  // @ts-ignore
+                  <nav.icon size={22} className={activeView === nav.id ? 'scale-110' : ''} />
+                )}
                 <span className="text-[9px] font-black uppercase tracking-[0.2em]">{nav.label}</span>
               </button>
             ))}

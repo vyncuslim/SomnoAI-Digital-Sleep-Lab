@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
-import { Moon, ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert } from 'lucide-react';
+import { ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { googleFit } from '../services/googleFitService.ts';
+import { Logo } from './Logo.tsx';
 
 interface AuthProps {
   onLogin: () => void;
@@ -49,16 +51,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
         transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
         className="absolute top-[-20%] left-[-10%] w-[100%] h-[100%] bg-indigo-600/10 blur-[180px] rounded-full"
       />
-      <motion.div 
-        animate={{ 
-          scale: [1, 1.3, 1],
-          opacity: [0.05, 0.15, 0.05],
-          x: [0, -30, 0],
-          y: [0, 60, 0]
-        }}
-        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        className="absolute bottom-[-10%] right-[-10%] w-[80%] h-[80%] bg-blue-600/10 blur-[150px] rounded-full"
-      />
       
       <motion.div 
         initial={{ opacity: 0, y: 30 }}
@@ -67,19 +59,19 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
         className="w-full max-w-md space-y-8 text-center mb-8 relative z-10"
       >
         <motion.div 
-          animate={{ y: [0, -10, 0] }}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-          className="inline-flex p-8 bg-indigo-600/10 rounded-[3rem] border border-indigo-500/20 shadow-[0_0_100px_rgba(79,70,229,0.2)]"
+          animate={{ scale: [1, 1.05, 1], rotate: [0, 2, 0, -2, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          className="inline-flex p-10 bg-indigo-600/5 rounded-[3.5rem] border border-indigo-500/10 shadow-[0_0_120px_rgba(79,70,229,0.15)] backdrop-blur-sm"
         >
-          <Moon className="text-indigo-400 fill-indigo-400/20" size={80} />
+          <Logo size={120} animated />
         </motion.div>
         
         <div className="space-y-4">
-          <h1 className="text-4xl font-black tracking-tighter text-white italic leading-tight">
-            SomnoAI Digital <span className="text-indigo-400">Sleep Lab</span>
+          <h1 className="text-5xl font-black tracking-tighter text-white italic leading-tight">
+            SomnoAI <span className="text-indigo-400 block sm:inline">Lab</span>
           </h1>
-          <p className="text-slate-400 font-medium tracking-wide leading-relaxed px-8 text-sm">
-            全方位的数字化睡眠实验分析平台
+          <p className="text-slate-400 font-medium tracking-wide leading-relaxed px-8 text-sm uppercase">
+            数字化睡眠实验与生理架构推演
           </p>
         </div>
       </motion.div>
@@ -98,7 +90,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
                 <p className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">安全性声明</p>
               </div>
               <p className="text-[11px] text-slate-300 leading-relaxed">
-                您的健康数据仅在浏览器本地会话中同步处理。我们不设任何后端服务器，数据在页面关闭后立即清除。
+                数据仅在浏览器本地会话中同步处理。我们不设后端服务器，数据在页面关闭后立即清除。
               </p>
             </div>
 
@@ -119,7 +111,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
                 whileTap={{ scale: 0.98 }}
                 onClick={handleGoogleLogin}
                 disabled={isLoggingIn}
-                className={`w-full py-5 rounded-[2rem] flex items-center justify-center gap-4 transition-all shadow-2xl font-black text-sm uppercase tracking-widest border ${
+                className={`w-full py-5 rounded-[2.5rem] flex items-center justify-center gap-4 transition-all shadow-2xl font-black text-sm uppercase tracking-widest border ${
                   isLoggingIn 
                   ? 'bg-slate-800 text-slate-500 border-white/5' 
                   : 'bg-white text-slate-950 border-white'
@@ -138,16 +130,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
             </div>
           </div>
         </GlassCard>
-      </motion.div>
-      
-      <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 0.4 }}
-        transition={{ delay: 1 }}
-        className="mt-12 flex items-center gap-3 text-slate-600 text-[10px] font-black uppercase tracking-[0.4em]"
-      >
-        <ShieldCheck size={12} />
-        Encrypted Endpoint Connection
       </motion.div>
     </div>
   );

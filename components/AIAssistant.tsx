@@ -1,10 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Loader2, Sparkles, Binary, Microscope, MessageSquareText, ShieldAlert } from 'lucide-react';
+import { Send, Bot, User, Loader2, Sparkles, Binary, MessageSquareText, ShieldAlert } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage } from '../types.ts';
 import { chatWithCoach } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './Logo.tsx';
 
 export const AIAssistant: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -54,8 +55,8 @@ export const AIAssistant: React.FC = () => {
     <div className="flex flex-col h-[calc(100vh-140px)] pb-6 animate-in fade-in duration-700">
       <header className="flex items-center justify-between mb-8 px-2">
         <div className="flex items-center gap-4">
-          <div className="p-3.5 bg-indigo-600/10 border border-indigo-500/20 rounded-[1.25rem] shadow-2xl relative">
-            <Microscope size={24} className="text-indigo-400" />
+          <div className="p-3 bg-indigo-600/10 border border-indigo-500/20 rounded-[1.5rem] shadow-2xl relative">
+            <Logo size={32} animated />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-emerald-500 rounded-full border-2 border-[#020617] animate-pulse"></div>
           </div>
           <div>
