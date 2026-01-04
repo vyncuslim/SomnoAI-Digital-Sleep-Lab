@@ -1,139 +1,170 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Privacy Policy – SomnoAI</title>
-
+  <title>Privacy Policy – Somno Lab</title>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
   <style>
     :root {
       --bg-core: #020617;
-      --bg-radial-1: rgba(56, 189, 248, 0.08);
-      --bg-radial-2: rgba(2, 6, 23, 1);
-      --text-primary: #E5E7EB;
-      --text-secondary: #9CA3AF;
-      --link-accent: #38BDF8;
+      --indigo-glow: rgba(79, 70, 229, 0.12);
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #818cf8;
+      --glass: rgba(15, 23, 42, 0.8);
     }
 
     html, body {
       margin: 0;
       padding: 0;
-      background: radial-gradient(
-        circle at top,
-        var(--bg-radial-1),
-        var(--bg-radial-2) 60%
-      );
+      background-color: var(--bg-core);
+      background-image: 
+        radial-gradient(circle at 50% 0%, var(--indigo-glow) 0%, transparent 60%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 30px 30px, 30px 30px;
       color: var(--text-primary);
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
-        Roboto, Inter, Helvetica, Arial, sans-serif;
+      font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
       line-height: 1.7;
     }
 
     body {
-      max-width: 860px;
+      max-width: 900px;
       margin: 0 auto;
-      padding: 48px 24px 80px;
+      padding: 80px 24px;
+    }
+
+    .glass-card {
+      background: var(--glass);
+      backdrop-filter: blur(32px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 2.5rem;
+      padding: 4rem;
+      box-shadow: 0 50px 100px -20px rgba(0, 0, 0, 0.8);
     }
 
     h1 {
-      font-size: 2.2rem;
-      margin-bottom: 0.3em;
-      letter-spacing: -0.02em;
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      margin-bottom: 0.5rem;
+      font-style: italic;
+    }
+
+    .subtitle {
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.3em;
+      margin-bottom: 3rem;
+      display: block;
     }
 
     h2 {
-      margin-top: 2.2em;
+      margin-top: 2.5rem;
       font-size: 1.25rem;
-      color: #F1F5F9;
+      font-weight: 700;
+      color: var(--accent);
+      border-bottom: 1px solid rgba(129, 140, 248, 0.2);
+      padding-bottom: 0.5rem;
+      margin-bottom: 1.25rem;
     }
 
     p, li {
       color: var(--text-secondary);
-      font-size: 0.95rem;
+      font-size: 1rem;
+      margin-bottom: 1.2rem;
     }
 
     ul {
-      padding-left: 1.2em;
+      padding-left: 1.25rem;
     }
 
     a {
-      color: var(--link-accent);
+      color: var(--accent);
       text-decoration: none;
+      border-bottom: 1px solid rgba(129, 140, 248, 0.3);
+      transition: all 0.2s;
     }
 
     a:hover {
-      text-decoration: underline;
+      color: #a5b4fc;
+      border-bottom-color: #a5b4fc;
     }
 
-    strong {
-      color: var(--text-primary);
+    .compliance-box {
+      background: rgba(79, 70, 229, 0.05);
+      border: 1px solid rgba(79, 70, 229, 0.2);
+      padding: 1.5rem;
+      border-radius: 1.25rem;
+      margin: 2rem 0;
+    }
+
+    .footer {
+      margin-top: 4rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.4em;
     }
   </style>
 </head>
-
 <body>
-  <h1>Privacy Policy</h1>
-  <p><strong>Last Updated:</strong> January 4, 2026</p>
+  <div class="glass-card">
+    <h1>Somno Lab</h1>
+    <span class="subtitle">Privacy Policy • v2025.01.04</span>
+    
+    <p><strong>Last Updated:</strong> January 4, 2025</p>
 
-  <h2>1. Data Access</h2>
-  <p>
-    SomnoAI accesses Google user data <strong>only after explicit user consent</strong>.
-    The data accessed may include:
-  </p>
-  <ul>
-    <li>Sleep Segments</li>
-    <li>Heart Rate</li>
-    <li>Activity Energy Expenditure</li>
-  </ul>
+    <div class="compliance-box">
+      <p style="margin: 0; color: #cbd5e1; font-size: 0.9rem;">
+        Somno Lab’s use of information received from Google APIs will adhere to the 
+        <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use" target="_blank">Google API Services User Data Policy</a>, 
+        including the Limited Use requirements.
+      </p>
+    </div>
 
-  <h2>2. Data Usage</h2>
-  <p>
-    The accessed data is used solely for:
-  </p>
-  <ul>
-    <li>Personal sleep visualization</li>
-    <li>AI-based sleep pattern analysis</li>
-    <li>Generating individualized insights within the application</li>
-  </ul>
-  <p>
-    SomnoAI does <strong>not</strong> use Google user data for advertising,
-    marketing, resale, or AI model training.
-  </p>
+    <h2>1. Data Accessed</h2>
+    <p>
+      Somno Lab accesses your Google Health data <strong>only with explicit authorization</strong> via the following scopes:
+    </p>
+    <ul>
+      <li><strong>fitness.sleep.read</strong>: To analyze sleep cycles and patterns.</li>
+      <li><strong>fitness.heart_rate.read</strong>: To monitor resting heart rate for recovery insights.</li>
+      <li><strong>fitness.activity.read</strong>: To correlate metabolic energy expenditure with sleep quality.</li>
+    </ul>
 
-  <h2>3. Data Storage</h2>
-  <p>
-    SomnoAI operates with a <strong>zero-server-storage architecture</strong>.
-  </p>
-  <ul>
-    <li>No user data is stored on external servers</li>
-    <li>All processing occurs locally in the browser session</li>
-    <li>Data is stored temporarily in <strong>sessionStorage</strong></li>
-    <li>Data is permanently deleted upon logout or tab closure</li>
-  </ul>
+    <h2>2. Data Usage</h2>
+    <p>We process your data exclusively for:</p>
+    <ul>
+      <li>Generating personalized sleep lab reports and biometric visualizations.</li>
+      <li>Synthesizing de-identified metrics via Google Gemini AI for health recommendations.</li>
+      <li>Local session-based historical trend analysis.</li>
+    </ul>
+    <p>We do <strong>not</strong> use your data for advertising, marketing, or profiling.</p>
 
-  <h2>4. Data Sharing</h2>
-  <p>
-    SomnoAI does not share Google user data with third parties.
-  </p>
+    <h2>3. Data Storage & Security</h2>
+    <p>Somno Lab utilizes a <strong>zero-backend architecture</strong>:</p>
+    <ul>
+      <li>No health data is ever transmitted to or stored on our servers.</li>
+      <li>Data is temporarily cached in your browser's <code>sessionStorage</code>.</li>
+      <li>All synchronized data is purged immediately upon logout or tab closure.</li>
+    </ul>
 
-  <h2>5. User Control & Rights</h2>
-  <p>
-    Users may revoke SomnoAI’s access at any time via their Google Account settings.
-  </p>
+    <h2>4. Data Sharing</h2>
+    <p>We never sell or share your personal health data with third parties for commercial purposes.</p>
 
-  <h2>6. Google API Limited Use Disclosure</h2>
-  <p>
-    SomnoAI’s use of information received from Google APIs adheres to the
-    <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" target="_blank">
-      Google API Services User Data Policy
-    </a>,
-    including the Limited Use requirements.
-  </p>
+    <h2>5. User Rights</h2>
+    <p>You may revoke Somno Lab’s access at any time via your <a href="https://myaccount.google.com/permissions" target="_blank">Google Account Permissions</a>.</p>
 
-  <h2>7. Contact</h2>
-  <p>
-    For any privacy-related inquiries, please contact:<br />
-    <strong>ongyuze1401@gmail.com</strong>
-  </p>
+    <div style="margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">
+      <a href="/" style="border: none; font-size: 0.8rem; color: #475569;">← Back to Somno Lab</a>
+    </div>
+  </div>
+  <p class="footer">© 2025 Somno Lab • Secure Edge Environment</p>
 </body>
 </html>
