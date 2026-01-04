@@ -3,127 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>隐私权政策 - SomnoAI Digital Sleep Lab</title>
+    <title>隐私权政策 - SomnoAI 数字化睡眠实验室</title>
     <style>
-        body { 
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
-            background-color: #020617; 
-            color: #f1f5f9; 
-            line-height: 1.7; 
-            margin: 0; 
-            padding: 2rem; 
-            display: flex; 
-            justify-content: center; 
-        }
-        .wrapper { 
-            max-width: 850px; 
-            width: 100%; 
-            background: #0f172a; 
-            border: 1px solid rgba(255,255,255,0.1); 
-            border-radius: 24px; 
-            padding: 40px; 
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); 
-            margin-top: 2rem; 
-        }
-        h1 { 
-            font-size: 2.2rem; 
-            font-weight: 800; 
-            color: #fff; 
-            margin-top: 0; 
-            border-bottom: 3px solid #4f46e5; 
-            padding-bottom: 15px; 
-            letter-spacing: -0.02em;
-        }
-        h2 { 
-            color: #818cf8; 
-            font-size: 1.4rem; 
-            margin-top: 2.5rem; 
-            font-weight: 700;
-        }
-        p, li { 
-            color: #94a3b8; 
-            font-size: 1rem; 
-            margin-bottom: 1rem;
-        }
-        ul { padding-left: 1.5rem; }
-        .disclosure { 
-            background: rgba(79, 70, 229, 0.1); 
-            border: 1px solid rgba(79, 70, 229, 0.4); 
-            padding: 24px; 
-            border-radius: 16px; 
-            margin: 24px 0; 
-        }
-        .disclosure h3 { 
-            margin-top: 0; 
-            color: #fff; 
-            font-size: 1.1rem; 
-        }
-        .disclosure p { color: #c7d2fe; margin-bottom: 0; font-style: italic; font-size: 0.9rem; }
-        a { 
-            color: #818cf8; 
-            text-decoration: none; 
-            font-weight: bold; 
-            transition: color 0.2s;
-        }
-        a:hover { color: #a5b4fc; text-decoration: underline; }
-        .footer { 
-            text-align: center; 
-            margin-top: 50px; 
-            padding-top: 25px; 
-            border-top: 1px solid rgba(255,255,255,0.05); 
-            font-size: 0.85rem; 
-            color: #475569;
-        }
+        body { font-family: -apple-system, sans-serif; background-color: #020617; color: #f1f5f9; line-height: 1.8; padding: 2rem; display: flex; justify-content: center; }
+        .wrapper { max-width: 800px; width: 100%; background: #0f172a; border: 1px solid rgba(255,255,255,0.1); border-radius: 24px; padding: 40px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+        h1 { font-size: 2.2rem; border-bottom: 3px solid #4f46e5; padding-bottom: 15px; margin-bottom: 2rem; }
+        h2 { color: #818cf8; font-size: 1.4rem; margin-top: 2.5rem; border-left: 5px solid #4f46e5; padding-left: 15px; }
+        p, li { color: #94a3b8; font-size: 1rem; }
+        .disclosure { background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.4); padding: 24px; border-radius: 16px; margin: 24px 0; }
+        a { color: #818cf8; text-decoration: none; font-weight: bold; }
+        .footer { text-align: center; margin-top: 50px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 25px; font-size: 0.85rem; color: #475569; }
     </style>
 </head>
 <body>
     <div class="wrapper">
-        <h1>隐私权政策 (Privacy Policy)</h1>
-        <p><strong>最后更新日期：</strong> 2024年3月25日</p>
-
-        <p>欢迎使用 SomnoAI Digital Sleep Lab。我们非常重视您的隐私。本政策旨在说明我们如何处理您的个人健康数据。本应用是一个纯前端的数字实验室，专注于保护您的生理隐私。</p>
+        <h1>隐私权政策</h1>
+        <p><strong>Google API 合规更新日期：</strong> 2024年5月22日</p>
 
         <div class="disclosure">
-            <h3>Google API 有限使用披露 (Limited Use Disclosure)</h3>
-            <p>SomnoAI 对从 Google API 接收的信息的使用和传输将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" target="_blank" rel="noopener">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。您的数据绝不会被用于广告投放、个人画像构建或出售给第三方机构。</p>
+            <h3>Google API 有限使用披露</h3>
+            <p>SomnoAI 严格遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" target="_blank" rel="noopener">Google API 服务用户数据政策</a>。我们坚持隐私优先，不设立任何后端健康数据库。</p>
         </div>
 
-        <h2>1. 数据访问与收集</h2>
-        <p>当您选择“接入 Google Fit”时，本应用会请求访问以下数据：</p>
-        <ul>
-            <li><strong>睡眠分段数据：</strong> 用于分析您的睡眠阶段（深睡、REM、浅睡、清醒）。</li>
-            <li><strong>心率数据：</strong> 用于计算静息心率及其在睡眠期间的变化趋势。</li>
-            <li><strong>活动消耗数据：</strong> 用于评估全天能耗对睡眠质量的影响。</li>
-        </ul>
-        <p>这些数据的获取是基于您的显式授权，且仅用于为您生成数字化的睡眠实验报告。</p>
+        <h2>1. 数据访问说明 (Data Accessed)</h2>
+        <p>我们请求访问您的 Google Fit 睡眠分期、心率脉搏及能量代谢数据。这些数据是为您提供专业分析所必需的最小数据集。</p>
 
-        <h2>2. 数据处理与存储声明</h2>
-        <p><strong>零服务器架构 (Zero Backend)：</strong> 这是 SomnoAI 的核心隐私承诺。本应用不设后端服务器，不具备云端持久化存储能力。所有数据流均在您的浏览器本地内存中实时处理。</p>
-        <ul>
-            <li><strong>会话存储：</strong> 数据仅保存在浏览器的 <code>sessionStorage</code> 中。</li>
-            <li><strong>自动抹除：</strong> 一旦您关闭浏览器标签页或点击“退出登录”，所有从 Google Fit 同步的数据将立即从您的设备中永久消失，无法找回。</li>
-        </ul>
+        <h2>2. 数据使用用途 (Data Usage)</h2>
+        <p>数据仅用于本地计算睡眠评分、AI 合成健康洞察以及绘制生理趋势图。我们严禁将数据用于非功能性的商业用途。</p>
 
-        <h2>3. 数据的共享与披露</h2>
-        <p>我们<strong>不会</strong>与任何第三方共享、出售、出租或交易您的健康数据。您的所有生理信号仅供您本人在当前会话中查阅。</p>
-
-        <h2>4. AI 洞察服务</h2>
-        <p>应用内集成 Gemini AI 引擎为您提供睡眠分析。在此过程中，系统仅将必要的脱敏指标（如：深睡比例、静息心率数值）发送给 AI 模型以生成建议，不会附带任何身份识别信息（如姓名、邮件地址）。</p>
-
-        <h2>5. 撤回授权与权利</h2>
-        <p>您可以随时通过以下方式停止数据收集：</p>
-        <ul>
-            <li>在应用设置中点击“退出并重载”。</li>
-            <li>在您的 Google 账号设置中的“安全性”选项下，撤销对 SomnoAI 的授权。</li>
-        </ul>
-
-        <h2>6. 联系我们</h2>
-        <p>如果您对本隐私政策有任何疑问，请联系开发者：<br>
-        <strong>Email:</strong> ongyuze1401@gmail.com</p>
+        <h2>3. 存储保留与安全声明 (Storage & Sharing)</h2>
+        <p>所有数据流转仅限于本地浏览器环境。我们不与第三方广告商或数据代理商共享您的生理指标。会话结束（登出或页面关闭）即永久销毁。</p>
 
         <div class="footer">
             &copy; 2024 SomnoAI Digital Sleep Lab. <br>
-            <a href="https://sleepsomno.com">← 返回实验室主页</a>
+            <a href="https://sleepsomno.com">← 返回主页</a>
         </div>
     </div>
 </body>

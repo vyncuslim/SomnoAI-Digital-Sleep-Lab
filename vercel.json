@@ -4,10 +4,6 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/googlee47ef5d2eacdf45a.html",
-      "destination": "/googlee47ef5d2eacdf45a.html"
-    },
-    {
       "source": "/privacy",
       "destination": "/privacy.html"
     },
@@ -16,23 +12,7 @@
       "destination": "/terms.html"
     },
     {
-      "source": "/Settings",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/setting",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/AIAssistant",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/AlAssistant",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/((?!privacy|terms|Settings|setting|AIAssistant|AlAssistant|googlee47ef5d2eacdf45a|assets|favicon).*)",
+      "source": "/((?!privacy|terms|robots|sitemap|assets|favicon|google|sw|manifest).* )",
       "destination": "/index.html"
     }
   ]

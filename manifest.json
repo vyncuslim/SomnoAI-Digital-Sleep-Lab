@@ -1,0 +1,23 @@
+
+{
+  "name": "Somno Digital Sleep Lab",
+  "short_name": "Somno Lab",
+  "description": "AI-powered digital sleep experiment and physiological insight platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#020617",
+  "icons": [
+    {
+      "src": "https://sleepsomno.com/assets/logo.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://sleepsomno.com/assets/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

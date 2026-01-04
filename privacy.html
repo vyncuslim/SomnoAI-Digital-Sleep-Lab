@@ -1,56 +1,80 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>隐私权政策 - SomnoAI Digital Sleep Lab</title>
+    <title>隐私权政策 - SomnoAI 数字化睡眠实验室</title>
     <style>
         :root { --bg: #020617; --surface: #0f172a; --primary: #4f46e5; --text: #f1f5f9; --text-dim: #94a3b8; }
-        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; margin: 0; padding: 2rem; display: flex; justify-content: center; }
-        .wrapper { max-width: 800px; width: 100%; background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; padding: 3rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        h1 { font-size: 2.2rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 2rem; }
-        h2 { color: #818cf8; margin-top: 2.5rem; font-size: 1.4rem; }
-        p, li { color: var(--text-dim); font-size: 1rem; margin-bottom: 1.2rem; }
-        .limited-use { background: rgba(79, 70, 229, 0.15); border: 1px solid var(--primary); padding: 2rem; border-radius: 1.5rem; margin: 2rem 0; }
-        .limited-use h3 { margin-top: 0; color: #fff; font-size: 1.1rem; }
-        .limited-use p { margin-bottom: 0; font-style: italic; color: #c7d2fe; font-size: 0.9rem; }
-        a { color: #818cf8; text-decoration: none; font-weight: 600; }
-        a:hover { text-decoration: underline; }
+        body { font-family: -apple-system, system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.8; margin: 0; padding: 2rem; display: flex; justify-content: center; }
+        .wrapper { max-width: 850px; width: 100%; background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; padding: 3rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
+        h1 { font-size: 2.4rem; border-bottom: 4px solid var(--primary); padding-bottom: 1rem; margin-bottom: 2rem; font-weight: 800; letter-spacing: -0.02em; }
+        h2 { color: #818cf8; margin-top: 2.5rem; font-size: 1.6rem; border-left: 6px solid var(--primary); padding-left: 18px; background: rgba(79, 70, 229, 0.05); padding-top: 8px; padding-bottom: 8px; font-weight: 700; }
+        p, li { color: var(--text-dim); font-size: 1.05rem; margin-bottom: 1.2rem; }
+        strong { color: #fff; font-weight: 700; }
+        .highlight-box { background: rgba(79, 70, 229, 0.15); border: 1px solid var(--primary); padding: 2rem; border-radius: 1.5rem; margin: 2rem 0; }
+        .highlight-box h3 { margin-top: 0; color: #fff; font-size: 1.2rem; margin-bottom: 1rem; }
+        .highlight-box p { margin-bottom: 0; font-style: italic; color: #c7d2fe; font-size: 0.95rem; }
+        .section-tag { font-size: 0.8rem; color: var(--primary); font-weight: 900; text-transform: uppercase; letter-spacing: 0.25em; display: block; margin-bottom: 8px; }
         hr { border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 3rem 0; }
-        .footer { text-align: center; font-size: 0.85rem; color: #475569; }
+        .footer { text-align: center; font-size: 0.9rem; color: #475569; }
+        .scope-item { font-family: monospace; color: #818cf8; background: rgba(255,255,255,0.05); padding: 2px 6px; border-radius: 4px; font-size: 0.9rem; }
+        a { color: #818cf8; text-decoration: none; border-bottom: 1px solid transparent; transition: all 0.2s; }
+        a:hover { border-bottom-color: #818cf8; }
     </style>
 </head>
 <body>
     <div class="wrapper">
-        <h1>隐私权政策 (Privacy Policy)</h1>
-        <p><strong>生效日期：</strong> 2024年3月25日</p>
+        <h1>隐私权政策</h1>
+        <p><strong>最后更新日期：</strong> 2024年5月22日</p>
         
-        <p>欢迎访问 <strong>sleepsomno.com</strong>。我们通过零后端、纯前端的数字化架构保护您的生理隐私。本政策说明我们如何处理您的 Google Fit 健康数据。</p>
+        <p>本政策旨在向您详尽说明 <strong>SomnoAI 数字化睡眠实验室</strong> (sleepsomno.com) 如何访问、使用、存储及处理通过 Google API 授权获取的健康数据。我们深知生理数据的敏感性，始终坚持隐私优先、公开透明的原则。</p>
 
-        <div class="limited-use">
-            <h3>Google API 有限使用披露 (Limited Use Disclosure)</h3>
-            <p>SomnoAI 对从 Google API 接收的信息的使用和传输将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" target="_blank" rel="noopener">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。我们绝不将您的健康信息用于广告投放、个人画像构建或出售给任何第三方。</p>
+        <div class="highlight-box">
+            <h3>Google API 有限使用披露</h3>
+            <p>本应用对从 Google API 接收的信息的使用和传输将严格遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use-policy" target="_blank" rel="noopener">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。<strong>我们承诺不将接收到的健康数据用于广告投放、个人画像构建、信用评估或任何形式的第三方数据交易。</strong></p>
         </div>
 
-        <h2>1. 数据访问与用途</h2>
-        <p>仅在您显式点击“授权接入”后，本应用才会通过 Google OAuth 访问以下指标：</p>
+        <span class="section-tag">核心披露章节 一</span>
+        <h2>1. 数据访问说明 (Data Accessed)</h2>
+        <p>当您授权连接 Google Fit 后，本应用将基于实现核心分析功能的“最小必要原则”访问以下数据范围：</p>
         <ul>
-            <li><strong>睡眠分段：</strong> 用于识别和可视化您的睡眠周期。</li>
-            <li><strong>心率数据：</strong> 用于计算静息心率及其睡眠期间的波动。</li>
-            <li><strong>活动消耗：</strong> 用于分析日常代谢对睡眠深度的影响。</li>
+            <li><strong>睡眠片段数据 (<span class="scope-item">fitness.sleep.read</span>)：</strong> 我们访问您的睡眠分期（如深睡、REM、浅睡、清醒）及各阶段的精确持续时间。</li>
+            <li><strong>心率生理指标 (<span class="scope-item">fitness.heart_rate.read</span>)：</strong> 我们访问您在静息及睡眠期间的心率数据（BPM），用于评估自主神经系统的恢复状况。</li>
+            <li><strong>能量消耗数据 (<span class="scope-item">fitness.activity.read</span>)：</strong> 我们访问您的每日活动卡路里消耗，用于多维度的生理负荷关联分析。</li>
+            <li><strong>基本个人资料：</strong> 仅读取您的姓名和头像，用于在本地实验室内为您提供个性化的交互体验。</li>
         </ul>
 
-        <h2>2. 零存储架构 (Zero Storage)</h2>
-        <p>数据仅保存在您本地浏览器的 <code>sessionStorage</code> 中。<strong>本应用没有后端服务器</strong>，这意味着一旦您关闭标签页，所有同步的数据将即刻从设备中永久抹除。</p>
+        <span class="section-tag">核心披露章节 二</span>
+        <h2>2. 数据使用方式 (Data Usage)</h2>
+        <p>我们访问上述 Google 用户数据并非为了收集，而是为了进行即时的数字化实验处理，具体用途如下：</p>
+        <ul>
+            <li><strong>本地化指标计算：</strong> 利用内置算法，在您的浏览器前端直接将心率和睡眠数据转化为“睡眠评分”与“身体恢复指数”。</li>
+            <li><strong>AI 驱动的深度洞察：</strong> 经过脱敏处理的生理数值（不含您的姓名、邮箱等身份识别信息）将被发送至 Google Gemini 模型，用于合成个性化的睡眠优化建议和次日的认知负荷预测。</li>
+            <li><strong>健康趋势可视化：</strong> 将历史数据聚合成动态图谱，辅助您进行长期的健康趋势自我监测。</li>
+        </ul>
 
-        <h2>3. 撤销权限</h2>
-        <p>您可以随时访问 <a href="https://myaccount.google.com/permissions" target="_blank">Google 安全设置</a> 撤回对 SomnoAI 的授权。</p>
+        <span class="section-tag">核心披露章节 三</span>
+        <h2>3. 数据存储、保留与安全 (Storage & Retention)</h2>
+        <p>本应用采用创新的 <strong>“零后端 (Zero-Backend)”</strong> 架构，确保数据主权始终归用户所有：</p>
+        <ul>
+            <li><strong>无云端存储：</strong> 您的任何 Google 用户数据 <strong>绝不会</strong> 被上传、传输或存储到我们的任何服务器上。</li>
+            <li><strong>本地会话缓存：</strong> 数据仅暂时驻留在您当前浏览器设备的 <code>sessionStorage</code>（临时会话存储）中。</li>
+            <li><strong>即时销毁机制：</strong> 一旦您关闭网页浏览器标签页、刷新页面或点击“登出”，所有临时存储的生理指标将立即被系统彻底抹除，无法恢复。</li>
+        </ul>
+
+        <span class="section-tag">核心披露章节 四</span>
+        <h2>4. 数据共享声明 (Sharing)</h2>
+        <p><strong>我们绝不共享您的数据。</strong> 本应用不会向任何第三方（包括广告代理商、数据经纪人或非关联研究机构）转售、披露或共享您的原始或经过处理的 Google 健康数据。所有数据流转仅限于本地计算及必要的脱敏 AI 分析接口调用。</p>
+
+        <span class="section-tag">用户控制权利</span>
+        <h2>5. 权限撤回与管理</h2>
+        <p>您可以随时在应用设置中点击“退出并重载”以清除所有本地缓存。此外，您随时可以通过您的 <a href="https://myaccount.google.com/permissions" target="_blank">Google 账号权限管理页面</a> 永久撤销对 SomnoAI 的授权。</p>
 
         <hr>
         <div class="footer">
-            &copy; 2024 SomnoAI Digital Sleep Lab | 生产域名: sleepsomno.com <br>
-            开发者联系: ongyuze1401@gmail.com
+            &copy; 2024 SomnoAI 数字化睡眠实验室 | sleepsomno.com <br>
+            隐私官联系方式: ongyuze1401@gmail.com
         </div>
     </div>
 </body>

@@ -1,0 +1,8 @@
+
+User-agent: *
+Allow: /
+Disallow: /auth/
+Disallow: /api/
+Disallow: /dist/
+
+Sitemap: https://sleepsomno.com/sitemap.xml
