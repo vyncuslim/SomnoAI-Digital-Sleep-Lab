@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Trends } from './components/Trends.tsx';
@@ -7,7 +6,6 @@ import { Settings } from './components/Settings.tsx';
 import { Auth } from './components/Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-// Add Zap to the imports
 import { LayoutGrid, Calendar as CalendarIcon, Bot, User, Loader2, Cloud, PlusCircle, TriangleAlert, Info, Microscope, Activity, Zap } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
@@ -114,7 +112,7 @@ const App: React.FC = () => {
         <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center animate-in fade-in duration-700">
           <Loader2 className="animate-spin text-indigo-500" size={64} />
           <div className="space-y-2">
-            <p className="text-xl font-black text-white tracking-tighter uppercase italic">实验室终端启动中</p>
+            <p className="text-xl font-black text-white tracking-tighter uppercase italic">SomnoAI Digital Sleep Lab 启动中</p>
             <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest">Encrypting Session Handshake...</p>
           </div>
         </div>
@@ -135,7 +133,7 @@ const App: React.FC = () => {
             <div className="absolute inset-0 bg-indigo-500/10 blur-[60px] rounded-full animate-pulse"></div>
           </div>
           <div className="max-w-xs space-y-4">
-            <h2 className="text-2xl font-black text-white italic tracking-tight">生理特征流未就绪</h2>
+            <h2 className="text-2xl font-black text-white italic tracking-tight text-glow-indigo">生理特征流未就绪</h2>
             <p className="text-[11px] text-slate-500 leading-relaxed font-black uppercase tracking-[0.2em]">
               等待 Google Fit 信号同步<br/>或手动注入体征数据进行推演
             </p>
@@ -180,7 +178,7 @@ const App: React.FC = () => {
           <div className="max-w-md mx-auto glass-morphism border border-white/5 rounded-[2.5rem] p-2 flex justify-between shadow-[0_20px_60px_-15px_rgba(0,0,0,0.8)] pointer-events-auto">
             <button onClick={() => setActiveView('dashboard')} className={`flex-1 py-3 flex flex-col items-center gap-1.5 transition-all ${activeView === 'dashboard' ? 'text-indigo-400' : 'text-slate-500'}`}>
                <Microscope size={20} className={activeView === 'dashboard' ? 'scale-110' : ''} />
-               <span className="text-[8px] font-black uppercase tracking-widest">仪表站</span>
+               <span className="text-[8px] font-black uppercase tracking-widest">实验室</span>
             </button>
             <button onClick={() => setActiveView('calendar')} className={`flex-1 py-3 flex flex-col items-center gap-1.5 transition-all ${activeView === 'calendar' ? 'text-indigo-400' : 'text-slate-500'}`}>
                <Activity size={20} className={activeView === 'calendar' ? 'scale-110' : ''} />

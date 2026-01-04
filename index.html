@@ -4,26 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SomnoAI Digital Sleep Lab - 数字化睡眠实验平台</title>
-    <!-- Google Search Console Verification -->
+    
+    <!-- Canonical Link for sleepsomno.com -->
+    <link rel="canonical" href="https://sleepsomno.com" />
+    
+    <!-- Google Search Console Verification Tags -->
     <meta name="google-site-verification" content="uYmJ_568JPu-rjsyRzA2KU2vQpiQDOvN97G5Qgd5-38" />
     <meta name="google-site-verification" content="googlee47ef5d2eacdf45a" />
     
-    <meta name="description" content="SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验服务。" />
+    <meta name="description" content="SomnoAI Digital Sleep Lab (sleepsomno.com) 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验服务。" />
     
-    <script>
-      (function() {
-        const env = { NODE_ENV: 'production', API_KEY: '' };
-        const processPolyfill = {
-          env: env,
-          versions: { node: '1.0.0' },
-          nextTick: function(fn) { setTimeout(fn, 0); },
-          browser: true,
-          platform: 'browser'
-        };
-        window.process = processPolyfill;
-        globalThis.process = processPolyfill;
-      })();
-    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
@@ -53,19 +43,6 @@
             text-shadow: 0 0 20px rgba(129, 140, 248, 0.4);
         }
 
-        @keyframes scanline {
-            0% { transform: translateY(-100%); }
-            100% { transform: translateY(100%); }
-        }
-        .scanline::after {
-            content: "";
-            position: absolute;
-            inset: 0;
-            background: linear-gradient(to bottom, transparent, rgba(79, 70, 229, 0.05), transparent);
-            animation: scanline 4s linear infinite;
-            pointer-events: none;
-        }
-
         .legal-footer {
             padding: 4rem 2rem;
             text-align: center;
@@ -80,7 +57,7 @@
             color: #818cf8;
             text-decoration: none;
             font-weight: 700;
-            transition: color 0.2s, opacity 0.2s;
+            transition: color 0.2s;
             display: inline-block;
             padding: 0.5rem 0;
             border-bottom: 1px solid transparent;
@@ -119,7 +96,7 @@
         </div>
         <div class="dev-info">
             开发者联系方式: ongyuze1401@gmail.com | 
-            官方主页: https://somno-ai-digital-sleep-lab.vercel.app
+            官方主页: https://sleepsomno.com
         </div>
     </footer>
 </body>

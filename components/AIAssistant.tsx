@@ -22,19 +22,30 @@ export const AIAssistant: React.FC = () => {
   }, [messages, isTyping]);
 
   const handleSend = async () => {
-    if (!input.trim() || isTyping) return;
-    const userMsg: ChatMessage = { role: 'user', content: input, timestamp: new Date() };
+    const trimmedInput = input.trim();
+    if (!trimmedInput || isTyping) return;
+
+    const userMsg: ChatMessage = { role: 'user', content: trimmedInput, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
+
     try {
-      const response = await chatWithCoach([...messages, userMsg].map(m => ({ 
-        role: m.role, 
-        content: m.content + " (请以冷静、专业的睡眠科学家口吻回答，尽量简短)" 
-      })));
+      // 传递完整的对话上下文以保持逻辑连贯
+      const historyForAi = messages.concat(userMsg).map(m => ({
+        role: m.role,
+        content: m.content
+      }));
+
+      const response = await chatWithCoach(historyForAi);
       setMessages(prev => [...prev, { role: 'assistant', content: response, timestamp: new Date() }]);
     } catch (err) {
-      console.error(err);
+      console.error("Chat Error:", err);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: "实验室链路发生异常中断，建议您刷新页面或检查网关连接。", 
+        timestamp: new Date() 
+      }]);
     } finally {
       setIsTyping(false);
     }
@@ -73,7 +84,7 @@ export const AIAssistant: React.FC = () => {
               <div className={`w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 border ${msg.role === 'assistant' ? 'bg-indigo-600/20 border-indigo-500/30 text-indigo-400' : 'bg-slate-800 border-white/5 text-slate-400'}`}>
                 {msg.role === 'assistant' ? <Sparkles size={14} /> : <User size={14} />}
               </div>
-              <div className={`p-4 rounded-[1.5rem] text-[13px] leading-relaxed font-medium ${msg.role === 'assistant' ? 'bg-white/5 border border-white/5 text-slate-200 rounded-tl-none italic' : 'bg-indigo-600 text-white rounded-tr-none'}`}>
+              <div className={`p-4 rounded-[1.5rem] text-[13px] leading-relaxed font-medium ${msg.role === 'assistant' ? 'bg-white/5 border border-white/5 text-slate-200 rounded-tl-none italic shadow-lg' : 'bg-indigo-600 text-white rounded-tr-none shadow-indigo-600/20 shadow-xl'}`}>
                 {msg.content}
               </div>
             </div>
@@ -104,15 +115,16 @@ export const AIAssistant: React.FC = () => {
           value={input}
           onChange={e => setInput(e.target.value)}
           onKeyPress={e => e.key === 'Enter' && handleSend()}
-          placeholder="输入指令，如：‘分析昨晚深睡偏低原因’"
-          className="w-full bg-[#0f172a]/60 border border-white/5 rounded-2xl py-5 pl-6 pr-14 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 backdrop-blur-xl transition-all font-medium text-sm text-white placeholder:text-slate-600"
+          disabled={isTyping}
+          placeholder={isTyping ? "实验室计算中..." : "输入指令，如：‘分析昨晚深睡偏低原因’"}
+          className="w-full bg-[#0f172a]/60 border border-white/5 rounded-2xl py-5 pl-6 pr-14 focus:outline-none focus:ring-1 focus:ring-indigo-500/30 backdrop-blur-xl transition-all font-medium text-sm text-white placeholder:text-slate-600 disabled:opacity-50"
         />
         <button
           onClick={handleSend}
           disabled={!input.trim() || isTyping}
           className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-indigo-600 rounded-xl hover:bg-indigo-500 disabled:opacity-30 transition-all active:scale-90"
         >
-          <Send size={18} />
+          {isTyping ? <Loader2 className="animate-spin" size={18} /> : <Send size={18} />}
         </button>
       </div>
     </div>
