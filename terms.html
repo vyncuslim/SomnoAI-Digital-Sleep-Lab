@@ -1,45 +1,96 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Terms of Service - SomnoAI Digital Sleep Lab</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Service Terms - Somno Digital Sleep Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root { --bg: #020617; --surface: #0f172a; --primary: #4f46e5; --text: #f1f5f9; --text-dim: #94a3b8; }
-        body { font-family: -apple-system, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; margin: 0; padding: 2rem; display: flex; justify-content: center; }
-        .wrapper { max-width: 800px; width: 100%; background: var(--surface); border: 1px solid rgba(255,255,255,0.1); border-radius: 2rem; padding: 3rem; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5); }
-        h1 { font-size: 2.2rem; border-bottom: 3px solid var(--primary); padding-bottom: 1rem; margin-bottom: 2rem; }
-        .disclaimer { background: rgba(251, 191, 36, 0.1); border: 1px solid #fbbf24; padding: 2rem; border-radius: 1.5rem; color: #fbbf24; font-weight: 600; margin: 2rem 0; font-size: 0.95rem; }
-        h2 { color: #818cf8; margin-top: 2.5rem; font-size: 1.4rem; }
-        p, li { color: var(--text-dim); }
-        a { color: #818cf8; text-decoration: none; }
-        hr { border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 3rem 0; }
-        .footer { text-align: center; font-size: 0.85rem; color: #475569; }
+        @keyframes gridScroll {
+            from { background-position: 0 0; }
+            to { background-position: 30px 30px; }
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020617;
+            color: #f1f5f9;
+            background-image: 
+                radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
+                linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 100% 100%, 30px 30px, 30px 30px;
+            animation: gridScroll 15s linear infinite;
+        }
+        .glass {
+            backdrop-filter: blur(24px);
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .highlight-danger { color: #f43f5e; font-weight: 700; }
+        .mono { font-family: 'JetBrains Mono', monospace; }
     </style>
 </head>
-<body>
-    <div class="wrapper">
-        <h1>Terms of Service (服务条款)</h1>
-        <p><strong>Last Updated:</strong> May 20, 2024</p>
-
-        <div class="disclaimer">
-            <strong>Medical Disclaimer:</strong> SomnoAI Digital Sleep Lab is for scientific experimentation and personal insight only. It is NOT a medical device. All AI suggestions and scores are NOT clinical diagnoses. Consult a professional before making health changes.
+<body class="min-h-screen py-12 px-6 flex justify-center">
+    <div class="max-w-4xl w-full">
+        <div class="mb-12 flex justify-between items-end">
+            <div>
+                <h1 class="text-4xl font-black tracking-tighter italic mb-2">Service <span class="text-indigo-500">Terms</span></h1>
+                <p class="text-[10px] mono font-bold text-slate-500 uppercase tracking-[0.4em]">Somno Lab / Usage Protocols v2025.1</p>
+            </div>
+            <div class="text-right">
+                <a href="/" class="text-xs font-black uppercase tracking-widest text-indigo-400 hover:text-white transition-colors">← Back to Lab</a>
+            </div>
         </div>
 
-        <h2>1. Experimental Platform</h2>
-        <p>sleepsomno.com is a digital lab designed to visualize health data. We are not liable for any health decisions made based on information provided by this experimental platform.</p>
+        <div class="glass rounded-[2.5rem] p-8 md:p-16 space-y-12 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+                <svg width="200" height="200" viewBox="0 0 24 24" fill="white"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+            </div>
 
-        <h2>2. Authorized Use</h2>
-        <p>By connecting Google Fit, you confirm you have the legal right to access and process the data of the chosen account. You must comply with all Google API Terms of Service.</p>
+            <div class="bg-rose-500/10 border border-rose-500/20 rounded-2xl p-6 md:p-8 space-y-4">
+                <div class="flex items-center gap-3">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="#f43f5e"><path d="M12 2L1 21h22L12 2zm1 14h-2v-2h2v2zm0-4h-2V8h2v4z"/></svg>
+                    <h3 class="text-xs font-black uppercase tracking-[0.3em] text-rose-400">Critical Medical Disclaimer</h3>
+                </div>
+                <p class="text-sm text-slate-300 leading-relaxed font-medium">
+                    Somno Digital Sleep Lab is an <span class="highlight-danger uppercase">Experimental Research Tool</span>. It is NOT a medical device, nor is it intended for clinical diagnosis, treatment, or prevention of any medical condition. <span class="text-white">All AI insights and sleep scores are physiological projections and should not replace professional medical consultation.</span>
+                </p>
+            </div>
 
-        <h2>3. Data Accuracy</h2>
-        <p>Analysis accuracy depends on your wearable device and the synchronization status of your Google Fit account. We do not guarantee 100% precision in biometric projections.</p>
+            <section class="space-y-6">
+                <h2 class="text-xl font-bold tracking-tight uppercase border-b border-white/5 pb-4">1. Experimental License</h2>
+                <p class="text-slate-400 leading-relaxed">
+                    By initializing a lab session, you acknowledge that you are participating in a digital experiment designed for personal physiological insight. We grant you a limited, non-exclusive license to utilize our neural synthesis models for individual use.
+                </p>
+            </section>
 
-        <hr>
-        <div class="footer">
-            &copy; 2024 SomnoAI Digital Sleep Lab | sleepsomno.com <br>
-            <a href="https://sleepsomno.com">← Back to Lab Home</a>
+            <section class="space-y-6">
+                <h2 class="text-xl font-bold tracking-tight uppercase border-b border-white/5 pb-4">2. Telemetry Integrity</h2>
+                <p class="text-slate-400 leading-relaxed">
+                    Accuracy of laboratory reports depends entirely on the high-fidelity telemetry provided by your wearable devices and synchronized via Google Fit. Somno Lab is not liable for data skew caused by third-party sensor malfunctions or synchronization latency.
+                </p>
+            </section>
+
+            <section class="space-y-6">
+                <h2 class="text-xl font-bold tracking-tight uppercase border-b border-white/5 pb-4">3. System Termination</h2>
+                <p class="text-slate-400 leading-relaxed">
+                    We reserve the right to upgrade lab protocols or terminate the gateway link at our discretion to maintain system security or comply with evolving data regulations. 
+                </p>
+            </section>
+
+            <section class="space-y-6">
+                <h2 class="text-xl font-bold tracking-tight uppercase border-b border-white/5 pb-4">4. Limitation of Liability</h2>
+                <p class="text-slate-400 leading-relaxed">
+                    Under no circumstances shall Somno Lab or its developers be liable for any direct, indirect, or incidental outcomes resulting from lab signal interpretations or AI-generated suggestions. Use of the lab constitutes full acceptance of this research risk.
+                </p>
+            </section>
+
+            <footer class="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
+                <p class="text-[10px] mono uppercase tracking-widest">Protocol Version: 3.4.0-PROD</p>
+                <p class="text-[10px] mono uppercase tracking-widest">Effective Date: 2025.01.05</p>
+                <p class="text-[10px] mono uppercase tracking-widest">© 2025 SOMNO LAB</p>
+            </footer>
         </div>
     </div>
 </body>
