@@ -12,31 +12,36 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: #020617;
             color: #f1f5f9;
-            background-image: radial-gradient(circle at 50% 50%, rgba(79, 70, 229, 0.1) 0%, transparent 50%);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(79, 70, 229, 0.15) 0%, transparent 70%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
             line-height: 1.6;
         }
         .container { max-width: 850px; margin: 0 auto; padding: 4rem 1.5rem; }
-        .glass { background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(20px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2rem; padding: 3rem; }
-        h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.05em; margin-bottom: 2rem; color: #fff; }
-        h2 { font-size: 1.5rem; font-weight: 700; color: #818cf8; margin-top: 2.5rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(129, 140, 248, 0.2); padding-bottom: 0.5rem; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem; padding: 3.5rem; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8); }
+        h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.05em; margin-bottom: 2rem; color: #fff; italic: true; }
+        h2 { font-size: 1.5rem; font-weight: 700; color: #818cf8; margin-top: 3rem; margin-bottom: 1.25rem; border-bottom: 1px solid rgba(129, 140, 248, 0.2); padding-bottom: 0.5rem; }
         h3 { font-size: 1.1rem; font-weight: 700; color: #e2e8f0; margin-top: 1.5rem; margin-bottom: 0.75rem; }
-        p, li { color: #94a3b8; font-size: 1rem; margin-bottom: 1rem; }
+        p, li { color: #94a3b8; font-size: 1rem; margin-bottom: 1.2rem; }
         ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1.5rem; }
         .highlight { color: #fff; font-weight: 600; }
-        a { color: #818cf8; text-decoration: underline; font-weight: 600; }
-        .footer { margin-top: 4rem; text-align: center; font-size: 0.75rem; color: #475569; text-transform: uppercase; letter-spacing: 0.2em; }
-        .compliance-box { background: rgba(79, 70, 229, 0.1); border: 1px solid rgba(79, 70, 229, 0.3); padding: 1.5rem; border-radius: 1rem; margin: 2rem 0; }
+        a { color: #818cf8; text-decoration: none; border-bottom: 1px solid rgba(129, 140, 248, 0.3); transition: all 0.2s; }
+        a:hover { color: #a5b4fc; border-bottom-color: #a5b4fc; }
+        .footer { margin-top: 4rem; text-align: center; font-size: 0.75rem; color: #475569; text-transform: uppercase; letter-spacing: 0.3em; }
+        .compliance-box { background: rgba(79, 70, 229, 0.05); border: 1px solid rgba(79, 70, 229, 0.2); padding: 1.5rem; border-radius: 1.25rem; margin: 2rem 0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="glass">
-            <h1>Somno Lab <span style="color: #818cf8;">隐私政策</span></h1>
+            <h1 class="italic">Somno Lab <span style="color: #818cf8;">Privacy Policy</span></h1>
             <p style="font-weight: 700; color: #fff;">生效日期：2025 年 1 月 4 日</p>
 
             <div class="compliance-box">
-                <h3 style="margin-top: 0; color: #818cf8;">Google API 数据有限使用声明</h3>
-                <p style="margin-bottom: 0; font-size: 0.9rem;">Somno Lab 对从 Google API 收到的信息的使用和转移将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use" target="_blank">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。</p>
+                <h3 style="margin-top: 0; color: #818cf8; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 0.1em;">Google API 数据有限使用声明</h3>
+                <p style="margin-bottom: 0; font-size: 0.85rem; color: #cbd5e1;">Somno Lab 对从 Google API 收到的信息的使用和转移将遵守 <a href="https://developers.google.com/terms/api-services-user-data-policy#limited-use" target="_blank">Google API 服务用户数据政策</a>，包括其中的“有限使用”要求。</p>
             </div>
 
             <section>
@@ -53,8 +58,8 @@
                 <h2>2. 数据的用途 (Data Usage)</h2>
                 <p>您的数据仅用于以下核心功能，我们不会为了其他目的而收集或处理这些信息：</p>
                 <ul>
-                    <li><span class="highlight">个性化睡眠洞察</span>：通过内置的分析算法将您的 Google Fit 数据转化为易于理解的视觉图表和睡眠分数。</li>
-                    <li><span class="highlight">AI 深度分析</span>：您的脱敏生理指标（如睡眠时长、RHR）将发送至 Google Gemini AI 模型，以生成量身定制的睡眠改善建议和生理影响预测。</li>
+                    <li><span class="highlight">个性化睡眠洞察</span>：通过内置的分析算法将您的 Google Fit 数据转化为视觉图表和睡眠分数。</li>
+                    <li><span class="highlight">AI 深度分析</span>：您的脱敏生理指标将发送至 Google Gemini AI 模型，以生成量身定制的睡眠改善建议。</li>
                     <li><span class="highlight">本地体验优化</span>：数据用于在您的浏览器中提供即时的历史趋势对比，帮助您监控健康变化。</li>
                 </ul>
             </section>
@@ -73,30 +78,19 @@
                 <ul>
                     <li><span class="highlight">严禁出售</span>：我们绝对不会将您的个人数据、健康指标或 Google 用户信息出售给第三方。</li>
                     <li><span class="highlight">无广告用途</span>：我们不会将访问到的 Google 数据用于投放广告、进行用户画像或营销。</li>
-                    <li><span class="highlight">第三方服务</span>：唯一接收脱敏指标的第三方为 Google Gemini API（用于生成建议），且该过程遵循 Google 的企业级隐私标准。</li>
                 </ul>
             </section>
 
             <section>
                 <h2>5. 您的权利与权限撤回 (Your Rights)</h2>
-                <p>您可以随时管理您的数据访问权限：</p>
-                <ul>
-                    <li>您可以通过 <a href="https://myaccount.google.com/permissions" target="_blank">Google 安全设置</a> 随时撤销 Somno Lab 对您账户的访问权。</li>
-                    <li>在应用内，点击“登出”或“清除会话”将立即删除本地存储的所有生理缓存。</li>
-                </ul>
-            </section>
-
-            <section>
-                <h2>6. 联系方式</h2>
-                <p>如果您对本政策或数据处理有任何疑问，请联系开发者：<br>
-                <a href="mailto:ongyuze1401@gmail.com">ongyuze1401@gmail.com</a></p>
+                <p>您可以随时通过 <a href="https://myaccount.google.com/permissions" target="_blank">Google 安全设置</a> 随时撤销 Somno Lab 对您账户的访问权。</p>
             </section>
 
             <div style="margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">
-                <a href="/" style="text-decoration: none; font-size: 0.8rem;">← 返回 Somno Lab 实验室</a>
+                <a href="/" style="text-decoration: none; font-size: 0.8rem; border: none; color: #475569;">← 返回 Somno Lab 实验室</a>
             </div>
         </div>
-        <p class="footer">© 2025 Somno Lab • 致力于隐私优先的健康科技</p>
+        <p class="footer">© 2025 Somno Lab • Secure Health Environment</p>
     </div>
 </body>
 </html>
