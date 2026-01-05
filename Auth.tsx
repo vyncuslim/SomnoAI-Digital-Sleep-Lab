@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Loader2, ArrowRight, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock, Eye, EyeOff, Save, Activity, BrainCircuit, Waves } from 'lucide-react';
+import { ShieldCheck, Loader2, ArrowRight, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock, Eye, EyeOff, Save, Activity, BrainCircuit, Waves, FlaskConical } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { googleFit } from './services/googleFitService.ts';
@@ -199,14 +199,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               </div>
             </div>
 
-            <button 
-              onClick={handleGoogleLogin} 
-              disabled={isLoggingIn || !hasKey} 
-              className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-900 font-bold text-sm transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed grayscale' : 'cursor-pointer hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]'}`}
-            >
-              {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
-              {isLoggingIn ? (lang === 'zh' ? '正在连接...' : 'CONNECTING...') : (lang === 'zh' ? '使用 Google 账号登录' : 'Sign in with Google')}
-            </button>
+            <div className="space-y-4">
+              <button 
+                onClick={handleGoogleLogin} 
+                disabled={isLoggingIn || !hasKey} 
+                className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-900 font-bold text-sm transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed grayscale' : 'cursor-pointer hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]'}`}
+              >
+                {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
+                {isLoggingIn ? (lang === 'zh' ? '正在连接...' : 'CONNECTING...') : (lang === 'zh' ? '使用 Google 账号登录' : 'Sign in with Google')}
+              </button>
+              
+              <button 
+                onClick={onGuest} 
+                className="w-full py-5 bg-transparent border border-white/5 rounded-full flex items-center justify-center gap-3 text-slate-500 hover:text-indigo-400 font-black text-[11px] uppercase tracking-[0.3em] transition-all cursor-pointer relative z-30 group"
+              >
+                <FlaskConical size={14} className="group-hover:scale-110 transition-transform" />
+                {lang === 'zh' ? '启动实验模拟' : 'START SIMULATION'} 
+                <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
+              </button>
+            </div>
           </section>
         </div>
       </GlassCard>

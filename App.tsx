@@ -8,8 +8,8 @@ import { Auth } from './Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { LegalView } from './components/LegalView.tsx';
 import { AboutView } from './components/AboutView.tsx';
-import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor } from './types.ts';
-import { User, Loader2, PlusCircle, Activity, Zap } from 'lucide-react';
+import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor, SleepStage } from './types.ts';
+import { User, Loader2, Activity, Zap, Beaker } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,7 +32,6 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
-  // Support deep links from sitemap or direct navigation
   useEffect(() => {
     const path = window.location.pathname;
     if (path === '/about') setActiveView('about');
@@ -53,6 +52,60 @@ const App: React.FC = () => {
     localStorage.setItem('somno_static', String(staticMode));
     document.body.classList.toggle('static-ui', staticMode);
   }, [staticMode]);
+
+  const generateMockData = useCallback(async () => {
+    setIsLoading(true);
+    const mockHistory: SleepRecord[] = [];
+    const now = new Date();
+    
+    for (let i = 0; i < 7; i++) {
+      const date = new Date(now);
+      date.setDate(now.getDate() - i);
+      const score = 70 + Math.floor(Math.random() * 25);
+      const duration = 420 + Math.floor(Math.random() * 100);
+      const deep = Math.floor(duration * 0.22);
+      const rem = Math.floor(duration * 0.20);
+      const awake = Math.floor(duration * 0.05);
+      
+      const record: SleepRecord = {
+        id: `mock-${i}`,
+        date: date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
+        score,
+        totalDuration: duration,
+        deepRatio: 22,
+        remRatio: 20,
+        efficiency: 92 + Math.floor(Math.random() * 6),
+        stages: [
+          { name: 'Deep', duration: deep, startTime: '01:20' },
+          { name: 'REM', duration: rem, startTime: '03:40' },
+          { name: 'Light', duration: duration - deep - rem - awake, startTime: '05:00' },
+          { name: 'Awake', duration: awake, startTime: '23:30' }
+        ],
+        heartRate: {
+          resting: 55 + Math.floor(Math.random() * 10),
+          max: 85,
+          min: 52,
+          average: 62,
+          history: []
+        },
+        aiInsights: lang === 'zh' ? ['模拟数据流激活。', '神经架构分析已就绪。'] : ['Simulation stream active.', 'Neural architecture ready.']
+      };
+      mockHistory.push(record);
+    }
+    
+    setCurrentRecord(mockHistory[0]);
+    setHistory(mockHistory);
+    
+    // Attempt to get real AI insights for the latest mock record if key exists
+    try {
+      const insights = await getSleepInsight(mockHistory[0], lang);
+      setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
+    } catch (e) {
+      console.warn("AI Insights suppressed for guest mode (No API Key).");
+    }
+    
+    setIsLoading(false);
+  }, [lang]);
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
@@ -79,6 +132,11 @@ const App: React.FC = () => {
     }
   }, [lang]);
 
+  const handleGuestLogin = () => {
+    setIsGuest(true);
+    generateMockData();
+  };
+
   const handleLogout = async () => {
     try {
       googleFit.logout();
@@ -97,7 +155,8 @@ const App: React.FC = () => {
     if (activeView === 'privacy' || activeView === 'terms') return <LegalView type={activeView} lang={lang} onBack={() => setActiveView('profile')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView('profile')} />;
     if (isLoading && !currentRecord) return <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center"><Loader2 size={48} className="animate-spin text-indigo-500" /><p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">Biometric Syncing...</p></div>;
-    if (!isLoggedIn && !isGuest) return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={() => setIsGuest(true)} onNavigate={(v: any) => setActiveView(v)} />;
+    
+    if (!isLoggedIn && !isGuest) return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={handleGuestLogin} onNavigate={(v: any) => setActiveView(v)} />;
     
     if (!currentRecord && activeView === 'dashboard') return (
       <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center">
@@ -115,7 +174,7 @@ const App: React.FC = () => {
     return (
       <AnimatePresence mode="wait">
         <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={(p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} />}
+          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} />}
           {activeView === 'calendar' && <Trends history={history} />}
           {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
           {activeView === 'profile' && (
@@ -124,7 +183,7 @@ const App: React.FC = () => {
               theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
               threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
               staticMode={staticMode} onStaticModeChange={setStaticMode}
-              lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncGoogleFit(true)}
+              lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
             />
           )}
         </motion.div>
@@ -136,6 +195,13 @@ const App: React.FC = () => {
 
   return (
     <div className={`flex-1 flex flex-col accent-${accentColor}`}>
+      {isGuest && (
+        <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-gradient-to-r from-amber-500 to-amber-600">
+           <div className="absolute top-1 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-amber-600 text-[8px] font-black text-white uppercase tracking-widest rounded-b-lg">
+             Simulation Protocol v3.0
+           </div>
+        </div>
+      )}
       <main className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-28' : 'pt-8 pb-10'}`}>
         {renderView()}
       </main>
