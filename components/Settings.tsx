@@ -192,8 +192,8 @@ export const Settings: React.FC<SettingsProps> = ({
             onClick={handleClearApiKey}
             badge={lang === 'zh' ? "点击重置" : "RESET"}
           />
-        </SettingItem>
-      </GlassCard>
+        </GlassCard>
+      </div>
 
       <div className="pt-6 px-2 space-y-4">
         <AnimatePresence mode="wait">
