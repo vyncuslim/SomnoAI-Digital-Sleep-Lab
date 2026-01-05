@@ -28,7 +28,7 @@ export const translations = {
     },
     auth: {
       lab: 'Lab',
-      tagline: 'SomnoAI Digital Sleep Lab integrates physiological monitoring, deep AI insights, and wellness protocols to deliver a comprehensive digital sleep laboratory experience. Unlock the future of rest with high-fidelity biometric telemetry and Gemini-powered neural analysis.',
+      tagline: 'SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights and strategic wellness protocols. Experience a comprehensive digital sleep laboratory designed to map your neurological recovery and optimize metabolic health through precision neural analysis.',
       securityStatement: 'Security Statement',
       securityDetail: 'Data synced locally. Zero backend storage. Sensitive metrics cleared upon session termination.',
       connect: 'Connect Google Fit',
