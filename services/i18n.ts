@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'zh' | 'de' | 'fr';
 
 export const translations = {
@@ -29,7 +28,7 @@ export const translations = {
     },
     auth: {
       lab: 'Lab',
-      tagline: 'SomnoAI integrates physiological monitoring, deep AI insights, and wellness protocols to deliver a comprehensive digital sleep laboratory experience.',
+      tagline: 'SomnoAI Digital Sleep Lab integrates physiological monitoring, deep AI insights, and wellness protocols to deliver a comprehensive digital sleep laboratory experience. Unlock the future of rest with high-fidelity biometric telemetry and Gemini-powered neural analysis.',
       securityStatement: 'Security Statement',
       securityDetail: 'Data synced locally. Zero backend storage. Sensitive metrics cleared upon session termination.',
       connect: 'Connect Google Fit',
@@ -221,7 +220,7 @@ export const translations = {
       transferVia: '即时转账 (MY)',
       duitNowCopy: '复制 DuitNow ID',
       tngId: '+60 187807388',
-      tngCopy: '复制 TNG 号码',
+      tngCopy: 'Copy TNG Number',
       paypalId: 'Vyncuslim vyncuslim',
       paypalLink: 'https://paypal.me/vyncuslim',
       paypalCopy: 'Copy PayPal Link',
