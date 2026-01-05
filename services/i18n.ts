@@ -224,7 +224,7 @@ export const translations = {
       tngCopy: '复制 TNG 号码',
       paypalId: 'Vyncuslim vyncuslim',
       paypalLink: 'https://paypal.me/vyncuslim',
-      paypalCopy: '复制 PayPal 链接',
+      paypalCopy: 'Copy PayPal Link',
       dataManagement: '数据管理',
       manualSync: '手动触发同步',
       lastSync: '上次同步',

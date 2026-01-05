@@ -15,6 +15,7 @@ import { googleFit } from './services/googleFitService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './components/Logo.tsx';
 import { Language, translations } from './services/i18n.ts';
+import { SpatialIcon } from './components/SpatialIcon.tsx';
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
@@ -96,7 +97,6 @@ const App: React.FC = () => {
     setCurrentRecord(mockHistory[0]);
     setHistory(mockHistory);
     
-    // Attempt to get real AI insights for the latest mock record if key exists
     try {
       const insights = await getSleepInsight(mockHistory[0], lang);
       setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
@@ -213,12 +213,54 @@ const App: React.FC = () => {
               { id: 'calendar', icon: Activity, label: translations[lang].nav.trends },
               { id: 'assistant', icon: Zap, label: translations[lang].nav.insights },
               { id: 'profile', icon: User, label: translations[lang].nav.settings }
-            ].map((nav) => (
-              <button key={nav.id} onClick={() => setActiveView(nav.id as ViewType)} className={`flex-1 py-4 flex flex-col items-center gap-2 transition-all active:scale-95 ${activeView === nav.id ? 'text-indigo-400' : 'text-slate-500'}`}>
-                <nav.icon size={22} animated={activeView === nav.id && !staticMode} threeD={threeDEnabled} staticMode={staticMode} />
-                <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>
-              </button>
-            ))}
+            ].map((nav) => {
+              const isActive = activeView === nav.id;
+              const iconColor = isActive ? (accentColor === 'rose' ? '#fb7185' : '#818cf8') : '#64748b';
+              
+              return (
+                <button 
+                  key={nav.id} 
+                  onClick={() => setActiveView(nav.id as ViewType)} 
+                  className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all active:scale-95 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}
+                >
+                  <motion.div
+                    animate={isActive && !staticMode ? {
+                      y: [0, -6, 0],
+                      scale: [1, 1.1, 1],
+                    } : { y: 0, scale: 1 }}
+                    transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
+                    className="relative"
+                  >
+                    <SpatialIcon 
+                      icon={nav.icon} 
+                      size={24} 
+                      animated={isActive && !staticMode} 
+                      threeD={threeDEnabled} 
+                      color={iconColor}
+                    />
+                    {isActive && !staticMode && (
+                      <motion.div
+                        layoutId="nav-glow"
+                        className="absolute inset-0 blur-xl opacity-40 rounded-full"
+                        style={{ backgroundColor: iconColor }}
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ repeat: Infinity, duration: 4 }}
+                      />
+                    )}
+                  </motion.div>
+                  <motion.span 
+                    animate={isActive && !staticMode ? { 
+                      opacity: [0.6, 1, 0.6],
+                      letterSpacing: ["0.2em", "0.3em", "0.2em"]
+                    } : {}}
+                    transition={{ repeat: Infinity, duration: 4 }}
+                    className={`text-[8px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}
+                  >
+                    {nav.label}
+                  </motion.span>
+                </button>
+              );
+            })}
           </div>
         </nav>
       )}
