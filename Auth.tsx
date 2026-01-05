@@ -26,14 +26,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
   useEffect(() => {
     checkApiKey();
+    // 提前初始化 SDK 减少点击时的延迟
     googleFit.ensureClientInitialized().catch(err => {
-      console.warn("Auth: SDK Warming Postponed", err.message);
+      console.warn("Auth: Google GSI Loading...", err.message);
     });
   }, []);
 
   const checkApiKey = () => {
     try {
-      // 检查当前环境下是否有预配置的 Key
       const existingKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
       if (existingKey && existingKey !== '') {
         setHasKey(true);
@@ -52,7 +52,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       return;
     }
     
-    // 注入 Key 到全局环境以便系统识别
     if ((window as any).process && (window as any).process.env) {
       (window as any).process.env.API_KEY = trimmedKey;
     }
@@ -66,14 +65,29 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       setLocalError(lang === 'zh' ? "请先在上方输入并激活 AI 引擎" : "Please enter and activate AI Engine above first");
       return;
     }
+
     setIsLoggingIn(true);
     setLocalError(null);
+
     try {
+      // 确保 SDK 已就绪
       await googleFit.ensureClientInitialized();
+      // 请求授权
       const token = await googleFit.authorize(true); 
-      if (token) onLogin(); 
+      if (token) {
+        onLogin();
+      } else {
+        throw new Error("No token received");
+      }
     } catch (error: any) {
-      setLocalError(error.message || "Authentication Failed");
+      console.error("Login Error:", error);
+      let msg = error.message;
+      if (msg === "popup_closed_by_user") {
+        msg = lang === 'zh' ? "登录窗口被关闭" : "Login popup closed";
+      } else if (msg === "access_denied") {
+        msg = lang === 'zh' ? "访问被拒绝，请授予权限" : "Access denied, please grant permissions";
+      }
+      setLocalError(msg || "Authentication Failed");
     } finally {
       setIsLoggingIn(false);
     }
@@ -172,7 +186,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-slate-200 text-slate-900 font-black text-sm uppercase tracking-[0.2em] transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed grayscale' : 'cursor-pointer hover:bg-white hover:scale-[1.02] active:scale-[0.98]'}`}
             >
               {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Cpu size={20} className="text-indigo-600" />}
-              CONNECT HEALTH DATA
+              {isLoggingIn ? (lang === 'zh' ? '正在连接...' : 'CONNECTING...') : 'CONNECT HEALTH DATA'}
             </button>
             
             <button 
