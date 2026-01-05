@@ -79,7 +79,6 @@ const App: React.FC = () => {
       localStorage.removeItem('somno_last_sync');
       localStorage.removeItem('google_fit_token');
       sessionStorage.clear();
-      // 强制重载
       window.location.href = window.location.origin;
     } catch (e) {
       window.location.reload();
@@ -128,13 +127,13 @@ const App: React.FC = () => {
   const showNav = isLoggedIn || isGuest;
 
   return (
-    <div className={`min-h-screen bg-[#020617] text-white font-['Plus_Jakarta_Sans'] relative flex flex-col accent-${accentColor}`}>
-      <main className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-40' : 'pt-8'}`}>
+    <div className={`flex-1 flex flex-col accent-${accentColor}`}>
+      <main className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-28' : 'pt-8 pb-10'}`}>
         {renderView()}
       </main>
       {showNav && (activeView !== 'privacy' && activeView !== 'terms' && activeView !== 'about') && (
         <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-10 safe-area-inset-bottom pointer-events-none">
-          <div className="max-w-md mx-auto glass-morphism rounded-[3rem] p-2 flex justify-between pointer-events-auto border border-white/10 shadow-2xl">
+          <div className="max-w-md mx-auto glass-morphism rounded-[3rem] p-2 flex justify-between pointer-events-auto border border-white/10 shadow-2xl bg-slate-900/60 backdrop-blur-3xl">
             {[
               { id: 'dashboard', icon: Logo, label: translations[lang].nav.lab },
               { id: 'calendar', icon: Activity, label: translations[lang].nav.trends },
@@ -150,11 +149,18 @@ const App: React.FC = () => {
         </nav>
       )}
       {isDataEntryOpen && <DataEntry onClose={() => setIsDataEntryOpen(false)} onSave={(r) => { setCurrentRecord(r); setHistory(prev => [r, ...prev]); setIsDataEntryOpen(false); }} />}
-      {errorToast && (
-        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-2xl">
-          {errorToast}
-        </div>
-      )}
+      <AnimatePresence>
+        {errorToast && (
+          <motion.div 
+            initial={{ y: 100, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 100, opacity: 0 }}
+            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-2xl"
+          >
+            {errorToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

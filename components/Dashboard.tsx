@@ -6,7 +6,7 @@ import { COLORS } from '../constants.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, BrainCircuit, HeartPulse, Scan, Cpu, Binary, Zap, 
-  Activity, ArrowUpRight, ShieldCheck, Waves, Target, Info
+  Activity, ArrowUpRight, ShieldCheck, Waves, Target, Info, Heart
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 
@@ -20,10 +20,30 @@ interface DashboardProps {
 
 export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onNavigate, staticMode = false }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [engineActive, setEngineActive] = useState(false);
   const t = translations[lang].dashboard;
+
+  useEffect(() => {
+    const checkKey = async () => {
+      if (window.aistudio) {
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setEngineActive(selected);
+      } else {
+        setEngineActive(!!process.env.API_KEY);
+      }
+    };
+    checkKey();
+  }, []);
 
   const handleSync = async () => {
     if (!onSyncFit || isProcessing) return;
+    
+    if (!engineActive) {
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 3000);
+      return;
+    }
+
     try {
       await onSyncFit((status) => setSyncStatus(status));
     } catch (err) {
@@ -56,18 +76,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
           <div>
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 leading-none mb-1.5">{t.neuralActive}</h2>
             <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full bg-emerald-500 ${!staticMode ? 'animate-pulse' : ''} shadow-[0_0_8px_#10b981]`} />
-              <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Protocol v4.0.2</span>
+              <span className={`w-2 h-2 rounded-full ${engineActive ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'} ${!staticMode && engineActive ? 'animate-pulse' : ''}`} />
+              <span className={`text-[10px] font-mono uppercase tracking-widest ${engineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {engineActive ? 'Engine Linked' : 'Engine Offline'}
+              </span>
             </div>
           </div>
         </div>
-        <button 
-          onClick={handleSync}
-          aria-label={lang === 'zh' ? '同步健康数据' : 'Sync Health Data'}
-          className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 ${isProcessing ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
-        >
-          <RefreshCw size={20} className={isProcessing ? 'animate-spin' : ''} />
-        </button>
+        <div className="flex items-center gap-2">
+          <button 
+            onClick={() => onNavigate?.('profile')}
+            aria-label={t.supportLab}
+            className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-xl active:scale-95 flex items-center gap-2"
+          >
+            <Heart size={20} className={!staticMode ? 'animate-pulse' : ''} />
+            <span className="hidden sm:inline text-[9px] font-black uppercase tracking-widest">{t.supportLab}</span>
+          </button>
+          <button 
+            onClick={handleSync}
+            aria-label={lang === 'zh' ? '同步健康数据' : 'Sync Health Data'}
+            className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 ${isProcessing ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
+          >
+            <RefreshCw size={20} className={isProcessing ? 'animate-spin' : (syncStatus === 'error' ? 'text-rose-400 animate-bounce' : '')} />
+          </button>
+        </div>
       </div>
 
       <div className="relative py-4">
@@ -114,7 +146,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
                 <div className="min-h-[80px] p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl relative">
                   <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-full" />
                   <p className="text-sm font-medium italic text-slate-300 leading-relaxed">
-                    "{data.aiInsights?.[0] || 'Analyzing biometric streams...'}"
+                    {engineActive ? (data.aiInsights?.[0] || 'Analyzing biometric streams...') : (lang === 'zh' ? 'AI 引擎未激活。请在登录页激活以接收洞察。' : 'AI Engine offline. Activate gateway in Settings/Login to receive insights.')}
                   </p>
                 </div>
               </div>
@@ -157,7 +189,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Resting HR</p>
               <p className="text-4xl font-black font-mono tracking-tighter text-white italic">
                 {data.heartRate.resting}
-                <span className="text-xs text-slate-600 ml-1 font-sans">BPM</span>
+                <span className="text-xs text-slate-400 ml-1 font-sans">BPM</span>
               </p>
             </div>
           </div>
@@ -172,22 +204,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Efficiency</p>
               <p className="text-4xl font-black font-mono tracking-tighter text-white italic">
                 {data.efficiency}
-                <span className="text-xs text-slate-600 ml-1 font-sans">%</span>
+                <span className="text-xs text-slate-400 ml-1 font-sans">%</span>
               </p>
             </div>
           </div>
         </GlassCard>
-      </div>
-
-      <div className="px-2 pt-6 flex justify-between items-center opacity-30">
-        <div className="flex items-center gap-3">
-          <Binary size={12} className="text-indigo-400" />
-          <span className="text-[9px] font-mono tracking-[0.3em] uppercase">{staticMode ? 'Telemetry Frozen' : 'Telemetry flow active'}</span>
-        </div>
-        <div className="flex items-center gap-4">
-           <span className="text-[9px] font-mono">NODE_SOMNO_01</span>
-           <span className="text-[9px] font-mono text-indigo-400">0x{data.id.slice(-6).toUpperCase()}</span>
-        </div>
       </div>
     </motion.div>
   );

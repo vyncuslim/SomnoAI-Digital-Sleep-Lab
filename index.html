@@ -3,7 +3,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
     
     <meta name="theme-color" content="#020617">
     <meta name="mobile-web-app-capable" content="yes">
@@ -13,8 +13,10 @@
     <link rel="canonical" href="https://sleepsomno.com/" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://translate.googleapis.com">
+    <link rel="preconnect" href="https://translate.google.com">
+    <link rel="dns-prefetch" href="https://translate.googleapis.com">
     <link rel="dns-prefetch" href="https://cdn.tailwindcss.com">
-    <link rel="dns-prefetch" href="https://accounts.google.com">
 
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
     <link rel="manifest" href="manifest.json">
@@ -29,7 +31,20 @@
     
     <script>
         window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
+        
+        // Google Translate Init
+        function googleTranslateElementInit() {
+            if (!document.getElementById('google_translate_element')) return;
+            new google.translate.TranslateElement({
+                pageLanguage: 'zh-CN',
+                includedLanguages: 'en,zh-CN,de,fr,es,ja,ko,it,ru,pt',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false,
+                multilanguagePage: true
+            }, 'google_translate_element');
+        }
     </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
     
     <style>
         :root {
@@ -42,15 +57,18 @@
             50% { transform: scale(1.1) translate(-2%, 2%); opacity: 0.15; }
         }
 
-        body {
-            font-family: 'Plus Jakarta Sans', sans-serif;
+        html, body {
+            height: 100%;
             margin: 0; padding: 0;
             background-color: #01040a;
             color: #e2e8f0;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        body {
             overflow-x: hidden;
             perspective: var(--perspective);
-            min-height: 100vh;
-            -webkit-font-smoothing: antialiased;
             display: flex;
             flex-direction: column;
         }
@@ -70,6 +88,7 @@
                         radial-gradient(circle at 30% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
             filter: blur(100px);
             animation: nebulaPulse 30s ease-in-out infinite;
+            pointer-events: none;
         }
 
         body.static-ui .nebula {
@@ -78,7 +97,7 @@
         }
 
         .grid-floor {
-            position: absolute;
+            position: fixed;
             bottom: -20%; left: -50%;
             width: 200%; height: 100%;
             background-image: 
@@ -88,13 +107,58 @@
             transform: rotateX(75deg);
             transform-origin: center bottom;
             mask-image: linear-gradient(to top, black, transparent);
+            pointer-events: none;
         }
 
         #root {
             position: relative;
             transform-style: preserve-3d;
             z-index: 10;
-            flex: 1;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Google Translate Widget Overrides */
+        .goog-te-gadget-simple {
+            background-color: rgba(255, 255, 255, 0.05) !important;
+            border: 1px solid rgba(255, 255, 255, 0.1) !important;
+            padding: 10px 16px !important;
+            border-radius: 16px !important;
+            font-family: inherit !important;
+            display: flex !important;
+            align-items: center !important;
+            gap: 8px !important;
+            cursor: pointer !important;
+            transition: all 0.3s ease !important;
+        }
+        .goog-te-gadget-simple:hover {
+            background-color: rgba(255, 255, 255, 0.1) !important;
+            border-color: rgba(255, 255, 255, 0.2) !important;
+        }
+        .goog-te-gadget-simple img {
+            display: none !important;
+        }
+        .goog-te-gadget-simple span {
+            color: #f1f5f9 !important;
+            font-size: 13px !important;
+            font-weight: 700 !important;
+            text-transform: uppercase !important;
+            letter-spacing: 0.05em !important;
+        }
+        .goog-te-banner-frame {
+            display: none !important;
+        }
+        body {
+            top: 0 !important;
+        }
+
+        .scrollbar-hide::-webkit-scrollbar {
+            display: none;
+        }
+        .scrollbar-hide {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
         }
     </style>
 <script type="importmap">

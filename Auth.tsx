@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Eye, EyeOff, Save, Check, Lock } from 'lucide-react';
+import { ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { googleFit } from './services/googleFitService.ts';
@@ -27,14 +27,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     });
   }, []);
 
-  // Use AI Studio helper to verify key selection
   const checkApiKey = async () => {
     try {
       if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
         const selected = await window.aistudio.hasSelectedApiKey();
         setHasKey(selected);
       } else {
-        setHasKey(!!process.env.API_KEY);
+        // Fallback for non-studio environment
+        setHasKey(!!process.env.API_KEY && process.env.API_KEY !== '');
       }
     } catch (e) {
       console.error("Auth: Key check failed", e);
@@ -44,23 +44,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     }
   };
 
-  // Open mandatory key selection dialog
-  const handleSelectApiKey = async () => {
+  const handleSelectApiKey = async (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
       try {
         await window.aistudio.openSelectKey();
+        // Assume success to improve UX responsiveness
         setHasKey(true);
+        setLocalError(null);
       } catch (e) {
-        setLocalError(lang === 'zh' ? "激活失败，请检查 Google AI Studio 连接" : "Activation failed, check Google AI Studio link");
+        setLocalError(lang === 'zh' ? "激活失败，请手动打开 AI Studio" : "Activation failed, please open AI Studio manually");
       }
     } else {
-      setLocalError(lang === 'zh' ? "AI Studio 网关不可用" : "AI Studio Gateway unavailable");
+      setLocalError(lang === 'zh' ? "环境连接错误，请检查 Gateway 状态。" : "Gateway connection error. Ensure you are in a supported environment.");
     }
   };
 
   const handleGoogleLogin = async () => {
     if (!hasKey) {
-      setLocalError(lang === 'zh' ? "请先激活 AI 引擎" : "Please activate AI Engine first");
+      setLocalError(lang === 'zh' ? "请先点击上方按钮激活 AI 引擎" : "Please activate AI Engine first");
       return;
     }
     setIsLoggingIn(true);
@@ -87,28 +89,27 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-transparent relative overflow-hidden">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
       
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-8 text-center mb-8 relative z-10">
-        <motion.div animate={{ scale: [1, 1.05, 1] }} className="inline-flex p-10 bg-indigo-600/5 rounded-[3.5rem] border border-indigo-500/10 shadow-[0_0_120px_rgba(79,70,229,0.15)]">
+        <motion.div animate={{ scale: [1, 1.05, 1] }} className="inline-flex p-10 bg-indigo-600/5 rounded-[3.5rem] border border-white/5 shadow-[0_0_120px_rgba(79,70,229,0.1)]">
           <Logo size={120} animated={hasKey} />
         </motion.div>
         <div className="space-y-4">
           <h1 className="text-5xl font-black tracking-tighter text-white italic">Somno <span className="text-indigo-400">Lab</span></h1>
-          <p className="text-slate-400 font-medium uppercase text-sm tracking-widest">{lang === 'en' ? 'Digital Sleep & Physiological Projections' : '数字睡眠与生理预测系统'}</p>
+          <p className="text-slate-400 font-bold uppercase text-[11px] tracking-[0.4em]">{lang === 'en' ? 'Digital Sleep Biometric System' : '数字睡眠生物识别系统'}</p>
         </div>
       </motion.div>
 
-      <GlassCard className="w-full max-w-md p-10 border-white/10 bg-slate-900/40 space-y-8 relative z-10">
+      <GlassCard className="w-full max-w-md p-10 border-white/10 bg-slate-950/40 space-y-8 relative z-20">
         <div className="space-y-8">
-          {/* AI Engine activation via dialog - mandatory for image-preview and search grounding models */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
                 <Lock size={12} className={hasKey ? "text-emerald-400" : "text-amber-400"} />
-                <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  {lang === 'zh' ? 'Gemini 引擎状态' : 'Gemini Engine Status'}
+                <label className="text-[10px] font-black uppercase tracking-widest text-slate-300">
+                  {lang === 'zh' ? '实验室 AI 引擎状态' : 'Lab AI Engine Status'}
                 </label>
               </div>
               <a 
@@ -117,21 +118,28 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                 rel="noopener noreferrer"
                 className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
               >
-                {lang === 'zh' ? '计费说明' : 'Billing Docs'} <ExternalLink size={10} />
+                {lang === 'zh' ? '计费说明' : 'Billing'} <ExternalLink size={10} />
               </a>
             </div>
 
             <button 
               onClick={handleSelectApiKey}
-              className={`w-full py-5 rounded-[2.5rem] flex items-center justify-center gap-3 font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl ${
+              className={`w-full py-6 rounded-[2.5rem] flex items-center justify-center gap-3 font-black text-sm uppercase tracking-widest transition-all active:scale-95 shadow-2xl relative z-30 pointer-events-auto ${
                 hasKey 
                   ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' 
-                  : 'bg-indigo-600 text-white hover:bg-indigo-500'
+                  : 'bg-indigo-600 text-white hover:bg-indigo-500 cursor-pointer border border-white/10'
               }`}
             >
-              <Zap size={18} className={hasKey ? "fill-emerald-400" : ""} />
-              {hasKey ? (lang === 'zh' ? '引擎已激活' : 'Engine Active') : (lang === 'zh' ? '激活 AI 引擎' : 'Activate AI Engine')}
+              <Zap size={18} className={hasKey ? "fill-emerald-400" : "animate-pulse"} />
+              {hasKey ? (lang === 'zh' ? '引擎已就绪' : 'Engine Ready') : (lang === 'zh' ? '激活 AI 实验引擎' : 'Activate AI Engine')}
             </button>
+            
+            {!hasKey && (
+              <div className="flex items-start gap-2 px-2 text-[9px] text-amber-400/80 italic font-medium">
+                <Info size={12} className="shrink-0" />
+                <p>{lang === 'zh' ? '必须先激活引擎，否则分析功能将显示“网关不可用”。' : 'Engine activation required, otherwise AI features will show "Gateway unavailable".'}</p>
+              </div>
+            )}
           </div>
 
           <div className="h-[1px] w-full bg-white/5"></div>
@@ -140,27 +148,27 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             <button 
               onClick={handleGoogleLogin} 
               disabled={isLoggingIn || !hasKey} 
-              className={`w-full py-5 rounded-[2.5rem] flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl ${!hasKey ? 'opacity-30 cursor-not-allowed' : ''}`}
+              className={`w-full py-5 rounded-[2.5rem] flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest hover:scale-[1.02] active:scale-[0.98] transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-30 cursor-not-allowed' : 'cursor-pointer hover:shadow-indigo-500/20'}`}
             >
               {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Cpu size={20} className="text-indigo-600" />}
               {lang === 'en' ? 'Sync Health Data' : '同步健康数据 (Fit)'}
             </button>
             
-            <button onClick={onGuest} className="w-full py-4 bg-white/5 border border-white/10 rounded-[1.5rem] flex items-center justify-center gap-2 text-slate-400 hover:text-indigo-400 font-black text-[10px] uppercase tracking-widest transition-all">
-              {lang === 'en' ? 'Virtual Lab' : '进入虚拟实验室'} <ArrowRight size={12} />
+            <button onClick={onGuest} className="w-full py-4 bg-white/5 border border-white/10 rounded-[1.5rem] flex items-center justify-center gap-2 text-slate-400 hover:text-indigo-400 font-black text-[10px] uppercase tracking-widest transition-all cursor-pointer relative z-30">
+              {lang === 'en' ? 'Virtual Guest Lab' : '进入虚拟实验室'} <ArrowRight size={12} />
             </button>
           </div>
         </div>
 
         {localError && (
-          <div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-left flex gap-3 text-rose-300 text-[11px] font-bold">
+          <div className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-left flex gap-3 text-rose-300 text-[11px] font-bold animate-in slide-in-from-top-2 duration-300">
             <TriangleAlert size={18} className="shrink-0" />
             <p>{localError}</p>
           </div>
         )}
       </GlassCard>
 
-      <footer className="mt-16 flex flex-col items-center gap-6 opacity-30 hover:opacity-100 transition-opacity pb-8">
+      <footer className="mt-16 flex flex-col items-center gap-6 opacity-30 hover:opacity-100 transition-opacity pb-8 relative z-10">
         <div className="flex items-center gap-8">
           <button onClick={() => onNavigate?.('privacy')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <Shield size={12} /> Privacy
@@ -172,7 +180,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             <Github size={12} /> Source
           </a>
         </div>
-        <p className="text-[8px] font-mono uppercase tracking-[0.4em] text-slate-600">© 2025 Somno Lab • Secure Health Environment</p>
+        <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-slate-400">© 2025 Somno Lab • Secure Health Environment</p>
       </footer>
     </div>
   );
