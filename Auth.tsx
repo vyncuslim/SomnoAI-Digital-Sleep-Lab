@@ -110,16 +110,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     );
   }
 
+  const brandName = lang === 'zh' ? 'SomnoAI Digital Sleep Lab - 数字化睡眠实验平台' : 'SomnoAI Digital Sleep Lab';
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-start py-20 px-6 bg-transparent relative overflow-x-hidden">
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[1200px] bg-indigo-500/5 rounded-full blur-[160px] pointer-events-none" />
       
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-4 text-center mb-12 relative z-10">
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl space-y-4 text-center mb-12 relative z-10">
         <div className="flex justify-center mb-6">
            <Logo size={80} animated threeD />
         </div>
-        <h1 className="text-4xl font-black tracking-tighter text-white italic drop-shadow-2xl">
-          SomnoAI <span className="text-indigo-400">Digital Sleep Lab</span>
+        <h1 className={`${lang === 'zh' ? 'text-3xl' : 'text-4xl'} font-black tracking-tighter text-white italic drop-shadow-2xl px-4`}>
+          {lang === 'zh' ? (
+            <>SomnoAI <span className="text-indigo-400">Digital Sleep Lab - 数字化睡眠实验平台</span></>
+          ) : (
+            <>SomnoAI <span className="text-indigo-400">Digital Sleep Lab</span></>
+          )}
         </h1>
         <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.4em] opacity-80">
           ADVANCED BIO-DIGITAL LABORATORY
@@ -201,7 +207,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               <button 
                 onClick={handleGoogleLogin} 
                 disabled={isLoggingIn || !hasKey} 
-                className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-900 font-bold text-sm transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed grayscale' : 'cursor-pointer hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]'}`}
+                className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-bold text-sm transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed grayscale' : 'cursor-pointer hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]'}`}
               >
                 {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
                 {isLoggingIn ? (lang === 'zh' ? '正在连接...' : 'CONNECTING...') : (lang === 'zh' ? '使用 Google 账号登录' : 'Sign in with Google')}
