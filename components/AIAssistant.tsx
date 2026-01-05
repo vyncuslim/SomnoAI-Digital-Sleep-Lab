@@ -1,8 +1,9 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, User, Loader2, Sparkles, Binary, MessageSquareText, ShieldAlert, 
   Github, ExternalLink, ArrowDown, Search, BookOpen, FlaskConical,
-  Database, Zap, Trash2, Activity, Mic, MicOff, Waves, Cpu
+  Database, Zap, Trash2, Activity, Mic, MicOff, Waves, Cpu, Lock, Key
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord, ViewType } from '../types.ts';
@@ -64,18 +65,35 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [hasKey, setHasKey] = useState<boolean | null>(null);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (messages.length === 0) {
+    const checkKey = async () => {
+      try {
+        if (window.aistudio) {
+          const selected = await window.aistudio.hasSelectedApiKey();
+          setHasKey(selected);
+        } else {
+          setHasKey(!!process.env.API_KEY);
+        }
+      } catch (e) {
+        setHasKey(false);
+      }
+    };
+    checkKey();
+  }, []);
+
+  useEffect(() => {
+    if (messages.length === 0 && hasKey) {
       setMessages([{
         role: 'assistant',
         content: t.intro,
         timestamp: new Date()
       }]);
     }
-  }, [lang]);
+  }, [lang, hasKey]);
 
   const scrollToBottom = () => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -85,8 +103,20 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     scrollToBottom();
   }, [messages, isTyping]);
 
+  const handleActivateEngine = async () => {
+    if (window.aistudio) {
+      try {
+        await window.aistudio.openSelectKey();
+        // 假设选择成功并立即切换 UI
+        setHasKey(true);
+      } catch (e) {
+        console.error("Activation failed", e);
+      }
+    }
+  };
+
   const handleSend = async () => {
-    if (!input.trim() || isTyping) return;
+    if (!input.trim() || isTyping || !hasKey) return;
 
     const userMsg: ChatMessage = { role: 'user', content: input.trim(), timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
@@ -105,12 +135,57 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         sources: response.sources,
         timestamp: new Date() 
       }]);
-    } catch (err) {
+    } catch (err: any) {
+      // 如果请求报错且包含 404/未找到实体，说明 Key 可能无效，重置状态
+      if (err.message?.includes("entity was not found") || err.message?.includes("404")) {
+        setHasKey(false);
+      }
       setMessages(prev => [...prev, { role: 'assistant', content: t.error, timestamp: new Date() }]);
     } finally {
       setIsTyping(false);
     }
   };
+
+  if (hasKey === false) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center p-6 space-y-8 animate-in fade-in zoom-in-95 duration-500">
+        <div className="relative">
+          <div className="p-10 bg-indigo-500/10 rounded-[3rem] border border-indigo-500/20 shadow-2xl">
+            <Lock size={64} className="text-indigo-400" />
+          </div>
+          <motion.div 
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
+            transition={{ repeat: Infinity, duration: 3 }}
+            className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full -z-10"
+          />
+        </div>
+        <div className="space-y-4 max-w-sm">
+          <h2 className="text-2xl font-black italic tracking-tight text-white">{lang === 'zh' ? '神经引擎未激活' : 'Neural Engine Inactive'}</h2>
+          <p className="text-slate-400 text-xs leading-relaxed font-medium">
+            {lang === 'zh' 
+              ? 'AI 深度洞察需要连接到 Google AI Studio 提供支持。请选择您的付费 API Key 以启动实验分析。' 
+              : 'Deep insights require a Google AI Studio connection. Select your paid API Key to initialize analysis.'}
+          </p>
+        </div>
+        <button 
+          onClick={handleActivateEngine}
+          className="px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black uppercase text-xs tracking-[0.2em] shadow-xl hover:bg-indigo-500 active:scale-95 transition-all flex items-center gap-3"
+        >
+          <Key size={18} />
+          {lang === 'zh' ? '激活 AI 引擎' : 'Activate AI Engine'}
+        </button>
+        <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[10px] text-slate-600 font-bold uppercase tracking-widest hover:text-indigo-400 transition-colors">
+          Billing Documentation & Pricing
+        </a>
+      </div>
+    );
+  }
+
+  if (hasKey === null) return (
+    <div className="flex items-center justify-center h-[70vh]">
+      <Loader2 size={32} className="animate-spin text-indigo-500/40" />
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-[calc(100vh-140px)] pb-4">

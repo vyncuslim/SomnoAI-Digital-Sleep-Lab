@@ -4,7 +4,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { 
   Shield, LogOut, ChevronRight, Info, AlertTriangle, Cpu, Binary, Languages as LangIcon, 
   Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Key, Check, Moon, Sun, Palette, 
-  RefreshCw, Globe2, CreditCard, Smartphone, CheckCircle2, X, EyeOff, Eye
+  RefreshCw, Globe2, CreditCard, Smartphone, CheckCircle2, X, EyeOff, Eye, Database, Github, FileText
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ViewType, ThemeMode, AccentColor } from '../types.ts';
@@ -39,6 +39,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [showPaypalQR, setShowPaypalQR] = useState(false);
   const [telemetry, setTelemetry] = useState("0x4A8F2E");
+  const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
     if (staticMode) return;
@@ -55,14 +56,24 @@ export const Settings: React.FC<SettingsProps> = ({
     setTimeout(() => setCopyToast(null), 2000);
   };
 
-  const SettingItem = ({ icon: Icon, label, value, onClick, badge, color = "indigo" }: any) => (
+  const handleManualSyncAction = async () => {
+    setIsSyncing(true);
+    try {
+      await onManualSync();
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const SettingItem = ({ icon: Icon, label, value, onClick, badge, color = "indigo", isLoading = false }: any) => (
     <button 
       onClick={onClick}
-      className="w-full flex items-center justify-between py-5 px-6 group transition-all active:scale-[0.98] border-b border-white/5 last:border-0"
+      disabled={isLoading}
+      className="w-full flex items-center justify-between py-5 px-6 group transition-all active:scale-[0.98] border-b border-white/5 last:border-0 disabled:opacity-50"
     >
       <div className="flex items-center gap-5">
         <div className={`p-3 rounded-2xl bg-${color}-500/10 text-${color}-400 group-hover:scale-110 transition-transform`}>
-          <Icon size={20} />
+          {isLoading ? <RefreshCw size={20} className="animate-spin" /> : <Icon size={20} />}
         </div>
         <div className="text-left">
           <p className="font-bold text-slate-100 group-hover:text-white transition-colors">{label}</p>
@@ -87,7 +98,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">{t.subtitle}</p>
       </header>
 
-      {/* Language Switcher - Redesigned to 2x2 Grid to avoid "reading together" */}
+      {/* Language Switcher */}
       <div className="space-y-4">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
           <Globe2 size={14} className="text-indigo-400" />
@@ -105,6 +116,23 @@ export const Settings: React.FC<SettingsProps> = ({
             </GlassCard>
           ))}
         </div>
+      </div>
+
+      {/* Data Management Section */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+          <Database size={14} className="text-indigo-400" />
+          {t.dataManagement}
+        </h3>
+        <GlassCard className="overflow-hidden">
+          <SettingItem 
+            icon={RefreshCw} 
+            label={t.manualSync} 
+            value={lastSyncTime || t.never} 
+            onClick={handleManualSyncAction}
+            isLoading={isSyncing}
+          />
+        </GlassCard>
       </div>
 
       {/* Visualizations & Static Mode */}
@@ -151,23 +179,30 @@ export const Settings: React.FC<SettingsProps> = ({
         </GlassCard>
       </div>
 
-      {/* Core Settings */}
+      {/* Legal & Docs */}
       <div className="space-y-4">
         <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
-          <Cpu size={14} className="text-indigo-400" />
-          {t.security}
+          <Shield size={14} className="text-indigo-400" />
+          {t.legal}
         </h3>
         <GlassCard className="overflow-hidden">
           <SettingItem 
-            icon={Key} 
-            label={t.geminiCore} 
-            value={lang === 'zh' ? '神经引擎已就绪' : 'Neural Engine Ready'} 
-            badge="v3.1"
+            icon={Shield} 
+            label={t.privacy} 
+            value="v2025.01.04" 
+            onClick={() => onNavigate('privacy')}
           />
           <SettingItem 
-            icon={Shield} 
-            label={t.dataPrivacy} 
-            value={t.encrypted} 
+            icon={FileText} 
+            label={t.terms} 
+            value="v2025.01.04" 
+            onClick={() => onNavigate('terms')}
+          />
+          <SettingItem 
+            icon={Github} 
+            label="GitHub Repository" 
+            value="Open Source" 
+            onClick={() => window.open('https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', '_blank')}
           />
         </GlassCard>
       </div>
@@ -224,13 +259,36 @@ export const Settings: React.FC<SettingsProps> = ({
       </div>
 
       <div className="pt-6">
-        <button 
-          onClick={() => setShowLogoutConfirm(true)}
-          className="w-full py-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center gap-3 text-slate-500 hover:text-rose-400 transition-all font-black text-[10px] uppercase tracking-widest"
-        >
-          <LogOut size={16} />
-          {t.logout}
-        </button>
+        <AnimatePresence mode="wait">
+          {showLogoutConfirm ? (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="p-8 bg-rose-500/10 border border-rose-500/20 rounded-[2.5rem] space-y-6"
+            >
+              <div className="text-center space-y-2">
+                <p className="font-black text-rose-400 uppercase text-xs tracking-widest">确认终止实验室会话？</p>
+                <p className="text-[10px] text-slate-400 font-medium italic">所有同步的生物识别数据将从本地内存中物理擦除。</p>
+              </div>
+              <div className="flex gap-4">
+                <button onClick={onLogout} className="flex-1 py-4 bg-rose-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                  清除并退出
+                </button>
+                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-4 bg-white/5 text-slate-400 rounded-2xl font-black text-[10px] uppercase tracking-widest">
+                  取消
+                </button>
+              </div>
+            </motion.div>
+          ) : (
+            <button 
+              onClick={() => setShowLogoutConfirm(true)}
+              className="w-full py-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center gap-3 text-slate-500 hover:text-rose-400 transition-all font-black text-[10px] uppercase tracking-widest"
+            >
+              <LogOut size={16} />
+              {t.logout}
+            </button>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Modals & Toasts */}

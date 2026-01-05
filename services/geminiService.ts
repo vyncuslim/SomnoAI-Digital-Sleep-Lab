@@ -1,21 +1,11 @@
 
-// Always use import {GoogleGenAI} from "@google/genai";
 import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
-/**
- * Initialize GoogleGenAI according to SDK guidelines.
- * The API key must be obtained exclusively from the environment variable process.env.API_KEY.
- */
-const getAIInstance = () => {
-  // Always use a named parameter and obtain the key from process.env.API_KEY.
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
-};
-
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   try {
-    const ai = getAIInstance();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const prompt = `Perform a high-precision multi-dimensional sleep analysis. 
     Output exactly 3 distinct insights in ${lang === 'zh' ? 'Chinese' : 'English'}:
     1. A physiological signal analysis (Deep/REM architecture).
@@ -41,22 +31,18 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     });
 
     const results = JSON.parse(response.text || "[]");
-    return Array.isArray(results) && results.length > 0 
-      ? results 
-      : (lang === 'en' 
-          ? ["Sleep architecture analyzed. Optimize environment.", "Cognitive load may be elevated today.", "Try magnesium for recovery."] 
-          : ["睡眠架构已分析。请优化环境。", "今天的认知负荷可能会升高。", "尝试补充镁以促进恢复。"]);
+    return results;
   } catch (err: any) {
     console.error("Gemini Insight Error:", err);
     return lang === 'en' 
-      ? ["Insight synthesis offline. Please check connectivity.", "Biometric link stable.", "Awaiting next stream."] 
-      : ["洞察合成离线。请检查网络连接。", "生物识别链路稳定。", "等待下一流数据。"];
+      ? ["Insight synthesis offline.", "Biometric link stable.", "Awaiting next stream."] 
+      : ["洞察合成离线。", "生物识别链路稳定。", "等待下一流数据。"];
   }
 };
 
 export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> => {
   try {
-    const ai = getAIInstance();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const recent = history.slice(0, 7);
     const avgScore = Math.round(recent.reduce((acc, r) => acc + r.score, 0) / recent.length);
     
@@ -71,7 +57,6 @@ export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> 
 
     return response.text || "Trend analysis inconclusive.";
   } catch (err: any) {
-    console.error("Weekly Summary Error:", err);
     return "Historical synthesis error.";
   }
 };
@@ -82,7 +67,7 @@ export const chatWithCoach = async (
   contextData?: SleepRecord | null
 ) => {
   try {
-    const ai = getAIInstance();
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     let biometricContext = "";
     if (contextData) {
@@ -103,7 +88,6 @@ export const chatWithCoach = async (
     const lastMessage = history[history.length - 1].content;
 
     const response = await ai.models.generateContent({
-      // Switched to gemini-3-pro-preview to use system API key directly
       model: 'gemini-3-pro-preview',
       contents: [
         ...chatHistory,
@@ -121,7 +105,6 @@ export const chatWithCoach = async (
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
     };
   } catch (err: any) {
-    console.error("Chat Error:", err);
     throw err;
   }
 };

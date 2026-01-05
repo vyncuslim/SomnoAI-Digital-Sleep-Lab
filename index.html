@@ -72,7 +72,6 @@
             animation: nebulaPulse 30s ease-in-out infinite;
         }
 
-        /* 静态模式：停止背景动画 */
         body.static-ui .nebula {
             animation: none;
             opacity: 0.08;
@@ -96,48 +95,6 @@
             transform-style: preserve-3d;
             z-index: 10;
             flex: 1;
-        }
-
-        .global-footer {
-            position: relative;
-            z-index: 20;
-            padding: 2rem 1.5rem 4rem;
-            text-align: center;
-            opacity: 0.3;
-            transition: opacity 0.3s ease;
-        }
-
-        .global-footer:hover {
-            opacity: 0.8;
-        }
-
-        .footer-nav {
-            display: flex;
-            justify-content: center;
-            gap: 2rem;
-            margin-bottom: 1rem;
-        }
-
-        .footer-link {
-            color: #94a3b8;
-            text-decoration: none;
-            font-size: 10px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            transition: color 0.2s ease;
-        }
-
-        .footer-link:hover {
-            color: #818cf8;
-        }
-
-        .footer-tag {
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 8px;
-            text-transform: uppercase;
-            letter-spacing: 0.4em;
-            color: #475569;
         }
     </style>
 <script type="importmap">
@@ -165,16 +122,6 @@
         <div class="grid-floor"></div>
     </div>
     <div id="root"></div>
-    
-    <footer class="global-footer">
-        <nav class="footer-nav">
-            <a href="/privacy.html" class="footer-link">Privacy Policy</a>
-            <a href="/terms.html" class="footer-link">Terms of Service</a>
-            <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" class="footer-link">GitHub</a>
-        </nav>
-        <p class="footer-tag">© 2025 Somno Lab • Neural Infrastructure</p>
-    </footer>
-
     <script type="module" src="index.tsx"></script>
 </body>
 </html>

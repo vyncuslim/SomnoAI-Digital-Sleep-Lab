@@ -4,7 +4,7 @@ import { Dashboard } from './components/Dashboard.tsx';
 import { Trends } from './components/Trends.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
 import { Settings } from './components/Settings.tsx';
-import { Auth } from './components/Auth.tsx';
+import { Auth } from './Auth.tsx';
 import { DataEntry } from './components/DataEntry.tsx';
 import { LegalView } from './components/LegalView.tsx';
 import { AboutView } from './components/AboutView.tsx';
@@ -57,6 +57,7 @@ const App: React.FC = () => {
       const updatedRecord = { id: `fit-${Date.now()}`, aiInsights: [lang === 'en' ? "Lab syncing..." : "同步中..."], ...fitData } as SleepRecord;
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
+      localStorage.setItem('somno_last_sync', new Date().toLocaleTimeString());
       setIsLoading(false);
       onProgress?.('analyzing');
       const insights = await getSleepInsight(updatedRecord, lang);
@@ -70,6 +71,21 @@ const App: React.FC = () => {
     }
   }, [lang]);
 
+  const handleLogout = async () => {
+    try {
+      googleFit.logout();
+      setIsLoggedIn(false);
+      setIsGuest(false);
+      localStorage.removeItem('somno_last_sync');
+      localStorage.removeItem('google_fit_token');
+      sessionStorage.clear();
+      // 强制重载
+      window.location.href = window.location.origin;
+    } catch (e) {
+      window.location.reload();
+    }
+  };
+
   const renderView = () => {
     if (activeView === 'privacy' || activeView === 'terms') return <LegalView type={activeView} lang={lang} onBack={() => setActiveView('profile')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView('profile')} />;
@@ -81,7 +97,10 @@ const App: React.FC = () => {
         <Logo size={96} className="opacity-40" animated={!staticMode} threeD={threeDEnabled} staticMode={staticMode} />
         <div className="space-y-4">
           <h2 className="text-3xl font-black uppercase tracking-tighter">{lang === 'en' ? 'Biometric Offline' : '生物识别离线'}</h2>
-          <button onClick={() => setIsDataEntryOpen(true)} className="px-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest">{lang === 'en' ? 'Inject Signals' : '手动注入'}</button>
+          <div className="flex flex-col gap-4">
+            <button onClick={() => setIsDataEntryOpen(true)} className="px-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest">{lang === 'en' ? 'Inject Signals' : '手动注入'}</button>
+            <button onClick={() => handleSyncGoogleFit(true)} className="px-8 py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest">{lang === 'en' ? 'Retry Google Sync' : '重试 Google 同步'}</button>
+          </div>
         </div>
       </div>
     );
@@ -94,7 +113,7 @@ const App: React.FC = () => {
           {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
           {activeView === 'profile' && (
             <Settings 
-              lang={lang} onLanguageChange={setLang} onLogout={() => setIsLoggedIn(false)} onNavigate={setActiveView}
+              lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
               theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
               threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
               staticMode={staticMode} onStaticModeChange={setStaticMode}
@@ -131,6 +150,11 @@ const App: React.FC = () => {
         </nav>
       )}
       {isDataEntryOpen && <DataEntry onClose={() => setIsDataEntryOpen(false)} onSave={(r) => { setCurrentRecord(r); setHistory(prev => [r, ...prev]); setIsDataEntryOpen(false); }} />}
+      {errorToast && (
+        <div className="fixed top-10 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-2xl">
+          {errorToast}
+        </div>
+      )}
     </div>
   );
 };
