@@ -106,7 +106,8 @@ export const chatWithCoach = async (
     const lastMessage = history[history.length - 1].content;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      // Upgrade to gemini-3-pro-image-preview for real-time information using googleSearch tool
+      model: 'gemini-3-pro-image-preview',
       contents: [
         ...chatHistory,
         { role: 'user', parts: [{ text: lastMessage }] }
@@ -122,6 +123,7 @@ export const chatWithCoach = async (
     return {
       // Access text output using the .text property
       text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
+      // Extract website URLs from groundingChunks as required
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
     };
   } catch (err: any) {

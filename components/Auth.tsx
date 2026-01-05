@@ -19,12 +19,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   const [hasKey, setHasKey] = useState(false);
   const [isCheckingKey, setIsCheckingKey] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
-  
-  // 核心：API Key 输入状态
-  const [manualKey, setManualKey] = useState(localStorage.getItem('SOMNO_MANUAL_KEY') || '');
-  const [isSavingKey, setIsSavingKey] = useState(false);
-  const [saveSuccess, setSaveSuccess] = useState(false);
-  const [showKeyContent, setShowKeyContent] = useState(false);
 
   useEffect(() => {
     checkApiKey();
@@ -33,49 +27,41 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     });
   }, []);
 
-  const checkApiKey = () => {
-    const savedKey = localStorage.getItem('SOMNO_MANUAL_KEY');
-    if (savedKey && savedKey.length > 20) {
-      // 注入到全局 window 对象供 geminiService 使用
-      if (!(window as any).process) (window as any).process = { env: {} };
-      if (!(window as any).process.env) (window as any).process.env = {};
-      (window as any).process.env.API_KEY = savedKey;
-      setHasKey(true);
-    } else {
+  // Use mandatory AI Studio helper to check for selected key
+  const checkApiKey = async () => {
+    try {
+      if (window.aistudio && typeof window.aistudio.hasSelectedApiKey === 'function') {
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setHasKey(selected);
+      } else {
+        setHasKey(!!process.env.API_KEY);
+      }
+    } catch (e) {
+      console.error("Auth: Key check failed", e);
       setHasKey(false);
+    } finally {
+      setIsCheckingKey(false);
     }
-    setIsCheckingKey(false);
   };
 
-  const handleSaveKey = () => {
-    const trimmedKey = manualKey.trim();
-    if (!trimmedKey || trimmedKey.length < 20) {
-      setLocalError(lang === 'zh' ? "请输入有效的 API 密钥" : "Please enter a valid API Key");
-      return;
+  // Trigger mandatory AI Studio key selection dialog
+  const handleSelectApiKey = async () => {
+    if (window.aistudio && typeof window.aistudio.openSelectKey === 'function') {
+      try {
+        await window.aistudio.openSelectKey();
+        // As per guidelines, assume success after triggering to avoid race conditions
+        setHasKey(true);
+      } catch (e) {
+        setLocalError(lang === 'zh' ? "激活失败，请检查 Google AI Studio 连接" : "Activation failed, check Google AI Studio link");
+      }
+    } else {
+      setLocalError(lang === 'zh' ? "AI Studio 网关不可用" : "AI Studio Gateway unavailable");
     }
-
-    setIsSavingKey(true);
-    setLocalError(null);
-
-    // 模拟加密校验过程
-    setTimeout(() => {
-      localStorage.setItem('SOMNO_MANUAL_KEY', trimmedKey);
-      if (!(window as any).process) (window as any).process = { env: {} };
-      (window as any).process.env.API_KEY = trimmedKey;
-      
-      setSaveSuccess(true);
-      setIsSavingKey(false);
-      setHasKey(true);
-      
-      setTimeout(() => {
-        setSaveSuccess(false);
-      }, 2000);
-    }, 1000);
   };
 
   const handleGoogleLogin = async () => {
     if (!hasKey) {
-      setLocalError(lang === 'zh' ? "请先配置并保存 API 密钥以激活 AI 功能" : "Please configure API Key first to enable AI functions");
+      setLocalError(lang === 'zh' ? "请先激活 AI 引擎" : "Please activate AI Engine first");
       return;
     }
     setIsLoggingIn(true);
@@ -103,7 +89,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
-      {/* 动态背景光晕 */}
+      {/* Background decoration */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       
       <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-8 text-center mb-8 relative z-10">
@@ -122,67 +108,47 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
       <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-900/60 space-y-8 relative z-10">
         <div className="space-y-6">
-          {/* API Key 核心输入区 */}
+          {/* AI Engine activation via mandatory selection dialog */}
           <div className="space-y-4">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
                 <Lock size={12} className={hasKey ? "text-emerald-400" : "text-amber-400"} />
                 <label className="text-[10px] font-black uppercase tracking-widest text-slate-400">
-                  {lang === 'zh' ? 'Gemini API 密钥' : 'Gemini API Gateway'}
+                  {lang === 'zh' ? 'Gemini 引擎状态' : 'Gemini Engine Status'}
                 </label>
               </div>
               <a 
-                href="https://aistudio.google.com/app/apikey" 
+                href="https://ai.google.dev/gemini-api/docs/billing" 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-[9px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1"
               >
-                获取密钥 <ExternalLink size={10} />
+                {lang === 'zh' ? '计费文档' : 'Billing Docs'} <ExternalLink size={10} />
               </a>
             </div>
 
-            <div className="relative group">
-              <div className={`absolute -inset-0.5 rounded-2xl blur opacity-20 transition duration-1000 ${hasKey ? 'bg-emerald-500' : 'bg-indigo-500'}`}></div>
-              <div className="relative flex items-center bg-slate-950 rounded-2xl border border-white/10 overflow-hidden focus-within:border-indigo-500/50 transition-all">
-                <div className="pl-4 text-slate-600">
-                  <Key size={16} />
-                </div>
-                <input 
-                  type={showKeyContent ? "text" : "password"}
-                  value={manualKey}
-                  onChange={(e) => {
-                    setManualKey(e.target.value);
-                    setHasKey(false); // 修改时重置状态
-                  }}
-                  placeholder="Paste AI Studio Key here..."
-                  className="w-full py-4 px-4 bg-transparent outline-none text-sm font-mono text-indigo-300 placeholder:text-slate-800"
-                />
-                <button 
-                  onClick={() => setShowKeyContent(!showKeyContent)}
-                  className="pr-4 text-slate-600 hover:text-indigo-400 transition-colors"
-                >
-                  {showKeyContent ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              </div>
-            </div>
-
             <button 
-              onClick={handleSaveKey}
-              disabled={isSavingKey || !manualKey}
-              className={`w-full py-4 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl ${
-                saveSuccess 
-                  ? 'bg-emerald-600 text-white' 
-                  : 'bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-30 disabled:grayscale'
+              onClick={handleSelectApiKey}
+              className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 shadow-xl ${
+                hasKey 
+                  ? 'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30' 
+                  : 'bg-indigo-600 text-white hover:bg-indigo-500'
               }`}
             >
-              {isSavingKey ? <Loader2 className="animate-spin" size={16} /> : (saveSuccess ? <Check size={16} /> : <Save size={16} />)}
-              {saveSuccess ? (lang === 'zh' ? '配置已更新' : 'Config Updated') : (lang === 'zh' ? '激活 AI 引擎' : 'Activate AI Engine')}
+              <Zap size={16} className={hasKey ? "fill-emerald-400" : ""} />
+              {hasKey ? (lang === 'zh' ? '引擎已激活' : 'Engine Active') : (lang === 'zh' ? '激活 AI 引擎' : 'Activate AI Engine')}
             </button>
+            
+            {!hasKey && (
+              <p className="text-[10px] text-slate-400 italic text-center px-4 leading-relaxed">
+                {lang === 'zh' ? '请点击上方按钮并从您的付费 GCP 项目中选择一个 API 密钥。' : 'Please click the button above and select an API key from your paid GCP project.'}
+              </p>
+            )}
           </div>
 
           <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
 
-          {/* 数据连接区 */}
+          {/* Health data connection section */}
           <div className="space-y-4">
             <button 
               onClick={handleGoogleLogin} 
