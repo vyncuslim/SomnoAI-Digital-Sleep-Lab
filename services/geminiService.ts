@@ -1,18 +1,16 @@
 
+// Always use import {GoogleGenAI} from "@google/genai";
 import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
+/**
+ * Initialize GoogleGenAI according to SDK guidelines.
+ * The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+ */
 const getAIInstance = () => {
-  // 按照规范：每次调用前创建新实例
-  // 优先级：Window 全局变量 (由 Auth 组件设置) > 环境注入
-  const apiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY || "";
-  
-  if (!apiKey || apiKey.length < 20) {
-    throw new Error("GATEWAY_NOT_FOUND");
-  }
-  
-  return new GoogleGenAI({ apiKey });
+  // Always use a named parameter and obtain the key from process.env.API_KEY.
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
@@ -42,6 +40,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
       }
     });
 
+    // Directly access the .text property from the response object
     const results = JSON.parse(response.text || "[]");
     return Array.isArray(results) && results.length > 0 
       ? results 
@@ -50,11 +49,10 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
           : ["睡眠架构已分析。请优化环境。", "今天的认知负荷可能会升高。", "尝试补充镁以促进恢复。"]);
   } catch (err: any) {
     console.error("Gemini Insight Error:", err);
-    if (err.message === "GATEWAY_NOT_FOUND") throw err;
     
     return lang === 'en' 
-      ? ["Insight synthesis offline. Please check API Key.", "Biometric link stable.", "Awaiting next stream."] 
-      : ["洞察合成离线。请检查 API 密钥配置。", "生物识别链路稳定。", "等待下一流数据。"];
+      ? ["Insight synthesis offline. Please check connectivity.", "Biometric link stable.", "Awaiting next stream."] 
+      : ["洞察合成离线。请检查网络连接。", "生物识别链路稳定。", "等待下一流数据。"];
   }
 };
 
@@ -73,10 +71,11 @@ export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> 
       config: { temperature: 0.7 }
     });
 
+    // Use .text property directly
     return response.text || "Trend analysis inconclusive.";
   } catch (err: any) {
-    if (err.message === "GATEWAY_NOT_FOUND") throw err;
-    return "Historical synthesis error. API Key missing.";
+    console.error("Weekly Summary Error:", err);
+    return "Historical synthesis error.";
   }
 };
 
@@ -114,18 +113,19 @@ export const chatWithCoach = async (
       ],
       config: {
         systemInstruction,
+        // search grounding is enabled for complex research tasks
         tools: [{ googleSearch: {} }],
         temperature: 0.75,
       }
     });
 
     return {
+      // Access text output using the .text property
       text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
     };
   } catch (err: any) {
     console.error("Chat Error:", err);
-    if (err.message === "GATEWAY_NOT_FOUND") throw err;
     throw err;
   }
 };

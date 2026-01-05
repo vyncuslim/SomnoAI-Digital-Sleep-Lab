@@ -1,6 +1,7 @@
 
 import React, { useState, useMemo } from 'react';
-import { X, Check, Clock, Heart, Star, Flame, Info, ShieldAlert, Activity, Zap, BrainCircuit, Waves, Terminal } from 'lucide-react';
+// Added Loader2 to the lucide-react imports
+import { X, Check, Clock, Heart, Star, Flame, Info, ShieldAlert, Activity, Zap, BrainCircuit, Waves, Terminal, Loader2 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { SleepRecord, SleepStage } from '../types.ts';
 import { motion } from 'framer-motion';

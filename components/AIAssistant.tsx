@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, User, Loader2, Sparkles, Binary, MessageSquareText, ShieldAlert, 
@@ -17,6 +16,8 @@ const CROAvatar = ({ isProcessing = false, size = 40 }: { isProcessing?: boolean
     <motion.div 
       className="relative flex items-center justify-center shrink-0"
       style={{ width: size, height: size }}
+      role="img"
+      aria-label="AI Assistant Avatar"
     >
       <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full">
         <defs>
@@ -47,13 +48,6 @@ const CROAvatar = ({ isProcessing = false, size = 40 }: { isProcessing?: boolean
         />
         <circle cx="50" cy="50" r="4" fill="white" className="opacity-80" />
       </svg>
-      {isProcessing && (
-        <motion.div 
-          className="absolute inset-0 border-2 border-indigo-400 rounded-full"
-          animate={{ scale: [1, 1.5], opacity: [0.5, 0] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        />
-      )}
     </motion.div>
   );
 };
@@ -70,11 +64,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [showScrollDown, setShowScrollDown] = useState(false);
-  const [isListening, setIsListening] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -91,14 +82,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   };
 
   useEffect(() => {
-    if (!showScrollDown) scrollToBottom();
+    scrollToBottom();
   }, [messages, isTyping]);
 
-  const handleSend = async (textOverride?: string) => {
-    const textToSend = textOverride || input;
-    if (!textToSend.trim() || isTyping) return;
+  const handleSend = async () => {
+    if (!input.trim() || isTyping) return;
 
-    const userMsg: ChatMessage = { role: 'user', content: textToSend.trim(), timestamp: new Date() };
+    const userMsg: ChatMessage = { role: 'user', content: input.trim(), timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
@@ -123,7 +113,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] pb-4 animate-in fade-in duration-700">
+    <div className="flex flex-col h-[calc(100vh-140px)] pb-4">
       <header className="flex items-center justify-between mb-6 px-1">
         <div className="flex items-center gap-4">
           <div className="p-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
@@ -131,18 +121,19 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
           </div>
           <div>
             <h1 className="text-xl font-black italic tracking-tight text-white">{t.title}</h1>
-            <p className="text-[9px] text-slate-500 font-black uppercase tracking-[0.2em]">Neural Research Interface</p>
+            <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">Neural Research Interface</p>
           </div>
         </div>
         <button 
           onClick={() => setMessages([{ role: 'assistant', content: t.intro, timestamp: new Date() }])}
-          className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-500 hover:text-rose-400 transition-all"
+          aria-label="Clear chat history"
+          className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-rose-400 transition-all"
         >
           <Trash2 size={16} />
         </button>
       </header>
 
-      <div className="flex-1 overflow-y-auto space-y-6 pr-2 mb-6 scrollbar-hide" ref={containerRef}>
+      <div className="flex-1 overflow-y-auto space-y-6 pr-2 mb-6 scrollbar-hide">
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => (
             <motion.div 
@@ -153,7 +144,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
             >
               <div className={`max-w-[90%] flex gap-4 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                 <div className="pt-1">
-                  {msg.role === 'assistant' ? <CROAvatar size={32} /> : <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center border border-white/5 text-slate-500"><User size={14}/></div>}
+                  {msg.role === 'assistant' ? <CROAvatar size={32} /> : <div className="w-8 h-8 rounded-xl bg-slate-800 flex items-center justify-center border border-white/5 text-slate-400"><User size={14}/></div>}
                 </div>
                 <div className="space-y-2">
                   <div className={`p-4 rounded-2xl text-[13px] leading-relaxed relative ${
@@ -162,23 +153,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
                     : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                   }`}>
                     <div className="whitespace-pre-wrap">{msg.content}</div>
-                    {msg.role === 'assistant' && (
-                      <div className="mt-3 pt-2 border-t border-white/5 flex justify-between items-center opacity-30">
-                        <span className="text-[7px] font-mono uppercase tracking-widest">Protocol: CRO-v5.0</span>
-                        <span className="text-[7px] font-mono">{new Date(msg.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                      </div>
-                    )}
                   </div>
-                  
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className="flex flex-wrap gap-2 px-1">
-                      {msg.sources.map((source, sIdx) => source.web?.uri && (
-                        <a key={sIdx} href={source.web.uri} target="_blank" className="inline-flex items-center gap-1.5 px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-[8px] font-bold text-slate-400 hover:text-indigo-400 transition-all uppercase tracking-widest">
-                          <BookOpen size={10} /> {source.web.title?.slice(0, 20)}...
-                        </a>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
             </motion.div>
@@ -189,7 +164,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
             <CROAvatar size={32} isProcessing={true} />
             <div className="p-4 rounded-2xl bg-slate-900/40 border border-white/5 flex items-center gap-2">
                <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
-               <span className="text-[10px] font-black uppercase text-slate-600 tracking-widest">Decoding Stream</span>
+               <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Decoding Stream</span>
             </div>
           </div>
         )}
@@ -200,24 +175,23 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         <GlassCard className="p-1.5 pr-3 flex items-center gap-2 border-indigo-500/30">
           <input 
             type="text" 
+            id="chat-input"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && handleSend()}
             placeholder={t.placeholder}
+            aria-label="Chat message input"
             className="flex-1 bg-transparent border-none outline-none px-4 py-3 text-sm text-slate-200 placeholder:text-slate-600 font-medium"
           />
           <button 
             onClick={() => handleSend()}
             disabled={!input.trim() || isTyping}
-            className={`p-3 rounded-2xl transition-all ${!input.trim() || isTyping ? 'bg-slate-800 text-slate-600' : 'bg-indigo-600 text-white shadow-lg active:scale-95'}`}
+            aria-label="Send message"
+            className={`p-3 rounded-2xl transition-all ${!input.trim() || isTyping ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white shadow-lg active:scale-95'}`}
           >
             <Send size={18} />
           </button>
         </GlassCard>
-        <div className="absolute -bottom-6 left-4 flex items-center gap-2 opacity-20">
-           <ShieldAlert size={10} className="text-indigo-400" />
-           <span className="text-[8px] font-black uppercase tracking-[0.2em]">End-to-End Neural Processing</span>
-        </div>
       </div>
     </div>
   );

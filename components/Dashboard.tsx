@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -44,7 +43,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
       animate={{ opacity: 1, scale: 1 }}
       className="space-y-8 pb-32"
     >
-      {/* 顶部系统状态栏 */}
       <div className="flex justify-between items-center px-2">
         <div className="flex items-center gap-4">
           <div className="relative">
@@ -58,7 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
             />
           </div>
           <div>
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-500 leading-none mb-1.5">{t.neuralActive}</h2>
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 leading-none mb-1.5">{t.neuralActive}</h2>
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
               <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Protocol v4.0.2</span>
@@ -67,16 +65,15 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
         </div>
         <button 
           onClick={handleSync}
+          aria-label={lang === 'zh' ? '同步健康数据' : 'Sync Health Data'}
           className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 ${isProcessing ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
         >
           <RefreshCw size={20} className={isProcessing ? 'animate-spin' : ''} />
         </button>
       </div>
 
-      {/* 核心睡眠分数节点 */}
       <div className="relative py-4">
         <GlassCard intensity={1.5} className="p-10 border-indigo-500/40 relative overflow-hidden">
-          {/* 背景动态网格 */}
           <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" />
           
           <div className="flex flex-col md:flex-row justify-between gap-12 relative z-10">
@@ -112,7 +109,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
 
             <div className="flex-1 max-w-sm space-y-6">
               <div className="space-y-4">
-                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500 flex items-center gap-2">
+                <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                   <Zap size={14} className="text-amber-400" />
                   Chief Insights
                 </h3>
@@ -126,10 +123,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
             </div>
           </div>
 
-          {/* 进度条可视化 */}
           <div className="mt-12 space-y-3">
              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                <span className="text-slate-500">Neural Efficiency</span>
+                <span className="text-slate-400">Neural Efficiency</span>
                 <span className="text-indigo-400 font-mono">{data.score}%</span>
              </div>
              <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5">
@@ -144,7 +140,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
         </GlassCard>
       </div>
 
-      {/* 次要指标网格 */}
       <div className="grid grid-cols-2 gap-6">
         <GlassCard className="p-8 group hover:border-rose-500/40 transition-all duration-500" intensity={1.2}>
           <div className="flex flex-col items-center gap-6">
@@ -159,7 +154,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
               />
             </div>
             <div className="text-center space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Resting HR</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Resting HR</p>
               <p className="text-4xl font-black font-mono tracking-tighter text-white italic">
                 {data.heartRate.resting}
                 <span className="text-xs text-slate-600 ml-1 font-sans">BPM</span>
@@ -174,7 +169,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
               <Cpu size={32} />
             </div>
             <div className="text-center space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Efficiency</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Efficiency</p>
               <p className="text-4xl font-black font-mono tracking-tighter text-white italic">
                 {data.efficiency}
                 <span className="text-xs text-slate-600 ml-1 font-sans">%</span>
@@ -184,7 +179,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
         </GlassCard>
       </div>
 
-      {/* 底部装饰遥测信息 */}
       <div className="px-2 pt-6 flex justify-between items-center opacity-30">
         <div className="flex items-center gap-3">
           <Binary size={12} className="text-indigo-400" />
