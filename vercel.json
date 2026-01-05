@@ -28,14 +28,6 @@
   ],
   "rewrites": [
     {
-      "source": "/privacy",
-      "destination": "/privacy.html"
-    },
-    {
-      "source": "/terms",
-      "destination": "/terms.html"
-    },
-    {
       "source": "/sitemap.xml",
       "destination": "/sitemap.xml"
     },
@@ -44,11 +36,15 @@
       "destination": "/robots.txt"
     },
     {
-      "source": "/googlee47ef5d2eacdf45a.html",
-      "destination": "/googlee47ef5d2eacdf45a.html"
+      "source": "/privacy",
+      "destination": "/privacy.html"
     },
     {
-      "source": "/((?!privacy|terms|robots\\.txt|sitemap\\.xml|googlee47ef5d2eacdf45a|.*\\.).*)",
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/((?!privacy|terms|googlee47ef5d2eacdf45a|sitemap\\.xml|robots\\.txt|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
   ]

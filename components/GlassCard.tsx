@@ -8,6 +8,9 @@ interface GlassCardProps {
   onClick?: () => void;
   hoverScale?: boolean;
   intensity?: number;
+  // Added accessibility props to fix type errors when these are passed to GlassCard
+  role?: string;
+  'aria-label'?: string;
 }
 
 export const GlassCard: React.FC<GlassCardProps> = ({ 
@@ -15,7 +18,10 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   className = '', 
   onClick, 
   hoverScale = false,
-  intensity = 1 
+  intensity = 1,
+  // Added accessibility props to fix type errors when these are passed to GlassCard
+  role,
+  'aria-label': ariaLabel
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -45,6 +51,9 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   return (
     <motion.div 
       ref={cardRef}
+      // Pass through accessibility props to the motion.div
+      role={role}
+      aria-label={ariaLabel}
       style={{
         rotateX,
         rotateY,

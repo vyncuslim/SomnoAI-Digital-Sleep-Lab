@@ -31,6 +31,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="bg-slate-950/95 backdrop-blur-2xl border border-indigo-500/30 p-6 rounded-3xl shadow-2xl min-w-[240px] space-y-5"
         role="tooltip"
+        aria-live="polite"
       >
         <div className="flex justify-between items-center border-b border-white/5 pb-3">
           <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">{label}</p>
@@ -144,7 +145,11 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
       </header>
 
       {!summary ? (
-        <GlassCard onClick={handleGenerateSummary} className="p-6 border-indigo-500/20 bg-indigo-500/[0.03] group cursor-pointer active:scale-[0.98]">
+        <GlassCard 
+          onClick={handleGenerateSummary} 
+          className="p-6 border-indigo-500/20 bg-indigo-500/[0.03] group cursor-pointer active:scale-[0.98]"
+          aria-label="Synthesize trend report"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
@@ -170,7 +175,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
         </GlassCard>
       )}
 
-      <GlassCard className="p-8 relative overflow-hidden">
+      <GlassCard className="p-8 relative overflow-hidden" role="region" aria-label="Sleep Score Trend Chart">
         <div className="absolute top-0 right-0 p-8 opacity-[0.02] pointer-events-none" aria-hidden="true">
           <BarChart3 size={160} />
         </div>
@@ -188,7 +193,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
           </div>
         </div>
 
-        <div className="h-64 w-full">
+        <div className="h-64 w-full" role="img" aria-label="Area chart showing sleep score trends over time">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
               <defs>

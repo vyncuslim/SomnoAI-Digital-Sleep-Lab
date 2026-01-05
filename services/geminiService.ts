@@ -3,6 +3,12 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
+export interface SleepExperiment {
+  hypothesis: string;
+  protocol: string[];
+  expectedImpact: string;
+}
+
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
@@ -30,13 +36,44 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
       }
     });
 
-    const results = JSON.parse(response.text || "[]");
-    return results;
+    const text = response.text;
+    return JSON.parse(text || "[]");
   } catch (err: any) {
     console.error("Gemini Insight Error:", err);
     return lang === 'en' 
       ? ["Insight synthesis offline.", "Biometric link stable.", "Awaiting next stream."] 
       : ["洞察合成离线。", "生物识别链路稳定。", "等待下一流数据。"];
+  }
+};
+
+export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
+  try {
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const prompt = `As a Chief Research Officer, design a 24-hour digital sleep experiment (protocol) based on this subject's latest metrics.
+    Current Data: Score ${data.score}, Deep ${data.deepRatio}%, RHR ${data.heartRate?.resting}bpm.
+    
+    Output in ${lang === 'zh' ? 'Chinese' : 'English'} as JSON.`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            hypothesis: { type: Type.STRING },
+            protocol: { type: Type.ARRAY, items: { type: Type.STRING } },
+            expectedImpact: { type: Type.STRING }
+          },
+          required: ["hypothesis", "protocol", "expectedImpact"]
+        }
+      }
+    });
+
+    return JSON.parse(response.text || "{}");
+  } catch (err) {
+    throw err;
   }
 };
 

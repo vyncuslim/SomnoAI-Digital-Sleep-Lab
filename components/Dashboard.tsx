@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -6,7 +7,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, BrainCircuit, HeartPulse, Scan, Cpu, Binary, Zap, 
   Activity, ArrowUpRight, ShieldCheck, Waves, Target, Info, Heart,
-  AlertCircle, ChevronRight, Loader2, Lock, Download, Microscope
+  AlertCircle, ChevronRight, Loader2, Lock, Download, Microscope,
+  Microchip, Layers
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 
@@ -120,25 +122,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
         </div>
         
         <div className="flex items-center gap-3">
-          <AnimatePresence mode="wait">
-            {isProcessing || syncStatus === 'error' || syncStatus === 'success' ? (
-              <motion.div 
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 20 }}
-                role="status"
-                className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${
-                  syncStatus === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
-                  syncStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                  'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
-                }`}
-              >
-                {getStatusIcon()}
-                {getStatusLabel()}
-              </motion.div>
-            ) : null}
-          </AnimatePresence>
-
           <div className="flex items-center gap-2">
             <button 
               onClick={() => onNavigate?.('profile')}
@@ -164,42 +147,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
         </div>
       </div>
 
-      {syncError && (
-        <motion.div 
-          initial={{ opacity: 0, y: -10 }}
-          animate={{ opacity: 1, y: 0 }}
-          role="alert"
-          className="mx-2 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-between gap-4"
-        >
-          <div className="flex items-center gap-3">
-            <AlertCircle size={18} className="text-rose-400" aria-hidden="true" />
-            <p className="text-[11px] font-bold text-rose-300 uppercase tracking-widest">{syncError}</p>
-          </div>
-          <button 
-            onClick={handleSync}
-            className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
-          >
-            Retry Sync
-          </button>
-        </motion.div>
-      )}
-
-      {isProcessing && (
-        <div className="px-2" aria-hidden="true">
-          <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden border border-white/5">
-            <motion.div 
-              initial={{ x: '-100%' }}
-              animate={{ x: '100%' }}
-              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
-              className="h-full w-1/3 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"
-            />
-          </div>
-        </div>
-      )}
-
       <div className="relative py-4">
         <GlassCard intensity={1.5} className="p-10 border-indigo-500/40 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" aria-hidden="true" />
+          <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none" aria-hidden="true">
+             <Layers size={140} />
+          </div>
           
           <div className="flex flex-col md:flex-row justify-between gap-12 relative z-10">
             <div className="space-y-6">
@@ -226,8 +178,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{t.stable}</span>
                 </div>
                 <div className="px-4 py-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20 flex items-center gap-2">
-                  <Activity size={14} className="text-indigo-400" aria-hidden="true" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Opt: 94%</span>
+                  <Microchip size={14} className="text-indigo-400" aria-hidden="true" />
+                  <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Lab Sync v4.2</span>
                 </div>
               </div>
             </div>
@@ -236,13 +188,28 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
               <div className="space-y-4">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
                   <Zap size={14} className="text-amber-400" aria-hidden="true" />
-                  Chief Insights
+                  {lang === 'zh' ? '关键实验分析' : 'Chief Insights'}
                 </h3>
-                <div className="min-h-[80px] p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl relative">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-full" aria-hidden="true" />
-                  <p className="text-sm font-medium italic text-slate-300 leading-relaxed">
-                    {engineActive ? (data.aiInsights?.[0] || (lang === 'zh' ? '正在分析生物流...' : 'Analyzing biometric streams...')) : (lang === 'zh' ? 'AI 引擎未激活。请在登录页激活以接收洞察。' : 'AI Engine offline. Activate gateway in Settings/Login to receive insights.')}
-                  </p>
+                <div className="space-y-3">
+                  {(data.aiInsights || []).slice(0, 3).map((insight, i) => (
+                    <motion.div 
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.1 }}
+                      className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl relative overflow-hidden group"
+                    >
+                      <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500" aria-hidden="true" />
+                      <p className="text-xs font-medium italic text-slate-300 leading-relaxed group-hover:text-white transition-colors">
+                        {insight}
+                      </p>
+                    </motion.div>
+                  ))}
+                  {(!data.aiInsights || data.aiInsights.length === 0) && (
+                    <p className="text-[10px] text-slate-600 italic px-4">
+                      {lang === 'zh' ? '等待实验数据同步中...' : 'Awaiting experimental stream...'}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
@@ -250,7 +217,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
 
           <div className="mt-12 space-y-3">
              <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                <span className="text-slate-400">Neural Efficiency</span>
+                <span className="text-slate-400">{lang === 'zh' ? '神经恢复效率' : 'Neural Efficiency'}</span>
                 <span className="text-indigo-400 font-mono">{data.score}%</span>
              </div>
              <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5" role="progressbar" aria-valuenow={data.score} aria-valuemin={0} aria-valuemax={100}>
@@ -297,7 +264,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
               <Cpu size={32} aria-hidden="true" />
             </div>
             <div className="text-center space-y-1">
-              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Efficiency</p>
+              <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">{lang === 'zh' ? '实验效率' : 'Efficiency'}</p>
               <p className="text-4xl font-black font-mono tracking-tighter text-white italic">
                 {data.efficiency}
                 <span className="text-xs text-slate-400 ml-1 font-sans">%</span>

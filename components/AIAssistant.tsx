@@ -3,11 +3,12 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, User, Loader2, Sparkles, Binary, MessageSquareText, ShieldAlert, 
   Github, ExternalLink, ArrowDown, Search, BookOpen, FlaskConical,
-  Database, Zap, Trash2, Activity, Mic, MicOff, Waves, Cpu, Lock, Key
+  Database, Zap, Trash2, Activity, Mic, MicOff, Waves, Cpu, Lock, Key,
+  ClipboardList, Beaker
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord, ViewType } from '../types.ts';
-import { chatWithCoach } from '../services/geminiService.ts';
+import { chatWithCoach, designExperiment, SleepExperiment } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
 import { Language, translations } from '../services/i18n.ts';
@@ -66,14 +67,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [hasKey, setHasKey] = useState<boolean | null>(null);
+  const [isDesigning, setIsDesigning] = useState(false);
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const checkKey = async () => {
       try {
-        if (window.aistudio) {
-          const selected = await window.aistudio.hasSelectedApiKey();
+        if ((window as any).aistudio) {
+          const selected = await (window as any).aistudio.hasSelectedApiKey();
           setHasKey(selected);
         } else {
           setHasKey(!!process.env.API_KEY);
@@ -104,14 +106,36 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   }, [messages, isTyping]);
 
   const handleActivateEngine = async () => {
-    if (window.aistudio) {
+    if ((window as any).aistudio) {
       try {
-        await window.aistudio.openSelectKey();
-        // GUIDELINE: Assume the key selection was successful after triggering openSelectKey()
+        await (window as any).aistudio.openSelectKey();
         setHasKey(true);
       } catch (e) {
         console.error("Activation failed", e);
       }
+    }
+  };
+
+  const handleDesignExperiment = async () => {
+    if (!data || isDesigning || !hasKey) return;
+    setIsDesigning(true);
+    setIsTyping(true);
+    try {
+      const exp = await designExperiment(data, lang);
+      const content = lang === 'zh' 
+        ? `🧪 **新实验协议已生成**\n\n**假设**: ${exp.hypothesis}\n\n**操作步骤**:\n${exp.protocol.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n**预期影响**: ${exp.expectedImpact}`
+        : `🧪 **New Experiment Protocol Generated**\n\n**Hypothesis**: ${exp.hypothesis}\n\n**Protocol**:\n${exp.protocol.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n**Expected Impact**: ${exp.expectedImpact}`;
+      
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content,
+        timestamp: new Date()
+      }]);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsDesigning(false);
+      setIsTyping(false);
     }
   };
 
@@ -136,7 +160,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         timestamp: new Date() 
       }]);
     } catch (err: any) {
-      // If request fails with entity not found, reset key state per guidelines
       if (err.message?.includes("entity was not found") || err.message?.includes("404")) {
         setHasKey(false);
       }
@@ -174,9 +197,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
           <Key size={18} />
           {lang === 'zh' ? '激活 AI 引擎' : 'Activate AI Engine'}
         </button>
-        <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[10px] text-slate-600 font-bold uppercase tracking-widest hover:text-indigo-400 transition-colors">
-          Billing Documentation & Pricing
-        </a>
       </div>
     );
   }
@@ -199,13 +219,23 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
             <p className="text-[9px] text-slate-400 font-black uppercase tracking-[0.2em]">Neural Research Interface</p>
           </div>
         </div>
-        <button 
-          onClick={() => setMessages([{ role: 'assistant', content: t.intro, timestamp: new Date() }])}
-          aria-label="Clear chat history"
-          className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-rose-400 transition-all"
-        >
-          <Trash2 size={16} />
-        </button>
+        <div className="flex gap-2">
+          <button 
+            onClick={handleDesignExperiment}
+            disabled={!data || isDesigning}
+            title={lang === 'zh' ? '设计实验协议' : 'Design Protocol'}
+            className="p-2.5 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 hover:bg-indigo-500/20 transition-all disabled:opacity-30"
+          >
+            <Beaker size={18} className={isDesigning ? 'animate-pulse' : ''} />
+          </button>
+          <button 
+            onClick={() => setMessages([{ role: 'assistant', content: t.intro, timestamp: new Date() }])}
+            aria-label="Clear chat history"
+            className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-400 hover:text-rose-400 transition-all"
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
       </header>
 
       <div className="flex-1 overflow-y-auto space-y-6 pr-2 mb-6 scrollbar-hide">
@@ -229,7 +259,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
                   }`}>
                     <div className="whitespace-pre-wrap">{msg.content}</div>
                     
-                    {/* Fixed: Extracting and listing URLs from groundingChunks as required by Search Grounding guidelines */}
                     {msg.sources && msg.sources.length > 0 && (
                       <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap gap-2">
                         {msg.sources.map((source: any, sIdx: number) => {
