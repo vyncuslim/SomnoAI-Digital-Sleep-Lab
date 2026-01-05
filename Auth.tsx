@@ -118,10 +118,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         <div className="flex justify-center mb-6">
            <Logo size={80} animated threeD />
         </div>
-        <h1 className="text-6xl font-black tracking-tighter text-white italic drop-shadow-2xl">
-          Somno<span className="text-indigo-400">AI</span>
+        <h1 className="text-4xl font-black tracking-tighter text-white italic drop-shadow-2xl">
+          SomnoAI <span className="text-indigo-400">Digital Sleep Lab</span>
         </h1>
-        <p className="text-slate-400 font-bold uppercase text-[12px] tracking-[0.5em] opacity-80">
+        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.4em] opacity-80">
           ADVANCED BIO-DIGITAL LABORATORY
         </p>
       </motion.div>
@@ -186,9 +186,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           <section className="space-y-6">
             <div className="p-4 bg-slate-900/60 border border-white/5 rounded-2xl space-y-3">
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium italic">
-                {lang === 'zh' 
-                  ? '合成精密生理指标监控与深度神经 AI 洞察，打造卓越的数字化睡眠研究环境。' 
-                  : 'Synthesizing precision biometric monitoring and deep neuro-AI insights for an unparalleled sleep research environment.'}
+                {translations[lang].auth.tagline}
               </p>
               <div className="flex flex-wrap gap-2">
                 {['sleep.read', 'heart_rate.read'].map(scope => (
@@ -234,7 +232,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             <SpatialIcon icon={Github} size={12} threeD={false} /> Source
           </a>
         </nav>
-        <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-slate-400">© 2026 SomnoAI • Secure Research Architecture</p>
+        <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-slate-400">© 2026 SomnoAI Digital Sleep Lab • Secure Research Architecture</p>
       </footer>
     </div>
   );

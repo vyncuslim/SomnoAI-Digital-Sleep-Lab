@@ -1,7 +1,7 @@
 
-# SomnoAI: Advanced Bio-Digital Sleep Laboratory 🌙
+# SomnoAI Digital Sleep Lab 🌙
 
-**SomnoAI** is an elite digital research environment synthesizing precision biometric monitoring, deep neuro-AI insights, and strategic wellness protocols to deliver an unparalleled sleep exploration experience. By integrating with Google Fit and utilizing Gemini-powered neural synthesis, SomnoAI provides users with high-fidelity mappings of their physiological recovery.
+**SomnoAI Digital Sleep Lab** integrates physiological monitoring, deep AI insights, and wellness protocols to deliver a comprehensive digital sleep laboratory experience. By synthesizing precision biometric telemetry with Gemini-powered neural analysis, SomnoAI provides users with high-fidelity mappings of their physiological recovery.
 
 ## 🚀 Core Architecture
 

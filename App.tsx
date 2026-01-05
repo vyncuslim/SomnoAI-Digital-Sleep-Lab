@@ -174,7 +174,7 @@ const App: React.FC = () => {
     return (
       <AnimatePresence mode="wait">
         <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} />}
+          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
           {activeView === 'calendar' && <Trends history={history} />}
           {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
           {activeView === 'profile' && (

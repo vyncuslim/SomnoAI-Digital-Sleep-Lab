@@ -1,6 +1,6 @@
 {
-  "name": "SomnoAI: Advanced Bio-Digital Sleep Laboratory",
-  "description": "Synthesizing precision biometric monitoring, deep neuro-AI insights, and strategic wellness protocols to deliver an unparalleled digital sleep research environment.",
+  "name": "SomnoAI Digital Sleep Lab",
+  "description": "SomnoAI Digital Sleep Lab synthesizes precision biometric telemetry with deep neuro-AI insights and strategic wellness protocols to deliver an unparalleled digital sleep laboratory experience.",
   "requestFramePermissions": [
     "microphone"
   ]

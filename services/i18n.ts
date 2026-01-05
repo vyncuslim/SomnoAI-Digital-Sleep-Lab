@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'zh' | 'de' | 'fr';
 
 export const translations = {
@@ -23,13 +22,13 @@ export const translations = {
       supportLab: 'Support Lab',
       shareLab: 'Share Protocol',
       shareTitle: 'Export Lab Summary',
-      shareBody: 'Sharing my latest biometric synthesis from the SomnoAI Advanced Lab.',
+      shareBody: 'Sharing my latest biometric synthesis from the SomnoAI Digital Sleep Lab.',
       copyText: 'Copy Text',
       postLinked: 'Post to LinkedIn'
     },
     auth: {
       lab: 'Lab',
-      tagline: 'Synthesizing precision biometric monitoring, deep neuro-AI insights, and strategic wellness protocols to deliver an unparalleled digital sleep research environment.',
+      tagline: 'SomnoAI Digital Sleep Lab synthesizes precision biometric telemetry with deep neuro-AI insights and strategic wellness protocols to deliver an unparalleled digital sleep laboratory experience.',
       securityStatement: 'Security Statement',
       securityDetail: 'Data synced locally. Zero backend storage. Sensitive metrics cleared upon session termination.',
       connect: 'Connect Google Fit',
@@ -60,7 +59,7 @@ export const translations = {
       sampling: 'Sampling Total'
     },
     settings: {
-      title: 'SomnoAI Advanced Lab',
+      title: 'SomnoAI Digital Sleep Lab',
       subtitle: 'Engine & Data Sync Preferences',
       security: 'Security & Calculation',
       ecosystem: 'Health Ecosystem',
@@ -102,7 +101,7 @@ export const translations = {
       theme: 'Theme Customization',
       visualizations: 'Visualizations',
       enable3D: 'Enable 3D Icons',
-      about: 'About SomnoAI Lab',
+      about: 'About SomnoAI Digital Sleep Lab',
       thankYouTitle: 'Contribution Acknowledged',
       thankYouMsg: 'Your support keeps the laboratory engine online. Thank you for fueling digital health research.',
       closeReceipt: 'Return to Lab'
@@ -153,13 +152,13 @@ export const translations = {
       supportLab: '赞助实验室',
       shareLab: '分享协议',
       shareTitle: '导出实验室摘要',
-      shareBody: '分享我来自 SomnoAI 高级实验室的最新生物识别合成报告。',
+      shareBody: '分享我来自 SomnoAI Digital Sleep Lab 的最新生物识别合成报告。',
       copyText: '复制推文',
       postLinked: '发布到 LinkedIn'
     },
     auth: {
       lab: '实验室',
-      tagline: '合成精密生理指标监控、深度神经 AI 洞察与战略性健康方案，打造卓越的数字化睡眠研究环境。',
+      tagline: 'SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验服务。',
       securityStatement: '安全声明',
       securityDetail: '数据本地同步。无后端存储。会话结束时即时清除敏感指标。',
       connect: '连接 Google Fit',
@@ -190,7 +189,7 @@ export const translations = {
       sampling: '采样总数'
     },
     settings: {
-      title: 'SomnoAI 高级实验室',
+      title: 'SomnoAI Digital Sleep Lab',
       subtitle: '引擎与数据同步首选项',
       security: '安全与计算',
       ecosystem: '健康生态系统',
@@ -232,7 +231,7 @@ export const translations = {
       theme: '主题定制',
       visualizations: '可视化',
       enable3D: '启用 3D 图标',
-      about: '关于 SomnoAI 实验室',
+      about: '关于 SomnoAI Digital Sleep Lab',
       thankYouTitle: '收到支持协议确认',
       thankYouMsg: '您的支持驱动着实验室的 AI 算力。我们的首席研究官（CRO）团队向您致敬。',
       closeReceipt: '返回实验室'
