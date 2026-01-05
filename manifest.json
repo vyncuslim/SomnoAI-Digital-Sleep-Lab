@@ -1,8 +1,8 @@
 
 {
-  "name": "Somno Digital Sleep Lab",
-  "short_name": "Somno Lab",
-  "description": "AI-powered digital sleep experiment and physiological insight platform.",
+  "name": "SomnoAI: Advanced Sleep Lab",
+  "short_name": "SomnoAI",
+  "description": "Synthesizing precision biometric monitoring and neuro-AI insights for optimized physiological recovery.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",

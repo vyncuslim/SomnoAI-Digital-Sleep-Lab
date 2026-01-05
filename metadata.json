@@ -1,6 +1,6 @@
 {
-  "name": "Somno Digital Sleep Lab",
-  "description": "Somno Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验平台。",
+  "name": "SomnoAI: Advanced Sleep Lab",
+  "description": "Synthesizing precision biometric monitoring, deep neuro-AI insights, and strategic wellness protocols to deliver an unparalleled digital sleep research environment.",
   "requestFramePermissions": [
     "microphone"
   ]

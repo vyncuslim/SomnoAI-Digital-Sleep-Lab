@@ -8,7 +8,7 @@ import {
   RefreshCw, BrainCircuit, HeartPulse, Scan, Cpu, Binary, Zap, 
   Activity, ArrowUpRight, ShieldCheck, Waves, Target, Info, Heart,
   AlertCircle, ChevronRight, Loader2, Lock, Download, Microscope,
-  Microchip, Layers
+  Microchip, Layers, Share2, Linkedin, Copy, CheckCircle2, X, ExternalLink, HeartHandshake
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 
@@ -24,6 +24,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [engineActive, setEngineActive] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [copied, setCopied] = useState(false);
   const t = translations[lang].dashboard;
 
   useEffect(() => {
@@ -67,26 +69,29 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
 
   const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
 
-  const getStatusLabel = () => {
-    switch (syncStatus) {
-      case 'authorizing': return lang === 'zh' ? '正在授权...' : 'Authorizing...';
-      case 'fetching': return lang === 'zh' ? '获取 7 日数据...' : 'Fetching 7D Data...';
-      case 'analyzing': return lang === 'zh' ? 'AI 神经分析...' : 'AI Analyzing...';
-      case 'success': return lang === 'zh' ? '同步成功' : 'Sync Success';
-      case 'error': return lang === 'zh' ? '同步失败' : 'Sync Failed';
-      default: return lang === 'zh' ? '同步数据' : 'Sync Data';
-    }
+  const getLinkedInText = () => {
+    const header = lang === 'zh' ? '🚀 我的数字化睡眠实验报告已就绪' : '🚀 My Digital Sleep Lab Report is Ready';
+    const body = `
+${lang === 'zh' ? '睡眠分数' : 'Sleep Score'}: ${data.score}/100
+${lang === 'zh' ? '神经恢复效率' : 'Neural Efficiency'}: ${data.efficiency}%
+${lang === 'zh' ? '静息心率' : 'Resting HR'}: ${data.heartRate.resting} BPM
+
+${lang === 'zh' ? '查看我的报告：' : 'View my report here:'}
+https://sleepsomno.com
+
+#DigitalHealth #SleepScience #AIPowered #SomnoLab #GeminiAI`;
+    return `${header}\n${body}`;
   };
 
-  const getStatusIcon = () => {
-    switch (syncStatus) {
-      case 'authorizing': return <Lock size={16} className="animate-pulse" aria-hidden="true" />;
-      case 'fetching': return <Download size={16} className="animate-bounce" aria-hidden="true" />;
-      case 'analyzing': return <Microscope size={16} className="animate-spin" aria-hidden="true" />;
-      case 'success': return <ShieldCheck size={16} className="text-emerald-400" aria-hidden="true" />;
-      case 'error': return <AlertCircle size={16} className="text-rose-400" aria-hidden="true" />;
-      default: return <RefreshCw size={16} aria-hidden="true" />;
-    }
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(getLinkedInText());
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  const shareToLinkedIn = () => {
+    const url = `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent('https://sleepsomno.com')}`;
+    window.open(url, '_blank');
   };
 
   return (
@@ -113,7 +118,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
           <div>
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 leading-none mb-1.5">{t.neuralActive}</h2>
             <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${engineActive ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'} ${!staticMode && engineActive ? 'animate-pulse' : ''}`} aria-hidden="true" />
+              <span className={`w-2 h-2 rounded-full ${engineActive ? 'bg-emerald-500' : 'bg-rose-500'} ${!staticMode && engineActive ? 'animate-pulse' : ''}`} aria-hidden="true" />
               <span className={`text-[10px] font-mono uppercase tracking-widest ${engineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {engineActive ? 'Engine Linked' : 'Engine Offline'}
               </span>
@@ -122,26 +127,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
         </div>
         
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => onNavigate?.('profile')}
+            className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-xl active:scale-95 group"
+            aria-label="Support Lab"
+          >
+            <HeartHandshake size={20} className="group-hover:scale-110 transition-transform" />
+          </button>
           <div className="flex items-center gap-2">
             <button 
-              onClick={() => onNavigate?.('profile')}
-              aria-label={t.supportLab}
-              className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-xl active:scale-95 flex items-center gap-2"
+              onClick={() => setShowShareModal(true)}
+              aria-label={t.shareLab}
+              className="p-4 rounded-2xl bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 hover:bg-indigo-500/20 transition-all shadow-xl active:scale-95"
             >
-              <Heart size={20} className={!staticMode ? 'animate-pulse' : ''} aria-hidden="true" />
-              <span className="hidden sm:inline text-[9px] font-black uppercase tracking-widest">{t.supportLab}</span>
+              <Share2 size={20} aria-hidden="true" />
             </button>
             <button 
               onClick={handleSync}
               disabled={isProcessing}
-              aria-label={lang === 'zh' ? '同步 Google Fit 数据' : 'Sync Google Fit Data'}
-              className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 flex items-center gap-2 ${
-                isProcessing ? 'bg-indigo-600 text-white cursor-wait' : 
-                syncStatus === 'error' ? 'bg-rose-600/20 text-rose-400 border border-rose-500/30' :
-                'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+              className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 ${
+                isProcessing ? 'bg-indigo-600 text-white' : 
+                'bg-white/5 text-slate-400 border border-white/10'
               }`}
             >
-              <RefreshCw size={20} className={isProcessing ? 'animate-spin' : (syncStatus === 'error' ? 'animate-bounce' : '')} aria-hidden="true" />
+              <RefreshCw size={20} className={isProcessing ? 'animate-spin' : ''} aria-hidden="true" />
             </button>
           </div>
         </div>
@@ -168,7 +177,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
                   >
                     {data.score}
                   </motion.span>
-                  <span className="text-3xl font-bold text-slate-700 font-mono tracking-tighter" aria-label="out of 100 points">/100</span>
+                  <span className="text-3xl font-bold text-slate-700 font-mono tracking-tighter">/100</span>
                 </div>
               </div>
               
@@ -205,11 +214,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
                       </p>
                     </motion.div>
                   ))}
-                  {(!data.aiInsights || data.aiInsights.length === 0) && (
-                    <p className="text-[10px] text-slate-600 italic px-4">
-                      {lang === 'zh' ? '等待实验数据同步中...' : 'Awaiting experimental stream...'}
-                    </p>
-                  )}
                 </div>
               </div>
             </div>
@@ -220,7 +224,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
                 <span className="text-slate-400">{lang === 'zh' ? '神经恢复效率' : 'Neural Efficiency'}</span>
                 <span className="text-indigo-400 font-mono">{data.score}%</span>
              </div>
-             <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5" role="progressbar" aria-valuenow={data.score} aria-valuemin={0} aria-valuemax={100}>
+             <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5">
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${data.score}%` }}
@@ -273,6 +277,66 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
           </div>
         </GlassCard>
       </div>
+
+      {/* Share Modal */}
+      <AnimatePresence>
+        {showShareModal && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-2xl">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="w-full max-w-md"
+            >
+              <GlassCard className="p-10 border-indigo-500/40 relative overflow-hidden">
+                <button 
+                  onClick={() => setShowShareModal(false)}
+                  className="absolute top-6 right-6 p-2 text-slate-500 hover:text-white transition-colors"
+                >
+                  <X size={20} />
+                </button>
+
+                <div className="space-y-8">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                      <Linkedin size={24} />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-black italic text-white tracking-tight">{t.shareTitle}</h2>
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Professional Synergy</p>
+                    </div>
+                  </div>
+
+                  <div className="p-5 bg-slate-900 border border-white/5 rounded-2xl relative">
+                    <p className="text-xs text-slate-300 font-medium whitespace-pre-wrap leading-relaxed">
+                      {getLinkedInText()}
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={copyToClipboard}
+                      className={`flex items-center justify-center gap-2 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                        copied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-300'
+                      }`}
+                    >
+                      {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                      {copied ? 'Copied' : t.copyText}
+                    </button>
+                    <button 
+                      onClick={shareToLinkedIn}
+                      className="flex items-center justify-center gap-2 py-4 bg-[#0a66c2] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest"
+                    >
+                      <Linkedin size={16} />
+                      {t.postLinked}
+                    </button>
+                  </div>
+                </div>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </motion.div>
   );
 };

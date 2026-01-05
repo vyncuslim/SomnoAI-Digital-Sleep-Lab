@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Loader2, ArrowRight, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock, Eye, EyeOff, Save, Activity, BrainCircuit, Waves } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -31,7 +32,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   
   const [manualKey, setManualKey] = useState('');
   const [showKey, setShowKey] = useState(false);
-  const t = translations[lang];
 
   useEffect(() => {
     checkApiKey();
@@ -119,10 +119,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
            <Logo size={80} animated threeD />
         </div>
         <h1 className="text-6xl font-black tracking-tighter text-white italic drop-shadow-2xl">
-          Somno <span className="text-indigo-400">Lab</span>
+          Somno<span className="text-indigo-400">AI</span>
         </h1>
         <p className="text-slate-400 font-bold uppercase text-[12px] tracking-[0.5em] opacity-80">
-          DIGITAL SLEEP BIOMETRIC SYSTEM
+          ADVANCED BIO-DIGITAL LABORATORY
         </p>
       </motion.div>
 
@@ -134,7 +134,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               <div className="flex items-center gap-2">
                 <SpatialIcon icon={Lock} size={14} color={hasKey ? "#10b981" : "#fbbf24"} threeD />
                 <label htmlFor="manual-api-key" className="text-[11px] font-black uppercase tracking-widest text-slate-300 cursor-pointer">
-                  AI GATEWAY (GEMINI)
+                  NEURAL GATEWAY (GEMINI)
                 </label>
               </div>
               <a 
@@ -142,7 +142,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 group"
-                aria-label={lang === 'zh' ? '前往 Google AI Studio 获取 API 密钥' : 'Go to Google AI Studio to get your API key'}
               >
                 {lang === 'zh' ? '获取密钥' : 'Get Key'} <ExternalLink size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </a>
@@ -163,7 +162,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               <button 
                 onClick={() => setShowKey(!showKey)}
                 className="absolute inset-y-0 right-5 flex items-center text-slate-500 hover:text-white transition-colors"
-                aria-label={showKey ? (lang === 'zh' ? '隐藏密钥' : 'Hide Key') : (lang === 'zh' ? '显示密钥' : 'Show Key')}
               >
                 <SpatialIcon icon={showKey ? EyeOff : Eye} size={18} threeD />
               </button>
@@ -171,7 +169,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
             <button 
               onClick={handleActivateManual}
-              aria-label={lang === 'zh' ? '激活 AI 引擎' : 'Activate AI Engine'}
               className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-[0.25em] transition-all active:scale-[0.97] shadow-lg ${
                 hasKey 
                   ? 'bg-emerald-600/10 text-emerald-400 border border-emerald-500/20' 
@@ -179,7 +176,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               }`}
             >
               <SpatialIcon icon={hasKey ? ShieldCheck : Save} size={18} threeD />
-              {hasKey ? (lang === 'zh' ? '引擎已就绪' : 'ENGINE READY') : (lang === 'zh' ? 'ACTIVATE AI ENGINE' : 'ACTIVATE AI ENGINE')}
+              {hasKey ? (lang === 'zh' ? '引擎已就绪' : 'ENGINE READY') : (lang === 'zh' ? '激活核心引擎' : 'ACTIVATE NEURAL ENGINE')}
             </button>
           </section>
 
@@ -188,10 +185,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           {/* OAUTH SECTION */}
           <section className="space-y-6">
             <div className="p-4 bg-slate-900/60 border border-white/5 rounded-2xl space-y-3">
-              <p className="text-[10px] text-slate-400 leading-relaxed font-medium italic">
+              <p className="text-[11px] text-slate-400 leading-relaxed font-medium italic">
                 {lang === 'zh' 
-                  ? '授权访问您的 Google Fit 睡眠与心率数据，以驱动 AI 进行生理建模与恢复建议。' 
-                  : 'Authorize access to Google Fit sleep & heart rate data to drive AI physiological modeling.'}
+                  ? '合成精密生理指标监控与深度神经 AI 洞察，打造卓越的数字化睡眠研究环境。' 
+                  : 'Synthesizing precision biometric monitoring and deep neuro-AI insights for an unparalleled sleep research environment.'}
               </p>
               <div className="flex flex-wrap gap-2">
                 {['sleep.read', 'heart_rate.read'].map(scope => (
@@ -205,82 +202,28 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             <button 
               onClick={handleGoogleLogin} 
               disabled={isLoggingIn || !hasKey} 
-              aria-label={lang === 'zh' ? '使用 Google 账号登录' : 'Sign in with Google'}
               className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-900 font-bold text-sm transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed grayscale' : 'cursor-pointer hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]'}`}
             >
               {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
               {isLoggingIn ? (lang === 'zh' ? '正在连接...' : 'CONNECTING...') : (lang === 'zh' ? '使用 Google 账号登录' : 'Sign in with Google')}
             </button>
-            
-            <button 
-              onClick={onGuest} 
-              aria-label={lang === 'zh' ? '进入虚拟实验室' : 'Enter Virtual Lab'}
-              className="w-full py-5 bg-transparent border border-white/5 rounded-full flex items-center justify-center gap-3 text-slate-500 hover:text-indigo-400 font-black text-[11px] uppercase tracking-[0.3em] transition-all cursor-pointer relative z-30 group"
-            >
-              VIRTUAL LAB <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-            </button>
           </section>
         </div>
-
-        {localError && (
-          <motion.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            role="alert"
-            className="mt-6 p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-left flex gap-3 text-rose-300 text-[11px] font-bold"
-          >
-            <TriangleAlert size={18} className="shrink-0" />
-            <p>{localError}</p>
-          </motion.div>
-        )}
       </GlassCard>
-
-      {/* HOW IT WORKS / FEATURES */}
-      <section className="mt-20 w-full max-w-4xl grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10 px-4" aria-label="App Features">
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.1 }}>
-          <GlassCard className="p-8 h-full space-y-4 border-indigo-500/20 bg-indigo-500/[0.02]">
-            <SpatialIcon icon={Activity} size={32} color="#818cf8" threeD />
-            <h3 className="text-sm font-black text-white uppercase tracking-widest">{lang === 'zh' ? '生理指标监控' : 'Biometric Monitoring'}</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-              {lang === 'zh' ? '通过 Google Fit 同步精准的睡眠分段与静息心率数据，可视化您的生命体征。' : 'Sync precise sleep segments and resting heart rate data via Google Fit.'}
-            </p>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.2 }}>
-          <GlassCard className="p-8 h-full space-y-4 border-emerald-500/20 bg-emerald-500/[0.02]">
-            <SpatialIcon icon={BrainCircuit} size={32} color="#10b981" threeD />
-            <h3 className="text-sm font-black text-white uppercase tracking-widest">{lang === 'zh' ? 'AI 深度洞察' : 'AI Deep Insights'}</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-              {lang === 'zh' ? '利用 Gemini 3 引擎对您的生理数据进行多维合成，提供战术级健康优化建议。' : 'Leverage Gemini 3 to synthesize multi-dimensional insights from your physiological data.'}
-            </p>
-          </GlassCard>
-        </motion.div>
-
-        <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: 0.3 }}>
-          <GlassCard className="p-8 h-full space-y-4 border-slate-500/20 bg-slate-500/[0.02]">
-            <SpatialIcon icon={Waves} size={32} color="#94a3b8" threeD />
-            <h3 className="text-sm font-black text-white uppercase tracking-widest">{lang === 'zh' ? '边缘安全架构' : 'Edge-First Privacy'}</h3>
-            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
-              {lang === 'zh' ? '数据仅在您的浏览器中处理。无后端存储，确保您的健康数据在绝对私密的环境下运行。' : 'Data is processed entirely in your browser. Zero backend storage for absolute privacy.'}
-            </p>
-          </GlassCard>
-        </motion.div>
-      </section>
 
       <footer className="mt-20 flex flex-col items-center gap-6 opacity-30 hover:opacity-100 transition-opacity pb-12 relative z-10">
         <nav className="flex items-center gap-8">
-          <button onClick={() => onNavigate?.('privacy')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors" aria-label={lang === 'zh' ? '隐私政策' : 'Privacy Policy'}>
+          <a href="/privacy" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <SpatialIcon icon={Shield} size={12} threeD={false} /> Privacy
-          </button>
-          <button onClick={() => onNavigate?.('terms')} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors" aria-label={lang === 'zh' ? '服务条款' : 'Terms of Service'}>
+          </a>
+          <a href="/terms" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <SpatialIcon icon={FileText} size={12} threeD={false} /> Terms
-          </button>
-          <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors" aria-label={lang === 'zh' ? 'GitHub 源码' : 'GitHub Source'}>
+          </a>
+          <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
             <SpatialIcon icon={Github} size={12} threeD={false} /> Source
           </a>
         </nav>
-        <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-slate-400">© 2025 Somno Lab • Secure Health Environment</p>
+        <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-slate-400">© 2026 SomnoAI • Secure Research Architecture</p>
       </footer>
     </div>
   );
