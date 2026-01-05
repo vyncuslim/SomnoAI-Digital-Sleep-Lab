@@ -107,7 +107,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     if (window.aistudio) {
       try {
         await window.aistudio.openSelectKey();
-        // 假设选择成功并立即切换 UI
+        // GUIDELINE: Assume the key selection was successful after triggering openSelectKey()
         setHasKey(true);
       } catch (e) {
         console.error("Activation failed", e);
@@ -136,7 +136,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         timestamp: new Date() 
       }]);
     } catch (err: any) {
-      // 如果请求报错且包含 404/未找到实体，说明 Key 可能无效，重置状态
+      // If request fails with entity not found, reset key state per guidelines
       if (err.message?.includes("entity was not found") || err.message?.includes("404")) {
         setHasKey(false);
       }
@@ -228,6 +228,29 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
                     : 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20'
                   }`}>
                     <div className="whitespace-pre-wrap">{msg.content}</div>
+                    
+                    {/* Fixed: Extracting and listing URLs from groundingChunks as required by Search Grounding guidelines */}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className="mt-3 pt-3 border-t border-white/5 flex flex-wrap gap-2">
+                        {msg.sources.map((source: any, sIdx: number) => {
+                          if (source.web && source.web.uri) {
+                            return (
+                              <a 
+                                key={sIdx}
+                                href={source.web.uri}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center gap-1.5 px-2 py-1 bg-white/5 rounded-lg text-[10px] text-indigo-400 hover:text-indigo-300 transition-colors border border-white/5"
+                              >
+                                <ExternalLink size={10} />
+                                {source.web.title || (lang === 'zh' ? '查看来源' : 'Source')}
+                              </a>
+                            );
+                          }
+                          return null;
+                        })}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
