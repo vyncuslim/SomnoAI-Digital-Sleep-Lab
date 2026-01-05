@@ -17,30 +17,12 @@ import { Logo } from './components/Logo.tsx';
 import { Language, translations } from './services/i18n.ts';
 
 const App: React.FC = () => {
-  const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem('somno_lang');
-    return (saved as Language) || 'en';
-  });
+  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
+  const [theme, setTheme] = useState<ThemeMode>(() => (localStorage.getItem('somno_theme') as ThemeMode) || 'dark');
+  const [accentColor, setAccentColor] = useState<AccentColor>(() => (localStorage.getItem('somno_accent') as AccentColor) || 'indigo');
+  const [threeDEnabled, setThreeDEnabled] = useState<boolean>(() => localStorage.getItem('somno_3d') !== 'false');
+  const [staticMode, setStaticMode] = useState<boolean>(() => localStorage.getItem('somno_static') === 'true');
   
-  const [theme, setTheme] = useState<ThemeMode>(() => {
-    const saved = localStorage.getItem('somno_theme');
-    return (saved as ThemeMode) || 'dark';
-  });
-
-  const [accentColor, setAccentColor] = useState<AccentColor>(() => {
-    const saved = localStorage.getItem('somno_accent');
-    return (saved as AccentColor) || 'indigo';
-  });
-
-  const [threeDEnabled, setThreeDEnabled] = useState<boolean>(() => {
-    const saved = localStorage.getItem('somno_3d');
-    return saved === null ? true : saved === 'true';
-  });
-
-  const [lastSyncTime, setLastSyncTime] = useState<string | null>(() => {
-    return localStorage.getItem('somno_last_sync');
-  });
-
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [isGuest, setIsGuest] = useState(false);
   const [activeView, setActiveView] = useState<ViewType | 'privacy' | 'terms'>('dashboard');
@@ -50,148 +32,56 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
-  const t = translations[lang];
-
   useEffect(() => {
     localStorage.setItem('somno_lang', lang);
   }, [lang]);
 
   useEffect(() => {
     localStorage.setItem('somno_theme', theme);
-    if (theme === 'light') {
-      document.documentElement.classList.add('light-mode');
-    } else {
-      document.documentElement.classList.remove('light-mode');
-    }
+    document.documentElement.classList.toggle('light-mode', theme === 'light');
   }, [theme]);
 
   useEffect(() => {
-    localStorage.setItem('somno_accent', accentColor);
-    // Dynamic CSS Variable for Accent
-    const colors: Record<AccentColor, string> = {
-      indigo: '#818cf8',
-      emerald: '#10b981',
-      rose: '#f43f5e',
-      amber: '#f59e0b',
-      sky: '#0ea5e9'
-    };
-    document.documentElement.style.setProperty('--accent-color', colors[accentColor]);
-  }, [accentColor]);
-
-  useEffect(() => {
-    localStorage.setItem('somno_3d', String(threeDEnabled));
-  }, [threeDEnabled]);
+    localStorage.setItem('somno_static', String(staticMode));
+    document.body.classList.toggle('static-ui', staticMode);
+  }, [staticMode]);
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
     try {
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
-      
       setIsLoggedIn(true);
-      setIsGuest(false);
-      
       onProgress?.('fetching');
       const fitData = await googleFit.fetchSleepData();
-      
-      const updatedRecord = {
-        id: `fit-${Date.now()}`,
-        aiInsights: [lang === 'en' ? "Lab syncing biometric streams..." : "实验室同步生物识别流中..."],
-        ...fitData
-      } as SleepRecord;
-      
+      const updatedRecord = { id: `fit-${Date.now()}`, aiInsights: [lang === 'en' ? "Lab syncing..." : "同步中..."], ...fitData } as SleepRecord;
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
-      
-      const syncTime = new Date().toLocaleString();
-      setLastSyncTime(syncTime);
-      localStorage.setItem('somno_last_sync', syncTime);
-
       setIsLoading(false);
       onProgress?.('analyzing');
-      
-      try {
-        const insights = await getSleepInsight(updatedRecord, lang);
-        setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
-        onProgress?.('success');
-      } catch (aiErr: any) {
-        console.error("App: AI Analytics failed", aiErr);
-        if (aiErr.message === "GATEWAY_NOT_FOUND") {
-          setIsLoggedIn(false);
-          setIsGuest(false);
-          setErrorToast(lang === 'zh' ? "密钥已失效，请重新激活神经网关" : "Key expired, please reactivate Neural Gateway");
-        }
-        onProgress?.('success');
-      }
+      const insights = await getSleepInsight(updatedRecord, lang);
+      setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
+      onProgress?.('success');
     } catch (err: any) {
-      console.error("App: Sync Error", err);
       setIsLoading(false);
       onProgress?.('error');
-      let msg = err.message;
-      if (msg === "DATA_NOT_FOUND") msg = (lang === 'zh' ? "未发现睡眠数据" : "No sleep data found");
-      setErrorToast(msg || (lang === 'zh' ? "同步失败" : "Sync Failed"));
+      setErrorToast(err.message || (lang === 'zh' ? "同步失败" : "Sync Failed"));
       setTimeout(() => setErrorToast(null), 5000);
     }
   }, [lang]);
 
-  const handleLogout = () => {
-    googleFit.logout();
-    setIsLoggedIn(false);
-    setIsGuest(false);
-    setCurrentRecord(null);
-    setHistory([]);
-    setActiveView('dashboard');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
   const renderView = () => {
-    if (activeView === 'privacy' || activeView === 'terms') {
-      return (
-        <LegalView 
-          type={activeView} 
-          lang={lang} 
-          onBack={() => setActiveView(isLoggedIn ? 'profile' : 'dashboard')} 
-        />
-      );
-    }
-
-    if (activeView === 'about') {
-      return <AboutView lang={lang} onBack={() => setActiveView('profile')} />;
-    }
-
-    if (isLoading && !currentRecord) return (
-      <div className="flex flex-col items-center justify-center h-[70vh] gap-10 text-center">
-        <Loader2 size={48} className="animate-spin text-indigo-500" />
-        <div className="space-y-2">
-          <p className="text-white font-bold">{lang === 'en' ? 'Biometric Syncing...' : '生物识别同步中...'}</p>
-          <p className="text-slate-500 text-[9px] uppercase tracking-widest leading-relaxed">
-            {lang === 'en' ? 'Establishing Bio-Auth Protocol' : '正在建立生物特征识别授权协议'}
-          </p>
-        </div>
-      </div>
-    );
-    
-    if (!isLoggedIn && !isGuest) return (
-      <Auth 
-        lang={lang} 
-        onLogin={() => handleSyncGoogleFit()} 
-        onGuest={() => setIsGuest(true)} 
-        onNavigate={(view: any) => setActiveView(view)}
-      />
-    );
+    if (activeView === 'privacy' || activeView === 'terms') return <LegalView type={activeView} lang={lang} onBack={() => setActiveView('profile')} />;
+    if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView('profile')} />;
+    if (isLoading && !currentRecord) return <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center"><Loader2 size={48} className="animate-spin text-indigo-500" /><p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">Biometric Syncing...</p></div>;
+    if (!isLoggedIn && !isGuest) return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={() => setIsGuest(true)} onNavigate={(v: any) => setActiveView(v)} />;
     
     if (!currentRecord && activeView === 'dashboard') return (
-      <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center px-4">
-        <Logo size={96} className="opacity-40" animated threeD={threeDEnabled} />
+      <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center">
+        <Logo size={96} className="opacity-40" animated={!staticMode} threeD={threeDEnabled} staticMode={staticMode} />
         <div className="space-y-4">
           <h2 className="text-3xl font-black uppercase tracking-tighter">{lang === 'en' ? 'Biometric Offline' : '生物识别离线'}</h2>
-          <p className="text-[11px] text-slate-500 uppercase tracking-widest">{lang === 'en' ? 'Sync cloud data or inject manual signals' : '同步云端数据或手动注入信号'}</p>
-        </div>
-        <div className="flex flex-col w-full max-w-xs gap-4">
-          <button onClick={() => handleSyncGoogleFit(true)} className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest shadow-xl hover:bg-indigo-500 transition-all">{lang === 'en' ? 'Sync Google Fit' : '同步 Google Fit'}</button>
-          <button onClick={() => setIsDataEntryOpen(true)} className="w-full py-6 bg-white/5 border border-white/10 text-slate-400 rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all">
-            <PlusCircle size={16} /> {lang === 'en' ? 'Manual Injection' : '手动注入'}
-          </button>
+          <button onClick={() => setIsDataEntryOpen(true)} className="px-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest">{lang === 'en' ? 'Inject Signals' : '手动注入'}</button>
         </div>
       </div>
     );
@@ -199,23 +89,16 @@ const App: React.FC = () => {
     return (
       <AnimatePresence mode="wait">
         <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={(onProgress) => handleSyncGoogleFit(false, onProgress)} onNavigate={setActiveView} />}
+          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={(p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} />}
           {activeView === 'calendar' && <Trends history={history} />}
-          {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} onSync={() => handleSyncGoogleFit()} />}
+          {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
           {activeView === 'profile' && (
             <Settings 
-              lang={lang} 
-              onLanguageChange={setLang} 
-              onLogout={handleLogout} 
-              onNavigate={setActiveView}
-              theme={theme}
-              onThemeChange={setTheme}
-              accentColor={accentColor}
-              onAccentChange={setAccentColor}
-              threeDEnabled={threeDEnabled}
-              onThreeDChange={setThreeDEnabled}
-              lastSyncTime={lastSyncTime}
-              onManualSync={() => handleSyncGoogleFit(true)}
+              lang={lang} onLanguageChange={setLang} onLogout={() => setIsLoggedIn(false)} onNavigate={setActiveView}
+              theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
+              threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
+              staticMode={staticMode} onStaticModeChange={setStaticMode}
+              lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncGoogleFit(true)}
             />
           )}
         </motion.div>
@@ -223,63 +106,31 @@ const App: React.FC = () => {
     );
   };
 
-  const showNav = isLoggedIn || isGuest || currentRecord;
+  const showNav = isLoggedIn || isGuest;
 
   return (
-    <div className={`min-h-screen bg-[#020617] text-white font-['Plus_Jakarta_Sans'] relative flex flex-col ${theme}-theme accent-${accentColor}`}>
-      <main className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-40' : 'pt-8'} transition-all duration-500`}>
+    <div className={`min-h-screen bg-[#020617] text-white font-['Plus_Jakarta_Sans'] relative flex flex-col accent-${accentColor}`}>
+      <main className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-40' : 'pt-8'}`}>
         {renderView()}
       </main>
-
       {showNav && (activeView !== 'privacy' && activeView !== 'terms' && activeView !== 'about') && (
         <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-10 safe-area-inset-bottom pointer-events-none">
-          <div className="max-w-md mx-auto glass-morphism rounded-[3rem] p-2 flex justify-between pointer-events-auto shadow-[0_-20px_50px_rgba(0,0,0,0.5)] border border-white/10">
+          <div className="max-w-md mx-auto glass-morphism rounded-[3rem] p-2 flex justify-between pointer-events-auto border border-white/10 shadow-2xl">
             {[
-              { id: 'dashboard', icon: Logo, label: t.nav.lab },
-              { id: 'calendar', icon: Activity, label: t.nav.trends },
-              { id: 'assistant', icon: Zap, label: t.nav.insights },
-              { id: 'profile', icon: User, label: t.nav.settings }
-            ].map((nav) => {
-              const IconComponent = nav.icon;
-              return (
-                <button 
-                  key={nav.id} 
-                  onClick={() => setActiveView(nav.id as ViewType)} 
-                  className={`flex-1 py-4 flex flex-col items-center gap-2 transition-all active:scale-95 ${activeView === nav.id ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
-                >
-                  <IconComponent 
-                    size={22} 
-                    {...(nav.id === 'dashboard' ? { animated: activeView === nav.id, threeD: threeDEnabled } : {})} 
-                  />
-                  <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>
-                </button>
-              );
-            })}
+              { id: 'dashboard', icon: Logo, label: translations[lang].nav.lab },
+              { id: 'calendar', icon: Activity, label: translations[lang].nav.trends },
+              { id: 'assistant', icon: Zap, label: translations[lang].nav.insights },
+              { id: 'profile', icon: User, label: translations[lang].nav.settings }
+            ].map((nav) => (
+              <button key={nav.id} onClick={() => setActiveView(nav.id as ViewType)} className={`flex-1 py-4 flex flex-col items-center gap-2 transition-all active:scale-95 ${activeView === nav.id ? 'text-indigo-400' : 'text-slate-500'}`}>
+                <nav.icon size={22} animated={activeView === nav.id && !staticMode} threeD={threeDEnabled} staticMode={staticMode} />
+                <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>
+              </button>
+            ))}
           </div>
         </nav>
       )}
-
       {isDataEntryOpen && <DataEntry onClose={() => setIsDataEntryOpen(false)} onSave={(r) => { setCurrentRecord(r); setHistory(prev => [r, ...prev]); setIsDataEntryOpen(false); }} />}
-      
-      {errorToast && (
-        <div className="fixed top-6 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white text-xs font-black uppercase tracking-widest rounded-full shadow-2xl animate-in slide-in-from-top-4">
-          {errorToast}
-        </div>
-      )}
-
-      <style>{`
-        .light-mode-theme { background-color: #f8fafc; color: #020617; }
-        .light-mode-theme .nebula { opacity: 0.05; }
-        .light-mode-theme .grid-plane { mask-image: radial-gradient(circle at center, black 0%, transparent 50%); }
-        .accent-indigo { --primary-accent: #818cf8; }
-        .accent-emerald { --primary-accent: #10b981; }
-        .accent-rose { --primary-accent: #f43f5e; }
-        .accent-amber { --primary-accent: #f59e0b; }
-        .accent-sky { --primary-accent: #0ea5e9; }
-        .text-accent { color: var(--primary-accent); }
-        .bg-accent { background-color: var(--primary-accent); }
-        .border-accent { border-color: var(--primary-accent); }
-      `}</style>
     </div>
   );
 };

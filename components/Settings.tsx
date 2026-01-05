@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  Shield, Smartphone, Globe, LogOut, 
-  ChevronRight, ShieldCheck, FileText, Info, MessageSquare, Github, AlertTriangle, Cpu, Activity, Binary, Radio, Languages as LangIcon, Globe2, Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Smartphone as MobileIcon, CreditCard, Key, Trash2, CheckCircle2, X, Loader2, RefreshCw, Sun, Moon, Palette, Box, Check
+  Shield, LogOut, ChevronRight, Info, AlertTriangle, Cpu, Binary, Languages as LangIcon, 
+  Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Key, Check, Moon, Sun, Palette, 
+  RefreshCw, Globe2, CreditCard, Smartphone, CheckCircle2, X, EyeOff, Eye
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ViewType, ThemeMode, AccentColor } from '../types.ts';
@@ -19,6 +21,8 @@ interface SettingsProps {
   onAccentChange: (c: AccentColor) => void;
   threeDEnabled: boolean;
   onThreeDChange: (enabled: boolean) => void;
+  staticMode: boolean;
+  onStaticModeChange: (enabled: boolean) => void;
   lastSyncTime: string | null;
   onManualSync: () => void;
 }
@@ -26,228 +30,240 @@ interface SettingsProps {
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, onNavigate,
   theme, onThemeChange, accentColor, onAccentChange,
-  threeDEnabled, onThreeDChange, lastSyncTime, onManualSync
+  threeDEnabled, onThreeDChange, 
+  staticMode, onStaticModeChange,
+  lastSyncTime, onManualSync
 }) => {
   const t = translations[lang].settings;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
-  const [telemetry, setTelemetry] = useState("0x000000");
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [showPaypalQR, setShowPaypalQR] = useState(false);
-  const [qrLoaded, setQrLoaded] = useState(false);
+  const [telemetry, setTelemetry] = useState("0x4A8F2E");
 
   useEffect(() => {
+    if (staticMode) return;
     const interval = setInterval(() => {
       const hex = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, '0');
       setTelemetry(`0x${hex}`);
-    }, 1500);
+    }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [staticMode]);
 
-  const handleClearApiKey = () => {
-    localStorage.removeItem('SOMNO_MANUAL_KEY');
-    if ((window as any).process?.env) (window as any).process.env.API_KEY = "";
-    onLogout();
-  };
-
-  const handleCopy = (text: string) => {
+  const handleCopy = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    setCopyToast(lang === 'zh' ? "ID 已捕获到剪贴板" : "ID Captured to Clipboard");
+    setCopyToast(`${label} ${translations[lang].settings.copySuccess}`);
     setTimeout(() => setCopyToast(null), 2000);
   };
 
-  const SettingItem = ({ icon: Icon, label, value, href, onClick, badge }: any) => {
-    const isExternal = !!href;
-    const content = (
-      <div className="w-full flex items-center justify-between py-5 px-6 group transition-all active:scale-[0.98] cursor-pointer relative overflow-hidden">
-        <div className="flex items-center gap-5 relative z-10">
-          <div className={`p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-500/20 transition-all duration-300 shadow-lg border border-indigo-500/10`}>
-            <Icon size={20} />
-          </div>
-          <div className="text-left space-y-0.5">
-            <p className="font-bold text-slate-100 group-hover:text-white transition-colors tracking-tight">{label}</p>
-            <div className="flex items-center gap-2">
-              <p className="text-[9px] font-mono font-bold uppercase tracking-widest text-slate-400 group-hover:text-slate-300 transition-colors">
-                {value}
-              </p>
-              {badge && (
-                <motion.span 
-                  initial={{ opacity: 0, scale: 0.8 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  className={`px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[7px] font-black rounded-md border border-indigo-500/20 uppercase tracking-tighter`}
-                >
-                  {badge}
-                </motion.span>
-              )}
-            </div>
+  const SettingItem = ({ icon: Icon, label, value, onClick, badge, color = "indigo" }: any) => (
+    <button 
+      onClick={onClick}
+      className="w-full flex items-center justify-between py-5 px-6 group transition-all active:scale-[0.98] border-b border-white/5 last:border-0"
+    >
+      <div className="flex items-center gap-5">
+        <div className={`p-3 rounded-2xl bg-${color}-500/10 text-${color}-400 group-hover:scale-110 transition-transform`}>
+          <Icon size={20} />
+        </div>
+        <div className="text-left">
+          <p className="font-bold text-slate-100 group-hover:text-white transition-colors">{label}</p>
+          <div className="flex items-center gap-2">
+            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-500">{value}</p>
+            {badge && (
+              <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[8px] font-black rounded border border-indigo-500/20">
+                {badge}
+              </span>
+            )}
           </div>
         </div>
-        <div className="flex items-center gap-2 relative z-10">
-          {onClick && <Copy size={14} className="text-slate-500 group-hover:text-indigo-400 opacity-0 group-hover:opacity-100 transition-all" />}
-          {isExternal && <ExternalLink size={14} className="text-slate-500 group-hover:text-indigo-400 transition-all" />}
-          {!onClick && !isExternal && <ChevronRight size={16} className="text-slate-500 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />}
-        </div>
-        <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/0 via-indigo-500/[0.03] to-indigo-500/0 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none" />
       </div>
-    );
-
-    return isExternal ? (
-      <a href={href} target="_blank" rel="noopener noreferrer" aria-label={`Open external link: ${label}`} className="block w-full">{content}</a>
-    ) : (
-      <button onClick={onClick} aria-label={`Settings: ${label}`} className="block w-full text-left outline-none">{content}</button>
-    );
-  };
+      <ChevronRight size={16} className="text-slate-600 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
+    </button>
+  );
 
   return (
-    <div className="space-y-10 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-700" style={{ transformStyle: "preserve-3d" }}>
+    <div className="space-y-10 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-700">
       <header className="px-2 space-y-1">
-        <div className="flex items-center gap-3 mb-1">
-          <motion.div 
-            animate={{ height: [24, 32, 24] }}
-            transition={{ duration: 2, repeat: Infinity }}
-            className="w-1.5 bg-indigo-500 rounded-full shadow-[0_0_12px_rgba(79,70,229,0.8)]" 
-          />
-          <h1 className="text-3xl font-black tracking-tighter text-white italic">{t.title}</h1>
-        </div>
-        <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em] px-4">{t.subtitle}</p>
+        <h1 className="text-3xl font-black tracking-tighter text-white italic">{t.title}</h1>
+        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.3em]">{t.subtitle}</p>
       </header>
 
-      <GlassCard 
-        onClick={() => onNavigate('about')}
-        className="p-6 border-indigo-500/20 bg-indigo-500/5 group cursor-pointer"
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform">
-              <Info size={24} />
-            </div>
-            <div>
-              <p className="font-bold text-slate-100">{t.about}</p>
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Mission & Neural Architecture</p>
-            </div>
-          </div>
-          <ChevronRight size={18} className="text-indigo-400 group-hover:translate-x-1 transition-all" />
+      {/* Language Switcher - Redesigned to 2x2 Grid to avoid "reading together" */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+          <Globe2 size={14} className="text-indigo-400" />
+          {t.language}
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          {(['en', 'zh', 'de', 'fr'] as Language[]).map((l) => (
+            <GlassCard key={l} className="p-0 overflow-hidden">
+              <button
+                onClick={() => onLanguageChange(l)}
+                className={`w-full py-4 text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-[inset_0_0_20px_rgba(0,0,0,0.3)]' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                {l === 'en' ? 'English' : l === 'zh' ? '中文' : l === 'de' ? 'Deutsch' : 'Français'}
+              </button>
+            </GlassCard>
+          ))}
         </div>
-      </GlassCard>
+      </div>
 
+      {/* Visualizations & Static Mode */}
       <div className="space-y-4">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
           <Palette size={14} className="text-indigo-400" />
-          {t.theme}
+          {t.visualizations}
         </h3>
-        <GlassCard className="p-6 space-y-6">
-          <div className="flex gap-4">
-            <button 
-              onClick={() => onThemeChange('dark')}
-              aria-label="Switch to Dark Mode"
-              className={`flex-1 p-4 rounded-2xl border transition-all flex items-center justify-center gap-3 ${theme === 'dark' ? 'bg-indigo-600 border-indigo-500 text-white' : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200'}`}
-            >
-              <Moon size={18} />
-              <span className="text-[10px] font-black uppercase tracking-widest">{t.darkMode}</span>
-            </button>
-            <button 
-              onClick={() => onThemeChange('light')}
-              aria-label="Switch to Light Mode"
-              className={`flex-1 p-4 rounded-2xl border transition-all flex items-center justify-center gap-3 ${theme === 'light' ? 'bg-white text-slate-900 border-slate-200' : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200'}`}
-            >
-              <Sun size={18} />
-              <span className="text-[10px] font-black uppercase tracking-widest">{t.lightMode}</span>
-            </button>
+        <GlassCard className="overflow-hidden">
+          <div className="w-full flex items-center justify-between py-5 px-6 border-b border-white/5">
+             <div className="flex items-center gap-5">
+                <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                  <EyeOff size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-slate-100">{lang === 'zh' ? '静态模式' : 'Static Mode'}</p>
+                  <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">{lang === 'zh' ? '禁用自动旋转和背景脉冲' : 'Disable looping animations'}</p>
+                </div>
+             </div>
+             <button 
+              onClick={() => onStaticModeChange(!staticMode)}
+              className={`w-12 h-6 rounded-full transition-all relative ${staticMode ? 'bg-indigo-600' : 'bg-slate-800'}`}
+             >
+                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${staticMode ? 'left-7' : 'left-1'}`} />
+             </button>
+          </div>
+          <div className="w-full flex items-center justify-between py-5 px-6">
+             <div className="flex items-center gap-5">
+                <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                  <Smartphone size={20} />
+                </div>
+                <div className="text-left">
+                  <p className="font-bold text-slate-100">{t.enable3D}</p>
+                  <p className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">{threeDEnabled ? 'Depth Enabled' : 'Flat Icons'}</p>
+                </div>
+             </div>
+             <button 
+              onClick={() => onThreeDChange(!threeDEnabled)}
+              className={`w-12 h-6 rounded-full transition-all relative ${threeDEnabled ? 'bg-indigo-600' : 'bg-slate-800'}`}
+             >
+                <div className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all ${threeDEnabled ? 'left-7' : 'left-1'}`} />
+             </button>
           </div>
         </GlassCard>
       </div>
 
+      {/* Core Settings */}
       <div className="space-y-4">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
-          <RefreshCw size={14} className="text-indigo-400" />
-          {t.dataManagement}
-        </h3>
-        <GlassCard className="p-6 space-y-6">
-          <div className="flex items-center justify-between px-2">
-            <div className="space-y-1">
-              <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">{t.lastSync}</p>
-              <p className="text-sm font-bold text-white">{lastSyncTime || t.never}</p>
-            </div>
-            <button 
-              onClick={onManualSync}
-              aria-label="Trigger manual synchronization"
-              className="px-6 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 flex items-center gap-2"
-            >
-              <RefreshCw size={14} />
-              {t.manualSync}
-            </button>
-          </div>
-        </GlassCard>
-      </div>
-
-      <div className="space-y-4">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
           <Cpu size={14} className="text-indigo-400" />
-          {lang === 'zh' ? '核心引擎管理' : 'CORE ENGINE MGMT'}
+          {t.security}
         </h3>
-        <GlassCard className="divide-y divide-white/5 border-indigo-500/20 bg-indigo-500/[0.02]">
+        <GlassCard className="overflow-hidden">
           <SettingItem 
             icon={Key} 
-            label={lang === 'zh' ? '管理 API 密钥' : 'Manage API Key'} 
-            value={lang === 'zh' ? '重新配置或清除密钥' : 'Reconfigure or Clear Key'}
-            onClick={handleClearApiKey}
-            badge={lang === 'zh' ? "点击重置" : "RESET"}
+            label={t.geminiCore} 
+            value={lang === 'zh' ? '神经引擎已就绪' : 'Neural Engine Ready'} 
+            badge="v3.1"
+          />
+          <SettingItem 
+            icon={Shield} 
+            label={t.dataPrivacy} 
+            value={t.encrypted} 
           />
         </GlassCard>
       </div>
 
-      <div className="pt-6 px-2 space-y-4">
-        <AnimatePresence mode="wait">
-          {showLogoutConfirm ? (
-            <motion.div 
-              key="confirm"
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="p-8 bg-rose-500/10 border border-rose-500/30 rounded-[2.5rem] space-y-6 shadow-[0_20px_50px_rgba(225,29,72,0.2)]"
-            >
-              <div className="flex items-center gap-4 text-rose-400">
-                 <div className="p-3 bg-rose-500/20 rounded-2xl border border-rose-500/20">
-                   <AlertTriangle size={24} />
-                 </div>
-                 <div>
-                   <p className="font-black uppercase text-[12px] tracking-widest">{lang === 'en' ? 'Purge System?' : '确认退出？'}</p>
-                 </div>
-              </div>
-              <p className="text-xs text-slate-300 font-medium leading-relaxed italic">
-                {lang === 'en' 
-                  ? 'Terminating lab session will erase all biometric cache. This action is irreversible.' 
-                  : '终止实验室会话将擦除所有本地缓存。此操作无法撤销。'}
-              </p>
-              <div className="flex gap-4">
-                <button 
-                  onClick={onLogout} 
-                  className="flex-1 py-4 bg-rose-600 text-white rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest"
-                >
-                  {lang === 'en' ? 'Purge Now' : '确认退出'}
-                </button>
-                <button onClick={() => setShowLogoutConfirm(false)} className="flex-1 py-4 bg-white/5 border border-white/10 text-slate-400 rounded-[1.5rem] font-black text-[11px] uppercase tracking-widest">
-                  {lang === 'en' ? 'Cancel' : '取消'}
-                </button>
-              </div>
-            </motion.div>
-          ) : (
-            <motion.button 
-              layoutId="logout-btn"
-              onClick={() => setShowLogoutConfirm(true)} 
-              aria-label="Logout of system"
-              className="group w-full flex items-center justify-between p-7 bg-white/5 border border-white/10 text-slate-400 rounded-[2.5rem] transition-all hover:bg-rose-500/5 hover:border-rose-500/30 active:scale-[0.98] shadow-2xl overflow-hidden relative"
-            >
-              <div className="flex items-center gap-5 relative z-10">
-                <div className="p-3 bg-slate-800 rounded-2xl text-slate-400 group-hover:bg-rose-500/10 group-hover:text-rose-400 transition-all shadow-inner border border-white/5"><LogOut size={22} /></div>
-                <div className="text-left">
-                  <span className="block font-black text-[12px] uppercase tracking-[0.25em] group-hover:text-slate-200 transition-colors">{t.logout}</span>
+      {/* Research Funding */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-slate-500 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+          <Heart size={14} className="text-rose-400" />
+          {t.funding}
+        </h3>
+        <GlassCard className="p-6 space-y-6">
+          <div className="flex items-center gap-5">
+            <div className="p-4 bg-rose-500/10 rounded-3xl text-rose-400">
+              <Coffee size={28} />
+            </div>
+            <div>
+              <p className="font-bold text-slate-100">{t.coffee}</p>
+              <p className="text-xs text-slate-500 leading-relaxed mt-1">{t.coffeeDesc}</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-3">
+            <div className="p-5 bg-white/5 border border-white/5 rounded-3xl space-y-4 group">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <CreditCard size={18} className="text-sky-400" />
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-300">PayPal (Global)</span>
                 </div>
+                <button onClick={() => setShowPaypalQR(true)} className="p-2 bg-sky-500/10 text-sky-400 rounded-xl"><QrCode size={16} /></button>
               </div>
-              <ChevronRight size={16} className="text-slate-500 group-hover:text-rose-400 transition-all" />
-            </motion.button>
-          )}
-        </AnimatePresence>
+              <p className="text-sm font-bold text-white">{t.paypalId}</p>
+              <a href={t.paypalLink} target="_blank" className="block w-full py-3 bg-sky-600 text-white rounded-xl text-[10px] font-black uppercase tracking-widest text-center">{t.paypalCopy}</a>
+            </div>
+            <div className="p-5 bg-white/5 border border-white/5 rounded-3xl space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <Smartphone size={18} className="text-indigo-400" />
+                  <span className="text-xs font-black uppercase tracking-widest text-slate-300">DuitNow / TNG (MY)</span>
+                </div>
+                <button onClick={() => handleCopy(t.duitNowId, 'DuitNow')} className="p-2 bg-indigo-500/10 text-indigo-400 rounded-xl"><Copy size={16} /></button>
+              </div>
+              <p className="text-lg font-black font-mono tracking-tighter text-white">{t.duitNowId}</p>
+            </div>
+          </div>
+        </GlassCard>
       </div>
+
+      {/* Footer Meta */}
+      <div className="px-4 opacity-30 flex justify-between items-center">
+         <div className="flex items-center gap-2">
+            <Binary size={12} className="text-indigo-400" />
+            <span className="text-[8px] font-mono tracking-widest uppercase">System Telemetry</span>
+         </div>
+         <span className="text-[8px] font-mono">{telemetry}</span>
+      </div>
+
+      <div className="pt-6">
+        <button 
+          onClick={() => setShowLogoutConfirm(true)}
+          className="w-full py-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center gap-3 text-slate-500 hover:text-rose-400 transition-all font-black text-[10px] uppercase tracking-widest"
+        >
+          <LogOut size={16} />
+          {t.logout}
+        </button>
+      </div>
+
+      {/* Modals & Toasts */}
+      <AnimatePresence>
+        {showPaypalQR && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-2xl">
+            <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} className="w-full max-sm px-4">
+              <GlassCard className="p-8 space-y-8 text-center border-indigo-500/40 shadow-[0_0_100px_rgba(79,70,229,0.2)]">
+                <div className="flex justify-between items-center text-slate-400">
+                  <span className="text-[10px] font-black uppercase tracking-widest">Research Grant Gateway</span>
+                  <button onClick={() => setShowPaypalQR(false)}><X size={20}/></button>
+                </div>
+                <div className="bg-white p-6 rounded-[2.5rem] flex flex-col items-center gap-4 shadow-2xl">
+                  <h2 className="text-slate-900 font-black tracking-tight text-xl">PayPal / Global</h2>
+                  <div className="w-48 h-48 bg-slate-100 rounded-2xl overflow-hidden border border-slate-100">
+                    <img src="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/paypal_qr.jpg" alt="QR" className="w-full h-full object-cover" />
+                  </div>
+                  <p className="text-slate-400 text-[10px] font-black uppercase tracking-widest">Vyncuslim vyncuslim</p>
+                </div>
+                <button onClick={() => setShowPaypalQR(false)} className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest">Close Gateway</button>
+              </GlassCard>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      <AnimatePresence>
+        {copyToast && (
+          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[300] px-6 py-3 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest">
+            {copyToast}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

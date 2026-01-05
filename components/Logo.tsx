@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -6,9 +7,18 @@ interface LogoProps {
   className?: string;
   animated?: boolean;
   threeD?: boolean;
+  staticMode?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated = false, threeD = true }) => {
+export const Logo: React.FC<LogoProps> = ({ 
+  size = 24, 
+  className = '', 
+  animated = false, 
+  threeD = true,
+  staticMode = false 
+}) => {
+  const shouldAnimate = animated && !staticMode;
+
   return (
     <motion.svg
       width={size}
@@ -43,7 +53,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated 
         stroke="white" 
         strokeWidth="0.5" 
         strokeDasharray="1 8" 
-        className="opacity-20" 
+        className="opacity-10" 
       />
 
       <motion.g mask="url(#moonMask)">
@@ -51,7 +61,7 @@ export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated 
           cx="50" cy="50" r="35"
           fill="url(#moonGlow)"
           filter={threeD ? "url(#moonHalo)" : "none"}
-          animate={animated ? {
+          animate={shouldAnimate ? {
             opacity: [0.7, 1, 0.7],
             scale: [0.98, 1.02, 0.98]
           } : {}}
@@ -70,19 +80,19 @@ export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated 
       </motion.g>
 
       <motion.g
-        animate={animated ? {
+        animate={shouldAnimate ? {
           rotate: [0, 360]
         } : {}}
         transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
         style={{ originX: '50px', originY: '50px' }}
       >
         <circle cx="50" cy="5" r="2.5" fill="#818cf8" filter={threeD ? "url(#moonHalo)" : "none"} />
-        {threeD && (
+        {threeD && !staticMode && (
           <motion.circle 
             cx="50" cy="5" r="5" 
             stroke="#818cf8" 
             strokeWidth="0.5" 
-            animate={{ scale: [1, 2], opacity: [0.5, 0] }}
+            animate={shouldAnimate ? { scale: [1, 2], opacity: [0.5, 0] } : {}}
             transition={{ duration: 2, repeat: Infinity }}
           />
         )}
@@ -93,8 +103,8 @@ export const Logo: React.FC<LogoProps> = ({ size = 24, className = '', animated 
         stroke="url(#moonGlow)"
         strokeWidth="2"
         strokeLinecap="round"
-        className="opacity-40"
-        animate={animated ? {
+        className="opacity-30"
+        animate={shouldAnimate ? {
           d: [
             "M30 85 Q 40 75, 50 85 T 70 85",
             "M30 85 Q 40 95, 50 85 T 70 85",

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -14,17 +15,12 @@ interface DashboardProps {
   lang: Language;
   onSyncFit?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
   onNavigate?: (view: any) => void;
+  staticMode?: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onNavigate }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onNavigate, staticMode = false }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [pulse, setPulse] = useState(0);
   const t = translations[lang].dashboard;
-
-  useEffect(() => {
-    const interval = setInterval(() => setPulse(p => (p + 1) % 100), 50);
-    return () => clearInterval(interval);
-  }, []);
 
   const handleSync = async () => {
     if (!onSyncFit || isProcessing) return;
@@ -49,16 +45,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
             <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
               <Scan size={20} className="text-indigo-400" />
             </div>
-            <motion.div 
-              animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
-              transition={{ repeat: Infinity, duration: 2 }}
-              className="absolute inset-0 bg-indigo-500/20 rounded-2xl"
-            />
+            {!staticMode && (
+              <motion.div 
+                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
+                transition={{ repeat: Infinity, duration: 2 }}
+                className="absolute inset-0 bg-indigo-500/20 rounded-2xl"
+              />
+            )}
           </div>
           <div>
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 leading-none mb-1.5">{t.neuralActive}</h2>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]" />
+              <span className={`w-2 h-2 rounded-full bg-emerald-500 ${!staticMode ? 'animate-pulse' : ''} shadow-[0_0_8px_#10b981]`} />
               <span className="text-[10px] font-mono text-emerald-400 uppercase tracking-widest">Protocol v4.0.2</span>
             </div>
           </div>
@@ -147,11 +145,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
               <div className="p-5 bg-rose-500/10 rounded-3xl text-rose-400 group-hover:scale-110 transition-transform">
                 <HeartPulse size={32} />
               </div>
-              <motion.div 
-                animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
-                transition={{ repeat: Infinity, duration: 1.5 }}
-                className="absolute inset-0 bg-rose-500/20 rounded-3xl"
-              />
+              {!staticMode && (
+                <motion.div 
+                  animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+                  transition={{ repeat: Infinity, duration: 1.5 }}
+                  className="absolute inset-0 bg-rose-500/20 rounded-3xl"
+                />
+              )}
             </div>
             <div className="text-center space-y-1">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Resting HR</p>
@@ -182,11 +182,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
       <div className="px-2 pt-6 flex justify-between items-center opacity-30">
         <div className="flex items-center gap-3">
           <Binary size={12} className="text-indigo-400" />
-          <span className="text-[9px] font-mono tracking-[0.3em] uppercase">Telemetry flow active</span>
+          <span className="text-[9px] font-mono tracking-[0.3em] uppercase">{staticMode ? 'Telemetry Frozen' : 'Telemetry flow active'}</span>
         </div>
         <div className="flex items-center gap-4">
            <span className="text-[9px] font-mono">NODE_SOMNO_01</span>
-           <span className="text-[9px] font-mono text-indigo-400">0x{Math.floor(Math.random()*16777215).toString(16).toUpperCase()}</span>
+           <span className="text-[9px] font-mono text-indigo-400">0x{data.id.slice(-6).toUpperCase()}</span>
         </div>
       </div>
     </motion.div>
