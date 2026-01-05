@@ -27,10 +27,28 @@
     }
   ],
   "rewrites": [
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/terms", "destination": "/terms.html" },
     {
-      "source": "/((?!privacy|terms|robots\\.txt|sitemap\\.xml|.*\\.png|.*\\.jpg|.*\\.js|.*\\.css|.*\\.json|.*\\.ico).*)",
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
+    },
+    {
+      "source": "/googlee47ef5d2eacdf45a.html",
+      "destination": "/googlee47ef5d2eacdf45a.html"
+    },
+    {
+      "source": "/((?!privacy|terms|robots\\.txt|sitemap\\.xml|googlee47ef5d2eacdf45a|.*\\.).*)",
       "destination": "/index.html"
     }
   ]

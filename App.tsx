@@ -32,6 +32,14 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
+  // Support deep links from sitemap or direct navigation
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path === '/about') setActiveView('about');
+    else if (path === '/privacy') setActiveView('privacy');
+    else if (path === '/terms') setActiveView('terms');
+  }, []);
+
   useEffect(() => {
     localStorage.setItem('somno_lang', lang);
   }, [lang]);

@@ -1,6 +1,5 @@
-
 import React from 'react';
-import { ArrowLeft, FileText, ShieldCheck, Lock, ShieldAlert, Activity, AlertTriangle, Zap, Mail, ExternalLink } from 'lucide-react';
+import { ArrowLeft, FileText, ShieldCheck, Lock, ShieldAlert, Activity, AlertTriangle, Zap, Mail, ExternalLink, Shield } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 
 interface LegalViewProps {
@@ -39,6 +38,18 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
 
         {isPrivacy ? (
           <>
+            <section className="p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl space-y-4">
+              <div className="flex items-center gap-2 text-indigo-400">
+                 <Shield size={18} />
+                 <h2 className="text-[11px] font-black uppercase tracking-widest">{isZh ? 'Google API 有限使用披露' : 'Google API Limited Use Disclosure'}</h2>
+              </div>
+              <p className="italic text-slate-400">
+                {isZh 
+                  ? 'Somno Lab 对从 Google API 接收到的信息的使用和转移将遵守 Google API 服务用户数据政策，包括其中的有限使用要求。' 
+                  : 'Somno Lab\'s use and transfer to any other app of information received from Google APIs will adhere to Google API Services User Data Policy, including the Limited Use requirements.'}
+              </p>
+            </section>
+
             <section className="space-y-6 relative z-10">
               <div className="flex items-center gap-3 text-white border-b border-white/5 pb-4">
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
@@ -46,7 +57,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 </div>
                 <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '1. 数据访问' : '1. Data Access'}</h2>
               </div>
-              <p>{isZh ? '我们通过 fitness.sleep.read、fitness.heart_rate.read 和 fitness.activity.read 范围访问您的睡眠、心率和能量消耗数据。' : 'We access your sleep, heart rate, and activity data via fitness.sleep.read, fitness.heart_rate.read, and fitness.activity.read scopes.'}</p>
+              <p>{isZh ? '在您明确授权后，我们通过 fitness.sleep.read、fitness.heart_rate.read 和 fitness.activity.read 范围访问您的睡眠、心率和能量消耗数据。这些范围是实现实验分析所必需的最小权限。' : 'After your explicit authorization, we access sleep, heart rate, and metabolic energy data via fitness.sleep.read, fitness.heart_rate.read, and fitness.activity.read. These represent the minimum scopes required for lab analysis.'}</p>
             </section>
 
             <section className="space-y-6 relative z-10">
@@ -56,7 +67,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 </div>
                 <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '2. 数据用途' : '2. Data Usage'}</h2>
               </div>
-              <p>{isZh ? '数据仅用于在应用内生成睡眠图表、评分，并通过脱敏处理发送至 Gemini AI 生成个人健康建议。' : 'Data is used for in-app charts, scores, and sent (anonymized) to Gemini AI for health recommendations.'}</p>
+              <p>{isZh ? '数据仅用于在应用内生成睡眠图表、评分，并通过脱敏处理发送至 Gemini AI 生成个人健康建议。我们不会为了广告、用户画像或销售给第三方而使用这些数据。' : 'Data is used for in-app charts and scores, and sent (anonymized) to Gemini AI for personalized health recommendations. We do not use this data for advertising, profiling, or third-party sales.'}</p>
             </section>
 
             <section className="space-y-6 relative z-10">
@@ -64,9 +75,9 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
                   <Lock size={20} />
                 </div>
-                <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '3. 有限使用与安全' : '3. Limited Use & Security'}</h2>
+                <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '3. 边缘存储与安全' : '3. Edge Storage & Security'}</h2>
               </div>
-              <p>{isZh ? '我们严格遵守 Google 的有限使用政策。数据仅在浏览器本地会话中处理，绝不用于广告、分析或向第三方销售。' : 'We strictly follow Google\'s Limited Use Policy. Data is processed locally and never used for advertising or third-party sales.'}</p>
+              <p>{isZh ? '数据仅在浏览器本地会话（SessionStorage）中处理，绝不上传到我们的后端服务器。一旦您关闭页面或登出，所有敏感数据将被永久擦除。' : 'Data is processed locally in your browser (SessionStorage) and never uploaded to our servers. All sensitive metrics are purged immediately upon logout or tab closure.'}</p>
             </section>
           </>
         ) : (
@@ -78,7 +89,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{isZh ? '医疗免责声明' : 'Medical Disclaimer'}</h3>
                 </div>
                 <p className="text-[12px] text-slate-300 leading-relaxed font-bold italic">
-                  {isZh ? '本服务不提供医疗诊断。AI 生成内容仅供参考，任何健康决策前请咨询专业医生。' : 'This service does not provide medical diagnosis. AI content is for reference; consult a doctor for health decisions.'}
+                  {isZh ? 'Somno Lab 不是医疗诊断工具。AI 生成的内容仅供教育和参考，在做出任何健康决策前，请咨询专业医疗人员。' : 'Somno Lab is not a medical device. AI content is for educational reference; consult a medical professional for health decisions.'}
                 </p>
               </div>
 

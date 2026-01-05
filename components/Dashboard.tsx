@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -6,7 +5,8 @@ import { COLORS } from '../constants.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, BrainCircuit, HeartPulse, Scan, Cpu, Binary, Zap, 
-  Activity, ArrowUpRight, ShieldCheck, Waves, Target, Info, Heart
+  Activity, ArrowUpRight, ShieldCheck, Waves, Target, Info, Heart,
+  AlertCircle, ChevronRight, Loader2, Lock, Download, Microscope
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 
@@ -21,15 +21,16 @@ interface DashboardProps {
 export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onNavigate, staticMode = false }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [engineActive, setEngineActive] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const t = translations[lang].dashboard;
 
   useEffect(() => {
     const checkKey = async () => {
-      if (window.aistudio) {
-        const selected = await window.aistudio.hasSelectedApiKey();
+      if ((window as any).aistudio) {
+        const selected = await (window as any).aistudio.hasSelectedApiKey();
         setEngineActive(selected);
       } else {
-        setEngineActive(!!process.env.API_KEY);
+        setEngineActive(!!process.env.API_KEY || (window as any).process?.env?.API_KEY);
       }
     };
     checkKey();
@@ -38,20 +39,53 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
   const handleSync = async () => {
     if (!onSyncFit || isProcessing) return;
     
+    setSyncError(null);
     if (!engineActive) {
       setSyncStatus('error');
-      setTimeout(() => setSyncStatus('idle'), 3000);
+      setSyncError(lang === 'zh' ? 'AI 引擎未就绪' : 'AI Engine Not Ready');
+      setTimeout(() => {
+        setSyncStatus('idle');
+        setSyncError(null);
+      }, 3000);
       return;
     }
 
     try {
-      await onSyncFit((status) => setSyncStatus(status));
-    } catch (err) {
+      await onSyncFit((status) => {
+        setSyncStatus(status);
+        if (status === 'success') {
+          setTimeout(() => setSyncStatus('idle'), 2000);
+        }
+      });
+    } catch (err: any) {
       setSyncStatus('error');
+      setSyncError(err.message || (lang === 'zh' ? '数据同步中断' : 'Sync Interrupted'));
     }
   };
 
   const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
+
+  const getStatusLabel = () => {
+    switch (syncStatus) {
+      case 'authorizing': return lang === 'zh' ? '正在授权...' : 'Authorizing...';
+      case 'fetching': return lang === 'zh' ? '获取 7 日数据...' : 'Fetching 7D Data...';
+      case 'analyzing': return lang === 'zh' ? 'AI 神经分析...' : 'AI Analyzing...';
+      case 'success': return lang === 'zh' ? '同步成功' : 'Sync Success';
+      case 'error': return lang === 'zh' ? '同步失败' : 'Sync Failed';
+      default: return lang === 'zh' ? '同步数据' : 'Sync Data';
+    }
+  };
+
+  const getStatusIcon = () => {
+    switch (syncStatus) {
+      case 'authorizing': return <Lock size={16} className="animate-pulse" aria-hidden="true" />;
+      case 'fetching': return <Download size={16} className="animate-bounce" aria-hidden="true" />;
+      case 'analyzing': return <Microscope size={16} className="animate-spin" aria-hidden="true" />;
+      case 'success': return <ShieldCheck size={16} className="text-emerald-400" aria-hidden="true" />;
+      case 'error': return <AlertCircle size={16} className="text-rose-400" aria-hidden="true" />;
+      default: return <RefreshCw size={16} aria-hidden="true" />;
+    }
+  };
 
   return (
     <motion.div 
@@ -63,54 +97,115 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
         <div className="flex items-center gap-4">
           <div className="relative">
             <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
-              <Scan size={20} className="text-indigo-400" />
+              <Scan size={20} className="text-indigo-400" aria-hidden="true" />
             </div>
             {!staticMode && (
               <motion.div 
                 animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
                 transition={{ repeat: Infinity, duration: 2 }}
                 className="absolute inset-0 bg-indigo-500/20 rounded-2xl"
+                aria-hidden="true"
               />
             )}
           </div>
           <div>
             <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 leading-none mb-1.5">{t.neuralActive}</h2>
             <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${engineActive ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'} ${!staticMode && engineActive ? 'animate-pulse' : ''}`} />
+              <span className={`w-2 h-2 rounded-full ${engineActive ? 'bg-emerald-500 shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'} ${!staticMode && engineActive ? 'animate-pulse' : ''}`} aria-hidden="true" />
               <span className={`text-[10px] font-mono uppercase tracking-widest ${engineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
                 {engineActive ? 'Engine Linked' : 'Engine Offline'}
               </span>
             </div>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <button 
-            onClick={() => onNavigate?.('profile')}
-            aria-label={t.supportLab}
-            className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-xl active:scale-95 flex items-center gap-2"
-          >
-            <Heart size={20} className={!staticMode ? 'animate-pulse' : ''} />
-            <span className="hidden sm:inline text-[9px] font-black uppercase tracking-widest">{t.supportLab}</span>
-          </button>
-          <button 
-            onClick={handleSync}
-            aria-label={lang === 'zh' ? '同步健康数据' : 'Sync Health Data'}
-            className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 ${isProcessing ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'}`}
-          >
-            <RefreshCw size={20} className={isProcessing ? 'animate-spin' : (syncStatus === 'error' ? 'text-rose-400 animate-bounce' : '')} />
-          </button>
+        
+        <div className="flex items-center gap-3">
+          <AnimatePresence mode="wait">
+            {isProcessing || syncStatus === 'error' || syncStatus === 'success' ? (
+              <motion.div 
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                role="status"
+                className={`hidden md:flex items-center gap-2 px-4 py-2 rounded-xl border text-[10px] font-black uppercase tracking-widest ${
+                  syncStatus === 'error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' :
+                  syncStatus === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                  'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'
+                }`}
+              >
+                {getStatusIcon()}
+                {getStatusLabel()}
+              </motion.div>
+            ) : null}
+          </AnimatePresence>
+
+          <div className="flex items-center gap-2">
+            <button 
+              onClick={() => onNavigate?.('profile')}
+              aria-label={t.supportLab}
+              className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-xl active:scale-95 flex items-center gap-2"
+            >
+              <Heart size={20} className={!staticMode ? 'animate-pulse' : ''} aria-hidden="true" />
+              <span className="hidden sm:inline text-[9px] font-black uppercase tracking-widest">{t.supportLab}</span>
+            </button>
+            <button 
+              onClick={handleSync}
+              disabled={isProcessing}
+              aria-label={lang === 'zh' ? '同步 Google Fit 数据' : 'Sync Google Fit Data'}
+              className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 flex items-center gap-2 ${
+                isProcessing ? 'bg-indigo-600 text-white cursor-wait' : 
+                syncStatus === 'error' ? 'bg-rose-600/20 text-rose-400 border border-rose-500/30' :
+                'bg-white/5 text-slate-400 border border-white/10 hover:bg-white/10'
+              }`}
+            >
+              <RefreshCw size={20} className={isProcessing ? 'animate-spin' : (syncStatus === 'error' ? 'animate-bounce' : '')} aria-hidden="true" />
+            </button>
+          </div>
         </div>
       </div>
 
+      {syncError && (
+        <motion.div 
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          role="alert"
+          className="mx-2 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center justify-between gap-4"
+        >
+          <div className="flex items-center gap-3">
+            <AlertCircle size={18} className="text-rose-400" aria-hidden="true" />
+            <p className="text-[11px] font-bold text-rose-300 uppercase tracking-widest">{syncError}</p>
+          </div>
+          <button 
+            onClick={handleSync}
+            className="px-3 py-1.5 bg-rose-500/20 hover:bg-rose-500/30 text-rose-400 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all"
+          >
+            Retry Sync
+          </button>
+        </motion.div>
+      )}
+
+      {isProcessing && (
+        <div className="px-2" aria-hidden="true">
+          <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden border border-white/5">
+            <motion.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: '100%' }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: "linear" }}
+              className="h-full w-1/3 bg-gradient-to-r from-transparent via-indigo-500 to-transparent"
+            />
+          </div>
+        </div>
+      )}
+
       <div className="relative py-4">
         <GlassCard intensity={1.5} className="p-10 border-indigo-500/40 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" />
+          <div className="absolute inset-0 opacity-[0.05] pointer-events-none bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:20px_20px]" aria-hidden="true" />
           
           <div className="flex flex-col md:flex-row justify-between gap-12 relative z-10">
             <div className="space-y-6">
               <div className="space-y-1">
                 <div className="flex items-center gap-2 text-indigo-400 mb-2">
-                  <BrainCircuit size={16} />
+                  <BrainCircuit size={16} aria-hidden="true" />
                   <span className="text-[10px] font-black uppercase tracking-[0.4em]">{t.aiSynthesis}</span>
                 </div>
                 <div className="flex items-baseline gap-4">
@@ -121,17 +216,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
                   >
                     {data.score}
                   </motion.span>
-                  <span className="text-3xl font-bold text-slate-700 font-mono tracking-tighter">/100</span>
+                  <span className="text-3xl font-bold text-slate-700 font-mono tracking-tighter" aria-label="out of 100 points">/100</span>
                 </div>
               </div>
               
               <div className="flex gap-4">
                 <div className="px-4 py-2 bg-white/5 rounded-xl border border-white/10 flex items-center gap-2">
-                  <ShieldCheck size={14} className="text-emerald-400" />
+                  <ShieldCheck size={14} className="text-emerald-400" aria-hidden="true" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-slate-300">{t.stable}</span>
                 </div>
                 <div className="px-4 py-2 bg-indigo-500/10 rounded-xl border border-indigo-500/20 flex items-center gap-2">
-                  <Activity size={14} className="text-indigo-400" />
+                  <Activity size={14} className="text-indigo-400" aria-hidden="true" />
                   <span className="text-[10px] font-black uppercase tracking-widest text-indigo-300">Opt: 94%</span>
                 </div>
               </div>
@@ -140,13 +235,13 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
             <div className="flex-1 max-w-sm space-y-6">
               <div className="space-y-4">
                 <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-2">
-                  <Zap size={14} className="text-amber-400" />
+                  <Zap size={14} className="text-amber-400" aria-hidden="true" />
                   Chief Insights
                 </h3>
                 <div className="min-h-[80px] p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl relative">
-                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-full" />
+                  <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500 rounded-full" aria-hidden="true" />
                   <p className="text-sm font-medium italic text-slate-300 leading-relaxed">
-                    {engineActive ? (data.aiInsights?.[0] || 'Analyzing biometric streams...') : (lang === 'zh' ? 'AI 引擎未激活。请在登录页激活以接收洞察。' : 'AI Engine offline. Activate gateway in Settings/Login to receive insights.')}
+                    {engineActive ? (data.aiInsights?.[0] || (lang === 'zh' ? '正在分析生物流...' : 'Analyzing biometric streams...')) : (lang === 'zh' ? 'AI 引擎未激活。请在登录页激活以接收洞察。' : 'AI Engine offline. Activate gateway in Settings/Login to receive insights.')}
                   </p>
                 </div>
               </div>
@@ -158,7 +253,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
                 <span className="text-slate-400">Neural Efficiency</span>
                 <span className="text-indigo-400 font-mono">{data.score}%</span>
              </div>
-             <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5">
+             <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5" role="progressbar" aria-valuenow={data.score} aria-valuemin={0} aria-valuemax={100}>
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${data.score}%` }}
@@ -175,13 +270,14 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
           <div className="flex flex-col items-center gap-6">
             <div className="relative">
               <div className="p-5 bg-rose-500/10 rounded-3xl text-rose-400 group-hover:scale-110 transition-transform">
-                <HeartPulse size={32} />
+                <HeartPulse size={32} aria-hidden="true" />
               </div>
               {!staticMode && (
                 <motion.div 
                   animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
                   transition={{ repeat: Infinity, duration: 1.5 }}
                   className="absolute inset-0 bg-rose-500/20 rounded-3xl"
+                  aria-hidden="true"
                 />
               )}
             </div>
@@ -198,7 +294,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
         <GlassCard className="p-8 group hover:border-cyan-500/40 transition-all duration-500" intensity={1.2}>
           <div className="flex flex-col items-center gap-6">
             <div className="p-5 bg-cyan-500/10 rounded-3xl text-cyan-400 group-hover:scale-110 transition-transform">
-              <Cpu size={32} />
+              <Cpu size={32} aria-hidden="true" />
             </div>
             <div className="text-center space-y-1">
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Efficiency</p>

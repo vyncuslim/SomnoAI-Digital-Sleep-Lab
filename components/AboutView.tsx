@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowLeft, BrainCircuit, Rocket, Target, Cpu, FlaskConical, ShieldCheck, Binary } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Rocket, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
 
@@ -12,6 +12,16 @@ interface AboutViewProps {
 export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
   const t = translations[lang].about;
   const isZh = lang === 'zh';
+
+  const GOOGLE_CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
+  const ACTIVE_SCOPES = [
+    "fitness.sleep.read",
+    "fitness.heart_rate.read",
+    "fitness.activity.read",
+    "openid",
+    "profile",
+    "email"
+  ];
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500">
@@ -67,16 +77,49 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
           </div>
         </GlassCard>
 
-        <GlassCard className="p-8 space-y-6 border-amber-500/20 bg-amber-500/[0.02]">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-400">
-              <Rocket size={24} />
+        {/* New Verification Section */}
+        <GlassCard className="p-8 space-y-8 border-white/10 bg-white/[0.01]">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400">
+                <ShieldCheck size={24} />
+              </div>
+              <h2 className="text-xl font-bold italic text-white">System Verification</h2>
             </div>
-            <h2 className="text-xl font-bold italic text-white">{t.vision}</h2>
+            <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-[8px] font-black rounded border border-indigo-500/20 uppercase tracking-widest">
+              Reviewer Info
+            </span>
           </div>
-          <p className="text-slate-300 leading-relaxed font-medium">
-            {t.visionText}
-          </p>
+
+          <div className="space-y-6">
+            <div className="space-y-2">
+              <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                <Globe size={10} /> OAuth Client ID
+              </p>
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-white/5 font-mono text-[10px] text-slate-400 break-all">
+                {GOOGLE_CLIENT_ID}
+              </div>
+            </div>
+
+            <div className="space-y-3">
+              <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
+                <Lock size={10} /> Active Scopes (Minimum Required)
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {ACTIVE_SCOPES.map(scope => (
+                  <span key={scope} className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-mono text-indigo-300">
+                    {scope}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
+              <p className="text-[11px] text-slate-400 italic leading-relaxed">
+                Somno Lab complies with Google's Limited Use Policy. Physiological data is processed in the client context using Google Gemini models and is never stored on a persistent backend.
+              </p>
+            </div>
+          </div>
         </GlassCard>
 
         <footer className="pt-12 flex flex-col items-center gap-6 opacity-40">
