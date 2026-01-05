@@ -40,7 +40,6 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
       }
     });
 
-    // Directly access the .text property from the response object
     const results = JSON.parse(response.text || "[]");
     return Array.isArray(results) && results.length > 0 
       ? results 
@@ -49,7 +48,6 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
           : ["睡眠架构已分析。请优化环境。", "今天的认知负荷可能会升高。", "尝试补充镁以促进恢复。"]);
   } catch (err: any) {
     console.error("Gemini Insight Error:", err);
-    
     return lang === 'en' 
       ? ["Insight synthesis offline. Please check connectivity.", "Biometric link stable.", "Awaiting next stream."] 
       : ["洞察合成离线。请检查网络连接。", "生物识别链路稳定。", "等待下一流数据。"];
@@ -71,7 +69,6 @@ export const getWeeklySummary = async (history: SleepRecord[]): Promise<string> 
       config: { temperature: 0.7 }
     });
 
-    // Use .text property directly
     return response.text || "Trend analysis inconclusive.";
   } catch (err: any) {
     console.error("Weekly Summary Error:", err);
@@ -95,8 +92,8 @@ export const chatWithCoach = async (
     }
 
     const systemInstruction = lang === 'en' 
-      ? `You are the Somno Chief Research Officer (CRO), a world-class AI Sleep Coach. You are professional, scientific, and data-driven. Your goal is to guide the user through their physiological data and provide actionable health protocols. ${biometricContext} Use Google Search to find the latest peer-reviewed science on any health topics the user asks about.`
-      : `你是 Somno 首席研究官 (CRO)，世界级的 AI 睡眠教练。你专业、科学并以数据为导向。你的目标是指导用户了解其生理数据并提供可执行的健康方案。 ${biometricContext} 使用 Google 搜索来查找用户询问的任何健康话题的最新同行评审科学研究。`;
+      ? `You are the Somno Chief Research Officer (CRO), a world-class AI Sleep Coach. You are professional, scientific, and data-driven. Your goal is to guide the user through their physiological data and provide actionable health protocols. ${biometricContext} Use Google Search to find the latest peer-reviewed science.`
+      : `你是 Somno 首席研究官 (CRO)，世界级的 AI 睡眠教练。你专业、科学并以数据为导向。你的目标是指导用户了解其生理数据并提供可执行的健康方案。 ${biometricContext} 使用 Google 搜索来查找最新的同行评审科学研究。`;
 
     const chatHistory = history.slice(0, -1).map(m => ({
       role: m.role === 'user' ? 'user' : 'model',
@@ -106,24 +103,21 @@ export const chatWithCoach = async (
     const lastMessage = history[history.length - 1].content;
 
     const response = await ai.models.generateContent({
-      // Upgrade to gemini-3-pro-image-preview for real-time information using googleSearch tool
-      model: 'gemini-3-pro-image-preview',
+      // Switched to gemini-3-pro-preview to use system API key directly
+      model: 'gemini-3-pro-preview',
       contents: [
         ...chatHistory,
         { role: 'user', parts: [{ text: lastMessage }] }
       ],
       config: {
         systemInstruction,
-        // search grounding is enabled for complex research tasks
         tools: [{ googleSearch: {} }],
         temperature: 0.75,
       }
     });
 
     return {
-      // Access text output using the .text property
       text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
-      // Extract website URLs from groundingChunks as required
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
     };
   } catch (err: any) {
