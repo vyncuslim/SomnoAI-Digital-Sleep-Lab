@@ -1,4 +1,3 @@
-
 import { SleepRecord, SleepStage } from "../types.ts";
 
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
@@ -13,12 +12,12 @@ const SCOPES = [
 
 declare var google: any;
 
-// 辅助函数：处理 Google Fit 的纳秒/毫秒级时间戳
+// Helper to handle Google Fit's nanosecond/millisecond timestamps
 const toMillis = (nanos: any): number => {
   if (nanos === null || nanos === undefined) return Date.now();
   const n = Number(nanos);
   if (isNaN(n)) return Date.now();
-  // 如果数字太大，通常是纳秒
+  // If the number is huge, it's typically nanoseconds
   return n > 10000000000000 ? Math.floor(n / 1000000) : n;
 };
 
@@ -29,7 +28,8 @@ export class GoogleFitService {
   private authPromise: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null;
 
   constructor() {
-    this.accessToken = sessionStorage.getItem('google_fit_token');
+    // Unify to localStorage for cross-session persistence
+    this.accessToken = localStorage.getItem('google_fit_token');
   }
 
   public hasToken(): boolean {
@@ -55,7 +55,6 @@ export class GoogleFitService {
     this.initPromise = (async () => {
       await this.injectGoogleScript();
       
-      // 等待 google.accounts.oauth2 对象就绪
       let attempts = 0;
       while (attempts < 20) {
         if (typeof google !== 'undefined' && google.accounts && google.accounts.oauth2) {
@@ -77,7 +76,7 @@ export class GoogleFitService {
             this.authPromise?.reject(new Error(response.error_description || response.error));
           } else {
             this.accessToken = response.access_token;
-            sessionStorage.setItem('google_fit_token', this.accessToken!);
+            localStorage.setItem('google_fit_token', this.accessToken!);
             this.authPromise?.resolve(this.accessToken!);
           }
           this.authPromise = null;
@@ -95,7 +94,6 @@ export class GoogleFitService {
   public async authorize(forcePrompt = false): Promise<string> {
     await this.ensureClientInitialized();
     
-    // 如果已经有有效的 Token，直接返回
     if (this.accessToken && !forcePrompt) {
       return this.accessToken;
     }
@@ -105,7 +103,7 @@ export class GoogleFitService {
       try {
         this.tokenClient.requestAccessToken({ 
           prompt: forcePrompt ? 'consent' : '',
-          hint: '' // 可选，用于减少登录时的步骤
+          hint: ''
         });
       } catch (e: any) {
         reject(new Error("Failed to open authorization window: " + e.message));
@@ -116,7 +114,7 @@ export class GoogleFitService {
 
   public logout() {
     this.accessToken = null;
-    sessionStorage.removeItem('google_fit_token');
+    localStorage.removeItem('google_fit_token');
     if (typeof google !== 'undefined' && google.accounts?.oauth2) {
       google.accounts.oauth2.revoke(this.accessToken, () => {
         console.log('Token revoked');
@@ -125,7 +123,7 @@ export class GoogleFitService {
   }
 
   public async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    const token = this.accessToken || sessionStorage.getItem('google_fit_token');
+    const token = this.accessToken || localStorage.getItem('google_fit_token');
     if (!token) throw new Error("AUTH_REQUIRED");
 
     const now = Date.now();
@@ -143,7 +141,13 @@ export class GoogleFitService {
       throw new Error("AUTH_EXPIRED");
     }
 
-    if (!response.ok) throw new Error("FIT_API_FAILURE");
+    if (!response.ok) {
+      const errorDetail = await response.json().catch(() => ({}));
+      const message = errorDetail.error?.message || response.statusText;
+      console.error("Google Fit API Error:", errorDetail);
+      throw new Error(`FIT_API_FAILURE: ${response.status} ${message}`);
+    }
+
     const data = await response.json();
     
     const sleepSessions = data.session?.filter((s: any) => s.activityType === 72) || [];

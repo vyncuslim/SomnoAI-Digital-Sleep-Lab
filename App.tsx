@@ -48,6 +48,13 @@ const App: React.FC = () => {
     if (path === '/about') setActiveView('about');
     else if (path === '/privacy') setActiveView('privacy');
     else if (path === '/terms') setActiveView('terms');
+
+    // Remove the static page loader once React has taken over
+    const loader = document.getElementById('page-loader');
+    if (loader) {
+      loader.style.opacity = '0';
+      setTimeout(() => loader.remove(), 500);
+    }
   }, []);
 
   useEffect(() => {
@@ -119,6 +126,7 @@ const App: React.FC = () => {
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
+    setHistory([]); // Reset history during sync to prevent confusion
     try {
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
@@ -135,10 +143,19 @@ const App: React.FC = () => {
       setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
       onProgress?.('success');
     } catch (err: any) {
+      console.error("Sync Critical Failure:", err);
       setIsLoading(false);
       onProgress?.('error');
-      setErrorToast(err.message || (lang === 'zh' ? "同步失败" : "Sync Failed"));
-      setTimeout(() => setErrorToast(null), 5000);
+      
+      let friendlyError = lang === 'zh' ? "同步失败" : "Sync Failed";
+      if (err.message?.includes("FIT_API_FAILURE")) {
+        friendlyError = lang === 'zh' ? `API 故障: ${err.message}` : `API Link Failure: ${err.message}`;
+      } else if (err.message === "DATA_NOT_FOUND") {
+        friendlyError = lang === 'zh' ? "未发现睡眠数据" : "No sleep data found";
+      }
+
+      setErrorToast(friendlyError);
+      setTimeout(() => setErrorToast(null), 8000);
     }
   }, [lang]);
 

@@ -17,10 +17,15 @@
     <meta name="keywords" content="SomnoAI, Digital Sleep Lab, AI sleep analysis, biometric telemetry, sleep science, Gemini AI, neurological recovery, physiological monitoring, sleep architecture, metabolic load, Google Fit, sleep coaching, neuro-analysis, health data encryption, restorative rest, circadian rhythm optimization">
     <meta name="author" content="SomnoAI Lab">
 
-    <!-- Performance Optimizations: Preload critical assets -->
-    <link rel="preload" href="index.tsx" as="script" type="module">
+    <!-- Performance Optimizations: Preconnect to critical origins -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://esm.sh">
+    <link rel="dns-prefetch" href="https://accounts.google.com">
+    <link rel="dns-prefetch" href="https://www.googleapis.com">
+
+    <!-- Preload critical assets with high priority -->
+    <link rel="preload" href="index.tsx" as="script" type="module" fetchpriority="high">
     <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" as="style">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap&font-display=swap">
 
@@ -31,18 +36,12 @@
     <meta property="og:description" content="SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights and strategic wellness protocols.">
     <meta property="og:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
 
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://sleepsomno.com/">
-    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab | Advanced AI Sleep Analysis">
-    <meta property="twitter:description" content="SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights and strategic wellness protocols.">
-    <meta property="twitter:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
-
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
     <link rel="manifest" href="manifest.json">
     
-    <!-- Critical Scripts -->
-    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Critical Tailwind Runtime - Deferred for performance -->
+    <script src="https://cdn.tailwindcss.com" defer></script>
+    <!-- GSI - Loaded with defer to not block main thread -->
     <script src="https://accounts.google.com/gsi/client" defer></script>
     
     <script>
@@ -66,11 +65,7 @@
             --accent-glow: rgba(79, 70, 229, 0.4);
         }
 
-        @keyframes nebulaPulse {
-            0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.1; }
-            50% { transform: scale(1.1) translate(-2%, 2%); opacity: 0.15; }
-        }
-
+        /* Critical Animation for the loader */
         @keyframes pulse-opacity {
             0%, 100% { opacity: 0.3; }
             50% { opacity: 0.7; }
@@ -83,13 +78,7 @@
             color: #e2e8f0;
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased;
-        }
-
-        body {
             overflow-x: hidden;
-            perspective: var(--perspective);
-            display: flex;
-            flex-direction: column;
         }
 
         #spatial-bg {
@@ -99,17 +88,44 @@
             background: radial-gradient(circle at 50% 50%, #050a1f 0%, #01040a 100%);
         }
 
-        .nebula {
-            position: absolute;
-            width: 200%; height: 200%;
-            top: -50%; left: -50%;
-            background: radial-gradient(circle at center, rgba(79, 70, 229, 0.1) 0%, transparent 50%),
-                        radial-gradient(circle at 30% 20%, rgba(168, 85, 247, 0.05) 0%, transparent 40%);
-            filter: blur(100px);
-            animation: nebulaPulse 30s ease-in-out infinite;
-            pointer-events: none;
+        #root {
+            position: relative;
+            z-index: 10;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
 
+        /* Splash Screen Style for FCP */
+        .initial-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+            gap: 1.5rem;
+            position: fixed;
+            top: 0; left: 0;
+            background-color: #01040a;
+            z-index: 1000;
+        }
+        .initial-loader .logo-placeholder {
+            width: 80px; height: 80px;
+            background: radial-gradient(circle, #818cf8, #4f46e5);
+            border-radius: 50%;
+            animation: pulse-opacity 2s infinite ease-in-out;
+            filter: blur(1px);
+        }
+        .initial-loader .text {
+            font-size: 0.65rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4em;
+            color: #64748b;
+            font-weight: 800;
+        }
+
+        /* Optimize remaining styles for lazy loading */
         .grid-floor {
             position: fixed;
             bottom: -20%; left: -50%;
@@ -122,40 +138,17 @@
             transform-origin: center bottom;
             mask-image: linear-gradient(to top, black, transparent);
             pointer-events: none;
+            opacity: 0.5;
         }
 
-        #root {
-            position: relative;
-            transform-style: preserve-3d;
-            z-index: 10;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        /* Splash Screen Style */
-        .initial-loader {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            width: 100%;
-            gap: 1.5rem;
-        }
-        .initial-loader .logo-placeholder {
-            width: 80px; height: 80px;
-            background: radial-gradient(circle, #818cf8, #4f46e5);
-            border-radius: 50%;
-            animation: pulse-opacity 2s infinite ease-in-out;
-            filter: blur(1px);
-        }
-        .initial-loader .text {
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            letter-spacing: 0.3em;
-            color: #475569;
-            font-weight: 800;
+        .nebula {
+            position: absolute;
+            width: 200%; height: 200%;
+            top: -50%; left: -50%;
+            background: radial-gradient(circle at center, rgba(79, 70, 229, 0.1) 0%, transparent 50%);
+            filter: blur(100px);
+            pointer-events: none;
+            opacity: 0.3;
         }
 
         .goog-te-gadget-simple {
@@ -177,27 +170,18 @@
             text-transform: uppercase !important;
             letter-spacing: 0.05em !important;
         }
-        .goog-te-banner-frame {
-            display: none !important;
-        }
-        body {
-            top: 0 !important;
-        }
+        .goog-te-banner-frame { display: none !important; }
+        body { top: 0 !important; }
 
-        .scrollbar-hide::-webkit-scrollbar {
-            display: none;
-        }
-        .scrollbar-hide {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .scrollbar-hide::-webkit-scrollbar { display: none; }
+        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
 
         .crawler-footer {
             position: absolute;
             bottom: 10px;
             width: 100%;
             text-align: center;
-            opacity: 0.01;
+            opacity: 0.1;
             pointer-events: auto;
             z-index: 1;
         }
@@ -216,8 +200,8 @@
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
     "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.0",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "vite": "https://esm.sh/vite@^7.3.0"
   }
 }
 </script>
@@ -228,10 +212,10 @@
         <div class="grid-floor" aria-hidden="true"></div>
     </div>
     <div id="root">
-        <!-- Initial Shell for better FCP/Lighthouse score -->
-        <div class="initial-loader">
+        <!-- Initial Loader Shell -->
+        <div class="initial-loader" id="page-loader">
             <div class="logo-placeholder"></div>
-            <div class="text">SomnoAI Digital Sleep Lab Initializing...</div>
+            <div class="text">SomnoAI Digital Sleep Lab</div>
         </div>
     </div>
     
@@ -241,9 +225,10 @@
         <span>© 2026 SomnoAI Digital Sleep Lab</span>
     </footer>
 
-    <!-- Deferred Entry Point -->
-    <script type="module" src="index.tsx" defer></script>
-    <!-- Non-critical Scripts -->
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
+    <!-- Main Entry Point -->
+    <script type="module" src="index.tsx"></script>
+    
+    <!-- Deferred Non-critical Scripts -->
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
 </body>
 </html>

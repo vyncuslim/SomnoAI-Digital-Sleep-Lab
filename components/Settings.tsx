@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
@@ -107,7 +106,8 @@ export const Settings: React.FC<SettingsProps> = ({
     </button>
   );
 
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(t.paypalLink)}&bgcolor=ffffff&color=000000&margin=1`;
+  // 优化 QR 码生成参数，增加容错率以便中心放置 Logo
+  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(t.paypalLink)}&bgcolor=ffffff&color=000000&margin=2&ecc=H`;
 
   return (
     <div className="space-y-10 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -245,7 +245,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </button>
       </div>
 
-      {/* High-Fidelity PayPal Modal (Image Style) */}
+      {/* 1:1 还原截图样式的 PayPal 模态框 */}
       <AnimatePresence>
         {showPaypalQR && (
           <div className="fixed inset-0 z-[400] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
@@ -255,52 +255,54 @@ export const Settings: React.FC<SettingsProps> = ({
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="w-full max-w-sm"
             >
-              {/* The White Card based on your image */}
-              <div className="bg-[#f1f4f8] rounded-[2.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.5)] flex flex-col items-center py-16 px-8 relative">
+              {/* 卡片容器：使用截图中的浅灰色背景和高大圆角 */}
+              <div className="bg-[#f1f4f8] rounded-[3.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex flex-col items-center py-20 px-10 relative">
                 <button 
                   onClick={() => setShowPaypalQR(false)}
-                  className="absolute top-8 right-8 p-2 text-slate-400 hover:text-slate-900 transition-colors"
+                  className="absolute top-10 right-10 p-2 text-slate-400 hover:text-slate-900 transition-colors"
                 >
-                  <X size={24} />
+                  <X size={28} />
                 </button>
 
-                <h2 className="text-2xl font-bold text-slate-900 mb-10 tracking-tight">Vyncuslim vyncuslim</h2>
+                {/* 标题：加粗黑体，符合 PayPal 界面风格 */}
+                <h2 className="text-2xl font-bold text-slate-900 mb-12 tracking-tight">Vyncuslim vyncuslim</h2>
 
-                <div className="bg-white p-6 rounded-[2rem] shadow-[0_15px_40px_rgba(0,0,0,0.05)] relative group mb-10">
-                  <div className="w-56 h-56 bg-white flex items-center justify-center relative overflow-hidden">
+                {/* QR 码白框：截图中的悬浮白卡片效果 */}
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] relative group mb-12">
+                  <div className="w-52 h-52 bg-white flex items-center justify-center relative overflow-hidden">
                     <img 
                       src={qrCodeUrl} 
                       alt="PayPal QR Code"
                       className="w-full h-full object-contain"
                     />
-                    {/* Centered PayPal Icon */}
+                    {/* 中心 PayPal "P" Logo：还原截图中的蓝色标识 */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="bg-white p-2 rounded-xl shadow-md border border-slate-50">
-                        <img 
-                          src="https://www.paypalobjects.com/webstatic/mktg/logo/pp_cc_mark_37x23.jpg" 
-                          alt="PP"
-                          className="w-8 h-auto"
-                        />
+                      <div className="bg-white p-2.5 rounded-2xl shadow-lg border border-slate-50">
+                        <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                           <path d="M12.5 5.5H21.5C25.5 5.5 28.5 8.5 28.5 12.5C28.5 16.5 25.5 19.5 21.5 19.5H16.5L15.5 26.5H9.5L12.5 5.5Z" fill="#003087" />
+                           <path d="M11 9.5H18.5C21.5 9.5 23.5 11.5 23.5 14.5C23.5 17.5 21.5 19.5 18.5 19.5H14.5L13.5 25.5H8.5L11 9.5Z" fill="#0070BA" />
+                        </svg>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <p className="text-sm font-medium text-slate-600 mb-10">
+                <p className="text-sm font-semibold text-slate-600 mb-12">
                   Scan to pay Vyncuslim vyncuslim
                 </p>
 
-                <div className="w-full space-y-3">
+                {/* 操作按钮：使用 PayPal 官方蓝 */}
+                <div className="w-full space-y-4">
                   <button 
                     onClick={() => { window.open(t.paypalLink, '_blank'); }}
-                    className="w-full py-5 bg-[#0070ba] text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.25em] shadow-xl hover:bg-[#005ea6] transition-all flex items-center justify-center gap-2"
+                    className="w-full py-5 bg-[#0070ba] text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-xl hover:bg-[#005ea6] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                   >
-                    <ExternalLink size={16} />
-                    {lang === 'zh' ? '立即通过 PayPal 付款' : 'Pay via PayPal Link'}
+                    <ExternalLink size={18} />
+                    {lang === 'zh' ? '在线通过 PayPal 赞助' : 'PAY VIA PAYPAL LINK'}
                   </button>
                   <button 
                     onClick={() => { handleCopy(t.paypalLink, 'PayPal'); setShowThankYou(true); }}
-                    className="w-full py-4 text-slate-500 font-bold text-[10px] uppercase tracking-widest hover:text-slate-900 transition-all"
+                    className="w-full py-4 text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:text-slate-900 transition-all"
                   >
                     {t.paypalCopy}
                   </button>

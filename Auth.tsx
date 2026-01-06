@@ -189,7 +189,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           <section className="space-y-6">
             <div className="p-4 bg-slate-900/60 border border-white/5 rounded-2xl space-y-3">
               <p className="text-[11px] text-slate-400 leading-relaxed font-medium italic">
-                {translations[lang].auth.tagline}
+                {lang === 'zh' 
+                  ? '它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。' 
+                  : 'Integrating physiological monitoring, AI deep insights, and health advice for a comprehensive digital sleep lab experience.'}
               </p>
               <div className="flex flex-wrap gap-2">
                 {['sleep.read', 'heart_rate.read'].map(scope => (
