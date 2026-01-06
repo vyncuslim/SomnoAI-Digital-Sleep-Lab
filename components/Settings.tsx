@@ -4,7 +4,7 @@ import {
   Shield, LogOut, ChevronRight, Info, AlertTriangle, Cpu, Binary, Languages as LangIcon, 
   Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Key, Check, Moon, Sun, Palette, 
   RefreshCw, Globe2, Smartphone, CheckCircle2, X, EyeOff, Eye, Database, Github, FileText,
-  DollarSign, Sparkles, Receipt, ArrowUpRight, Globe, CreditCard, Share2
+  DollarSign, Sparkles, Receipt, ArrowUpRight, Globe, CreditCard, Share2, Stethoscope, FlaskConical
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ViewType, ThemeMode, AccentColor } from '../types.ts';
@@ -106,7 +106,6 @@ export const Settings: React.FC<SettingsProps> = ({
     </button>
   );
 
-  // 优化 QR 码生成参数，增加容错率以便中心放置 Logo
   const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(t.paypalLink)}&bgcolor=ffffff&color=000000&margin=2&ecc=H`;
 
   return (
@@ -115,6 +114,26 @@ export const Settings: React.FC<SettingsProps> = ({
         <h1 className="text-3xl font-black tracking-tighter text-white italic">{t.title}</h1>
         <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">{t.subtitle}</p>
       </header>
+
+      {/* Experimental & Medical Disclaimer Section */}
+      <GlassCard className="p-8 space-y-4 border-rose-500/30 bg-rose-500/5 overflow-hidden relative">
+        <div className="absolute -top-4 -right-4 opacity-5 pointer-events-none rotate-12" aria-hidden="true">
+          <AlertTriangle size={120} />
+        </div>
+        <div className="flex items-center gap-3 text-rose-400">
+          <Stethoscope size={20} />
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{lang === 'zh' ? '实验性环境与医疗免责声明' : 'EXPERIMENTAL STATUS & MEDICAL DISCLAIMER'}</h3>
+        </div>
+        <p className="text-xs text-slate-300 leading-relaxed font-medium">
+          {lang === 'zh' 
+            ? 'SomnoAI 是一个实验性数字健康实验室。本平台提供的所有 AI 洞察、生理评分和建议仅供教育和参考，不构成任何医疗诊断或建议。在使用本平台前，请务必咨询医疗专业人员。' 
+            : 'SomnoAI is an experimental digital health laboratory. All AI insights, physiological scores, and recommendations provided are for educational and informational purposes only and do not constitute medical advice or diagnosis. Always consult a medical professional before taking action based on laboratory results.'}
+        </p>
+        <div className="flex items-center gap-2 pt-2 text-[9px] font-bold text-rose-500/60 uppercase tracking-widest">
+           <FlaskConical size={12} />
+           {lang === 'zh' ? '非医疗设备 • 仅供研究使用' : 'NON-MEDICAL DEVICE • FOR RESEARCH ONLY'}
+        </div>
+      </GlassCard>
 
       {/* Language Switcher */}
       <div className="space-y-4">
@@ -179,6 +198,12 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
           </div>
 
+          <div className="p-4 bg-slate-900/60 border border-white/5 rounded-2xl">
+            <p className="text-[10px] text-slate-500 italic leading-relaxed">
+              {t.fundingDisclaimer}
+            </p>
+          </div>
+
           <div className="space-y-3">
             <button 
               onClick={() => handleCopy(t.duitNowId, 'DuitNow')}
@@ -209,6 +234,16 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
               <QrCode size={16} className="text-slate-400 group-hover:text-sky-400" />
             </button>
+            
+            <a 
+              href={t.paypalLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full p-4 bg-sky-600 text-white rounded-2xl flex items-center justify-center gap-3 font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-sky-500 transition-all active:scale-95"
+            >
+              <ExternalLink size={16} />
+              {lang === 'zh' ? '访问 PayPal.me 页面' : 'Visit PayPal.me Profile'}
+            </a>
           </div>
         </GlassCard>
       </div>
@@ -245,7 +280,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </button>
       </div>
 
-      {/* 1:1 还原截图样式的 PayPal 模态框 */}
+      {/* PayPal Modal */}
       <AnimatePresence>
         {showPaypalQR && (
           <div className="fixed inset-0 z-[400] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
@@ -255,7 +290,6 @@ export const Settings: React.FC<SettingsProps> = ({
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="w-full max-w-sm"
             >
-              {/* 卡片容器：使用截图中的浅灰色背景和高大圆角 */}
               <div className="bg-[#f1f4f8] rounded-[3.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex flex-col items-center py-20 px-10 relative">
                 <button 
                   onClick={() => setShowPaypalQR(false)}
@@ -264,10 +298,8 @@ export const Settings: React.FC<SettingsProps> = ({
                   <X size={28} />
                 </button>
 
-                {/* 标题：加粗黑体，符合 PayPal 界面风格 */}
                 <h2 className="text-2xl font-bold text-slate-900 mb-12 tracking-tight">Vyncuslim vyncuslim</h2>
 
-                {/* QR 码白框：截图中的悬浮白卡片效果 */}
                 <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] relative group mb-12">
                   <div className="w-52 h-52 bg-white flex items-center justify-center relative overflow-hidden">
                     <img 
@@ -275,7 +307,6 @@ export const Settings: React.FC<SettingsProps> = ({
                       alt="PayPal QR Code"
                       className="w-full h-full object-contain"
                     />
-                    {/* 中心 PayPal "P" Logo：还原截图中的蓝色标识 */}
                     <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                       <div className="bg-white p-2.5 rounded-2xl shadow-lg border border-slate-50">
                         <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -291,7 +322,6 @@ export const Settings: React.FC<SettingsProps> = ({
                   Scan to pay Vyncuslim vyncuslim
                 </p>
 
-                {/* 操作按钮：使用 PayPal 官方蓝 */}
                 <div className="w-full space-y-4">
                   <button 
                     onClick={() => { window.open(t.paypalLink, '_blank'); }}
@@ -313,6 +343,7 @@ export const Settings: React.FC<SettingsProps> = ({
         )}
       </AnimatePresence>
 
+      {/* Thank You Modal */}
       <AnimatePresence>
         {showThankYou && (
           <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
