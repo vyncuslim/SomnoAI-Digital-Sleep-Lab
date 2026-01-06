@@ -132,7 +132,7 @@ export const translations = {
     }
   },
   zh: {
-    nav: { lab: 'lab', trends: 'TRENDS', insights: 'INSIGHTS', settings: 'SETTINGS' },
+    nav: { lab: '实验室', trends: '趋势', insights: '洞察', settings: '设置' },
     dashboard: {
       neuralActive: '神经系统活跃中',
       liveLink: '实时链路',
@@ -218,7 +218,7 @@ export const translations = {
       legal: '法律与文档',
       duitNowId: '+60 187807388',
       transferVia: '即时转账 (MY)',
-      duitNowCopy: '复制 DuitNow ID',
+      duitNowCopy: 'Copy DuitNow ID',
       tngId: '+60 187807388',
       tngCopy: 'Copy TNG Number',
       paypalId: 'Vyncuslim vyncuslim',
