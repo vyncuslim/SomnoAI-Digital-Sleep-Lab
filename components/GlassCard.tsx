@@ -81,7 +81,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
             [mouseXSpring, mouseYSpring],
             ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(255,255,255,0.15) 0%, transparent 70%)`
           ),
-          translateZ: 100
+          translateZ: 100,
+          marginTop: 0 // Fix: Explicitly reset margin-top to avoid clipping from inherited styles
         }}
         className="absolute inset-0 pointer-events-none z-20"
       />

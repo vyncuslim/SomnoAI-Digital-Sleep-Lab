@@ -1,40 +1,34 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
-  "short_name": "SomnoAI",
-  "description": "SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights and strategic wellness protocols. Experience a comprehensive digital sleep laboratory designed to map your neurological recovery and optimize metabolic health through precision neural analysis.",
+  "short_name": "SomnoAI Lab",
+  "description": "SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights and strategic wellness protocols.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
   "icons": [
     {
-      "src": "https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png",
+      "src": "/favicon.png",
       "sizes": "48x48",
       "type": "image/png"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png",
+      "src": "/favicon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png",
+      "src": "/favicon.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "maskable"
     },
     {
-      "src": "https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png",
+      "src": "/favicon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any"
-    },
-    {
-      "src": "https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "maskable"
     }
   ]
 }

@@ -4,21 +4,21 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
-    <!-- 1. Google Search Favicon Identity (Highest Priority) -->
-    <!-- Google 官方建议至少 48x48，这里我们提供 48/32/16 全链路尺寸 -->
-    <link rel="icon" type="image/png" sizes="48x48" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
-    <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
-    <link rel="shortcut icon" type="image/png" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
-    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    <!-- 1. Google Search Favicon (The Professional Standard) -->
+    <!-- 核心：放在根目录，直接访问 https://sleepsomno.com/favicon.png -->
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <link rel="shortcut icon" href="/favicon.png" type="image/png">
     
-    <!-- 2. Google Site Name & Search Presence -->
+    <!-- 2. Apple Device Support -->
+    <link rel="apple-touch-icon" href="/favicon.png">
+    
+    <!-- 3. Google Site Name & Identity (Structured Data) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
       "@type": "WebSite",
-      "name": "SomnoAI",
-      "alternateName": "Somno Lab",
+      "name": "SomnoAI Digital Sleep Lab",
+      "alternateName": "SomnoAI",
       "url": "https://sleepsomno.com/"
     }
     </script>
@@ -26,14 +26,14 @@
     <meta name="theme-color" content="#020617">
     <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SomnoAI">
+    <meta name="apple-mobile-web-app-title" content="SomnoAI Lab">
     
     <link rel="canonical" href="https://sleepsomno.com/" />
     
     <!-- SEO Meta Tags -->
-    <title>SomnoAI: AI-Powered Sleep Lab & Advanced Biometric Insights</title>
-    <meta name="description" content="Unlock the science of rest with SomnoAI Digital Sleep Lab. Integrate Google Fit biometrics with state-of-the-art Gemini AI to decode your sleep architecture and receive personalized bio-hacking protocols.">
-    <meta name="keywords" content="SomnoAI, AI Sleep Analysis, Digital Sleep Lab, Sleep Biometrics, Google Fit Sleep Sync, Gemini AI Health, Personalized Sleep Coach, Bio-hacking, Sleep Science">
+    <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
+    <meta name="description" content="Unlock the science of rest with SomnoAI Digital Sleep Lab. Integrate Google Fit biometrics with state-of-the-art Gemini AI to decode your sleep architecture.">
+    <meta name="keywords" content="SomnoAI, SomnoAI Digital Sleep Lab, AI Sleep Analysis, Digital Sleep Lab, Sleep Biometrics, Google Fit Sleep Sync, Gemini AI Health">
     <meta name="author" content="SomnoAI Lab">
 
     <link rel="manifest" href="manifest.json">
@@ -41,9 +41,9 @@
     <!-- OpenGraph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="SomnoAI: Professional AI Sleep Analysis & Biometric Lab">
-    <meta property="og:description" content="Integrate Google Fit biometrics with Gemini AI to decode your sleep architecture. 100% private, edge-processed sleep mastery.">
-    <meta property="og:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    <meta property="og:title" content="SomnoAI Digital Sleep Lab: Professional AI Sleep Analysis">
+    <meta property="og:description" content="Integrate Google Fit biometrics with Gemini AI to decode your sleep architecture. 100% private.">
+    <meta property="og:image" content="https://sleepsomno.com/favicon.png">
     
     <!-- Performance Optimizations -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -243,7 +243,7 @@
     </div>
     <div id="root">
         <div class="initial-loader" id="page-loader" role="status" aria-label="Starting SomnoAI Digital Sleep Lab">
-            <img class="logo-img" src="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png" alt="SomnoAI Logo" aria-hidden="true">
+            <img class="logo-img" src="/favicon.png" alt="SomnoAI Logo" aria-hidden="true">
             <div class="text">SomnoAI Digital Sleep Lab</div>
         </div>
     </div>
