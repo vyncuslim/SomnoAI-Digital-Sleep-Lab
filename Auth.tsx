@@ -1,6 +1,10 @@
 
-import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Loader2, ArrowRight, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock, Save, FlaskConical, Network, Fingerprint, Keyboard, Terminal as TerminalIcon } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  ShieldCheck, Loader2, ArrowRight, TriangleAlert, Lock, 
+  Terminal, Sparkles, Fingerprint, Network, Eye, EyeOff, 
+  RefreshCw, Key, Shield, ChevronRight, Globe, CheckCircle2
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { googleFit } from './services/googleFitService.ts';
@@ -26,49 +30,72 @@ const GoogleIcon = () => (
 
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
-  const [hasKey, setHasKey] = useState(false);
-  const [isCheckingKey, setIsCheckingKey] = useState(true);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [showKey, setShowKey] = useState(false);
+  const [isKeyInjected, setIsKeyInjected] = useState(false);
+  const [isInjecting, setIsInjecting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    checkApiKey();
-    googleFit.ensureClientInitialized().catch(err => {
-      console.warn("Auth: Google GSI Background Loading...", err.message);
-    });
+    // 检查初始环境变量
+    const existingKey = (window as any).process?.env?.API_KEY || process.env.API_KEY;
+    if (existingKey && existingKey.length > 20) {
+      setIsKeyInjected(true);
+      setApiKeyInput(existingKey);
+    }
+    
+    // 自动聚焦
+    if (!isKeyInjected) {
+      setTimeout(() => inputRef.current?.focus(), 500);
+    }
+    
+    googleFit.ensureClientInitialized().catch(() => {});
   }, []);
 
-  const checkApiKey = async () => {
-    try {
-      if ((window as any).aistudio) {
-        const selected = await (window as any).aistudio.hasSelectedApiKey();
-        setHasKey(selected);
-      } else {
-        setHasKey(!!process.env.API_KEY || (window as any).process?.env?.API_KEY);
-      }
-    } catch (e) {
-      setHasKey(false);
-    } finally {
-      setIsCheckingKey(false);
+  const handleInjectKey = () => {
+    // 移除点击长度限制，在函数内部校验
+    if (!apiKeyInput.trim() || apiKeyInput.trim().length < 20) {
+      setLocalError(lang === 'zh' ? "密钥无效：通常 Gemini API 密钥应至少包含 20 个字符" : "Invalid Key: Gemini API keys are usually 20+ characters.");
+      return;
     }
+
+    setIsInjecting(true);
+    setLocalError(null);
+
+    // 缩短反馈时间，确保响应感
+    setTimeout(() => {
+      try {
+        const cleanKey = apiKeyInput.trim();
+        
+        // 确保全局变量被注入
+        if (!(window as any).process) (window as any).process = { env: {} };
+        if (!(window as any).process.env) (window as any).process.env = {};
+        (window as any).process.env.API_KEY = cleanKey;
+        
+        // 双重注入
+        try { (process.env as any).API_KEY = cleanKey; } catch(e) {}
+
+        setIsKeyInjected(true);
+        setIsInjecting(false);
+        setLocalError(null);
+      } catch (err) {
+        setLocalError("Handshake failure: environment restricted.");
+        setIsInjecting(false);
+      }
+    }, 400);
   };
 
-  const handleActivateEngine = async () => {
-    if ((window as any).aistudio) {
-      try {
-        await (window as any).aistudio.openSelectKey();
-        setHasKey(true);
-        setLocalError(null);
-      } catch (e: any) {
-        setLocalError(lang === 'zh' ? "激活 AI 神经网关失败" : "Failed to activate AI Gateway");
-      }
-    }
+  const handleResetKey = () => {
+    setIsKeyInjected(false);
+    setApiKeyInput('');
+    setLocalError(null);
+    if ((window as any).process?.env) (window as any).process.env.API_KEY = '';
+    setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const handleGoogleLogin = async () => {
-    if (!hasKey) {
-      setLocalError(lang === 'zh' ? "请先完成 API 密钥输入" : "Please input API Key first");
-      return;
-    }
+    if (!isKeyInjected) return;
 
     setIsLoggingIn(true);
     setLocalError(null);
@@ -76,184 +103,149 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     try {
       await googleFit.ensureClientInitialized();
       const token = await googleFit.authorize(true); 
-      if (token) {
-        onLogin();
-      }
+      if (token) onLogin();
     } catch (error: any) {
-      console.error("Login Error:", error);
-      let msg = error.message;
-      if (msg.includes("popup_closed_by_user")) {
-        msg = lang === 'zh' ? "授权窗口已关闭" : "Auth popup closed";
-      } else if (msg.includes("access_denied")) {
-        msg = lang === 'zh' ? "数据访问权限被拒绝" : "Access denied by user";
-      }
-      setLocalError(msg || "Authentication Failed");
+      let msg = error.message || "Auth Error";
+      if (msg.includes("popup_closed")) msg = lang === 'zh' ? "授权窗口被关闭" : "Popup closed";
+      setLocalError(msg);
     } finally {
       setIsLoggingIn(false);
     }
   };
 
-  if (isCheckingKey) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-[#01040a]">
-        <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-          <Logo size={64} animated threeD />
-        </motion.div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start py-16 px-6 bg-transparent relative overflow-x-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[1000px] bg-indigo-500/5 rounded-full blur-[160px] pointer-events-none" />
-      
+    <div className="min-h-screen flex flex-col items-center justify-start py-12 px-6 bg-[#01040a] relative overflow-hidden">
+      {/* 装饰层 */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
+
       <motion.div 
-        initial={{ opacity: 0, y: -20 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        className="w-full max-w-2xl space-y-6 text-center mb-12 relative z-10"
+        initial={{ opacity: 0, scale: 0.9 }} 
+        animate={{ opacity: 1, scale: 1 }} 
+        className="w-full max-w-2xl space-y-4 text-center mb-10 relative z-10"
       >
         <div className="flex justify-center mb-4">
-           <Logo size={90} animated threeD />
+           <Logo size={80} animated={!isKeyInjected} threeD />
         </div>
-        <div className="space-y-2">
-          <h1 className={`${lang === 'zh' ? 'text-4xl' : 'text-5xl'} font-black tracking-tighter text-white italic drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] px-4 text-center leading-tight`}>
-            {lang === 'zh' ? (
-              <>SomnoAI <span className="text-indigo-400">数字化实验终端</span></>
-            ) : (
-              <>SomnoAI <span className="text-indigo-400">Digital Terminal</span></>
-            )}
+        <div className="space-y-1">
+          <h1 className={`${lang === 'zh' ? 'text-4xl' : 'text-5xl'} font-black tracking-tighter text-white italic drop-shadow-2xl`}>
+            SomnoAI <span className="text-indigo-400">实验终端</span>
           </h1>
           <div className="flex items-center justify-center gap-4 text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] opacity-60">
-            <span className="flex items-center gap-1"><Network size={10} /> Neural Link v4.0</span>
-            <span className="w-1 h-1 bg-slate-700 rounded-full" />
-            <span className="flex items-center gap-1"><Fingerprint size={10} /> Biometric Ready</span>
+            <span className="flex items-center gap-1.5"><Network size={12} /> Neural-v4</span>
+            <span className="flex items-center gap-1.5"><Shield size={12} /> Encrypted</span>
           </div>
         </div>
       </motion.div>
 
-      <GlassCard className="w-full max-w-md p-10 border-white/5 bg-slate-950/40 space-y-10 relative z-20 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]">
-        <div className="space-y-10">
-          <section className="space-y-6">
-            <div className="flex items-center justify-between px-1">
-              <div className="flex items-center gap-2">
-                <SpatialIcon icon={Lock} size={14} color={hasKey ? "#10b981" : "#818cf8"} threeD />
-                <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-300">
-                  {lang === 'zh' ? 'AI 神经网关 (Gemini)' : 'NEURAL GATEWAY (GEMINI)'}
-                </h2>
+      <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-950/60 space-y-8 relative z-[100] shadow-2xl">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between px-1">
+            <div className="flex items-center gap-3">
+              <div className={`p-2 rounded-xl border ${isKeyInjected ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'}`}>
+                <Terminal size={16} />
               </div>
-              <a 
-                href="https://ai.google.dev/gemini-api/docs/billing" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-[10px] font-bold text-indigo-400/80 hover:text-indigo-300 transition-colors flex items-center gap-1 group"
-              >
-                {lang === 'zh' ? '计费说明' : 'Billing Info'} <ExternalLink size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
-              </a>
+              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
+                {lang === 'zh' ? 'Gemini 引擎网关' : 'Gemini Engine Gateway'}
+              </h2>
+            </div>
+            {isKeyInjected && (
+              <button onClick={handleResetKey} className="text-[9px] font-black text-rose-500 hover:text-rose-400 flex items-center gap-1 uppercase transition-colors">
+                <RefreshCw size={10} /> {lang === 'zh' ? '重置密钥' : 'Reset'}
+              </button>
+            )}
+          </div>
+
+          <div className={`relative rounded-3xl border transition-all duration-500 p-1 flex flex-col gap-2 ${isKeyInjected ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-white/10 bg-black/40 focus-within:border-indigo-500/50'}`}>
+            <div className="flex items-center px-4 py-2 opacity-50">
+              <div className={`w-1.5 h-1.5 rounded-full mr-2 ${isKeyInjected ? 'bg-emerald-500' : 'bg-indigo-500 animate-pulse'}`} />
+              <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-400">
+                {isKeyInjected ? 'Link Established' : 'Awaiting Encryption Key'}
+              </span>
             </div>
 
-            {/* 模拟输入框设计的触发器 */}
-            <div className="space-y-3">
-               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
-                 {lang === 'zh' ? '安全密钥输入端口' : 'Secure Key Entry Port'}
-               </label>
-               <motion.button 
-                whileHover={{ scale: 1.01 }}
-                whileTap={{ scale: 0.99 }}
-                onClick={handleActivateEngine}
-                className={`w-full h-16 rounded-2xl border flex items-center px-6 gap-4 transition-all relative overflow-hidden group shadow-inner ${
-                  hasKey 
-                    ? 'bg-emerald-500/5 border-emerald-500/30 text-emerald-400' 
-                    : 'bg-slate-950 border-white/10 text-slate-400 hover:border-indigo-500/40'
-                }`}
-              >
-                <TerminalIcon size={16} className={hasKey ? "text-emerald-500" : "text-indigo-500"} />
-                
-                <div className="flex-1 text-left font-mono text-sm tracking-tight flex items-center">
-                  {hasKey ? (
-                    <span className="opacity-80">••••••••••••••••••••••••••••</span>
-                  ) : (
-                    <div className="flex items-center">
-                      <span className="opacity-40">{lang === 'zh' ? '点击此处输入 API 密钥...' : 'Type API Key here...'}</span>
-                      <motion.div 
-                        animate={{ opacity: [0, 1, 0] }}
-                        transition={{ duration: 0.8, repeat: Infinity }}
-                        className="w-2 h-4 bg-indigo-500 ml-1"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {hasKey ? (
-                   <ShieldCheck size={18} className="text-emerald-500" />
-                ) : (
-                   <Keyboard size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
-                )}
-
-                {/* 背景光晕装饰 */}
-                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
-              </motion.button>
+            <div className="relative flex items-center">
+              <input 
+                ref={inputRef}
+                type={showKey ? "text" : "password"}
+                value={apiKeyInput}
+                onChange={(e) => setApiKeyInput(e.target.value)}
+                disabled={isKeyInjected}
+                placeholder={lang === 'zh' ? '粘贴 API Key...' : 'Paste API Key...'}
+                className="w-full bg-transparent border-none outline-none px-4 py-3 text-sm text-white placeholder:text-slate-700 font-mono select-text"
+              />
+              {!isKeyInjected && apiKeyInput && (
+                <button onClick={() => setShowKey(!showKey)} className="p-3 text-slate-500 hover:text-indigo-400">
+                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+              )}
             </div>
-            
-            {!hasKey && (
-              <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex gap-3">
-                 <Lock size={14} className="text-indigo-500 shrink-0 mt-0.5" />
-                 <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
-                   {lang === 'zh' ? '请点击上方“模拟输入框”激活安全网关。系统将弹出一个加密窗口供您打字输入。' : 'Click the simulated input field to launch the secure gateway. A system dialog will open for you to type your key.'}
-                 </p>
+
+            {!isKeyInjected ? (
+              <button 
+                onClick={handleInjectKey}
+                disabled={isInjecting}
+                className="m-1 py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-lg pointer-events-auto"
+              >
+                {isInjecting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                {isInjecting ? (lang === 'zh' ? '握手同步中...' : 'HANDSHAKING...') : (lang === 'zh' ? '激活神经引擎' : 'ACTIVATE ENGINE')}
+              </button>
+            ) : (
+              <div className="m-1 py-4 bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest">
+                <CheckCircle2 size={16} />
+                {lang === 'zh' ? '引擎已就绪' : 'Engine Ready'}
               </div>
             )}
-          </section>
+          </div>
 
-          <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" aria-hidden="true" />
+          <div className="flex items-center justify-center gap-6">
+            <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[10px] font-bold text-indigo-400 flex items-center gap-1.5 hover:text-indigo-300">
+              <Key size={12} /> {lang === 'zh' ? '获取密钥' : 'Get Key'}
+            </a>
+            <span className="w-1 h-1 bg-slate-800 rounded-full" />
+            <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5 hover:text-indigo-400">
+              <Globe size={12} /> {lang === 'zh' ? '计费政策' : 'Billing'}
+            </a>
+          </div>
 
-          <section className="space-y-6">
-            <div className="space-y-4">
-              <button 
-                onClick={handleGoogleLogin} 
-                disabled={isLoggingIn || !hasKey} 
-                className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed filter grayscale' : 'hover:bg-slate-50 hover:shadow-indigo-500/20 active:scale-[0.98]'}`}
-              >
-                {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
-                {isLoggingIn ? (lang === 'zh' ? '正在连接链路...' : 'LINKING...') : (lang === 'zh' ? '同步生理指标流' : 'SYNC BIOMETRICS')}
-              </button>
-              
-              <button 
-                onClick={onGuest} 
-                className="w-full py-5 bg-white/5 border border-white/5 rounded-full flex items-center justify-center gap-3 text-slate-500 hover:text-indigo-400 font-black text-[11px] uppercase tracking-[0.3em] transition-all group"
-              >
-                <FlaskConical size={14} className="group-hover:scale-110 transition-transform" />
-                {lang === 'zh' ? '访问模拟数据实验室' : 'SIMULATION LAB'} 
-                <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
-              </button>
-            </div>
-          </section>
+          <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
+
+          <div className="space-y-4">
+            <button 
+              onClick={handleGoogleLogin} 
+              disabled={!isKeyInjected || isLoggingIn} 
+              className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest transition-all shadow-2xl ${!isKeyInjected ? 'opacity-20 pointer-events-none grayscale' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+            >
+              {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
+              {lang === 'zh' ? '同步生理指标流' : 'SYNC BIOMETRICS'}
+            </button>
+            
+            <button onClick={onGuest} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-400 font-black text-[10px] uppercase tracking-widest transition-all group">
+              {lang === 'zh' ? '进入模拟实验室' : 'SIMULATION LAB'} <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+            </button>
+          </div>
         </div>
+
+        <AnimatePresence>
+          {localError && (
+            <motion.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0 }}
+              className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4 text-rose-400 text-xs font-bold shadow-xl"
+            >
+              <TriangleAlert size={18} className="shrink-0 mt-0.5" />
+              <p>{localError}</p>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </GlassCard>
 
-      {localError && (
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mt-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 text-rose-400 text-xs font-bold shadow-lg"
-        >
-          <TriangleAlert size={16} />
-          {localError}
-        </motion.div>
-      )}
-
-      <footer className="mt-16 flex flex-col items-center gap-6 opacity-30 hover:opacity-100 transition-opacity pb-12 relative z-10 text-center">
-        <nav className="flex items-center gap-10">
-          <a href="/privacy" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-indigo-400 transition-colors">
-            Privacy
-          </a>
-          <a href="/terms" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-indigo-400 transition-colors">
-            Terms
-          </a>
-        </nav>
-        <div className="space-y-1">
-          <p className="text-[9px] font-mono uppercase tracking-[0.5em] text-slate-400">© 2026 SomnoAI Lab • Neural Research Division</p>
-          <p className="text-[8px] text-slate-600 font-bold uppercase tracking-widest">Client Encryption: Active</p>
+      <footer className="mt-12 flex flex-col items-center gap-4 opacity-30 hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-6">
+          <button onClick={() => onNavigate?.('privacy')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">Privacy</button>
+          <button onClick={() => onNavigate?.('terms')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">Terms</button>
         </div>
+        <p className="text-[8px] font-mono uppercase tracking-[0.4em] text-slate-600">© 2026 SOMNO LAB • EDGE COMPUTE ACTIVE</p>
       </footer>
     </div>
   );

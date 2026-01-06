@@ -1,6 +1,10 @@
 User-agent: *
 Allow: /
 Disallow: /api/
+Disallow: /dist/
 
-# Sitemap Location
+# Host
+Host: https://sleepsomno.com
+
+# Sitemap
 Sitemap: https://sleepsomno.com/sitemap.xml
