@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert, Shield, 
@@ -267,6 +266,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
           >
             {lang === 'zh' ? '服务条款' : 'Terms of Service'}
+          </a>
+          <a 
+            href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" 
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors flex items-center gap-1"
+          >
+            <Github size={12} />
+            GitHub
           </a>
           <span className="text-[10px] font-bold text-slate-600">
             © 2026 SomnoAI Digital Sleep Lab
