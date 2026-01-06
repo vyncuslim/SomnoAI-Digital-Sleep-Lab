@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -130,7 +129,7 @@ https://sleepsomno.com
           <button 
             onClick={() => onNavigate?.('profile')}
             className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-xl active:scale-95 group"
-            aria-label="Support Lab"
+            aria-label="Support Research Lab"
           >
             <HeartHandshake size={20} className="group-hover:scale-110 transition-transform" />
           </button>
@@ -145,6 +144,8 @@ https://sleepsomno.com
             <button 
               onClick={handleSync}
               disabled={isProcessing}
+              aria-label="Sync sleep data"
+              aria-busy={isProcessing}
               className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 ${
                 isProcessing ? 'bg-indigo-600 text-white' : 
                 'bg-white/5 text-slate-400 border border-white/10'
@@ -156,7 +157,7 @@ https://sleepsomno.com
         </div>
       </div>
 
-      <div className="relative py-4">
+      <div className="relative py-4" aria-live="polite">
         <GlassCard intensity={1.5} className="p-10 border-indigo-500/40 relative overflow-hidden">
           <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none" aria-hidden="true">
              <Layers size={140} />
@@ -177,7 +178,7 @@ https://sleepsomno.com
                   >
                     {data.score}
                   </motion.span>
-                  <span className="text-3xl font-bold text-slate-700 font-mono tracking-tighter">/100</span>
+                  <span className="text-3xl font-bold text-slate-700 font-mono tracking-tighter" aria-hidden="true">/100</span>
                 </div>
               </div>
               
@@ -224,7 +225,7 @@ https://sleepsomno.com
                 <span className="text-slate-400">{lang === 'zh' ? '神经恢复效率' : 'Neural Efficiency'}</span>
                 <span className="text-indigo-400 font-mono">{data.score}%</span>
              </div>
-             <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5">
+             <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5" role="progressbar" aria-valuenow={data.score} aria-valuemin={0} aria-valuemax={100}>
                 <motion.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${data.score}%` }}
@@ -256,7 +257,7 @@ https://sleepsomno.com
               <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Resting HR</p>
               <p className="text-4xl font-black font-mono tracking-tighter text-white italic">
                 {data.heartRate.resting}
-                <span className="text-xs text-slate-400 ml-1 font-sans">BPM</span>
+                <span className="text-xs text-slate-400 ml-1 font-sans" aria-label="Beats Per Minute">BPM</span>
               </p>
             </div>
           </div>
@@ -281,7 +282,7 @@ https://sleepsomno.com
       {/* Share Modal */}
       <AnimatePresence>
         {showShareModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-2xl">
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-2xl" role="dialog" aria-modal="true" aria-labelledby="share-title">
             <motion.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -291,6 +292,7 @@ https://sleepsomno.com
               <GlassCard className="p-10 border-indigo-500/40 relative overflow-hidden">
                 <button 
                   onClick={() => setShowShareModal(false)}
+                  aria-label="Close share modal"
                   className="absolute top-6 right-6 p-2 text-slate-500 hover:text-white transition-colors"
                 >
                   <X size={20} />
@@ -299,10 +301,10 @@ https://sleepsomno.com
                 <div className="space-y-8">
                   <div className="flex items-center gap-4">
                     <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                      <Linkedin size={24} />
+                      <Linkedin size={24} aria-hidden="true" />
                     </div>
                     <div>
-                      <h2 className="text-xl font-black italic text-white tracking-tight">{t.shareTitle}</h2>
+                      <h2 id="share-title" className="text-xl font-black italic text-white tracking-tight">{t.shareTitle}</h2>
                       <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest mt-0.5">Professional Synergy</p>
                     </div>
                   </div>
@@ -320,14 +322,14 @@ https://sleepsomno.com
                         copied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-300'
                       }`}
                     >
-                      {copied ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                      {copied ? <CheckCircle2 size={16} aria-hidden="true" /> : <Copy size={16} aria-hidden="true" />}
                       {copied ? 'Copied' : t.copyText}
                     </button>
                     <button 
                       onClick={shareToLinkedIn}
                       className="flex items-center justify-center gap-2 py-4 bg-[#0a66c2] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest"
                     >
-                      <Linkedin size={16} />
+                      <Linkedin size={16} aria-hidden="true" />
                       {t.postLinked}
                     </button>
                   </div>

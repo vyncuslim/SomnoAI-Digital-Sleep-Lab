@@ -19,7 +19,7 @@ const LegalView = lazy(() => import('./components/LegalView.tsx').then(m => ({ d
 const AboutView = lazy(() => import('./components/AboutView.tsx').then(m => ({ default: m.AboutView })));
 
 const LoadingSpinner = () => (
-  <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
+  <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center" role="status" aria-label="Loading content">
     <Loader2 size={48} className="animate-spin text-indigo-500" />
     <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">
       Processing Stream...
@@ -249,12 +249,12 @@ const App: React.FC = () => {
            </div>
         </div>
       )}
-      <main className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-28' : 'pt-8 pb-10'}`}>
+      <main id="main-content" className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-28' : 'pt-8 pb-10'}`} role="main">
         {renderView()}
       </main>
       
       {showNav && (activeView !== 'privacy' && activeView !== 'terms' && activeView !== 'about') && (
-        <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-8 safe-area-inset-bottom pointer-events-none">
+        <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-8 safe-area-inset-bottom pointer-events-none" aria-label="Main Navigation">
           <div className="max-w-md mx-auto glass-morphism rounded-[3.5rem] p-2 flex justify-between pointer-events-auto border border-white/10 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] bg-slate-900/70 backdrop-blur-3xl">
             {[
               { id: 'dashboard', icon: Logo, label: translations[lang].nav.lab },
@@ -269,6 +269,7 @@ const App: React.FC = () => {
                 <button 
                   key={nav.id} 
                   onClick={() => setActiveView(nav.id as ViewType)} 
+                  aria-current={isActive ? 'page' : undefined}
                   className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${isActive ? 'text-white' : 'text-slate-500'}`}
                 >
                   <motion.div
@@ -319,6 +320,7 @@ const App: React.FC = () => {
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
+            role="alert"
             className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-2xl"
           >
             {errorToast}

@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
     <meta name="theme-color" content="#020617">
     <meta name="mobile-web-app-capable" content="yes">
@@ -12,36 +12,50 @@
     <link rel="canonical" href="https://sleepsomno.com/" />
     
     <!-- SEO Meta Tags -->
-    <title>SomnoAI: The Digital Sleep Lab | Pro AI Sleep Analysis & Biometric Mastery</title>
-    <meta name="description" content="Master your physiological recovery with SomnoAI. We fuse high-fidelity biometric telemetry with Gemini AI to map your neural architecture and optimize metabolic health. Experience world-class sleep science with 100% privacy, local-first processing, and precision-driven insights.">
-    <meta name="keywords" content="SomnoAI, Digital Sleep Lab, AI Sleep Coach, Gemini AI Health, Google Fit Sleep Analysis, Biometric Telemetry, Sleep Architecture Mapping, Neurological Recovery, Circadian Rhythm Optimization, Privacy-First Health App, Local AI Sleep Tracking, Deep Sleep Recovery, REM Optimization, Restorative Health Protocols, Metabolic Load Analysis, Biohacking Sleep, Quantified Self Sleep, Sleep Science Platform, High-Fidelity Physiological Monitoring, Neuro-Wellness, Sleep Biofeedback, Neural Recovery, Metabolic Optimization, Gemini 3 Pro, Privacy-Preserving AI, Digital Health Laboratory">
+    <title>SomnoAI Digital Sleep Lab | AI Sleep Science & Biometric Mastery</title>
+    <meta name="description" content="SomnoAI Digital Sleep Lab: 它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。Map your neurological recovery with high-fidelity telemetry and Gemini AI. 100% private, local-first sleep science.">
+    <meta name="keywords" content="SomnoAI, Digital Sleep Lab, AI Sleep Coach, Gemini AI Health, Google Fit Sleep Analysis, Biometric Telemetry, Sleep Architecture Mapping, Neurological Recovery, Circadian Rhythm, Privacy-First Health, Deep Sleep Recovery, REM Optimization, Sleep Science Platform, 数字化睡眠实验室, 睡眠监测, AI睡眠建议, 睡眠实验">
     <meta name="author" content="SomnoAI Lab">
 
-    <!-- Performance Optimizations: Preconnect to critical origins -->
+    <!-- Structured Data (JSON-LD) for SEO -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "SomnoAI Digital Sleep Lab",
+      "operatingSystem": "Web",
+      "applicationCategory": "HealthApplication",
+      "description": "Integrating physiological monitoring, AI deep insights, and health advice for a comprehensive digital sleep lab experience.",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      }
+    }
+    </script>
+
+    <!-- Performance Optimizations -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://esm.sh">
     <link rel="dns-prefetch" href="https://accounts.google.com">
-    <link rel="dns-prefetch" href="https://www.googleapis.com">
 
-    <!-- Preload critical assets with high priority -->
+    <!-- Preload critical assets -->
     <link rel="preload" href="index.tsx" as="script" type="module" fetchpriority="high">
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" as="style">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap&font-display=swap">
 
-    <!-- OpenGraph / LinkedIn -->
+    <!-- OpenGraph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sleepsomno.com/">
     <meta property="og:title" content="SomnoAI: Pro AI Sleep Analysis & Biometric Mastery">
-    <meta property="og:description" content="Map your neurological recovery with high-fidelity biometric telemetry and Gemini AI. Precision sleep science, 100% private.">
+    <meta property="og:description" content="Precision sleep science powered by Gemini AI. Map your recovery with high-fidelity telemetry.">
     <meta property="og:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
 
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
     <link rel="manifest" href="manifest.json">
     
-    <!-- Critical Tailwind Runtime - Deferred for performance -->
+    <!-- Deferred Non-critical Libraries -->
     <script src="https://cdn.tailwindcss.com" defer></script>
-    <!-- GSI - Loaded with defer to not block main thread -->
     <script src="https://accounts.google.com/gsi/client" defer></script>
     
     <script>
@@ -65,7 +79,6 @@
             --accent-glow: rgba(79, 70, 229, 0.4);
         }
 
-        /* Critical Animation for the loader */
         @keyframes pulse-opacity {
             0%, 100% { opacity: 0.3; }
             50% { opacity: 0.7; }
@@ -79,6 +92,12 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
+        }
+
+        /* Keyboard Focus Outline Enhancement */
+        :focus-visible {
+            outline: 2px solid #818cf8;
+            outline-offset: 4px;
         }
 
         #spatial-bg {
@@ -96,7 +115,6 @@
             flex-direction: column;
         }
 
-        /* Splash Screen Style for FCP */
         .initial-loader {
             display: flex;
             flex-direction: column;
@@ -125,7 +143,6 @@
             font-weight: 800;
         }
 
-        /* Optimize remaining styles for lazy loading */
         .grid-floor {
             position: fixed;
             bottom: -20%; left: -50%;
@@ -156,12 +173,10 @@
             border: 1px solid rgba(255, 255, 255, 0.1) !important;
             padding: 10px 16px !important;
             border-radius: 16px !important;
-            font-family: inherit !important;
             display: flex !important;
             align-items: center !important;
             gap: 8px !important;
             cursor: pointer !important;
-            transition: all 0.3s ease !important;
         }
         .goog-te-gadget-simple span {
             color: #f1f5f9 !important;
@@ -181,11 +196,30 @@
             bottom: 10px;
             width: 100%;
             text-align: center;
-            opacity: 0.1;
-            pointer-events: auto;
+            opacity: 0.2;
             z-index: 1;
         }
-        .crawler-footer a { color: #475569; font-size: 8px; margin: 0 5px; text-decoration: none; }
+        .crawler-footer a { color: #475569; font-size: 10px; margin: 0 10px; text-decoration: none; font-weight: 700; }
+        .crawler-footer a:hover { color: #818cf8; }
+
+        /* Skip to content link for accessibility */
+        .skip-to-content {
+            position: absolute;
+            top: -100px;
+            left: 0;
+            background: #4f46e5;
+            color: white;
+            padding: 8px 16px;
+            z-index: 9999;
+            transition: top 0.2s;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+        .skip-to-content:focus {
+            top: 0;
+        }
     </style>
     <script type="importmap">
 {
@@ -207,22 +241,26 @@
 </script>
 </head>
 <body>
+    <a href="#main-content" class="skip-to-content">Skip to Content</a>
+    
     <div id="spatial-bg">
         <div class="nebula" aria-hidden="true"></div>
         <div class="grid-floor" aria-hidden="true"></div>
     </div>
     <div id="root">
         <!-- Initial Loader Shell -->
-        <div class="initial-loader" id="page-loader">
+        <div class="initial-loader" id="page-loader" role="alert" aria-busy="true">
             <div class="logo-placeholder"></div>
             <div class="text">SomnoAI Digital Sleep Lab</div>
         </div>
     </div>
     
-    <footer class="crawler-footer">
-        <a href="/privacy">Privacy Policy</a>
-        <a href="/terms">Terms of Service</a>
-        <span>© 2026 SomnoAI Digital Sleep Lab</span>
+    <footer class="crawler-footer" role="contentinfo">
+        <nav aria-label="Footer Navigation">
+            <a href="/privacy">Privacy Policy</a>
+            <a href="/terms">Terms of Service</a>
+            <span style="color: #475569; font-size: 10px; font-weight: 700;">© 2026 SomnoAI Lab</span>
+        </nav>
     </footer>
 
     <!-- Main Entry Point -->

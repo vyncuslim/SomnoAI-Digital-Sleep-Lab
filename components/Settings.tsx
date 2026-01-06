@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  Shield, LogOut, ChevronRight, Info, AlertTriangle, Cpu, Binary, Languages as LangIcon, 
-  Wallet, Heart, Coffee, ExternalLink, QrCode, Copy, Key, Check, Moon, Sun, Palette, 
-  RefreshCw, Globe2, Smartphone, CheckCircle2, X, EyeOff, Eye, Database, Github, FileText,
-  DollarSign, Sparkles, Receipt, ArrowUpRight, Globe, CreditCard, Share2, Stethoscope, FlaskConical
+  Shield, LogOut, ChevronRight, AlertTriangle, Languages as LangIcon, 
+  Heart, Coffee, ExternalLink, QrCode, Copy, Key, Globe2, Smartphone, 
+  X, FileText, Sparkles, Globe, CreditCard, Stethoscope, FlaskConical, 
+  RefreshCw, Wallet, Info
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ViewType, ThemeMode, AccentColor } from '../types.ts';
@@ -40,17 +40,6 @@ export const Settings: React.FC<SettingsProps> = ({
   const [copyToast, setCopyToast] = useState<string | null>(null);
   const [showThankYou, setShowThankYou] = useState(false);
   const [showPaypalQR, setShowPaypalQR] = useState(false);
-  const [telemetry, setTelemetry] = useState("0x4A8F2E");
-  const [isSyncing, setIsSyncing] = useState(false);
-
-  useEffect(() => {
-    if (staticMode) return;
-    const interval = setInterval(() => {
-      const hex = Math.floor(Math.random() * 0xFFFFFF).toString(16).toUpperCase().padStart(6, '0');
-      setTelemetry(`0x${hex}`);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [staticMode]);
 
   useEffect(() => {
     const initTranslate = () => {
@@ -69,15 +58,6 @@ export const Settings: React.FC<SettingsProps> = ({
     navigator.clipboard.writeText(text);
     setCopyToast(`${label} ${translations[lang].settings.copySuccess}`);
     setTimeout(() => setCopyToast(null), 2000);
-  };
-
-  const handleManualSyncAction = async () => {
-    setIsSyncing(true);
-    try {
-      await onManualSync();
-    } finally {
-      setIsSyncing(false);
-    }
   };
 
   const SettingItem = ({ icon: Icon, label, value, onClick, badge, color = "indigo", isLoading = false }: any) => (
@@ -122,12 +102,14 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
         <div className="flex items-center gap-3 text-rose-400">
           <Stethoscope size={20} />
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">{lang === 'zh' ? '实验性环境与医疗免责声明' : 'EXPERIMENTAL STATUS & MEDICAL DISCLAIMER'}</h3>
+          <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">
+            {lang === 'zh' ? '实验性环境与医疗免责声明' : 'EXPERIMENTAL STATUS & MEDICAL DISCLAIMER'}
+          </h3>
         </div>
         <p className="text-xs text-slate-300 leading-relaxed font-medium">
           {lang === 'zh' 
-            ? 'SomnoAI 是一个实验性数字健康实验室。本平台提供的所有 AI 洞察、生理评分和建议仅供教育和参考，不构成任何医疗诊断或建议。在使用本平台前，请务必咨询医疗专业人员。' 
-            : 'SomnoAI is an experimental digital health laboratory. All AI insights, physiological scores, and recommendations provided are for educational and informational purposes only and do not constitute medical advice or diagnosis. Always consult a medical professional before taking action based on laboratory results.'}
+            ? 'SomnoAI 是一个实验性数字健康实验室。本平台提供的所有 AI 洞察、生理评分和建议仅供教育和参考，不构成任何医疗诊断或建议。本平台并非医疗服务。在使用本平台前，请务必咨询医疗专业人员。' 
+            : 'SomnoAI is an experimental digital health laboratory. All AI insights, physiological scores, and recommendations provided are for educational and informational purposes only and do not constitute medical advice or diagnosis. This platform is NOT a medical service. Always consult a medical professional before taking action based on laboratory results.'}
         </p>
         <div className="flex items-center gap-2 pt-2 text-[9px] font-bold text-rose-500/60 uppercase tracking-widest">
            <FlaskConical size={12} />
@@ -155,39 +137,13 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </div>
 
-      {/* Google Translate Integration */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-4">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] flex items-center gap-2">
-            <Globe size={14} className="text-indigo-400" />
-            {lang === 'zh' ? '全域自动翻译' : 'Global Auto Translation'}
-          </h3>
-          <span className="px-2 py-0.5 bg-emerald-500/10 text-emerald-400 text-[8px] font-black rounded border border-emerald-500/20 uppercase tracking-widest">Neural Link</span>
-        </div>
-        <GlassCard className="p-6 border-indigo-500/20">
-          <div className="flex flex-col gap-5">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                <LangIcon size={20} />
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
-                {lang === 'zh' 
-                  ? '使用 Google Translate 引擎将整个实验室界面即时翻译成您喜欢的语言。' 
-                  : 'Use Google Translate to interpret the entire lab interface into your preferred language instantly.'}
-              </p>
-            </div>
-            <div id="google_translate_element" className="min-h-[46px] flex items-center justify-center p-2 bg-slate-950/40 rounded-2xl border border-white/5"></div>
-          </div>
-        </GlassCard>
-      </div>
-
-      {/* Support Lab Section */}
+      {/* PayPal & Support Lab Section */}
       <div className="space-y-4">
         <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
           <Heart size={14} className="text-rose-400" />
           {t.funding}
         </h3>
-        <GlassCard className="p-8 space-y-6 border-rose-500/20">
+        <GlassCard className="p-8 space-y-6 border-indigo-500/20">
           <div className="flex items-center gap-5">
             <div className="p-4 bg-rose-500/10 rounded-[2rem] text-rose-400">
               <Coffee size={32} />
@@ -204,46 +160,94 @@ export const Settings: React.FC<SettingsProps> = ({
             </p>
           </div>
 
-          <div className="space-y-3">
-            <button 
-              onClick={() => handleCopy(t.duitNowId, 'DuitNow')}
-              className="w-full p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all"
-            >
+          {/* PayPal Integration Area */}
+          <div className="space-y-4">
+            <div className="p-6 bg-sky-500/5 border border-sky-500/20 rounded-3xl space-y-4">
               <div className="flex items-center gap-4">
-                <Smartphone size={20} className="text-indigo-400" />
-                <div className="text-left">
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-200">DuitNow / TNG (MY)</p>
-                  <p className="text-lg font-black font-mono tracking-tight text-white">{t.duitNowId}</p>
-                </div>
-              </div>
-              <Copy size={16} className="text-slate-400 group-hover:text-indigo-400" />
-            </button>
-
-            <button 
-              onClick={() => setShowPaypalQR(true)}
-              className="w-full p-6 bg-sky-500/10 border border-sky-500/20 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all"
-            >
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-sky-500/20 rounded-xl">
+                <div className="p-2.5 bg-sky-500/20 rounded-xl">
                   <CreditCard size={20} className="text-sky-400" />
                 </div>
                 <div className="text-left">
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-200">PayPal / Global</p>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase">{t.paypalId}</p>
+                  <p className="text-xs font-black uppercase tracking-widest text-slate-200">PayPal Profile</p>
+                  <p className="text-[10px] text-slate-500 font-mono italic">Support via PayPal.me</p>
                 </div>
               </div>
-              <QrCode size={16} className="text-slate-400 group-hover:text-sky-400" />
-            </button>
-            
-            <a 
-              href={t.paypalLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full p-4 bg-sky-600 text-white rounded-2xl flex items-center justify-center gap-3 font-black text-[10px] uppercase tracking-[0.2em] shadow-lg hover:bg-sky-500 transition-all active:scale-95"
-            >
-              <ExternalLink size={16} />
-              {lang === 'zh' ? '访问 PayPal.me 页面' : 'Visit PayPal.me Profile'}
-            </a>
+              
+              <div className="grid grid-cols-2 gap-3">
+                <a 
+                  href={t.paypalLink}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 shadow-lg"
+                >
+                  <ExternalLink size={14} />
+                  {lang === 'zh' ? '赞助链接' : 'Donate Link'}
+                </a>
+                <button 
+                  onClick={() => setShowPaypalQR(true)}
+                  className="py-3 bg-white/5 border border-white/10 text-slate-300 rounded-xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-widest transition-all hover:bg-white/10 active:scale-95"
+                >
+                  <QrCode size={14} />
+                  {lang === 'zh' ? '二维码赞助' : 'QR Code'}
+                </button>
+              </div>
+            </div>
+
+            {/* Local Methods */}
+            <div className="grid grid-cols-1 gap-3">
+              <button 
+                onClick={() => handleCopy(t.duitNowId, 'DuitNow')}
+                className="w-full p-5 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <Smartphone size={20} className="text-indigo-400" />
+                  <div className="text-left">
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-200">DuitNow ID</p>
+                    <p className="text-md font-black font-mono tracking-tight text-white">{t.duitNowId}</p>
+                  </div>
+                </div>
+                <Copy size={16} className="text-slate-400 group-hover:text-indigo-400" />
+              </button>
+
+              <button 
+                onClick={() => handleCopy(t.tngId, 'TNG')}
+                className="w-full p-5 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all"
+              >
+                <div className="flex items-center gap-4">
+                  <Wallet size={20} className="text-sky-400" />
+                  <div className="text-left">
+                    <p className="text-xs font-black uppercase tracking-widest text-slate-200">TNG (Phone)</p>
+                    <p className="text-md font-black font-mono tracking-tight text-white">{t.tngId}</p>
+                  </div>
+                </div>
+                <Copy size={16} className="text-slate-400 group-hover:text-sky-400" />
+              </button>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* Google Translate Integration */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between px-4">
+          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] flex items-center gap-2">
+            <Globe size={14} className="text-indigo-400" />
+            {lang === 'zh' ? '全域自动翻译' : 'Global Auto Translation'}
+          </h3>
+        </div>
+        <GlassCard className="p-6 border-indigo-500/20">
+          <div className="flex flex-col gap-5">
+            <div className="flex items-start gap-4">
+              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                <LangIcon size={20} />
+              </div>
+              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
+                {lang === 'zh' 
+                  ? '使用 Google Translate 引擎将整个实验室界面即时翻译成您喜欢的语言。' 
+                  : 'Use Google Translate to interpret the entire lab interface into your preferred language instantly.'}
+              </p>
+            </div>
+            <div id="google_translate_element" className="min-h-[46px] flex items-center justify-center p-2 bg-slate-950/40 rounded-2xl border border-white/5"></div>
           </div>
         </GlassCard>
       </div>
@@ -280,7 +284,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </button>
       </div>
 
-      {/* PayPal Modal */}
+      {/* PayPal QR Modal (Matching provided image) */}
       <AnimatePresence>
         {showPaypalQR && (
           <div className="fixed inset-0 z-[400] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
@@ -298,9 +302,9 @@ export const Settings: React.FC<SettingsProps> = ({
                   <X size={28} />
                 </button>
 
-                <h2 className="text-2xl font-bold text-slate-900 mb-12 tracking-tight">Vyncuslim vyncuslim</h2>
+                <h2 className="text-2xl font-bold text-slate-900 mb-12 tracking-tight">{t.paypalId}</h2>
 
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] relative group mb-12">
+                <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] relative mb-12">
                   <div className="w-52 h-52 bg-white flex items-center justify-center relative overflow-hidden">
                     <img 
                       src={qrCodeUrl} 
@@ -318,8 +322,8 @@ export const Settings: React.FC<SettingsProps> = ({
                   </div>
                 </div>
 
-                <p className="text-sm font-semibold text-slate-600 mb-12">
-                  Scan to pay Vyncuslim vyncuslim
+                <p className="text-sm font-semibold text-slate-600 mb-12 text-center">
+                  Scan to pay {t.paypalId}
                 </p>
 
                 <div className="w-full space-y-4">
@@ -328,7 +332,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     className="w-full py-5 bg-[#0070ba] text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-xl hover:bg-[#005ea6] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
                   >
                     <ExternalLink size={18} />
-                    {lang === 'zh' ? '在线通过 PayPal 赞助' : 'PAY VIA PAYPAL LINK'}
+                    {lang === 'zh' ? '在线赞助' : 'VISIT PAYPAL.ME'}
                   </button>
                   <button 
                     onClick={() => { handleCopy(t.paypalLink, 'PayPal'); setShowThankYou(true); }}
