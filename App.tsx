@@ -195,9 +195,17 @@ const App: React.FC = () => {
 
   const renderView = () => {
     if (activeView === 'privacy' || activeView === 'terms') {
+      const handleBack = () => {
+        // 如果已登录或以访客身份进入，返回设置页；否则返回默认页（Auth）
+        if (isLoggedIn || isGuest) {
+          setActiveView('profile');
+        } else {
+          setActiveView('dashboard');
+        }
+      };
       return (
         <Suspense fallback={<LoadingSpinner />}>
-          <LegalView type={activeView} lang={lang} onBack={() => setActiveView('profile')} />
+          <LegalView type={activeView} lang={lang} onBack={handleBack} />
         </Suspense>
       );
     }

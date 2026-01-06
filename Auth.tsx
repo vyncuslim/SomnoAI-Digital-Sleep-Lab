@@ -1,17 +1,15 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  ShieldCheck, Loader2, ArrowRight, TriangleAlert, Lock, 
-  Terminal, Sparkles, Fingerprint, Network, Eye, EyeOff, 
-  RefreshCw, Key, Shield, ChevronRight, Globe, CheckCircle2,
-  Cpu, Zap
+  ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert, Shield, 
+  FileText, Github, Key, ExternalLink, Cpu, Lock, Sparkles, Terminal,
+  Eye, EyeOff, RefreshCw, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { googleFit } from './services/googleFitService.ts';
 import { Logo } from './components/Logo.tsx';
-import { Language } from './services/i18n.ts';
-import { SpatialIcon } from './components/SpatialIcon.tsx';
+import { Language, translations } from './services/i18n.ts';
 import { AIProvider } from './types.ts';
 
 interface AuthProps {
@@ -21,56 +19,52 @@ interface AuthProps {
   onNavigate?: (view: string) => void;
 }
 
-const GoogleIcon = () => (
-  <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
-    <path fill="#4285F4" d="M17.64 9.2c0-.63-.06-1.25-.16-1.84H9v3.49h4.84c-.21 1.12-.84 2.07-1.79 2.7l2.85 2.22c1.67-1.55 2.63-3.83 2.63-6.57z"/>
-    <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.85-2.22c-.8.53-1.81.85-3.11.85-2.39 0-4.41-1.61-5.14-3.78H.9v2.33C2.38 15.94 5.47 18 9 18z"/>
-    <path fill="#FBBC05" d="M3.86 10.67c-.19-.58-.3-1.19-.3-1.82s.11-1.24.3-1.82V4.7H.9C.33 5.83 0 7.13 0 8.5s.33 2.67.9 3.8l2.96-2.63z"/>
-    <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.58C13.47.89 11.43 0 9 0 5.47 0 2.38 2.06.9 5.03l2.96 2.33c.73-2.17 2.75-3.78 5.14-3.78z"/>
-  </svg>
-);
-
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
+  const [provider, setProvider] = useState<AIProvider>(() => (localStorage.getItem('somno_ai_provider') as AIProvider) || 'gemini');
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showKey, setShowKey] = useState(false);
-  const [provider, setProvider] = useState<AIProvider>(() => (localStorage.getItem('somno_ai_provider') as AIProvider) || 'gemini');
-  const [isKeyInjected, setIsKeyInjected] = useState(false);
   const [isInjecting, setIsInjecting] = useState(false);
-  const [localError, setLocalError] = useState<string | null>(null);
+  const [isKeyInjected, setIsKeyInjected] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const t = translations[lang].auth;
 
   useEffect(() => {
-    // Check initial environment variables
-    const geminiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY;
-    const openaiKey = (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
+    googleFit.ensureClientInitialized().catch(err => {
+      console.warn("Auth: SDK Warming Postponed", err.message);
+    });
+
+    const checkStoredKeys = () => {
+      const geminiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY;
+      const openaiKey = (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
+
+      if (provider === 'gemini' && geminiKey?.length > 20) {
+        setIsKeyInjected(true);
+        setApiKeyInput(geminiKey);
+      } else if (provider === 'openai' && openaiKey?.length > 20) {
+        setIsKeyInjected(true);
+        setApiKeyInput(openaiKey);
+      } else {
+        setIsKeyInjected(false);
+        setApiKeyInput('');
+      }
+    };
     
-    if (provider === 'gemini' && geminiKey?.length > 20) {
-      setIsKeyInjected(true);
-      setApiKeyInput(geminiKey);
-    } else if (provider === 'openai' && openaiKey?.length > 20) {
-      setIsKeyInjected(true);
-      setApiKeyInput(openaiKey);
-    }
-    
-    // Auto focus
-    if (!isKeyInjected) {
-      setTimeout(() => inputRef.current?.focus(), 500);
-    }
-    
-    googleFit.ensureClientInitialized().catch(() => {});
+    checkStoredKeys();
   }, [provider]);
 
   const handleInjectKey = () => {
     const cleanKey = apiKeyInput.trim();
     if (!cleanKey || cleanKey.length < 20) {
-      setLocalError(lang === 'zh' ? "密钥无效：通常 API 密钥应至少包含 20 个字符" : "Invalid Key: API keys are usually 20+ characters.");
+      setLocalError(t.invalidKey);
       return;
     }
 
     setIsInjecting(true);
     setLocalError(null);
 
+    // Simulate a secure handshake
     setTimeout(() => {
       try {
         if (!(window as any).process) (window as any).process = { env: {} };
@@ -86,10 +80,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         setIsKeyInjected(true);
         setIsInjecting(false);
       } catch (err) {
-        setLocalError("Injection failed: internal error.");
+        setLocalError("Injection failure in sandbox environment.");
         setIsInjecting(false);
       }
-    }, 400);
+    }, 600);
   };
 
   const handleResetKey = () => {
@@ -105,156 +99,178 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   };
 
   const handleGoogleLogin = async () => {
-    if (!isKeyInjected) return;
+    if (!isKeyInjected) {
+      setLocalError(lang === 'zh' ? "请先激活 AI 引擎" : "Please activate AI Engine first");
+      return;
+    }
     setIsLoggingIn(true);
     setLocalError(null);
     try {
       await googleFit.ensureClientInitialized();
       const token = await googleFit.authorize(true); 
-      if (token) onLogin();
+      if (token) onLogin(); 
     } catch (error: any) {
-      setLocalError(error.message || "Auth Error");
+      setLocalError(error.message || "Authentication Failed");
     } finally {
       setIsLoggingIn(false);
     }
   };
 
-  const toggleProvider = (p: AIProvider) => {
-    if (isKeyInjected) return;
-    setProvider(p);
-    setApiKeyInput('');
-    setLocalError(null);
-  };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start py-12 px-6 bg-[#01040a] relative overflow-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
-
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl space-y-4 text-center mb-10 relative z-10">
-        <div className="flex justify-center mb-4">
-           <Logo size={80} animated={!isKeyInjected} threeD />
-        </div>
-        <div className="space-y-1">
-          <h1 className={`${lang === 'zh' ? 'text-4xl' : 'text-5xl'} font-black tracking-tighter text-white italic drop-shadow-2xl`}>
-            SomnoAI <span className="text-indigo-400">{lang === 'zh' ? '数字化睡眠实验室' : 'Digital Sleep Lab'}</span>
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
+      {/* Background decoration */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+      
+      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-8 text-center mb-8 relative z-10">
+        <motion.div 
+          animate={{ scale: [1, 1.05, 1], rotate: [0, 2, 0, -2, 0] }} 
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+          className="inline-flex p-10 bg-indigo-600/5 rounded-[3.5rem] border border-indigo-500/10 shadow-[0_0_120px_rgba(79,70,229,0.15)]"
+        >
+          <Logo size={100} animated={true} />
+        </motion.div>
+        <div className="space-y-4">
+          <h1 className="text-3xl font-black tracking-tighter text-white italic leading-tight">
+            SomnoAI <span className="text-indigo-400">Digital Sleep Lab</span>
           </h1>
-          <div className="flex items-center justify-center gap-4 text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] opacity-60">
-            {lang === 'zh' ? '高级生物数字实验室' : 'ADVANCED BIO-DIGITAL LABORATORY'}
-          </div>
+          <p className="text-slate-500 font-bold uppercase text-[9px] tracking-[0.35em]">
+            ADVANCED BIO-DIGITAL LABORATORY
+          </p>
         </div>
       </motion.div>
 
-      <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-950/60 space-y-8 relative z-[100] shadow-2xl">
+      <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-900/60 space-y-8 relative z-10">
         <div className="space-y-6">
-          {/* Provider Toggle */}
-          <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
-            <button 
-              onClick={() => toggleProvider('gemini')}
-              disabled={isKeyInjected}
-              className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'gemini' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-              Google Gemini
-            </button>
-            <button 
-              onClick={() => toggleProvider('openai')}
-              disabled={isKeyInjected}
-              className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'openai' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-              OpenAI GPT
-            </button>
-          </div>
-
-          <div className="flex items-center justify-between px-1">
-            <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl border ${isKeyInjected ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'}`}>
-                {provider === 'gemini' ? <Terminal size={16} /> : <Zap size={16} />}
-              </div>
-              <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                {provider === 'gemini' ? 'Gemini Gateway' : 'OpenAI Gateway'}
-              </h2>
-            </div>
-            {isKeyInjected && (
-              <button onClick={handleResetKey} className="text-[9px] font-black text-rose-500 hover:text-rose-400 flex items-center gap-1 uppercase transition-colors">
-                <RefreshCw size={10} /> {lang === 'zh' ? '重置密钥' : 'Reset'}
-              </button>
-            )}
-          </div>
-
-          <div className={`relative rounded-3xl border transition-all duration-500 p-1 flex flex-col gap-2 ${isKeyInjected ? 'border-emerald-500/40 bg-emerald-500/5' : 'border-white/10 bg-black/40 focus-within:border-indigo-500/50'}`}>
-            <div className="flex items-center px-4 py-2 opacity-50">
-              <div className={`w-1.5 h-1.5 rounded-full mr-2 ${isKeyInjected ? 'bg-emerald-500' : 'bg-indigo-500 animate-pulse'}`} />
-              <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-400">
-                {isKeyInjected ? `${provider.toUpperCase()} LINKED` : `Awaiting ${provider.toUpperCase()} Key`}
-              </span>
-            </div>
-
-            <div className="relative flex items-center">
-              <input 
-                ref={inputRef}
-                type={showKey ? "text" : "password"}
-                value={apiKeyInput}
-                onChange={(e) => setApiKeyInput(e.target.value)}
-                disabled={isKeyInjected}
-                placeholder={provider === 'openai' ? 'sk-...' : 'AI API Key...'}
-                className="w-full bg-transparent border-none outline-none px-4 py-3 text-sm text-white placeholder:text-slate-700 font-mono select-text"
-              />
-              {!isKeyInjected && apiKeyInput && (
-                <button onClick={() => setShowKey(!showKey)} className="p-3 text-slate-500 hover:text-indigo-400">
-                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-              )}
-            </div>
-
-            {!isKeyInjected ? (
-              <button 
-                onClick={handleInjectKey}
-                disabled={isInjecting}
-                className={`m-1 py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-lg pointer-events-auto ${provider === 'openai' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}
-              >
-                {isInjecting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                {isInjecting ? 'Handshaking...' : 'Activate Engine'}
-              </button>
-            ) : (
-              <div className="m-1 py-4 bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest">
-                <CheckCircle2 size={16} />
-                Engine Ready
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-center gap-6">
-            <a href={provider === 'openai' ? "https://platform.openai.com/api-keys" : "https://aistudio.google.com/app/apikey"} target="_blank" className="text-[10px] font-bold text-indigo-400 flex items-center gap-1.5 hover:text-indigo-300">
-              <Key size={12} /> {lang === 'zh' ? '获取密钥' : 'Get Key'}
-            </a>
-            <span className="w-1 h-1 bg-slate-800 rounded-full" />
-            <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-[10px] font-bold text-slate-500 flex items-center gap-1.5 hover:text-indigo-400">
-              <Globe size={12} /> {lang === 'zh' ? '计费政策' : 'Billing'}
-            </a>
+          <div className="space-y-4 text-center">
+            <p className="text-xs text-slate-400 leading-relaxed font-medium">
+              {lang === 'zh' 
+                ? '它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。' 
+                : 'Integrating physiological monitoring, AI deep insights, and health advice for a comprehensive digital sleep lab experience.'}
+            </p>
           </div>
 
           <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
 
+          {/* API Key Management */}
           <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
+              <button 
+                onClick={() => setProvider('gemini')}
+                disabled={isKeyInjected}
+                className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'gemini' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                Google Gemini
+              </button>
+              <button 
+                onClick={() => setProvider('openai')}
+                disabled={isKeyInjected}
+                className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'openai' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                OpenAI GPT
+              </button>
+            </div>
+
+            <div className={`relative rounded-3xl border transition-all duration-500 p-1 flex flex-col gap-2 bg-black/40 ${isKeyInjected ? 'border-emerald-500/30' : 'border-white/10 focus-within:border-indigo-500/50'}`}>
+              <div className="flex items-center justify-between px-4 py-2">
+                <div className="flex items-center gap-2">
+                  <div className={`w-1.5 h-1.5 rounded-full ${isKeyInjected ? 'bg-emerald-500' : 'bg-indigo-500 animate-pulse'}`} />
+                  <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-400">
+                    {isKeyInjected ? `${provider.toUpperCase()} LINKED` : t.awaitingKey}
+                  </span>
+                </div>
+                {isKeyInjected && (
+                  <button onClick={handleResetKey} className="text-rose-500 hover:text-rose-400 transition-colors">
+                    <RefreshCw size={12} />
+                  </button>
+                )}
+              </div>
+
+              <div className="relative flex items-center">
+                <input 
+                  ref={inputRef}
+                  type={showKey ? "text" : "password"}
+                  value={apiKeyInput}
+                  onChange={(e) => setApiKeyInput(e.target.value)}
+                  disabled={isKeyInjected}
+                  placeholder={provider === 'openai' ? 'sk-...' : 'AI API Key...'}
+                  className="w-full bg-transparent border-none outline-none px-4 py-3 text-sm text-white placeholder:text-slate-700 font-mono"
+                />
+                {!isKeyInjected && apiKeyInput && (
+                  <button onClick={() => setShowKey(!showKey)} className="p-3 text-slate-500 hover:text-indigo-400">
+                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                )}
+              </div>
+
+              {!isKeyInjected ? (
+                <button 
+                  onClick={handleInjectKey}
+                  disabled={isInjecting}
+                  className={`m-1 py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-lg ${provider === 'openai' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}
+                >
+                  {isInjecting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
+                  {t.activateEngine}
+                </button>
+              ) : (
+                <div className="m-1 py-4 bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest">
+                  <CheckCircle2 size={16} />
+                  {t.engineReady}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="space-y-4 pt-2">
             <button 
               onClick={handleGoogleLogin} 
-              disabled={!isKeyInjected || isLoggingIn} 
-              className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest transition-all shadow-2xl ${!isKeyInjected ? 'opacity-20 pointer-events-none grayscale' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+              disabled={isLoggingIn || !isKeyInjected} 
+              className={`w-full py-5 rounded-[2rem] flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest transition-all shadow-2xl ${!isKeyInjected ? 'opacity-30 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
             >
-              {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
-              {lang === 'zh' ? '同步生理指标流' : 'SYNC BIOMETRICS'}
+              {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Cpu size={20} className="text-indigo-600" />}
+              {t.connect}
+            </button>
+            
+            <button 
+              onClick={onGuest} 
+              className="w-full py-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-white hover:bg-white/10 font-black text-[10px] uppercase tracking-widest transition-all"
+            >
+              <Zap size={14} className="text-indigo-400" />
+              {t.guest} <ArrowRight size={12} className="ml-1" />
             </button>
           </div>
         </div>
 
-        <AnimatePresence>
-          {localError && (
-            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4 text-rose-400 text-xs font-bold shadow-xl">
-              <TriangleAlert size={18} className="shrink-0 mt-0.5" />
-              <p>{localError}</p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {localError && (
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-left flex gap-3 text-rose-300 text-[11px] font-bold"
+          >
+            <TriangleAlert size={18} className="shrink-0" />
+            <p>{localError}</p>
+          </motion.div>
+        )}
       </GlassCard>
+
+      <footer className="mt-12 flex flex-col items-center gap-4 opacity-50 hover:opacity-100 transition-opacity pb-8">
+        <div className="flex items-center gap-6">
+          <button 
+            onClick={() => onNavigate?.('privacy')} 
+            className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
+          >
+            {t.privacyPolicy}
+          </button>
+          <button 
+            onClick={() => onNavigate?.('terms')} 
+            className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
+          >
+            {t.termsOfService}
+          </button>
+          <span className="text-[10px] font-bold text-slate-600">
+            © 2026 SomnoAI Digital Sleep Lab
+          </span>
+        </div>
+      </footer>
     </div>
   );
 };
