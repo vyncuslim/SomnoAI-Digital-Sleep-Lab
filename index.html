@@ -17,36 +17,29 @@
     <meta name="keywords" content="SomnoAI, AI Sleep Analysis, Digital Sleep Lab, Sleep Biometrics, Google Fit Sleep Sync, Gemini AI Health, Personalized Sleep Coach, Neurological Recovery, Circadian Rhythm Optimization, Bio-hacking, Sleep Science, Metabolic Wellness, Neural Architecture">
     <meta name="author" content="SomnoAI Lab">
 
-    <!-- Structured Data (JSON-LD) for SEO -->
+    <!-- Google Site Name & Identity Structured Data -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "SomnoAI Digital Sleep Lab",
-      "operatingSystem": "Web",
-      "applicationCategory": "HealthApplication",
-      "description": "SomnoAI Digital Sleep Lab fuses physiological monitoring, deep AI insights, and privacy-first science for comprehensive sleep mastery. Map your neurological recovery and optimize metabolic health.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "CNY"
-      }
+      "@type": "WebSite",
+      "name": "SomnoAI",
+      "alternateName": ["SomnoAI Lab", "Somno Digital Sleep Lab"],
+      "url": "https://sleepsomno.com/"
     }
     </script>
 
-    <!-- Performance Optimizations -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://esm.sh">
-    <link rel="dns-prefetch" href="https://accounts.google.com">
-
-    <!-- Preload critical assets -->
-    <link rel="preload" href="index.tsx" as="script" type="module" fetchpriority="high">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap&font-display=swap">
-
-    <!-- Icons & Manifest -->
-    <link rel="icon" type="image/png" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    <!-- Google Search Favicon Standards -->
+    <link rel="icon" type="image/png" sizes="16x16" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    <link rel="icon" type="image/png" sizes="32x32" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    <link rel="icon" type="image/png" sizes="48x48" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    
+    <!-- Windows/Microsoft Identity -->
+    <meta name="msapplication-TileImage" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
+    <meta name="msapplication-TileColor" content="#020617">
+
     <link rel="manifest" href="manifest.json">
 
     <!-- OpenGraph / Social Media -->
@@ -56,7 +49,15 @@
     <meta property="og:description" content="Integrate Google Fit biometrics with Gemini AI to decode your sleep architecture and optimize neurological recovery. 100% private, edge-processed sleep mastery.">
     <meta property="og:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
     
-    <!-- Deferred Non-critical Libraries -->
+    <!-- Performance Optimizations -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://esm.sh">
+    <link rel="dns-prefetch" href="https://accounts.google.com">
+
+    <link rel="preload" href="index.tsx" as="script" type="module" fetchpriority="high">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap&font-display=swap">
+
     <script src="https://cdn.tailwindcss.com" defer></script>
     
     <script>
@@ -95,7 +96,6 @@
             overflow-x: hidden;
         }
 
-        /* Accessibility: Skip link style */
         .skip-link {
             position: absolute;
             top: -40px;
@@ -197,9 +197,6 @@
         .goog-te-banner-frame { display: none !important; }
         body { top: 0 !important; }
 
-        .scrollbar-hide::-webkit-scrollbar { display: none; }
-        .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-
         .crawler-footer {
             position: absolute;
             bottom: 20px;
@@ -207,7 +204,7 @@
             text-align: center;
             opacity: 0.4;
             transition: opacity 0.3s ease;
-            z-index: 100; /* Higher than #root to be clickable */
+            z-index: 100;
             pointer-events: auto;
         }
         .crawler-footer:hover { opacity: 1; }
@@ -250,7 +247,6 @@
         <div class="grid-floor" aria-hidden="true"></div>
     </div>
     <div id="root">
-        <!-- Initial Loader Shell with ARIA -->
         <div class="initial-loader" id="page-loader" role="status" aria-label="Starting SomnoAI Digital Sleep Lab">
             <img class="logo-img" src="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png" alt="SomnoAI Logo" aria-hidden="true">
             <div class="text">SomnoAI Digital Sleep Lab</div>
@@ -266,10 +262,7 @@
         </nav>
     </footer>
 
-    <!-- Main Entry Point -->
     <script type="module" src="index.tsx"></script>
-    
-    <!-- Deferred Non-critical Scripts -->
     <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
 </body>
 </html>

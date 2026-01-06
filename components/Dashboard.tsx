@@ -101,26 +101,22 @@ https://sleepsomno.com
     >
       <div className="flex justify-between items-center px-2">
         <div className="flex items-center gap-4">
-          <div className="relative">
-            <div className="w-12 h-12 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
-              <Scan size={20} className="text-indigo-400" aria-hidden="true" />
-            </div>
-            {!staticMode && (
-              <motion.div 
-                animate={{ scale: [1, 1.5, 1], opacity: [0.3, 0, 0.3] }}
-                transition={{ repeat: Infinity, duration: 2 }}
-                className="absolute inset-0 bg-indigo-500/20 rounded-2xl"
-                aria-hidden="true"
+          <div className="relative flex items-center gap-3">
+            <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20 overflow-hidden shadow-[0_0_20px_rgba(79,70,229,0.2)]">
+              <img 
+                src="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png" 
+                alt="SomnoAI" 
+                className="w-7 h-7 object-contain"
               />
-            )}
-          </div>
-          <div>
-            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 leading-none mb-1.5">{t.neuralActive}</h2>
-            <div className="flex items-center gap-2">
-              <span className={`w-2 h-2 rounded-full ${engineActive ? 'bg-emerald-500' : 'bg-rose-500'} ${!staticMode && engineActive ? 'animate-pulse' : ''}`} aria-hidden="true" />
-              <span className={`text-[10px] font-mono uppercase tracking-widest ${engineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                {engineActive ? 'Engine Linked' : 'Engine Offline'}
-              </span>
+            </div>
+            <div>
+              <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 leading-none mb-1.5">{t.neuralActive}</h2>
+              <div className="flex items-center gap-2">
+                <span className={`w-2 h-2 rounded-full ${engineActive ? 'bg-emerald-500' : 'bg-rose-500'} ${!staticMode && engineActive ? 'animate-pulse' : ''}`} aria-hidden="true" />
+                <span className={`text-[10px] font-mono uppercase tracking-widest ${engineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                  {engineActive ? 'Engine Linked' : 'Engine Offline'}
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -279,7 +275,6 @@ https://sleepsomno.com
         </GlassCard>
       </div>
 
-      {/* Share Modal */}
       <AnimatePresence>
         {showShareModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-2xl" role="dialog" aria-modal="true" aria-labelledby="share-title">
