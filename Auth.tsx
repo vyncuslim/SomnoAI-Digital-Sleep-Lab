@@ -1,10 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
-import { ShieldCheck, Loader2, ArrowRight, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock, Eye, EyeOff, Save, Activity, BrainCircuit, Waves, FlaskConical } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { ShieldCheck, Loader2, ArrowRight, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock, Save, FlaskConical, Network, Fingerprint, Keyboard, Terminal as TerminalIcon } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { googleFit } from './services/googleFitService.ts';
 import { Logo } from './components/Logo.tsx';
-import { Language, translations } from './services/i18n.ts';
+import { Language } from './services/i18n.ts';
 import { SpatialIcon } from './components/SpatialIcon.tsx';
 
 interface AuthProps {
@@ -28,22 +29,21 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   const [hasKey, setHasKey] = useState(false);
   const [isCheckingKey, setIsCheckingKey] = useState(true);
   const [localError, setLocalError] = useState<string | null>(null);
-  
-  const [manualKey, setManualKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
 
   useEffect(() => {
     checkApiKey();
     googleFit.ensureClientInitialized().catch(err => {
-      console.warn("Auth: Google GSI Loading...", err.message);
+      console.warn("Auth: Google GSI Background Loading...", err.message);
     });
   }, []);
 
-  const checkApiKey = () => {
+  const checkApiKey = async () => {
     try {
-      const existingKey = process.env.API_KEY || (window as any).process?.env?.API_KEY;
-      if (existingKey && existingKey !== '') {
-        setHasKey(true);
+      if ((window as any).aistudio) {
+        const selected = await (window as any).aistudio.hasSelectedApiKey();
+        setHasKey(selected);
+      } else {
+        setHasKey(!!process.env.API_KEY || (window as any).process?.env?.API_KEY);
       }
     } catch (e) {
       setHasKey(false);
@@ -52,25 +52,21 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     }
   };
 
-  const handleActivateManual = () => {
-    const trimmedKey = manualKey.trim();
-    if (!trimmedKey) {
-      setLocalError(lang === 'zh' ? "请输入有效的 API Key" : "Please enter a valid API Key");
-      return;
+  const handleActivateEngine = async () => {
+    if ((window as any).aistudio) {
+      try {
+        await (window as any).aistudio.openSelectKey();
+        setHasKey(true);
+        setLocalError(null);
+      } catch (e: any) {
+        setLocalError(lang === 'zh' ? "激活 AI 神经网关失败" : "Failed to activate AI Gateway");
+      }
     }
-    
-    if ((window as any).process) {
-      if (!(window as any).process.env) (window as any).process.env = {};
-      (window as any).process.env.API_KEY = trimmedKey;
-    }
-    
-    setHasKey(true);
-    setLocalError(null);
   };
 
   const handleGoogleLogin = async () => {
     if (!hasKey) {
-      setLocalError(lang === 'zh' ? "请先在上方输入并激活 AI 引擎" : "Please enter and activate AI Engine above first");
+      setLocalError(lang === 'zh' ? "请先完成 API 密钥输入" : "Please input API Key first");
       return;
     }
 
@@ -82,16 +78,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       const token = await googleFit.authorize(true); 
       if (token) {
         onLogin();
-      } else {
-        throw new Error("No token received");
       }
     } catch (error: any) {
       console.error("Login Error:", error);
       let msg = error.message;
-      if (msg === "popup_closed_by_user") {
-        msg = lang === 'zh' ? "登录窗口被关闭" : "Login popup closed";
-      } else if (msg === "access_denied") {
-        msg = lang === 'zh' ? "访问被拒绝，请授予权限" : "Access denied, please grant permissions";
+      if (msg.includes("popup_closed_by_user")) {
+        msg = lang === 'zh' ? "授权窗口已关闭" : "Auth popup closed";
+      } else if (msg.includes("access_denied")) {
+        msg = lang === 'zh' ? "数据访问权限被拒绝" : "Access denied by user";
       }
       setLocalError(msg || "Authentication Failed");
     } finally {
@@ -101,7 +95,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
   if (isCheckingKey) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#020617]">
+      <div className="min-h-screen flex items-center justify-center bg-[#01040a]">
         <motion.div animate={{ opacity: [0.4, 1, 0.4] }} transition={{ repeat: Infinity, duration: 1.5 }}>
           <Logo size={64} animated threeD />
         </motion.div>
@@ -110,114 +104,125 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start py-20 px-6 bg-transparent relative overflow-x-hidden">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[1200px] bg-indigo-500/5 rounded-full blur-[160px] pointer-events-none" />
+    <div className="min-h-screen flex flex-col items-center justify-start py-16 px-6 bg-transparent relative overflow-x-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1400px] h-[1000px] bg-indigo-500/5 rounded-full blur-[160px] pointer-events-none" />
       
-      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl space-y-4 text-center mb-12 relative z-10">
-        <div className="flex justify-center mb-6">
-           <Logo size={80} animated threeD />
+      <motion.div 
+        initial={{ opacity: 0, y: -20 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="w-full max-w-2xl space-y-6 text-center mb-12 relative z-10"
+      >
+        <div className="flex justify-center mb-4">
+           <Logo size={90} animated threeD />
         </div>
-        <h1 className={`${lang === 'zh' ? 'text-3xl' : 'text-4xl'} font-black tracking-tighter text-white italic drop-shadow-2xl px-4`}>
-          {lang === 'zh' ? (
-            <>SomnoAI <span className="text-indigo-400">Digital Sleep Lab - 数字化睡眠实验平台</span></>
-          ) : (
-            <>SomnoAI <span className="text-indigo-400">Digital Sleep Lab</span></>
-          )}
-        </h1>
-        <p className="text-slate-400 font-bold uppercase text-[10px] tracking-[0.4em] opacity-80">
-          ADVANCED BIO-DIGITAL LABORATORY
-        </p>
+        <div className="space-y-2">
+          <h1 className={`${lang === 'zh' ? 'text-4xl' : 'text-5xl'} font-black tracking-tighter text-white italic drop-shadow-[0_10px_30px_rgba(0,0,0,0.5)] px-4 text-center leading-tight`}>
+            {lang === 'zh' ? (
+              <>SomnoAI <span className="text-indigo-400">数字化实验终端</span></>
+            ) : (
+              <>SomnoAI <span className="text-indigo-400">Digital Terminal</span></>
+            )}
+          </h1>
+          <div className="flex items-center justify-center gap-4 text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] opacity-60">
+            <span className="flex items-center gap-1"><Network size={10} /> Neural Link v4.0</span>
+            <span className="w-1 h-1 bg-slate-700 rounded-full" />
+            <span className="flex items-center gap-1"><Fingerprint size={10} /> Biometric Ready</span>
+          </div>
+        </div>
       </motion.div>
 
-      <GlassCard className="w-full max-w-md p-10 border-white/5 bg-slate-950/50 space-y-10 relative z-20 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]">
+      <GlassCard className="w-full max-w-md p-10 border-white/5 bg-slate-950/40 space-y-10 relative z-20 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)]">
         <div className="space-y-10">
-          {/* API GATEWAY */}
           <section className="space-y-6">
             <div className="flex items-center justify-between px-1">
               <div className="flex items-center gap-2">
-                <SpatialIcon icon={Lock} size={14} color={hasKey ? "#10b981" : "#fbbf24"} threeD />
-                <label htmlFor="manual-api-key" className="text-[11px] font-black uppercase tracking-widest text-slate-300 cursor-pointer">
-                  NEURAL GATEWAY (GEMINI)
-                </label>
+                <SpatialIcon icon={Lock} size={14} color={hasKey ? "#10b981" : "#818cf8"} threeD />
+                <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-300">
+                  {lang === 'zh' ? 'AI 神经网关 (Gemini)' : 'NEURAL GATEWAY (GEMINI)'}
+                </h2>
               </div>
               <a 
-                href="https://aistudio.google.com/app/apikey" 
+                href="https://ai.google.dev/gemini-api/docs/billing" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-[11px] font-bold text-indigo-400 hover:text-indigo-300 transition-colors flex items-center gap-1 group"
+                className="text-[10px] font-bold text-indigo-400/80 hover:text-indigo-300 transition-colors flex items-center gap-1 group"
               >
-                {lang === 'zh' ? '获取密钥' : 'Get Key'} <ExternalLink size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
+                {lang === 'zh' ? '计费说明' : 'Billing Info'} <ExternalLink size={10} className="group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-transform" />
               </a>
             </div>
 
-            <div className="relative group">
-              <div className="absolute inset-y-0 left-5 flex items-center pointer-events-none">
-                <SpatialIcon icon={Key} size={18} color="#64748b" threeD />
-              </div>
-              <input 
-                id="manual-api-key"
-                type={showKey ? "text" : "password"}
-                value={manualKey}
-                onChange={(e) => setManualKey(e.target.value)}
-                placeholder="Paste AI Studio Key here..."
-                className="w-full bg-[#020617]/80 border border-white/10 rounded-2xl py-5 pl-14 pr-14 text-white text-sm placeholder:text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500/30 focus:border-indigo-500/50 transition-all font-mono shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)]"
-              />
-              <button 
-                onClick={() => setShowKey(!showKey)}
-                className="absolute inset-y-0 right-5 flex items-center text-slate-500 hover:text-white transition-colors"
+            {/* 模拟输入框设计的触发器 */}
+            <div className="space-y-3">
+               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">
+                 {lang === 'zh' ? '安全密钥输入端口' : 'Secure Key Entry Port'}
+               </label>
+               <motion.button 
+                whileHover={{ scale: 1.01 }}
+                whileTap={{ scale: 0.99 }}
+                onClick={handleActivateEngine}
+                className={`w-full h-16 rounded-2xl border flex items-center px-6 gap-4 transition-all relative overflow-hidden group shadow-inner ${
+                  hasKey 
+                    ? 'bg-emerald-500/5 border-emerald-500/30 text-emerald-400' 
+                    : 'bg-slate-950 border-white/10 text-slate-400 hover:border-indigo-500/40'
+                }`}
               >
-                <SpatialIcon icon={showKey ? EyeOff : Eye} size={18} threeD />
-              </button>
-            </div>
+                <TerminalIcon size={16} className={hasKey ? "text-emerald-500" : "text-indigo-500"} />
+                
+                <div className="flex-1 text-left font-mono text-sm tracking-tight flex items-center">
+                  {hasKey ? (
+                    <span className="opacity-80">••••••••••••••••••••••••••••</span>
+                  ) : (
+                    <div className="flex items-center">
+                      <span className="opacity-40">{lang === 'zh' ? '点击此处输入 API 密钥...' : 'Type API Key here...'}</span>
+                      <motion.div 
+                        animate={{ opacity: [0, 1, 0] }}
+                        transition={{ duration: 0.8, repeat: Infinity }}
+                        className="w-2 h-4 bg-indigo-500 ml-1"
+                      />
+                    </div>
+                  )}
+                </div>
 
-            <button 
-              onClick={handleActivateManual}
-              className={`w-full py-5 rounded-2xl flex items-center justify-center gap-3 font-black text-xs uppercase tracking-[0.25em] transition-all active:scale-[0.97] shadow-lg ${
-                hasKey 
-                  ? 'bg-emerald-600/10 text-emerald-400 border border-emerald-500/20' 
-                  : 'bg-white/5 text-slate-500 border border-white/10 hover:bg-white/10 hover:text-white'
-              }`}
-            >
-              <SpatialIcon icon={hasKey ? ShieldCheck : Save} size={18} threeD />
-              {hasKey ? (lang === 'zh' ? '引擎已就绪' : 'ENGINE READY') : (lang === 'zh' ? '激活核心引擎' : 'ACTIVATE NEURAL ENGINE')}
-            </button>
+                {hasKey ? (
+                   <ShieldCheck size={18} className="text-emerald-500" />
+                ) : (
+                   <Keyboard size={18} className="text-slate-600 group-hover:text-indigo-400 transition-colors" />
+                )}
+
+                {/* 背景光晕装饰 */}
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
+              </motion.button>
+            </div>
+            
+            {!hasKey && (
+              <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex gap-3">
+                 <Lock size={14} className="text-indigo-500 shrink-0 mt-0.5" />
+                 <p className="text-[10px] text-slate-400 leading-relaxed font-medium">
+                   {lang === 'zh' ? '请点击上方“模拟输入框”激活安全网关。系统将弹出一个加密窗口供您打字输入。' : 'Click the simulated input field to launch the secure gateway. A system dialog will open for you to type your key.'}
+                 </p>
+              </div>
+            )}
           </section>
 
           <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" aria-hidden="true" />
 
-          {/* OAUTH SECTION */}
           <section className="space-y-6">
-            <div className="p-4 bg-slate-900/60 border border-white/5 rounded-2xl space-y-3">
-              <p className="text-[11px] text-slate-400 leading-relaxed font-medium italic">
-                {lang === 'zh' 
-                  ? '它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。' 
-                  : 'Integrating physiological monitoring, AI deep insights, and health advice for a comprehensive digital sleep lab experience.'}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {['sleep.read', 'heart_rate.read'].map(scope => (
-                   <span key={scope} className="px-2 py-0.5 bg-indigo-500/10 border border-indigo-500/20 text-[9px] font-mono text-indigo-400 rounded">
-                     {scope}
-                   </span>
-                ))}
-              </div>
-            </div>
-
             <div className="space-y-4">
               <button 
                 onClick={handleGoogleLogin} 
                 disabled={isLoggingIn || !hasKey} 
-                className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-bold text-sm transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed grayscale' : 'cursor-pointer hover:bg-slate-50 hover:scale-[1.02] active:scale-[0.98]'}`}
+                className={`w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest transition-all shadow-xl relative z-30 ${!hasKey ? 'opacity-20 cursor-not-allowed filter grayscale' : 'hover:bg-slate-50 hover:shadow-indigo-500/20 active:scale-[0.98]'}`}
               >
                 {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
-                {isLoggingIn ? (lang === 'zh' ? '正在连接...' : 'CONNECTING...') : (lang === 'zh' ? '使用 Google 账号登录' : 'Sign in with Google')}
+                {isLoggingIn ? (lang === 'zh' ? '正在连接链路...' : 'LINKING...') : (lang === 'zh' ? '同步生理指标流' : 'SYNC BIOMETRICS')}
               </button>
               
               <button 
                 onClick={onGuest} 
-                className="w-full py-5 bg-transparent border border-white/5 rounded-full flex items-center justify-center gap-3 text-slate-500 hover:text-indigo-400 font-black text-[11px] uppercase tracking-[0.3em] transition-all cursor-pointer relative z-30 group"
+                className="w-full py-5 bg-white/5 border border-white/5 rounded-full flex items-center justify-center gap-3 text-slate-500 hover:text-indigo-400 font-black text-[11px] uppercase tracking-[0.3em] transition-all group"
               >
                 <FlaskConical size={14} className="group-hover:scale-110 transition-transform" />
-                {lang === 'zh' ? '启动实验模拟' : 'START SIMULATION'} 
+                {lang === 'zh' ? '访问模拟数据实验室' : 'SIMULATION LAB'} 
                 <ArrowRight size={12} className="group-hover:translate-x-1 transition-transform" />
               </button>
             </div>
@@ -225,19 +230,30 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         </div>
       </GlassCard>
 
-      <footer className="mt-20 flex flex-col items-center gap-6 opacity-30 hover:opacity-100 transition-opacity pb-12 relative z-10">
-        <nav className="flex items-center gap-8">
-          <a href="/privacy" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
-            <SpatialIcon icon={Shield} size={12} threeD={false} /> Privacy
+      {localError && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mt-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 text-rose-400 text-xs font-bold shadow-lg"
+        >
+          <TriangleAlert size={16} />
+          {localError}
+        </motion.div>
+      )}
+
+      <footer className="mt-16 flex flex-col items-center gap-6 opacity-30 hover:opacity-100 transition-opacity pb-12 relative z-10 text-center">
+        <nav className="flex items-center gap-10">
+          <a href="/privacy" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-indigo-400 transition-colors">
+            Privacy
           </a>
-          <a href="/terms" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
-            <SpatialIcon icon={FileText} size={12} threeD={false} /> Terms
-          </a>
-          <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">
-            <SpatialIcon icon={Github} size={12} threeD={false} /> Source
+          <a href="/terms" className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-indigo-400 transition-colors">
+            Terms
           </a>
         </nav>
-        <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-slate-400">© 2026 SomnoAI Digital Sleep Lab • Secure Research Architecture</p>
+        <div className="space-y-1">
+          <p className="text-[9px] font-mono uppercase tracking-[0.5em] text-slate-400">© 2026 SomnoAI Lab • Neural Research Division</p>
+          <p className="text-[8px] text-slate-600 font-bold uppercase tracking-widest">Client Encryption: Active</p>
+        </div>
       </footer>
     </div>
   );

@@ -1,5 +1,6 @@
+
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
@@ -12,9 +13,9 @@
     <link rel="canonical" href="https://sleepsomno.com/" />
     
     <!-- SEO Meta Tags -->
-    <title>SomnoAI Digital Sleep Lab | AI Sleep Science & Biometric Mastery</title>
-    <meta name="description" content="SomnoAI Digital Sleep Lab: 它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。Map your neurological recovery with high-fidelity telemetry and Gemini AI. 100% private, local-first sleep science.">
-    <meta name="keywords" content="SomnoAI, Digital Sleep Lab, AI Sleep Coach, Gemini AI Health, Google Fit Sleep Analysis, Biometric Telemetry, Sleep Architecture Mapping, Neurological Recovery, Circadian Rhythm, Privacy-First Health, Deep Sleep Recovery, REM Optimization, Sleep Science Platform, 数字化睡眠实验室, 睡眠监测, AI睡眠建议, 睡眠实验">
+    <title>SomnoAI 数字化睡眠实验室 | 精准生物识别与 AI 神经分析</title>
+    <meta name="description" content="SomnoAI 数字化睡眠实验室融合了高保真生理指标监控、Gemini AI 深度洞察与战略性健康协议。通过精准的神经架构分析，映射您的神经恢复状态并优化代谢健康。">
+    <meta name="keywords" content="SomnoAI, 数字化睡眠实验室, AI睡眠教练, 睡眠监测, 生理指标分析, Google Fit 同步, 睡眠科学, 神经恢复, Gemini AI 健康, 睡眠质量评估">
     <meta name="author" content="SomnoAI Lab">
 
     <!-- Structured Data (JSON-LD) for SEO -->
@@ -25,11 +26,11 @@
       "name": "SomnoAI Digital Sleep Lab",
       "operatingSystem": "Web",
       "applicationCategory": "HealthApplication",
-      "description": "Integrating physiological monitoring, AI deep insights, and health advice for a comprehensive digital sleep lab experience.",
+      "description": "融合生理指标监控、AI 深度洞察与健康建议的数字化睡眠实验室。",
       "offers": {
         "@type": "Offer",
         "price": "0",
-        "priceCurrency": "USD"
+        "priceCurrency": "CNY"
       }
     }
     </script>
@@ -47,8 +48,8 @@
     <!-- OpenGraph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="SomnoAI: Pro AI Sleep Analysis & Biometric Mastery">
-    <meta property="og:description" content="Precision sleep science powered by Gemini AI. Map your recovery with high-fidelity telemetry.">
+    <meta property="og:title" content="SomnoAI: 专业的 AI 睡眠分析与生物识别实验室">
+    <meta property="og:description" content="由 Gemini AI 驱动的精准睡眠科学。利用高保真遥测技术映射您的恢复状态。">
     <meta property="og:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
 
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
@@ -56,7 +57,6 @@
     
     <!-- Deferred Non-critical Libraries -->
     <script src="https://cdn.tailwindcss.com" defer></script>
-    <script src="https://accounts.google.com/gsi/client" defer></script>
     
     <script>
         window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
@@ -94,10 +94,19 @@
             overflow-x: hidden;
         }
 
-        /* Keyboard Focus Outline Enhancement */
-        :focus-visible {
-            outline: 2px solid #818cf8;
-            outline-offset: 4px;
+        /* Accessibility: Skip link style */
+        .skip-link {
+            position: absolute;
+            top: -40px;
+            left: 0;
+            background: #4f46e5;
+            color: white;
+            padding: 8px;
+            z-index: 100;
+            transition: top 0.3s;
+        }
+        .skip-link:focus {
+            top: 0;
         }
 
         #spatial-bg {
@@ -201,25 +210,6 @@
         }
         .crawler-footer a { color: #475569; font-size: 10px; margin: 0 10px; text-decoration: none; font-weight: 700; }
         .crawler-footer a:hover { color: #818cf8; }
-
-        /* Skip to content link for accessibility */
-        .skip-to-content {
-            position: absolute;
-            top: -100px;
-            left: 0;
-            background: #4f46e5;
-            color: white;
-            padding: 8px 16px;
-            z-index: 9999;
-            transition: top 0.2s;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 12px;
-            text-transform: uppercase;
-        }
-        .skip-to-content:focus {
-            top: 0;
-        }
     </style>
     <script type="importmap">
 {
@@ -241,24 +231,23 @@
 </script>
 </head>
 <body>
-    <a href="#main-content" class="skip-to-content">Skip to Content</a>
-    
+    <a href="#main-content" class="skip-link">跳过导航至主内容</a>
     <div id="spatial-bg">
         <div class="nebula" aria-hidden="true"></div>
         <div class="grid-floor" aria-hidden="true"></div>
     </div>
     <div id="root">
-        <!-- Initial Loader Shell -->
-        <div class="initial-loader" id="page-loader" role="alert" aria-busy="true">
-            <div class="logo-placeholder"></div>
+        <!-- Initial Loader Shell with ARIA -->
+        <div class="initial-loader" id="page-loader" role="status" aria-label="正在加载数字化睡眠实验室">
+            <div class="logo-placeholder" aria-hidden="true"></div>
             <div class="text">SomnoAI Digital Sleep Lab</div>
         </div>
     </div>
     
     <footer class="crawler-footer" role="contentinfo">
-        <nav aria-label="Footer Navigation">
-            <a href="/privacy">Privacy Policy</a>
-            <a href="/terms">Terms of Service</a>
+        <nav aria-label="底部导航">
+            <a href="/privacy">隐私政策</a>
+            <a href="/terms">服务条款</a>
             <span style="color: #475569; font-size: 10px; font-weight: 700;">© 2026 SomnoAI Lab</span>
         </nav>
     </footer>

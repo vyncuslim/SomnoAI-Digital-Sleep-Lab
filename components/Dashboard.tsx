@@ -129,9 +129,9 @@ https://sleepsomno.com
           <button 
             onClick={() => onNavigate?.('profile')}
             className="p-4 rounded-2xl bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20 transition-all shadow-xl active:scale-95 group"
-            aria-label="Support Research Lab"
+            aria-label={translations[lang].settings.funding}
           >
-            <HeartHandshake size={20} className="group-hover:scale-110 transition-transform" />
+            <HeartHandshake size={20} className="group-hover:scale-110 transition-transform" aria-hidden="true" />
           </button>
           <div className="flex items-center gap-2">
             <button 
@@ -144,7 +144,7 @@ https://sleepsomno.com
             <button 
               onClick={handleSync}
               disabled={isProcessing}
-              aria-label="Sync sleep data"
+              aria-label={lang === 'zh' ? '同步睡眠数据' : 'Sync sleep data'}
               aria-busy={isProcessing}
               className={`p-4 rounded-2xl transition-all shadow-2xl active:scale-95 ${
                 isProcessing ? 'bg-indigo-600 text-white' : 
@@ -158,7 +158,7 @@ https://sleepsomno.com
       </div>
 
       <div className="relative py-4" aria-live="polite">
-        <GlassCard intensity={1.5} className="p-10 border-indigo-500/40 relative overflow-hidden">
+        <GlassCard intensity={1.5} className="p-10 border-indigo-500/40 relative overflow-hidden" role="region" aria-label={lang === 'zh' ? '睡眠分数概览' : 'Sleep Score Overview'}>
           <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none" aria-hidden="true">
              <Layers size={140} />
           </div>
@@ -292,10 +292,10 @@ https://sleepsomno.com
               <GlassCard className="p-10 border-indigo-500/40 relative overflow-hidden">
                 <button 
                   onClick={() => setShowShareModal(false)}
-                  aria-label="Close share modal"
+                  aria-label={lang === 'zh' ? '关闭分享窗口' : 'Close share modal'}
                   className="absolute top-6 right-6 p-2 text-slate-500 hover:text-white transition-colors"
                 >
-                  <X size={20} />
+                  <X size={20} aria-hidden="true" />
                 </button>
 
                 <div className="space-y-8">
@@ -318,6 +318,7 @@ https://sleepsomno.com
                   <div className="grid grid-cols-2 gap-4">
                     <button 
                       onClick={copyToClipboard}
+                      aria-label={copied ? (lang === 'zh' ? '已复制' : 'Copied') : t.copyText}
                       className={`flex items-center justify-center gap-2 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest transition-all ${
                         copied ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-300'
                       }`}
@@ -327,6 +328,7 @@ https://sleepsomno.com
                     </button>
                     <button 
                       onClick={shareToLinkedIn}
+                      aria-label={lang === 'zh' ? '发布到 LinkedIn' : 'Post to LinkedIn'}
                       className="flex items-center justify-center gap-2 py-4 bg-[#0a66c2] text-white rounded-2xl text-[10px] font-black uppercase tracking-widest"
                     >
                       <Linkedin size={16} aria-hidden="true" />
