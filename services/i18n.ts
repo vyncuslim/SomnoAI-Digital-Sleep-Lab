@@ -158,7 +158,7 @@ export const translations = {
     },
     auth: {
       lab: '实验室',
-      tagline: 'SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验服务。',
+      tagline: 'SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验服务。',
       securityStatement: '安全声明',
       securityDetail: '数据本地同步。无后端存储。会话结束时即时清除敏感指标。',
       connect: '连接 Google Fit',

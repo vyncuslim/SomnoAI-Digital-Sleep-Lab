@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ShieldCheck, Loader2, ArrowRight, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock, Eye, EyeOff, Save, Activity, BrainCircuit, Waves, FlaskConical } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -109,8 +108,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       </div>
     );
   }
-
-  const brandName = lang === 'zh' ? 'SomnoAI Digital Sleep Lab - 数字化睡眠实验平台' : 'SomnoAI Digital Sleep Lab';
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-start py-20 px-6 bg-transparent relative overflow-x-hidden">

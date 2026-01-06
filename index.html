@@ -17,6 +17,13 @@
     <meta name="keywords" content="SomnoAI, Digital Sleep Lab, AI sleep analysis, biometric telemetry, sleep science, Gemini AI, neurological recovery, physiological monitoring, sleep architecture, metabolic load, Google Fit, sleep coaching, neuro-analysis, health data encryption, restorative rest, circadian rhythm optimization">
     <meta name="author" content="SomnoAI Lab">
 
+    <!-- Performance Optimizations: Preload critical assets -->
+    <link rel="preload" href="index.tsx" as="script" type="module">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" as="style">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap&font-display=swap">
+
     <!-- OpenGraph / LinkedIn -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sleepsomno.com/">
@@ -31,18 +38,12 @@
     <meta property="twitter:description" content="SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights and strategic wellness protocols.">
     <meta property="twitter:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <link rel="preload" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" as="style">
-
     <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png">
     <link rel="manifest" href="manifest.json">
     
+    <!-- Critical Scripts -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://accounts.google.com/gsi/client" defer></script>
-    
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     
     <script>
         window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
@@ -58,7 +59,6 @@
             }, 'google_translate_element');
         }
     </script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
     
     <style>
         :root {
@@ -69,6 +69,11 @@
         @keyframes nebulaPulse {
             0%, 100% { transform: scale(1) translate(0, 0); opacity: 0.1; }
             50% { transform: scale(1.1) translate(-2%, 2%); opacity: 0.15; }
+        }
+
+        @keyframes pulse-opacity {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 0.7; }
         }
 
         html, body {
@@ -105,11 +110,6 @@
             pointer-events: none;
         }
 
-        body.static-ui .nebula {
-            animation: none;
-            opacity: 0.08;
-        }
-
         .grid-floor {
             position: fixed;
             bottom: -20%; left: -50%;
@@ -131,6 +131,31 @@
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+        }
+
+        /* Splash Screen Style */
+        .initial-loader {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            width: 100%;
+            gap: 1.5rem;
+        }
+        .initial-loader .logo-placeholder {
+            width: 80px; height: 80px;
+            background: radial-gradient(circle, #818cf8, #4f46e5);
+            border-radius: 50%;
+            animation: pulse-opacity 2s infinite ease-in-out;
+            filter: blur(1px);
+        }
+        .initial-loader .text {
+            font-size: 0.6rem;
+            text-transform: uppercase;
+            letter-spacing: 0.3em;
+            color: #475569;
+            font-weight: 800;
         }
 
         .goog-te-gadget-simple {
@@ -202,7 +227,13 @@
         <div class="nebula" aria-hidden="true"></div>
         <div class="grid-floor" aria-hidden="true"></div>
     </div>
-    <div id="root"></div>
+    <div id="root">
+        <!-- Initial Shell for better FCP/Lighthouse score -->
+        <div class="initial-loader">
+            <div class="logo-placeholder"></div>
+            <div class="text">SomnoAI Laboratory Initializing...</div>
+        </div>
+    </div>
     
     <footer class="crawler-footer">
         <a href="/privacy">Privacy Policy</a>
@@ -210,6 +241,9 @@
         <span>© 2026 SomnoAI Digital Sleep Lab</span>
     </footer>
 
-    <script type="module" src="index.tsx"></script>
+    <!-- Deferred Entry Point -->
+    <script type="module" src="index.tsx" defer></script>
+    <!-- Non-critical Scripts -->
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async></script>
 </body>
 </html>

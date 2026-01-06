@@ -1,21 +1,31 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
-import { Trends } from './components/Trends.tsx';
-import { AIAssistant } from './components/AIAssistant.tsx';
-import { Settings } from './components/Settings.tsx';
 import { Auth } from './Auth.tsx';
-import { DataEntry } from './components/DataEntry.tsx';
-import { LegalView } from './components/LegalView.tsx';
-import { AboutView } from './components/AboutView.tsx';
-import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor, SleepStage } from './types.ts';
-import { User, Loader2, Activity, Zap, Beaker } from 'lucide-react';
+import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor } from './types.ts';
+import { User, Loader2, Activity, Zap } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './components/Logo.tsx';
-import { Language, translations } from './services/i18n.ts';
+import { translations, Language } from './services/i18n.ts';
 import { SpatialIcon } from './components/SpatialIcon.tsx';
+
+// Code-splitting for non-primary views to improve Lighthouse Performance
+const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
+const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
+const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ default: m.Settings })));
+const DataEntry = lazy(() => import('./components/DataEntry.tsx').then(m => ({ default: m.DataEntry })));
+const LegalView = lazy(() => import('./components/LegalView.tsx').then(m => ({ default: m.LegalView })));
+const AboutView = lazy(() => import('./components/AboutView.tsx').then(m => ({ default: m.AboutView })));
+
+const LoadingSpinner = () => (
+  <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
+    <Loader2 size={48} className="animate-spin text-indigo-500" />
+    <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">
+      Processing Stream...
+    </p>
+  </div>
+);
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
@@ -152,40 +162,60 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
-    if (activeView === 'privacy' || activeView === 'terms') return <LegalView type={activeView} lang={lang} onBack={() => setActiveView('profile')} />;
-    if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView('profile')} />;
-    if (isLoading && !currentRecord) return <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center"><Loader2 size={48} className="animate-spin text-indigo-500" /><p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">Biometric Syncing...</p></div>;
+    if (activeView === 'privacy' || activeView === 'terms') {
+      return (
+        <Suspense fallback={<LoadingSpinner />}>
+          <LegalView type={activeView} lang={lang} onBack={() => setActiveView('profile')} />
+        </Suspense>
+      );
+    }
+    if (activeView === 'about') {
+      return (
+        <Suspense fallback={<LoadingSpinner />}>
+          <AboutView lang={lang} onBack={() => setActiveView('profile')} />
+        </Suspense>
+      );
+    }
+    if (isLoading && !currentRecord) {
+      return <LoadingSpinner />;
+    }
     
-    if (!isLoggedIn && !isGuest) return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={handleGuestLogin} onNavigate={(v: any) => setActiveView(v)} />;
+    if (!isLoggedIn && !isGuest) {
+      return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={handleGuestLogin} onNavigate={(v: any) => setActiveView(v)} />;
+    }
     
-    if (!currentRecord && activeView === 'dashboard') return (
-      <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center">
-        <Logo size={96} className="opacity-40" animated={!staticMode} threeD={threeDEnabled} staticMode={staticMode} />
-        <div className="space-y-4">
-          <h2 className="text-3xl font-black uppercase tracking-tighter">{lang === 'en' ? 'Biometric Offline' : '生物识别离线'}</h2>
-          <div className="flex flex-col gap-4">
-            <button onClick={() => setIsDataEntryOpen(true)} className="px-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest">{lang === 'en' ? 'Inject Signals' : '手动注入'}</button>
-            <button onClick={() => handleSyncGoogleFit(true)} className="px-8 py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest">{lang === 'en' ? 'Retry Google Sync' : '重试 Google 同步'}</button>
+    if (!currentRecord && activeView === 'dashboard') {
+      return (
+        <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center">
+          <Logo size={96} className="opacity-40" animated={!staticMode} threeD={threeDEnabled} staticMode={staticMode} />
+          <div className="space-y-4">
+            <h2 className="text-3xl font-black uppercase tracking-tighter">{lang === 'en' ? 'Biometric Offline' : '生物识别离线'}</h2>
+            <div className="flex flex-col gap-4">
+              <button onClick={() => setIsDataEntryOpen(true)} className="px-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest">{lang === 'en' ? 'Inject Signals' : '手动注入'}</button>
+              <button onClick={() => handleSyncGoogleFit(true)} className="px-8 py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest">{lang === 'en' ? 'Retry Google Sync' : '重试 Google 同步'}</button>
+            </div>
           </div>
         </div>
-      </div>
-    );
+      );
+    }
 
     return (
       <AnimatePresence mode="wait">
         <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
-          {activeView === 'calendar' && <Trends history={history} />}
-          {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
-          {activeView === 'profile' && (
-            <Settings 
-              lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
-              theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
-              threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
-              staticMode={staticMode} onStaticModeChange={setStaticMode}
-              lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
-            />
-          )}
+          <Suspense fallback={<LoadingSpinner />}>
+            {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
+            {activeView === 'calendar' && <Trends history={history} />}
+            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
+            {activeView === 'profile' && (
+              <Settings 
+                lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
+                theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
+                threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
+                staticMode={staticMode} onStaticModeChange={setStaticMode}
+                lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
+              />
+            )}
+          </Suspense>
         </motion.div>
       </AnimatePresence>
     );
@@ -264,7 +294,11 @@ const App: React.FC = () => {
           </div>
         </nav>
       )}
-      {isDataEntryOpen && <DataEntry onClose={() => setIsDataEntryOpen(false)} onSave={(r) => { setCurrentRecord(r); setHistory(prev => [r, ...prev]); setIsDataEntryOpen(false); }} />}
+      {isDataEntryOpen && (
+        <Suspense fallback={null}>
+          <DataEntry onClose={() => setIsDataEntryOpen(false)} onSave={(r) => { setCurrentRecord(r); setHistory(prev => [r, ...prev]); setIsDataEntryOpen(false); }} />
+        </Suspense>
+      )}
       <AnimatePresence>
         {errorToast && (
           <motion.div 
