@@ -235,9 +235,10 @@ const App: React.FC = () => {
       <main className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-28' : 'pt-8 pb-10'}`}>
         {renderView()}
       </main>
+      
       {showNav && (activeView !== 'privacy' && activeView !== 'terms' && activeView !== 'about') && (
-        <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-10 safe-area-inset-bottom pointer-events-none">
-          <div className="max-w-md mx-auto glass-morphism rounded-[3rem] p-2 flex justify-between pointer-events-auto border border-white/10 shadow-2xl bg-slate-900/60 backdrop-blur-3xl">
+        <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-8 safe-area-inset-bottom pointer-events-none">
+          <div className="max-w-md mx-auto glass-morphism rounded-[3.5rem] p-2 flex justify-between pointer-events-auto border border-white/10 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] bg-slate-900/70 backdrop-blur-3xl">
             {[
               { id: 'dashboard', icon: Logo, label: translations[lang].nav.lab },
               { id: 'calendar', icon: Activity, label: translations[lang].nav.trends },
@@ -245,46 +246,41 @@ const App: React.FC = () => {
               { id: 'profile', icon: User, label: translations[lang].nav.settings }
             ].map((nav) => {
               const isActive = activeView === nav.id;
-              const iconColor = isActive ? (accentColor === 'rose' ? '#fb7185' : '#818cf8') : '#64748b';
+              const iconColor = isActive ? (accentColor === 'rose' ? '#fb7185' : '#818cf8') : '#475569';
               
               return (
                 <button 
                   key={nav.id} 
                   onClick={() => setActiveView(nav.id as ViewType)} 
-                  className={`flex-1 py-4 flex flex-col items-center gap-1 transition-all active:scale-95 ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}
+                  className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${isActive ? 'text-white' : 'text-slate-500'}`}
                 >
                   <motion.div
                     animate={isActive && !staticMode ? {
-                      y: [0, -6, 0],
-                      scale: [1, 1.1, 1],
+                      y: [0, -4, 0],
+                      scale: [1, 1.05, 1],
                     } : { y: 0, scale: 1 }}
                     transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                    className="relative"
+                    className="relative flex items-center justify-center"
                   >
                     <SpatialIcon 
                       icon={nav.icon} 
-                      size={24} 
+                      size={22} 
                       animated={isActive && !staticMode} 
                       threeD={threeDEnabled} 
                       color={iconColor}
                     />
                     {isActive && !staticMode && (
                       <motion.div
-                        layoutId="nav-glow"
-                        className="absolute inset-0 blur-xl opacity-40 rounded-full"
+                        layoutId="nav-glow-indicator"
+                        className="absolute -bottom-1 w-1 h-1 rounded-full blur-[2px]"
                         style={{ backgroundColor: iconColor }}
-                        animate={{ scale: [1, 1.5, 1] }}
-                        transition={{ repeat: Infinity, duration: 4 }}
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ repeat: Infinity, duration: 2 }}
                       />
                     )}
                   </motion.div>
                   <motion.span 
-                    animate={isActive && !staticMode ? { 
-                      opacity: [0.6, 1, 0.6],
-                      letterSpacing: ["0.2em", "0.3em", "0.2em"]
-                    } : {}}
-                    transition={{ repeat: Infinity, duration: 4 }}
-                    className={`text-[8px] font-black uppercase tracking-[0.2em] transition-colors ${isActive ? 'text-indigo-400' : 'text-slate-500'}`}
+                    className={`text-[8px] font-black transition-colors tracking-[0.25em] ${isActive ? (accentColor === 'rose' ? 'text-rose-400' : 'text-indigo-400') : 'text-slate-600'}`}
                   >
                     {nav.label}
                   </motion.span>
@@ -294,6 +290,7 @@ const App: React.FC = () => {
           </div>
         </nav>
       )}
+
       {isDataEntryOpen && (
         <Suspense fallback={null}>
           <DataEntry onClose={() => setIsDataEntryOpen(false)} onSave={(r) => { setCurrentRecord(r); setHistory(prev => [r, ...prev]); setIsDataEntryOpen(false); }} />

@@ -2,7 +2,7 @@ export type Language = 'en' | 'zh' | 'de' | 'fr';
 
 export const translations = {
   en: {
-    nav: { lab: 'Lab', trends: 'Trends', insights: 'Insights', settings: 'Settings' },
+    nav: { lab: 'lab', trends: 'TRENDS', insights: 'INSIGHTS', settings: 'SETTINGS' },
     dashboard: {
       neuralActive: 'Neural Network Active',
       liveLink: 'Live Link',
@@ -132,7 +132,7 @@ export const translations = {
     }
   },
   zh: {
-    nav: { lab: '实验室', trends: '趋势', insights: '洞察', settings: '设置' },
+    nav: { lab: 'lab', trends: 'TRENDS', insights: 'INSIGHTS', settings: 'SETTINGS' },
     dashboard: {
       neuralActive: '神经系统活跃中',
       liveLink: '实时链路',
