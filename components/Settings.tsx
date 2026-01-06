@@ -210,11 +210,11 @@ export const Settings: React.FC<SettingsProps> = ({
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">DuitNow / TNG</p>
-                        <p className="text-sm font-mono font-bold text-white">{t.duitNowId}</p>
+                        <p className="text-sm font-mono font-bold text-white">+60 187807388</p>
                       </div>
                     </div>
                     <button 
-                      onClick={() => handleCopy(t.duitNowId, 'tng')}
+                      onClick={() => handleCopy('+60 187807388', 'tng')}
                       className={`p-2.5 rounded-xl transition-all ${copyStatus === 'tng' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-400 hover:text-indigo-400'}`}
                     >
                       {copyStatus === 'tng' ? <CheckCircle2 size={18} /> : <Copy size={18} />}
@@ -229,24 +229,21 @@ export const Settings: React.FC<SettingsProps> = ({
                       </div>
                       <div className="space-y-0.5">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">PayPal</p>
-                        <p className="text-sm font-mono font-bold text-white">{t.paypalId}</p>
+                        <p className="text-sm font-mono font-bold text-white">Vyncuslim vyncuslim</p>
                       </div>
                     </div>
                     <button 
-                      onClick={() => handleCopy(t.paypalId, 'paypal')}
+                      onClick={() => handleCopy('Vyncuslim vyncuslim', 'paypal')}
                       className={`p-2.5 rounded-xl transition-all ${copyStatus === 'paypal' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-400 hover:text-indigo-400'}`}
                     >
                       {copyStatus === 'paypal' ? <CheckCircle2 size={18} /> : <Copy size={18} />}
                     </button>
                   </div>
                   
-                  {/* PayPal QR Visual Representation (Textual/Iconic) */}
+                  {/* PayPal Link */}
                   <div className="flex flex-col items-center gap-3 pt-2">
-                    <div className="w-24 h-24 bg-white p-2 rounded-xl flex items-center justify-center shadow-lg">
-                      <QrCode size={64} className="text-slate-900" />
-                    </div>
                     <a 
-                      href={t.paypalLink} 
+                      href="https://paypal.me/vyncuslim" 
                       target="_blank" 
                       className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-colors"
                     >
@@ -267,7 +264,7 @@ export const Settings: React.FC<SettingsProps> = ({
         )}
       </AnimatePresence>
 
-      {/* Logout Confirmation Modal */}
+      {/* Logout Confirmation */}
       <AnimatePresence>
         {showLogoutConfirm && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
@@ -275,7 +272,7 @@ export const Settings: React.FC<SettingsProps> = ({
               initial={{ scale: 0.9, opacity: 0, y: 20 }} 
               animate={{ scale: 1, opacity: 1, y: 0 }} 
               exit={{ scale: 0.9, opacity: 0, y: 20 }} 
-              className="w-full max-sm"
+              className="w-full max-w-sm"
             >
               <GlassCard className="p-10 text-center border-rose-500/40 space-y-8 shadow-[0_0_100px_rgba(225,29,72,0.1)]">
                 <div className="mx-auto w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30">

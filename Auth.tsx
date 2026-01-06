@@ -57,14 +57,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   const handleInjectKey = () => {
     const cleanKey = apiKeyInput.trim();
     if (!cleanKey || cleanKey.length < 20) {
-      setLocalError(t.invalidKey);
+      setLocalError(lang === 'zh' ? '密钥无效：通常包含 20+ 字符' : 'Invalid Key: API keys are usually 20+ characters.');
       return;
     }
 
     setIsInjecting(true);
     setLocalError(null);
 
-    // Simulate a secure handshake
     setTimeout(() => {
       try {
         if (!(window as any).process) (window as any).process = { env: {} };
@@ -80,7 +79,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         setIsKeyInjected(true);
         setIsInjecting(false);
       } catch (err) {
-        setLocalError("Injection failure in sandbox environment.");
+        setLocalError("Handshake failure.");
         setIsInjecting(false);
       }
     }, 600);
@@ -151,7 +150,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
           <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
 
-          {/* API Key Management */}
+          {/* AI Provider Toggle */}
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
               <button 
@@ -170,12 +169,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               </button>
             </div>
 
+            {/* Key Injection Field */}
             <div className={`relative rounded-3xl border transition-all duration-500 p-1 flex flex-col gap-2 bg-black/40 ${isKeyInjected ? 'border-emerald-500/30' : 'border-white/10 focus-within:border-indigo-500/50'}`}>
               <div className="flex items-center justify-between px-4 py-2">
                 <div className="flex items-center gap-2">
                   <div className={`w-1.5 h-1.5 rounded-full ${isKeyInjected ? 'bg-emerald-500' : 'bg-indigo-500 animate-pulse'}`} />
                   <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-400">
-                    {isKeyInjected ? `${provider.toUpperCase()} LINKED` : t.awaitingKey}
+                    {isKeyInjected ? `${provider.toUpperCase()} LINKED` : (lang === 'zh' ? '等待密钥注入' : 'Awaiting API Key')}
                   </span>
                 </div>
                 {isKeyInjected && (
@@ -209,12 +209,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                   className={`m-1 py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-lg ${provider === 'openai' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}
                 >
                   {isInjecting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                  {t.activateEngine}
+                  {isInjecting ? 'Authenticating...' : (lang === 'zh' ? '激活 AI 引擎' : 'Activate AI Engine')}
                 </button>
               ) : (
                 <div className="m-1 py-4 bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest">
                   <CheckCircle2 size={16} />
-                  {t.engineReady}
+                  {lang === 'zh' ? '引擎已就绪' : 'Engine Ready'}
                 </div>
               )}
             </div>
@@ -227,7 +227,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               className={`w-full py-5 rounded-[2rem] flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest transition-all shadow-2xl ${!isKeyInjected ? 'opacity-30 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
             >
               {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Cpu size={20} className="text-indigo-600" />}
-              {t.connect}
+              {lang === 'en' ? 'Connect Google Fit' : '连接 Google Fit'}
             </button>
             
             <button 
@@ -235,7 +235,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               className="w-full py-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-white hover:bg-white/10 font-black text-[10px] uppercase tracking-widest transition-all"
             >
               <Zap size={14} className="text-indigo-400" />
-              {t.guest} <ArrowRight size={12} className="ml-1" />
+              {lang === 'en' ? 'Virtual Lab' : '进入虚拟实验室'} <ArrowRight size={12} className="ml-1" />
             </button>
           </div>
         </div>
@@ -254,18 +254,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
       <footer className="mt-12 flex flex-col items-center gap-4 opacity-50 hover:opacity-100 transition-opacity pb-8">
         <div className="flex items-center gap-6">
-          <button 
-            onClick={() => onNavigate?.('privacy')} 
+          <a 
+            href="/privacy" 
+            target="_blank"
             className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
           >
-            {t.privacyPolicy}
-          </button>
-          <button 
-            onClick={() => onNavigate?.('terms')} 
+            {lang === 'zh' ? '隐私政策' : 'Privacy Policy'}
+          </a>
+          <a 
+            href="/terms" 
+            target="_blank"
             className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
           >
-            {t.termsOfService}
-          </button>
+            {lang === 'zh' ? '服务条款' : 'Terms of Service'}
+          </a>
           <span className="text-[10px] font-bold text-slate-600">
             © 2026 SomnoAI Digital Sleep Lab
           </span>
