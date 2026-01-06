@@ -1,13 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Shield, LogOut, ChevronRight, AlertTriangle, Languages as LangIcon, 
   Heart, Coffee, ExternalLink, QrCode, Copy, Key, Globe2, Smartphone, 
   X, FileText, Sparkles, Globe, CreditCard, Stethoscope, FlaskConical, 
-  RefreshCw, Wallet, Info
+  RefreshCw, Wallet, Info, Trash2, Cpu, Zap, Terminal
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
-import { ViewType, ThemeMode, AccentColor } from '../types.ts';
+import { ViewType, ThemeMode, AccentColor, AIProvider } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SpatialIcon } from './SpatialIcon.tsx';
 
@@ -38,55 +39,16 @@ export const Settings: React.FC<SettingsProps> = ({
   const t = translations[lang].settings;
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [copyToast, setCopyToast] = useState<string | null>(null);
-  const [showThankYou, setShowThankYou] = useState(false);
-  const [showPaypalQR, setShowPaypalQR] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<AIProvider>(() => (localStorage.getItem('somno_ai_provider') as AIProvider) || 'gemini');
 
   useEffect(() => {
-    const initTranslate = () => {
-      const win = window as any;
-      if (win.google && win.google.translate && win.google.translate.TranslateElement) {
-        if (!document.querySelector('.goog-te-gadget')) {
-          win.googleTranslateElementInit();
-        }
-      }
-    };
-    const timer = setTimeout(initTranslate, 500);
-    return () => clearTimeout(timer);
-  }, []);
+    localStorage.setItem('somno_ai_provider', activeProvider);
+  }, [activeProvider]);
 
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    setCopyToast(`${label} ${translations[lang].settings.copySuccess}`);
-    setTimeout(() => setCopyToast(null), 2000);
+  const handleConfirmLogout = () => {
+    onLogout();
+    setShowLogoutConfirm(false);
   };
-
-  const SettingItem = ({ icon: Icon, label, value, onClick, badge, color = "indigo", isLoading = false }: any) => (
-    <button 
-      onClick={onClick}
-      disabled={isLoading}
-      className="w-full flex items-center justify-between py-5 px-6 group transition-all active:scale-[0.98] border-b border-white/5 last:border-0 disabled:opacity-50"
-    >
-      <div className="flex items-center gap-5">
-        <div className={`p-3 rounded-2xl bg-${color}-500/10 text-${color}-400 group-hover:scale-110 transition-transform`}>
-          {isLoading ? <RefreshCw size={20} className="animate-spin" /> : <Icon size={20} />}
-        </div>
-        <div className="text-left">
-          <p className="font-bold text-slate-100 group-hover:text-white transition-colors">{label}</p>
-          <div className="flex items-center gap-2">
-            <p className="text-[10px] font-mono font-bold uppercase tracking-widest text-slate-400">{value}</p>
-            {badge && (
-              <span className="px-1.5 py-0.5 bg-indigo-500/20 text-indigo-400 text-[8px] font-black rounded border border-indigo-500/20">
-                {badge}
-              </span>
-            )}
-          </div>
-        </div>
-      </div>
-      <ChevronRight size={16} className="text-slate-400 group-hover:text-indigo-400 group-hover:translate-x-1 transition-all" />
-    </button>
-  );
-
-  const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent(t.paypalLink)}&bgcolor=ffffff&color=000000&margin=2&ecc=H`;
 
   return (
     <div className="space-y-10 pb-32 animate-in fade-in slide-in-from-bottom-6 duration-700">
@@ -95,27 +57,39 @@ export const Settings: React.FC<SettingsProps> = ({
         <p className="text-slate-400 text-[10px] font-black uppercase tracking-[0.3em]">{t.subtitle}</p>
       </header>
 
-      {/* Experimental & Medical Disclaimer Section */}
-      <GlassCard className="p-8 space-y-4 border-rose-500/30 bg-rose-500/5 overflow-hidden relative">
-        <div className="absolute -top-4 -right-4 opacity-5 pointer-events-none rotate-12" aria-hidden="true">
-          <AlertTriangle size={120} />
+      {/* AI Engine Settings */}
+      <div className="space-y-4">
+        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
+          <Cpu size={14} className="text-indigo-400" />
+          AI ENGINE PREFERENCE
+        </h3>
+        <div className="grid grid-cols-2 gap-3">
+          <button 
+            type="button"
+            onClick={() => setActiveProvider('gemini')}
+            className={`p-5 rounded-3xl border transition-all text-left flex flex-col gap-2 relative overflow-hidden ${activeProvider === 'gemini' ? 'bg-indigo-500/10 border-indigo-500/40 shadow-lg' : 'bg-white/5 border-white/10 opacity-40 grayscale'}`}
+          >
+            <Terminal size={20} className="text-indigo-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-white">Google Gemini</span>
+            <span className="text-[8px] text-slate-500 font-bold leading-tight">Advanced multimodal research engine.</span>
+            {activeProvider === 'gemini' && (
+              <motion.div layoutId="active-indicator" className="absolute top-3 right-3 w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+            )}
+          </button>
+          <button 
+            type="button"
+            onClick={() => setActiveProvider('openai')}
+            className={`p-5 rounded-3xl border transition-all text-left flex flex-col gap-2 relative overflow-hidden ${activeProvider === 'openai' ? 'bg-emerald-500/10 border-emerald-500/40 shadow-lg' : 'bg-white/5 border-white/10 opacity-40 grayscale'}`}
+          >
+            <Zap size={20} className="text-emerald-400" />
+            <span className="text-[10px] font-black uppercase tracking-widest text-white">OpenAI GPT</span>
+            <span className="text-[8px] text-slate-500 font-bold leading-tight">High-precision reasoning alternative.</span>
+            {activeProvider === 'openai' && (
+              <motion.div layoutId="active-indicator" className="absolute top-3 right-3 w-1.5 h-1.5 bg-emerald-500 rounded-full" />
+            )}
+          </button>
         </div>
-        <div className="flex items-center gap-3 text-rose-400">
-          <Stethoscope size={20} />
-          <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">
-            {lang === 'zh' ? '实验性环境与医疗免责声明' : 'EXPERIMENTAL STATUS & MEDICAL DISCLAIMER'}
-          </h3>
-        </div>
-        <p className="text-xs text-slate-300 leading-relaxed font-medium">
-          {lang === 'zh' 
-            ? 'SomnoAI 是一个实验性数字健康实验室。本平台提供的所有 AI 洞察、生理评分和建议仅供教育和参考，不构成任何医疗诊断或建议。本平台并非医疗服务。在使用本平台前，请务必咨询医疗专业人员。' 
-            : 'SomnoAI is an experimental digital health laboratory. All AI insights, physiological scores, and recommendations provided are for educational and informational purposes only and do not constitute medical advice or diagnosis. This platform is NOT a medical service. Always consult a medical professional before taking action based on laboratory results.'}
-        </p>
-        <div className="flex items-center gap-2 pt-2 text-[9px] font-bold text-rose-500/60 uppercase tracking-widest">
-           <FlaskConical size={12} />
-           {lang === 'zh' ? '非医疗设备 • 仅供研究使用' : 'NON-MEDICAL DEVICE • FOR RESEARCH ONLY'}
-        </div>
-      </GlassCard>
+      </div>
 
       {/* Language Switcher */}
       <div className="space-y-4">
@@ -127,8 +101,9 @@ export const Settings: React.FC<SettingsProps> = ({
           {(['en', 'zh', 'de', 'fr'] as Language[]).map((l) => (
             <GlassCard key={l} className="p-0 overflow-hidden">
               <button
+                type="button"
                 onClick={() => onLanguageChange(l)}
-                className={`w-full py-4 text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-[inset_0_0_20px_rgba(0,0,0,0.3)]' : 'text-slate-400 hover:text-slate-200'}`}
+                className={`w-full py-4 text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-400 hover:text-slate-200'}`}
               >
                 {l === 'en' ? 'English' : l === 'zh' ? '中文' : l === 'de' ? 'Deutsch' : 'Français'}
               </button>
@@ -137,248 +112,59 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </div>
 
-      {/* PayPal & Support Lab Section */}
-      <div className="space-y-4">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
-          <Heart size={14} className="text-rose-400" />
-          {t.funding}
-        </h3>
-        <GlassCard className="p-8 space-y-6 border-indigo-500/20">
-          <div className="flex items-center gap-5">
-            <div className="p-4 bg-rose-500/10 rounded-[2rem] text-rose-400">
-              <Coffee size={32} />
-            </div>
-            <div>
-              <p className="font-bold text-slate-100 text-lg">{t.coffee}</p>
-              <p className="text-xs text-slate-400 leading-relaxed mt-1">{t.coffeeDesc}</p>
-            </div>
-          </div>
-
-          <div className="p-4 bg-slate-900/60 border border-white/5 rounded-2xl">
-            <p className="text-[10px] text-slate-500 italic leading-relaxed">
-              {t.fundingDisclaimer}
-            </p>
-          </div>
-
-          {/* PayPal Integration Area */}
-          <div className="space-y-4">
-            <div className="p-6 bg-sky-500/5 border border-sky-500/20 rounded-3xl space-y-4">
-              <div className="flex items-center gap-4">
-                <div className="p-2.5 bg-sky-500/20 rounded-xl">
-                  <CreditCard size={20} className="text-sky-400" />
-                </div>
-                <div className="text-left">
-                  <p className="text-xs font-black uppercase tracking-widest text-slate-200">PayPal Profile</p>
-                  <p className="text-[10px] text-slate-500 font-mono italic">Support via PayPal.me</p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-3">
-                <a 
-                  href={t.paypalLink}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="py-3 bg-sky-600 hover:bg-sky-500 text-white rounded-xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 shadow-lg"
-                >
-                  <ExternalLink size={14} />
-                  {lang === 'zh' ? '赞助链接' : 'Donate Link'}
-                </a>
-                <button 
-                  onClick={() => setShowPaypalQR(true)}
-                  className="py-3 bg-white/5 border border-white/10 text-slate-300 rounded-xl flex items-center justify-center gap-2 font-black text-[9px] uppercase tracking-widest transition-all hover:bg-white/10 active:scale-95"
-                >
-                  <QrCode size={14} />
-                  {lang === 'zh' ? '二维码赞助' : 'QR Code'}
-                </button>
-              </div>
-            </div>
-
-            {/* Local Methods */}
-            <div className="grid grid-cols-1 gap-3">
-              <button 
-                onClick={() => handleCopy(t.duitNowId, 'DuitNow')}
-                className="w-full p-5 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <Smartphone size={20} className="text-indigo-400" />
-                  <div className="text-left">
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-200">DuitNow ID</p>
-                    <p className="text-md font-black font-mono tracking-tight text-white">{t.duitNowId}</p>
-                  </div>
-                </div>
-                <Copy size={16} className="text-slate-400 group-hover:text-indigo-400" />
-              </button>
-
-              <button 
-                onClick={() => handleCopy(t.tngId, 'TNG')}
-                className="w-full p-5 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-between group active:scale-[0.98] transition-all"
-              >
-                <div className="flex items-center gap-4">
-                  <Wallet size={20} className="text-sky-400" />
-                  <div className="text-left">
-                    <p className="text-xs font-black uppercase tracking-widest text-slate-200">TNG (Phone)</p>
-                    <p className="text-md font-black font-mono tracking-tight text-white">{t.tngId}</p>
-                  </div>
-                </div>
-                <Copy size={16} className="text-slate-400 group-hover:text-sky-400" />
-              </button>
-            </div>
-          </div>
-        </GlassCard>
-      </div>
-
-      {/* Google Translate Integration */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-4">
-          <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] flex items-center gap-2">
-            <Globe size={14} className="text-indigo-400" />
-            {lang === 'zh' ? '全域自动翻译' : 'Global Auto Translation'}
-          </h3>
-        </div>
-        <GlassCard className="p-6 border-indigo-500/20">
-          <div className="flex flex-col gap-5">
-            <div className="flex items-start gap-4">
-              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                <LangIcon size={20} />
-              </div>
-              <p className="text-[11px] text-slate-400 font-medium leading-relaxed">
-                {lang === 'zh' 
-                  ? '使用 Google Translate 引擎将整个实验室界面即时翻译成您喜欢的语言。' 
-                  : 'Use Google Translate to interpret the entire lab interface into your preferred language instantly.'}
-              </p>
-            </div>
-            <div id="google_translate_element" className="min-h-[46px] flex items-center justify-center p-2 bg-slate-950/40 rounded-2xl border border-white/5"></div>
-          </div>
-        </GlassCard>
-      </div>
-
-      {/* Legal & Docs */}
-      <div className="space-y-4">
-        <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] px-4 flex items-center gap-2">
-          <Shield size={14} className="text-indigo-400" />
-          {t.legal}
-        </h3>
-        <GlassCard className="overflow-hidden">
-          <SettingItem 
-            icon={Shield} 
-            label={t.privacy} 
-            value="v2026.01.05" 
-            onClick={() => onNavigate('privacy')}
-          />
-          <SettingItem 
-            icon={FileText} 
-            label={t.terms} 
-            value="v2026.01.05" 
-            onClick={() => onNavigate('terms')}
-          />
-        </GlassCard>
-      </div>
-
       <div className="pt-6">
         <button 
+          type="button"
           onClick={() => setShowLogoutConfirm(true)}
-          className="w-full py-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center gap-3 text-slate-400 hover:text-rose-400 transition-all font-black text-[10px] uppercase tracking-widest"
+          className="w-full py-6 bg-white/5 border border-white/10 rounded-[2.5rem] flex items-center justify-center gap-3 text-slate-400 hover:text-rose-400 transition-all font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-xl"
         >
           <LogOut size={16} />
           {t.logout}
         </button>
       </div>
 
-      {/* PayPal QR Modal (Matching provided image) */}
       <AnimatePresence>
-        {showPaypalQR && (
-          <div className="fixed inset-0 z-[400] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
+        {showLogoutConfirm && (
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
             <motion.div 
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} 
+              animate={{ scale: 1, opacity: 1, y: 0 }} 
+              exit={{ scale: 0.9, opacity: 0, y: 20 }} 
               className="w-full max-w-sm"
             >
-              <div className="bg-[#f1f4f8] rounded-[3.5rem] overflow-hidden shadow-[0_40px_100px_rgba(0,0,0,0.6)] flex flex-col items-center py-20 px-10 relative">
-                <button 
-                  onClick={() => setShowPaypalQR(false)}
-                  className="absolute top-10 right-10 p-2 text-slate-400 hover:text-slate-900 transition-colors"
-                >
-                  <X size={28} />
-                </button>
-
-                <h2 className="text-2xl font-bold text-slate-900 mb-12 tracking-tight">{t.paypalId}</h2>
-
-                <div className="bg-white p-8 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.08)] relative mb-12">
-                  <div className="w-52 h-52 bg-white flex items-center justify-center relative overflow-hidden">
-                    <img 
-                      src={qrCodeUrl} 
-                      alt="PayPal QR Code"
-                      className="w-full h-full object-contain"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                      <div className="bg-white p-2.5 rounded-2xl shadow-lg border border-slate-50">
-                        <svg width="24" height="24" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                           <path d="M12.5 5.5H21.5C25.5 5.5 28.5 8.5 28.5 12.5C28.5 16.5 25.5 19.5 21.5 19.5H16.5L15.5 26.5H9.5L12.5 5.5Z" fill="#003087" />
-                           <path d="M11 9.5H18.5C21.5 9.5 23.5 11.5 23.5 14.5C23.5 17.5 21.5 19.5 18.5 19.5H14.5L13.5 25.5H8.5L11 9.5Z" fill="#0070BA" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <p className="text-sm font-semibold text-slate-600 mb-12 text-center">
-                  Scan to pay {t.paypalId}
-                </p>
-
-                <div className="w-full space-y-4">
-                  <button 
-                    onClick={() => { window.open(t.paypalLink, '_blank'); }}
-                    className="w-full py-5 bg-[#0070ba] text-white rounded-2xl font-black text-[11px] uppercase tracking-[0.25em] shadow-xl hover:bg-[#005ea6] active:scale-[0.98] transition-all flex items-center justify-center gap-3"
-                  >
-                    <ExternalLink size={18} />
-                    {lang === 'zh' ? '在线赞助' : 'VISIT PAYPAL.ME'}
-                  </button>
-                  <button 
-                    onClick={() => { handleCopy(t.paypalLink, 'PayPal'); setShowThankYou(true); }}
-                    className="w-full py-4 text-slate-400 font-bold text-[10px] uppercase tracking-widest hover:text-slate-900 transition-all"
-                  >
-                    {t.paypalCopy}
-                  </button>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Thank You Modal */}
-      <AnimatePresence>
-        {showThankYou && (
-          <div className="fixed inset-0 z-[500] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
-            <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} className="w-full max-w-sm">
-              <GlassCard className="p-10 text-center border-indigo-500/40 space-y-8">
-                <div className="mx-auto w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center border border-indigo-500/30">
-                  <Sparkles size={40} className="text-indigo-400" />
+              <GlassCard className="p-10 text-center border-rose-500/40 space-y-8 shadow-[0_0_100px_rgba(225,29,72,0.1)]">
+                <div className="mx-auto w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30">
+                  <AlertTriangle size={32} className="text-rose-500" />
                 </div>
                 <div className="space-y-3">
-                  <h2 className="text-2xl font-black italic text-white tracking-tighter">{t.thankYouTitle}</h2>
-                  <p className="text-sm text-slate-400 leading-relaxed font-medium">
-                    {t.thankYouMsg}
+                  <h2 className="text-xl font-black italic text-white tracking-tighter">
+                    {lang === 'zh' ? '确认注销并重载？' : 'Sign Out & Reload?'}
+                  </h2>
+                  <p className="text-xs text-slate-400 leading-relaxed font-medium">
+                    {lang === 'zh' 
+                      ? '为了您的隐私，注销操作将永久清除所有本地缓存的生理指标和 AI 洞察流。' 
+                      : 'For your privacy, signing out will permanently purge all local biometric caches and AI insight streams.'}
                   </p>
                 </div>
-                <button 
-                  onClick={() => setShowThankYou(false)}
-                  className="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl hover:bg-indigo-500 transition-all"
-                >
-                  {t.closeReceipt}
-                </button>
+                <div className="flex flex-col gap-3">
+                  <button 
+                    type="button"
+                    onClick={handleConfirmLogout} 
+                    className="w-full py-4 bg-rose-600 hover:bg-rose-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl transition-all active:scale-95"
+                  >
+                    {lang === 'zh' ? '确认注销' : 'CONFIRM LOGOUT'}
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => setShowLogoutConfirm(false)} 
+                    className="w-full py-4 bg-white/5 text-slate-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all hover:bg-white/10"
+                  >
+                    {lang === 'zh' ? '取消' : 'CANCEL'}
+                  </button>
+                </div>
               </GlassCard>
             </motion.div>
           </div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {copyToast && (
-          <motion.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="fixed bottom-32 left-1/2 -translate-x-1/2 z-[300] px-6 py-3 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest">
-            {copyToast}
-          </motion.div>
         )}
       </AnimatePresence>
     </div>

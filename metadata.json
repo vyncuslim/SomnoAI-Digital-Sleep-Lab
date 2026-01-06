@@ -1,6 +1,6 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
-  "description": "SomnoAI Digital Sleep Lab fuses physiological monitoring, deep AI insights, and privacy-first science for comprehensive sleep mastery. 融合生理指标监控与 Gemini AI 洞察，为您提供数字化的睡眠实验分析。",
+  "description": "SomnoAI Digital Sleep Lab fuses physiological monitoring, deep AI insights, and privacy-first science for comprehensive sleep mastery. ADVANCED BIO-DIGITAL LABORATORY.",
   "requestFramePermissions": [
     "microphone"
   ]

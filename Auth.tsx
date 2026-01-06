@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef } from 'react';
 import { 
   ShieldCheck, Loader2, ArrowRight, TriangleAlert, Lock, 
   Terminal, Sparkles, Fingerprint, Network, Eye, EyeOff, 
-  RefreshCw, Key, Shield, ChevronRight, Globe, CheckCircle2
+  RefreshCw, Key, Shield, ChevronRight, Globe, CheckCircle2,
+  Cpu, Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
@@ -11,6 +12,7 @@ import { googleFit } from './services/googleFitService.ts';
 import { Logo } from './components/Logo.tsx';
 import { Language } from './services/i18n.ts';
 import { SpatialIcon } from './components/SpatialIcon.tsx';
+import { AIProvider } from './types.ts';
 
 interface AuthProps {
   lang: Language;
@@ -32,55 +34,59 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [apiKeyInput, setApiKeyInput] = useState('');
   const [showKey, setShowKey] = useState(false);
+  const [provider, setProvider] = useState<AIProvider>(() => (localStorage.getItem('somno_ai_provider') as AIProvider) || 'gemini');
   const [isKeyInjected, setIsKeyInjected] = useState(false);
   const [isInjecting, setIsInjecting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    // 检查初始环境变量
-    const existingKey = (window as any).process?.env?.API_KEY || process.env.API_KEY;
-    if (existingKey && existingKey.length > 20) {
+    // Check initial environment variables
+    const geminiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY;
+    const openaiKey = (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
+    
+    if (provider === 'gemini' && geminiKey?.length > 20) {
       setIsKeyInjected(true);
-      setApiKeyInput(existingKey);
+      setApiKeyInput(geminiKey);
+    } else if (provider === 'openai' && openaiKey?.length > 20) {
+      setIsKeyInjected(true);
+      setApiKeyInput(openaiKey);
     }
     
-    // 自动聚焦
+    // Auto focus
     if (!isKeyInjected) {
       setTimeout(() => inputRef.current?.focus(), 500);
     }
     
     googleFit.ensureClientInitialized().catch(() => {});
-  }, []);
+  }, [provider]);
 
   const handleInjectKey = () => {
-    // 移除点击长度限制，在函数内部校验
-    if (!apiKeyInput.trim() || apiKeyInput.trim().length < 20) {
-      setLocalError(lang === 'zh' ? "密钥无效：通常 Gemini API 密钥应至少包含 20 个字符" : "Invalid Key: Gemini API keys are usually 20+ characters.");
+    const cleanKey = apiKeyInput.trim();
+    if (!cleanKey || cleanKey.length < 20) {
+      setLocalError(lang === 'zh' ? "密钥无效：通常 API 密钥应至少包含 20 个字符" : "Invalid Key: API keys are usually 20+ characters.");
       return;
     }
 
     setIsInjecting(true);
     setLocalError(null);
 
-    // 缩短反馈时间，确保响应感
     setTimeout(() => {
       try {
-        const cleanKey = apiKeyInput.trim();
-        
-        // 确保全局变量被注入
         if (!(window as any).process) (window as any).process = { env: {} };
         if (!(window as any).process.env) (window as any).process.env = {};
-        (window as any).process.env.API_KEY = cleanKey;
         
-        // 双重注入
-        try { (process.env as any).API_KEY = cleanKey; } catch(e) {}
-
+        if (provider === 'openai') {
+          (window as any).process.env.OPENAI_API_KEY = cleanKey;
+        } else {
+          (window as any).process.env.API_KEY = cleanKey;
+        }
+        
+        localStorage.setItem('somno_ai_provider', provider);
         setIsKeyInjected(true);
         setIsInjecting(false);
-        setLocalError(null);
       } catch (err) {
-        setLocalError("Handshake failure: environment restricted.");
+        setLocalError("Injection failed: internal error.");
         setIsInjecting(false);
       }
     }, 400);
@@ -90,62 +96,81 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     setIsKeyInjected(false);
     setApiKeyInput('');
     setLocalError(null);
-    if ((window as any).process?.env) (window as any).process.env.API_KEY = '';
+    if (provider === 'openai') {
+      if ((window as any).process?.env) (window as any).process.env.OPENAI_API_KEY = '';
+    } else {
+      if ((window as any).process?.env) (window as any).process.env.API_KEY = '';
+    }
     setTimeout(() => inputRef.current?.focus(), 100);
   };
 
   const handleGoogleLogin = async () => {
     if (!isKeyInjected) return;
-
     setIsLoggingIn(true);
     setLocalError(null);
-
     try {
       await googleFit.ensureClientInitialized();
       const token = await googleFit.authorize(true); 
       if (token) onLogin();
     } catch (error: any) {
-      let msg = error.message || "Auth Error";
-      if (msg.includes("popup_closed")) msg = lang === 'zh' ? "授权窗口被关闭" : "Popup closed";
-      setLocalError(msg);
+      setLocalError(error.message || "Auth Error");
     } finally {
       setIsLoggingIn(false);
     }
   };
 
+  const toggleProvider = (p: AIProvider) => {
+    if (isKeyInjected) return;
+    setProvider(p);
+    setApiKeyInput('');
+    setLocalError(null);
+  };
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-start py-12 px-6 bg-[#01040a] relative overflow-hidden">
-      {/* 装饰层 */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1200px] h-[600px] bg-indigo-500/10 rounded-full blur-[120px] pointer-events-none" />
 
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.9 }} 
-        animate={{ opacity: 1, scale: 1 }} 
-        className="w-full max-w-2xl space-y-4 text-center mb-10 relative z-10"
-      >
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl space-y-4 text-center mb-10 relative z-10">
         <div className="flex justify-center mb-4">
            <Logo size={80} animated={!isKeyInjected} threeD />
         </div>
         <div className="space-y-1">
           <h1 className={`${lang === 'zh' ? 'text-4xl' : 'text-5xl'} font-black tracking-tighter text-white italic drop-shadow-2xl`}>
-            SomnoAI <span className="text-indigo-400">实验终端</span>
+            SomnoAI <span className="text-indigo-400">{lang === 'zh' ? '数字化睡眠实验室' : 'Digital Sleep Lab'}</span>
           </h1>
           <div className="flex items-center justify-center gap-4 text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] opacity-60">
-            <span className="flex items-center gap-1.5"><Network size={12} /> Neural-v4</span>
-            <span className="flex items-center gap-1.5"><Shield size={12} /> Encrypted</span>
+            {lang === 'zh' ? '高级生物数字实验室' : 'ADVANCED BIO-DIGITAL LABORATORY'}
           </div>
         </div>
       </motion.div>
 
       <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-950/60 space-y-8 relative z-[100] shadow-2xl">
         <div className="space-y-6">
+          {/* Provider Toggle */}
+          <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
+            <button 
+              onClick={() => toggleProvider('gemini')}
+              disabled={isKeyInjected}
+              className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'gemini' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              Google Gemini
+            </button>
+            <button 
+              onClick={() => toggleProvider('openai')}
+              disabled={isKeyInjected}
+              className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'openai' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              OpenAI GPT
+            </button>
+          </div>
+
           <div className="flex items-center justify-between px-1">
             <div className="flex items-center gap-3">
               <div className={`p-2 rounded-xl border ${isKeyInjected ? 'bg-emerald-500/20 border-emerald-500/30 text-emerald-400' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400'}`}>
-                <Terminal size={16} />
+                {provider === 'gemini' ? <Terminal size={16} /> : <Zap size={16} />}
               </div>
               <h2 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">
-                {lang === 'zh' ? 'Gemini 引擎网关' : 'Gemini Engine Gateway'}
+                {provider === 'gemini' ? 'Gemini Gateway' : 'OpenAI Gateway'}
               </h2>
             </div>
             {isKeyInjected && (
@@ -159,7 +184,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             <div className="flex items-center px-4 py-2 opacity-50">
               <div className={`w-1.5 h-1.5 rounded-full mr-2 ${isKeyInjected ? 'bg-emerald-500' : 'bg-indigo-500 animate-pulse'}`} />
               <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-400">
-                {isKeyInjected ? 'Link Established' : 'Awaiting Encryption Key'}
+                {isKeyInjected ? `${provider.toUpperCase()} LINKED` : `Awaiting ${provider.toUpperCase()} Key`}
               </span>
             </div>
 
@@ -170,7 +195,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                 value={apiKeyInput}
                 onChange={(e) => setApiKeyInput(e.target.value)}
                 disabled={isKeyInjected}
-                placeholder={lang === 'zh' ? '粘贴 API Key...' : 'Paste API Key...'}
+                placeholder={provider === 'openai' ? 'sk-...' : 'AI API Key...'}
                 className="w-full bg-transparent border-none outline-none px-4 py-3 text-sm text-white placeholder:text-slate-700 font-mono select-text"
               />
               {!isKeyInjected && apiKeyInput && (
@@ -184,21 +209,21 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               <button 
                 onClick={handleInjectKey}
                 disabled={isInjecting}
-                className="m-1 py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-lg pointer-events-auto"
+                className={`m-1 py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-lg pointer-events-auto ${provider === 'openai' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}
               >
                 {isInjecting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                {isInjecting ? (lang === 'zh' ? '握手同步中...' : 'HANDSHAKING...') : (lang === 'zh' ? '激活神经引擎' : 'ACTIVATE ENGINE')}
+                {isInjecting ? 'Handshaking...' : 'Activate Engine'}
               </button>
             ) : (
               <div className="m-1 py-4 bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest">
                 <CheckCircle2 size={16} />
-                {lang === 'zh' ? '引擎已就绪' : 'Engine Ready'}
+                Engine Ready
               </div>
             )}
           </div>
 
           <div className="flex items-center justify-center gap-6">
-            <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[10px] font-bold text-indigo-400 flex items-center gap-1.5 hover:text-indigo-300">
+            <a href={provider === 'openai' ? "https://platform.openai.com/api-keys" : "https://aistudio.google.com/app/apikey"} target="_blank" className="text-[10px] font-bold text-indigo-400 flex items-center gap-1.5 hover:text-indigo-300">
               <Key size={12} /> {lang === 'zh' ? '获取密钥' : 'Get Key'}
             </a>
             <span className="w-1 h-1 bg-slate-800 rounded-full" />
@@ -218,35 +243,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <GoogleIcon />}
               {lang === 'zh' ? '同步生理指标流' : 'SYNC BIOMETRICS'}
             </button>
-            
-            <button onClick={onGuest} className="w-full py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-2 text-slate-500 hover:text-indigo-400 font-black text-[10px] uppercase tracking-widest transition-all group">
-              {lang === 'zh' ? '进入模拟实验室' : 'SIMULATION LAB'} <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
-            </button>
           </div>
         </div>
 
         <AnimatePresence>
           {localError && (
-            <motion.div 
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4 text-rose-400 text-xs font-bold shadow-xl"
-            >
+            <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4 text-rose-400 text-xs font-bold shadow-xl">
               <TriangleAlert size={18} className="shrink-0 mt-0.5" />
               <p>{localError}</p>
             </motion.div>
           )}
         </AnimatePresence>
       </GlassCard>
-
-      <footer className="mt-12 flex flex-col items-center gap-4 opacity-30 hover:opacity-100 transition-opacity">
-        <div className="flex items-center gap-6">
-          <button onClick={() => onNavigate?.('privacy')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">Privacy</button>
-          <button onClick={() => onNavigate?.('terms')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">Terms</button>
-        </div>
-        <p className="text-[8px] font-mono uppercase tracking-[0.4em] text-slate-600">© 2026 SOMNO LAB • EDGE COMPUTE ACTIVE</p>
-      </footer>
     </div>
   );
 };

@@ -61,7 +61,7 @@ export const translations = {
     },
     settings: {
       title: 'SomnoAI Digital Sleep Lab',
-      subtitle: 'Engine & Data Sync Preferences',
+      subtitle: 'ADVANCED BIO-DIGITAL LABORATORY',
       security: 'Security & Calculation',
       ecosystem: 'Health Ecosystem',
       support: 'Support & Legal',
@@ -191,8 +191,8 @@ export const translations = {
       sampling: '总采样样本'
     },
     settings: {
-      title: 'SomnoAI 数字化睡眠实验室',
-      subtitle: '内核引擎与数据同步首选项',
+      title: 'SomnoAI Digital Sleep Lab',
+      subtitle: 'ADVANCED BIO-DIGITAL LABORATORY',
       security: '系统安全与算力',
       ecosystem: '健康生态系统',
       support: '法律与文档',

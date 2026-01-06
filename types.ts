@@ -28,8 +28,8 @@ export interface SleepRecord {
 }
 
 export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'about';
-
 export type TimeRange = 'week' | 'month' | 'year';
+export type AIProvider = 'gemini' | 'openai';
 
 export interface ChatMessage {
   role: 'user' | 'assistant';
@@ -38,6 +38,5 @@ export interface ChatMessage {
 }
 
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
-
 export type ThemeMode = 'dark' | 'light';
 export type AccentColor = 'indigo' | 'emerald' | 'rose' | 'amber' | 'sky';

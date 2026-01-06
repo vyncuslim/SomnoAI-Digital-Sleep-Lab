@@ -9,9 +9,11 @@ import {
 } from 'lucide-react';
 import { getWeeklySummary } from '../services/geminiService.ts';
 import { motion } from 'framer-motion';
+import { Language } from '../services/i18n.ts';
 
 interface TrendsProps {
   history: SleepRecord[];
+  lang: Language;
 }
 
 const CustomTooltip = ({ active, payload, label }: any) => {
@@ -72,7 +74,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
-export const Trends: React.FC<TrendsProps> = ({ history }) => {
+export const Trends: React.FC<TrendsProps> = ({ history, lang }) => {
   const [range, setRange] = useState<TimeRange>('week');
   const [summary, setSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -100,7 +102,7 @@ export const Trends: React.FC<TrendsProps> = ({ history }) => {
     if (isGenerating || history.length < 2) return;
     setIsGenerating(true);
     try {
-      const report = await getWeeklySummary(history);
+      const report = await getWeeklySummary(history, lang);
       setSummary(report);
     } catch (e) {
       console.error(e);

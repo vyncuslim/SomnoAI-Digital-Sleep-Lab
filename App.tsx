@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Auth } from './Auth.tsx';
@@ -126,7 +127,7 @@ const App: React.FC = () => {
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
-    setHistory([]); // Reset history during sync to prevent confusion
+    setHistory([]); 
     try {
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
@@ -164,15 +165,29 @@ const App: React.FC = () => {
     generateMockData();
   };
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
+      // 彻底重置所有本地持久化状态
       googleFit.logout();
       setIsLoggedIn(false);
       setIsGuest(false);
+      setCurrentRecord(null);
+      setHistory([]);
+
       localStorage.removeItem('somno_last_sync');
       localStorage.removeItem('google_fit_token');
+      localStorage.removeItem('somno_ai_provider');
+      
+      // 清除全局变量引用
+      if ((window as any).process?.env) {
+        (window as any).process.env.API_KEY = '';
+        (window as any).process.env.OPENAI_API_KEY = '';
+      }
+      
       sessionStorage.clear();
-      window.location.href = window.location.origin;
+      
+      // 核心：强制页面硬重载以刷新整个 React 运行时环境
+      window.location.href = window.location.origin + window.location.pathname;
     } catch (e) {
       window.location.reload();
     }
@@ -221,7 +236,7 @@ const App: React.FC = () => {
         <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <Suspense fallback={<LoadingSpinner />}>
             {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
-            {activeView === 'calendar' && <Trends history={history} />}
+            {activeView === 'calendar' && <Trends history={history} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
             {activeView === 'profile' && (
               <Settings 
