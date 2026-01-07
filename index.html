@@ -28,22 +28,13 @@
     
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
     <meta name="description" content="Unlock the science of rest with SomnoAI Digital Sleep Lab. Integrate Google Fit biometrics with state-of-the-art Gemini AI to decode your sleep architecture.">
-    <meta name="keywords" content="SomnoAI, SomnoAI Digital Sleep Lab, AI Sleep Analysis, Digital Sleep Lab, Sleep Biometrics, Google Fit Sleep Sync, Gemini AI Health">
-    <meta name="author" content="SomnoAI Lab">
-
+    
     <link rel="manifest" href="manifest.json">
 
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="SomnoAI Digital Sleep Lab: Professional AI Sleep Analysis">
-    <meta property="og:description" content="Integrate Google Fit biometrics with Gemini AI to decode your sleep architecture. 100% private.">
-    <meta property="og:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/favicon.png">
-    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://esm.sh">
     
-    <link rel="preload" href="index.tsx" as="script" type="module" fetchpriority="high">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap&font-display=swap">
 
     <script src="https://cdn.tailwindcss.com" defer></script>
@@ -51,16 +42,18 @@
     <script>
         window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
         
-        // Loader timeout logic to handle network blocks
+        // 监控脚本加载
         window.addEventListener('load', function() {
             setTimeout(function() {
                 var forceBtn = document.getElementById('force-start-btn');
                 var diagMsg = document.getElementById('diagnostic-msg');
                 if (document.getElementById('page-loader')) {
                     if (forceBtn) forceBtn.style.display = 'block';
-                    if (diagMsg) diagMsg.innerHTML = '检测到脚本加载缓慢，可能是网络防火墙拦截。';
+                    if (diagMsg) {
+                        diagMsg.innerHTML = '<span style="color:#ef4444">检测到 SSL 证书冲突（如 Fortinet 防火墙）。</span><br/>请尝试点击“高级”并信任证书，或切换至移动网络。';
+                    }
                 }
-            }, 6000);
+            }, 8000);
         });
 
         function dismissLoader() {
@@ -91,6 +84,7 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
+            border-radius: 4px;
         }
 
         .initial-loader {
@@ -108,26 +102,26 @@
             transition: opacity 0.5s ease;
         }
         .initial-loader .logo-svg {
-            width: 80px; height: 80px;
+            width: 60px; height: 60px;
             animation: pulse-opacity 2s infinite ease-in-out;
             filter: drop-shadow(0 0 15px rgba(79, 70, 229, 0.5));
         }
         .initial-loader .text {
-            font-size: 0.65rem;
+            font-size: 0.6rem;
             text-transform: uppercase;
             letter-spacing: 0.4em;
-            color: #64748b;
+            color: #475569;
             font-weight: 800;
         }
         #force-start-btn {
             display: none;
-            margin-top: 20px;
-            padding: 10px 24px;
-            background: rgba(79, 70, 229, 0.2);
-            border: 1px solid rgba(79, 70, 229, 0.4);
-            border-radius: 12px;
+            margin-top: 24px;
+            padding: 12px 24px;
+            background: rgba(79, 70, 229, 0.1);
+            border: 1px solid rgba(79, 70, 229, 0.3);
+            border-radius: 8px;
             color: #818cf8;
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.2em;
@@ -136,11 +130,12 @@
         }
         #force-start-btn:hover { background: #4f46e5; color: white; }
         #diagnostic-msg {
-            font-size: 9px;
+            font-size: 10px;
             color: #475569;
             text-align: center;
-            max-width: 200px;
-            font-weight: 600;
+            max-width: 260px;
+            line-height: 1.6;
+            margin-top: 10px;
         }
 
         .grid-floor {
@@ -155,14 +150,13 @@
             transform-origin: center bottom;
             mask-image: linear-gradient(to top, black, transparent);
             pointer-events: none;
-            opacity: 0.5;
+            opacity: 0.4;
         }
     </style>
     <script type="importmap">
 {
   "imports": {
     "react": "https://esm.sh/react@18.3.1",
-    "react/": "https://esm.sh/react@18.3.1/",
     "react-dom": "https://esm.sh/react-dom@18.3.1",
     "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
     "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
@@ -170,9 +164,10 @@
     "lucide-react": "https://esm.sh/lucide-react@0.470.0?deps=react@18.3.1",
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
     "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
     "vite": "https://esm.sh/vite@^7.3.1",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
+    "react/": "https://esm.sh/react@^19.2.3/"
   }
 }
 </script>
@@ -182,12 +177,11 @@
         <div class="grid-floor" aria-hidden="true"></div>
     </div>
     <div id="root">
-        <div class="initial-loader" id="page-loader" role="status" aria-label="Starting SomnoAI Digital Sleep Lab">
+        <div class="initial-loader" id="page-loader" role="status">
             <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="moonGlowLoader" x1="20" y1="20" x2="80" y2="80">
                         <stop offset="0%" stop-color="#e0e7ff" />
-                        <stop offset="50%" stop-color="#818cf8" />
                         <stop offset="100%" stop-color="#4f46e5" />
                     </linearGradient>
                     <mask id="moonMaskLoader">
@@ -199,18 +193,11 @@
                     <circle cx="50" cy="50" r="35" fill="url(#moonGlowLoader)" />
                 </g>
             </svg>
-            <div class="text">SomnoAI Digital Sleep Lab</div>
-            <div id="diagnostic-msg"></div>
+            <div class="text">SomnoAI Lab</div>
+            <div id="diagnostic-msg">初始化安全链路...</div>
             <button id="force-start-btn" onclick="dismissLoader()">强制进入实验室</button>
         </div>
     </div>
-    
-    <footer class="crawler-footer" style="position:fixed;bottom:20px;width:100%;text-align:center;opacity:0.4;z-index:100;">
-        <a href="/privacy" style="color:#818cf8;font-size:11px;margin:0 12px;text-decoration:none;font-weight:700;text-transform:uppercase;">Privacy</a>
-        <a href="/terms" style="color:#818cf8;font-size:11px;margin:0 12px;text-decoration:none;font-weight:700;text-transform:uppercase;">Terms</a>
-        <span style="color:#475569;font-size:10px;font-weight:700;">© 2026 SomnoAI Lab</span>
-    </footer>
-
     <script type="module" src="index.tsx"></script>
 </body>
 </html>

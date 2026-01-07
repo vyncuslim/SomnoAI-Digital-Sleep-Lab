@@ -1,16 +1,11 @@
 
-import React, { useState, useEffect, useRef } from 'react';
-import { 
-  ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert, Shield, 
-  FileText, Github, Key, ExternalLink, Cpu, Lock, Sparkles, Terminal,
-  Eye, EyeOff, RefreshCw, CheckCircle2
-} from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ShieldCheck, Loader2, Info, ArrowRight, Zap, TriangleAlert, Shield, FileText, Github, Key, ExternalLink, Cpu, Lock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { googleFit } from './services/googleFitService.ts';
 import { Logo } from './components/Logo.tsx';
-import { Language, translations } from './services/i18n.ts';
-import { AIProvider } from './types.ts';
+import { Language } from './services/i18n.ts';
 
 // Fix: Use any cast to bypass broken library types for motion props
 const m = motion as any;
@@ -25,86 +20,14 @@ interface AuthProps {
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [provider, setProvider] = useState<AIProvider>(() => (localStorage.getItem('somno_ai_provider') as AIProvider) || 'gemini');
-  const [apiKeyInput, setApiKeyInput] = useState('');
-  const [showKey, setShowKey] = useState(false);
-  const [isInjecting, setIsInjecting] = useState(false);
-  const [isKeyInjected, setIsKeyInjected] = useState(false);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const t = translations[lang].auth;
 
   useEffect(() => {
     googleFit.ensureClientInitialized().catch(err => {
       console.warn("Auth: SDK Warming Postponed", err.message);
     });
-
-    const checkStoredKeys = () => {
-      const geminiKey = (window as any).process?.env?.API_KEY || process.env.API_KEY;
-      const openaiKey = (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
-
-      if (provider === 'gemini' && geminiKey?.length > 20) {
-        setIsKeyInjected(true);
-        setApiKeyInput(geminiKey);
-      } else if (provider === 'openai' && openaiKey?.length > 20) {
-        setIsKeyInjected(true);
-        setApiKeyInput(openaiKey);
-      } else {
-        setIsKeyInjected(false);
-        setApiKeyInput('');
-      }
-    };
-    
-    checkStoredKeys();
-  }, [provider]);
-
-  const handleInjectKey = () => {
-    const cleanKey = apiKeyInput.trim();
-    if (!cleanKey || cleanKey.length < 20) {
-      setLocalError(lang === 'zh' ? '密钥无效：通常包含 20+ 字符' : 'Invalid Key: API keys are usually 20+ characters.');
-      return;
-    }
-
-    setIsInjecting(true);
-    setLocalError(null);
-
-    setTimeout(() => {
-      try {
-        if (!(window as any).process) (window as any).process = { env: {} };
-        if (!(window as any).process.env) (window as any).process.env = {};
-        
-        if (provider === 'openai') {
-          (window as any).process.env.OPENAI_API_KEY = cleanKey;
-        } else {
-          (window as any).process.env.API_KEY = cleanKey;
-        }
-        
-        localStorage.setItem('somno_ai_provider', provider);
-        setIsKeyInjected(true);
-        setIsInjecting(false);
-      } catch (err) {
-        setLocalError("Handshake failure.");
-        setIsInjecting(false);
-      }
-    }, 600);
-  };
-
-  const handleResetKey = () => {
-    setIsKeyInjected(false);
-    setApiKeyInput('');
-    setLocalError(null);
-    if (provider === 'openai') {
-      if ((window as any).process?.env) (window as any).process.env.OPENAI_API_KEY = '';
-    } else {
-      if ((window as any).process?.env) (window as any).process.env.API_KEY = '';
-    }
-    setTimeout(() => inputRef.current?.focus(), 100);
-  };
+  }, []);
 
   const handleGoogleLogin = async () => {
-    if (!isKeyInjected) {
-      setLocalError(lang === 'zh' ? "请先激活 AI 引擎" : "Please activate AI Engine first");
-      return;
-    }
     setIsLoggingIn(true);
     setLocalError(null);
     try {
@@ -119,174 +42,76 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   };
 
   return (
-    <div 
-      className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden"
-      style={{ borderRadius: '4px' }}
-    >
-      {/* Background decoration */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden rounded-[4px]">
+      {/* 背景装饰 */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/5 rounded-full blur-[100px] pointer-events-none" />
       
-      <m.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-8 text-center mb-8 relative z-10">
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-sm space-y-6 text-center mb-8 relative z-10">
         <m.div 
-          animate={{ scale: [1, 1.05, 1], rotate: [0, 2, 0, -2, 0] }} 
+          animate={{ scale: [1, 1.05, 1] }} 
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-          className="inline-flex p-10 bg-indigo-600/5 rounded-[3.5rem] border border-indigo-500/10 shadow-[0_0_120px_rgba(79,70,229,0.15)]"
+          className="inline-flex p-8 bg-indigo-600/5 rounded-3xl border border-indigo-500/10 shadow-2xl"
         >
-          <Logo size={100} animated={true} />
+          <Logo size={80} animated={true} />
         </m.div>
-        <div className="space-y-4">
-          <h1 className="text-3xl font-black tracking-tighter text-white italic leading-tight">
-            SomnoAI <span className="text-indigo-400">Digital Sleep Lab</span>
+        <div className="space-y-3">
+          <h1 className="text-3xl font-black tracking-tighter text-white italic">
+            Somno <span className="text-indigo-400">Lab</span>
           </h1>
-          <p className="text-slate-500 font-bold uppercase text-[9px] tracking-[0.35em]">
-            ADVANCED BIO-DIGITAL LABORATORY
+          <p className="text-slate-500 font-bold uppercase text-[9px] tracking-[0.4em] opacity-60">
+            {lang === 'en' ? 'Neural Biometric System' : '数字睡眠神经映射系统'}
           </p>
         </div>
       </m.div>
 
-      <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-900/60 space-y-8 relative z-10">
+      <GlassCard className="w-full max-w-sm p-8 border-white/5 bg-slate-900/40 space-y-8 relative z-10 rounded-[4px]">
         <div className="space-y-6">
           <div className="space-y-4 text-center">
-            <p className="text-xs text-slate-400 leading-relaxed font-medium">
+            <p className="text-[11px] text-slate-400 leading-relaxed font-medium">
               {lang === 'zh' 
-                ? '它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。' 
-                : 'Integrating physiological monitoring, AI deep insights, and health advice for a comprehensive digital sleep lab experience.'}
+                ? '它融合生理指标监控与 AI 深度洞察，为您开启全方位的数字化睡眠实验。' 
+                : 'Integrating physiological monitoring with AI deep insights for your comprehensive digital sleep laboratory.'}
             </p>
           </div>
 
           <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/5 to-transparent" />
 
-          {/* AI Provider Toggle */}
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
-              <button 
-                onClick={() => setProvider('gemini')}
-                disabled={isKeyInjected}
-                className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'gemini' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                Google Gemini
-              </button>
-              <button 
-                onClick={() => setProvider('openai')}
-                disabled={isKeyInjected}
-                className={`py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${provider === 'openai' ? 'bg-emerald-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                OpenAI GPT
-              </button>
-            </div>
-
-            {/* Key Injection Field */}
-            <div className={`relative rounded-3xl border transition-all duration-500 p-1 flex flex-col gap-2 bg-black/40 ${isKeyInjected ? 'border-emerald-500/30' : 'border-white/10 focus-within:border-indigo-500/50'}`}>
-              <div className="flex items-center justify-between px-4 py-2">
-                <div className="flex items-center gap-2">
-                  <div className={`w-1.5 h-1.5 rounded-full ${isKeyInjected ? 'bg-emerald-500' : 'bg-indigo-500 animate-pulse'}`} />
-                  <span className="text-[8px] font-mono font-bold uppercase tracking-widest text-slate-400">
-                    {isKeyInjected ? `${provider.toUpperCase()} LINKED` : (lang === 'zh' ? '等待密钥注入' : 'Awaiting API Key')}
-                  </span>
-                </div>
-                {isKeyInjected && (
-                  <button onClick={handleResetKey} className="text-rose-500 hover:text-rose-400 transition-colors">
-                    <RefreshCw size={12} />
-                  </button>
-                )}
-              </div>
-
-              <div className="relative flex items-center">
-                <input 
-                  ref={inputRef}
-                  type={showKey ? "text" : "password"}
-                  value={apiKeyInput}
-                  onChange={(e) => setApiKeyInput(e.target.value)}
-                  disabled={isKeyInjected}
-                  placeholder={provider === 'openai' ? 'sk-...' : 'AI API Key...'}
-                  className="w-full bg-transparent border-none outline-none px-4 py-3 text-sm text-white placeholder:text-slate-700 font-mono"
-                />
-                {!isKeyInjected && apiKeyInput && (
-                  <button onClick={() => setShowKey(!showKey)} className="p-3 text-slate-500 hover:text-indigo-400">
-                    {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                  </button>
-                )}
-              </div>
-
-              {!isKeyInjected ? (
-                <button 
-                  onClick={handleInjectKey}
-                  disabled={isInjecting}
-                  className={`m-1 py-4 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-lg ${provider === 'openai' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}
-                >
-                  {isInjecting ? <Loader2 size={16} className="animate-spin" /> : <Sparkles size={16} />}
-                  {isInjecting ? 'Authenticating...' : (lang === 'zh' ? '激活 AI 引擎' : 'Activate AI Engine')}
-                </button>
-              ) : (
-                <div className="m-1 py-4 bg-emerald-500/20 border border-emerald-500/20 text-emerald-400 rounded-2xl flex items-center justify-center gap-2 font-black text-[10px] uppercase tracking-widest">
-                  <CheckCircle2 size={16} />
-                  {lang === 'zh' ? '引擎已就绪' : 'Engine Ready'}
-                </div>
-              )}
-            </div>
-          </div>
-
-          <div className="space-y-4 pt-2">
+          <div className="space-y-3">
             <button 
               onClick={handleGoogleLogin} 
-              disabled={isLoggingIn || !isKeyInjected} 
-              className={`w-full py-5 rounded-[2rem] flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest transition-all shadow-2xl ${!isKeyInjected ? 'opacity-30 cursor-not-allowed' : 'hover:scale-[1.02] active:scale-[0.98]'}`}
+              disabled={isLoggingIn} 
+              className="w-full py-4 rounded-[4px] flex items-center justify-center gap-3 bg-white text-slate-950 font-black text-xs uppercase tracking-widest hover:bg-slate-100 transition-all shadow-xl"
             >
-              {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Cpu size={20} className="text-indigo-600" />}
-              {lang === 'en' ? 'Connect Google Fit' : '连接 Google Fit'}
+              {isLoggingIn ? <Loader2 className="animate-spin" size={18} /> : <Cpu size={18} className="text-indigo-600" />}
+              {lang === 'en' ? 'Google Fit' : '连接 Google Fit'}
             </button>
             
             <button 
               onClick={onGuest} 
-              className="w-full py-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-white hover:bg-white/10 font-black text-[10px] uppercase tracking-widest transition-all"
+              className="w-full py-3 bg-white/5 border border-white/5 rounded-[4px] flex items-center justify-center gap-2 text-slate-500 hover:text-slate-300 font-black text-[9px] uppercase tracking-widest transition-all"
             >
-              <Zap size={14} className="text-indigo-400" />
-              {lang === 'en' ? 'Virtual Lab' : '进入虚拟实验室'} <ArrowRight size={12} className="ml-1" />
+              {lang === 'en' ? 'Virtual Lab' : '进入虚拟实验室'} <ArrowRight size={12} />
             </button>
           </div>
         </div>
 
         {localError && (
           <m.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-left flex gap-3 text-rose-300 text-[11px] font-bold"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            className="p-3 bg-rose-500/10 rounded-[4px] border border-rose-500/20 text-rose-300 text-[10px] font-bold"
           >
-            <TriangleAlert size={18} className="shrink-0" />
-            <p>{localError}</p>
+            <p className="flex gap-2"><TriangleAlert size={14} className="shrink-0" /> {localError}</p>
           </m.div>
         )}
       </GlassCard>
 
-      <footer className="mt-12 flex flex-col items-center gap-4 opacity-50 hover:opacity-100 transition-opacity pb-8">
-        <div className="flex items-center gap-6">
-          <a 
-            href="/privacy" 
-            target="_blank"
-            className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
-          >
-            {lang === 'zh' ? '隐私政策' : 'Privacy Policy'}
-          </a>
-          <a 
-            href="/terms" 
-            target="_blank"
-            className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
-          >
-            {lang === 'zh' ? '服务条款' : 'Terms of Service'}
-          </a>
-          <a 
-            href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" 
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-[10px] font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors flex items-center gap-1"
-          >
-            <Github size={12} />
-            GitHub
-          </a>
-          <span className="text-[10px] font-bold text-slate-600">
-            © 2026 SomnoAI Digital Sleep Lab
-          </span>
+      <footer className="mt-8 flex flex-col items-center gap-3 opacity-30 hover:opacity-100 transition-opacity">
+        <div className="flex items-center gap-4">
+          <button onClick={() => onNavigate?.('privacy')} className="text-[9px] font-black uppercase tracking-widest text-slate-400">Privacy</button>
+          <button onClick={() => onNavigate?.('terms')} className="text-[9px] font-black uppercase tracking-widest text-slate-400">Terms</button>
         </div>
+        <p className="text-[8px] font-mono uppercase tracking-[0.2em] text-slate-600">© 2026 Somno Lab</p>
       </footer>
     </div>
   );
