@@ -18,11 +18,9 @@ const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => 
 const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ default: m.Settings })));
 
 const LoadingSpinner = () => (
-  <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center" role="status">
+  <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
     <Loader2 size={40} className="animate-spin text-indigo-500 opacity-50" />
-    <p className="text-slate-500 font-black uppercase text-[9px] tracking-widest">
-      Synchronizing Stream...
-    </p>
+    <p className="text-slate-500 font-black uppercase text-[10px] tracking-widest">Processing Bio-Stream...</p>
   </div>
 );
 
@@ -46,10 +44,10 @@ const App: React.FC = () => {
       const loader = document.getElementById('page-loader');
       if (loader) {
         loader.style.opacity = '0';
-        setTimeout(() => loader.remove(), 500);
+        setTimeout(() => loader.remove(), 800);
       }
     };
-    const timer = setTimeout(removeLoader, 200);
+    const timer = setTimeout(removeLoader, 500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -60,17 +58,15 @@ const App: React.FC = () => {
     for (let i = 0; i < 7; i++) {
       const date = new Date(now);
       date.setDate(now.getDate() - i);
-      const score = 70 + Math.floor(Math.random() * 25);
-      const duration = 420 + Math.floor(Math.random() * 100);
       mockHistory.push({
         id: `mock-${i}`,
-        date: date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
-        score,
-        totalDuration: duration,
-        deepRatio: 22, remRatio: 20, efficiency: 92 + Math.floor(Math.random() * 6),
+        date: date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
+        score: 75 + Math.floor(Math.random() * 20),
+        totalDuration: 420 + Math.floor(Math.random() * 100),
+        deepRatio: 22, remRatio: 20, efficiency: 94,
         stages: [],
-        heartRate: { resting: 55 + Math.floor(Math.random() * 10), max: 85, min: 52, average: 62, history: [] },
-        aiInsights: lang === 'zh' ? ['模拟数据流已激活。'] : ['Simulation stream active.']
+        heartRate: { resting: 60, max: 85, min: 52, average: 62, history: [] },
+        aiInsights: lang === 'zh' ? ['模拟数据流已激活。', '神经链路处于同步模式。', '等待深层次生物识别采样。'] : ['Simulation stream active.', 'Neural link in sync mode.', 'Awaiting deep biometric sampling.']
       });
     }
     setCurrentRecord(mockHistory[0]);
@@ -98,7 +94,7 @@ const App: React.FC = () => {
       setIsLoading(false);
       onProgress?.('error');
       setErrorToast(err.message || "Sync Failed");
-      setTimeout(() => setErrorToast(null), 5000);
+      setTimeout(() => setErrorToast(null), 3000);
     }
   }, [lang]);
 
@@ -110,58 +106,63 @@ const App: React.FC = () => {
     window.location.reload();
   };
 
-  const renderView = () => {
-    if (isLoading && !currentRecord) return <LoadingSpinner />;
-    if (!isLoggedIn && !isGuest) return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={() => { setIsGuest(true); generateMockData(); }} />;
-    
-    return (
-      <AnimatePresence mode="wait">
-        <m.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
-          {activeView === 'calendar' && <Trends history={history} lang={lang} />}
-          {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
-          {activeView === 'profile' && (
-            <Settings 
-              lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
-              theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
-              threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
-              staticMode={staticMode} onStaticModeChange={setStaticMode}
-              lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
-            />
-          )}
-        </m.div>
-      </AnimatePresence>
-    );
-  };
-
   return (
-    <div className={`flex-1 flex flex-col accent-${accentColor} rounded-[4px]`}>
-      <main className="flex-1 w-full mx-auto p-4">{renderView()}</main>
+    <div className={`flex-1 flex flex-col min-h-screen relative`}>
+      <main className="flex-1 w-full mx-auto p-4 pt-10 pb-40">
+        {!isLoggedIn && !isGuest ? (
+          <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={() => { setIsGuest(true); generateMockData(); }} />
+        ) : (
+          <Suspense fallback={<LoadingSpinner />}>
+            <AnimatePresence mode="wait">
+              <m.div key={activeView} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }}>
+                {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
+                {activeView === 'calendar' && <Trends history={history} lang={lang} />}
+                {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
+                {activeView === 'profile' && (
+                  <Settings 
+                    lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
+                    theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
+                    threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
+                    staticMode={staticMode} onStaticModeChange={setStaticMode}
+                    lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
+                  />
+                )}
+              </m.div>
+            </AnimatePresence>
+          </Suspense>
+        )}
+      </main>
+
+      {/* 浮动胶囊导航栏 */}
       {(isLoggedIn || isGuest) && (
-        <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-8 safe-area-inset-bottom pointer-events-none">
-          <div className="max-w-md mx-auto rounded-[4px] p-2 flex justify-between pointer-events-auto border border-white/10 bg-slate-900/80 backdrop-blur-3xl shadow-2xl">
+        <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
+          <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)]">
             {[
-              { id: 'dashboard', icon: Logo, label: translations[lang]?.nav?.lab },
-              { id: 'calendar', icon: Activity, label: translations[lang]?.nav?.trends },
-              { id: 'assistant', icon: Zap, label: translations[lang]?.nav?.insights },
-              { id: 'profile', icon: User, label: translations[lang]?.nav?.settings }
+              { id: 'dashboard', icon: Logo, label: 'LAB' },
+              { id: 'calendar', icon: Activity, label: 'TRND' },
+              { id: 'assistant', icon: Zap, label: 'CORE' },
+              { id: 'profile', icon: User, label: 'CFG' }
             ].map((nav) => {
               const isActive = activeView === nav.id;
               return (
-                <button key={nav.id} onClick={() => setActiveView(nav.id as ViewType)} className={`flex-1 py-3 flex flex-col items-center gap-1 ${isActive ? 'text-white' : 'text-slate-500'}`}>
-                  <m.div animate={isActive && !staticMode ? { y: [0, -2, 0] } : {}} transition={{ duration: 4, repeat: Infinity }}>
-                    <SpatialIcon icon={nav.icon} size={20} animated={isActive && !staticMode} threeD={threeDEnabled} color={isActive ? '#818cf8' : '#475569'} />
-                  </m.div>
-                  <span className="text-[7px] font-black uppercase tracking-[0.2em]">{nav.label}</span>
+                <button 
+                  key={nav.id} 
+                  onClick={() => setActiveView(nav.id as ViewType)} 
+                  className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${isActive ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  <SpatialIcon icon={nav.icon} size={20} animated={isActive} threeD={threeDEnabled} color={isActive ? '#fff' : '#475569'} />
+                  {isActive && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
                 </button>
               );
             })}
-          </div>
-        </nav>
+          </nav>
+        </div>
       )}
+
+      {/* 气泡式错误提示 */}
       <AnimatePresence>
         {errorToast && (
-          <m.div initial={{ y: 50, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 50, opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-5 py-3 bg-rose-600 text-white rounded-[4px] font-black text-[10px] uppercase tracking-widest shadow-2xl">
+          <m.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-36 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl">
             {errorToast}
           </m.div>
         )}

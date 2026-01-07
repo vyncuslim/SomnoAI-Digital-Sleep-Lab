@@ -5,9 +5,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
-    <link rel="icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/favicon.png" type="image/png">
-    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/favicon.png" type="image/png">
-    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/favicon.png">
+    <link rel="icon" href="https://img.icons8.com/fluency/48/moon-star.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/96/moon-star.png">
     
     <script type="application/ld+json">
     {
@@ -33,24 +32,20 @@
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="preconnect" href="https://esm.sh">
     
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap&font-display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
 
     <script src="https://cdn.tailwindcss.com" defer></script>
     
     <script>
         window.addEventListener('load', function() {
             setTimeout(function() {
-                var forceBtn = document.getElementById('force-start-btn');
-                var diagMsg = document.getElementById('diagnostic-msg');
-                if (document.getElementById('page-loader')) {
+                var loader = document.getElementById('page-loader');
+                if (loader) {
+                    var forceBtn = document.getElementById('force-start-btn');
                     if (forceBtn) forceBtn.style.display = 'block';
-                    if (diagMsg) {
-                        diagMsg.innerHTML = '<span style="color:#ef4444">检测到 SSL 证书冲突或脚本加载缓慢。</span><br/>请检查网络连接或手动进入。';
-                    }
                 }
-            }, 8000);
+            }, 6000);
         });
 
         function dismissLoader() {
@@ -63,91 +58,53 @@
     </script>
     
     <style>
-        :root {
-            --perspective: 1500px;
-        }
-
-        @keyframes pulse-opacity {
-            0%, 100% { opacity: 0.3; transform: scale(1); }
-            50% { opacity: 0.8; transform: scale(1.05); }
+        :root { --perspective: 1500px; }
+        
+        @keyframes liquid-drift {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(5%, 5%) scale(1.1); }
+            66% { transform: translate(-5%, 2%) scale(0.95); }
+            100% { transform: translate(0, 0) scale(1); }
         }
 
         html, body {
-            height: 100%;
-            margin: 0; padding: 0;
-            background-color: #01040a;
-            color: #e2e8f0;
+            height: 100%; margin: 0; padding: 0;
+            background-color: #01040a; color: #e2e8f0;
             font-family: 'Plus Jakarta Sans', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            overflow-x: hidden;
-            border-radius: 4px;
+            -webkit-font-smoothing: antialiased; overflow-x: hidden;
+        }
+
+        #spatial-bg {
+            position: fixed; inset: 0; z-index: -1;
+            background: #01040a;
+            overflow: hidden;
+        }
+
+        .liquid-blob {
+            position: absolute; border-radius: 50%;
+            filter: blur(80px); opacity: 0.15;
+            animation: liquid-drift 25s infinite alternate ease-in-out;
+            pointer-events: none;
         }
 
         .initial-loader {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            width: 100%;
-            gap: 1.5rem;
-            position: fixed;
-            top: 0; left: 0;
-            background-color: #01040a;
-            z-index: 1000;
-            transition: opacity 0.5s ease;
-        }
-        .initial-loader .logo-svg {
-            width: 60px; height: 60px;
-            animation: pulse-opacity 2s infinite ease-in-out;
-            filter: drop-shadow(0 0 15px rgba(79, 70, 229, 0.5));
-        }
-        .initial-loader .text {
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            letter-spacing: 0.4em;
-            color: #475569;
-            font-weight: 800;
-        }
-        #force-start-btn {
-            display: none;
-            margin-top: 24px;
-            padding: 12px 24px;
-            background: rgba(79, 70, 229, 0.1);
-            border: 1px solid rgba(79, 70, 229, 0.3);
-            border-radius: 4px;
-            color: #818cf8;
-            font-size: 9px;
-            font-weight: 800;
-            text-transform: uppercase;
-            letter-spacing: 0.2em;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-        #force-start-btn:hover { background: #4f46e5; color: white; }
-        #diagnostic-msg {
-            font-size: 10px;
-            color: #475569;
-            text-align: center;
-            max-width: 260px;
-            line-height: 1.6;
-            margin-top: 10px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            height: 100vh; width: 100%; gap: 1.5rem; position: fixed;
+            top: 0; left: 0; background-color: #01040a; z-index: 1000;
+            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .grid-floor {
-            position: fixed;
-            bottom: -20%; left: -50%;
-            width: 200%; height: 100%;
-            background-image: 
-                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-            background-size: 50px 50px;
-            transform: rotateX(75deg);
-            transform-origin: center bottom;
-            mask-image: linear-gradient(to top, black, transparent);
-            pointer-events: none;
-            opacity: 0.4;
+        #force-start-btn {
+            display: none; margin-top: 24px; padding: 14px 32px;
+            background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3);
+            border-radius: 999px; color: #818cf8; font-size: 10px; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 0.2em; cursor: pointer;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
+        #force-start-btn:hover { background: #4f46e5; color: white; transform: scale(1.05); }
+
+        ::-webkit-scrollbar { display: none; }
+        * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
     <script type="importmap">
 {
@@ -170,28 +127,25 @@
 </head>
 <body>
     <div id="spatial-bg">
-        <div class="grid-floor" aria-hidden="true"></div>
+        <div class="liquid-blob" style="width: 800px; height: 800px; background: #4f46e5; top: -10%; left: -10%;"></div>
+        <div class="liquid-blob" style="width: 600px; height: 600px; background: #10b981; bottom: -10%; right: -10%; animation-delay: -5s;"></div>
+        <div class="liquid-blob" style="width: 400px; height: 400px; background: #ec4899; top: 40%; left: 30%; animation-delay: -12s;"></div>
     </div>
     <div id="root">
         <div class="initial-loader" id="page-loader" role="status">
-            <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg class="logo-svg" style="width: 100px; height: 100px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="moonGlowLoader" x1="20" y1="20" x2="80" y2="80">
-                        <stop offset="0%" stop-color="#e0e7ff" />
+                        <stop offset="0%" stop-color="#818cf8" />
                         <stop offset="100%" stop-color="#4f46e5" />
                     </linearGradient>
-                    <mask id="moonMaskLoader">
-                        <circle cx="50" cy="50" r="35" fill="white" />
-                        <circle cx="65" cy="40" r="32" fill="black" />
-                    </mask>
                 </defs>
-                <g mask="url(#moonMaskLoader)">
-                    <circle cx="50" cy="50" r="35" fill="url(#moonGlowLoader)" />
-                </g>
+                <circle cx="50" cy="50" r="35" fill="url(#moonGlowLoader)" opacity="0.8">
+                    <animate attributeName="r" values="32;38;32" dur="4s" repeatCount="indefinite" />
+                </circle>
             </svg>
-            <div class="text">SomnoAI Lab</div>
-            <div id="diagnostic-msg">初始化安全链路...</div>
-            <button id="force-start-btn" onclick="dismissLoader()">强制进入实验室</button>
+            <div class="text" style="color: #fff; letter-spacing: 0.8em; font-weight: 900; font-style: italic; font-size: 11px;">SOMNOAI DIGITAL SLEEP LAB</div>
+            <button id="force-start-btn" onclick="dismissLoader()">INITIALIZE LAB</button>
         </div>
     </div>
     <script type="module" src="index.tsx"></script>
