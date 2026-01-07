@@ -51,6 +51,13 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
+  // 初始加载：如果已登录但没数据，触发一次同步
+  useEffect(() => {
+    if (isLoggedIn && !currentRecord && !isLoading) {
+      handleSyncGoogleFit(false);
+    }
+  }, [isLoggedIn]);
+
   const generateMockData = useCallback(async () => {
     setIsLoading(true);
     const mockHistory: SleepRecord[] = [];
@@ -80,21 +87,25 @@ const App: React.FC = () => {
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
       setIsLoggedIn(true);
+      
       onProgress?.('fetching');
       const fitData = await googleFit.fetchSleepData();
       const updatedRecord = { id: `fit-${Date.now()}`, ...fitData } as SleepRecord;
+      
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
-      setIsLoading(false);
+      
       onProgress?.('analyzing');
       const insights = await getSleepInsight(updatedRecord, lang);
       setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
+      
       onProgress?.('success');
     } catch (err: any) {
-      setIsLoading(false);
       onProgress?.('error');
       setErrorToast(err.message || "Sync Failed");
       setTimeout(() => setErrorToast(null), 3000);
+    } finally {
+      setIsLoading(false);
     }
   }, [lang]);
 
@@ -102,6 +113,7 @@ const App: React.FC = () => {
     googleFit.logout();
     setIsLoggedIn(false);
     setIsGuest(false);
+    setCurrentRecord(null);
     localStorage.removeItem('google_fit_token');
     window.location.reload();
   };
@@ -110,22 +122,40 @@ const App: React.FC = () => {
     <div className={`flex-1 flex flex-col min-h-screen relative`}>
       <main className="flex-1 w-full mx-auto p-4 pt-10 pb-40">
         {!isLoggedIn && !isGuest ? (
-          <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={() => { setIsGuest(true); generateMockData(); }} />
+          <Auth lang={lang} onLogin={() => handleSyncGoogleFit(true)} onGuest={() => { setIsGuest(true); generateMockData(); }} />
         ) : (
           <Suspense fallback={<LoadingSpinner />}>
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }}>
-                {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
-                {activeView === 'calendar' && <Trends history={history} lang={lang} />}
-                {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
-                {activeView === 'profile' && (
-                  <Settings 
-                    lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
-                    theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
-                    threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
-                    staticMode={staticMode} onStaticModeChange={setStaticMode}
-                    lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
-                  />
+                {/* 核心防护：如果已登录但数据还没加载出来，显示 Loading 而不是 Dashboard */}
+                {isLoading && !currentRecord ? (
+                  <LoadingSpinner />
+                ) : (
+                  <>
+                    {activeView === 'dashboard' && currentRecord && (
+                      <Dashboard 
+                        lang={lang} 
+                        data={currentRecord} 
+                        onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} 
+                        staticMode={staticMode} 
+                        onNavigate={setActiveView} 
+                      />
+                    )}
+                    {activeView === 'dashboard' && !currentRecord && !isLoading && (
+                       <div className="text-center py-20 text-slate-500 italic">No telemetry data available. Try syncing.</div>
+                    )}
+                    {activeView === 'calendar' && <Trends history={history} lang={lang} />}
+                    {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
+                    {activeView === 'profile' && (
+                      <Settings 
+                        lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
+                        theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
+                        threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
+                        staticMode={staticMode} onStaticModeChange={setStaticMode}
+                        lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
+                      />
+                    )}
+                  </>
                 )}
               </m.div>
             </AnimatePresence>
@@ -133,7 +163,6 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {/* 浮动胶囊导航栏 */}
       {(isLoggedIn || isGuest) && (
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
           <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)]">
@@ -159,7 +188,6 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* 气泡式错误提示 */}
       <AnimatePresence>
         {errorToast && (
           <m.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-36 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl">
