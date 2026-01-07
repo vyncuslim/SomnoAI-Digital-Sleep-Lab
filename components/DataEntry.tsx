@@ -6,6 +6,9 @@ import { GlassCard } from './GlassCard.tsx';
 import { SleepRecord, SleepStage } from '../types.ts';
 import { motion } from 'framer-motion';
 
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
+
 interface DataEntryProps {
   onClose: () => void;
   onSave: (record: SleepRecord) => void;
@@ -71,7 +74,7 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-3xl bg-slate-950/90 overflow-y-auto">
-      <motion.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-4xl">
+      <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-4xl">
         <GlassCard className="p-8 md:p-12 space-y-10 border-indigo-500/20 shadow-2xl">
           <header className="flex justify-between items-center border-b border-white/5 pb-8">
             <div className="flex items-center gap-5">
@@ -134,7 +137,7 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
                        <span>{previewData.efficiency}%</span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
-                       <motion.div animate={{ width: `${previewData.efficiency}%` }} className="h-full bg-emerald-500" />
+                       <m.div animate={{ width: `${previewData.efficiency}%` }} className="h-full bg-emerald-500" />
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -143,7 +146,7 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
                        <span>{previewData.deep}M</span>
                     </div>
                     <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
-                       <motion.div animate={{ width: `${(previewData.deep/duration)*100}%` }} className="h-full bg-indigo-500" />
+                       <m.div animate={{ width: `${(previewData.deep/duration)*100}%` }} className="h-full bg-indigo-500" />
                     </div>
                   </div>
                 </div>
@@ -160,7 +163,7 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
             </div>
           </div>
         </GlassCard>
-      </motion.div>
+      </m.div>
     </div>
   );
 };

@@ -7,6 +7,9 @@ import { googleFit } from '../services/googleFitService.ts';
 import { Logo } from './Logo.tsx';
 import { Language } from '../services/i18n.ts';
 
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
+
 interface AuthProps {
   lang: Language;
   onLogin: () => void;
@@ -43,14 +46,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       {/* Background decoration */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none animate-pulse" />
       
-      <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-8 text-center mb-8 relative z-10">
-        <motion.div 
+      <m.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-8 text-center mb-8 relative z-10">
+        <m.div 
           animate={{ scale: [1, 1.05, 1], rotate: [0, 2, 0, -2, 0] }} 
           transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
           className="inline-flex p-10 bg-indigo-600/5 rounded-[3.5rem] border border-indigo-500/10 shadow-[0_0_120px_rgba(79,70,229,0.15)]"
         >
           <Logo size={100} animated={true} />
-        </motion.div>
+        </m.div>
         <div className="space-y-4">
           <h1 className="text-4xl font-black tracking-tighter text-white italic">
             Somno <span className="text-indigo-400">Lab</span>
@@ -59,7 +62,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             {lang === 'en' ? 'Digital Sleep Biometric System' : '数字睡眠生物识别系统'}
           </p>
         </div>
-      </motion.div>
+      </m.div>
 
       <GlassCard className="w-full max-w-md p-8 border-white/10 bg-slate-900/60 space-y-8 relative z-10">
         <div className="space-y-6">
@@ -93,14 +96,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         </div>
 
         {localError && (
-          <motion.div 
+          <m.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             className="p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-left flex gap-3 text-rose-300 text-[11px] font-bold"
           >
             <TriangleAlert size={18} className="shrink-0" />
             <p>{localError}</p>
-          </motion.div>
+          </m.div>
         )}
       </GlassCard>
 

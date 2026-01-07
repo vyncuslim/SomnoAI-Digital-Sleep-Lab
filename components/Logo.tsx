@@ -10,6 +10,9 @@ interface LogoProps {
   staticMode?: boolean;
 }
 
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
+
 export const Logo: React.FC<LogoProps> = ({ 
   size = 24, 
   className = '', 
@@ -20,7 +23,7 @@ export const Logo: React.FC<LogoProps> = ({
   const shouldAnimate = animated && !staticMode;
 
   return (
-    <motion.svg
+    <m.svg
       width={size}
       height={size}
       viewBox="0 0 100 100"
@@ -56,8 +59,8 @@ export const Logo: React.FC<LogoProps> = ({
         className="opacity-10" 
       />
 
-      <motion.g mask="url(#moonMask)">
-        <motion.circle
+      <m.g mask="url(#moonMask)">
+        <m.circle
           cx="50" cy="50" r="35"
           fill="url(#moonGlow)"
           filter={threeD ? "url(#moonHalo)" : "none"}
@@ -77,9 +80,9 @@ export const Logo: React.FC<LogoProps> = ({
             className="opacity-10"
           />
         ))}
-      </motion.g>
+      </m.g>
 
-      <motion.g
+      <m.g
         animate={shouldAnimate ? {
           rotate: [0, 360]
         } : {}}
@@ -88,7 +91,7 @@ export const Logo: React.FC<LogoProps> = ({
       >
         <circle cx="50" cy="5" r="2.5" fill="#818cf8" filter={threeD ? "url(#moonHalo)" : "none"} />
         {threeD && !staticMode && (
-          <motion.circle 
+          <m.circle 
             cx="50" cy="5" r="5" 
             stroke="#818cf8" 
             strokeWidth="0.5" 
@@ -96,9 +99,9 @@ export const Logo: React.FC<LogoProps> = ({
             transition={{ duration: 2, repeat: Infinity }}
           />
         )}
-      </motion.g>
+      </m.g>
 
-      <motion.path
+      <m.path
         d="M30 85 Q 40 75, 50 85 T 70 85"
         stroke="url(#moonGlow)"
         strokeWidth="2"
@@ -113,6 +116,6 @@ export const Logo: React.FC<LogoProps> = ({
         } : {}}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       />
-    </motion.svg>
+    </m.svg>
   );
 };

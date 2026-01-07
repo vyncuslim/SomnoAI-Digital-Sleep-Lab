@@ -534,7 +534,7 @@ export const translations = {
     },
     about: {
       title: 'À propos du Labo',
-      mission: 'Notre Mission',
+      mission: 'Our Mission',
       missionText: 'Démocratiser la science du sommeil par le edge computing et l\'IA empathique.',
       tech: 'Technologie IA',
       techText: 'Propulsé par les modèles Gemini série 3.',

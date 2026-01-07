@@ -11,6 +11,9 @@ import { Logo } from './components/Logo.tsx';
 import { translations, Language } from './services/i18n.ts';
 import { SpatialIcon } from './components/SpatialIcon.tsx';
 
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
+
 // Code-splitting for non-primary views to improve Lighthouse Performance
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
@@ -167,26 +170,19 @@ const App: React.FC = () => {
 
   const handleLogout = () => {
     try {
-      // 彻底重置所有本地持久化状态
       googleFit.logout();
       setIsLoggedIn(false);
       setIsGuest(false);
       setCurrentRecord(null);
       setHistory([]);
-
       localStorage.removeItem('somno_last_sync');
       localStorage.removeItem('google_fit_token');
       localStorage.removeItem('somno_ai_provider');
-      
-      // 清除全局变量引用
       if ((window as any).process?.env) {
         (window as any).process.env.API_KEY = '';
         (window as any).process.env.OPENAI_API_KEY = '';
       }
-      
       sessionStorage.clear();
-      
-      // 核心：强制页面硬重载以刷新整个 React 运行时环境
       window.location.href = window.location.origin + window.location.pathname;
     } catch (e) {
       window.location.reload();
@@ -196,7 +192,6 @@ const App: React.FC = () => {
   const renderView = () => {
     if (activeView === 'privacy' || activeView === 'terms') {
       const handleBack = () => {
-        // 如果已登录或以访客身份进入，返回设置页；否则返回默认页（Auth）
         if (isLoggedIn || isGuest) {
           setActiveView('profile');
         } else {
@@ -241,7 +236,7 @@ const App: React.FC = () => {
 
     return (
       <AnimatePresence mode="wait">
-        <motion.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+        <m.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
           <Suspense fallback={<LoadingSpinner />}>
             {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
             {activeView === 'calendar' && <Trends history={history} lang={lang} />}
@@ -256,7 +251,7 @@ const App: React.FC = () => {
               />
             )}
           </Suspense>
-        </motion.div>
+        </m.div>
       </AnimatePresence>
     );
   };
@@ -267,12 +262,12 @@ const App: React.FC = () => {
     <div className={`flex-1 flex flex-col accent-${accentColor}`}>
       {isGuest && (
         <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-gradient-to-r from-amber-500 to-amber-600">
-           <div className="absolute top-1 left-1/2 -translate-x-1/2 px-3 py-0.5 bg-amber-600 text-[8px] font-black text-white uppercase tracking-widest rounded-b-lg">
+           <div className="absolute top-1 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-0.5 bg-amber-600 text-[8px] font-black text-white uppercase tracking-widest rounded-b-lg">
              Simulation Protocol v3.0
            </div>
         </div>
       )}
-      <main id="main-content" className={`flex-1 w-full max-w-2xl mx-auto px-6 ${showNav ? 'pt-20 pb-28' : 'pt-8 pb-10'}`} role="main">
+      <main id="main-content" className="flex-1 w-full mx-auto p-4" role="main">
         {renderView()}
       </main>
       
@@ -280,10 +275,10 @@ const App: React.FC = () => {
         <nav className="fixed bottom-0 left-0 right-0 z-[60] px-6 pb-8 safe-area-inset-bottom pointer-events-none" aria-label="Main Navigation">
           <div className="max-w-md mx-auto glass-morphism rounded-[3.5rem] p-2 flex justify-between pointer-events-auto border border-white/10 shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] bg-slate-900/70 backdrop-blur-3xl">
             {[
-              { id: 'dashboard', icon: Logo, label: translations[lang].nav.lab },
-              { id: 'calendar', icon: Activity, label: translations[lang].nav.trends },
-              { id: 'assistant', icon: Zap, label: translations[lang].nav.insights },
-              { id: 'profile', icon: User, label: translations[lang].nav.settings }
+              { id: 'dashboard', icon: Logo, label: translations[lang]?.nav?.lab || 'Lab' },
+              { id: 'calendar', icon: Activity, label: translations[lang]?.nav?.trends || 'Trends' },
+              { id: 'assistant', icon: Zap, label: translations[lang]?.nav?.insights || 'Insights' },
+              { id: 'profile', icon: User, label: translations[lang]?.nav?.settings || 'Settings' }
             ].map((nav) => {
               const isActive = activeView === nav.id;
               const iconColor = isActive ? (accentColor === 'rose' ? '#fb7185' : '#818cf8') : '#475569';
@@ -295,7 +290,7 @@ const App: React.FC = () => {
                   aria-current={isActive ? 'page' : undefined}
                   className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${isActive ? 'text-white' : 'text-slate-500'}`}
                 >
-                  <motion.div
+                  <m.div
                     animate={isActive && !staticMode ? {
                       y: [0, -4, 0],
                       scale: [1, 1.05, 1],
@@ -311,7 +306,7 @@ const App: React.FC = () => {
                       color={iconColor}
                     />
                     {isActive && !staticMode && (
-                      <motion.div
+                      <m.div
                         layoutId="nav-glow-indicator"
                         className="absolute -bottom-1 w-1 h-1 rounded-full blur-[2px]"
                         style={{ backgroundColor: iconColor }}
@@ -319,12 +314,12 @@ const App: React.FC = () => {
                         transition={{ repeat: Infinity, duration: 2 }}
                       />
                     )}
-                  </motion.div>
-                  <motion.span 
+                  </m.div>
+                  <m.span 
                     className={`text-[8px] font-black transition-colors tracking-[0.25em] ${isActive ? (accentColor === 'rose' ? 'text-rose-400' : 'text-indigo-400') : 'text-slate-600'}`}
                   >
                     {nav.label}
-                  </motion.span>
+                  </m.span>
                 </button>
               );
             })}
@@ -339,7 +334,7 @@ const App: React.FC = () => {
       )}
       <AnimatePresence>
         {errorToast && (
-          <motion.div 
+          <m.div 
             initial={{ y: 100, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             exit={{ y: 100, opacity: 0 }}
@@ -347,7 +342,7 @@ const App: React.FC = () => {
             className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-2xl"
           >
             {errorToast}
-          </motion.div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>

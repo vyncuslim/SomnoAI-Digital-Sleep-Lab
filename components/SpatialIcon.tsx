@@ -13,6 +13,9 @@ interface SpatialIconProps {
   animated?: boolean;
 }
 
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
+
 export const SpatialIcon: React.FC<SpatialIconProps> = ({ 
   icon: Icon, 
   size = 20, 
@@ -25,7 +28,7 @@ export const SpatialIcon: React.FC<SpatialIconProps> = ({
   return (
     <div className={`relative inline-flex items-center justify-center ${className}`} style={{ width: size, height: size }}>
       {threeD && glow && (
-        <motion.div
+        <m.div
           animate={animated ? {
             opacity: [0.2, 0.5, 0.2],
             scale: [1, 1.2, 1]
@@ -35,7 +38,7 @@ export const SpatialIcon: React.FC<SpatialIconProps> = ({
           style={{ backgroundColor: color }}
         />
       )}
-      <motion.div
+      <m.div
         style={{ 
           color,
           transformStyle: "preserve-3d",
@@ -44,7 +47,7 @@ export const SpatialIcon: React.FC<SpatialIconProps> = ({
         whileHover={threeD ? { translateZ: 10, scale: 1.1 } : {}}
       >
         <Icon size={size} />
-      </motion.div>
+      </m.div>
     </div>
   );
 };

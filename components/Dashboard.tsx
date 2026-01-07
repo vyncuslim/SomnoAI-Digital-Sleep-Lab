@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -10,6 +11,9 @@ import {
   Microchip, Layers, Share2, Linkedin, Copy, CheckCircle2, X, ExternalLink, HeartHandshake
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
+
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
 
 interface DashboardProps {
   data: SleepRecord;
@@ -94,7 +98,7 @@ https://sleepsomno.com
   };
 
   return (
-    <motion.div 
+    <m.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
       className="space-y-8 pb-32"
@@ -167,13 +171,13 @@ https://sleepsomno.com
                   <span className="text-[10px] font-black uppercase tracking-[0.4em]">{t.aiSynthesis}</span>
                 </div>
                 <div className="flex items-baseline gap-4">
-                  <motion.span 
+                  <m.span 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="text-9xl font-black italic tracking-tighter text-white drop-shadow-[0_15px_40px_rgba(79,70,229,0.4)]"
                   >
                     {data.score}
-                  </motion.span>
+                  </m.span>
                   <span className="text-3xl font-bold text-slate-700 font-mono tracking-tighter" aria-hidden="true">/100</span>
                 </div>
               </div>
@@ -198,7 +202,7 @@ https://sleepsomno.com
                 </h3>
                 <div className="space-y-3">
                   {(data.aiInsights || []).slice(0, 3).map((insight, i) => (
-                    <motion.div 
+                    <m.div 
                       key={i}
                       initial={{ opacity: 0, x: -10 }}
                       animate={{ opacity: 1, x: 0 }}
@@ -209,7 +213,7 @@ https://sleepsomno.com
                       <p className="text-xs font-medium italic text-slate-300 leading-relaxed group-hover:text-white transition-colors">
                         {insight}
                       </p>
-                    </motion.div>
+                    </m.div>
                   ))}
                 </div>
               </div>
@@ -222,7 +226,7 @@ https://sleepsomno.com
                 <span className="text-indigo-400 font-mono">{data.score}%</span>
              </div>
              <div className="h-2 w-full bg-slate-950 rounded-full overflow-hidden border border-white/5" role="progressbar" aria-valuenow={data.score} aria-valuemin={0} aria-valuemax={100}>
-                <motion.div 
+                <m.div 
                   initial={{ width: 0 }}
                   animate={{ width: `${data.score}%` }}
                   transition={{ duration: 1.5, ease: "circOut" }}
@@ -241,7 +245,7 @@ https://sleepsomno.com
                 <HeartPulse size={32} aria-hidden="true" />
               </div>
               {!staticMode && (
-                <motion.div 
+                <m.div 
                   animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
                   transition={{ repeat: Infinity, duration: 1.5 }}
                   className="absolute inset-0 bg-rose-500/20 rounded-3xl"
@@ -278,7 +282,7 @@ https://sleepsomno.com
       <AnimatePresence>
         {showShareModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-2xl" role="dialog" aria-modal="true" aria-labelledby="share-title">
-            <motion.div 
+            <m.div 
               initial={{ opacity: 0, scale: 0.9, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 20 }}
@@ -332,10 +336,10 @@ https://sleepsomno.com
                   </div>
                 </div>
               </GlassCard>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </m.div>
   );
 };

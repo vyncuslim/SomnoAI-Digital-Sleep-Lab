@@ -13,9 +13,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
 import { Language, translations } from '../services/i18n.ts';
 
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
+
 const CROAvatar = ({ isProcessing = false, size = 40 }: { isProcessing?: boolean, size?: number }) => {
   return (
-    <motion.div 
+    <m.div 
       className="relative flex items-center justify-center shrink-0"
       style={{ width: size, height: size }}
       role="img"
@@ -28,7 +31,7 @@ const CROAvatar = ({ isProcessing = false, size = 40 }: { isProcessing?: boolean
             <feComposite in="SourceGraphic" in2="blur" operator="over" />
           </filter>
         </defs>
-        <motion.circle
+        <m.circle
           cx="50" cy="50" r="45"
           stroke="rgba(129, 140, 248, 0.3)"
           strokeWidth="1"
@@ -36,7 +39,7 @@ const CROAvatar = ({ isProcessing = false, size = 40 }: { isProcessing?: boolean
           animate={{ rotate: 360 }}
           transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
         />
-        <motion.path
+        <m.path
           d="M50 20 L80 35 V65 L50 80 L20 65 V35 Z"
           fill="rgba(79, 70, 229, 0.2)"
           stroke="#818cf8"
@@ -50,7 +53,7 @@ const CROAvatar = ({ isProcessing = false, size = 40 }: { isProcessing?: boolean
         />
         <circle cx="50" cy="50" r="4" fill="white" className="opacity-80" />
       </svg>
-    </motion.div>
+    </m.div>
   );
 };
 
@@ -176,7 +179,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
           <div className="p-10 bg-indigo-500/10 rounded-[3rem] border border-indigo-500/20 shadow-2xl">
             <Lock size={64} className="text-indigo-400" />
           </div>
-          <motion.div 
+          <m.div 
             animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.2, 0.5] }}
             transition={{ repeat: Infinity, duration: 3 }}
             className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full -z-10"
@@ -241,7 +244,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
       <div className="flex-1 overflow-y-auto space-y-6 pr-2 mb-6 scrollbar-hide">
         <AnimatePresence initial={false}>
           {messages.map((msg, idx) => (
-            <motion.div 
+            <m.div 
               key={idx} 
               initial={{ opacity: 0, y: 10 }} 
               animate={{ opacity: 1, y: 0 }}
@@ -283,14 +286,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
                   </div>
                 </div>
               </div>
-            </motion.div>
+            </m.div>
           ))}
         </AnimatePresence>
         {isTyping && (
           <div className="flex justify-start gap-4">
             <CROAvatar size={32} isProcessing={true} />
             <div className="p-4 rounded-2xl bg-slate-900/40 border border-white/5 flex items-center gap-2">
-               <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
+               <m.div animate={{ scale: [1, 1.2, 1], opacity: [0.5, 1, 0.5] }} transition={{ repeat: Infinity, duration: 1 }} className="w-1.5 h-1.5 bg-indigo-500 rounded-full" />
                <span className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Decoding Stream</span>
             </div>
           </div>

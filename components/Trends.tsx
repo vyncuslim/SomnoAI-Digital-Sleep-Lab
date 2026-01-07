@@ -11,10 +11,8 @@ import { getWeeklySummary } from '../services/geminiService.ts';
 import { motion } from 'framer-motion';
 import { Language } from '../services/i18n.ts';
 
-interface TrendsProps {
-  history: SleepRecord[];
-  lang: Language;
-}
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
 
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
@@ -28,7 +26,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
     ];
 
     return (
-      <motion.div 
+      <m.div 
         initial={{ opacity: 0, scale: 0.9, y: 10 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         className="bg-slate-950/95 backdrop-blur-2xl border border-indigo-500/30 p-6 rounded-3xl shadow-2xl min-w-[240px] space-y-5"
@@ -68,7 +66,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
           </div>
           <Binary size={12} className="text-slate-700" />
         </div>
-      </motion.div>
+      </m.div>
     );
   }
   return null;

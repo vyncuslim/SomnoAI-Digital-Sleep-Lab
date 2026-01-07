@@ -13,6 +13,9 @@ import { ViewType, ThemeMode, AccentColor, AIProvider } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { SpatialIcon } from './SpatialIcon.tsx';
 
+// Fix: Use any cast to bypass broken library types for motion props
+const m = motion as any;
+
 interface SettingsProps {
   lang: Language;
   onLanguageChange: (l: Language) => void;
@@ -182,7 +185,7 @@ export const Settings: React.FC<SettingsProps> = ({
       <AnimatePresence>
         {showDonation && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
-            <motion.div 
+            <m.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }} 
               animate={{ scale: 1, opacity: 1, y: 0 }} 
               exit={{ scale: 0.9, opacity: 0, y: 20 }} 
@@ -259,7 +262,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   </p>
                 </div>
               </GlassCard>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
@@ -268,11 +271,11 @@ export const Settings: React.FC<SettingsProps> = ({
       <AnimatePresence>
         {showLogoutConfirm && (
           <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
-            <motion.div 
+            <m.div 
               initial={{ scale: 0.9, opacity: 0, y: 20 }} 
               animate={{ scale: 1, opacity: 1, y: 0 }} 
               exit={{ scale: 0.9, opacity: 0, y: 20 }} 
-              className="w-full max-w-sm"
+              className="w-full max-sm"
             >
               <GlassCard className="p-10 text-center border-rose-500/40 space-y-8 shadow-[0_0_100px_rgba(225,29,72,0.1)]">
                 <div className="mx-auto w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center border border-rose-500/30">
@@ -305,7 +308,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   </button>
                 </div>
               </GlassCard>
-            </motion.div>
+            </m.div>
           </div>
         )}
       </AnimatePresence>
