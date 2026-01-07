@@ -17,7 +17,6 @@ const toMillis = (nanos: any): number => {
   if (nanos === null || nanos === undefined) return Date.now();
   const n = Number(nanos);
   if (isNaN(n)) return Date.now();
-  // Fitness API often returns nanos. If it's over 13 digits, it's definitely nanos.
   return n > 10000000000000 ? Math.floor(n / 1000000) : n;
 };
 
@@ -41,7 +40,6 @@ export class GoogleFitService {
     return new Promise((resolve, reject) => {
       const scriptId = 'google-gsi-sks';
       if (document.getElementById(scriptId)) {
-        // Already injecting, wait for it
         let checkInterval = setInterval(() => {
           if (typeof google !== 'undefined' && google.accounts?.oauth2) {
             clearInterval(checkInterval);
@@ -57,7 +55,6 @@ export class GoogleFitService {
       script.async = true;
       script.defer = true;
       script.onload = () => {
-        // Small delay to ensure the global objects are fully populated
         setTimeout(() => {
           if (google && google.accounts?.oauth2) resolve();
           else reject(new Error("GOOGLE_SDK_INIT_FAILED"));
@@ -96,7 +93,7 @@ export class GoogleFitService {
           });
         }
       } catch (e: any) {
-        this.initPromise = null; // Allow retry
+        this.initPromise = null;
         throw new Error("GOOGLE_SDK_TIMEOUT: " + e.message);
       }
     })();
@@ -141,7 +138,8 @@ export class GoogleFitService {
     if (!token) throw new Error("AUTH_REQUIRED");
 
     const now = Date.now();
-    const startTimeMillis = now - (7 * 24 * 60 * 60 * 1000); 
+    // 扩大范围到 30 天，增加找到记录的几率
+    const startTimeMillis = now - (30 * 24 * 60 * 60 * 1000); 
 
     try {
       const response = await fetch(
@@ -157,18 +155,26 @@ export class GoogleFitService {
       }
 
       if (response.status === 403) {
-        throw new Error("FIT_API_ACCESS_DENIED: Ensure Fitness API is enabled in Google Cloud Console.");
+        throw new Error("FIT_API_ACCESS_DENIED");
       }
 
       if (!response.ok) {
         const errorDetail = await response.json().catch(() => ({}));
-        throw new Error(`FIT_API_FAILURE: ${response.status} ${errorDetail.error?.message || response.statusText}`);
+        throw new Error(`FIT_API_FAILURE: ${response.status}`);
       }
 
       const data = await response.json();
-      const sleepSessions = data.session?.filter((s: any) => s.activityType === 72) || [];
+      const allSessions = data.session || [];
+      const sleepSessions = allSessions.filter((s: any) => s.activityType === 72);
       
-      if (sleepSessions.length === 0) throw new Error("DATA_NOT_FOUND");
+      if (allSessions.length === 0) {
+        throw new Error("DATA_NOT_FOUND");
+      }
+
+      if (sleepSessions.length === 0) {
+        // 找到了其他运动数据但没有睡眠数据
+        throw new Error("SLEEP_DATA_SPECIFICALLY_NOT_FOUND");
+      }
 
       const latest = sleepSessions[sleepSessions.length - 1];
       const start = toMillis(latest.startTimeMillis);
@@ -183,7 +189,7 @@ export class GoogleFitService {
       ];
 
       return {
-        date: new Date(start).toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
+        date: new Date(start).toLocaleDateString(navigator.language === 'zh-CN' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
         score: 75 + Math.floor(Math.random() * 20),
         totalDuration: Math.floor(duration),
         deepRatio: 22,
@@ -199,9 +205,6 @@ export class GoogleFitService {
         }
       };
     } catch (err: any) {
-      if (err.message.includes("Failed to fetch")) {
-        throw new Error("FIT_API_NETWORK_ERROR: Check your internet connection or CORS settings.");
-      }
       throw err;
     }
   }

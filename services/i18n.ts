@@ -6,7 +6,10 @@ export const translations = {
     nav: { lab: 'lab', trends: 'TRENDS', insights: 'INSIGHTS', settings: 'SETTINGS' },
     errors: {
       fitApiDenied: 'Access Denied: Please ensure the "Fitness API" is enabled for your project in the Google Cloud Console.',
-      syncFailed: 'Telemetry Sync Failed. Check network connection.'
+      syncFailed: 'Telemetry Sync Failed. Check network connection.',
+      noDataFound: 'No Google Fit data identified. Please ensure your wearable app has synced with Google Fit.',
+      noSleepData: 'Activity found, but no "Sleep" sessions identified. Ensure your wearable records sleep as sessions.',
+      authExpired: 'Session expired. Please re-connect.'
     },
     dashboard: {
       neuralActive: 'Neural Network Active',
@@ -145,7 +148,10 @@ export const translations = {
     nav: { lab: '实验室', trends: '趋势分析', insights: 'AI 洞察', settings: '系统设置' },
     errors: {
       fitApiDenied: '访问被拒绝：请确保已在 Google Cloud Console 中为您的项目启用了 "Fitness API"。',
-      syncFailed: '遥测同步失败。请检查网络连接或授权状态。'
+      syncFailed: '遥测同步失败。请检查网络连接或授权状态。',
+      noDataFound: '未发现 Google Fit 数据。请确保您的可穿戴设备 App 已将数据同步至 Google Fit。',
+      noSleepData: '发现活动记录，但未发现“睡眠”会话。请确保您的设备将睡眠记录为“会话(Sessions)”。',
+      authExpired: '登录已过期，请重新连接。'
     },
     dashboard: {
       neuralActive: '神经感知网络活跃',
@@ -176,7 +182,7 @@ export const translations = {
       securityStatement: '安全与隐私声明',
       securityDetail: '数据本地加密同步。零后端存储。会话终止时即时销毁敏感指标。',
       connect: '同步 Google Fit 数据',
-      guest: '访客登录',
+      guest: '访穿实验室',
       privacyPolicy: '隐私政策',
       termsOfService: '服务条款',
       activateEngine: '激活 AI 引擎',
@@ -284,7 +290,10 @@ export const translations = {
     nav: { lab: 'Labor', trends: 'TRENDS', insights: 'EINBLICKE', settings: 'EINSTELLUNGEN' },
     errors: {
       fitApiDenied: 'Zugriff verweigert: Bitte stellen Sie sicher, dass die "Fitness API" in der Google Cloud Console aktiviert ist.',
-      syncFailed: 'Synchronisierung fehlgeschlagen.'
+      syncFailed: 'Synchronisierung fehlgeschlagen.',
+      noDataFound: 'Keine Google Fit-Daten gefunden.',
+      noSleepData: 'Keine Schlafphasen gefunden.',
+      authExpired: 'Sitzung abgelaufen.'
     },
     dashboard: {
       neuralActive: 'Neurales Netzwerk aktiv',
@@ -423,7 +432,10 @@ export const translations = {
     nav: { lab: 'labo', trends: 'TENDANCES', insights: 'INSIGHTS', settings: 'RÉGLAGES' },
     errors: {
       fitApiDenied: 'Accès refusé : Veuillez vous assurer que l\'API Fitness est activée dans la Google Cloud Console.',
-      syncFailed: 'Échec de la synchronisation.'
+      syncFailed: 'Échec de la synchronisation.',
+      noDataFound: 'Aucune donnée Google Fit identifiée.',
+      noSleepData: 'Aucune session de sommeil identifiée.',
+      authExpired: 'Session expirée.'
     },
     dashboard: {
       neuralActive: 'Réseau neuronal actif',

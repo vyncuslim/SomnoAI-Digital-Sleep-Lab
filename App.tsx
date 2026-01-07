@@ -77,9 +77,19 @@ const App: React.FC = () => {
       onProgress?.('error');
       let errMsg = err.message || "Sync Failed";
       
+      const langErrors = (translations[lang] as any).errors;
+      
       if (errMsg.includes("FIT_API_ACCESS_DENIED")) {
         setIsApiDenied(true);
-        errMsg = translations[lang].errors.fitApiDenied;
+        errMsg = langErrors.fitApiDenied;
+      } else if (errMsg.includes("DATA_NOT_FOUND")) {
+        errMsg = langErrors.noDataFound;
+      } else if (errMsg.includes("SLEEP_DATA_SPECIFICALLY_NOT_FOUND")) {
+        errMsg = langErrors.noSleepData;
+      } else if (errMsg.includes("AUTH_EXPIRED")) {
+        errMsg = langErrors.authExpired;
+      } else {
+        errMsg = langErrors.syncFailed;
       }
       
       setErrorToast(errMsg);
@@ -89,7 +99,6 @@ const App: React.FC = () => {
     }
   }, [lang]);
 
-  // Initial Sync if logged in
   useEffect(() => {
     if (isLoggedIn && !currentRecord && !isLoading) {
       handleSyncGoogleFit(false);
@@ -105,7 +114,7 @@ const App: React.FC = () => {
       date.setDate(now.getDate() - i);
       mockHistory.push({
         id: `mock-${i}`,
-        date: date.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' }),
+        date: date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
         score: 75 + Math.floor(Math.random() * 20),
         totalDuration: 420 + Math.floor(Math.random() * 100),
         deepRatio: 22, remRatio: 20, efficiency: 94,
