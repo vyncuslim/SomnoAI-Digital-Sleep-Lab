@@ -190,6 +190,7 @@ const App: React.FC = () => {
   };
 
   const renderView = () => {
+    let content;
     if (activeView === 'privacy' || activeView === 'terms') {
       const handleBack = () => {
         if (isLoggedIn || isGuest) {
@@ -198,29 +199,15 @@ const App: React.FC = () => {
           setActiveView('dashboard');
         }
       };
-      return (
-        <Suspense fallback={<LoadingSpinner />}>
-          <LegalView type={activeView} lang={lang} onBack={handleBack} />
-        </Suspense>
-      );
-    }
-    if (activeView === 'about') {
-      return (
-        <Suspense fallback={<LoadingSpinner />}>
-          <AboutView lang={lang} onBack={() => setActiveView('profile')} />
-        </Suspense>
-      );
-    }
-    if (isLoading && !currentRecord) {
-      return <LoadingSpinner />;
-    }
-    
-    if (!isLoggedIn && !isGuest) {
-      return <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={handleGuestLogin} onNavigate={(v: any) => setActiveView(v)} />;
-    }
-    
-    if (!currentRecord && activeView === 'dashboard') {
-      return (
+      content = <LegalView type={activeView} lang={lang} onBack={handleBack} />;
+    } else if (activeView === 'about') {
+      content = <AboutView lang={lang} onBack={() => setActiveView('profile')} />;
+    } else if (isLoading && !currentRecord) {
+      content = <LoadingSpinner />;
+    } else if (!isLoggedIn && !isGuest) {
+      content = <Auth lang={lang} onLogin={() => handleSyncGoogleFit()} onGuest={handleGuestLogin} onNavigate={(v: any) => setActiveView(v)} />;
+    } else if (!currentRecord && activeView === 'dashboard') {
+      content = (
         <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center">
           <Logo size={96} className="opacity-40" animated={!staticMode} threeD={threeDEnabled} staticMode={staticMode} />
           <div className="space-y-4">
@@ -232,12 +219,10 @@ const App: React.FC = () => {
           </div>
         </div>
       );
-    }
-
-    return (
-      <AnimatePresence mode="wait">
-        <m.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-          <Suspense fallback={<LoadingSpinner />}>
+    } else {
+      content = (
+        <AnimatePresence mode="wait">
+          <m.div key={activeView} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
             {activeView === 'dashboard' && <Dashboard lang={lang} data={currentRecord!} onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} staticMode={staticMode} onNavigate={setActiveView} />}
             {activeView === 'calendar' && <Trends history={history} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
@@ -250,9 +235,17 @@ const App: React.FC = () => {
                 lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
               />
             )}
-          </Suspense>
-        </m.div>
-      </AnimatePresence>
+          </m.div>
+        </AnimatePresence>
+      );
+    }
+
+    return (
+      <div className="rounded-[4px] overflow-hidden min-h-full">
+        <Suspense fallback={<LoadingSpinner />}>
+          {content}
+        </Suspense>
+      </div>
     );
   };
 
