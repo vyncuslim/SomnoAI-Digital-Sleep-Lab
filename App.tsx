@@ -14,7 +14,7 @@ import { SpatialIcon } from './components/SpatialIcon.tsx';
 // Fix: Use any cast to bypass broken library types for motion props
 const m = motion as any;
 
-// Code-splitting for non-primary views to improve Lighthouse Performance
+// Code-splitting for non-primary views to improve Performance
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
 const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ default: m.Settings })));
@@ -48,17 +48,29 @@ const App: React.FC = () => {
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
   useEffect(() => {
+    // Robust loader removal
+    const removeLoader = () => {
+      if (typeof (window as any).dismissLoader === 'function') {
+        (window as any).dismissLoader();
+      } else {
+        const loader = document.getElementById('page-loader');
+        if (loader) {
+          loader.style.opacity = '0';
+          setTimeout(() => loader.remove(), 500);
+        }
+      }
+    };
+    
+    // Attempt removal immediately and after a short delay
+    removeLoader();
+    const timer = setTimeout(removeLoader, 100);
+
     const path = window.location.pathname;
     if (path === '/about') setActiveView('about');
     else if (path === '/privacy') setActiveView('privacy');
     else if (path === '/terms') setActiveView('terms');
 
-    // Remove the static page loader once React has taken over
-    const loader = document.getElementById('page-loader');
-    if (loader) {
-      loader.style.opacity = '0';
-      setTimeout(() => loader.remove(), 500);
-    }
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -70,11 +82,6 @@ const App: React.FC = () => {
     document.documentElement.classList.toggle('light-mode', theme === 'light');
   }, [theme]);
 
-  useEffect(() => {
-    localStorage.setItem('somno_static', String(staticMode));
-    document.body.classList.toggle('static-ui', staticMode);
-  }, [staticMode]);
-
   const generateMockData = useCallback(async () => {
     setIsLoading(true);
     const mockHistory: SleepRecord[] = [];
@@ -85,10 +92,6 @@ const App: React.FC = () => {
       date.setDate(now.getDate() - i);
       const score = 70 + Math.floor(Math.random() * 25);
       const duration = 420 + Math.floor(Math.random() * 100);
-      const deep = Math.floor(duration * 0.22);
-      const rem = Math.floor(duration * 0.20);
-      const awake = Math.floor(duration * 0.05);
-      
       const record: SleepRecord = {
         id: `mock-${i}`,
         date: date.toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
@@ -98,19 +101,16 @@ const App: React.FC = () => {
         remRatio: 20,
         efficiency: 92 + Math.floor(Math.random() * 6),
         stages: [
-          { name: 'Deep', duration: deep, startTime: '01:20' },
-          { name: 'REM', duration: rem, startTime: '03:40' },
-          { name: 'Light', duration: duration - deep - rem - awake, startTime: '05:00' },
-          { name: 'Awake', duration: awake, startTime: '23:30' }
+          { name: 'Deep', duration: Math.floor(duration * 0.22), startTime: '01:20' },
+          { name: 'REM', duration: Math.floor(duration * 0.20), startTime: '03:40' },
+          { name: 'Light', duration: duration - Math.floor(duration * 0.47), startTime: '05:00' },
+          { name: 'Awake', duration: Math.floor(duration * 0.05), startTime: '23:30' }
         ],
         heartRate: {
           resting: 55 + Math.floor(Math.random() * 10),
-          max: 85,
-          min: 52,
-          average: 62,
-          history: []
+          max: 85, min: 52, average: 62, history: []
         },
-        aiInsights: lang === 'zh' ? ['模拟数据流激活。', '神经架构分析已就绪。'] : ['Simulation stream active.', 'Neural architecture ready.']
+        aiInsights: lang === 'zh' ? ['模拟数据流激活。'] : ['Simulation stream active.']
       };
       mockHistory.push(record);
     }
@@ -122,15 +122,13 @@ const App: React.FC = () => {
       const insights = await getSleepInsight(mockHistory[0], lang);
       setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
     } catch (e) {
-      console.warn("AI Insights suppressed for guest mode (No API Key).");
+      console.warn("AI Insights suppressed for guest mode.");
     }
-    
     setIsLoading(false);
   }, [lang]);
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
-    setHistory([]); 
     try {
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
@@ -147,18 +145,9 @@ const App: React.FC = () => {
       setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
       onProgress?.('success');
     } catch (err: any) {
-      console.error("Sync Critical Failure:", err);
       setIsLoading(false);
       onProgress?.('error');
-      
-      let friendlyError = lang === 'zh' ? "同步失败" : "Sync Failed";
-      if (err.message?.includes("FIT_API_FAILURE")) {
-        friendlyError = lang === 'zh' ? `API 故障: ${err.message}` : `API Link Failure: ${err.message}`;
-      } else if (err.message === "DATA_NOT_FOUND") {
-        friendlyError = lang === 'zh' ? "未发现睡眠数据" : "No sleep data found";
-      }
-
-      setErrorToast(friendlyError);
+      setErrorToast(err.message || (lang === 'zh' ? "同步失败" : "Sync Failed"));
       setTimeout(() => setErrorToast(null), 8000);
     }
   }, [lang]);
@@ -169,36 +158,20 @@ const App: React.FC = () => {
   };
 
   const handleLogout = () => {
-    try {
-      googleFit.logout();
-      setIsLoggedIn(false);
-      setIsGuest(false);
-      setCurrentRecord(null);
-      setHistory([]);
-      localStorage.removeItem('somno_last_sync');
-      localStorage.removeItem('google_fit_token');
-      localStorage.removeItem('somno_ai_provider');
-      if ((window as any).process?.env) {
-        (window as any).process.env.API_KEY = '';
-        (window as any).process.env.OPENAI_API_KEY = '';
-      }
-      sessionStorage.clear();
-      window.location.href = window.location.origin + window.location.pathname;
-    } catch (e) {
-      window.location.reload();
-    }
+    googleFit.logout();
+    setIsLoggedIn(false);
+    setIsGuest(false);
+    setCurrentRecord(null);
+    setHistory([]);
+    localStorage.removeItem('somno_last_sync');
+    localStorage.removeItem('google_fit_token');
+    window.location.reload();
   };
 
   const renderView = () => {
     let content;
     if (activeView === 'privacy' || activeView === 'terms') {
-      const handleBack = () => {
-        if (isLoggedIn || isGuest) {
-          setActiveView('profile');
-        } else {
-          setActiveView('dashboard');
-        }
-      };
+      const handleBack = () => (isLoggedIn || isGuest) ? setActiveView('profile') : setActiveView('dashboard');
       content = <LegalView type={activeView} lang={lang} onBack={handleBack} />;
     } else if (activeView === 'about') {
       content = <AboutView lang={lang} onBack={() => setActiveView('profile')} />;
@@ -209,13 +182,10 @@ const App: React.FC = () => {
     } else if (!currentRecord && activeView === 'dashboard') {
       content = (
         <div className="flex flex-col items-center justify-center h-[75vh] gap-10 text-center">
-          <Logo size={96} className="opacity-40" animated={!staticMode} threeD={threeDEnabled} staticMode={staticMode} />
+          <Logo size={96} className="opacity-40" />
           <div className="space-y-4">
             <h2 className="text-3xl font-black uppercase tracking-tighter">{lang === 'en' ? 'Biometric Offline' : '生物识别离线'}</h2>
-            <div className="flex flex-col gap-4">
-              <button onClick={() => setIsDataEntryOpen(true)} className="px-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest">{lang === 'en' ? 'Inject Signals' : '手动注入'}</button>
-              <button onClick={() => handleSyncGoogleFit(true)} className="px-8 py-4 bg-white/5 border border-white/10 text-slate-400 rounded-2xl font-black uppercase text-[10px] tracking-widest">{lang === 'en' ? 'Retry Google Sync' : '重试 Google 同步'}</button>
-            </div>
+            <button onClick={() => setIsDataEntryOpen(true)} className="px-8 py-5 bg-indigo-600 text-white rounded-[2rem] font-black uppercase tracking-widest">Inject Signals</button>
           </div>
         </div>
       );
@@ -253,13 +223,6 @@ const App: React.FC = () => {
 
   return (
     <div className={`flex-1 flex flex-col accent-${accentColor}`}>
-      {isGuest && (
-        <div className="fixed top-0 left-0 right-0 z-[100] h-1 bg-gradient-to-r from-amber-500 to-amber-600">
-           <div className="absolute top-1 left-1/2 -translate-x-1/2 -translate-y-1/2 px-3 py-0.5 bg-amber-600 text-[8px] font-black text-white uppercase tracking-widest rounded-b-lg">
-             Simulation Protocol v3.0
-           </div>
-        </div>
-      )}
       <main id="main-content" className="flex-1 w-full mx-auto p-4" role="main">
         {renderView()}
       </main>
@@ -274,45 +237,13 @@ const App: React.FC = () => {
               { id: 'profile', icon: User, label: translations[lang]?.nav?.settings || 'Settings' }
             ].map((nav) => {
               const isActive = activeView === nav.id;
-              const iconColor = isActive ? (accentColor === 'rose' ? '#fb7185' : '#818cf8') : '#475569';
-              
+              const iconColor = isActive ? '#818cf8' : '#475569';
               return (
-                <button 
-                  key={nav.id} 
-                  onClick={() => setActiveView(nav.id as ViewType)} 
-                  aria-current={isActive ? 'page' : undefined}
-                  className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${isActive ? 'text-white' : 'text-slate-500'}`}
-                >
-                  <m.div
-                    animate={isActive && !staticMode ? {
-                      y: [0, -4, 0],
-                      scale: [1, 1.05, 1],
-                    } : { y: 0, scale: 1 }}
-                    transition={{ repeat: Infinity, duration: 4, ease: "easeInOut" }}
-                    className="relative flex items-center justify-center"
-                  >
-                    <SpatialIcon 
-                      icon={nav.icon} 
-                      size={22} 
-                      animated={isActive && !staticMode} 
-                      threeD={threeDEnabled} 
-                      color={iconColor}
-                    />
-                    {isActive && !staticMode && (
-                      <m.div
-                        layoutId="nav-glow-indicator"
-                        className="absolute -bottom-1 w-1 h-1 rounded-full blur-[2px]"
-                        style={{ backgroundColor: iconColor }}
-                        animate={{ opacity: [0.4, 1, 0.4] }}
-                        transition={{ repeat: Infinity, duration: 2 }}
-                      />
-                    )}
+                <button key={nav.id} onClick={() => setActiveView(nav.id as ViewType)} className={`flex-1 py-4 flex flex-col items-center gap-1.5 transition-all active:scale-95 ${isActive ? 'text-white' : 'text-slate-500'}`}>
+                  <m.div animate={isActive && !staticMode ? { y: [0, -4, 0], scale: [1, 1.05, 1] } : {}} transition={{ repeat: Infinity, duration: 4 }}>
+                    <SpatialIcon icon={nav.icon} size={22} animated={isActive && !staticMode} threeD={threeDEnabled} color={iconColor} />
                   </m.div>
-                  <m.span 
-                    className={`text-[8px] font-black transition-colors tracking-[0.25em] ${isActive ? (accentColor === 'rose' ? 'text-rose-400' : 'text-indigo-400') : 'text-slate-600'}`}
-                  >
-                    {nav.label}
-                  </m.span>
+                  <span className={`text-[8px] font-black transition-colors tracking-[0.25em] ${isActive ? 'text-indigo-400' : 'text-slate-600'}`}>{nav.label}</span>
                 </button>
               );
             })}
@@ -327,13 +258,7 @@ const App: React.FC = () => {
       )}
       <AnimatePresence>
         {errorToast && (
-          <m.div 
-            initial={{ y: 100, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 100, opacity: 0 }}
-            role="alert"
-            className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-2xl"
-          >
+          <m.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[200] px-6 py-3 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-2xl">
             {errorToast}
           </m.div>
         )}

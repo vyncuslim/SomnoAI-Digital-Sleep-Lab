@@ -51,15 +51,24 @@
     <script>
         window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
         
-        function googleTranslateElementInit() {
-            if (!document.getElementById('google_translate_element')) return;
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                includedLanguages: 'en,zh-CN,de,fr,es,ja,ko,it,ru,pt',
-                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
-                autoDisplay: false,
-                multilanguagePage: true
-            }, 'google_translate_element');
+        // Loader timeout logic to handle network blocks
+        window.addEventListener('load', function() {
+            setTimeout(function() {
+                var forceBtn = document.getElementById('force-start-btn');
+                var diagMsg = document.getElementById('diagnostic-msg');
+                if (document.getElementById('page-loader')) {
+                    if (forceBtn) forceBtn.style.display = 'block';
+                    if (diagMsg) diagMsg.innerHTML = '检测到脚本加载缓慢，可能是网络防火墙拦截。';
+                }
+            }, 6000);
+        });
+
+        function dismissLoader() {
+            var loader = document.getElementById('page-loader');
+            if (loader) {
+                loader.style.opacity = '0';
+                setTimeout(function() { loader.remove(); }, 500);
+            }
         }
     </script>
     
@@ -82,35 +91,6 @@
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased;
             overflow-x: hidden;
-        }
-
-        .skip-link {
-            position: absolute;
-            top: -40px;
-            left: 0;
-            background: #4f46e5;
-            color: white;
-            padding: 8px;
-            z-index: 100;
-            transition: top 0.3s;
-        }
-        .skip-link:focus {
-            top: 0;
-        }
-
-        #spatial-bg {
-            position: fixed;
-            inset: 0;
-            z-index: -1;
-            background: radial-gradient(circle at 50% 50%, #050a1f 0%, #01040a 100%);
-        }
-
-        #root {
-            position: relative;
-            z-index: 10;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
         }
 
         .initial-loader {
@@ -139,6 +119,29 @@
             color: #64748b;
             font-weight: 800;
         }
+        #force-start-btn {
+            display: none;
+            margin-top: 20px;
+            padding: 10px 24px;
+            background: rgba(79, 70, 229, 0.2);
+            border: 1px solid rgba(79, 70, 229, 0.4);
+            border-radius: 12px;
+            color: #818cf8;
+            font-size: 10px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        #force-start-btn:hover { background: #4f46e5; color: white; }
+        #diagnostic-msg {
+            font-size: 9px;
+            color: #475569;
+            text-align: center;
+            max-width: 200px;
+            font-weight: 600;
+        }
 
         .grid-floor {
             position: fixed;
@@ -154,60 +157,6 @@
             pointer-events: none;
             opacity: 0.5;
         }
-
-        .nebula {
-            position: absolute;
-            width: 200%; height: 200%;
-            top: -50%; left: -50%;
-            background: radial-gradient(circle at center, rgba(79, 70, 229, 0.1) 0%, transparent 50%);
-            filter: blur(100px);
-            pointer-events: none;
-            opacity: 0.3;
-        }
-
-        .goog-te-gadget-simple {
-            background-color: rgba(255, 255, 255, 0.05) !important;
-            border: 1px solid rgba(255, 255, 255, 0.1) !important;
-            padding: 10px 16px !important;
-            border-radius: 16px !important;
-            display: flex !important;
-            align-items: center !important;
-            gap: 8px !important;
-            cursor: pointer !important;
-        }
-        .goog-te-gadget-simple span {
-            color: #f1f5f9 !important;
-            font-size: 13px !important;
-            font-weight: 700 !important;
-            text-transform: uppercase !important;
-            letter-spacing: 0.05em !important;
-        }
-        .goog-te-banner-frame { display: none !important; }
-        body { top: 0 !important; }
-
-        .crawler-footer {
-            position: absolute;
-            bottom: 20px;
-            width: 100%;
-            text-align: center;
-            opacity: 0.4;
-            transition: opacity 0.3s ease;
-            z-index: 100;
-            pointer-events: auto;
-        }
-        .crawler-footer:hover { opacity: 1; }
-        .crawler-footer a { 
-            color: #818cf8; 
-            font-size: 11px; 
-            margin: 0 12px; 
-            text-decoration: none; 
-            font-weight: 700; 
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            transition: color 0.2s;
-        }
-        .crawler-footer a:hover { color: #fff; text-decoration: underline; }
-        .crawler-footer span { color: #475569; font-size: 10px; font-weight: 700; margin-left: 10px; }
     </style>
     <script type="importmap">
 {
@@ -221,22 +170,19 @@
     "lucide-react": "https://esm.sh/lucide-react@0.470.0?deps=react@18.3.1",
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
     "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.1",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "vite": "https://esm.sh/vite@^7.3.0"
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/"
   }
 }
 </script>
 </head>
 <body>
-    <a href="#main-content" class="skip-link">跳过导航至主内容</a>
     <div id="spatial-bg">
-        <div class="nebula" aria-hidden="true"></div>
         <div class="grid-floor" aria-hidden="true"></div>
     </div>
     <div id="root">
         <div class="initial-loader" id="page-loader" role="status" aria-label="Starting SomnoAI Digital Sleep Lab">
-            <!-- Embedded SVG to prevent broken image -->
             <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                     <linearGradient id="moonGlowLoader" x1="20" y1="20" x2="80" y2="80">
@@ -254,19 +200,17 @@
                 </g>
             </svg>
             <div class="text">SomnoAI Digital Sleep Lab</div>
+            <div id="diagnostic-msg"></div>
+            <button id="force-start-btn" onclick="dismissLoader()">强制进入实验室</button>
         </div>
     </div>
     
-    <footer class="crawler-footer" role="contentinfo">
-        <nav aria-label="Footer Navigation">
-            <a href="/privacy">Privacy Policy</a>
-            <a href="/terms">Terms of Service</a>
-            <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer">GitHub</a>
-            <span>© 2026 SomnoAI Lab</span>
-        </nav>
+    <footer class="crawler-footer" style="position:fixed;bottom:20px;width:100%;text-align:center;opacity:0.4;z-index:100;">
+        <a href="/privacy" style="color:#818cf8;font-size:11px;margin:0 12px;text-decoration:none;font-weight:700;text-transform:uppercase;">Privacy</a>
+        <a href="/terms" style="color:#818cf8;font-size:11px;margin:0 12px;text-decoration:none;font-weight:700;text-transform:uppercase;">Terms</a>
+        <span style="color:#475569;font-size:10px;font-weight:700;">© 2026 SomnoAI Lab</span>
     </footer>
 
     <script type="module" src="index.tsx"></script>
-    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit" async defer></script>
 </body>
 </html>
