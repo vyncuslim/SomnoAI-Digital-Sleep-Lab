@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Auth } from './Auth.tsx';
 import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor } from './types.ts';
-import { User, Loader2, Activity, Zap, TriangleAlert, RefreshCw } from 'lucide-react';
+import { User, Loader2, Activity, Zap, TriangleAlert, RefreshCw, ExternalLink } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,6 +38,7 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
+  const [isApiDenied, setIsApiDenied] = useState(false);
 
   useEffect(() => {
     const removeLoader = () => {
@@ -50,6 +51,43 @@ const App: React.FC = () => {
     const timer = setTimeout(removeLoader, 500);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
+    setIsLoading(true);
+    setErrorToast(null);
+    setIsApiDenied(false);
+    try {
+      onProgress?.('authorizing');
+      await googleFit.authorize(forcePrompt);
+      setIsLoggedIn(true);
+      
+      onProgress?.('fetching');
+      const fitData = await googleFit.fetchSleepData();
+      const updatedRecord = { id: `fit-${Date.now()}`, ...fitData } as SleepRecord;
+      
+      setCurrentRecord(updatedRecord);
+      setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
+      
+      onProgress?.('analyzing');
+      const insights = await getSleepInsight(updatedRecord, lang);
+      setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
+      
+      onProgress?.('success');
+    } catch (err: any) {
+      onProgress?.('error');
+      let errMsg = err.message || "Sync Failed";
+      
+      if (errMsg.includes("FIT_API_ACCESS_DENIED")) {
+        setIsApiDenied(true);
+        errMsg = translations[lang].errors.fitApiDenied;
+      }
+      
+      setErrorToast(errMsg);
+      console.error("Sync Error:", err);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [lang]);
 
   // Initial Sync if logged in
   useEffect(() => {
@@ -81,36 +119,6 @@ const App: React.FC = () => {
     setIsLoading(false);
   }, [lang]);
 
-  const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
-    setIsLoading(true);
-    setErrorToast(null);
-    try {
-      onProgress?.('authorizing');
-      await googleFit.authorize(forcePrompt);
-      setIsLoggedIn(true);
-      
-      onProgress?.('fetching');
-      const fitData = await googleFit.fetchSleepData();
-      const updatedRecord = { id: `fit-${Date.now()}`, ...fitData } as SleepRecord;
-      
-      setCurrentRecord(updatedRecord);
-      setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
-      
-      onProgress?.('analyzing');
-      const insights = await getSleepInsight(updatedRecord, lang);
-      setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
-      
-      onProgress?.('success');
-    } catch (err: any) {
-      onProgress?.('error');
-      const errMsg = err.message || "Telemetry Sync Failed";
-      setErrorToast(errMsg);
-      console.error("Sync Error:", err);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [lang]);
-
   const handleLogout = () => {
     googleFit.logout();
     setIsLoggedIn(false);
@@ -124,7 +132,7 @@ const App: React.FC = () => {
     <div className={`flex-1 flex flex-col min-h-screen relative`}>
       <main className="flex-1 w-full mx-auto p-4 pt-10 pb-40">
         {!isLoggedIn && !isGuest ? (
-          <Auth lang={lang} onLogin={() => handleSyncGoogleFit(true)} onGuest={() => { setIsGuest(true); generateMockData(); }} />
+          <Auth lang={lang} onLogin={() => setIsLoggedIn(true)} onGuest={() => { setIsGuest(true); generateMockData(); }} />
         ) : (
           <Suspense fallback={<LoadingSpinner />}>
             <AnimatePresence mode="wait">
@@ -144,19 +152,35 @@ const App: React.FC = () => {
                             onNavigate={setActiveView} 
                           />
                         ) : (
-                          <div className="flex flex-col items-center justify-center h-[70vh] gap-8 px-10 text-center animate-in fade-in zoom-in">
-                            <div className="w-24 h-24 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                          <div className="flex flex-col items-center justify-center h-[70vh] gap-8 px-10 text-center">
+                            <m.div 
+                              animate={{ scale: [1, 1.1, 1] }}
+                              transition={{ duration: 4, repeat: Infinity }}
+                              className="w-24 h-24 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400"
+                            >
                               <TriangleAlert size={40} />
-                            </div>
-                            <div className="space-y-4">
-                              <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Telemetry Disconnected</h2>
-                              <p className="text-sm text-slate-500 italic max-w-xs mx-auto">
+                            </m.div>
+                            <div className="space-y-4 max-w-sm">
+                              <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">
+                                {isApiDenied ? "API Access Required" : "Telemetry Disconnected"}
+                              </h2>
+                              <p className="text-xs text-slate-400 leading-relaxed italic">
                                 {errorToast || "No active biometric stream identified. Please synchronize with your wearable device."}
                               </p>
+                              
+                              {isApiDenied && (
+                                <a 
+                                  href="https://console.cloud.google.com/apis/library/fitness.googleapis.com" 
+                                  target="_blank" 
+                                  className="inline-flex items-center gap-2 text-[10px] font-black uppercase text-indigo-400 border-b border-indigo-400/30 pb-1 mt-4 hover:text-indigo-300 transition-colors"
+                                >
+                                  Enable Fitness API <ExternalLink size={12} />
+                                </a>
+                              )}
                             </div>
                             <button 
                               onClick={() => handleSyncGoogleFit(true)}
-                              className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                              className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all flex items-center gap-3"
                             >
                               <RefreshCw size={14} /> Re-Initialize Link
                             </button>

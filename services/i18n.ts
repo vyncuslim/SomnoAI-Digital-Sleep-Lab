@@ -4,6 +4,10 @@ export type Language = 'en' | 'zh' | 'de' | 'fr';
 export const translations = {
   en: {
     nav: { lab: 'lab', trends: 'TRENDS', insights: 'INSIGHTS', settings: 'SETTINGS' },
+    errors: {
+      fitApiDenied: 'Access Denied: Please ensure the "Fitness API" is enabled for your project in the Google Cloud Console.',
+      syncFailed: 'Telemetry Sync Failed. Check network connection.'
+    },
     dashboard: {
       neuralActive: 'Neural Network Active',
       liveLink: 'Live Link',
@@ -139,6 +143,10 @@ export const translations = {
   },
   zh: {
     nav: { lab: '实验室', trends: '趋势分析', insights: 'AI 洞察', settings: '系统设置' },
+    errors: {
+      fitApiDenied: '访问被拒绝：请确保已在 Google Cloud Console 中为您的项目启用了 "Fitness API"。',
+      syncFailed: '遥测同步失败。请检查网络连接或授权状态。'
+    },
     dashboard: {
       neuralActive: '神经感知网络活跃',
       liveLink: '实时遥测',
@@ -274,6 +282,10 @@ export const translations = {
   },
   de: {
     nav: { lab: 'Labor', trends: 'TRENDS', insights: 'EINBLICKE', settings: 'EINSTELLUNGEN' },
+    errors: {
+      fitApiDenied: 'Zugriff verweigert: Bitte stellen Sie sicher, dass die "Fitness API" in der Google Cloud Console aktiviert ist.',
+      syncFailed: 'Synchronisierung fehlgeschlagen.'
+    },
     dashboard: {
       neuralActive: 'Neurales Netzwerk aktiv',
       liveLink: 'Live-Link',
@@ -409,6 +421,10 @@ export const translations = {
   },
   fr: {
     nav: { lab: 'labo', trends: 'TENDANCES', insights: 'INSIGHTS', settings: 'RÉGLAGES' },
+    errors: {
+      fitApiDenied: 'Accès refusé : Veuillez vous assurer que l\'API Fitness est activée dans la Google Cloud Console.',
+      syncFailed: 'Échec de la synchronisation.'
+    },
     dashboard: {
       neuralActive: 'Réseau neuronal actif',
       liveLink: 'Lien direct',
@@ -536,7 +552,7 @@ export const translations = {
       title: 'À propos du labo',
       mission: 'Notre mission',
       missionText: 'Démocratiser la science du sommeil par le edge computing.',
-      tech: 'Technologie IA',
+      tech: 'IA Technologie',
       techText: 'Propulsé par les modèles Gemini série 3.',
       vision: 'La vision',
       visionText: 'Un monde où le sommeil n\'est plus une boîte noire.'

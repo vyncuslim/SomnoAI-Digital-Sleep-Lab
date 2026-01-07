@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, ArrowRight, Key, Cpu, TriangleAlert } from 'lucide-react';
+import { Loader2, ArrowRight, Key, Cpu, TriangleAlert, CheckCircle2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { googleFit } from './services/googleFitService.ts';
@@ -47,10 +47,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     try {
       await googleFit.ensureClientInitialized();
       const token = await googleFit.authorize(true); 
-      if (token) onLogin(); 
+      if (token) {
+        // 成功获取 Token 后，不再在此处执行 handleSync，而是交给 App 组件的状态驱动
+        onLogin();
+      }
     } catch (error: any) {
       setLocalError(error.message || "Authentication Failed");
-    } finally {
       setIsLoggingIn(false);
     }
   };
@@ -83,12 +85,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
         <GlassCard className="p-10 rounded-[5rem] space-y-10">
           <div className="space-y-6">
-            <div className="p-5 bg-indigo-500/10 border border-indigo-500/20 rounded-full flex items-center justify-between">
+            <div className={`p-5 rounded-full flex items-center justify-between transition-colors ${isEngineActive ? 'bg-emerald-500/10 border border-emerald-500/20' : 'bg-indigo-500/10 border border-indigo-500/20'}`}>
               <span className="text-[10px] font-black uppercase tracking-widest text-slate-400 flex items-center gap-3">
-                <Key size={14} className="text-indigo-400" />
+                <Key size={14} className={isEngineActive ? 'text-emerald-400' : 'text-indigo-400'} />
                 AI Engine
               </span>
-              <span className={`text-[10px] font-black uppercase tracking-widest ${isEngineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
+              <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${isEngineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                {isEngineActive && <CheckCircle2 size={12} />}
                 {isEngineActive ? 'Ready' : 'Offline'}
               </span>
             </div>
@@ -97,7 +100,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               <button 
                 onClick={handleGoogleLogin} 
                 disabled={isLoggingIn} 
-                className="w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95"
+                className="w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 disabled:opacity-50"
               >
                 {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Cpu size={20} className="text-indigo-600" />}
                 Sync Biometrics
@@ -127,7 +130,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               animate={{ opacity: 1 }}
               className="p-4 bg-rose-500/10 rounded-full border border-rose-500/20 text-rose-300 text-[10px] font-bold"
             >
-              <p className="flex justify-center gap-2"><TriangleAlert size={14} className="shrink-0" /> {localError}</p>
+              <p className="flex justify-center gap-2 italic"><TriangleAlert size={14} className="shrink-0" /> {localError}</p>
             </m.div>
           )}
         </GlassCard>
