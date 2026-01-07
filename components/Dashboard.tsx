@@ -108,6 +108,7 @@ https://sleepsomno.com
         <div className="flex items-center gap-4">
           <div className="relative flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20 overflow-hidden shadow-[0_0_20px_rgba(79,70,229,0.2)]">
+              {/* Using embedded SVG component to ensure reliability even behind corporate firewalls */}
               <Logo size={28} animated={engineActive} threeD={true} />
             </div>
             <div>
