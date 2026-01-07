@@ -27,7 +27,7 @@
     <link rel="canonical" href="https://sleepsomno.com/" />
     
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
-    <meta name="description" content="Unlock the science of rest with SomnoAI Digital Sleep Lab. Integrate Google Fit biometrics with state-of-the-art Gemini AI to decode your sleep architecture.">
+    <meta name="description" content="Unlock the science of rest with SomnoAI Digital Sleep Lab.">
     
     <link rel="manifest" href="manifest.json">
 
@@ -40,9 +40,6 @@
     <script src="https://cdn.tailwindcss.com" defer></script>
     
     <script>
-        window.process = { env: { NODE_ENV: 'production', API_KEY: '' } };
-        
-        // 监控脚本加载
         window.addEventListener('load', function() {
             setTimeout(function() {
                 var forceBtn = document.getElementById('force-start-btn');
@@ -50,7 +47,7 @@
                 if (document.getElementById('page-loader')) {
                     if (forceBtn) forceBtn.style.display = 'block';
                     if (diagMsg) {
-                        diagMsg.innerHTML = '<span style="color:#ef4444">检测到 SSL 证书冲突（如 Fortinet 防火墙）。</span><br/>请尝试点击“高级”并信任证书，或切换至移动网络。';
+                        diagMsg.innerHTML = '<span style="color:#ef4444">检测到 SSL 证书冲突或脚本加载缓慢。</span><br/>请检查网络连接或手动进入。';
                     }
                 }
             }, 8000);
@@ -68,7 +65,6 @@
     <style>
         :root {
             --perspective: 1500px;
-            --accent-glow: rgba(79, 70, 229, 0.4);
         }
 
         @keyframes pulse-opacity {
@@ -119,7 +115,7 @@
             padding: 12px 24px;
             background: rgba(79, 70, 229, 0.1);
             border: 1px solid rgba(79, 70, 229, 0.3);
-            border-radius: 8px;
+            border-radius: 4px;
             color: #818cf8;
             font-size: 9px;
             font-weight: 800;
@@ -165,9 +161,9 @@
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
     "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
     "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "react/": "https://esm.sh/react@^19.2.3/"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>

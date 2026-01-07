@@ -70,10 +70,9 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     if (provider === 'openai') {
       const result = await callOpenAI(prompt + " 请仅返回原始 JSON 数组，不要包含 Markdown 代码块标记。", "You are a specialized Sleep Scientist. Always output valid JSON arrays.", true);
       const parsed = JSON.parse(result || "[]");
-      // 处理 OpenAI 可能返回的对象格式
       return Array.isArray(parsed) ? parsed : (parsed.insights || parsed.results || Object.values(parsed));
     } else {
-      // Use process.env.API_KEY directly as per @google/genai guidelines
+      // Create fresh instance before each call to pick up the latest injected API key
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -109,7 +108,6 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
       const result = await callOpenAI(prompt, "You are a Chief Research Officer designing scientific protocols.", true);
       return JSON.parse(result || "{}");
     } else {
-      // Use process.env.API_KEY directly and gemini-3-pro-preview for complex reasoning
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
@@ -177,7 +175,6 @@ export const chatWithCoach = async (
         sources: []
       };
     } else {
-      // Correct Gemini initialization and call for chat with search grounding
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const chatHistory = history.slice(0, -1).map(m => ({
         role: m.role === 'user' ? 'user' : 'model',
@@ -207,9 +204,6 @@ export const chatWithCoach = async (
   }
 };
 
-/**
- * Generate a summary report of the user's sleep trends over time.
- */
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
   const provider = getAIProvider();
   const dataSummary = history.slice(0, 7).map(h => ({
@@ -231,7 +225,6 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
     if (provider === 'openai') {
       return await callOpenAI(prompt, "You are a Sleep Scientist providing high-level reports.");
     } else {
-      // Using gemini-3-pro-preview for high-quality reasoning and analysis
       const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
