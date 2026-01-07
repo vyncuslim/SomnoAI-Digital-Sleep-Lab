@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Auth } from './Auth.tsx';
 import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor } from './types.ts';
-import { User, Loader2, Activity, Zap } from 'lucide-react';
+import { User, Loader2, Activity, Zap, TriangleAlert, RefreshCw } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { googleFit } from './services/googleFitService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -51,7 +51,7 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  // 初始加载：如果已登录但没数据，触发一次同步
+  // Initial Sync if logged in
   useEffect(() => {
     if (isLoggedIn && !currentRecord && !isLoading) {
       handleSyncGoogleFit(false);
@@ -83,6 +83,7 @@ const App: React.FC = () => {
 
   const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
+    setErrorToast(null);
     try {
       onProgress?.('authorizing');
       await googleFit.authorize(forcePrompt);
@@ -102,8 +103,9 @@ const App: React.FC = () => {
       onProgress?.('success');
     } catch (err: any) {
       onProgress?.('error');
-      setErrorToast(err.message || "Sync Failed");
-      setTimeout(() => setErrorToast(null), 3000);
+      const errMsg = err.message || "Telemetry Sync Failed";
+      setErrorToast(errMsg);
+      console.error("Sync Error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -126,23 +128,41 @@ const App: React.FC = () => {
         ) : (
           <Suspense fallback={<LoadingSpinner />}>
             <AnimatePresence mode="wait">
-              <m.div key={activeView} initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.05 }}>
-                {/* 核心防护：如果已登录但数据还没加载出来，显示 Loading 而不是 Dashboard */}
+              <m.div key={activeView} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}>
                 {isLoading && !currentRecord ? (
                   <LoadingSpinner />
                 ) : (
                   <>
-                    {activeView === 'dashboard' && currentRecord && (
-                      <Dashboard 
-                        lang={lang} 
-                        data={currentRecord} 
-                        onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} 
-                        staticMode={staticMode} 
-                        onNavigate={setActiveView} 
-                      />
-                    )}
-                    {activeView === 'dashboard' && !currentRecord && !isLoading && (
-                       <div className="text-center py-20 text-slate-500 italic">No telemetry data available. Try syncing.</div>
+                    {activeView === 'dashboard' && (
+                      <>
+                        {currentRecord ? (
+                          <Dashboard 
+                            lang={lang} 
+                            data={currentRecord} 
+                            onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} 
+                            staticMode={staticMode} 
+                            onNavigate={setActiveView} 
+                          />
+                        ) : (
+                          <div className="flex flex-col items-center justify-center h-[70vh] gap-8 px-10 text-center animate-in fade-in zoom-in">
+                            <div className="w-24 h-24 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+                              <TriangleAlert size={40} />
+                            </div>
+                            <div className="space-y-4">
+                              <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Telemetry Disconnected</h2>
+                              <p className="text-sm text-slate-500 italic max-w-xs mx-auto">
+                                {errorToast || "No active biometric stream identified. Please synchronize with your wearable device."}
+                              </p>
+                            </div>
+                            <button 
+                              onClick={() => handleSyncGoogleFit(true)}
+                              className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 active:scale-95 transition-all flex items-center gap-3"
+                            >
+                              <RefreshCw size={14} /> Re-Initialize Link
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
                     {activeView === 'calendar' && <Trends history={history} lang={lang} />}
                     {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
@@ -189,9 +209,9 @@ const App: React.FC = () => {
       )}
 
       <AnimatePresence>
-        {errorToast && (
-          <m.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-36 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl">
-            {errorToast}
+        {errorToast && currentRecord && (
+          <m.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-36 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl flex items-center gap-3">
+            <TriangleAlert size={14} /> {errorToast}
           </m.div>
         )}
       </AnimatePresence>

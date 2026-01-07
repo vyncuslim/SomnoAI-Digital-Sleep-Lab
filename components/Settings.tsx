@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, HeartHandshake, Shield, FileText, Copy, Smartphone
+  LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, HeartHandshake, Shield, FileText, Copy, Smartphone, Scan
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
@@ -151,66 +151,65 @@ export const Settings: React.FC<SettingsProps> = ({
 
       <AnimatePresence>
         {showDonation && (
-          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-slate-950/95 backdrop-blur-3xl">
+          <div className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-3xl">
             <m.div 
-              initial={{ scale: 0.8, opacity: 0, y: 40 }} 
+              initial={{ scale: 0.9, opacity: 0, y: 20 }} 
               animate={{ scale: 1, opacity: 1, y: 0 }} 
-              exit={{ scale: 0.8, opacity: 0, y: 40 }}
-              transition={{ type: "spring", damping: 20 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
               className="w-full max-w-sm"
             >
-              <GlassCard className="p-12 rounded-[5.5rem] relative overflow-hidden border-rose-500/30">
-                <button onClick={() => setShowDonation(false)} className="absolute top-10 right-10 z-20 text-slate-500 hover:text-white transition-colors">
-                  <X size={28} />
+              <GlassCard className="p-10 rounded-[5rem] relative overflow-hidden border-rose-500/30">
+                <button 
+                  onClick={() => setShowDonation(false)} 
+                  className="absolute top-8 right-8 z-30 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center text-slate-500 hover:text-white transition-colors border border-white/5"
+                >
+                  <X size={20} />
                 </button>
 
-                <div className="text-center space-y-10 relative z-10">
-                  <div className="space-y-2">
-                    <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Bio-Funding</h2>
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.3em]">Neural Core Support</p>
+                <div className="text-center space-y-8 relative z-10">
+                  <div className="space-y-1">
+                    <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Bio-Funding</h2>
+                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.4em]">Laboratory Maintenance</p>
                   </div>
 
-                  {/* 神经门户二维码容器 */}
-                  <div className="relative mx-auto group">
-                    <m.div 
-                      animate={{ scale: [1, 1.05, 1], rotate: [0, 2, 0, -2, 0] }}
-                      transition={{ duration: 10, repeat: Infinity }}
-                      className="w-64 h-64 mx-auto bg-white p-6 rounded-[4rem] shadow-[0_0_80px_rgba(236,72,153,0.3)] relative overflow-hidden"
-                    >
-                      {/* 二维码图片 */}
+                  {/* Enhanced QR Portal */}
+                  <div className="relative py-4 flex flex-col items-center">
+                    <div className="relative p-6 bg-white rounded-[3.5rem] shadow-[0_0_60px_rgba(236,72,153,0.25)] group">
+                      <m.div 
+                        animate={{ opacity: [0.4, 1, 0.4] }}
+                        transition={{ duration: 3, repeat: Infinity }}
+                        className="absolute inset-0 border-2 border-rose-500/30 rounded-[3.5rem] -m-2 pointer-events-none"
+                      />
                       <img 
                         src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://paypal.me/vyncuslim&bgcolor=ffffff&color=020617&qzone=2" 
-                        alt="PayPal QR Terminal" 
-                        className="w-full h-full rounded-[2rem] relative z-10"
+                        alt="PayPal QR Portal" 
+                        className="w-48 h-48 rounded-[2rem] relative z-10 mix-blend-multiply"
                       />
-                      
-                      {/* 扫描射线动画 */}
+                      {/* Laser Line */}
                       <m.div 
-                        animate={{ top: ['-10%', '110%'] }}
-                        transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
-                        className="absolute left-0 right-0 h-[2px] bg-rose-500 shadow-[0_0_15px_rgba(236,72,153,0.8)] z-20 opacity-50"
+                        animate={{ top: ['0%', '100%'] }}
+                        transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+                        className="absolute left-0 right-0 h-[1.5px] bg-rose-500 shadow-[0_0_12px_rgba(236,72,153,0.8)] z-20 opacity-60"
                       />
-                      
-                      {/* 呼吸光晕 */}
-                      <div className="absolute inset-0 bg-rose-500/5 animate-pulse rounded-[4rem]" />
-                    </m.div>
-
-                    {/* 装饰性元素 */}
-                    <div className="absolute -inset-4 border border-rose-500/10 rounded-[5rem] -z-10 animate-spin-slow opacity-30" />
+                    </div>
+                    <div className="mt-6 flex items-center gap-2 px-4 py-2 bg-rose-500/10 rounded-full border border-rose-500/20">
+                      <Scan size={12} className="text-rose-400" />
+                      <span className="text-[9px] font-black text-rose-300 uppercase tracking-widest">Scan to Support</span>
+                    </div>
                   </div>
 
-                  <div className="space-y-4">
+                  <div className="space-y-3 pt-4 border-t border-white/5">
                     <button 
                       onClick={() => handleCopy('vyncuslim', 'paypal')}
                       className={`w-full py-4 px-6 rounded-full border transition-all flex items-center justify-between ${copyStatus === 'paypal' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-white/5 border-white/10 text-slate-300 hover:border-rose-400'}`}
                     >
                       <div className="flex items-center gap-3">
-                        <Smartphone size={16} className="text-rose-400" />
-                        <span className="text-[11px] font-black uppercase tracking-widest">PayPal ID</span>
+                        <Smartphone size={14} className="text-rose-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">PayPal</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-mono opacity-50">vyncuslim</span>
-                        {copyStatus === 'paypal' ? <CheckCircle2 size={16} /> : <Copy size={14} />}
+                        <span className="text-[10px] font-mono opacity-50">vyncuslim</span>
+                        {copyStatus === 'paypal' ? <CheckCircle2 size={14} /> : <Copy size={12} />}
                       </div>
                     </button>
 
@@ -219,17 +218,15 @@ export const Settings: React.FC<SettingsProps> = ({
                       className={`w-full py-4 px-6 rounded-full border transition-all flex items-center justify-between ${copyStatus === 'duitnow' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-white/5 border-white/10 text-slate-300 hover:border-rose-400'}`}
                     >
                       <div className="flex items-center gap-3">
-                        <Smartphone size={16} className="text-rose-400" />
-                        <span className="text-[11px] font-black uppercase tracking-widest">DuitNow ID</span>
+                        <Smartphone size={14} className="text-rose-400" />
+                        <span className="text-[10px] font-black uppercase tracking-widest">DuitNow</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-mono opacity-50">+60 18***7388</span>
-                        {copyStatus === 'duitnow' ? <CheckCircle2 size={16} /> : <Copy size={14} />}
+                        <span className="text-[10px] font-mono opacity-50">+60 18***7388</span>
+                        {copyStatus === 'duitnow' ? <CheckCircle2 size={14} /> : <Copy size={12} />}
                       </div>
                     </button>
                   </div>
-
-                  <p className="text-[9px] text-slate-600 font-bold uppercase tracking-[0.4em] pt-4">Laboratory Maintenance Fund</p>
                 </div>
               </GlassCard>
             </m.div>
