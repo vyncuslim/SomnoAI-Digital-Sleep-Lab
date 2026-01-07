@@ -14,6 +14,14 @@ import { Language } from '../services/i18n.ts';
 // Fix: Use any cast to bypass broken library types for motion props
 const m = motion as any;
 
+/**
+ * Interface for Trends component props
+ */
+interface TrendsProps {
+  history: SleepRecord[];
+  lang: Language;
+}
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     const data = payload[0].payload;

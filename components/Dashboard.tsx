@@ -11,6 +11,7 @@ import {
   Microchip, Layers, Share2, Linkedin, Copy, CheckCircle2, X, ExternalLink, HeartHandshake
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
+import { Logo } from './Logo.tsx';
 
 // Fix: Use any cast to bypass broken library types for motion props
 const m = motion as any;
@@ -101,17 +102,13 @@ https://sleepsomno.com
     <m.div 
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="space-y-8 pb-32"
+      className="space-y-8 pb-32 rounded"
     >
       <div className="flex justify-between items-center px-2">
         <div className="flex items-center gap-4">
           <div className="relative flex items-center gap-3">
             <div className="w-10 h-10 bg-indigo-500/10 rounded-xl flex items-center justify-center border border-indigo-500/20 overflow-hidden shadow-[0_0_20px_rgba(79,70,229,0.2)]">
-              <img 
-                src="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/logo.png" 
-                alt="SomnoAI" 
-                className="w-7 h-7 object-contain"
-              />
+              <Logo size={28} animated={engineActive} threeD={true} />
             </div>
             <div>
               <h2 className="text-xs font-black uppercase tracking-[0.3em] text-slate-400 leading-none mb-1.5">{t.neuralActive}</h2>

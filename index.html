@@ -1,18 +1,14 @@
+
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
-    <!-- 1. Google Search Favicon (The Professional Standard) -->
-    <!-- 核心：放在根目录，直接访问 https://sleepsomno.com/favicon.png -->
-    <link rel="icon" href="/favicon.png" type="image/png">
-    <link rel="shortcut icon" href="/favicon.png" type="image/png">
+    <link rel="icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/favicon.png" type="image/png">
+    <link rel="shortcut icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/favicon.png">
     
-    <!-- 2. Apple Device Support -->
-    <link rel="apple-touch-icon" href="/favicon.png">
-    
-    <!-- 3. Google Site Name & Identity (Structured Data) -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
@@ -30,7 +26,6 @@
     
     <link rel="canonical" href="https://sleepsomno.com/" />
     
-    <!-- SEO Meta Tags -->
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
     <meta name="description" content="Unlock the science of rest with SomnoAI Digital Sleep Lab. Integrate Google Fit biometrics with state-of-the-art Gemini AI to decode your sleep architecture.">
     <meta name="keywords" content="SomnoAI, SomnoAI Digital Sleep Lab, AI Sleep Analysis, Digital Sleep Lab, Sleep Biometrics, Google Fit Sleep Sync, Gemini AI Health">
@@ -38,14 +33,12 @@
 
     <link rel="manifest" href="manifest.json">
 
-    <!-- OpenGraph / Social Media -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sleepsomno.com/">
     <meta property="og:title" content="SomnoAI Digital Sleep Lab: Professional AI Sleep Analysis">
     <meta property="og:description" content="Integrate Google Fit biometrics with Gemini AI to decode your sleep architecture. 100% private.">
-    <meta property="og:image" content="https://sleepsomno.com/favicon.png">
+    <meta property="og:image" content="https://cdn.jsdelivr.net/gh/vyncuslim/SomnoAI-Digital-Sleep-Lab@main/public/favicon.png">
     
-    <!-- Performance Optimizations -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="preconnect" href="https://esm.sh">
@@ -134,7 +127,7 @@
             z-index: 1000;
             transition: opacity 0.5s ease;
         }
-        .initial-loader .logo-img {
+        .initial-loader .logo-svg {
             width: 80px; height: 80px;
             animation: pulse-opacity 2s infinite ease-in-out;
             filter: drop-shadow(0 0 15px rgba(79, 70, 229, 0.5));
@@ -243,7 +236,23 @@
     </div>
     <div id="root">
         <div class="initial-loader" id="page-loader" role="status" aria-label="Starting SomnoAI Digital Sleep Lab">
-            <img class="logo-img" src="/favicon.png" alt="SomnoAI Logo" aria-hidden="true">
+            <!-- Embedded SVG to prevent broken image -->
+            <svg class="logo-svg" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <defs>
+                    <linearGradient id="moonGlowLoader" x1="20" y1="20" x2="80" y2="80">
+                        <stop offset="0%" stop-color="#e0e7ff" />
+                        <stop offset="50%" stop-color="#818cf8" />
+                        <stop offset="100%" stop-color="#4f46e5" />
+                    </linearGradient>
+                    <mask id="moonMaskLoader">
+                        <circle cx="50" cy="50" r="35" fill="white" />
+                        <circle cx="65" cy="40" r="32" fill="black" />
+                    </mask>
+                </defs>
+                <g mask="url(#moonMaskLoader)">
+                    <circle cx="50" cy="50" r="35" fill="url(#moonGlowLoader)" />
+                </g>
+            </svg>
             <div class="text">SomnoAI Digital Sleep Lab</div>
         </div>
     </div>
