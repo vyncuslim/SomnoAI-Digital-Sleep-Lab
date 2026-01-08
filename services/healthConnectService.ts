@@ -28,17 +28,22 @@ const toMillis = (val: any): number => {
 
 /**
  * HealthConnectService: Handles biometric data synchronization via the cloud bridge.
- * Internally aligns with the 8-step SDK protocol for high-fidelity extraction.
+ * Aligns with high-fidelity 8-step SDK protocol for reliable extraction & injection.
  * 
- * --- FEEDING PROTOCOL (Writing) ---
- * 1. InsertRecords: The bridge utilizes metadata for implicit update/insert logic.
- * 2. clientRecordID: Unique local DB key mapping to prevent telemetry duplication.
- * 3. clientRecordVersion: Timestamp-based conflict resolution.
+ * --- FEEDING PROTOCOL (Writing Logic) ---
+ * 1. InsertRecords: SDK-level implicit update/insert logic via metadata.
+ * 2. clientRecordID: Unique local DB mapping prevents telemetry duplication (Idempotency).
+ * 3. clientRecordVersion: Timestamp-based conflict resolution for signal accuracy.
+ * 4. Batching: Series data is batched per 1000 records for efficient throughput.
  * 
- * --- CONSUMING PROTOCOL (Reading) ---
- * 1. Changes Sync API: Continuous tracking of system library updates.
- * 2. Token Management: Incremental cursor support (30-day lifespan).
- * 3. Filtering: Package-name isolation prevents feedback loops from self-written data.
+ * --- CONSUMING PROTOCOL (Reading Logic) ---
+ * 1. Changes Sync API: Incremental tracking of insertions, updates, and deletions.
+ * 2. Token Management: Incremental cursor support with rolling 30-day lifespan.
+ * 3. Package Filtering: Isolation based on Package Name to exclude self-generated loops.
+ * 
+ * --- SECURITY & PRIVACY ---
+ * 1. Foreground Restriction: Biometric reading restricted to active UI session for privacy.
+ * 2. User Sovereignty: System-level permission UI ensures user control over scopes.
  */
 export class HealthConnectService {
   private accessToken: string | null = null;

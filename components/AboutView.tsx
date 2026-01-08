@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, Info, Code2, ListTree, Timer, Layers, Zap, Download, Upload } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, Info, Code2, ListTree, Timer, Layers, Zap, Download, Upload, BookOpen, Warehouse, LayoutList, Fingerprint } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { motion } from 'framer-motion';
@@ -36,11 +36,11 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase">
+          <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
             {t.title}
           </h1>
-          <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-0.5">
-            Technical Implementation Protocol
+          <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-1">
+            Health Connect Implementation Protocol
           </p>
         </div>
       </header>
@@ -64,50 +64,62 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
            </GlassCard>
         </div>
 
-        {/* Feeding Logic */}
+        {/* Feeding Logic (Writing) */}
         <GlassCard className="p-10 space-y-8 border-indigo-500/20 bg-indigo-500/[0.02] rounded-[4rem]">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                <Upload size={24} />
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                  <Upload size={24} />
+                </div>
+                <h2 className="text-xl font-bold italic text-white uppercase tracking-tight">{t.feedingTitle}</h2>
               </div>
-              <h2 className="text-xl font-bold italic text-white uppercase tracking-tight">{t.feedingTitle}</h2>
+              <Warehouse size={20} className="text-slate-800" />
            </div>
            
            <div className="space-y-4">
               {[t.feedingStep1, t.feedingStep2, t.feedingStep3].map((step, i) => (
-                <div key={i} className="flex items-start gap-4 p-5 bg-slate-950/60 rounded-3xl border border-white/5">
+                <div key={i} className="flex items-start gap-4 p-5 bg-slate-950/60 rounded-3xl border border-white/5 group hover:border-indigo-500/40 transition-all">
                   <div className="mt-1 w-2 h-2 rounded-full bg-indigo-500 shrink-0 shadow-[0_0_10px_rgba(79,70,229,0.8)]" />
-                  <p className="text-xs font-bold text-slate-300 italic">{step}</p>
+                  <p className="text-[11px] font-bold text-slate-300 italic">{step}</p>
                 </div>
               ))}
            </div>
            
-           <div className="p-5 bg-black/40 border border-indigo-500/10 rounded-2xl font-mono text-[10px] text-indigo-400/80 leading-relaxed">
-              <span className="text-slate-600">// Idempotency Mapping</span><br/>
-              {`Metadata(clientRecordID = "APP_KEY_2026", clientRecordVersion = System.now())`}
+           <div className="p-5 bg-black/40 border border-indigo-500/10 rounded-2xl font-mono text-[10px] text-indigo-400/80 leading-relaxed group">
+              <div className="flex items-center gap-2 mb-2">
+                 <Fingerprint size={12} className="text-indigo-500/60" />
+                 <span className="text-[9px] uppercase tracking-widest text-slate-600 font-black">Idempotency & Conflict Mapping</span>
+              </div>
+              {`Metadata(clientRecordID = "DB_UNIQUE_KEY", clientRecordVersion = System.now())`}
            </div>
         </GlassCard>
 
-        {/* Consuming Logic */}
+        {/* Consuming Logic (Reading) */}
         <GlassCard className="p-10 space-y-8 border-emerald-500/20 bg-emerald-500/[0.02] rounded-[4rem]">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400">
-                <Download size={24} />
+           <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400">
+                  <Download size={24} />
+                </div>
+                <h2 className="text-xl font-bold italic text-white uppercase tracking-tight">{t.consumingTitle}</h2>
               </div>
-              <h2 className="text-xl font-bold italic text-white uppercase tracking-tight">{t.consumingTitle}</h2>
+              <BookOpen size={20} className="text-slate-800" />
            </div>
            
            <div className="space-y-4">
               {[t.consumingStep1, t.consumingStep2, t.consumingStep3].map((step, i) => (
-                <div key={i} className="flex items-start gap-4 p-5 bg-slate-950/60 rounded-3xl border border-white/5">
+                <div key={i} className="flex items-start gap-4 p-5 bg-slate-950/60 rounded-3xl border border-white/5 group hover:border-emerald-500/40 transition-all">
                   <div className="mt-1 w-2 h-2 rounded-full bg-emerald-500 shrink-0 shadow-[0_0_10px_rgba(16,185,129,0.8)]" />
-                  <p className="text-xs font-bold text-slate-300 italic">{step}</p>
+                  <p className="text-[11px] font-bold text-slate-300 italic">{step}</p>
                 </div>
               ))}
            </div>
            
            <div className="p-5 bg-black/40 border border-emerald-500/10 rounded-2xl font-mono text-[10px] text-emerald-400/80 leading-relaxed">
-              <span className="text-slate-600">// Incremental Sync Cursor</span><br/>
+              <div className="flex items-center gap-2 mb-2">
+                 <Activity size={12} className="text-emerald-500/60" />
+                 <span className="text-[9px] uppercase tracking-widest text-slate-600 font-black">Incremental Sync Token (30d Lifespan)</span>
+              </div>
               {`val token = client.getChangesToken(recordTypes = setOf(SleepSessionRecord::class))`}
            </div>
         </GlassCard>
@@ -121,7 +133,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
            
            <div className="grid grid-cols-1 gap-4">
               {recordTypes.map((type, i) => (
-                <GlassCard key={i} className="p-8 border-white/5 bg-slate-950/40 rounded-[3rem] space-y-4 group hover:border-indigo-500/20 transition-all">
+                <GlassCard key={i} className="p-8 border-white/5 bg-slate-950/40 rounded-[3rem] space-y-4 group hover:border-indigo-500/20 transition-all duration-700">
                   <div className="flex items-center gap-4">
                      <div className="p-3 bg-white/5 rounded-2xl text-slate-400 group-hover:text-indigo-400 transition-colors">
                         <type.icon size={20} />
@@ -148,7 +160,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                 </div>
                 <h2 className="text-xl font-bold italic text-white uppercase tracking-tight">{t.protocolTitle}</h2>
               </div>
-              <span className="text-[9px] font-mono text-slate-600 bg-white/5 px-3 py-1 rounded-full border border-white/5 tracking-widest uppercase font-black">SDK Logic v1.2</span>
+              <span className="text-[9px] font-mono text-slate-600 bg-white/5 px-3 py-1 rounded-full border border-white/5 tracking-widest uppercase font-black">SDK v1.2 HANDSHAKE</span>
            </div>
 
           <div className="grid grid-cols-1 gap-3">
@@ -176,8 +188,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
              </div>
              <p className="text-[10px] text-slate-400 leading-relaxed italic font-medium">
                 {isZh 
-                  ? "连接认知升级：连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。无登录页，无 Token，由 Android 官方 Health Connect 托管授权。数据所有权始终属于用户，应用仅在“醒着”时获准查阅。" 
-                  : "Cognitive Handshake: Connection = Detect -> Initialize Client -> Request Permission -> R/W. No login page, no tokens. Authorization is managed by Android Health Connect. Data ownership stays with the user."}
+                  ? "连接哲学：连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。Health Connect 在 Android OS 层面托管授权。数据所有权始终属于用户，同步仅在应用处于“前台”时获准，且需严格通过包名过滤防冗余反馈。令牌有效期为 30 天。" 
+                  : "Cognitive Handshake: Connection = Detect -> Initialize Client -> Request Permission -> R/W. Authorization is managed by Android Health Connect. Data stays with the user. Foreground-only access required. Package filtering ensures signal isolation. Tokens expire in 30 days."}
              </p>
           </div>
         </GlassCard>
@@ -185,10 +197,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
         <footer className="pt-12 flex flex-col items-center gap-6 opacity-40">
            <div className="flex items-center gap-3">
              <FlaskConical size={14} className="text-indigo-400" />
-             <span className="text-[9px] font-mono tracking-widest uppercase">Health Ecosystem Logic v1.2</span>
+             <span className="text-[9px] font-mono tracking-widest uppercase">Bio-Digital Infrastructure v1.2</span>
            </div>
            <div className="p-6 bg-slate-900/40 border border-white/5 rounded-[2.5rem] text-center max-w-sm">
-             <p className="text-[9px] text-slate-500 font-bold italic leading-relaxed uppercase tracking-wider">
+             <p className="text-[10px] text-slate-500 font-bold italic leading-relaxed uppercase tracking-[0.2em]">
                {isZh ? "数据属于用户，授权由系统兜底" : "Data belongs to the user, Auth by System"}
              </p>
            </div>
