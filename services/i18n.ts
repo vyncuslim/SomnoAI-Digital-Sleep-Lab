@@ -424,7 +424,7 @@ export const translations = {
       missionText: 'Die Demokratisierung der Schlafwissenschaft durch Edge Computing und Health Connect.',
       tech: 'KI-Technologie',
       techText: 'Unterstützt durch Gemini 3 Serienmodelle.',
-      vision: 'The Vision',
+      vision: 'Die Vision',
       visionText: 'Eine Welt, in der Schlaf keine Blackbox ist.'
     }
   },
@@ -562,7 +562,7 @@ export const translations = {
     },
     about: {
       title: 'À propos du labo',
-      mission: 'Notre mission',
+      mission: 'Our mission',
       missionText: 'Démocratiser la science du sommeil.',
       tech: 'IA Technologie',
       techText: 'Propulsé par Gemini.',
