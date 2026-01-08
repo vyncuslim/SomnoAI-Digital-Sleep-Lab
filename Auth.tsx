@@ -116,21 +116,21 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                 {/* Interactive Status Grid */}
                 <div className="grid grid-cols-2 gap-3 pb-2">
                    <m.button 
-                      whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.08)" }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleHealthConnectLogin}
-                      className="p-4 bg-white/5 rounded-3xl border border-white/5 flex flex-col items-center gap-2 transition-colors cursor-pointer group"
+                      whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.08)" }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => onNavigate?.('about')}
+                      className="p-5 bg-white/5 rounded-[2.5rem] border border-white/5 flex flex-col items-center gap-2 transition-all cursor-pointer group"
                    >
-                      <Database size={16} className="text-indigo-400 group-hover:text-indigo-300 transition-colors" />
+                      <Database size={20} className="text-indigo-400 group-hover:text-indigo-300 transition-colors" />
                       <span className="text-[9px] font-black uppercase text-slate-500 group-hover:text-slate-400 tracking-widest">Health Connect</span>
                    </m.button>
                    <m.button 
-                      whileHover={{ scale: 1.02, backgroundColor: "rgba(255,255,255,0.08)" }}
-                      whileTap={{ scale: 0.98 }}
-                      onClick={handleHealthConnectLogin}
-                      className="p-4 bg-white/5 rounded-3xl border border-white/5 flex flex-col items-center gap-2 transition-colors cursor-pointer group"
+                      whileHover={{ scale: 1.05, backgroundColor: "rgba(255,255,255,0.08)" }}
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => onNavigate?.('about')}
+                      className="p-5 bg-white/5 rounded-[2.5rem] border border-white/5 flex flex-col items-center gap-2 transition-all cursor-pointer group"
                    >
-                      <Lock size={16} className="text-emerald-400 group-hover:text-emerald-300 transition-colors" />
+                      <Lock size={20} className="text-emerald-400 group-hover:text-emerald-300 transition-colors" />
                       <span className="text-[9px] font-black uppercase text-slate-500 group-hover:text-slate-400 tracking-widest">Secure Bridge</span>
                    </m.button>
                 </div>

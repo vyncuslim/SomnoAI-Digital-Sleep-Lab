@@ -17,6 +17,7 @@ const m = motion as any;
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
 const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ default: m.Settings })));
+const AboutView = lazy(() => import('./components/AboutView.tsx').then(m => ({ default: m.AboutView })));
 
 const LoadingSpinner = () => (
   <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
@@ -138,7 +139,8 @@ const App: React.FC = () => {
     window.location.reload();
   };
 
-  const isShowAuth = !isLoggedIn && !isGuest && activeView !== 'privacy' && activeView !== 'terms';
+  const isPublicView = activeView === 'privacy' || activeView === 'terms' || activeView === 'about';
+  const isShowAuth = !isLoggedIn && !isGuest && !isPublicView;
 
   return (
     <div className={`flex-1 flex flex-col min-h-screen relative`}>
@@ -151,6 +153,8 @@ const App: React.FC = () => {
               <m.div key={activeView} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}>
                 {activeView === 'privacy' || activeView === 'terms' ? (
                   <LegalView type={activeView as 'privacy' | 'terms'} lang={lang} onBack={() => setActiveView('dashboard')} />
+                ) : activeView === 'about' ? (
+                  <AboutView lang={lang} onBack={() => setActiveView('dashboard')} />
                 ) : (
                   isLoading && !currentRecord ? (
                     <LoadingSpinner />
@@ -231,7 +235,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {(isLoggedIn || isGuest) && activeView !== 'privacy' && activeView !== 'terms' && (
+      {(isLoggedIn || isGuest) && !isPublicView && (
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
           <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)]">
             {[
