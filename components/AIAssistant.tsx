@@ -62,7 +62,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null }>
   }, []);
 
   useEffect(() => {
-    if (messages.length === 0 && hasKey) {
+    if (messages.length === 0 && hasKey === true) {
       setMessages([{ role: 'assistant', content: t.intro, timestamp: new Date() }]);
     }
   }, [hasKey]);
@@ -89,10 +89,30 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null }>
         timestamp: new Date() 
       }]);
     } catch (err: any) {
-      if (err.message?.includes("404") || err.message?.includes("not found")) setHasKey(false);
+      if (err.message?.includes("404") || err.message?.includes("not found")) {
+        setHasKey(false);
+      }
       setMessages(prev => [...prev, { role: 'assistant', content: t.error, timestamp: new Date() }]);
     } finally {
       setIsTyping(false);
+    }
+  };
+
+  const handleActivate = async () => {
+    const aistudio = (window as any).aistudio;
+    if (aistudio) {
+      try {
+        await aistudio.openSelectKey();
+        // Race condition mitigation: assume success after triggering openSelectKey
+        setHasKey(true);
+      } catch (e) {
+        console.error("Failed to open key selector:", e);
+      }
+    } else {
+      // If not in AI Studio, maybe show an alert or just set to false if it was null
+      console.warn("AI Studio Environment not detected.");
+      // If we are here, hasKey is already false or null. 
+      // We can't really "Activate" without the bridge or a manual key in Settings.
     }
   };
 
@@ -121,13 +141,27 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null }>
         <div className="w-24 h-24 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-2xl">
           <Lock size={40} className="text-indigo-400" />
         </div>
-        <h2 className="text-2xl font-black italic text-white uppercase">Neural Core Offline</h2>
+        <div className="space-y-2">
+          <h2 className="text-2xl font-black italic text-white uppercase">Neural Core Offline</h2>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-10">
+            { (window as any).aistudio ? "Please select an API key to enable AI insights." : "API Key required. Configure in Settings or environment."}
+          </p>
+        </div>
         <button 
-          onClick={() => (window as any).aistudio?.openSelectKey().then(() => setHasKey(true))}
-          className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all"
+          onClick={handleActivate}
+          className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all hover:bg-indigo-500"
         >
           Initialize AI Engine
         </button>
+      </div>
+    );
+  }
+
+  // Still loading status
+  if (hasKey === null) {
+    return (
+      <div className="flex items-center justify-center h-[70vh]">
+        <Loader2 className="animate-spin text-indigo-500" size={32} />
       </div>
     );
   }
