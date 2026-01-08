@@ -36,9 +36,9 @@ export const translations = {
     },
     auth: {
       lab: 'Lab',
-      tagline: 'SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring (Sleep, HR, Body Metrics) with deep Gemini AI insights and strategic wellness protocols.',
+      tagline: 'SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring (Sleep, HR, Body Metrics) with deep Gemini AI insights and strategic wellness protocols, utilizing the modern Android Health Connect ecosystem.',
       securityStatement: 'Security Statement',
-      securityDetail: 'Data synced locally via Health Connect. Zero backend storage. Sensitive metrics cleared upon session termination.',
+      securityDetail: 'Data synced locally via the Health Connect Cloud Bridge. Zero backend storage. Sensitive metrics cleared upon session termination.',
       connect: 'Sync Health Connect',
       guest: 'Guest Login',
       privacyPolicy: 'Privacy Policy',
@@ -50,7 +50,7 @@ export const translations = {
     },
     assistant: {
       title: 'AI Insights Lab',
-      intro: 'System initialized. I am Somno Chief Research Officer. Biometric streams loaded. I can provide sleep architecture projections or optimization recommendations. Awaiting instructions.',
+      intro: 'System initialized. I am Somno Chief Research Officer. Health Connect biometric streams loaded. I can provide sleep architecture projections or optimization recommendations. Awaiting instructions.',
       feedback: 'FEEDBACK',
       confidence: 'CONFIDENCE',
       placeholder: 'Ask or use voice commands (Sync, Trends, Clear)...',
@@ -82,7 +82,7 @@ export const translations = {
       language: 'Language',
       geminiCore: 'Gemini Core Engine',
       dataPrivacy: 'Data Privacy',
-      healthConnect: 'Health Connect',
+      healthConnect: 'Health Connect Bridge',
       autoUpdate: 'Auto Update',
       active: 'Active',
       encrypted: 'Edge-Encrypted Storage',
@@ -137,7 +137,7 @@ export const translations = {
     about: {
       title: 'About the Lab',
       mission: 'Our Mission',
-      missionText: 'To democratize high-fidelity sleep science through edge computing and empathetic AI.',
+      missionText: 'To democratize high-fidelity sleep science through edge computing and empathetic AI, powered by Android Health Connect.',
       tech: 'AI Technology',
       techText: 'Powered by Gemini 3 series models.',
       vision: 'The Vision',
@@ -147,10 +147,10 @@ export const translations = {
   zh: {
     nav: { lab: '实验室', trends: '趋势分析', insights: 'AI 洞察', settings: '系统设置' },
     errors: {
-      healthApiDenied: '访问被拒绝：请确保系统中已启用 Health Connect 权限及 Health Cloud 桥接。',
+      healthApiDenied: '访问被拒绝：请确保已在系统中启用了 Health Connect 数据权限。',
       syncFailed: '遥测同步失败。请检查网络连接或授权状态。',
-      noDataFound: '未发现 Health Connect 数据。请确保您的可穿戴设备已将数据同步至系统。',
-      noSleepData: '发现活动记录，但未发现明确的“睡眠”会话。请检查 Health Connect 中是否包含睡眠记录。',
+      noDataFound: '未发现 Health Connect 数据。请确保您的可穿戴设备已将数据同步至 Health Connect。',
+      noSleepData: '发现活动记录，但未发现明确的“睡眠”会话。请检查 Health Connect 中是否能看到睡眠记录。',
       authExpired: '登录已过期，请重新连接。'
     },
     dashboard: {
@@ -178,9 +178,9 @@ export const translations = {
     },
     auth: {
       lab: '实验室',
-      tagline: 'SomnoAI 数字化睡眠实验室将高保真生理指标监控（睡眠、心率、身体测量）、Gemini AI 深度洞察与战略性健康协议融为一体。',
+      tagline: 'SomnoAI 数字化睡眠实验室将高保真生理指标监控、Gemini AI 深度洞察与战略性健康协议融为一体，完美适配 Android Health Connect 生态。',
       securityStatement: '安全与隐私声明',
-      securityDetail: '数据通过 Health Connect 本地加密同步。零后端存储。会话终止时即时销毁敏感指标。',
+      securityDetail: '数据通过 Health Connect 云端桥接本地加密同步。零后端存储。会话终止时即时销毁敏感指标。',
       connect: '同步 Health Connect',
       guest: '访穿实验室',
       privacyPolicy: '隐私政策',
@@ -192,7 +192,7 @@ export const translations = {
     },
     assistant: {
       title: 'AI 实验洞察室',
-      intro: '系统初始化完成。我是 Somno 首席研究官。生物识别流已加载。我可以为您提供睡眠架构预测或优化建议。等待指令中。',
+      intro: '系统初始化完成。我是 Somno 首席研究官。Health Connect 生物识别流已加载。我可以为您提供睡眠架构预测或优化建议。等待指令中。',
       feedback: '反馈精度',
       confidence: '模型置信度',
       placeholder: '请输入指令或使用语音命令...',
@@ -224,7 +224,7 @@ export const translations = {
       language: '系统语言',
       geminiCore: 'Gemini 神经内核',
       dataPrivacy: '数据隐私协议',
-      healthConnect: 'Health Connect',
+      healthConnect: 'Health Connect 桥接',
       autoUpdate: '自动更新',
       active: '已激活',
       encrypted: '边缘加密存储',
@@ -279,7 +279,7 @@ export const translations = {
     about: {
       title: '关于本实验室',
       mission: '我们的愿景',
-      missionText: '通过边缘计算和共情 AI，实现高保真睡眠科学的普及。',
+      missionText: '通过边缘计算、Health Connect 数据桥接和共情 AI，实现高保真睡眠科学的普及。',
       tech: 'AI 神经技术',
       techText: '由 Google Gemini 3 系列旗舰模型驱动。',
       vision: '核心理念',
@@ -289,10 +289,10 @@ export const translations = {
   de: {
     nav: { lab: 'Labor', trends: 'TRENDS', insights: 'EINBLICKE', settings: 'EINSTELLUNGEN' },
     errors: {
-      healthApiDenied: 'Zugriff verweigert: Bitte stellen Sie sicher, dass Health Connect Berechtigungen aktiviert sind.',
+      healthApiDenied: 'Zugriff verweigert: Bitte stellen Sie sicher, dass die Health Connect-Berechtigungen aktiviert sind.',
       syncFailed: 'Synchronisierung fehlgeschlagen.',
-      noDataFound: 'Keine Health Connect Daten gefunden.',
-      noSleepData: 'Keine Schlafphasen in Health Connect identifiziert.',
+      noDataFound: 'Keine Health Connect-Daten gefunden.',
+      noSleepData: 'Keine Schlafphasen gefunden.',
       authExpired: 'Sitzung abgelaufen.'
     },
     dashboard: {
@@ -320,7 +320,7 @@ export const translations = {
     },
     auth: {
       lab: 'Labor',
-      tagline: 'Das SomnoAI Digital Sleep Lab integriert hochpräzises physiologisches Monitoring mit tiefen Gemini KI-Einblicken.',
+      tagline: 'Das SomnoAI Digital Sleep Lab integriert hochpräzises physiologisches Monitoring mit tiefen Gemini KI-Einblicken und Health Connect.',
       securityStatement: 'Sicherheitserklärung',
       securityDetail: 'Daten lokal über Health Connect synchronisiert. Kein Backend-Speicher.',
       connect: 'Health Connect synchronisieren',
@@ -334,13 +334,13 @@ export const translations = {
     },
     assistant: {
       title: 'KI Einblicke Labor',
-      intro: 'System initialisiert. Ich bin der Somno Chief Research Officer.',
+      intro: 'System initialisiert. Ich bin der Somno Chief Research Officer. Health Connect Streams geladen.',
       feedback: 'FEEDBACK',
       confidence: 'KONFIDENZ',
       placeholder: 'Fragen oder Sprachbefehle verwenden...',
       typing: 'Laboranweisungen werden synthetisiert...',
       error: 'Labor-Gateway-Ausnahme.',
-      sandbox: 'Verschlüsselte KI-Sandbox • Lokale Verarbeitung aktiviert',
+      sandbox: 'Verschlüsselte KI-Sandbox',
       micActive: 'Höre auf Bio-Befehle...',
       cmdCaptured: 'Befehlsprotokoll identifiziert'
     },
@@ -348,7 +348,7 @@ export const translations = {
       title: 'Trend-Atlas',
       subtitle: 'Historisches Analyse-Labor',
       noSignal: 'Datenbank bereit - Kein Signal',
-      noSignalDetail: 'Mindestens 2 Stichproben erforderlich',
+      noSignalDetail: 'Mindestens 2 Stichproben für Trendanalyse erforderlich',
       synthesize: 'Trendbericht synthetisieren',
       aggregating: 'Feature-Streams werden aggregiert...',
       croConclusion: 'CRO Schlussfolgerung',
@@ -366,7 +366,7 @@ export const translations = {
       language: 'Sprache',
       geminiCore: 'Gemini Core Engine',
       dataPrivacy: 'Datenschutz',
-      healthConnect: 'Health Connect',
+      healthConnect: 'Health Connect Bridge',
       autoUpdate: 'Auto-Update',
       active: 'Aktiv',
       encrypted: 'Edge-verschlüsselter Speicher',
@@ -377,7 +377,7 @@ export const translations = {
       source: 'Quellcode anzeigen',
       funding: 'Forschungsförderung',
       fundingDesc: 'Unterstützen Sie den Entwickler.',
-      fundingDisclaimer: 'Beiträge sind freiwillig.',
+      fundingDisclaimer: 'SomnoAI ist ein experimentelles Umfeld. Beiträge sind freiwillig.',
       copySuccess: 'ID kopiert',
       coffee: 'Forschung unterstützen',
       coffeeDesc: 'Wartung & Entwicklung',
@@ -400,7 +400,7 @@ export const translations = {
       enable3D: '3D-Icons aktivieren',
       about: 'Über das Labor',
       thankYouTitle: 'Beitrag erhalten',
-      thankYouMsg: 'Vielen Dank.',
+      thankYouMsg: 'Vielen Dank für Ihre Unterstützung.',
       closeReceipt: 'Zurück zum Labor'
     },
     dataEntry: {
@@ -421,20 +421,20 @@ export const translations = {
     about: {
       title: 'Über das Labor',
       mission: 'Unsere Mission',
-      missionText: 'Die Demokratisierung der Schlafwissenschaft durch Edge Computing.',
+      missionText: 'Die Demokratisierung der Schlafwissenschaft durch Edge Computing und Health Connect.',
       tech: 'KI-Technologie',
-      techText: 'Unterstützt durch Gemini.',
-      vision: 'Die Vision',
-      visionText: 'Schlaf als offenes Buch.'
+      techText: 'Unterstützt durch Gemini 3 Serienmodelle.',
+      vision: 'The Vision',
+      visionText: 'Eine Welt, in der Schlaf keine Blackbox ist.'
     }
   },
   fr: {
     nav: { lab: 'labo', trends: 'TENDANCES', insights: 'INSIGHTS', settings: 'RÉGLAGES' },
     errors: {
-      healthApiDenied: 'Accès refusé : Veuillez vérifier les permissions Health Connect.',
+      healthApiDenied: 'Accès refusé : Veuillez vous assurer que les permissions Health Connect sont activées.',
       syncFailed: 'Échec de la synchronisation.',
       noDataFound: 'Aucune donnée Health Connect identifiée.',
-      noSleepData: 'Aucune session de sommeil identifiée dans Health Connect.',
+      noSleepData: 'Aucune session de sommeil identifiée.',
       authExpired: 'Session expirée.'
     },
     dashboard: {
@@ -462,7 +462,7 @@ export const translations = {
     },
     auth: {
       lab: 'Labo',
-      tagline: 'Le SomnoAI Digital Sleep Lab intègre une surveillance physiologique de haute fidélité avec des insights IA Gemini.',
+      tagline: 'Le SomnoAI Digital Sleep Lab intègre une surveillance physiologique de haute fidélité avec des insights IA Gemini et Health Connect.',
       securityStatement: 'Déclaration de sécurité',
       securityDetail: 'Données synchronisées via Health Connect localement.',
       connect: 'Synchroniser Health Connect',
@@ -476,7 +476,7 @@ export const translations = {
     },
     assistant: {
       title: 'Labo d\'insights IA',
-      intro: 'Système initialisé. Je suis le CRO de Somno.',
+      intro: 'Système initialisé. Je suis le Chief Research Officer de Somno. Flux Health Connect chargés.',
       feedback: 'FEEDBACK',
       confidence: 'CONFIANCE',
       placeholder: 'Poser une question...',
@@ -490,8 +490,8 @@ export const translations = {
       title: 'Atlas des tendances',
       subtitle: 'Laboratoire d\'analyse historique',
       noSignal: 'Base de données prête - Aucun signal',
-      noSignalDetail: 'Au moins 2 échantillons requis',
-      synthesize: 'Synthétiser le rapport',
+      noSignalDetail: 'Au moins 2 échantillons requis pour l\'analyse',
+      synthesize: 'Synthétiser le rapport de tendances',
       aggregating: 'Agrégation des flux...',
       croConclusion: 'Conclusion du CRO',
       sqi: 'Signal qualitätsindex (SQI)',
@@ -508,7 +508,7 @@ export const translations = {
       language: 'Langue',
       geminiCore: 'Moteur Gemini Core',
       dataPrivacy: 'Confidentialité',
-      healthConnect: 'Health Connect',
+      healthConnect: 'Health Connect Bridge',
       autoUpdate: 'Mise à jour auto',
       active: 'Actif',
       encrypted: 'Stockage chiffré Edge',
@@ -518,8 +518,8 @@ export const translations = {
       repo: 'Dépôt GitHub',
       source: 'Voir le code source',
       funding: 'Financement de la recherche',
-      fundingDesc: 'Soutenez le développeur.',
-      fundingDisclaimer: 'Les contributions sont volontaires.',
+      fundingDesc: 'Soutenez le développeur et maintenez les serveurs.',
+      fundingDisclaimer: 'SomnoAI est un environnement numérique expérimental.',
       copySuccess: 'ID copié',
       coffee: 'Soutenir la recherche',
       coffeeDesc: 'Maintenance & Développement',
@@ -563,11 +563,11 @@ export const translations = {
     about: {
       title: 'À propos du labo',
       mission: 'Notre mission',
-      missionText: 'Démocratiser la science du sommeil.',
+      missionText: 'Démocratiser la science du sommeil par le edge computing et Health Connect.',
       tech: 'IA Technologie',
-      techText: 'Propulsé par Gemini.',
+      techText: 'Propulsé par les modèles Gemini série 3.',
       vision: 'La vision',
-      visionText: 'Un sommeil transparent.'
+      visionText: 'Un monde où le sommeil n\'est plus une boîte noire.'
     }
   }
 };
