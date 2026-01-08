@@ -2,7 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, HeartHandshake, Shield, FileText, Copy, Smartphone, Scan
+  LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, 
+  HeartHandshake, Shield, FileText, Copy, Smartphone, Scan, 
+  Globe, Zap, RefreshCw, Palette, Box, Info
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
@@ -28,7 +30,10 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
-  lang, onLogout
+  lang, onLanguageChange, onLogout, 
+  theme, onThemeChange, accentColor, onAccentChange,
+  threeDEnabled, onThreeDChange, staticMode, onStaticModeChange,
+  lastSyncTime, onManualSync
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [isEngineLinked, setIsEngineLinked] = useState(false);
@@ -36,6 +41,9 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showKey, setShowKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState(false);
   const [copyStatus, setCopyStatus] = useState<'none' | 'paypal' | 'duitnow'>('none');
+  const [isSyncing, setIsSyncing] = useState(false);
+
+  const t = translations[lang].settings;
 
   useEffect(() => {
     const checkKey = async () => {
@@ -69,14 +77,50 @@ export const Settings: React.FC<SettingsProps> = ({
     setTimeout(() => setCopyStatus('none'), 2000);
   };
 
+  const triggerSync = async () => {
+    setIsSyncing(true);
+    await onManualSync();
+    setIsSyncing(false);
+  };
+
   return (
-    <div className="space-y-12 pb-32 animate-in fade-in duration-700">
+    <div className="space-y-12 pb-32 animate-in fade-in duration-700 max-w-2xl mx-auto">
       <header className="px-4 text-center space-y-2">
-        <h1 className="text-3xl font-black tracking-tighter text-white italic uppercase">Lab Configuration</h1>
-        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">Biometric System Override</p>
+        <h1 className="text-3xl font-black tracking-tighter text-white italic uppercase">{t.title}</h1>
+        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">{t.subtitle}</p>
       </header>
 
-      <GlassCard className="p-10 rounded-[5rem] space-y-10">
+      {/* Language Section */}
+      <GlassCard className="p-8 rounded-[4rem] space-y-6">
+        <div className="flex items-center gap-4 mb-4">
+          <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+            <Globe size={20} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{t.language}</h2>
+            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Interface Locale Selection</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          {(['en', 'zh', 'de', 'fr'] as Language[]).map((l) => (
+            <button
+              key={l}
+              onClick={() => onLanguageChange(l)}
+              className={`py-4 rounded-3xl border text-[10px] font-black uppercase tracking-widest transition-all ${
+                lang === l 
+                ? 'bg-indigo-600 border-indigo-400 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]' 
+                : 'bg-white/5 border-white/10 text-slate-500 hover:text-white hover:border-white/20'
+              }`}
+            >
+              {l === 'en' ? 'English' : l === 'zh' ? '中文' : l === 'de' ? 'Deutsch' : 'Français'}
+            </button>
+          ))}
+        </div>
+      </GlassCard>
+
+      {/* AI Security Section */}
+      <GlassCard className="p-10 rounded-[4rem] space-y-10">
         <div className="space-y-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -84,13 +128,13 @@ export const Settings: React.FC<SettingsProps> = ({
                 <Key size={24} />
               </div>
               <div>
-                <h2 className="text-lg font-black italic text-white uppercase tracking-tight">AI Security</h2>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{isEngineLinked ? 'Link Active' : 'Disconnected'}</p>
+                <h2 className="text-lg font-black italic text-white uppercase tracking-tight">{t.geminiCore}</h2>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{isEngineLinked ? t.active : 'Disconnected'}</p>
               </div>
             </div>
             <button 
               onClick={handleLinkEngine}
-              className="px-6 py-2.5 rounded-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest transition-all hover:scale-105"
+              className="px-6 py-2.5 rounded-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl"
             >
               Auth AI
             </button>
@@ -99,7 +143,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <div className="space-y-4 pt-8 border-t border-white/5">
             <div className="flex justify-between items-center px-4">
               <label className="text-[10px] font-black uppercase text-slate-500">Manual Key Injection</label>
-              <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[10px] font-bold text-indigo-400 hover:underline">Get Key</a>
+              <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[10px] font-bold text-indigo-400 hover:underline flex items-center gap-1">Get Key <ExternalLink size={10}/></a>
             </div>
             <div className="relative">
               <input 
@@ -121,32 +165,98 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        <div className="space-y-4">
+        {/* Sync Controls */}
+        <div className="pt-6 border-t border-white/5 space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+                <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
+              </div>
+              <div>
+                <h3 className="text-xs font-black italic text-white uppercase tracking-tight">{t.dataManagement}</h3>
+                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{t.lastSync}: {lastSyncTime || t.never}</p>
+              </div>
+            </div>
+            <button 
+              onClick={triggerSync}
+              disabled={isSyncing}
+              className="px-6 py-2.5 rounded-full bg-white/5 border border-white/10 text-white font-black text-[10px] uppercase tracking-widest transition-all hover:bg-white/10 active:scale-95"
+            >
+              {t.manualSync}
+            </button>
+          </div>
+        </div>
+
+        <div className="space-y-4 pt-6">
           <button 
             onClick={() => setShowDonation(true)}
             className="w-full py-5 rounded-full bg-rose-600/10 border border-rose-500/30 text-rose-400 font-black text-[11px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all shadow-xl shadow-rose-950/20"
           >
-            <HeartHandshake size={18} className="inline mr-3" /> Support Research
+            <HeartHandshake size={18} className="inline mr-3" /> {t.coffee}
           </button>
           
           <button 
             onClick={onLogout}
-            className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-black text-[11px] uppercase tracking-widest hover:text-rose-400 transition-all"
+            className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-black text-[11px] uppercase tracking-widest hover:text-rose-400 hover:bg-rose-500/5 transition-all"
           >
-            Terminal Shutdown
+            <LogOut size={16} className="inline mr-3" /> {t.logout}
           </button>
         </div>
       </GlassCard>
 
-      <div className="flex flex-col gap-4 px-8">
-        <a href="/privacy.html" target="_blank" className="flex items-center justify-between p-6 bg-white/5 rounded-full text-slate-500 hover:text-indigo-400 transition-all">
-          <span className="text-[10px] font-black uppercase flex items-center gap-3"><Shield size={16} /> Privacy Policy</span>
-          <ExternalLink size={16} />
-        </a>
-        <a href="/terms.html" target="_blank" className="flex items-center justify-between p-6 bg-white/5 rounded-full text-slate-500 hover:text-indigo-400 transition-all">
-          <span className="text-[10px] font-black uppercase flex items-center gap-3"><FileText size={16} /> Terms of Service</span>
-          <ExternalLink size={16} />
-        </a>
+      {/* Visual Options Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <GlassCard className="p-8 rounded-[3.5rem] flex flex-col gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
+              <Box size={18} />
+            </div>
+            <h3 className="text-xs font-black italic text-white uppercase tracking-tight">{t.visualizations}</h3>
+          </div>
+          <div className="flex items-center justify-between px-2">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.enable3D}</span>
+            <button 
+              onClick={() => onThreeDChange(!threeDEnabled)}
+              className={`w-12 h-6 rounded-full relative transition-colors ${threeDEnabled ? 'bg-indigo-600' : 'bg-slate-800'}`}
+            >
+              <m.div 
+                animate={{ x: threeDEnabled ? 24 : 4 }}
+                className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg"
+              />
+            </button>
+          </div>
+          <div className="flex items-center justify-between px-2">
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Performance Mode</span>
+            <button 
+              onClick={() => onStaticModeChange(!staticMode)}
+              className={`w-12 h-6 rounded-full relative transition-colors ${staticMode ? 'bg-indigo-600' : 'bg-slate-800'}`}
+            >
+              <m.div 
+                animate={{ x: staticMode ? 24 : 4 }}
+                className="absolute top-1 w-4 h-4 bg-white rounded-full shadow-lg"
+              />
+            </button>
+          </div>
+        </GlassCard>
+
+        <GlassCard className="p-8 rounded-[3.5rem] flex flex-col gap-6">
+           <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+              <Info size={18} />
+            </div>
+            <h3 className="text-xs font-black italic text-white uppercase tracking-tight">{t.legal}</h3>
+          </div>
+          <div className="space-y-3">
+            <a href="/privacy.html" target="_blank" className="flex items-center justify-between p-4 bg-white/5 rounded-2xl text-slate-400 hover:text-indigo-400 transition-all text-[10px] font-black uppercase tracking-widest">
+              <span>{t.privacy}</span>
+              <ExternalLink size={12} />
+            </a>
+            <a href="/terms.html" target="_blank" className="flex items-center justify-between p-4 bg-white/5 rounded-2xl text-slate-400 hover:text-indigo-400 transition-all text-[10px] font-black uppercase tracking-widest">
+              <span>{t.terms}</span>
+              <ExternalLink size={12} />
+            </a>
+          </div>
+        </GlassCard>
       </div>
 
       <AnimatePresence>
@@ -169,7 +279,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div className="text-center space-y-8 relative z-10">
                   <div className="space-y-1">
                     <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Bio-Funding</h2>
-                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.4em]">Laboratory Maintenance</p>
+                    <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.4em]">{t.fundingDesc}</p>
                   </div>
 
                   {/* Enhanced QR Portal */}
@@ -181,11 +291,10 @@ export const Settings: React.FC<SettingsProps> = ({
                         className="absolute inset-0 border-2 border-rose-500/30 rounded-[3.5rem] -m-2 pointer-events-none"
                       />
                       <img 
-                        src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://paypal.me/vyncuslim&bgcolor=ffffff&color=020617&qzone=2" 
-                        alt="PayPal QR Portal" 
+                        src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(t.paypalLink)}&bgcolor=ffffff&color=020617&qzone=2`} 
+                        alt="Donation QR Portal" 
                         className="w-48 h-48 rounded-[2rem] relative z-10 mix-blend-multiply"
                       />
-                      {/* Laser Line */}
                       <m.div 
                         animate={{ top: ['0%', '100%'] }}
                         transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
@@ -194,13 +303,13 @@ export const Settings: React.FC<SettingsProps> = ({
                     </div>
                     <div className="mt-6 flex items-center gap-2 px-4 py-2 bg-rose-500/10 rounded-full border border-rose-500/20">
                       <Scan size={12} className="text-rose-400" />
-                      <span className="text-[9px] font-black text-rose-300 uppercase tracking-widest">Scan to Support</span>
+                      <span className="text-[9px] font-black text-rose-300 uppercase tracking-widest">{t.coffeeDesc}</span>
                     </div>
                   </div>
 
                   <div className="space-y-3 pt-4 border-t border-white/5">
                     <button 
-                      onClick={() => handleCopy('vyncuslim', 'paypal')}
+                      onClick={() => handleCopy(t.paypalId, 'paypal')}
                       className={`w-full py-4 px-6 rounded-full border transition-all flex items-center justify-between ${copyStatus === 'paypal' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-white/5 border-white/10 text-slate-300 hover:border-rose-400'}`}
                     >
                       <div className="flex items-center gap-3">
@@ -208,13 +317,13 @@ export const Settings: React.FC<SettingsProps> = ({
                         <span className="text-[10px] font-black uppercase tracking-widest">PayPal</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono opacity-50">vyncuslim</span>
+                        <span className="text-[10px] font-mono opacity-50">{t.paypalId}</span>
                         {copyStatus === 'paypal' ? <CheckCircle2 size={14} /> : <Copy size={12} />}
                       </div>
                     </button>
 
                     <button 
-                      onClick={() => handleCopy('+60 187807388', 'duitnow')}
+                      onClick={() => handleCopy(t.tngId, 'duitnow')}
                       className={`w-full py-4 px-6 rounded-full border transition-all flex items-center justify-between ${copyStatus === 'duitnow' ? 'bg-emerald-500/20 border-emerald-500/40 text-emerald-400' : 'bg-white/5 border-white/10 text-slate-300 hover:border-rose-400'}`}
                     >
                       <div className="flex items-center gap-3">
@@ -222,7 +331,7 @@ export const Settings: React.FC<SettingsProps> = ({
                         <span className="text-[10px] font-black uppercase tracking-widest">DuitNow</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-mono opacity-50">+60 18***7388</span>
+                        <span className="text-[10px] font-mono opacity-50">{t.tngId}</span>
                         {copyStatus === 'duitnow' ? <CheckCircle2 size={14} /> : <Copy size={12} />}
                       </div>
                     </button>
