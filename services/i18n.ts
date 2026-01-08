@@ -120,20 +120,20 @@ export const translations = {
       closeReceipt: 'Return to Lab'
     },
     about: {
-      title: 'Implementation Protocol',
+      title: 'Technical Implementation',
       mission: 'Our Mission',
       missionText: 'To democratize high-fidelity sleep science through edge computing and empathetic AI, powered by the Health Connect ecosystem.',
       tech: 'AI Technology',
       techText: 'Powered by Gemini 3 series models.',
       vision: 'The Vision',
       visionText: 'A world where sleep is not a black box.',
-      protocolTitle: 'Health Connect SDK Handshake',
-      feedingTitle: 'Data Feeding (Writing Logic)',
+      protocolTitle: 'Health Connect Handshake Protocol',
+      feedingTitle: 'Feeding Data (Writing Logic)',
       feedingStep1: 'InsertRecords: Execute batch synchronization (1000/set) for high-volume telemetry.',
-      feedingStep2: 'clientRecordID: Unique DB mapping ensures idempotency and prevents duplicates.',
+      feedingStep2: 'clientRecordID: Unique DB mapping ensures system-level idempotency and prevents duplicates.',
       feedingStep3: 'clientRecordVersion: Timestamp-based identifiers for accurate conflict resolution.',
-      consumingTitle: 'Data Consuming (Reading Logic)',
-      consumingStep1: 'Changes Sync API: Track insertions, updates, and deletions in the shared library.',
+      consumingTitle: 'Consuming Data (Reading Logic)',
+      consumingStep1: 'Changes Sync API: Incremental tracking of insertions, updates, and deletions.',
       consumingStep2: 'Changes Token: Rolling 30-day lifecycle incremental cursor management.',
       consumingStep3: 'Package Filter: Isolate self-written signals to prevent redundant feedback loops.',
       recordsTitle: 'Bio-Digital Record Architecture',
@@ -142,7 +142,7 @@ export const translations = {
       intervalType: 'Interval Record (Aggregated)',
       intervalDesc: 'Windowed statistics (e.g. StepsRecord: Count + Duration).',
       seriesType: 'Series Record (Sequence)',
-      seriesDesc: 'High-frequency采样 arrays (e.g. HeartRateRecord: Sample List).',
+      seriesDesc: 'High-frequency sampling arrays (e.g. HeartRateRecord: Sample List).',
       step1: '1. getSdkStatus: Validate Android system availability.',
       step2: '2. getOrCreate: Initialize HealthConnectClient bridge.',
       step3: '3. Manifest: Declare READ_SLEEP / READ_HEART_RATE.',
@@ -150,7 +150,7 @@ export const translations = {
       step5: '5. launch: Trigger official system authorization UI.',
       step6: '6. Verification: Check getGrantedPermissions status.',
       step7: '7. readRecords: Extract biometric streams from library.',
-      step8: '8. Sync: Execute InsertRecords protocol for local data.'
+      step8: '8. Sync: Execute bidirectional Feeding/Consuming protocol.'
     }
   },
   zh: {
@@ -189,7 +189,7 @@ export const translations = {
       lab: '实验室',
       tagline: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。基于 Health Connect SDK。',
       securityStatement: '连接哲学',
-      securityDetail: '连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。无登录页，无 Token，仅系统级授权，数据属于用户。',
+      securityDetail: '连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。无登录页，无 Token，仅系统级授权，数据所有权始终属于用户。',
       connect: '建立安全连接',
       guest: '进入虚拟实验室',
       privacyPolicy: '隐私政策',
@@ -298,10 +298,10 @@ export const translations = {
       step2: '2. getOrCreate: 初始化 SDK 客户端桥接。',
       step3: '3. Manifest: 定义 READ_SLEEP 等权限访问范围。',
       step4: '4. Launcher: 初始化系统级权限请求启动器。',
-      step5: '5. launch: 触发系统原生官方授权界面。',
+      step5: '5. launch(permissions): 触发系统原生官方授权界面。',
       step6: '6. Verification: 校验 getGrantedPermissions 状态确保链路通畅。',
       step7: '7. readRecords: 从系统级共享库提取生理特征流。',
-      step8: '8. Sync: 执行协议级 InsertRecords 以同步本地数据。'
+      step8: '8. Sync & Filter: 执行包名过滤与增量令牌更新协议。'
     }
   },
   de: {
@@ -367,7 +367,7 @@ export const translations = {
       subtitle: 'Historisches Analyse-Labor',
       noSignal: 'Datenbank bereit',
       noSignalDetail: 'Mindestens 2 Stichproben erforderlich',
-      synthesize: 'Trendbericht synthetisiert',
+      synthesize: 'Trendbericht synthetisieren',
       aggregating: 'Feature-Streams werden aggregiert...',
       croConclusion: 'CRO Schlussfolgerung',
       sqi: 'SQI',

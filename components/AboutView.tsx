@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, Info, Code2, ListTree, Timer, Layers, Zap, Download, Upload, BookOpen, Warehouse, LayoutList, Fingerprint } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, Info, Code2, ListTree, Timer, Layers, Zap, Download, Upload, BookOpen, Warehouse, LayoutList, Fingerprint, Network } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { motion } from 'framer-motion';
@@ -156,7 +156,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
            <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
                 <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400">
-                  <Terminal size={24} />
+                  <Network size={24} />
                 </div>
                 <h2 className="text-xl font-bold italic text-white uppercase tracking-tight">{t.protocolTitle}</h2>
               </div>
@@ -188,7 +188,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
              </div>
              <p className="text-[10px] text-slate-400 leading-relaxed italic font-medium">
                 {isZh 
-                  ? "连接哲学：连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。Health Connect 在 Android OS 层面托管授权。数据所有权始终属于用户，同步仅在应用处于“前台”时获准，且需严格通过包名过滤防冗余反馈。令牌有效期为 30 天。" 
+                  ? "连接认知升级：连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。Health Connect 在 Android OS 层面托管授权。数据所有权始终属于用户，同步仅在应用处于“前台”时获准，且需严格通过包名过滤防冗余反馈。令牌有效期为 30 天。" 
                   : "Cognitive Handshake: Connection = Detect -> Initialize Client -> Request Permission -> R/W. Authorization is managed by Android Health Connect. Data stays with the user. Foreground-only access required. Package filtering ensures signal isolation. Tokens expire in 30 days."}
              </p>
           </div>
