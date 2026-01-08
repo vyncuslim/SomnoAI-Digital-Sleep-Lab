@@ -30,10 +30,21 @@ export const Trends: React.FC<{ history: SleepRecord[]; lang: Language }> = ({ h
   const [summary, setSummary] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const chartData = history.slice(0, 7).reverse().map(item => ({
-    date: item.date.split(' ')[0],
-    score: item.score
-  }));
+  const chartData = history.slice(0, 7).reverse().map(item => {
+    // 增强日期处理，在中文下提取"月日"，英文下提取第一项
+    let dateLabel = item.date;
+    if (lang === 'zh') {
+      const match = item.date.match(/(\d+月\d+日)/);
+      dateLabel = match ? match[1] : item.date.split(' ')[0];
+    } else {
+      dateLabel = item.date.split(',')[0].split(' ').slice(0, 2).join(' ');
+    }
+    
+    return {
+      date: dateLabel,
+      score: item.score
+    };
+  });
 
   const handleGenerate = async () => {
     if (isGenerating || history.length < 2) return;

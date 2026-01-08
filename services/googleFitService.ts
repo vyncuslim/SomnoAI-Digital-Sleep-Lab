@@ -22,7 +22,6 @@ const nanostampsToMillis = (nanos: any): number => {
 const toMillis = (val: any): number => {
   if (!val) return Date.now();
   const n = Number(val);
-  // 判断是纳秒还是毫秒
   return n > 10000000000000 ? Math.floor(n / 1000000) : n;
 };
 
@@ -135,9 +134,8 @@ export class GoogleFitService {
     if (!token) throw new Error("AUTH_REQUIRED");
 
     const now = Date.now();
-    const searchWindowStart = now - (48 * 60 * 60 * 1000); // 搜索最近48小时
+    const searchWindowStart = now - (48 * 60 * 60 * 1000); 
 
-    // 1. 尝试获取睡眠会话 (Sessions)
     const sessionRes = await fetch(
       `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(searchWindowStart).toISOString()}&endTime=${new Date(now).toISOString()}`,
       { headers: { Authorization: `Bearer ${token}` } }
@@ -153,18 +151,13 @@ export class GoogleFitService {
       sTime = toMillis(latest.startTimeMillis);
       eTime = toMillis(latest.endTimeMillis);
     } else {
-      // 2. 回退机制：如果没有会话，尝试直接搜索最近24小时的原始睡眠数据点
       const rawSegments = await this.fetchAggregate(token, now - (24 * 60 * 60 * 1000), now, "com.google.sleep.segment");
       const points = rawSegments.bucket?.[0]?.dataset?.[0]?.point || [];
-      
       if (points.length === 0) throw new Error("SLEEP_DATA_SPECIFICALLY_NOT_FOUND");
-      
-      // 自动确定边界：取第一个点和最后一个点的时间
       sTime = nanostampsToMillis(points[0].startTimeNanos);
       eTime = nanostampsToMillis(points[points.length - 1].endTimeNanos);
     }
 
-    // 3. 提取详细分段
     const segmentData = await this.fetchAggregate(token, sTime, eTime, "com.google.sleep.segment");
     const stages: SleepStage[] = [];
     let deepMins = 0, remMins = 0, lightMins = 0, awakeMins = 0;
@@ -188,16 +181,30 @@ export class GoogleFitService {
 
     const totalDuration = (eTime - sTime) / (60 * 1000);
 
-    // 4. 获取对应的真实心率数据
-    const hrData = await this.fetchAggregate(token, sTime, eTime, "com.google.heart_rate.bpm");
-    const hrValue = hrData.bucket?.[0]?.dataset?.[0]?.point?.[0]?.value || [];
-    const resting = Math.round(hrValue[2]?.fpVal || 62);
-    const average = Math.round(hrValue[0]?.fpVal || 65);
-    const max = Math.round(hrValue[1]?.fpVal || 88);
+    const hrAgg = await this.fetchAggregate(token, sTime, eTime, "com.google.heart_rate.bpm");
+    const hrVal = hrAgg.bucket?.[0]?.dataset?.[0]?.point?.[0]?.value || [];
+    const resting = Math.round(hrVal[2]?.fpVal || 62);
+    const average = Math.round(hrVal[0]?.fpVal || 65);
+    const max = Math.round(hrVal[1]?.fpVal || 88);
 
-    // 5. 评分逻辑
+    const hrHistory: { time: string; bpm: number }[] = [];
+    try {
+      const startTimeNanos = BigInt(sTime) * BigInt(1000000);
+      const endTimeNanos = BigInt(eTime) * BigInt(1000000);
+      const hrStreamRes = await fetch(
+        `https://www.googleapis.com/fitness/v1/users/me/dataSources/derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm/datasets/${startTimeNanos}-${endTimeNanos}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      const streamData = await hrStreamRes.json();
+      (streamData.point || []).slice(0, 50).forEach((p: any) => {
+        const bpm = p.value[0].fpVal;
+        const time = new Date(nanostampsToMillis(p.startTimeNanos)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        hrHistory.push({ time, bpm: Math.round(bpm) });
+      });
+    } catch (e) { console.warn("HR Stream Fetch Error", e); }
+
     const efficiency = totalDuration > 0 ? Math.round(((totalDuration - awakeMins) / totalDuration) * 100) : 0;
-    const scoreBase = Math.min(100, (totalDuration / 450) * 100); // 以7.5小时为基准
+    const scoreBase = Math.min(100, (totalDuration / 450) * 100);
     const finalScore = Math.round((scoreBase * 0.7) + (efficiency * 0.3));
 
     return {
@@ -208,13 +215,7 @@ export class GoogleFitService {
       remRatio: totalDuration > 0 ? Math.round((remMins / totalDuration) * 100) : 0,
       efficiency,
       stages,
-      heartRate: {
-        resting,
-        max,
-        min: resting,
-        average,
-        history: []
-      }
+      heartRate: { resting, max, min: resting, average, history: hrHistory }
     };
   }
 }

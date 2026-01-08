@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './components/Logo.tsx';
 import { translations, Language } from './services/i18n.ts';
 import { SpatialIcon } from './components/SpatialIcon.tsx';
+import { LegalView } from './components/LegalView.tsx';
 
 const m = motion as any;
 
@@ -33,7 +34,7 @@ const App: React.FC = () => {
   
   const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
   const [isGuest, setIsGuest] = useState(false);
-  const [activeView, setActiveView] = useState<ViewType>('dashboard');
+  const [activeView, setActiveView] = useState<ViewType | 'privacy' | 'terms'>('dashboard');
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -140,75 +141,79 @@ const App: React.FC = () => {
   return (
     <div className={`flex-1 flex flex-col min-h-screen relative`}>
       <main className="flex-1 w-full mx-auto p-4 pt-10 pb-40">
-        {!isLoggedIn && !isGuest ? (
-          <Auth lang={lang} onLogin={() => setIsLoggedIn(true)} onGuest={() => { setIsGuest(true); generateMockData(); }} />
+        {!isLoggedIn && !isGuest && activeView !== 'privacy' && activeView !== 'terms' ? (
+          <Auth lang={lang} onLogin={() => setIsLoggedIn(true)} onGuest={() => { setIsGuest(true); generateMockData(); }} onNavigate={setActiveView} />
         ) : (
           <Suspense fallback={<LoadingSpinner />}>
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}>
-                {isLoading && !currentRecord ? (
-                  <LoadingSpinner />
+                {activeView === 'privacy' || activeView === 'terms' ? (
+                  <LegalView type={activeView as 'privacy' | 'terms'} lang={lang} onBack={() => setActiveView(isLoggedIn || isGuest ? 'dashboard' : 'dashboard')} />
                 ) : (
-                  <>
-                    {activeView === 'dashboard' && (
-                      <>
-                        {currentRecord ? (
-                          <Dashboard 
-                            lang={lang} 
-                            data={currentRecord} 
-                            onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} 
-                            staticMode={staticMode} 
-                            onNavigate={setActiveView} 
-                          />
-                        ) : (
-                          <div className="flex flex-col items-center justify-center h-[70vh] gap-8 px-10 text-center">
-                            <m.div 
-                              animate={{ scale: [1, 1.1, 1] }}
-                              transition={{ duration: 4, repeat: Infinity }}
-                              className="w-24 h-24 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400"
-                            >
-                              <TriangleAlert size={40} />
-                            </m.div>
-                            <div className="space-y-4 max-w-sm">
-                              <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">
-                                {isApiDenied ? "API Access Required" : "Telemetry Disconnected"}
-                              </h2>
-                              <p className="text-xs text-slate-400 leading-relaxed italic">
-                                {errorToast || "No active biometric stream identified. Please synchronize with your wearable device."}
-                              </p>
-                              
-                              {isApiDenied && (
-                                <a 
-                                  href="https://console.cloud.google.com/apis/library/fitness.googleapis.com" 
-                                  target="_blank" 
-                                  className="inline-flex items-center gap-2 text-[10px] font-black uppercase text-indigo-400 border-b border-indigo-400/30 pb-1 mt-4 hover:text-indigo-300 transition-colors"
-                                >
-                                  Enable Fitness API <ExternalLink size={12} />
-                                </a>
-                              )}
+                  isLoading && !currentRecord ? (
+                    <LoadingSpinner />
+                  ) : (
+                    <>
+                      {activeView === 'dashboard' && (
+                        <>
+                          {currentRecord ? (
+                            <Dashboard 
+                              lang={lang} 
+                              data={currentRecord} 
+                              onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} 
+                              staticMode={staticMode} 
+                              onNavigate={setActiveView} 
+                            />
+                          ) : (
+                            <div className="flex flex-col items-center justify-center h-[70vh] gap-8 px-10 text-center">
+                              <m.div 
+                                animate={{ scale: [1, 1.1, 1] }}
+                                transition={{ duration: 4, repeat: Infinity }}
+                                className="w-24 h-24 rounded-full bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400"
+                              >
+                                <TriangleAlert size={40} />
+                              </m.div>
+                              <div className="space-y-4 max-w-sm">
+                                <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">
+                                  {isApiDenied ? "API Access Required" : "Telemetry Disconnected"}
+                                </h2>
+                                <p className="text-xs text-slate-400 leading-relaxed italic">
+                                  {errorToast || "No active biometric stream identified. Please synchronize with your wearable device."}
+                                </p>
+                                
+                                {isApiDenied && (
+                                  <a 
+                                    href="https://console.cloud.google.com/apis/library/fitness.googleapis.com" 
+                                    target="_blank" 
+                                    className="inline-flex items-center gap-2 text-[10px] font-black uppercase text-indigo-400 border-b border-indigo-400/30 pb-1 mt-4 hover:text-indigo-300 transition-colors"
+                                  >
+                                    Enable Fitness API <ExternalLink size={12} />
+                                  </a>
+                                )}
+                              </div>
+                              <button 
+                                onClick={() => handleSyncGoogleFit(true)}
+                                className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all flex items-center gap-3"
+                              >
+                                <RefreshCw size={14} /> Re-Initialize Link
+                              </button>
                             </div>
-                            <button 
-                              onClick={() => handleSyncGoogleFit(true)}
-                              className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all flex items-center gap-3"
-                            >
-                              <RefreshCw size={14} /> Re-Initialize Link
-                            </button>
-                          </div>
-                        )}
-                      </>
-                    )}
-                    {activeView === 'calendar' && <Trends history={history} lang={lang} />}
-                    {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
-                    {activeView === 'profile' && (
-                      <Settings 
-                        lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
-                        theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
-                        threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
-                        staticMode={staticMode} onStaticModeChange={setStaticMode}
-                        lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
-                      />
-                    )}
-                  </>
+                          )}
+                        </>
+                      )}
+                      {activeView === 'calendar' && <Trends history={history} lang={lang} />}
+                      {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} />}
+                      {activeView === 'profile' && (
+                        <Settings 
+                          lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
+                          theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
+                          threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
+                          staticMode={staticMode} onStaticModeChange={setStaticMode}
+                          lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
+                        />
+                      )}
+                    </>
+                  )
                 )}
               </m.div>
             </AnimatePresence>
@@ -216,7 +221,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {(isLoggedIn || isGuest) && (
+      {(isLoggedIn || isGuest) && activeView !== 'privacy' && activeView !== 'terms' && (
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
           <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-[0_30px_60px_-15px_rgba(0,0,0,0.8)]">
             {[
@@ -242,7 +247,7 @@ const App: React.FC = () => {
       )}
 
       <AnimatePresence>
-        {errorToast && currentRecord && (
+        {errorToast && (
           <m.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-36 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl flex items-center gap-3">
             <TriangleAlert size={14} /> {errorToast}
           </m.div>

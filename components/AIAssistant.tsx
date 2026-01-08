@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, User, Loader2, BrainCircuit, ExternalLink, Cpu, Trash2, Key, Beaker, Lock
+  Send, User, Loader2, BrainCircuit, ExternalLink, Cpu, Trash2, Key, Beaker, Lock, Settings as SettingsIcon
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
@@ -38,7 +38,13 @@ const CROAvatar = ({ isProcessing = false, size = 32 }: { isProcessing?: boolean
   </m.div>
 );
 
-export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null }> = ({ lang, data }) => {
+interface AIAssistantProps {
+  lang: Language;
+  data: SleepRecord | null;
+  onNavigate?: (view: any) => void;
+}
+
+export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate }) => {
   const t = translations[lang].assistant;
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
@@ -48,17 +54,22 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null }>
   
   const scrollRef = useRef<HTMLDivElement>(null);
 
+  const checkKey = async () => {
+    const manualKey = localStorage.getItem('somno_manual_gemini_key');
+    if ((window as any).aistudio) {
+      const selected = await (window as any).aistudio.hasSelectedApiKey();
+      setHasKey(selected || !!process.env.API_KEY || !!manualKey);
+    } else {
+      setHasKey(!!process.env.API_KEY || !!manualKey);
+    }
+  };
+
   useEffect(() => {
-    const checkKey = async () => {
-      const manualKey = localStorage.getItem('somno_manual_gemini_key');
-      if ((window as any).aistudio) {
-        const selected = await (window as any).aistudio.hasSelectedApiKey();
-        setHasKey(selected || !!process.env.API_KEY || !!manualKey);
-      } else {
-        setHasKey(!!process.env.API_KEY || !!manualKey);
-      }
-    };
     checkKey();
+    // 监听 Storage 变化，以便从设置页面回来后自动更新状态
+    const handleStorage = () => checkKey();
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
   }, []);
 
   useEffect(() => {
@@ -103,16 +114,17 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null }>
     if (aistudio) {
       try {
         await aistudio.openSelectKey();
-        // Race condition mitigation: assume success after triggering openSelectKey
         setHasKey(true);
       } catch (e) {
         console.error("Failed to open key selector:", e);
       }
     } else {
-      // If not in AI Studio, maybe show an alert or just set to false if it was null
-      console.warn("AI Studio Environment not detected.");
-      // If we are here, hasKey is already false or null. 
-      // We can't really "Activate" without the bridge or a manual key in Settings.
+      // 非 AI Studio 环境下，直接引导至设置页
+      if (onNavigate) {
+        onNavigate('profile');
+      } else {
+        alert("Please go to Settings (CFG) to configure your AI Engine API Key.");
+      }
     }
   };
 
@@ -138,26 +150,34 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null }>
   if (hasKey === false) {
     return (
       <div className="flex flex-col items-center justify-center h-[70vh] text-center p-6 space-y-8">
-        <div className="w-24 h-24 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-2xl">
+        <div className="w-24 h-24 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-2xl relative">
           <Lock size={40} className="text-indigo-400" />
+          <m.div 
+            animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0, 0.5] }}
+            transition={{ duration: 2, repeat: Infinity }}
+            className="absolute inset-0 bg-indigo-500/10 rounded-full"
+          />
         </div>
-        <div className="space-y-2">
-          <h2 className="text-2xl font-black italic text-white uppercase">Neural Core Offline</h2>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-10">
-            { (window as any).aistudio ? "Please select an API key to enable AI insights." : "API Key required. Configure in Settings or environment."}
+        <div className="space-y-4">
+          <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Neural Core Offline</h2>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-10 leading-relaxed">
+            { (window as any).aistudio ? 
+              "Select an API Key to enable laboratory insights." : 
+              "Manual configuration required. Please enter your API Key in the System Settings."}
           </p>
         </div>
+        
         <button 
           onClick={handleActivate}
-          className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all hover:bg-indigo-500"
+          className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all hover:bg-indigo-500 flex items-center gap-3"
         >
-          Initialize AI Engine
+          { (window as any).aistudio ? <Cpu size={14} /> : <SettingsIcon size={14} /> }
+          { (window as any).aistudio ? "Initialize AI Engine" : "Go to Settings" }
         </button>
       </div>
     );
   }
 
-  // Still loading status
   if (hasKey === null) {
     return (
       <div className="flex items-center justify-center h-[70vh]">
