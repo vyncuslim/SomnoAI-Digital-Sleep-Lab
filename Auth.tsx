@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Loader2, ArrowRight, Key, Cpu, TriangleAlert, CheckCircle2, Eye, EyeOff, Save, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
-import { googleFit } from './services/googleFitService.ts';
+import { healthConnect } from './services/healthConnectService.ts';
 import { Logo } from './components/Logo.tsx';
 import { Language } from './services/i18n.ts';
 
@@ -47,7 +47,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         console.error("AI Bridge failed:", e);
       }
     } else {
-      // In web browser, show manual input
       setShowManualKeyInput(true);
     }
   };
@@ -58,12 +57,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     setShowManualKeyInput(false);
   };
 
-  const handleGoogleLogin = async () => {
+  const handleHealthConnectLogin = async () => {
     setIsLoggingIn(true);
     setLocalError(null);
     try {
-      await googleFit.ensureClientInitialized();
-      const token = await googleFit.authorize(true); 
+      await healthConnect.ensureClientInitialized();
+      const token = await healthConnect.authorize(true); 
       if (token) onLogin();
     } catch (error: any) {
       setLocalError(error.message || "Authentication Failed");
@@ -114,12 +113,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
                 <div className="space-y-4">
                   <button 
-                    onClick={handleGoogleLogin} 
+                    onClick={handleHealthConnectLogin} 
                     disabled={isLoggingIn} 
                     className="w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 disabled:opacity-50"
                   >
                     {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Cpu size={20} className="text-indigo-600" />}
-                    Sync Biometrics
+                    Sync Health Connect
                   </button>
                   
                   {!isEngineActive && (

@@ -5,10 +5,10 @@ export const translations = {
   en: {
     nav: { lab: 'lab', trends: 'TRENDS', insights: 'INSIGHTS', settings: 'SETTINGS' },
     errors: {
-      fitApiDenied: 'Access Denied: Please ensure the "Fitness API" is enabled for your project in the Google Cloud Console.',
+      fitApiDenied: 'Access Denied: Please ensure the "Fitness API" and "Body Metrics" permissions are enabled for your project.',
       syncFailed: 'Telemetry Sync Failed. Check network connection.',
-      noDataFound: 'No Google Fit data identified. Please ensure your wearable app has synced with Google Fit.',
-      noSleepData: 'Activity found, but no "Sleep" sessions identified. Ensure your wearable records sleep as sessions.',
+      noDataFound: 'No Health Connect data identified. Ensure your wearable app has synced with Health Connect.',
+      noSleepData: 'Activity found, but no explicit "Sleep" sessions identified in Health Connect.',
       authExpired: 'Session expired. Please re-connect.'
     },
     dashboard: {
@@ -36,10 +36,10 @@ export const translations = {
     },
     auth: {
       lab: 'Lab',
-      tagline: 'SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights and strategic wellness protocols. Experience a comprehensive digital sleep laboratory designed to map your neurological recovery and optimize metabolic health through precision neural analysis.',
+      tagline: 'SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring (Sleep, HR, Body Metrics) with deep Gemini AI insights and strategic wellness protocols.',
       securityStatement: 'Security Statement',
-      securityDetail: 'Data synced locally. Zero backend storage. Sensitive metrics cleared upon session termination.',
-      connect: 'Connect Google Fit',
+      securityDetail: 'Data synced locally via Health Connect. Zero backend storage. Sensitive metrics cleared upon session termination.',
+      connect: 'Connect Health Connect',
       guest: 'Guest Login',
       privacyPolicy: 'Privacy Policy',
       termsOfService: 'Terms of Service',
@@ -82,7 +82,7 @@ export const translations = {
       language: 'Language',
       geminiCore: 'Gemini Core Engine',
       dataPrivacy: 'Data Privacy',
-      googleFit: 'Google Fit',
+      healthConnect: 'Health Connect',
       autoUpdate: 'Auto Update',
       active: 'Active',
       encrypted: 'Edge-Encrypted Storage',
@@ -147,10 +147,10 @@ export const translations = {
   zh: {
     nav: { lab: '实验室', trends: '趋势分析', insights: 'AI 洞察', settings: '系统设置' },
     errors: {
-      fitApiDenied: '访问被拒绝：请确保已在 Google Cloud Console 中为您的项目启用了 "Fitness API"。',
+      fitApiDenied: '访问被拒绝：请确保已在 Google Cloud Console 中为您的项目启用了相关的健康权限。',
       syncFailed: '遥测同步失败。请检查网络连接或授权状态。',
-      noDataFound: '未发现 Google Fit 数据。请确保您的可穿戴设备 App 已将数据同步至 Google Fit。',
-      noSleepData: '发现活动记录，但未发现“睡眠”会话。请确保您的设备将睡眠记录为“会话(Sessions)”。',
+      noDataFound: '未发现 Health Connect 数据。请确保您的可穿戴设备已将数据同步至 Health Connect。',
+      noSleepData: '发现活动记录，但未发现明确的“睡眠”会话。请检查 Health Connect 中是否能看到睡眠记录。',
       authExpired: '登录已过期，请重新连接。'
     },
     dashboard: {
@@ -178,10 +178,10 @@ export const translations = {
     },
     auth: {
       lab: '实验室',
-      tagline: 'SomnoAI 数字化睡眠实验室将高保真生理指标监控、Gemini AI 深度洞察与战略性健康协议融为一体。通过精准的神经架构分析，映射您的神经恢复状态并优化代谢健康。',
+      tagline: 'SomnoAI 数字化睡眠实验室将高保真生理指标监控（睡眠、心率、身体测量）、Gemini AI 深度洞察与战略性健康协议融为一体。',
       securityStatement: '安全与隐私声明',
-      securityDetail: '数据本地加密同步。零后端存储。会话终止时即时销毁敏感指标。',
-      connect: '同步 Google Fit 数据',
+      securityDetail: '数据通过 Health Connect 本地加密同步。零后端存储。会话终止时即时销毁敏感指标。',
+      connect: '同步 Health Connect',
       guest: '访穿实验室',
       privacyPolicy: '隐私政策',
       termsOfService: '服务条款',
@@ -224,7 +224,7 @@ export const translations = {
       language: '系统语言',
       geminiCore: 'Gemini 神经内核',
       dataPrivacy: '数据隐私协议',
-      googleFit: 'Google Fit',
+      healthConnect: 'Health Connect',
       autoUpdate: '自动更新',
       active: '已激活',
       encrypted: '边缘加密存储',
@@ -289,9 +289,9 @@ export const translations = {
   de: {
     nav: { lab: 'Labor', trends: 'TRENDS', insights: 'EINBLICKE', settings: 'EINSTELLUNGEN' },
     errors: {
-      fitApiDenied: 'Zugriff verweigert: Bitte stellen Sie sicher, dass die "Fitness API" in der Google Cloud Console aktiviert ist.',
+      fitApiDenied: 'Zugriff verweigert: Bitte stellen Sie sicher, dass die Health-Berechtigungen aktiviert sind.',
       syncFailed: 'Synchronisierung fehlgeschlagen.',
-      noDataFound: 'Keine Google Fit-Daten gefunden.',
+      noDataFound: 'Keine Health Connect-Daten gefunden.',
       noSleepData: 'Keine Schlafphasen gefunden.',
       authExpired: 'Sitzung abgelaufen.'
     },
@@ -322,15 +322,15 @@ export const translations = {
       lab: 'Labor',
       tagline: 'Das SomnoAI Digital Sleep Lab integriert hochpräzises physiologisches Monitoring mit tiefen Gemini KI-Einblicken und strategischen Wellness-Protokollen.',
       securityStatement: 'Sicherheitserklärung',
-      securityDetail: 'Daten lokal synchronisiert. Kein Backend-Speicher. Sensible Metriken werden nach Sitzungsende gelöscht.',
-      connect: 'Google Fit verbinden',
+      securityDetail: 'Daten lokal über Health Connect synchronisiert. Kein Backend-Speicher.',
+      connect: 'Health Connect verbinden',
       guest: 'Gast-Login',
       privacyPolicy: 'Datenschutzrichtlinie',
       termsOfService: 'Nutzungsbedingungen',
       activateEngine: 'KI-Engine aktivieren',
       engineReady: 'Engine bereit',
       awaitingKey: 'Warte auf API-Schlüssel',
-      invalidKey: 'Ungültiger Schlüssel: API-Schlüssel sind normalerweise über 20 Zeichen lang.'
+      invalidKey: 'Ungültiger Schlüssel.'
     },
     assistant: {
       title: 'KI Einblicke Labor',
@@ -366,7 +366,7 @@ export const translations = {
       language: 'Sprache',
       geminiCore: 'Gemini Core Engine',
       dataPrivacy: 'Datenschutz',
-      googleFit: 'Google Fit',
+      healthConnect: 'Health Connect',
       autoUpdate: 'Auto-Update',
       active: 'Aktiv',
       encrypted: 'Edge-verschlüsselter Speicher',
@@ -431,9 +431,9 @@ export const translations = {
   fr: {
     nav: { lab: 'labo', trends: 'TENDANCES', insights: 'INSIGHTS', settings: 'RÉGLAGES' },
     errors: {
-      fitApiDenied: 'Accès refusé : Veuillez vous assurer que l\'API Fitness est activée dans la Google Cloud Console.',
+      fitApiDenied: 'Accès refusé : Veuillez vous assurer que les permissions de santé sont activées.',
       syncFailed: 'Échec de la synchronisation.',
-      noDataFound: 'Aucune donnée Google Fit identifiée.',
+      noDataFound: 'Aucune donnée Health Connect identifiée.',
       noSleepData: 'Aucune session de sommeil identifiée.',
       authExpired: 'Session expirée.'
     },
@@ -464,15 +464,15 @@ export const translations = {
       lab: 'Labo',
       tagline: 'Le SomnoAI Digital Sleep Lab intègre une surveillance physiologique de haute fidélité avec des insights IA Gemini profonds.',
       securityStatement: 'Déclaration de sécurité',
-      securityDetail: 'Données synchronisées localement. Pas de stockage backend. Les métriques sensibles sont effacées à la fin de la session.',
-      connect: 'Connecter Google Fit',
+      securityDetail: 'Données synchronisées via Health Connect localement.',
+      connect: 'Connecter Health Connect',
       guest: 'Connexion invité',
       privacyPolicy: 'Politique de confidentialité',
       termsOfService: 'Conditions d\'utilisation',
       activateEngine: 'Activer le moteur IA',
       engineReady: 'Moteur prêt',
       awaitingKey: 'Attente de la clé API',
-      invalidKey: 'Clé invalide : les clés API ont généralement plus de 20 caractères.'
+      invalidKey: 'Clé invalide.'
     },
     assistant: {
       title: 'Labo d\'insights IA',
@@ -508,7 +508,7 @@ export const translations = {
       language: 'Langue',
       geminiCore: 'Moteur Gemini Core',
       dataPrivacy: 'Confidentialité',
-      googleFit: 'Google Fit',
+      healthConnect: 'Health Connect',
       autoUpdate: 'Mise à jour auto',
       active: 'Actif',
       encrypted: 'Stockage chiffré Edge',

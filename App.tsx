@@ -5,7 +5,7 @@ import { Auth } from './Auth.tsx';
 import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor } from './types.ts';
 import { User, Loader2, Activity, Zap, TriangleAlert, RefreshCw, ExternalLink } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
-import { googleFit } from './services/googleFitService.ts';
+import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './components/Logo.tsx';
 import { translations, Language } from './services/i18n.ts';
@@ -32,7 +32,7 @@ const App: React.FC = () => {
   const [threeDEnabled, setThreeDEnabled] = useState<boolean>(() => localStorage.getItem('somno_3d') !== 'false');
   const [staticMode, setStaticMode] = useState<boolean>(() => localStorage.getItem('somno_static') === 'true');
   
-  const [isLoggedIn, setIsLoggedIn] = useState(googleFit.hasToken());
+  const [isLoggedIn, setIsLoggedIn] = useState(healthConnect.hasToken());
   const [isGuest, setIsGuest] = useState(false);
   const [activeView, setActiveView] = useState<ViewType | 'privacy' | 'terms'>('dashboard');
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
@@ -53,17 +53,17 @@ const App: React.FC = () => {
     return () => clearTimeout(timer);
   }, []);
 
-  const handleSyncGoogleFit = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
+  const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
     setErrorToast(null);
     setIsApiDenied(false);
     try {
       onProgress?.('authorizing');
-      await googleFit.authorize(forcePrompt);
+      await healthConnect.authorize(forcePrompt);
       setIsLoggedIn(true);
       
       onProgress?.('fetching');
-      const fitData = await googleFit.fetchSleepData();
+      const fitData = await healthConnect.fetchSleepData();
       const updatedRecord = { id: `fit-${Date.now()}`, ...fitData } as SleepRecord;
       
       setCurrentRecord(updatedRecord);
@@ -102,7 +102,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     if (isLoggedIn && !currentRecord && !isLoading) {
-      handleSyncGoogleFit(false);
+      handleSyncHealthConnect(false);
     }
   }, [isLoggedIn]);
 
@@ -130,11 +130,11 @@ const App: React.FC = () => {
   }, [lang]);
 
   const handleLogout = () => {
-    googleFit.logout();
+    healthConnect.logout();
     setIsLoggedIn(false);
     setIsGuest(false);
     setCurrentRecord(null);
-    localStorage.removeItem('google_fit_token');
+    localStorage.removeItem('health_connect_token');
     window.location.reload();
   };
 
@@ -160,7 +160,7 @@ const App: React.FC = () => {
                             <Dashboard 
                               lang={lang} 
                               data={currentRecord} 
-                              onSyncFit={isGuest ? undefined : (p) => handleSyncGoogleFit(false, p)} 
+                              onSyncFit={isGuest ? undefined : (p) => handleSyncHealthConnect(false, p)} 
                               staticMode={staticMode} 
                               onNavigate={setActiveView} 
                             />
@@ -178,7 +178,7 @@ const App: React.FC = () => {
                                   {isApiDenied ? "API Access Required" : "Telemetry Disconnected"}
                                 </h2>
                                 <p className="text-xs text-slate-400 leading-relaxed italic">
-                                  {errorToast || "No active biometric stream identified. Please synchronize with your wearable device."}
+                                  {errorToast || "No active biometric stream identified. Please synchronize with your wearable device via Health Connect."}
                                 </p>
                                 
                                 {isApiDenied && (
@@ -187,16 +187,24 @@ const App: React.FC = () => {
                                     target="_blank" 
                                     className="inline-flex items-center gap-2 text-[10px] font-black uppercase text-indigo-400 border-b border-indigo-400/30 pb-1 mt-4 hover:text-indigo-300 transition-colors"
                                   >
-                                    Enable Fitness API <ExternalLink size={12} />
+                                    Enable Health Cloud API <ExternalLink size={12} />
                                   </a>
                                 )}
                               </div>
-                              <button 
-                                onClick={() => handleSyncGoogleFit(true)}
-                                className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all flex items-center gap-3"
-                              >
-                                <RefreshCw size={14} /> Re-Initialize Link
-                              </button>
+                              <div className="flex flex-col gap-4">
+                                <button 
+                                  onClick={() => handleSyncHealthConnect(true)}
+                                  className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:scale-105 transition-all flex items-center gap-3"
+                                >
+                                  <RefreshCw size={14} /> Re-Initialize Link
+                                </button>
+                                <button 
+                                  onClick={() => { setIsGuest(true); generateMockData(); }}
+                                  className="text-[10px] font-black uppercase text-slate-500 hover:text-indigo-400 tracking-widest transition-colors"
+                                >
+                                  Use Synthetic Data Instead
+                                </button>
+                              </div>
                             </div>
                           )}
                         </>
@@ -209,7 +217,7 @@ const App: React.FC = () => {
                           theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
                           threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
                           staticMode={staticMode} onStaticModeChange={setStaticMode}
-                          lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncGoogleFit(true)}
+                          lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={isGuest ? generateMockData : () => handleSyncHealthConnect(true)}
                         />
                       )}
                     </>

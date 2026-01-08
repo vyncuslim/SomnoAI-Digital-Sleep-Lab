@@ -90,7 +90,6 @@ export const Settings: React.FC<SettingsProps> = ({
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">{t.subtitle}</p>
       </header>
 
-      {/* Language Section */}
       <GlassCard className="p-8 rounded-[4rem] space-y-6">
         <div className="flex items-center gap-4 mb-4">
           <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
@@ -119,7 +118,6 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </GlassCard>
 
-      {/* AI Security Section */}
       <GlassCard className="p-10 rounded-[4rem] space-y-10">
         <div className="space-y-8">
           <div className="flex items-center justify-between">
@@ -165,7 +163,6 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        {/* Sync Controls */}
         <div className="pt-6 border-t border-white/5 space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
@@ -173,7 +170,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <RefreshCw size={20} className={isSyncing ? 'animate-spin' : ''} />
               </div>
               <div>
-                <h3 className="text-xs font-black italic text-white uppercase tracking-tight">{t.dataManagement}</h3>
+                <h3 className="text-xs font-black italic text-white uppercase tracking-tight">{t.healthConnect}</h3>
                 <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{t.lastSync}: {lastSyncTime || t.never}</p>
               </div>
             </div>
@@ -204,7 +201,6 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </GlassCard>
 
-      {/* Visual Options Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <GlassCard className="p-8 rounded-[3.5rem] flex flex-col gap-6">
           <div className="flex items-center gap-4">
@@ -282,7 +278,6 @@ export const Settings: React.FC<SettingsProps> = ({
                     <p className="text-[9px] text-slate-500 font-bold uppercase tracking-[0.4em]">{t.fundingDesc}</p>
                   </div>
 
-                  {/* Enhanced QR Portal */}
                   <div className="relative py-4 flex flex-col items-center">
                     <div className="relative p-6 bg-white rounded-[3.5rem] shadow-[0_0_60px_rgba(236,72,153,0.25)] group">
                       <m.div 

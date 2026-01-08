@@ -26,14 +26,19 @@ const toMillis = (val: any): number => {
   return n > 10000000000000 ? Math.floor(n / 1000000) : n;
 };
 
-export class GoogleFitService {
+/**
+ * HealthConnectService: Handles biometric data synchronization via the cloud bridge.
+ * Although using Fitness REST API internally for web access, it represents 
+ * the synced data from the Android Health Connect ecosystem.
+ */
+export class HealthConnectService {
   private accessToken: string | null = null;
   private tokenClient: any = null;
   private initPromise: Promise<void> | null = null;
   private authPromise: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null;
 
   constructor() {
-    this.accessToken = localStorage.getItem('google_fit_token');
+    this.accessToken = localStorage.getItem('health_connect_token');
   }
 
   public hasToken(): boolean {
@@ -88,7 +93,7 @@ export class GoogleFitService {
             this.authPromise?.reject(new Error(response.error_description || response.error));
           } else {
             this.accessToken = response.access_token;
-            localStorage.setItem('google_fit_token', this.accessToken!);
+            localStorage.setItem('health_connect_token', this.accessToken!);
             this.authPromise?.resolve(this.accessToken!);
           }
           this.authPromise = null;
@@ -105,9 +110,9 @@ export class GoogleFitService {
   }
 
   public logout() {
-    const token = this.accessToken || localStorage.getItem('google_fit_token');
+    const token = this.accessToken || localStorage.getItem('health_connect_token');
     this.accessToken = null;
-    localStorage.removeItem('google_fit_token');
+    localStorage.removeItem('health_connect_token');
     if (token && typeof google !== 'undefined') {
       google.accounts.oauth2.revoke(token, () => {});
     }
@@ -132,11 +137,11 @@ export class GoogleFitService {
   }
 
   public async fetchSleepData(): Promise<Partial<SleepRecord>> {
-    const token = this.accessToken || localStorage.getItem('google_fit_token');
+    const token = this.accessToken || localStorage.getItem('health_connect_token');
     if (!token) throw new Error("AUTH_REQUIRED");
 
     const now = Date.now();
-    const searchWindowStart = now - (96 * 60 * 60 * 1000); // Expanded look back to 96 hours (4 days)
+    const searchWindowStart = now - (96 * 60 * 60 * 1000); 
 
     const sessionRes = await fetch(
       `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(searchWindowStart).toISOString()}&endTime=${new Date(now).toISOString()}`,
@@ -153,7 +158,6 @@ export class GoogleFitService {
       sTime = toMillis(latest.startTimeMillis);
       eTime = toMillis(latest.endTimeMillis);
     } else {
-      // Fallback 1: Raw sleep segments
       const rawSegments = await this.fetchAggregate(token, now - (48 * 60 * 60 * 1000), now, "com.google.sleep.segment");
       const points = rawSegments?.bucket?.[0]?.dataset?.[0]?.point || [];
       
@@ -161,7 +165,6 @@ export class GoogleFitService {
         sTime = nanostampsToMillis(points[0].startTimeNanos);
         eTime = nanostampsToMillis(points[points.length - 1].endTimeNanos);
       } else {
-        // Fallback 2: Activity segments tagged as sleep
         const activitySegments = await this.fetchAggregate(token, now - (48 * 60 * 60 * 1000), now, "com.google.activity.segment");
         const actPoints = activitySegments?.bucket?.[0]?.dataset?.[0]?.point || [];
         const sleepPoints = actPoints.filter((p: any) => p.value?.[0]?.intVal === 72);
@@ -173,7 +176,6 @@ export class GoogleFitService {
       }
     }
 
-    // Now fetch detailed segments
     const segmentData = await this.fetchAggregate(token, sTime, eTime, "com.google.sleep.segment");
     const stages: SleepStage[] = [];
     let deepMins = 0, remMins = 0, lightMins = 0, awakeMins = 0;
@@ -208,7 +210,6 @@ export class GoogleFitService {
 
     const totalDuration = (eTime - sTime) / (60 * 1000);
 
-    // Heart Rate Fetch
     let average = 65, max = 88, min = 58;
     const hrAgg = await this.fetchAggregate(token, sTime, eTime, "com.google.heart_rate.bpm");
     if (hrAgg) {
@@ -253,4 +254,4 @@ export class GoogleFitService {
   }
 }
 
-export const googleFit = new GoogleFitService();
+export const healthConnect = new HealthConnectService();
