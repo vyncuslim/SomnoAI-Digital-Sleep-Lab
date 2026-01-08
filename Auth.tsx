@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { healthConnect } from './services/healthConnectService.ts';
 import { Logo } from './components/Logo.tsx';
-import { Language } from './services/i18n.ts';
+import { Language, translations } from './services/i18n.ts';
 
 const m = motion as any;
 
@@ -23,6 +23,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   const [showManualKeyInput, setShowManualKeyInput] = useState(false);
   const [manualKey, setManualKey] = useState(localStorage.getItem('somno_manual_gemini_key') || '');
   const [showKey, setShowKey] = useState(false);
+
+  const t = translations[lang].auth;
 
   useEffect(() => {
     const checkKey = async () => {
@@ -71,17 +73,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   };
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#020617]">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none animate-pulse" />
+      
       <m.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
-        className="w-full max-w-md space-y-12 text-center"
+        className="w-full max-w-md space-y-12 text-center relative z-10"
       >
         <div className="relative flex flex-col items-center">
           <m.div 
             animate={{ scale: [1, 1.05, 1], rotate: [0, 5, 0] }}
             transition={{ duration: 12, repeat: Infinity }}
-            className="w-32 h-32 rounded-full bg-indigo-600/10 border border-indigo-500/20 flex items-center justify-center shadow-[0_0_100px_rgba(79,70,229,0.1)] mb-10"
+            className="w-32 h-32 rounded-full bg-indigo-600/10 border border-indigo-500/10 flex items-center justify-center shadow-[0_0_100px_rgba(79,70,229,0.1)] mb-10"
           >
             <Logo size={80} animated={true} />
           </m.div>
@@ -107,7 +111,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                   </span>
                   <span className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${isEngineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {isEngineActive && <CheckCircle2 size={12} />}
-                    {isEngineActive ? 'Ready' : 'Offline'}
+                    {isEngineActive ? t.engineReady : 'Offline'}
                   </span>
                 </div>
 
@@ -118,7 +122,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                     className="w-full py-6 rounded-full flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-widest hover:scale-105 transition-all shadow-2xl active:scale-95 disabled:opacity-50"
                   >
                     {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Cpu size={20} className="text-indigo-600" />}
-                    Sync Health Connect
+                    {t.connect}
                   </button>
                   
                   {!isEngineActive && (
@@ -126,7 +130,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                       onClick={handleActivateEngine}
                       className="w-full py-4 rounded-full bg-indigo-600/20 border border-indigo-500/30 text-indigo-400 font-black text-[10px] uppercase tracking-widest transition-all hover:bg-indigo-600 hover:text-white"
                     >
-                      Activate Neural Core
+                      {t.activateEngine}
                     </button>
                   )}
 
@@ -134,7 +138,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                     onClick={onGuest} 
                     className="w-full py-4 bg-white/5 border border-white/5 rounded-full flex items-center justify-center gap-3 text-slate-500 hover:text-slate-300 font-black text-[10px] uppercase tracking-widest transition-all"
                   >
-                    Virtual Guest <ArrowRight size={14} />
+                    {t.guest} <ArrowRight size={14} />
                   </button>
                 </div>
               </m.div>
@@ -180,8 +184,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
         <footer className="mt-8 flex flex-col items-center gap-5 opacity-40 hover:opacity-100 transition-opacity">
           <div className="flex items-center gap-10">
-            <button onClick={() => onNavigate?.('privacy')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">Privacy</button>
-            <button onClick={() => onNavigate?.('terms')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">Terms</button>
+            <button onClick={() => onNavigate?.('privacy')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">{t.privacyPolicy}</button>
+            <button onClick={() => onNavigate?.('terms')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">{t.termsOfService}</button>
           </div>
           <p className="text-[9px] font-mono uppercase tracking-[0.5em] text-slate-700">© 2026 SOMNOAI LAB</p>
         </footer>

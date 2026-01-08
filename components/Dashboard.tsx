@@ -15,12 +15,12 @@ const m = motion as any;
 interface DashboardProps {
   data: SleepRecord;
   lang: Language;
-  onSyncFit?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
+  onSyncHealth?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
   onNavigate?: (view: any) => void;
   staticMode?: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onNavigate, staticMode = false }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, onNavigate, staticMode = false }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [engineActive, setEngineActive] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -41,9 +41,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncFit, onN
   }, []);
 
   const handleSync = async () => {
-    if (!onSyncFit || isProcessing) return;
+    if (!onSyncHealth || isProcessing) return;
     try {
-      await onSyncFit((status) => {
+      await onSyncHealth((status) => {
         setSyncStatus(status);
         if (status === 'success') setTimeout(() => setSyncStatus('idle'), 2000);
       });

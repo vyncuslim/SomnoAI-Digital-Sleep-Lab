@@ -42,12 +42,12 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
             <section className="p-6 bg-indigo-500/5 border border-indigo-500/20 rounded-2xl space-y-4">
               <div className="flex items-center gap-2 text-indigo-400">
                  <Shield size={18} />
-                 <h2 className="text-[11px] font-black uppercase tracking-widest">{isZh ? 'Google API 有限使用披露' : 'Google API Limited Use Disclosure'}</h2>
+                 <h2 className="text-[11px] font-black uppercase tracking-widest">{isZh ? '健康数据有限使用披露' : 'Health Data Limited Use Disclosure'}</h2>
               </div>
               <p className="italic text-slate-400">
                 {isZh 
-                  ? 'Somno Lab 对从 Google API 接收到的信息的使用和转移将遵守 Google API 服务用户数据政策，包括其中的有限使用要求。本应用通过这些 API 桥接 Health Connect 数据。' 
-                  : 'Somno Lab\'s use and transfer to any other app of information received from Google APIs will adhere to Google API Services User Data Policy, including the Limited Use requirements. This is used to bridge Health Connect data.'}
+                  ? 'Somno Lab 对接收到的个人健康信息的使用和转移将遵守相关数据安全政策，包括其中的有限使用要求。本应用通过安全链路同步 Health Connect 数据。' 
+                  : 'Somno Lab\'s use and transfer of information received from personal health APIs will adhere to strict data safety policies, including the Limited Use requirements. This is used to bridge Health Connect data.'}
               </p>
             </section>
 

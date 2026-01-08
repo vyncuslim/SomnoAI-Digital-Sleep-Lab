@@ -63,8 +63,8 @@ const App: React.FC = () => {
       setIsLoggedIn(true);
       
       onProgress?.('fetching');
-      const fitData = await healthConnect.fetchSleepData();
-      const updatedRecord = { id: `fit-${Date.now()}`, ...fitData } as SleepRecord;
+      const healthData = await healthConnect.fetchSleepData();
+      const updatedRecord = { id: `health-${Date.now()}`, ...healthData } as SleepRecord;
       
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
@@ -72,7 +72,7 @@ const App: React.FC = () => {
       onProgress?.('analyzing');
       const insights = await getSleepInsight(updatedRecord, lang);
       setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
-      
+      localStorage.setItem('somno_last_sync', new Date().toLocaleString());
       onProgress?.('success');
     } catch (err: any) {
       onProgress?.('error');
@@ -82,7 +82,7 @@ const App: React.FC = () => {
       
       if (errMsg.includes("FIT_API_ACCESS_DENIED")) {
         setIsApiDenied(true);
-        errMsg = langErrors.fitApiDenied;
+        errMsg = langErrors.healthApiDenied;
       } else if (errMsg.includes("DATA_NOT_FOUND")) {
         errMsg = langErrors.noDataFound;
       } else if (errMsg.includes("SLEEP_DATA_SPECIFICALLY_NOT_FOUND")) {
@@ -160,7 +160,7 @@ const App: React.FC = () => {
                             <Dashboard 
                               lang={lang} 
                               data={currentRecord} 
-                              onSyncFit={isGuest ? undefined : (p) => handleSyncHealthConnect(false, p)} 
+                              onSyncHealth={isGuest ? undefined : (p) => handleSyncHealthConnect(false, p)} 
                               staticMode={staticMode} 
                               onNavigate={setActiveView} 
                             />

@@ -117,8 +117,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
             <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
               <p className="text-[11px] text-slate-400 italic leading-relaxed">
                 {isZh 
-                  ? 'Somno Lab 遵守 Google 的有限使用政策。生理数据通过 Health Connect 同步并在客户端使用 Google Gemini 模型进行处理，绝不存储在持久化后端服务器上。' 
-                  : 'Somno Lab complies with Google\'s Limited Use Policy. Physiological data is synchronized via Health Connect and processed in the client context using Google Gemini models, never stored on a persistent backend.'}
+                  ? 'Somno Lab 遵守数据安全与有限使用政策。生理数据通过 Health Connect 同步并在客户端使用 Google Gemini 模型进行处理，绝不存储在持久化后端服务器上。' 
+                  : 'Somno Lab complies with high-security data safety policies. Physiological data is synchronized via Health Connect and processed in the client context using Google Gemini models, never stored on a persistent backend.'}
               </p>
             </div>
           </div>

@@ -28,8 +28,7 @@ const toMillis = (val: any): number => {
 
 /**
  * HealthConnectService: Handles biometric data synchronization via the cloud bridge.
- * Although using Fitness REST API internally for web access, it represents 
- * the synced data from the Android Health Connect ecosystem.
+ * Internally uses the Fitness REST API to access data synced from Android's Health Connect.
  */
 export class HealthConnectService {
   private accessToken: string | null = null;
