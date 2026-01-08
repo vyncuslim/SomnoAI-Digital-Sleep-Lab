@@ -138,17 +138,19 @@ const App: React.FC = () => {
     window.location.reload();
   };
 
+  const isShowAuth = !isLoggedIn && !isGuest && activeView !== 'privacy' && activeView !== 'terms';
+
   return (
     <div className={`flex-1 flex flex-col min-h-screen relative`}>
       <main className="flex-1 w-full mx-auto p-4 pt-10 pb-40">
-        {!isLoggedIn && !isGuest && activeView !== 'privacy' && activeView !== 'terms' ? (
+        {isShowAuth ? (
           <Auth lang={lang} onLogin={() => setIsLoggedIn(true)} onGuest={() => { setIsGuest(true); generateMockData(); }} onNavigate={setActiveView} />
         ) : (
           <Suspense fallback={<LoadingSpinner />}>
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }}>
                 {activeView === 'privacy' || activeView === 'terms' ? (
-                  <LegalView type={activeView as 'privacy' | 'terms'} lang={lang} onBack={() => setActiveView(isLoggedIn || isGuest ? 'dashboard' : 'dashboard')} />
+                  <LegalView type={activeView as 'privacy' | 'terms'} lang={lang} onBack={() => setActiveView('dashboard')} />
                 ) : (
                   isLoading && !currentRecord ? (
                     <LoadingSpinner />

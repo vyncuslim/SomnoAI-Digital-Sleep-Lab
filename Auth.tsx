@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, ArrowRight, Key, Cpu, TriangleAlert, CheckCircle2, Eye, EyeOff, Save, X, Activity, Lock, Database } from 'lucide-react';
+import { Loader2, ArrowRight, Key, Cpu, TriangleAlert, CheckCircle2, Eye, EyeOff, Save, X, Activity, Lock, Database, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { healthConnect } from './services/healthConnectService.ts';
@@ -228,12 +228,24 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           )}
         </GlassCard>
 
-        <footer className="mt-12 flex flex-col items-center gap-6 opacity-40 hover:opacity-100 transition-all duration-700">
+        <footer className="mt-12 flex flex-col items-center gap-6 opacity-60 hover:opacity-100 transition-all duration-700">
           <div className="flex items-center gap-10">
-            <button onClick={() => onNavigate?.('privacy')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">{t.privacyPolicy}</button>
-            <button onClick={() => onNavigate?.('terms')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors">{t.termsOfService}</button>
+            <m.button 
+              whileHover={{ y: -2 }}
+              onClick={() => onNavigate?.('privacy')} 
+              className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors flex items-center gap-2"
+            >
+              {t.privacyPolicy} <ExternalLink size={10} />
+            </m.button>
+            <m.button 
+              whileHover={{ y: -2 }}
+              onClick={() => onNavigate?.('terms')} 
+              className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors flex items-center gap-2"
+            >
+              {t.termsOfService} <ExternalLink size={10} />
+            </m.button>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 opacity-30">
              <div className="h-[1px] w-8 bg-slate-800" />
              <p className="text-[9px] font-mono uppercase tracking-[0.5em] text-slate-700">© 2026 SOMNO LAB TERMINAL</p>
              <div className="h-[1px] w-8 bg-slate-800" />
