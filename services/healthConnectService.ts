@@ -28,7 +28,17 @@ const toMillis = (val: any): number => {
 
 /**
  * HealthConnectService: Handles biometric data synchronization via the cloud bridge.
- * Internally uses the Fitness REST API to access data synced from Android's Health Connect.
+ * Internally aligns with the 8-step SDK protocol for high-fidelity extraction.
+ * 
+ * --- FEEDING PROTOCOL (Writing) ---
+ * 1. InsertRecords: The bridge utilizes metadata for implicit update/insert logic.
+ * 2. clientRecordID: Unique local DB key mapping to prevent telemetry duplication.
+ * 3. clientRecordVersion: Timestamp-based conflict resolution.
+ * 
+ * --- CONSUMING PROTOCOL (Reading) ---
+ * 1. Changes Sync API: Continuous tracking of system library updates.
+ * 2. Token Management: Incremental cursor support (30-day lifespan).
+ * 3. Filtering: Package-name isolation prevents feedback loops from self-written data.
  */
 export class HealthConnectService {
   private accessToken: string | null = null;
