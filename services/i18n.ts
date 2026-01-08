@@ -421,7 +421,7 @@ export const translations = {
     about: {
       title: 'Über das Labor',
       mission: 'Unsere Mission',
-      missionText: 'Demokratisierung der Schlafwissenschaft.',
+      missionText: 'Die Demokratisierung der Schlafwissenschaft durch Edge Computing.',
       tech: 'KI-Technologie',
       techText: 'Unterstützt durch Gemini.',
       vision: 'Die Vision',
