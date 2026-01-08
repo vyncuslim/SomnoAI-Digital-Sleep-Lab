@@ -141,7 +141,16 @@ export const translations = {
       tech: 'AI Technology',
       techText: 'Powered by Gemini 3 series models.',
       vision: 'The Vision',
-      visionText: 'A world where sleep is not a black box.'
+      visionText: 'A world where sleep is not a black box.',
+      protocolTitle: 'Health Connect SDK Integration Protocol',
+      step1: '1. Availability Check (getSdkStatus)',
+      step2: '2. Manifest Declaration (READ_SLEEP)',
+      step3: '3. Permission Set Creation (HealthPermission)',
+      step4: '4. Authorization Status Check (getGrantedPermissions)',
+      step5: '5. User Consent Flow (RequestPermissionResultContract)',
+      step6: '6. Biometric Data Retrieval (readRecords)',
+      step7: '7. Write Protocol Injection (insertRecords)',
+      step8: '8. Dynamic Lifecycle Management (Revocation Handling)'
     }
   },
   zh: {
@@ -277,13 +286,22 @@ export const translations = {
       confirm: '执行注入'
     },
     about: {
-      title: '关于本实验室',
-      mission: '我们的愿景',
-      missionText: '通过边缘计算、Health Connect 数据中心和共情 AI，实现高保真睡眠科学的普及。',
+      title: '关于实验室',
+      mission: '研究使命',
+      missionText: '通过边缘计算、Android Health Connect 生态系统和共情 AI，实现高保真睡眠科学的普及。',
       tech: 'AI 神经技术',
       techText: '由 Google Gemini 3 系列旗舰模型驱动。',
       vision: '核心理念',
-      visionText: '让睡眠不再是健康盲区。'
+      visionText: '让睡眠不再是健康盲区。',
+      protocolTitle: 'Health Connect 官方 SDK 集成协议',
+      step1: '1. 确认可用性 (HealthConnectClient.getSdkStatus)',
+      step2: '2. Manifest 权限声明 (READ_SLEEP / WRITE_SLEEP)',
+      step3: '3. 创建权限集合 (HealthPermission Set)',
+      step4: '4. 运行时授权检查 (getGrantedPermissions)',
+      step5: '5. 弹出系统授权界面 (ActivityResultContract)',
+      step6: '6. 读取睡眠会话数据 (readRecords)',
+      step7: '7. 写入睡眠记录 (insertRecords)',
+      step8: '8. 生命周期与撤回保护 (Dynamic Permission Management)'
     }
   },
   de: {
@@ -425,7 +443,16 @@ export const translations = {
       tech: 'KI-Technologie',
       techText: 'Unterstützt durch Gemini 3 Serienmodelle.',
       vision: 'Die Vision',
-      visionText: 'Eine Welt, in der Schlaf keine Blackbox ist.'
+      visionText: 'Eine Welt, in der Schlaf keine Blackbox ist.',
+      protocolTitle: 'Health Connect SDK Protokoll',
+      step1: '1. Verfügbarkeit prüfen',
+      step2: '2. Manifest-Deklaration',
+      step3: '3. Berechtigungsset erstellen',
+      step4: '4. Statusprüfung',
+      step5: '5. Benutzereinwilligung',
+      step6: '6. Daten abrufen',
+      step7: '7. Daten schreiben',
+      step8: '8. Widerrufs-Management'
     }
   },
   fr: {
@@ -567,7 +594,16 @@ export const translations = {
       tech: 'IA Technologie',
       techText: 'Propulsé par Gemini.',
       vision: 'La vision',
-      visionText: 'Un sommeil transparent.'
+      visionText: 'Un sommeil transparent.',
+      protocolTitle: 'Protocole Health Connect',
+      step1: '1. Vérifier la disponibilité',
+      step2: '2. Déclarer les permissions',
+      step3: '3. Créer l\'ensemble',
+      step4: '4. Vérifier l\'autorisation',
+      step5: '5. Consentement utilisateur',
+      step6: '6. Lire les données',
+      step7: '7. Écrire les données',
+      step8: '8. Gestion de révocation'
     }
   }
 };

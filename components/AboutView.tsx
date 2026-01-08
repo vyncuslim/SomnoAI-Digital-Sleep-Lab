@@ -1,8 +1,11 @@
 
 import React from 'react';
-import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock, Smartphone, Database } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, Info } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
+import { motion } from 'framer-motion';
+
+const m = motion as any;
 
 interface AboutViewProps {
   lang: Language;
@@ -24,6 +27,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
     "email"
   ];
 
+  const protocolSteps = [
+    t.step1, t.step2, t.step3, t.step4, t.step5, t.step6, t.step7, t.step8
+  ];
+
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500">
       <header className="flex items-center gap-4 mb-10 px-2">
@@ -43,7 +50,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
         </div>
       </header>
 
-      <div className="space-y-8 max-w-2xl mx-auto">
+      <div className="space-y-8 max-w-2xl mx-auto px-2">
         <GlassCard className="p-8 space-y-6 border-indigo-500/30 bg-indigo-500/[0.02] rounded-[3.5rem]">
           <div className="flex items-center gap-4">
             <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
@@ -54,6 +61,40 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
           <p className="text-slate-300 leading-relaxed font-medium">
             {t.missionText}
           </p>
+        </GlassCard>
+
+        <GlassCard className="p-8 space-y-8 border-white/10 bg-white/[0.01] rounded-[3.5rem]">
+           <div className="flex items-center gap-4">
+            <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400">
+              <Terminal size={24} />
+            </div>
+            <h2 className="text-xl font-bold italic text-white uppercase tracking-tight">{t.protocolTitle}</h2>
+          </div>
+
+          <div className="grid grid-cols-1 gap-3">
+            {protocolSteps.map((step, idx) => (
+              <m.div 
+                key={idx}
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: idx * 0.1 }}
+                className="flex items-center gap-4 p-4 bg-slate-950/60 rounded-2xl border border-white/5 group"
+              >
+                <span className="text-[10px] font-mono font-black text-slate-600 group-hover:text-indigo-400 transition-colors">0{idx + 1}</span>
+                <p className="text-xs font-bold text-slate-300 tracking-tight">{step}</p>
+                <CheckCircle2 size={12} className="ml-auto text-emerald-500/30" />
+              </m.div>
+            ))}
+          </div>
+          
+          <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl flex gap-4 items-start">
+             <Info size={18} className="text-indigo-400 shrink-0 mt-1" />
+             <p className="text-[11px] text-slate-400 leading-relaxed italic">
+                {isZh 
+                  ? "SomnoAI 官方 Android 客户端严格遵循 Google 推荐的 8 步集成协议。通过 Health Connect Client SDK，应用直接在 OS 层面请求授权，绕过已淘汰的旧版 API 限制，实现极低延迟且合规的睡眠分段读取。" 
+                  : "The official SomnoAI Android client strictly follows the 8-step integration protocol recommended by Google. Using the Health Connect Client SDK, the app requests authorization directly at the OS level, ensuring high-fidelity sleep stage retrieval while maintaining full regulatory compliance."}
+             </p>
+          </div>
         </GlassCard>
 
         <GlassCard className="p-8 space-y-8 border-white/10 bg-white/[0.01] rounded-[3.5rem]">
@@ -75,14 +116,14 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                    <Smartphone className="text-indigo-400" size={20} />
                    <div>
                       <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Source</p>
-                      <p className="text-xs font-bold text-white uppercase tracking-tight">Android Health Connect</p>
+                      <p className="text-xs font-bold text-white uppercase tracking-tight">Health Connect SDK v1.1.0</p>
                    </div>
                 </div>
                 <div className="p-5 bg-slate-950/60 rounded-3xl border border-white/5 flex items-center gap-4">
                    <Database className="text-emerald-400" size={20} />
                    <div>
-                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Bridge</p>
-                      <p className="text-xs font-bold text-white uppercase tracking-tight">Secure Cloud Sync</p>
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Sync</p>
+                      <p className="text-xs font-bold text-white uppercase tracking-tight">Android 9+ Native Integration</p>
                    </div>
                 </div>
              </div>
@@ -98,7 +139,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
 
             <div className="space-y-3">
               <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                <Lock size={10} /> {isZh ? '活动范围 (Health Connect 桥接)' : 'Active Scopes (Health Connect Bridge)'}
+                <Lock size={10} /> {isZh ? '活动范围 (Health Permission Set)' : 'Active Scopes (Health Permission Set)'}
               </p>
               <div className="flex flex-wrap gap-2">
                 {ACTIVE_SCOPES.map(scope => (
@@ -107,14 +148,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                   </span>
                 ))}
               </div>
-            </div>
-
-            <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl">
-              <p className="text-[11px] text-slate-400 italic leading-relaxed">
-                {isZh 
-                  ? 'Somno Lab 遵守 Google API 数据安全与有限使用政策。生理数据通过 Android Health Connect 同步并在客户端使用 Google Gemini 模型进行加密处理，绝不存储在持久化后端服务器上。' 
-                  : 'Somno Lab complies with high-security data safety policies. Physiological data is synchronized via Android Health Connect and processed in the client context using Google Gemini models, never stored on a persistent backend server.'}
-              </p>
             </div>
           </div>
         </GlassCard>
