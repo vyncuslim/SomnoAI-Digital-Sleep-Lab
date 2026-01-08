@@ -13,10 +13,16 @@ const SCOPES = [
 
 declare var google: any;
 
-const toMillis = (nanos: any): number => {
+const nanostampsToMillis = (nanos: any): number => {
   if (nanos === null || nanos === undefined) return Date.now();
-  const n = Number(nanos);
-  if (isNaN(n)) return Date.now();
+  const n = BigInt(nanos);
+  return Number(n / BigInt(1000000));
+};
+
+const toMillis = (val: any): number => {
+  if (!val) return Date.now();
+  const n = Number(val);
+  // 判断是纳秒还是毫秒
   return n > 10000000000000 ? Math.floor(n / 1000000) : n;
 };
 
@@ -129,35 +135,47 @@ export class GoogleFitService {
     if (!token) throw new Error("AUTH_REQUIRED");
 
     const now = Date.now();
-    const startTimeMillis = now - (30 * 24 * 60 * 60 * 1000); 
+    const searchWindowStart = now - (48 * 60 * 60 * 1000); // 搜索最近48小时
 
-    // 1. 获取睡眠会话
+    // 1. 尝试获取睡眠会话 (Sessions)
     const sessionRes = await fetch(
-      `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(startTimeMillis).toISOString()}&endTime=${new Date(now).toISOString()}`,
+      `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(searchWindowStart).toISOString()}&endTime=${new Date(now).toISOString()}`,
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    if (!sessionRes.ok) throw new Error("FIT_SESSION_FETCH_FAILED");
+    let sTime = 0;
+    let eTime = 0;
     const sessionData = await sessionRes.json();
     const sleepSessions = (sessionData.session || []).filter((s: any) => s.activityType === 72);
-    
-    if (sleepSessions.length === 0) throw new Error("SLEEP_DATA_SPECIFICALLY_NOT_FOUND");
 
-    const latest = sleepSessions[sleepSessions.length - 1];
-    const sTime = toMillis(latest.startTimeMillis);
-    const eTime = toMillis(latest.endTimeMillis);
+    if (sleepSessions.length > 0) {
+      const latest = sleepSessions[sleepSessions.length - 1];
+      sTime = toMillis(latest.startTimeMillis);
+      eTime = toMillis(latest.endTimeMillis);
+    } else {
+      // 2. 回退机制：如果没有会话，尝试直接搜索最近24小时的原始睡眠数据点
+      const rawSegments = await this.fetchAggregate(token, now - (24 * 60 * 60 * 1000), now, "com.google.sleep.segment");
+      const points = rawSegments.bucket?.[0]?.dataset?.[0]?.point || [];
+      
+      if (points.length === 0) throw new Error("SLEEP_DATA_SPECIFICALLY_NOT_FOUND");
+      
+      // 自动确定边界：取第一个点和最后一个点的时间
+      sTime = nanostampsToMillis(points[0].startTimeNanos);
+      eTime = nanostampsToMillis(points[points.length - 1].endTimeNanos);
+    }
 
-    // 2. 获取真实睡眠分段详情
+    // 3. 提取详细分段
     const segmentData = await this.fetchAggregate(token, sTime, eTime, "com.google.sleep.segment");
     const stages: SleepStage[] = [];
     let deepMins = 0, remMins = 0, lightMins = 0, awakeMins = 0;
 
-    // 解析 Google Fit 睡眠阶段: 1=Awake, 4=Light, 5=Deep, 6=REM
-    const points = segmentData.bucket?.[0]?.dataset?.[0]?.point || [];
-    points.forEach((p: any) => {
+    const allPoints = segmentData.bucket?.[0]?.dataset?.[0]?.point || [];
+    allPoints.forEach((p: any) => {
       const type = p.value?.[0]?.intVal;
-      const duration = (toMillis(p.endTimeNanos) - toMillis(p.startTimeNanos)) / (60 * 1000);
-      const startTimeStr = new Date(toMillis(p.startTimeNanos)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      const start = nanostampsToMillis(p.startTimeNanos);
+      const end = nanostampsToMillis(p.endTimeNanos);
+      const duration = (end - start) / (60 * 1000);
+      const startTimeStr = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
       
       let stageName: any = 'Light';
       if (type === 1) { stageName = 'Awake'; awakeMins += duration; }
@@ -165,29 +183,22 @@ export class GoogleFitService {
       else if (type === 5) { stageName = 'Deep'; deepMins += duration; }
       else if (type === 6) { stageName = 'REM'; remMins += duration; }
 
-      stages.push({ name: stageName, duration: Math.round(duration), startTime: startTimeStr });
+      stages.push({ name: stageName, duration: Math.max(1, Math.round(duration)), startTime: startTimeStr });
     });
 
-    // 如果没有分段详情，按总时长估算比例（防止部分设备只记总数不记分段）
     const totalDuration = (eTime - sTime) / (60 * 1000);
-    if (stages.length === 0) {
-      stages.push({ name: 'Deep', duration: Math.round(totalDuration * 0.2), startTime: '--' });
-      stages.push({ name: 'REM', duration: Math.round(totalDuration * 0.2), startTime: '--' });
-      stages.push({ name: 'Light', duration: Math.round(totalDuration * 0.6), startTime: '--' });
-    }
 
-    // 3. 获取真实心率聚合
+    // 4. 获取对应的真实心率数据
     const hrData = await this.fetchAggregate(token, sTime, eTime, "com.google.heart_rate.bpm");
-    const hrPoints = hrData.bucket?.[0]?.dataset?.[0]?.point?.[0]?.value || [];
-    const resting = Math.round(hrPoints[2]?.fpVal || 60); // min bpm
-    const average = Math.round(hrPoints[0]?.fpVal || 65); // avg bpm
-    const max = Math.round(hrPoints[1]?.fpVal || 85);    // max bpm
+    const hrValue = hrData.bucket?.[0]?.dataset?.[0]?.point?.[0]?.value || [];
+    const resting = Math.round(hrValue[2]?.fpVal || 62);
+    const average = Math.round(hrValue[0]?.fpVal || 65);
+    const max = Math.round(hrValue[1]?.fpVal || 88);
 
-    // 4. 计算真实分数和效率
+    // 5. 评分逻辑
     const efficiency = totalDuration > 0 ? Math.round(((totalDuration - awakeMins) / totalDuration) * 100) : 0;
-    // 简易评分算法：基于总时长（目标7-8小时）和效率
-    const scoreBase = Math.min(100, (totalDuration / 480) * 100);
-    const finalScore = Math.round((scoreBase * 0.6) + (efficiency * 0.4));
+    const scoreBase = Math.min(100, (totalDuration / 450) * 100); // 以7.5小时为基准
+    const finalScore = Math.round((scoreBase * 0.7) + (efficiency * 0.3));
 
     return {
       date: new Date(sTime).toLocaleDateString(navigator.language, { month: 'long', day: 'numeric', weekday: 'long' }),
@@ -202,7 +213,7 @@ export class GoogleFitService {
         max,
         min: resting,
         average,
-        history: [] // 需要更复杂的查询来获取点，此处先取聚合
+        history: []
       }
     };
   }
