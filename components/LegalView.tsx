@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { ArrowLeft, FileText, ShieldCheck, Lock, ShieldAlert, Activity, AlertTriangle, Zap, Mail, ExternalLink, Shield } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
@@ -26,7 +27,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
             {isPrivacy ? (isZh ? '隐私政策' : 'Privacy Policy') : (isZh ? '服务条款' : 'Terms of Service')}
           </h1>
           <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-0.5">
-            Somno Lab • {isZh ? '2025.01.04 版' : 'v2025.01.04'}
+            Somno Lab • {isZh ? '2026.01.04 版' : 'v2026.01.04'}
           </p>
         </div>
       </header>
@@ -45,8 +46,8 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
               </div>
               <p className="italic text-slate-400">
                 {isZh 
-                  ? 'Somno Lab 对从 Google API 接收到的信息的使用和转移将遵守 Google API 服务用户数据政策，包括其中的有限使用要求。' 
-                  : 'Somno Lab\'s use and transfer to any other app of information received from Google APIs will adhere to Google API Services User Data Policy, including the Limited Use requirements.'}
+                  ? 'Somno Lab 对从 Google API 接收到的信息的使用和转移将遵守 Google API 服务用户数据政策，包括其中的有限使用要求。本应用通过这些 API 桥接 Health Connect 数据。' 
+                  : 'Somno Lab\'s use and transfer to any other app of information received from Google APIs will adhere to Google API Services User Data Policy, including the Limited Use requirements. This is used to bridge Health Connect data.'}
               </p>
             </section>
 
@@ -57,7 +58,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 </div>
                 <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '1. 数据访问' : '1. Data Access'}</h2>
               </div>
-              <p>{isZh ? '在您明确授权后，我们通过 fitness.sleep.read、fitness.heart_rate.read 和 fitness.activity.read 范围访问您的睡眠、心率和能量消耗数据。这些范围是实现实验分析所必需的最小权限。' : 'After your explicit authorization, we access sleep, heart rate, and metabolic energy data via fitness.sleep.read, fitness.heart_rate.read, and fitness.activity.read. These represent the minimum scopes required for lab analysis.'}</p>
+              <p>{isZh ? '在您明确授权后，我们访问您的睡眠、心率、能量消耗和身体测量数据。这些范围是实现实验分析所必需的最小权限，并通过 Health Connect 基础架构进行同步。' : 'After your explicit authorization, we access sleep, heart rate, energy expenditure, and body measurement data. These represent the minimum scopes required for lab analysis, synced via the Health Connect infrastructure.'}</p>
             </section>
 
             <section className="space-y-6 relative z-10">
@@ -98,9 +99,9 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                   <div className="p-2.5 bg-indigo-500/10 rounded-xl text-indigo-400 border border-indigo-500/20">
                     <ShieldCheck size={20} />
                   </div>
-                  <h2 className="text-xl font-bold italic tracking-tight">{isZh ? 'Google API 使用规范' : 'Google API Usage'}</h2>
+                  <h2 className="text-xl font-bold italic tracking-tight">{isZh ? '数据授权规范' : 'Data Authorization'}</h2>
                 </div>
-                <p>{isZh ? '您确认已了解本应用访问 Google Fit 数据的具体范围，并同意应用的数据处理方式。' : 'You confirm you understand the scopes accessed from Google Fit and agree to the data processing.'}</p>
+                <p>{isZh ? '您确认已了解本应用访问 Health Connect 数据的具体范围，并同意应用的数据处理方式。' : 'You confirm you understand the scopes accessed from Health Connect and agree to the data processing.'}</p>
               </div>
             </section>
           </>
@@ -122,7 +123,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
             <Mail size={12} />
             <span className="text-[10px] font-bold">ongyuze1401@gmail.com</span>
           </div>
-          <p className="text-[9px] font-black uppercase tracking-widest">© 2025 SOMNO LAB • {isZh ? '合规性更新： 2025.01.04' : 'Compliance Update: 2025.01.04'}</p>
+          <p className="text-[9px] font-black uppercase tracking-widest">© 2026 SOMNO LAB • {isZh ? '合规性更新： 2026.01.04' : 'Compliance Update: 2026.01.04'}</p>
         </footer>
       </div>
     </div>

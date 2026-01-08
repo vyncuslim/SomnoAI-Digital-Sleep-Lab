@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { ArrowLeft, BrainCircuit, Rocket, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, ShieldCheck, Binary, Globe, Shield, Activity, Lock } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
 
@@ -18,6 +18,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
     "fitness.sleep.read",
     "fitness.heart_rate.read",
     "fitness.activity.read",
+    "fitness.body.read",
     "openid",
     "profile",
     "email"
@@ -77,14 +78,13 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
           </div>
         </GlassCard>
 
-        {/* New Verification Section */}
         <GlassCard className="p-8 space-y-8 border-white/10 bg-white/[0.01]">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400">
                 <ShieldCheck size={24} />
               </div>
-              <h2 className="text-xl font-bold italic text-white">System Verification</h2>
+              <h2 className="text-xl font-bold italic text-white">{isZh ? '系统验证' : 'System Verification'}</h2>
             </div>
             <span className="px-2 py-0.5 bg-indigo-500/20 text-indigo-400 text-[8px] font-black rounded border border-indigo-500/20 uppercase tracking-widest">
               Reviewer Info
@@ -103,12 +103,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
 
             <div className="space-y-3">
               <p className="text-[9px] font-black uppercase text-slate-500 tracking-widest flex items-center gap-2">
-                <Lock size={10} /> Active Scopes (Minimum Required)
+                <Lock size={10} /> {isZh ? '活动范围 (Health Connect 桥接)' : 'Active Scopes (Health Connect Bridge)'}
               </p>
               <div className="flex flex-wrap gap-2">
                 {ACTIVE_SCOPES.map(scope => (
                   <span key={scope} className="px-2 py-1 bg-white/5 border border-white/10 rounded-lg text-[10px] font-mono text-indigo-300">
-                    {scope}
+                    {scope.replace('https://www.googleapis.com/auth/', '')}
                   </span>
                 ))}
               </div>
@@ -116,7 +116,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
 
             <div className="p-4 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl">
               <p className="text-[11px] text-slate-400 italic leading-relaxed">
-                Somno Lab complies with Google's Limited Use Policy. Physiological data is processed in the client context using Google Gemini models and is never stored on a persistent backend.
+                {isZh 
+                  ? 'Somno Lab 遵守 Google 的有限使用政策。生理数据通过 Health Connect 同步并在客户端使用 Google Gemini 模型进行处理，绝不存储在持久化后端服务器上。' 
+                  : 'Somno Lab complies with Google\'s Limited Use Policy. Physiological data is synchronized via Health Connect and processed in the client context using Google Gemini models, never stored on a persistent backend.'}
               </p>
             </div>
           </div>
