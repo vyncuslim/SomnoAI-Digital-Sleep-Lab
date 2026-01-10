@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect } from 'react';
-import { Loader2, ArrowRight, Key, Cpu, TriangleAlert, CheckCircle2, Eye, EyeOff, Save, X, Activity, Lock, Database, ExternalLink, ShieldCheck } from 'lucide-react';
+import { Loader2, ArrowRight, Key, Cpu, TriangleAlert, CheckCircle2, Eye, EyeOff, Save, X, Activity, Lock, Database, ExternalLink, ShieldCheck, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { healthConnect } from './services/healthConnectService.ts';
 import { Logo } from './components/Logo.tsx';
 import { Language, translations } from './services/i18n.ts';
+import { HealthConnectDialog } from './components/HealthConnectDialog.tsx';
 
 const m = motion as any;
 
@@ -23,6 +24,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   const [showManualKeyInput, setShowManualKeyInput] = useState(false);
   const [manualKey, setManualKey] = useState(localStorage.getItem('somno_manual_gemini_key') || '');
   const [showKey, setShowKey] = useState(false);
+  const [showPermissionDialog, setShowPermissionDialog] = useState(false);
 
   const t = translations[lang].auth;
 
@@ -59,7 +61,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     setShowManualKeyInput(false);
   };
 
+  const triggerPermissionDialog = () => {
+    setShowPermissionDialog(true);
+  };
+
   const handleHealthConnectLogin = async () => {
+    setShowPermissionDialog(false);
     if (isLoggingIn) return;
     setIsLoggingIn(true);
     setLocalError(null);
@@ -141,7 +148,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
                 <div className="space-y-4">
                   <button 
-                    onClick={handleHealthConnectLogin} 
+                    onClick={triggerPermissionDialog} 
                     disabled={isLoggingIn} 
                     className="w-full py-5 md:py-6 rounded-[2rem] md:rounded-[2.5rem] flex items-center justify-center gap-4 bg-white text-slate-950 font-black text-sm uppercase tracking-[0.2em] hover:scale-[1.03] transition-all shadow-[0_20px_50px_rgba(255,255,255,0.1)] active:scale-95 disabled:opacity-50"
                   >
@@ -164,6 +171,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                   >
                     {t.guest} <ArrowRight size={14} />
                   </button>
+                </div>
+
+                {/* Primary Documentation Link */}
+                <div className="pt-2">
+                   <a 
+                     href="/privacy" 
+                     target="_blank"
+                     className="text-[10px] font-black text-slate-500 uppercase tracking-widest hover:text-indigo-400 transition-colors flex items-center justify-center gap-2"
+                   >
+                     <FileText size={12} />
+                     View Official Privacy Policy
+                   </a>
                 </div>
 
                 <div className="pt-4 flex items-center justify-center gap-4 opacity-20">
@@ -244,6 +263,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           <p className="text-[8px] font-mono uppercase tracking-[0.5em] text-slate-700">© 2026 SOMNO LAB TERMINAL • SECURE HANDSHAKE</p>
         </footer>
       </m.div>
+
+      {/* High Fidelity Permission Dialog */}
+      <HealthConnectDialog 
+        isOpen={showPermissionDialog} 
+        onClose={() => setShowPermissionDialog(false)} 
+        onAllow={handleHealthConnectLogin}
+        appName="SomnoAI Lab"
+      />
     </div>
   );
 };

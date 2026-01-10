@@ -30,19 +30,21 @@ const toMillis = (val: any): number => {
  * HealthConnectService: Handles biometric data synchronization via the cloud bridge.
  * Aligns with high-fidelity 8-step SDK protocol for reliable extraction & injection.
  * 
- * --- FEEDING PROTOCOL (Writing Logic) ---
+ * --- FEEDING PROTOCOL (Writing Logic - The Warehouse Packing Slip) ---
  * 1. InsertRecords: SDK-level implicit update/insert logic via metadata.
  * 2. clientRecordID: Unique local DB mapping prevents telemetry duplication (Idempotency).
  * 3. clientRecordVersion: Timestamp-based conflict resolution for signal accuracy.
  * 4. Batching: Series data is batched per 1000 records for efficient throughput.
  * 
- * --- CONSUMING PROTOCOL (Reading Logic) ---
- * 1. Changes Sync API: Incremental tracking of insertions, updates, and deletions.
- * 2. Token Management: Incremental cursor support with rolling 30-day lifespan.
- * 3. Package Filtering: Isolation based on Package Name to exclude self-generated loops.
+ * --- CONSUMING PROTOCOL (Reading Logic - The Inventory Report) ---
+ * 1. Changes Sync API: Tracking stateful UpsertionChange and DeletionChange events.
+ * 2. Token Lifecycle (The Manga Bookmark): getChangesToken initiates a cursor. 
+ *    Calling getChanges returns updates + next token.
+ *    Tokens have a rolling 30-day lifespan (Reading progress bookmark).
+ * 3. Signal Filtering (Forensics): Isolation based on Package Name to exclude self-generated loops.
  * 
  * --- SECURITY & PRIVACY ---
- * 1. Foreground Restriction: Biometric reading restricted to active UI session for privacy.
+ * 1. Foreground Restriction: Biometric reading restricted to active UI session (Warehouse door open).
  * 2. User Sovereignty: System-level permission UI ensures user control over scopes.
  */
 export class HealthConnectService {

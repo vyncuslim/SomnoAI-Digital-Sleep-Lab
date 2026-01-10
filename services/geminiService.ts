@@ -13,8 +13,12 @@ const getAIProvider = (): AIProvider => {
   return (localStorage.getItem('somno_ai_provider') as AIProvider) || 'gemini';
 };
 
+/**
+ * The API key must be obtained exclusively from the environment variable process.env.API_KEY.
+ * It's injected by the system via the openSelectKey() workflow when using high-end models.
+ */
 const getGeminiApiKey = () => {
-  return localStorage.getItem('somno_manual_gemini_key') || process.env.API_KEY;
+  return process.env.API_KEY;
 };
 
 const getOpenAIKey = () => (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
@@ -71,6 +75,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
       const apiKey = getGeminiApiKey();
       if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
       
+      // Always initialize right before making an API call
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -84,6 +89,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
           }
         }
       });
+      // Corrected: Accessing .text as a property, as per GenAI SDK requirements.
       return JSON.parse(response.text || "[]");
     }
   } catch (err) {
@@ -108,6 +114,7 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
     } else {
       const apiKey = getGeminiApiKey();
       if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+      // Always initialize right before making an API call
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-pro-preview',
@@ -125,6 +132,7 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
           }
         }
       });
+      // Corrected: Accessing .text as a property.
       return JSON.parse(response.text || "{}");
     }
   } catch (err) {
@@ -177,6 +185,7 @@ export const chatWithCoach = async (
     } else {
       const apiKey = getGeminiApiKey();
       if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+      // Always initialize right before making an API call
       const ai = new GoogleGenAI({ apiKey });
       
       const lastMessage = history[history.length - 1].content;
@@ -197,6 +206,7 @@ export const chatWithCoach = async (
           temperature: 0.75,
         }
       });
+      // Corrected: Accessing .text as a property.
       return {
         text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
         sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
@@ -223,6 +233,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
     } else {
       const apiKey = getGeminiApiKey();
       if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+      // Always initialize right before making an API call
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -231,6 +242,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
           temperature: 0.7,
         }
       });
+      // Corrected: Accessing .text as a property.
       return response.text || (lang === 'en' ? "Trend analysis unavailable." : "趋势分析不可用。");
     }
   } catch (err) {
