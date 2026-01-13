@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
-import { Loader2, ArrowRight, TriangleAlert, ShieldCheck, Mail, Key, Eye, EyeOff, ChevronLeft, RefreshCw, Sparkles, CheckCircle2, Zap, Lock, Fingerprint, Send, Inbox, HelpCircle, Shield, BookmarkCheck, Atom, Radar, FlaskConical } from 'lucide-react';
+// Added Zap to the imports
+import { Loader2, ArrowRight, TriangleAlert, ShieldCheck, Mail, Key, Eye, EyeOff, ChevronLeft, RefreshCw, Fingerprint, Lock, Shield, Atom, CircleCheck, Info, Send, Scan, Terminal, Hash, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './components/Logo.tsx';
 import { Language } from './services/i18n.ts';
-import { signInWithEmailPassword, signUpWithEmailPassword, sendLoginOTP, verifyLoginOTP, signInWithGoogle, supabase } from './services/supabaseService.ts';
+import { signInWithEmailOTP, verifyOtp, signInWithGoogle } from './services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -13,132 +13,26 @@ interface AuthProps {
   onLogin: () => void;
   onGuest: () => void;
   onNavigate?: (view: any) => void;
-  isAdminFlow?: boolean; 
 }
 
-// 模式定义：
-// login: 输入邮箱/密码
-// signup: 注册新账号
-// otp: 登录后的 6 位数字二步验证
-// success_signup: 注册成功，引导去邮箱点确认链接（不显示验证码输入框）
-// email_confirmed: 用户点击邮件链接跳转回来的中间状态
-type AuthMode = 'login' | 'signup' | 'otp' | 'success_signup' | 'email_confirmed';
+type AuthStep = 'email' | 'otp';
 
-export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, isAdminFlow = false }) => {
+export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
   const isZh = lang === 'zh';
-  const [mode, setMode] = useState<AuthMode>('login');
+  const [step, setStep] = useState<AuthStep>('email');
   const [isProcessing, setIsProcessing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [isResending, setIsResending] = useState(false);
   
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [resendTimer, setResendTimer] = useState(0);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const passwordValid = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(password);
-
-  // 捕获从确认邮件跳转回来的状态 (Supabase 默认跳转到 URL#access_token...)
-  useEffect(() => {
-    const checkAuthStatus = () => {
-      const hash = window.location.hash;
-      if (hash.includes('access_token') || hash.includes('type=signup') || hash.includes('type=recovery')) {
-        setMode('email_confirmed');
-      }
-    };
-    checkAuthStatus();
-    window.addEventListener('hashchange', checkAuthStatus);
-    return () => window.removeEventListener('hashchange', checkAuthStatus);
-  }, []);
-
-  useEffect(() => {
-    let interval: any;
-    if (resendTimer > 0) {
-      interval = setInterval(() => setResendTimer(prev => prev - 1), 1000);
-    }
-    return () => clearInterval(interval);
-  }, [resendTimer]);
-
-  useEffect(() => {
-    if (mode === 'otp') {
-      const timer = setTimeout(() => otpRefs.current[0]?.focus(), 400);
-      return () => clearTimeout(timer);
-    }
-  }, [mode]);
-
-  const handleInitialAction = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password || isProcessing) return;
-
-    if (mode === 'signup' && !passwordValid) {
-      setLocalError(isZh ? "密码强度不足：需包含大小写字母和数字" : "Security Threshold Not Met: Required A-Z, a-z, 0-9");
-      return;
-    }
-
-    setIsProcessing(true);
-    setLocalError(null);
-    try {
-      if (mode === 'signup') {
-        // 第一阶段：注册 -> 仅发送确认邮件链接
-        await signUpWithEmailPassword(email, password);
-        setMode('success_signup');
-      } else {
-        // 第二阶段：登录 (此时邮箱必须已 Confirm)
-        // 1. 校验密码凭证
-        await signInWithEmailPassword(email, password);
-        // 2. 密码正确，发送 6 位 OTP 验证码到邮箱
-        await sendLoginOTP(email);
-        setMode('otp');
-        setResendTimer(60);
-      }
-    } catch (err: any) {
-      if (err.message?.includes('Email not confirmed')) {
-        setLocalError(isZh ? "身份未激活：请先点击邮件中的确认链接。" : "Identity Inactive: Click the link in your email first.");
-        setMode('success_signup');
-      } else {
-        setLocalError(err.message || (isZh ? "实验室访问拒绝：凭证无效" : "Access Denied: Invalid Credentials"));
-      }
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleResendSignupLink = async () => {
-    setIsResending(true);
-    try {
-      await signUpWithEmailPassword(email, password);
-      alert(isZh ? "激活链路已重置，请查收新邮件。" : "Activation link re-transmitted.");
-    } catch (e) {
-      setLocalError(isZh ? "请求过于频繁，请稍后再试。" : "Transmission limit reached. Wait a moment.");
-    } finally {
-      setIsResending(false);
-    }
-  };
-
-  const handleVerifyOTP = async (providedOtp?: string) => {
-    const otpValue = providedOtp || otp.join('');
-    if (otpValue.length < 6 || isProcessing) return;
-
-    setIsProcessing(true);
-    setLocalError(null);
-    try {
-      const session = await verifyLoginOTP(email, otpValue);
-      if (session) onLogin();
-    } catch (err: any) {
-      setLocalError(isZh ? "安全令牌不匹配或已过期" : "Security Token Mismatch");
-      setOtp(['', '', '', '', '', '']);
-      otpRefs.current[0]?.focus();
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
+  // Verification Code Input Management
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return;
     const newOtp = [...otp];
     if (value.length > 1) {
+      // Handle bulk paste
       const pasted = value.slice(0, 6).split('');
       pasted.forEach((char, i) => { if (index + i < 6) newOtp[index + i] = char; });
       setOtp(newOtp);
@@ -148,11 +42,58 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
       setOtp(newOtp);
       if (value && index < 5) otpRefs.current[index + 1]?.focus();
     }
-    if (newOtp.every(d => d !== '')) handleVerifyOTP(newOtp.join(''));
+
+    // Auto-commit on full code entry
+    if (newOtp.every(d => d !== '') && index === 5) {
+      handleVerify(newOtp.join(''));
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
+  };
+
+  // Step 1: Send Neural Token
+  const handleSendOTP = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!email || isProcessing) return;
+    setIsProcessing(true);
+    setLocalError(null);
+    try {
+      await signInWithEmailOTP(email);
+      setStep('otp');
+      // Set focus to first input
+      setTimeout(() => otpRefs.current[0]?.focus(), 400);
+    } catch (err: any) {
+      setLocalError(err.message || (isZh ? "协议握手失败：无法发送验证码" : "Protocol Handshake Failed: Unable to send code"));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  // Step 2: Synchronize Identity
+  const handleVerify = async (fullOtp?: string) => {
+    const token = fullOtp || otp.join('');
+    if (token.length < 6 || isProcessing) return;
+    setIsProcessing(true);
+    setLocalError(null);
+    try {
+      await verifyOtp(email, token);
+      onLogin();
+    } catch (err: any) {
+      setLocalError(isZh ? "令牌无效或已过期，请检查邮件" : "Token invalid or expired. Check your laboratory email.");
+      setOtp(['', '', '', '', '', '']);
+      otpRefs.current[0]?.focus();
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-6 bg-[#020617] font-sans selection:bg-indigo-500/30 overflow-hidden relative">
+      {/* Background Ambience */}
       <div className="absolute inset-0 z-0 pointer-events-none">
         <m.div 
           animate={{ opacity: [0.03, 0.08, 0.03], scale: [1, 1.2, 1] }}
@@ -161,7 +102,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
         />
       </div>
 
-      <m.div layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[440px] z-10">
+      <m.div layout initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-[460px] z-10">
         <header className="text-center mb-10 space-y-4">
           <m.div layout className="inline-block p-4 bg-slate-900/50 rounded-full shadow-inner border border-white/5 backdrop-blur-sm">
             <Logo size={64} animated={true} />
@@ -171,146 +112,33 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
               SomnoAI
             </m.h1>
             <m.h2 layout className="text-3xl font-light text-indigo-400/80 tracking-widest uppercase italic leading-tight">
-              Digital Lab
+              Identity Lab
             </m.h2>
           </div>
         </header>
 
-        <div className="bg-[#050a1f]/60 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] p-8 md:p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] relative">
+        <div className="bg-[#050a1f]/60 backdrop-blur-3xl border border-white/10 rounded-[3.5rem] p-8 md:p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] relative overflow-hidden">
           <AnimatePresence mode="wait">
-            {mode === 'success_signup' ? (
+            {step === 'email' ? (
               <m.div 
-                key="success"
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="text-center space-y-10 py-2"
-              >
-                <div className="relative mx-auto w-24 h-24">
-                  <m.div 
-                    animate={{ rotate: 360 }}
-                    transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
-                    className="absolute inset-0 border border-emerald-500/30 border-dashed rounded-full"
-                  />
-                  <div className="absolute inset-2 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-400 border border-emerald-500/20">
-                    <Mail size={40} className="animate-pulse" />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h2 className="text-2xl font-black text-white italic tracking-tight">{isZh ? '正在等待身份激活' : 'Activation Pending'}</h2>
-                  <p className="text-sm text-slate-400 font-medium leading-relaxed px-2">
-                    {isZh 
-                      ? '激活链路已开启。请前往邮箱点击确认链接。确认后，您即可通过登录面板进入实验室。' 
-                      : 'Security link transmitted. Please verify via email. Once confirmed, you can proceed to laboratory entry.'}
-                  </p>
-                </div>
-
-                <div className="space-y-4 pt-6 border-t border-white/5">
-                  <button onClick={handleResendSignupLink} disabled={isResending} className="w-full py-4 bg-white/5 border border-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:bg-white/10 transition-all">
-                    {isResending ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                    {isZh ? '没收到邮件？重发激活链路' : 'No Email? Resend Link'}
-                  </button>
-                  <button onClick={() => setMode('login')} className="w-full py-5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all">
-                    {isZh ? '已完成确认，去登录' : 'Confirmed, Login Now'}
-                  </button>
-                </div>
-              </m.div>
-            ) : mode === 'email_confirmed' ? (
-              <m.div 
-                key="confirmed"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="text-center space-y-10 py-4"
-              >
-                <div className="w-24 h-24 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto text-emerald-400 border border-emerald-500/20 shadow-[0_0_50px_rgba(16,185,129,0.2)]">
-                  <BookmarkCheck size={48} />
-                </div>
-                <div className="space-y-3">
-                  <h2 className="text-2xl font-black text-white italic tracking-tight">{isZh ? '实验室访问权限已激活' : 'Lab Access Unlocked'}</h2>
-                  <p className="text-sm text-slate-400 font-medium px-4">{isZh ? '您的身份已验证。现在请输入凭证以触发二步验证令牌。' : 'Your identity is verified. Enter credentials to trigger Phase II OTP.'}</p>
-                </div>
-                <button onClick={() => { setMode('login'); window.location.hash = ''; }} className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-xl">
-                  {isZh ? '进入身份验证控制台' : 'Enter Terminal'}
-                </button>
-              </m.div>
-            ) : mode === 'otp' ? (
-              <m.div 
-                key="otp"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
+                key="email" 
+                initial={{ opacity: 0, x: -20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                exit={{ opacity: 0, x: 20 }} 
                 className="space-y-10"
-              >
-                <div className="text-center space-y-4">
-                  <button onClick={() => setMode('login')} className="text-[10px] font-black text-slate-500 hover:text-indigo-400 uppercase tracking-widest flex items-center gap-2 mx-auto group">
-                    <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> {isZh ? '返回修改凭证' : 'Back to Credentials'}
-                  </button>
-                  <div className="space-y-1">
-                    <h2 className="text-xl font-black text-white uppercase italic tracking-tight">{isZh ? '安全令牌握手' : 'Phase II Handshake'}</h2>
-                    <p className="text-[11px] text-slate-500 leading-relaxed font-bold uppercase tracking-widest">
-                      {isZh ? '请输入发送至您邮箱的 6 位安全验证码' : 'Enter the 6-digit code sent to your email'}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="flex justify-center gap-2">
-                  {otp.map((digit, idx) => (
-                    <input
-                      key={idx}
-                      ref={el => { otpRefs.current[idx] = el; }}
-                      type="text"
-                      inputMode="numeric"
-                      maxLength={1}
-                      value={digit}
-                      onChange={(e) => handleOtpChange(idx, e.target.value)}
-                      className="w-12 h-16 bg-white/[0.03] border border-white/10 rounded-2xl text-2xl text-center text-white font-black focus:border-indigo-500 outline-none transition-all shadow-inner"
-                    />
-                  ))}
-                </div>
-
-                <div className="space-y-6 text-center">
-                  <button 
-                    onClick={() => handleVerifyOTP()}
-                    disabled={isProcessing || otp.some(d => !d)}
-                    className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-xl active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3 transition-all"
-                  >
-                    {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                    {isZh ? '同步身份数据' : 'Synchronize Identity'}
-                  </button>
-                  <div className="h-4">
-                    {resendTimer > 0 ? (
-                      <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Resend in {resendTimer}s</span>
-                    ) : (
-                      <button onClick={handleInitialAction} className="text-[9px] font-black text-indigo-400 uppercase hover:text-white transition-colors flex items-center gap-2 mx-auto">
-                        <RefreshCw size={12} /> {isZh ? '重发验证码' : 'Resend Code'}
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </m.div>
-            ) : (
-              <m.div 
-                key="credentials"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: 10 }}
-                className="space-y-8"
               >
                 <div className="space-y-4">
                   <m.button 
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                     onClick={() => signInWithGoogle()}
-                    className="w-full py-5 bg-white text-[#1c1b1f] rounded-full font-black text-xs uppercase tracking-widest flex items-center justify-center gap-4 transition-all shadow-2xl relative overflow-hidden group"
+                    className="w-full py-5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-widest flex items-center justify-center gap-4 transition-all shadow-2xl relative overflow-hidden group"
                   >
-                    <svg className="w-5 h-5" viewBox="0 0 24 24">
-                      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
-                      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.66l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                    </svg>
-                    <span>{isZh ? '使用 Google 账号继续' : 'Continue with Google'}</span>
+                    <m.div 
+                      className="absolute inset-0 bg-slate-100/0 group-hover:bg-slate-100/10 transition-colors"
+                    />
+                    <img src="https://img.icons8.com/color/24/google-logo.png" alt="G" className="z-10" />
+                    <span className="z-10">{isZh ? '使用 Google 账号继续' : 'Continue with Google'}</span>
                   </m.button>
                   
                   <div className="relative flex items-center py-4 opacity-30">
@@ -320,59 +148,90 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
                   </div>
                 </div>
 
-                <form onSubmit={handleInitialAction} className="space-y-8">
-                  <div className="space-y-5">
+                <form onSubmit={handleSendOTP} className="space-y-8">
+                  <div className="space-y-2">
                     <div className="relative group">
                       <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
                       <input 
                         type="email" 
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        placeholder={isZh ? "输入实验室电子邮箱" : "Enter Laboratory Email"}
+                        placeholder={isZh ? "输入实验室电子邮箱" : "Laboratory Email"}
                         className="w-full bg-[#020617]/80 border border-white/10 rounded-[1.5rem] px-16 py-5 text-sm text-white font-medium outline-none focus:border-indigo-500/50 transition-all placeholder:text-slate-700"
                         required
                       />
                     </div>
-
-                    <div className="relative group">
-                      <Fingerprint className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
-                      <input 
-                        type={showPassword ? 'text' : 'password'}
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        placeholder={isZh ? "访问密钥" : "Laboratory Access Key"}
-                        className="w-full bg-[#020617]/80 border border-white/10 rounded-[1.5rem] px-16 py-5 text-sm text-white font-medium outline-none focus:border-indigo-500/50 transition-all placeholder:text-slate-700"
-                        required
-                      />
-                      <button 
-                        type="button" 
-                        onClick={() => setShowPassword(!showPassword)}
-                        className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-700 hover:text-white transition-colors"
-                      >
-                        {showPassword ? <EyeOff size={18}/> : <Eye size={18}/>}
-                      </button>
-                    </div>
+                    <p className="px-6 text-[10px] text-slate-500 font-bold italic">
+                      {isZh ? '我们将通过此邮箱发送一次性验证码。' : 'We will transmit a unique access token to this address.'}
+                    </p>
                   </div>
 
                   <button 
                     type="submit"
                     disabled={isProcessing}
-                    className="w-full py-5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-full font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-[0.98] shadow-[0_15px_45px_-10px_rgba(79,70,229,0.5)] flex items-center justify-center gap-3"
+                    className="w-full py-5 bg-gradient-to-r from-indigo-600 to-violet-600 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-[0_15px_45px_-10px_rgba(79,70,229,0.5)] flex items-center justify-center gap-3 disabled:opacity-50"
                   >
-                    {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Atom size={18} className="animate-spin-slow" />}
-                    {mode === 'signup' ? (isZh ? '初始化身份链路' : 'Initialize Identity') : (isZh ? '建立加密隧道' : 'Establish Tunnel')}
+                    {/* Fixed missing Zap icon reference */}
+                    {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+                    {isZh ? '发送安全令牌' : 'Request Access Token'}
                   </button>
                 </form>
 
-                <div className="flex flex-col gap-6 text-center">
-                  <button 
-                    onClick={() => { setMode(mode === 'login' ? 'signup' : 'login'); setLocalError(null); }}
-                    className="text-[10px] font-black text-slate-500 hover:text-indigo-400 transition-colors uppercase tracking-[0.2em]"
-                  >
-                    {mode === 'login' ? (isZh ? '没有授权？申请身份' : 'No Access? Request Identity') : (isZh ? '已有身份？返回终端' : 'Authorized? Back to Terminal')}
-                  </button>
+                <div className="text-center">
                   <button onClick={onGuest} className="text-[10px] font-black text-slate-700 hover:text-slate-400 transition-colors uppercase tracking-[0.2em] flex items-center justify-center gap-2 mx-auto group">
-                    {isZh ? '接入本地虚拟沙盒' : 'Access Virtual Sandbox'} <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                    {isZh ? '接入虚拟实验沙盒' : 'Enter Virtual Sandbox'} <ArrowRight size={14} className="group-hover:translate-x-1 transition-transform" />
+                  </button>
+                </div>
+              </m.div>
+            ) : (
+              <m.div 
+                key="otp" 
+                initial={{ opacity: 0, x: 20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                exit={{ opacity: 0, x: -20 }} 
+                className="space-y-10"
+              >
+                <div className="text-center space-y-4">
+                  <button onClick={() => setStep('email')} className="text-[10px] font-black text-slate-500 hover:text-indigo-400 uppercase tracking-widest flex items-center gap-2 mx-auto group">
+                    <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" /> {isZh ? '返回修改邮箱' : 'Change Identity'}
+                  </button>
+                  <div className="space-y-1">
+                    <m.h2 layout className="text-xl font-black text-white uppercase italic tracking-tight">
+                      {isZh ? '请输入 6 位令牌' : 'Enter 6-Digit Token'}
+                    </m.h2>
+                    <p className="text-[11px] text-slate-500 leading-relaxed font-bold uppercase tracking-widest">
+                      {isZh ? '验证码已同步至' : 'Token synchronized to'} <span className="text-indigo-400">{email}</span>
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex justify-between gap-2 px-2">
+                  {otp.map((digit, idx) => (
+                    <input
+                      key={idx}
+                      ref={el => { otpRefs.current[idx] = el; }}
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={1}
+                      value={digit}
+                      onChange={(e) => handleOtpChange(idx, e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(idx, e)}
+                      className="w-12 h-16 bg-white/[0.03] border border-white/10 rounded-2xl text-2xl text-center text-white font-black focus:border-indigo-500 outline-none transition-all shadow-inner focus:shadow-[0_0_20px_rgba(99,102,241,0.2)]"
+                    />
+                  ))}
+                </div>
+
+                <div className="space-y-6 text-center">
+                  <button 
+                    onClick={() => handleVerify()}
+                    disabled={isProcessing || otp.some(d => !d)}
+                    className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                  >
+                    {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                    {isZh ? '建立加密链接' : 'Synchronize Identity'}
+                  </button>
+                  <button onClick={() => handleSendOTP()} className="text-[10px] font-black text-slate-600 hover:text-white transition-colors uppercase tracking-widest flex items-center gap-2 mx-auto">
+                    <RefreshCw size={12} /> {isZh ? '重发验证码' : 'Resend Token'}
                   </button>
                 </div>
               </m.div>
@@ -392,23 +251,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
         </div>
 
         <m.footer layout className="mt-12 text-center opacity-30 hover:opacity-100 transition-opacity">
-          <p className="text-[8px] font-black text-slate-800 uppercase tracking-[0.5em] mb-4 italic">Neural Core Security • Phase II Handshake</p>
+          <p className="text-[8px] font-black text-slate-800 uppercase tracking-[0.5em] mb-4 italic">Neural Core Security • Session Encryption Enabled</p>
           <div className="flex justify-center gap-10">
             <button onClick={() => onNavigate?.('privacy')} className="text-[10px] font-black text-slate-600 hover:text-indigo-400 uppercase tracking-widest transition-colors">Privacy</button>
             <button onClick={() => onNavigate?.('terms')} className="text-[10px] font-black text-slate-600 hover:text-indigo-400 uppercase tracking-widest transition-colors">Terms</button>
           </div>
         </m.footer>
       </m.div>
-
-      <style>{`
-        .animate-spin-slow {
-          animation: spin 3s linear infinite;
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 };

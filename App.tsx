@@ -38,12 +38,7 @@ const LoadingSpinner = ({ label = "Loading..." }: { label?: string }) => (
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
-  const [theme, setTheme] = useState<ThemeMode>(() => (localStorage.getItem('somno_theme') as ThemeMode) || 'dark');
-  const [accentColor, setAccentColor] = useState<AccentColor>(() => (localStorage.getItem('somno_accent') as AccentColor) || 'indigo');
-  const [threeDEnabled, setThreeDEnabled] = useState<boolean>(() => localStorage.getItem('somno_3d') !== 'false');
-  const [staticMode, setStaticMode] = useState<boolean>(() => localStorage.getItem('somno_static') === 'true');
-  
-  const [isLoggedIn, setIsLoggedIn] = useState(healthConnect.hasToken());
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isGuest, setIsGuest] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [activeView, setActiveView] = useState<ViewType | 'privacy' | 'terms' | 'admin'>('dashboard');
@@ -51,83 +46,60 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
-  const [requestedAdminFlow, setRequestedAdminFlow] = useState(window.location.pathname.startsWith('/admin'));
   const [syncPhase, setSyncPhase] = useState<string>("");
 
-  // Helper to safely update URL without crashing in sandboxed environments
-  const updateUrl = (path: string) => {
-    try {
-      window.history.pushState({}, '', path);
-    } catch (e) {
-      console.warn('Navigation: Could not update URL in current environment', e);
+  // 核心权限检查逻辑
+  const syncIdentity = useCallback(async (user: any) => {
+    if (!user) {
+      setIsAdmin(false);
+      setIsLoggedIn(false);
+      return;
     }
-  };
+    
+    setIsLoggedIn(true);
+    const isAdminUser = await adminApi.checkAdminStatus(user.id);
+    setIsAdmin(isAdminUser);
 
-  // Check initial route on mount
-  useEffect(() => {
-    if (window.location.pathname.startsWith('/admin')) {
-      setRequestedAdminFlow(true);
-      setActiveView('admin');
-    }
-  }, []);
-
-  // Dismiss global HTML loader
-  useEffect(() => {
-    if ((window as any).dismissLoader) {
-      (window as any).dismissLoader();
-    }
-  }, []);
-
-  const checkAdminPrivileges = useCallback(async (userId: string) => {
-    try {
-      const isUserAdmin = await adminApi.checkAdminStatus(userId);
-      setIsAdmin(isUserAdmin);
-      // If user is admin and specifically on admin path, ensure view is set
-      if (isUserAdmin && window.location.pathname.includes('/admin')) {
+    // 路由守卫：检测 URL 指令
+    const path = window.location.pathname;
+    if (path === '/admin') {
+      if (isAdminUser) {
         setActiveView('admin');
+      } else {
+        // 纵深防御：拦截非授权进入后台
+        window.history.replaceState({}, '', '/');
+        setActiveView('dashboard');
       }
-    } catch (e) {
-      console.error("Admin check failed", e);
     }
   }, []);
 
   useEffect(() => {
+    // 1. 初始化 Session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        setIsLoggedIn(true);
-        checkAdminPrivileges(session.user.id);
+      syncIdentity(session?.user);
+    });
+
+    // 2. 监听 Auth 状态变更
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      syncIdentity(session?.user);
+      if (event === 'SIGNED_OUT') {
+        setIsGuest(false);
+        setActiveView('dashboard');
       }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session) {
-        setIsLoggedIn(true);
-        checkAdminPrivileges(session.user.id);
-      } else {
-        setIsAdmin(false);
-        setIsLoggedIn(false);
-      }
-    });
+    if ((window as any).dismissLoader) (window as any).dismissLoader();
 
     return () => subscription.unsubscribe();
-  }, [checkAdminPrivileges]);
+  }, [syncIdentity]);
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
     setErrorToast(null);
-    
-    const syncTimeout = setTimeout(() => {
-      if (isLoading) {
-        setIsLoading(false);
-        setErrorToast("LINK_TIMEOUT");
-      }
-    }, 15000);
-
     try {
       onProgress?.('authorizing');
       setSyncPhase("Linking...");
       await healthConnect.authorize(forcePrompt);
-      setIsLoggedIn(true);
       
       onProgress?.('fetching');
       setSyncPhase("Telemetric Stream...");
@@ -145,99 +117,36 @@ const App: React.FC = () => {
       onProgress?.('success');
     } catch (err: any) {
       onProgress?.('error');
-      if (err.message === "SLEEP_DATA_SPECIFICALLY_NOT_FOUND") {
-        setErrorToast("NO_SLEEP_DATA");
-      } else {
-        setErrorToast(err.message || "Sync Failed");
-      }
+      setErrorToast(err.message || "Sync Failed");
     } finally {
-      clearTimeout(syncTimeout);
       setIsLoading(false);
       setSyncPhase("");
     }
-  }, [lang, isLoading]);
-
-  useEffect(() => {
-    if (isLoggedIn && !currentRecord && !isLoading && !isAdmin && !errorToast && activeView === 'dashboard') {
-      handleSyncHealthConnect(false).catch(() => {
-        setIsLoading(false);
-      });
-    }
-  }, [isLoggedIn, isAdmin, currentRecord, isLoading, errorToast, handleSyncHealthConnect, activeView]);
+  }, [lang]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    healthConnect.logout();
-    setIsLoggedIn(false);
-    setIsGuest(false);
-    setIsAdmin(false);
-    setCurrentRecord(null);
-    // Use window.location.origin for a safer relative redirect
-    window.location.href = window.location.origin;
+    window.location.reload();
   };
 
-  const isPublicView = activeView === 'privacy' || activeView === 'terms' || activeView === 'about';
-  
-  // Auth Screen logic: Show if not logged in AND not a public view
-  // Also show if they are on /admin but we don't know if they are admin yet
-  const showAuthScreen = (!isLoggedIn && !isGuest && !isPublicView);
-
-  // Unauthorized State: Logged in but trying to access admin without privileges
-  const isUnauthorized = isLoggedIn && requestedAdminFlow && !isAdmin;
+  const showAuthScreen = !isLoggedIn && !isGuest && activeView !== 'privacy' && activeView !== 'terms';
 
   return (
-    <div className={`flex-1 flex flex-col min-h-screen relative`}>
+    <div className="flex-1 flex flex-col min-h-screen relative">
       <main className="flex-1 w-full mx-auto p-4 pt-10 pb-40">
         {showAuthScreen ? (
           <Auth 
             lang={lang} 
-            isAdminFlow={requestedAdminFlow} 
-            onLogin={() => {
-              setIsLoggedIn(true);
-              // requestedAdminFlow is kept true to trigger admin check once session is established
-            }} 
+            onLogin={() => setIsLoggedIn(true)} 
             onGuest={() => setIsGuest(true)} 
             onNavigate={setActiveView} 
           />
-        ) : isUnauthorized ? (
-          <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-8">
-            <GlassCard className="p-12 rounded-[5rem] border-rose-500/20 max-w-md space-y-8">
-              <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto text-rose-500">
-                <Lock size={32} />
-              </div>
-              <div className="space-y-3">
-                <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Clearance Denied</h2>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed px-4">
-                  Your identity signature lacks administrative privileges for this node.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3">
-                <button 
-                  onClick={() => {
-                    setRequestedAdminFlow(false);
-                    setActiveView('dashboard');
-                    updateUrl('/');
-                  }}
-                  className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2"
-                >
-                  <ChevronLeft size={14} /> Return to Lab
-                </button>
-                <button onClick={handleLogout} className="text-[10px] font-black uppercase text-slate-600 hover:text-white transition-colors">
-                  Switch Identity
-                </button>
-              </div>
-            </GlassCard>
-          </div>
         ) : (
           <Suspense fallback={<LoadingSpinner label="Compiling Lab..." />}>
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 {activeView === 'admin' ? (
-                  isAdmin ? <AdminView onBack={() => {
-                    setRequestedAdminFlow(false);
-                    setActiveView('dashboard');
-                    updateUrl('/');
-                  }} /> : <LoadingSpinner label="Verifying Credentials..." />
+                  isAdmin ? <AdminView onBack={() => setActiveView('dashboard')} /> : <LoadingSpinner label="Access Denied" />
                 ) : activeView === 'privacy' || activeView === 'terms' ? (
                   <LegalView type={activeView as any} lang={lang} onBack={() => setActiveView('dashboard')} />
                 ) : activeView === 'about' ? (
@@ -246,27 +155,19 @@ const App: React.FC = () => {
                   isLoading ? (
                     <LoadingSpinner label={syncPhase} />
                   ) : currentRecord ? (
-                    <Dashboard data={currentRecord} lang={lang} onSyncHealth={(p) => handleSyncHealthConnect(false, p)} onNavigate={setActiveView} staticMode={staticMode} />
+                    <Dashboard data={currentRecord} lang={lang} onSyncHealth={(p) => handleSyncHealthConnect(false, p)} onNavigate={setActiveView} />
                   ) : errorToast ? (
                     <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center">
                        <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 max-w-sm space-y-6">
-                          <div className="w-16 h-16 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto text-rose-500">
-                             <WifiOff size={24} />
-                          </div>
-                          <div className="space-y-2">
-                             <h2 className="text-xl font-black italic text-white uppercase">Link Exception</h2>
-                             <p className="text-[10px] text-slate-500 uppercase tracking-widest leading-relaxed">
-                                {errorToast === "NO_SLEEP_DATA" ? "No sleep sessions found." : 
-                                 errorToast === "LINK_TIMEOUT" ? "Link connection timed out. Check your device." : errorToast}
-                             </p>
-                          </div>
-                          <button onClick={() => handleSyncHealthConnect(true)} className="w-full py-4 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl">
-                             Retry Handshake
-                          </button>
+                          <WifiOff size={48} className="text-rose-500 mx-auto" />
+                          <p className="text-sm text-slate-400">{errorToast}</p>
+                          <button onClick={() => handleSyncHealthConnect(true)} className="w-full py-4 bg-indigo-600 text-white rounded-full font-bold uppercase tracking-widest text-[10px]">Retry</button>
                        </GlassCard>
                     </div>
                   ) : (
-                    <LoadingSpinner label="Calibrating Sensors..." />
+                    <div className="flex items-center justify-center h-[70vh]">
+                       <button onClick={() => handleSyncHealthConnect(true)} className="px-8 py-4 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Initialize Digital Handshake</button>
+                    </div>
                   )
                 ) : activeView === 'calendar' ? (
                   <Trends history={history} lang={lang} />
@@ -275,8 +176,8 @@ const App: React.FC = () => {
                 ) : activeView === 'profile' ? (
                   <Settings 
                     lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView}
-                    theme={theme} onThemeChange={setTheme} accentColor={accentColor} onAccentChange={setAccentColor}
-                    threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled} staticMode={staticMode} onStaticModeChange={setStaticMode}
+                    theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
+                    threeDEnabled={true} onThreeDChange={() => {}} staticMode={false} onStaticModeChange={() => {}}
                     lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncHealthConnect(true)}
                   />
                 ) : null}
@@ -286,7 +187,7 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {(isLoggedIn || isGuest) && !isPublicView && !isUnauthorized && (
+      {(isLoggedIn || isGuest) && activeView !== 'privacy' && activeView !== 'terms' && (
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
           <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl">
             {[
@@ -301,17 +202,12 @@ const App: React.FC = () => {
                   key={nav.id} 
                   onClick={() => {
                     setActiveView(nav.id as any);
-                    if (nav.id === 'admin') {
-                      updateUrl('/admin');
-                      setRequestedAdminFlow(true);
-                    } else {
-                      updateUrl('/');
-                      setRequestedAdminFlow(false);
-                    }
+                    if (nav.id === 'admin') window.history.pushState({}, '', '/admin');
+                    else window.history.pushState({}, '', '/');
                   }} 
                   className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${isActive ? (isAdmin && nav.id === 'admin' ? 'bg-rose-600' : 'bg-indigo-600') + ' text-white' : 'text-slate-500 hover:text-slate-300'}`}
                 >
-                  <SpatialIcon icon={nav.icon} size={20} animated={isActive} threeD={threeDEnabled} color={isActive ? '#fff' : '#475569'} />
+                  <SpatialIcon icon={nav.icon} size={20} animated={isActive} />
                   {isActive && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
                 </button>
               );

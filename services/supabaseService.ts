@@ -7,46 +7,24 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
- * 实验室安全认证协议 (High-Security Auth)
+ * 身份验证服务 (Auth Core)
+ * 使用 OTP (验证码) 模式，兼容 Magic Link
  */
 
-// 1. 注册新身份并触发邮件确认
-export const signUpWithEmailPassword = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: {
-      emailRedirectTo: window.location.origin,
-    }
-  });
-  if (error) throw error;
-  return data;
-};
-
-// 2. 第一步：验证密码
-export const signInWithEmailPassword = async (email: string, password: string) => {
-  const { data, error } = await supabase.auth.signInWithPassword({
-    email,
-    password,
-  });
-  if (error) throw error;
-  return data.session;
-};
-
-// 3. 第二步：发送动态验证码 (OTP)
-export const sendLoginOTP = async (email: string) => {
+// 1. 发送验证码 (Token) 或 登录链接
+export async function signInWithEmailOTP(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      shouldCreateUser: false, // 必须是已确认密码的已注册用户
-      emailRedirectTo: window.location.origin,
+      emailRedirectTo: window.location.origin + '/admin', // 如果点击链接则跳转
+      shouldCreateUser: true,
     }
   });
   if (error) throw error;
-};
+}
 
-// 4. 最终验证动态码
-export const verifyLoginOTP = async (email: string, token: string) => {
+// 2. 验证 6 位 OTP 令牌
+export async function verifyOtp(email: string, token: string) {
   const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
@@ -54,8 +32,9 @@ export const verifyLoginOTP = async (email: string, token: string) => {
   });
   if (error) throw error;
   return data.session;
-};
+}
 
+// 3. Google 第三方集成
 export const signInWithGoogle = async () => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
@@ -67,64 +46,94 @@ export const signInWithGoogle = async () => {
 };
 
 /**
- * 后台管理 API
+ * 管理后台 API (Admin Control Plane)
  */
 export const adminApi = {
+  // 前端守卫：核验管理员角色
   checkAdminStatus: async (userId: string) => {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('is_admin')
+        .select('role')
         .eq('id', userId)
         .single();
       if (error) return false;
-      return data?.is_admin || false;
+      return data?.role === 'admin';
     } catch {
       return false;
     }
   },
 
+  // 获取受试者列表 (受 RLS 保护)
   getUsers: async () => {
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (error) throw (error.code === 'PGRST116' ? new Error('DB_SCHEMA_MISSING') : error);
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
     return data || [];
   },
 
+  // 获取睡眠原始数据
   getSleepRecords: async () => {
-    const { data, error } = await supabase.from('sleep_records').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('sleep_records')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
   },
 
+  // 反馈记录
   getFeedback: async () => {
-    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('feedback')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
   },
 
+  // 审计日志 (只读)
   getAuditLogs: async () => {
-    const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase
+      .from('audit_logs')
+      .select('*')
+      .order('created_at', { ascending: false });
     if (error) return [];
     return data || [];
   },
 
+  // 删除指令
   deleteRecord: async (table: string, id: string) => {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
   },
 
-  updateSleepRecord: async (id: string, updates: any) => {
-    const { error } = await supabase.from('sleep_records').update(updates).eq('id', id);
+  // 角色权限更新
+  updateUserRole: async (id: string, role: 'user' | 'admin') => {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ role })
+      .eq('id', id);
     if (error) throw error;
   },
 
+  // 反馈状态处理
   resolveFeedback: async (id: string) => {
-    const { error } = await supabase.from('feedback').update({ status: 'resolved' }).eq('id', id);
+    const { error } = await supabase
+      .from('feedback')
+      .update({ status: 'resolved' })
+      .eq('id', id);
     if (error) throw error;
   },
-  
-  updateUserRole: async (id: string, isAdmin: boolean) => {
-    const { error } = await supabase.from('profiles').update({ is_admin: isAdmin }).eq('id', id);
+
+  // 更新睡眠记录
+  updateSleepRecord: async (id: string, updates: any) => {
+    const { error } = await supabase
+      .from('sleep_records')
+      .update(updates)
+      .eq('id', id);
     if (error) throw error;
   }
 };
