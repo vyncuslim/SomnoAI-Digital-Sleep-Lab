@@ -42,11 +42,25 @@ export const signInWithGoogle = async () => {
 };
 
 /**
- * COMMAND CENTER API
+ * RBAC & COMMAND CENTER API
  */
 export const adminApi = {
+  checkAdminStatus: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('is_admin')
+      .eq('id', userId)
+      .single();
+    if (error) return false;
+    return data?.is_admin || false;
+  },
   getUsers: async () => {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  getSleepRecords: async () => {
+    const { data, error } = await supabase.from('sleep_records').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
   },
@@ -59,8 +73,8 @@ export const adminApi = {
     const { error } = await supabase.from('feedback').update({ status: 'resolved' }).eq('id', id);
     if (error) throw error;
   },
-  deleteUser: async (id: string) => {
-    const { error } = await supabase.from('profiles').delete().eq('id', id);
+  deleteRecord: async (table: 'profiles' | 'sleep_records' | 'feedback', id: string) => {
+    const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
   }
 };
