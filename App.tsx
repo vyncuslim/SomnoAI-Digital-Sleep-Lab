@@ -89,8 +89,8 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Robust check for sandboxed/blob/restricted origins
-    const isRestrictedEnv = 
+    // SECURITY: Prevent SecurityError in sandboxed environments (blob URLs, usercontent.goog, etc.)
+    const isSandbox = 
       window.location.protocol.includes('blob') || 
       window.location.origin === 'null' ||
       window.location.hostname === '' ||
@@ -98,16 +98,18 @@ const App: React.FC = () => {
       window.location.hostname.includes('googleusercontent.com') ||
       window.location.hostname.includes('ai.studio');
 
-    if (isRestrictedEnv) return;
+    if (isSandbox) return;
 
     const targetPath = activeView === 'dashboard' ? '/' : `/${activeView}`;
+    
     try {
       if (window.location.pathname !== targetPath) {
-        // Use relative path to avoid origin mismatch issues in certain environments
+        // Use relative path to avoid origin mismatch issues
         window.history.pushState({ view: activeView }, '', targetPath);
       }
     } catch (e) {
-      console.warn("SomnoAI: Navigation history update failed due to environment security restrictions.", e);
+      // Silently fail navigation history update if restricted, app state remains valid
+      console.warn("SomnoAI: Navigation restricted by environment security policies.");
     }
   }, [activeView]);
 
@@ -151,7 +153,11 @@ const App: React.FC = () => {
     setRequestedAdminFlow(false);
     setCurrentRecord(null);
     localStorage.removeItem('health_connect_token');
-    window.location.href = '/';
+    
+    // Only attempt origin-relative redirect if not in a sandbox
+    if (!window.location.protocol.includes('blob')) {
+      window.location.href = '/';
+    }
   };
 
   const isPublicView = activeView === 'privacy' || activeView === 'terms' || activeView === 'about';

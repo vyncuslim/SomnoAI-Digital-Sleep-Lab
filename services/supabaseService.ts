@@ -43,6 +43,7 @@ export const signInWithGoogle = async () => {
 
 /**
  * RBAC & COMMAND CENTER API
+ * Implementation of full CRUD for administrative management.
  */
 export const adminApi = {
   checkAdminStatus: async (userId: string) => {
@@ -54,16 +55,30 @@ export const adminApi = {
     if (error) return false;
     return data?.is_admin || false;
   },
+
+  // USERS / PROFILES
   getUsers: async () => {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
   },
+  updateUserRole: async (id: string, isAdmin: boolean) => {
+    const { error } = await supabase.from('profiles').update({ is_admin: isAdmin }).eq('id', id);
+    if (error) throw error;
+  },
+
+  // SLEEP RECORDS
   getSleepRecords: async () => {
     const { data, error } = await supabase.from('sleep_records').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
   },
+  updateSleepRecord: async (id: string, updates: any) => {
+    const { error } = await supabase.from('sleep_records').update(updates).eq('id', id);
+    if (error) throw error;
+  },
+
+  // FEEDBACK / LOGS
   getFeedback: async () => {
     const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
     if (error) throw error;
@@ -73,6 +88,8 @@ export const adminApi = {
     const { error } = await supabase.from('feedback').update({ status: 'resolved' }).eq('id', id);
     if (error) throw error;
   },
+
+  // GENERIC DELETE
   deleteRecord: async (table: 'profiles' | 'sleep_records' | 'feedback', id: string) => {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
