@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Loader2, ArrowRight, Cpu, TriangleAlert, Lock, ShieldCheck, Mail, Key, Sparkles, ChevronLeft, Chrome, Info } from 'lucide-react';
+import { Loader2, ArrowRight, Cpu, TriangleAlert, Lock, ShieldCheck, Mail, Key, Sparkles, ChevronLeft, Chrome, Info, ExternalLink } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { Logo } from './components/Logo.tsx';
@@ -47,7 +47,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
     setLocalError(null);
     try {
       await signInWithGoogle();
-      // Supabase OAuth redirects the window, so we don't need onLogin() here immediately
+      // Supabase OAuth redirects the window, App.tsx handles detection
     } catch (err: any) {
       setLocalError(err.message || "Google Authentication Failed.");
       setIsProcessing(false);
@@ -161,9 +161,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
                     <Key size={16} />
                     <span className="text-[9px] font-black uppercase tracking-widest">Neural Verification</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 italic">
-                    A 6-digit code was sent to <span className="text-white font-bold">{email}</span>. <br/>
-                    Please check your <span className="text-emerald-400">Inbox</span> or <span className="text-emerald-400">Spam</span> folder.
+                  <p className="text-[11px] text-slate-400 italic leading-relaxed">
+                    Check your email: <span className="text-white font-bold">{email}</span><br/>
+                    <span className="text-emerald-400 font-bold">Option 1:</span> Click the "Magic Link" in your email.<br/>
+                    <span className="text-emerald-400 font-bold">Option 2:</span> Enter the 6-digit code below.
                   </p>
                 </div>
 
@@ -188,11 +189,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
                   </button>
                 </form>
 
-                <div className="flex items-center gap-2 justify-center p-4 bg-white/5 rounded-2xl border border-white/5">
-                  <Info size={14} className="text-slate-500" />
-                  <p className="text-[9px] text-slate-500 uppercase tracking-widest leading-relaxed">
-                    Code not received? Try resending in 60s or contact laboratory support.
-                  </p>
+                <div className="flex flex-col gap-3 p-4 bg-white/5 rounded-2xl border border-white/5">
+                  <div className="flex items-center gap-2 justify-center">
+                    <Info size={14} className="text-slate-500" />
+                    <p className="text-[9px] text-slate-500 uppercase tracking-widest leading-relaxed">
+                      Code not received? Check your <span className="text-white">Spam folder</span>.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={handleSendOTP} 
+                    disabled={isProcessing}
+                    className="text-[9px] font-black text-indigo-400 uppercase hover:text-white transition-colors underline underline-offset-4"
+                  >
+                    Resend Verification Signal
+                  </button>
                 </div>
               </m.div>
             )}
@@ -206,8 +216,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, 
           )}
         </GlassCard>
 
-        <footer className="opacity-40 hover:opacity-100 transition-opacity">
+        <footer className="opacity-40 hover:opacity-100 transition-opacity flex flex-col items-center gap-4">
           <p className="text-[8px] font-mono uppercase tracking-[0.5em] text-slate-700">© 2026 Somno Lab • Secure Authentication Bridge</p>
+          <div className="flex gap-4">
+             <button onClick={() => onNavigate?.('privacy')} className="text-[9px] font-black uppercase text-slate-600 hover:text-indigo-400">Privacy</button>
+             <button onClick={() => onNavigate?.('terms')} className="text-[9px] font-black uppercase text-slate-600 hover:text-indigo-400">Terms</button>
+          </div>
         </footer>
       </m.div>
     </div>

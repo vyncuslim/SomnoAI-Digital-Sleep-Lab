@@ -11,7 +11,7 @@ import { Logo } from './components/Logo.tsx';
 import { translations, Language } from './services/i18n.ts';
 import { SpatialIcon } from './components/SpatialIcon.tsx';
 import { LegalView } from './components/LegalView.tsx';
-import { supabase } from './services/supabaseService.ts';
+import { supabase, adminApi } from './services/supabaseService.ts';
 import { AdminView } from './components/AdminView.tsx';
 
 const m = motion as any;
@@ -45,32 +45,39 @@ const App: React.FC = () => {
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [requestedAdminFlow, setRequestedAdminFlow] = useState(window.location.pathname.startsWith('/admin'));
 
+  const checkAdminPrivileges = useCallback(async (userId: string) => {
+    const isUserAdmin = await adminApi.checkAdminStatus(userId);
+    setIsAdmin(isUserAdmin);
+    if (isUserAdmin && window.location.pathname.includes('/admin')) {
+      setActiveView('admin');
+    }
+  }, []);
+
   // Global Session Manager
   useEffect(() => {
+    // Initial Session Check
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session) {
-        setIsAdmin(true);
         setIsLoggedIn(true);
-        if (window.location.pathname.includes('/admin')) {
-          setActiveView('admin');
-        }
+        checkAdminPrivileges(session.user.id);
       }
     });
 
+    // Listen for Auth Changes (Google Redirect / Magic Link clicks)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
-        setIsAdmin(true);
         setIsLoggedIn(true);
         setRequestedAdminFlow(false);
-        setActiveView('admin');
+        checkAdminPrivileges(session.user.id);
       } else {
         setIsAdmin(false);
+        setIsLoggedIn(false);
         if (activeView === 'admin') setActiveView('dashboard');
       }
     });
 
     return () => subscription.unsubscribe();
-  }, [activeView]);
+  }, [checkAdminPrivileges, activeView]);
 
   // View Sync with Browser History
   useEffect(() => {
@@ -89,7 +96,6 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // SECURITY: Prevent SecurityError in sandboxed environments (blob URLs, usercontent.goog, etc.)
     const isSandbox = 
       window.location.protocol.includes('blob') || 
       window.location.origin === 'null' ||
@@ -104,11 +110,9 @@ const App: React.FC = () => {
     
     try {
       if (window.location.pathname !== targetPath) {
-        // Use relative path to avoid origin mismatch issues
         window.history.pushState({ view: activeView }, '', targetPath);
       }
     } catch (e) {
-      // Silently fail navigation history update if restricted, app state remains valid
       console.warn("SomnoAI: Navigation restricted by environment security policies.");
     }
   }, [activeView]);
@@ -154,7 +158,6 @@ const App: React.FC = () => {
     setCurrentRecord(null);
     localStorage.removeItem('health_connect_token');
     
-    // Only attempt origin-relative redirect if not in a sandbox
     if (!window.location.protocol.includes('blob')) {
       window.location.href = '/';
     }
