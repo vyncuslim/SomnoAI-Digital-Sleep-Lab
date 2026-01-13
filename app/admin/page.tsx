@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.ts';
 import { AdminView } from '../../components/AdminView.tsx';
-import { Loader2, ShieldAlert, LogOut, UserCheck, Terminal, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldAlert, LogOut, ShieldCheck } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../components/GlassCard.tsx';
 
@@ -12,17 +12,22 @@ export default function AdminPage() {
   const [status, setStatus] = useState<'loading' | 'authorized' | 'unauthorized' | 'unauthenticated'>('loading');
   const [userProfile, setUserProfile] = useState<any>(null);
 
+  // SPA 内部跳转工具，不触发页面刷新
+  const spaNavigate = (path: string) => {
+    window.history.pushState({}, '', path);
+    window.dispatchEvent(new PopStateEvent('popstate'));
+  };
+
   useEffect(() => {
     async function checkAdmin() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         setStatus('unauthenticated');
-        window.location.href = '/login';
+        spaNavigate('/login');
         return;
       }
 
-      // Fetch profile for role verification
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('role, email, id')
@@ -43,7 +48,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    window.location.href = '/login';
+    spaNavigate('/login');
   };
 
   if (status === 'loading') {
@@ -57,7 +62,6 @@ export default function AdminPage() {
         </div>
         <div className="text-center space-y-2">
           <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">Decrypting Clearance...</p>
-          <p className="text-[8px] font-mono text-indigo-400 opacity-40">NODE: SOMNO_SECURE_GATEWAY_v1.8</p>
         </div>
       </div>
     );
@@ -73,12 +77,12 @@ export default function AdminPage() {
           <div className="space-y-4">
             <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter">Clearance Denied</h1>
             <p className="text-sm text-slate-400 leading-relaxed italic">
-              "Your current identification profile lacks high-level administrative clearance for Node: SOMNO_LAB."
+              "Your current identification profile lacks high-level administrative clearance."
             </p>
           </div>
           <div className="space-y-4 pt-4">
             <button 
-              onClick={() => window.location.href = '/'}
+              onClick={() => spaNavigate('/')}
               className="w-full py-5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-white hover:bg-white/10 transition-all"
             >
               Return to Base
@@ -97,7 +101,6 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen pt-12 pb-32 px-4 bg-[#020617]">
-      {/* Admin Quick Profile Overlay */}
       <div className="max-w-6xl mx-auto mb-12 flex justify-between items-center px-4">
         <GlassCard className="px-8 py-4 rounded-full border-indigo-500/20 flex items-center gap-6">
           <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg">
@@ -112,7 +115,6 @@ export default function AdminPage() {
         <button 
           onClick={handleLogout}
           className="p-4 bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 rounded-3xl text-slate-600 hover:text-rose-500 transition-all shadow-xl"
-          title="Disconnect Lab"
         >
           <LogOut size={24} />
         </button>
@@ -124,7 +126,7 @@ export default function AdminPage() {
           animate={{ opacity: 1, y: 0 }}
           className="max-w-6xl mx-auto"
         >
-          <AdminView onBack={() => window.location.href = '/'} />
+          <AdminView onBack={() => spaNavigate('/')} />
         </m.div>
       </AnimatePresence>
     </div>

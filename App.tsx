@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, Activity, Zap, WifiOff, ShieldCheck, User } from 'lucide-react';
+import { Loader2, Activity, Zap, WifiOff, ShieldCheck, User, BrainCircuit } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,11 +10,11 @@ import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
 import { GlassCard } from './components/GlassCard.tsx';
 
-// Lazy Loaded Page Fragments
+// 懒加载页面组件
 const LoginPage = lazy(() => import('./app/login/page.tsx'));
 const AdminPage = lazy(() => import('./app/admin/page.tsx'));
 
-// Core Lab Components
+// 核心组件
 import { Dashboard } from './components/Dashboard.tsx';
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
@@ -36,7 +36,17 @@ const LoadingSpinner = ({ label = "Loading..." }: { label?: string }) => (
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
-  const [activeRoute, setActiveRoute] = useState<string>(window.location.pathname);
+  
+  // 路径归一化函数：移除结尾斜杠并转为小写
+  const getNormalizedPath = () => {
+    let path = window.location.pathname.toLowerCase();
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.slice(0, -1);
+    }
+    return path || '/';
+  };
+
+  const [activeRoute, setActiveRoute] = useState<string>(getNormalizedPath());
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
@@ -44,8 +54,17 @@ const App: React.FC = () => {
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
   useEffect(() => {
-    const handlePopState = () => setActiveRoute(window.location.pathname);
+    const handlePopState = () => {
+      setActiveRoute(getNormalizedPath());
+    };
     window.addEventListener('popstate', handlePopState);
+    
+    // 初始化时如果已经在 /admin，确保路径正确
+    const currentPath = getNormalizedPath();
+    if (currentPath !== activeRoute) {
+      setActiveRoute(currentPath);
+    }
+
     if ((window as any).dismissLoader) (window as any).dismissLoader();
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
@@ -74,12 +93,20 @@ const App: React.FC = () => {
     }
   }, [lang]);
 
-  // Main Route Dispatcher
+  // 内部导航函数
+  const navigateTo = (path: string) => {
+    const normalized = path.toLowerCase();
+    window.history.pushState({}, '', normalized);
+    setActiveRoute(normalized);
+  };
+
+  // 路由分发逻辑
   const renderContent = () => {
+    // 使用归一化后的路径进行匹配
     if (activeRoute === '/login') return <LoginPage />;
     if (activeRoute === '/admin') return <AdminPage />;
     
-    // Default Laboratory Interface
+    // 默认主页逻辑
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40">
         <Suspense fallback={<LoadingSpinner label="Compiling Lab..." />}>
@@ -107,7 +134,7 @@ const App: React.FC = () => {
                 <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} />
               ) : activeView === 'profile' ? (
                 <Settings 
-                  lang={lang} onLanguageChange={setLang} onLogout={() => supabase.auth.signOut().then(() => window.location.href = '/login')} onNavigate={setActiveView}
+                  lang={lang} onLanguageChange={setLang} onLogout={() => supabase.auth.signOut().then(() => navigateTo('/login'))} onNavigate={setActiveView}
                   theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
                   threeDEnabled={true} onThreeDChange={() => {}} staticMode={false} onStaticModeChange={() => {}}
                   lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncHealthConnect(true)}
@@ -117,31 +144,34 @@ const App: React.FC = () => {
           </AnimatePresence>
         </Suspense>
 
-        {/* Global Floating Navigation */}
+        {/* 全局浮动导航栏 */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
-          <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl">
+          <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl overflow-hidden">
             {[
               { id: 'dashboard', icon: Activity, label: 'LAB' },
               { id: 'calendar', icon: Zap, label: 'TRND' },
-              { id: 'assistant', icon: Zap, label: 'CORE' },
+              { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
               { id: 'profile', icon: User, label: 'CFG' }
             ].map((nav) => (
               <button 
                 key={nav.id} 
-                onClick={() => setActiveView(nav.id as any)} 
-                className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                onClick={() => {
+                  if (activeRoute !== '/') navigateTo('/');
+                  setActiveView(nav.id as any);
+                }} 
+                className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeView === nav.id && activeRoute === '/' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 <nav.icon size={20} />
-                {activeView === nav.id && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
+                {activeView === nav.id && activeRoute === '/' && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
               </button>
             ))}
-            <div className="w-[1px] h-12 bg-white/5 mx-1 self-center" />
+            <div className="w-[1px] h-8 bg-white/10 mx-1 self-center" />
             <button 
-              onClick={() => { window.history.pushState({}, '', '/admin'); setActiveRoute('/admin'); }}
-              className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeRoute === '/admin' ? 'bg-rose-600 text-white' : 'text-slate-500 hover:text-rose-400'}`}
+              onClick={() => navigateTo('/admin')}
+              className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeRoute === '/admin' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-500 hover:text-rose-400'}`}
             >
               <ShieldCheck size={20} />
-              {activeRoute === '/admin' && <span className="text-[10px] font-black uppercase tracking-widest">ADM</span>}
+              {activeRoute === '/admin' && <m.span layoutId="nav-text-admin" className="text-[10px] font-black uppercase tracking-widest">ADM</m.span>}
             </button>
           </nav>
         </div>
@@ -151,9 +181,7 @@ const App: React.FC = () => {
 
   return (
     <RootLayout>
-      <Suspense fallback={<LoadingSpinner label="Initializing Laboratory Node..." />}>
-        {renderContent()}
-      </Suspense>
+      {renderContent()}
     </RootLayout>
   );
 };
