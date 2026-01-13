@@ -12,13 +12,25 @@ export const getSession = async () => {
   return session;
 };
 
+export const signInWithGoogle = async () => {
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin + '/admin'
+    }
+  });
+  if (error) throw error;
+  return data;
+};
+
 export const signOut = async () => {
   await supabase.auth.signOut();
 };
 
-// Admin Data Helpers (Assuming standard table names: 'profiles' and 'feedback')
+// Admin Data Helpers
 export const adminApi = {
   getUsers: async () => {
+    // Note: 'profiles' table should store user metadata
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];

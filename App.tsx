@@ -45,7 +45,6 @@ const App: React.FC = () => {
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [isApiDenied, setIsApiDenied] = useState(false);
 
-  // Detect hidden /admin entry point
   const [requestedAdminFlow, setRequestedAdminFlow] = useState(false);
 
   // Supabase Session Logic
@@ -54,6 +53,9 @@ const App: React.FC = () => {
       if (session) {
         setIsAdmin(true);
         setIsLoggedIn(true);
+        if (window.location.pathname.includes('/admin')) {
+          setActiveView('admin');
+        }
       }
     });
 
@@ -74,7 +76,7 @@ const App: React.FC = () => {
   // Sync state with URL path
   useEffect(() => {
     const path = window.location.pathname.replace(/^\//, '');
-    if (path === 'admin') {
+    if (path.startsWith('admin')) {
       setRequestedAdminFlow(true);
       setActiveView('admin');
     } else if (path === 'about') setActiveView('about');
@@ -198,7 +200,6 @@ const App: React.FC = () => {
 
   const isPublicView = activeView === 'privacy' || activeView === 'terms' || activeView === 'about';
   
-  // Logical gating for Auth screen
   const isShowAuth = (!isLoggedIn && !isGuest && !isPublicView) || (requestedAdminFlow && !isAdmin);
 
   return (
@@ -221,7 +222,7 @@ const App: React.FC = () => {
                 ) : activeView === 'about' ? (
                   <AboutView lang={lang} onBack={() => setActiveView('dashboard')} />
                 ) : activeView === 'admin' ? (
-                  isAdmin ? <AdminView /> : <div className="p-20 text-center text-slate-500 font-black italic uppercase">Unauthorized Node</div>
+                  isAdmin ? <AdminView /> : <div className="p-20 text-center text-slate-500 font-black italic uppercase">Access Denied</div>
                 ) : (
                   isLoading && !currentRecord ? (
                     <LoadingSpinner />
