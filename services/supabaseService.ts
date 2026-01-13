@@ -7,7 +7,13 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
- * ADMINISTRATIVE AUTHENTICATION PROTOCOLS
+ * MASTER DATABASE SETUP REQUIRED:
+ * If you encounter "relation does not exist" errors, you must run the following SQL
+ * in your Supabase SQL Editor to initialize the schema:
+ * 
+ * CREATE TABLE public.profiles (id UUID REFERENCES auth.users PRIMARY KEY, email TEXT, is_admin BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ DEFAULT NOW());
+ * CREATE TABLE public.sleep_records (id UUID DEFAULT gen_random_uuid() PRIMARY KEY, user_id UUID REFERENCES public.profiles(id), date TEXT, score INTEGER, created_at TIMESTAMPTZ DEFAULT NOW());
+ * CREATE TABLE public.feedback (id UUID DEFAULT gen_random_uuid() PRIMARY KEY, user_id UUID REFERENCES public.profiles(id), content TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMPTZ DEFAULT NOW());
  */
 
 export const sendEmailOTP = async (email: string) => {
@@ -15,7 +21,7 @@ export const sendEmailOTP = async (email: string) => {
     email,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: window.location.origin + '/admin'
+      emailRedirectTo: window.location.origin
     }
   });
   if (error) throw error;
@@ -31,34 +37,27 @@ export const verifyEmailOTP = async (email: string, token: string) => {
   return data.session;
 };
 
-export const signInWithGoogle = async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin + '/admin'
-    }
-  });
-  if (error) throw error;
-};
-
-/**
- * RBAC & COMMAND CENTER API
- */
 export const adminApi = {
   checkAdminStatus: async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('is_admin')
-      .eq('id', userId)
-      .single();
-    if (error) return false;
-    return data?.is_admin || false;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', userId)
+        .single();
+      if (error) return false;
+      return data?.is_admin || false;
+    } catch {
+      return false;
+    }
   },
 
-  // USERS / PROFILES
   getUsers: async () => {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) {
+      if (error.code === '42P01') throw new Error("DB_SCHEMA_MISSING: The 'profiles' table does not exist. Please run the SQL setup script.");
+      throw error;
+    }
     return data || [];
   },
   
@@ -67,10 +66,12 @@ export const adminApi = {
     if (error) throw error;
   },
 
-  // SLEEP RECORDS
   getSleepRecords: async () => {
     const { data, error } = await supabase.from('sleep_records').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) {
+      if (error.code === '42P01') throw new Error("DB_SCHEMA_MISSING: The 'sleep_records' table does not exist.");
+      throw error;
+    }
     return data || [];
   },
 
@@ -79,10 +80,12 @@ export const adminApi = {
     if (error) throw error;
   },
 
-  // FEEDBACK / LOGS
   getFeedback: async () => {
     const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
-    if (error) throw error;
+    if (error) {
+      if (error.code === '42P01') throw new Error("DB_SCHEMA_MISSING: The 'feedback' table does not exist.");
+      throw error;
+    }
     return data || [];
   },
 
@@ -91,16 +94,13 @@ export const adminApi = {
     if (error) throw error;
   },
 
-  // AUDIT LOGS (MOCKED)
   getAuditLogs: async () => {
-    // In a production environment, this would query an audit_logs table
     return [
       { id: '1', action: 'ACCESS_GRANTED', user: 'system', timestamp: new Date().toISOString() },
       { id: '2', action: 'RECORD_PURGED', user: 'admin_primary', timestamp: new Date(Date.now() - 3600000).toISOString() },
     ];
   },
 
-  // GENERIC DELETE
   deleteRecord: async (table: 'profiles' | 'sleep_records' | 'feedback', id: string) => {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;

@@ -1,12 +1,12 @@
 
 import React, { useState } from 'react';
-import { Loader2, ArrowRight, Cpu, TriangleAlert, Lock, ShieldCheck, Mail, Key, Sparkles } from 'lucide-react';
+import { Loader2, ArrowRight, Cpu, TriangleAlert, Lock, ShieldCheck, Mail, Key, Sparkles, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { healthConnect } from './services/healthConnectService.ts';
 import { Logo } from './components/Logo.tsx';
 import { Language, translations } from './services/i18n.ts';
-import { supabase, signInWithGoogle, sendEmailOTP, verifyEmailOTP } from './services/supabaseService.ts';
+import { supabase, sendEmailOTP, verifyEmailOTP } from './services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -18,179 +18,227 @@ interface AuthProps {
   isAdminFlow?: boolean; 
 }
 
+/**
+ * AUTHENTICATION COMMAND CENTER
+ * Implements a state-machine driven passwordless flow:
+ * State 1: Identity Extraction (Email Input)
+ * State 2: Neural Verification (OTP Input)
+ * State 3: Session Initialization (Success)
+ */
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, isAdminFlow = false }) => {
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  
-  // Admin Login States
-  const [adminStep, setAdminStep] = useState<'email' | 'otp'>('email');
+  const [authState, setAuthState] = useState<'email' | 'otp'>('email');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
 
   const t = translations[lang].auth;
 
-  const handleHealthConnectLogin = async () => {
-    setIsLoggingIn(true);
-    setLocalError(null);
-    try {
-      await healthConnect.ensureClientInitialized();
-      const token = await healthConnect.authorize(true); 
-      if (token) onLogin();
-    } catch (error: any) {
-      setLocalError(error.message || "Biometric Link Failed");
-    } finally {
-      setIsLoggingIn(false);
-    }
-  };
-
-  const handleAdminEmailStep = async (e: React.FormEvent) => {
+  const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoggingIn(true);
+    if (!email) return;
+    
+    setIsProcessing(true);
     setLocalError(null);
     try {
       await sendEmailOTP(email);
-      setAdminStep('otp');
+      setAuthState('otp');
     } catch (err: any) {
-      setLocalError(err.message || "Failed to send verification code.");
+      setLocalError(err.message || "Protocol Error: Failed to dispatch verification link.");
     } finally {
-      setIsLoggingIn(false);
+      setIsProcessing(false);
     }
   };
 
-  const handleAdminVerifyStep = async (e: React.FormEvent) => {
+  const handleVerifyOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoggingIn(true);
+    if (!otp || otp.length < 6) return;
+
+    setIsProcessing(true);
     setLocalError(null);
     try {
-      await verifyEmailOTP(email, otp);
-      onLogin();
+      const session = await verifyEmailOTP(email, otp);
+      if (session) {
+        onLogin();
+      } else {
+        throw new Error("Handshake Failed: Invalid session data received.");
+      }
     } catch (err: any) {
-      setLocalError(err.message || "Invalid or expired code.");
+      setLocalError(err.message || "Verification Failed: Code is invalid or expired.");
     } finally {
-      setIsLoggingIn(false);
+      setIsProcessing(false);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsLoggingIn(true);
+  const resetFlow = () => {
+    setAuthState('email');
+    setOtp('');
     setLocalError(null);
-    try {
-      await signInWithGoogle();
-    } catch (err: any) {
-      setLocalError(err.message || "Google Authentication Error");
-      setIsLoggingIn(false);
-    }
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 relative overflow-hidden bg-[#020617]">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1200px] h-[1200px] bg-indigo-500/5 rounded-full blur-[160px] pointer-events-none" />
+      {/* Bio-Digital Background Element */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1400px] h-[1400px] bg-indigo-500/[0.03] rounded-full blur-[180px] pointer-events-none animate-pulse" />
       
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg space-y-10 text-center relative z-10">
-        <div className="flex flex-col items-center gap-6">
-          <div className={`w-28 h-28 rounded-full border flex items-center justify-center transition-all duration-700 ${isAdminFlow ? 'bg-rose-600/10 border-rose-500/30 shadow-[0_0_50px_rgba(244,63,94,0.1)]' : 'bg-indigo-600/10 border-indigo-500/10'}`}>
-            <Logo size={64} animated={true} />
+      <m.div 
+        initial={{ opacity: 0, y: 30 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="w-full max-w-md space-y-12 text-center relative z-10"
+      >
+        {/* Branding Cluster */}
+        <div className="flex flex-col items-center gap-8">
+          <m.div 
+            animate={{ scale: [1, 1.05, 1], rotate: [0, 2, 0, -2, 0] }}
+            transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
+            className={`p-8 rounded-[3.5rem] border flex items-center justify-center transition-all duration-700 ${isAdminFlow ? 'bg-rose-600/10 border-rose-500/30' : 'bg-indigo-600/10 border-indigo-500/10'}`}
+          >
+            <Logo size={80} animated={true} />
+          </m.div>
+          <div className="space-y-3">
+            <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none">
+              SomnoAI <br/>
+              <span className={isAdminFlow ? "text-rose-500" : "text-indigo-400"}>
+                {isAdminFlow ? "Admin Node" : "Digital Lab"}
+              </span>
+            </h1>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.6em] ml-2">
+              Neural Data Gateway
+            </p>
           </div>
-          <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none">
-            SomnoAI <br/>
-            <span className={isAdminFlow ? "text-rose-500" : "text-indigo-400"}>
-              {isAdminFlow ? "Admin Engine" : "Digital Sleep Lab"}
-            </span>
-          </h1>
         </div>
 
-        <GlassCard className={`p-10 rounded-[4rem] border-white/10 ${isAdminFlow ? 'shadow-2xl shadow-rose-950/20' : ''}`}>
+        {/* Auth Interface */}
+        <GlassCard className={`p-10 rounded-[4.5rem] border-white/10 ${isAdminFlow ? 'shadow-2xl shadow-rose-950/30' : ''}`}>
           <AnimatePresence mode="wait">
-            {!isAdminFlow ? (
-              <m.div key="user" initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 10 }} className="space-y-8">
-                 <div className="space-y-3">
-                  <div className="flex items-center justify-center gap-2 text-indigo-400">
-                    <ShieldCheck size={16} />
-                    <span className="text-[10px] font-black uppercase tracking-widest">{t.securityStatement}</span>
-                  </div>
-                   <p className="text-xs text-slate-400 italic">Neural biometric handshakes are encrypted and stored locally.</p>
-                </div>
+            {authState === 'email' ? (
+              <m.div 
+                key="email-state" 
+                initial={{ opacity: 0, x: -20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                exit={{ opacity: 0, x: 20 }} 
+                className="space-y-10"
+              >
                 <div className="space-y-4">
-                  <button onClick={handleHealthConnectLogin} disabled={isLoggingIn} className="w-full py-6 rounded-full bg-white text-slate-950 font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all flex items-center justify-center gap-3 shadow-xl">
-                    {isLoggingIn ? <Loader2 className="animate-spin" /> : <Cpu size={20} className="text-indigo-600" />}
-                    Connect Health Link
+                  <div className="flex items-center justify-center gap-2 text-indigo-400 mb-2">
+                    <ShieldCheck size={16} />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Passwordless Identification</span>
+                  </div>
+                  <p className="text-xs text-slate-500 italic leading-relaxed px-6">
+                    Enter your research identity to synchronize with the lab ecosystem.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSendOTP} className="space-y-6">
+                  <div className="relative group">
+                    <Mail className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={20} />
+                    <input 
+                      type="email" 
+                      value={email} 
+                      onChange={e => setEmail(e.target.value)}
+                      placeholder="researcher@lab.com"
+                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white font-bold outline-none focus:border-indigo-500/50 transition-all"
+                      required
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={isProcessing} 
+                    className={`w-full py-6 rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${isAdminFlow ? 'bg-rose-600 hover:bg-rose-500' : 'bg-white text-slate-950 hover:bg-slate-100'}`}
+                  >
+                    {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Sparkles size={18} />}
+                    {isAdminFlow ? 'ACCESS ADMIN NODE' : 'INITIALIZE SESSION'}
                   </button>
-                  <button onClick={onGuest} className="w-full py-4 text-[10px] font-black uppercase text-slate-500 hover:text-white transition-all">
-                    Enter Virtual Lab <ArrowRight size={14} className="inline ml-2" />
-                  </button>
+                </form>
+
+                <div className="pt-4 border-t border-white/5">
+                   <button onClick={onGuest} className="text-[10px] font-black uppercase text-slate-500 hover:text-white transition-all">
+                      Access Local Virtual Sandbox <ArrowRight size={14} className="inline ml-2" />
+                   </button>
                 </div>
               </m.div>
             ) : (
-              <m.div key="admin" initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -10 }} className="space-y-8">
-                 {adminStep === 'email' ? (
-                   <form onSubmit={handleAdminEmailStep} className="space-y-6">
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest text-left px-6">Administrative Email</p>
-                        <div className="relative">
-                          <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                          <input 
-                            type="email" 
-                            value={email} 
-                            onChange={e => setEmail(e.target.value)}
-                            placeholder="laboratory@somno.com"
-                            className="w-full bg-slate-950/60 border border-white/5 rounded-full px-16 py-5 text-sm text-white font-bold outline-none focus:border-rose-500/50"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <button type="submit" disabled={isLoggingIn} className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-950/20 active:scale-95 transition-all">
-                        {isLoggingIn ? <Loader2 className="animate-spin" /> : <Sparkles size={16} className="inline mr-2" />}
-                        SEND MAGIC LINK
-                      </button>
-                   </form>
-                 ) : (
-                   <form onSubmit={handleAdminVerifyStep} className="space-y-6">
-                      <div className="space-y-2">
-                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest text-left px-6">Verification Code</p>
-                        <div className="relative">
-                          <Key className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                          <input 
-                            type="text" 
-                            value={otp} 
-                            onChange={e => setOtp(e.target.value)}
-                            placeholder="6-Digit Secret"
-                            className="w-full bg-slate-950/60 border border-white/5 rounded-full px-16 py-5 text-xl text-center text-white font-black tracking-[1em] outline-none focus:border-rose-500/50"
-                            required
-                          />
-                        </div>
-                      </div>
-                      <button type="submit" disabled={isLoggingIn} className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-xs uppercase tracking-widest shadow-xl shadow-rose-950/20 active:scale-95 transition-all">
-                        {isLoggingIn ? <Loader2 className="animate-spin" /> : <Lock size={16} className="inline mr-2" />}
-                        INITIALIZE COMMAND ACCESS
-                      </button>
-                      <button type="button" onClick={() => setAdminStep('email')} className="text-[9px] font-black text-slate-500 uppercase tracking-widest hover:text-white transition-colors">Wrong email? Start Over</button>
-                   </form>
-                 )}
+              <m.div 
+                key="otp-state" 
+                initial={{ opacity: 0, x: 20 }} 
+                animate={{ opacity: 1, x: 0 }} 
+                exit={{ opacity: 0, x: -20 }} 
+                className="space-y-10"
+              >
+                <div className="space-y-3">
+                  <button onClick={resetFlow} className="text-[9px] font-black text-slate-600 hover:text-indigo-400 uppercase tracking-widest flex items-center gap-2 mx-auto mb-4 transition-colors">
+                    <ChevronLeft size={14} /> Back to Identity
+                  </button>
+                  <div className="flex items-center justify-center gap-2 text-emerald-400 mb-2">
+                    <Key size={16} />
+                    <span className="text-[9px] font-black uppercase tracking-widest">Neural Verification</span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 italic">
+                    Verification code dispatched to: <br/>
+                    <span className="text-white font-bold">{email}</span>
+                  </p>
+                </div>
 
-                 <div className="relative flex items-center justify-center py-2">
-                    <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5"></div></div>
-                    <span className="relative bg-[#050a1f] px-4 text-[10px] font-black text-slate-600 uppercase tracking-widest">OR</span>
-                 </div>
-                 
-                 <button onClick={handleGoogleLogin} className="w-full py-4 bg-white/5 border border-white/5 rounded-full text-white font-black text-[10px] uppercase tracking-widest hover:bg-white/10 transition-all flex items-center justify-center gap-3">
-                    <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-                    ADMIN GOOGLE SIGN-IN
-                 </button>
+                <form onSubmit={handleVerifyOTP} className="space-y-6">
+                  <div className="relative">
+                    <input 
+                      type="text" 
+                      maxLength={6}
+                      value={otp} 
+                      onChange={e => setOtp(e.target.value.replace(/[^0-9]/g, ''))}
+                      placeholder="000000"
+                      className="w-full bg-slate-950/60 border border-white/10 rounded-full py-6 text-2xl text-center text-white font-black tracking-[0.8em] outline-none focus:border-emerald-500/50"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                  <button 
+                    type="submit" 
+                    disabled={isProcessing || otp.length < 6} 
+                    className={`w-full py-6 rounded-full font-black text-xs uppercase tracking-[0.2em] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${isAdminFlow ? 'bg-rose-600 text-white' : 'bg-emerald-600 text-white'}`}
+                  >
+                    {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Lock size={18} />}
+                    VERIFY & DECRYPT
+                  </button>
+                </form>
+
+                <p className="text-[9px] text-slate-600 uppercase tracking-widest italic">
+                  Link expires in 5 minutes.
+                </p>
               </m.div>
             )}
           </AnimatePresence>
+
           {localError && (
-            <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 p-4 bg-rose-500/10 rounded-2xl border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-3">
-              <TriangleAlert size={16} /> {localError}
+            <m.div 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              className="mt-8 p-5 bg-rose-500/10 rounded-3xl border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase tracking-widest flex items-start gap-4 text-left leading-relaxed"
+            >
+              <TriangleAlert size={18} className="shrink-0 mt-0.5" />
+              <span>{localError}</span>
             </m.div>
           )}
         </GlassCard>
 
-        {isAdminFlow && (
-          <button onClick={() => { window.location.href = '/'; }} className="text-[10px] font-black uppercase text-slate-600 hover:text-white transition-colors">
-            Return to Public Portal
-          </button>
-        )}
+        {/* Footer Navigation */}
+        <div className="flex flex-col items-center gap-6 opacity-40 hover:opacity-100 transition-opacity">
+          <div className="flex items-center gap-8">
+            <button onClick={() => onNavigate?.('privacy')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">Privacy Protocol</button>
+            <div className="w-1 h-1 bg-slate-800 rounded-full" />
+            <button onClick={() => onNavigate?.('terms')} className="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400">Laboratory Terms</button>
+          </div>
+          {isAdminFlow ? (
+            <button 
+              onClick={() => { window.location.href = '/'; }} 
+              className="px-6 py-2 border border-white/10 rounded-full text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 hover:text-white transition-all"
+            >
+              Exit Secure Node
+            </button>
+          ) : (
+            <p className="text-[8px] font-mono uppercase tracking-[0.5em] text-slate-700">© 2026 Somno Lab • Biological Data Security Ensured</p>
+          )}
+        </div>
       </m.div>
     </div>
   );
