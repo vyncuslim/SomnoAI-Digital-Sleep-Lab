@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Auth } from './Auth.tsx';
 import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor } from './types.ts';
-import { User, Loader2, Activity, Zap, TriangleAlert, RefreshCw, ExternalLink } from 'lucide-react';
+import { User, Loader2, Activity, Zap, TriangleAlert, RefreshCw, ExternalLink, Shield } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -11,6 +11,7 @@ import { Logo } from './components/Logo.tsx';
 import { translations, Language } from './services/i18n.ts';
 import { SpatialIcon } from './components/SpatialIcon.tsx';
 import { LegalView } from './components/LegalView.tsx';
+import { supabase } from './services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -35,12 +36,68 @@ const App: React.FC = () => {
   
   const [isLoggedIn, setIsLoggedIn] = useState(healthConnect.hasToken());
   const [isGuest, setIsGuest] = useState(false);
-  const [activeView, setActiveView] = useState<ViewType | 'privacy' | 'terms'>('dashboard');
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [activeView, setActiveView] = useState<ViewType | 'privacy' | 'terms' | 'admin'>('dashboard');
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [isApiDenied, setIsApiDenied] = useState(false);
+
+  // Supabase Session Logic
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setIsAdmin(true);
+        setIsLoggedIn(true);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session) {
+        setIsAdmin(true);
+        setIsLoggedIn(true);
+      } else {
+        setIsAdmin(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // Sync state with URL path
+  useEffect(() => {
+    const path = window.location.pathname.replace(/^\//, '');
+    if (path === 'about') setActiveView('about');
+    else if (path === 'calendar') setActiveView('calendar');
+    else if (path === 'assistant') setActiveView('assistant');
+    else if (path === 'profile') setActiveView('profile');
+    else if (path === 'privacy') setActiveView('privacy');
+    else if (path === 'terms') setActiveView('terms');
+    else if (path === 'admin') setActiveView('admin');
+  }, []);
+
+  // Resilient pushState for Preview/Sandboxed environments
+  useEffect(() => {
+    const isBlob = window.location.protocol === 'blob:';
+    const isSandboxed = window.location.origin === 'null' || window.location.hostname.includes('usercontent.goog');
+    
+    if (isBlob || isSandboxed) return; // Skip history updates in extremely restricted frames
+
+    const publicViews = ['privacy', 'terms', 'about'];
+    const spaViews = ['dashboard', 'calendar', 'assistant', 'profile', 'admin'];
+    
+    if (publicViews.includes(activeView) || spaViews.includes(activeView as any)) {
+      const targetPath = activeView === 'dashboard' ? '/' : `/${activeView}`;
+      try {
+        if (window.location.pathname !== targetPath) {
+          window.history.pushState({ view: activeView }, '', targetPath);
+        }
+      } catch (e) {
+        console.warn("Navigation history update failed. This is expected in some sandboxed environments.", e);
+      }
+    }
+  }, [activeView]);
 
   useEffect(() => {
     const removeLoader = () => {
@@ -78,9 +135,7 @@ const App: React.FC = () => {
     } catch (err: any) {
       onProgress?.('error');
       let errMsg = err.message || "Sync Failed";
-      
       const langErrors = (translations[lang] as any).errors;
-      
       if (errMsg.includes("FIT_API_ACCESS_DENIED")) {
         setIsApiDenied(true);
         errMsg = langErrors.healthApiDenied;
@@ -88,14 +143,10 @@ const App: React.FC = () => {
         errMsg = langErrors.noDataFound;
       } else if (errMsg.includes("SLEEP_DATA_SPECIFICALLY_NOT_FOUND")) {
         errMsg = langErrors.noSleepData;
-      } else if (errMsg.includes("AUTH_EXPIRED")) {
-        errMsg = langErrors.authExpired;
       } else {
         errMsg = langErrors.syncFailed;
       }
-      
       setErrorToast(errMsg);
-      console.error("Sync Error:", err);
     } finally {
       setIsLoading(false);
     }
@@ -122,7 +173,7 @@ const App: React.FC = () => {
         deepRatio: 22, remRatio: 20, efficiency: 94,
         stages: [],
         heartRate: { resting: 60, max: 85, min: 52, average: 62, history: [] },
-        aiInsights: lang === 'zh' ? ['模拟数据流已激活。', '神经链路处于同步模式。', '等待深层次生物识别采样。'] : ['Simulation stream active.', 'Neural link in sync mode.', 'Awaiting deep biometric sampling.']
+        aiInsights: lang === 'zh' ? ['模拟数据流已激活。', '神经链路处于同步模式。'] : ['Simulation stream active.', 'Neural link in sync mode.']
       });
     }
     setCurrentRecord(mockHistory[0]);
@@ -130,10 +181,12 @@ const App: React.FC = () => {
     setIsLoading(false);
   }, [lang]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     healthConnect.logout();
     setIsLoggedIn(false);
     setIsGuest(false);
+    setIsAdmin(false);
     setCurrentRecord(null);
     localStorage.removeItem('health_connect_token');
     window.location.reload();
@@ -155,6 +208,41 @@ const App: React.FC = () => {
                   <LegalView type={activeView as 'privacy' | 'terms'} lang={lang} onBack={() => setActiveView('dashboard')} />
                 ) : activeView === 'about' ? (
                   <AboutView lang={lang} onBack={() => setActiveView('dashboard')} />
+                ) : activeView === 'admin' ? (
+                  <div className="p-8 space-y-8 max-w-4xl mx-auto">
+                    <header className="flex justify-between items-center">
+                       <h1 className="text-3xl font-black italic text-white">ADMIN DASHBOARD</h1>
+                       <button onClick={() => setActiveView('dashboard')} className="p-3 bg-white/5 rounded-full"><Activity size={20}/></button>
+                    </header>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                      <div className="p-8 bg-slate-900/60 rounded-[3rem] border border-white/10">
+                        <h3 className="text-xs font-black uppercase text-slate-500 mb-2">Total Users</h3>
+                        <p className="text-3xl font-black text-white italic">1,204</p>
+                      </div>
+                      <div className="p-8 bg-slate-900/60 rounded-[3rem] border border-white/10">
+                        <h3 className="text-xs font-black uppercase text-slate-500 mb-2">Active Streams</h3>
+                        <p className="text-3xl font-black text-white italic">842</p>
+                      </div>
+                      <div className="p-8 bg-slate-900/60 rounded-[3rem] border border-white/10">
+                        <h3 className="text-xs font-black uppercase text-slate-500 mb-2">AI Insights</h3>
+                        <p className="text-3xl font-black text-white italic">12.5k</p>
+                      </div>
+                    </div>
+                    <div className="bg-slate-900/40 rounded-[4rem] p-10 border border-white/10">
+                       <h2 className="text-xl font-black italic text-white uppercase mb-6">Recent Feedbacks</h2>
+                       <div className="space-y-4">
+                          {[1,2,3].map(i => (
+                            <div key={i} className="p-6 bg-white/5 rounded-3xl border border-white/5 flex items-center justify-between">
+                               <div>
+                                  <p className="text-sm font-bold text-slate-200 italic">User {i*231} reported telemetry sync issues.</p>
+                                  <p className="text-[10px] text-slate-500 uppercase font-black">2 hours ago</p>
+                               </div>
+                               <button className="text-indigo-400 text-[10px] font-black uppercase">Inspect</button>
+                            </div>
+                          ))}
+                       </div>
+                    </div>
+                  </div>
                 ) : (
                   isLoading && !currentRecord ? (
                     <LoadingSpinner />
@@ -186,16 +274,6 @@ const App: React.FC = () => {
                                 <p className="text-xs text-slate-400 leading-relaxed italic">
                                   {errorToast || "No active biometric stream identified. Please synchronize with your wearable device via Health Connect."}
                                 </p>
-                                
-                                {isApiDenied && (
-                                  <a 
-                                    href="https://console.cloud.google.com/apis/library/fitness.googleapis.com" 
-                                    target="_blank" 
-                                    className="inline-flex items-center gap-2 text-[10px] font-black uppercase text-indigo-400 border-b border-indigo-400/30 pb-1 mt-4 hover:text-indigo-300 transition-colors"
-                                  >
-                                    Enable Health Cloud API <ExternalLink size={12} />
-                                  </a>
-                                )}
                               </div>
                               <div className="flex flex-col gap-4">
                                 <button 
@@ -242,13 +320,13 @@ const App: React.FC = () => {
               { id: 'dashboard', icon: Logo, label: 'LAB' },
               { id: 'calendar', icon: Activity, label: 'TRND' },
               { id: 'assistant', icon: Zap, label: 'CORE' },
-              { id: 'profile', icon: User, label: 'CFG' }
+              { id: isAdmin ? 'admin' : 'profile', icon: isAdmin ? Shield : User, label: isAdmin ? 'ADM' : 'CFG' }
             ].map((nav) => {
               const isActive = activeView === nav.id;
               return (
                 <button 
                   key={nav.id} 
-                  onClick={() => setActiveView(nav.id as ViewType)} 
+                  onClick={() => setActiveView(nav.id as any)} 
                   className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${isActive ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                   <SpatialIcon icon={nav.icon} size={20} animated={isActive} threeD={threeDEnabled} color={isActive ? '#fff' : '#475569'} />
@@ -259,14 +337,6 @@ const App: React.FC = () => {
           </nav>
         </div>
       )}
-
-      <AnimatePresence>
-        {errorToast && (
-          <m.div initial={{ y: 100, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 100, opacity: 0 }} className="fixed bottom-36 left-1/2 -translate-x-1/2 z-[200] px-8 py-4 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl flex items-center gap-3">
-            <TriangleAlert size={14} /> {errorToast}
-          </m.div>
-        )}
-      </AnimatePresence>
     </div>
   );
 };

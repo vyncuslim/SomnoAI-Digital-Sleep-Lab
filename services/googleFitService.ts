@@ -2,6 +2,7 @@
 import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
 
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
+const CLIENT_SECRET = "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";
 const SCOPES = [
   "https://www.googleapis.com/auth/fitness.sleep.read",
   "https://www.googleapis.com/auth/fitness.heart_rate.read",
@@ -227,7 +228,7 @@ export class GoogleFitService {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       if (hrStreamRes.ok) {
-        const streamData = await hrStreamRes.json();
+        const streamData = await hrStreamRes.ok ? await hrStreamRes.json() : { point: [] };
         (streamData.point || []).slice(-50).forEach((p: any) => {
           const bpm = p.value[0].fpVal;
           const time = new Date(nanostampsToMillis(p.startTimeNanos)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
