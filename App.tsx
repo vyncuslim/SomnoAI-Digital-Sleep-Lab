@@ -10,9 +10,9 @@ import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
 import { GlassCard } from './components/GlassCard.tsx';
 
-// 懒加载页面：必须在 Suspense 内运行
-const LoginPage = lazy(() => import('./app/login/page.tsx'));
-const AdminPage = lazy(() => import('./app/admin/page.tsx'));
+// 懒加载页面：使用绝对路径以防 404
+const LoginPage = lazy(() => import('/app/login/page.tsx'));
+const AdminPage = lazy(() => import('/app/admin/page.tsx'));
 
 // 核心组件
 import { Dashboard } from './components/Dashboard.tsx';
@@ -37,7 +37,6 @@ const LoadingSpinner = ({ label = "Loading..." }: { label?: string }) => (
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
   
-  // 路径归一化
   const getNormalizedPath = () => {
     let path = window.location.pathname.toLowerCase();
     if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
@@ -56,16 +55,15 @@ const App: React.FC = () => {
       setActiveRoute(getNormalizedPath());
     };
     window.addEventListener('popstate', handlePopState);
-    
-    // 强制执行初始同步
-    const pathOnMount = getNormalizedPath();
-    if (activeRoute !== pathOnMount) {
-      setActiveRoute(pathOnMount);
-    }
-
     if ((window as any).dismissLoader) (window as any).dismissLoader();
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
+
+  const navigateTo = (path: string) => {
+    const normalized = path.toLowerCase();
+    window.history.pushState({}, '', normalized);
+    setActiveRoute(normalized);
+  };
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
@@ -91,18 +89,12 @@ const App: React.FC = () => {
     }
   }, [lang]);
 
-  const navigateTo = (path: string) => {
-    const normalized = path.toLowerCase();
-    window.history.pushState({}, '', normalized);
-    setActiveRoute(normalized);
-  };
-
-  // 路由渲染逻辑
-  const renderRoute = () => {
+  // Added explicit return type React.ReactNode to clarify the component's output for TypeScript's JSX children validation
+  const renderRoute = (): React.ReactNode => {
+    // 基础路由分发
     if (activeRoute === '/login') return <LoginPage />;
     if (activeRoute === '/admin') return <AdminPage />;
     
-    // 主实验室界面 (Root /)
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40">
         <AnimatePresence mode="wait">
@@ -138,7 +130,6 @@ const App: React.FC = () => {
           </m.div>
         </AnimatePresence>
 
-        {/* 浮动导航栏 */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
           <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl overflow-hidden">
             {[

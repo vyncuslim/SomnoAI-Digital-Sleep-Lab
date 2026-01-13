@@ -4,6 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <base href="/">
     
     <link rel="icon" href="https://img.icons8.com/fluency/48/moon-star.png" type="image/png">
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/96/moon-star.png">
@@ -29,7 +30,7 @@
     <meta name="description" content="Master your sleep with SomnoAI. Fusing physiological monitoring, deep AI insights via Gemini, and personalized recovery protocols for a complete digital sleep experience.">
     <meta name="keywords" content="sleep analysis, AI health coach, biometric monitoring, Health Connect, sleep recovery, Gemini AI, digital health lab">
     
-    <link rel="manifest" href="manifest.json">
+    <link rel="manifest" href="/manifest.json">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,56 +47,50 @@
                     var forceBtn = document.getElementById('force-start-btn');
                     if (forceBtn) forceBtn.style.display = 'block';
                 }
-            }, 3000); // Reduced to 3s for better UX
-        });
+            }, 3000);
 
-        window.dismissLoader = function() {
-            var loader = document.getElementById('page-loader');
-            if (loader) {
-                loader.style.opacity = '0';
-                loader.style.pointerEvents = 'none';
-                setTimeout(function() { loader.remove(); }, 800);
+            window.dismissLoader = function() {
+                var loader = document.getElementById('page-loader');
+                if (loader) {
+                    loader.style.opacity = '0';
+                    loader.style.pointerEvents = 'none';
+                    setTimeout(function() { loader.remove(); }, 800);
+                }
             }
-        }
+        });
     </script>
     
     <style>
         :root { --perspective: 1500px; }
-        
         @keyframes liquid-drift {
             0% { transform: translate(0, 0) scale(1); }
             33% { transform: translate(5%, 5%) scale(1.1); }
             66% { transform: translate(-5%, 2%) scale(0.95); }
             100% { transform: translate(0, 0) scale(1); }
         }
-
         html, body {
             height: 100%; margin: 0; padding: 0;
             background-color: #01040a; color: #e2e8f0;
             font-family: 'Plus Jakarta Sans', sans-serif;
             -webkit-font-smoothing: antialiased; overflow-x: hidden;
         }
-
         #spatial-bg {
             position: fixed; inset: 0; z-index: -1;
             background: #01040a;
             overflow: hidden;
         }
-
         .liquid-blob {
             position: absolute; border-radius: 50%;
             filter: blur(80px); opacity: 0.15;
             animation: liquid-drift 25s infinite alternate ease-in-out;
             pointer-events: none;
         }
-
         .initial-loader {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100vh; width: 100%; gap: 1.5rem; position: fixed;
             top: 0; left: 0; background-color: #01040a; z-index: 1000;
             transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-
         #force-start-btn {
             display: none; margin-top: 24px; padding: 14px 32px;
             background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3);
@@ -103,8 +98,6 @@
             text-transform: uppercase; letter-spacing: 0.2em; cursor: pointer;
             transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
         }
-        #force-start-btn:hover { background: #4f46e5; color: white; transform: scale(1.05); }
-
         ::-webkit-scrollbar { display: none; }
         * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
@@ -120,11 +113,10 @@
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
     "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "react/": "https://esm.sh/react@^19.2.3/",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "export": "https://esm.sh/export@^0.1.337"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.1"
   }
 }
 </script>
@@ -137,21 +129,15 @@
     </div>
     <div id="root">
         <div class="initial-loader" id="page-loader" role="status">
-            <svg class="logo-svg" style="width: 100px; height: 100px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                    <linearGradient id="moonGlowLoader" x1="20" y1="20" x2="80" y2="80">
-                        <stop offset="0%" stop-color="#818cf8" />
-                        <stop offset="100%" stop-color="#4f46e5" />
-                    </linearGradient>
-                </defs>
-                <circle cx="50" cy="50" r="35" fill="url(#moonGlowLoader)" opacity="0.8">
+            <svg style="width: 100px; height: 100px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <circle cx="50" cy="50" r="35" fill="#4f46e5" opacity="0.8">
                     <animate attributeName="r" values="32;38;32" dur="4s" repeatCount="indefinite" />
                 </circle>
             </svg>
-            <div class="text" style="color: #fff; letter-spacing: 0.8em; font-weight: 900; font-style: italic; font-size: 11px;">SOMNOAI DIGITAL SLEEP LAB</div>
+            <div style="color: #fff; letter-spacing: 0.8em; font-weight: 900; font-style: italic; font-size: 11px;">SOMNOAI DIGITAL SLEEP LAB</div>
             <button id="force-start-btn" onclick="window.dismissLoader()">INITIALIZE LAB</button>
         </div>
     </div>
-    <script type="module" src="index.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
 </body>
 </html>

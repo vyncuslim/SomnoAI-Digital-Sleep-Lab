@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../../lib/supabaseClient.ts';
 import { AdminView } from '../../components/AdminView.tsx';
-import { Loader2, ShieldAlert, LogOut, ShieldCheck } from 'lucide-react';
+import { Loader2, ShieldAlert, LogOut, ShieldCheck, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../components/GlassCard.tsx';
 
@@ -10,16 +10,15 @@ const m = motion as any;
 
 export default function AdminPage() {
   const [status, setStatus] = useState<'loading' | 'authorized' | 'unauthorized' | 'unauthenticated'>('loading');
-  const [userProfile, setUserProfile] = useState<any>(null);
+  const [profile, setProfile] = useState<any>(null);
 
-  // SPA 内部跳转工具，不触发页面刷新
   const spaNavigate = (path: string) => {
     window.history.pushState({}, '', path);
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   useEffect(() => {
-    async function checkAdmin() {
+    async function initAdmin() {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -28,22 +27,23 @@ export default function AdminPage() {
         return;
       }
 
-      const { data: profile, error } = await supabase
+      // 获取 Profiles 表中的角色
+      const { data: userProfile, error } = await supabase
         .from('profiles')
-        .select('role, email, id')
+        .select('*')
         .eq('id', session.user.id)
         .maybeSingle();
 
-      if (error || !profile || profile.role !== 'admin') {
+      if (error || !userProfile || userProfile.role !== 'admin') {
         setStatus('unauthorized');
         return;
       }
 
-      setUserProfile(profile);
+      setProfile(userProfile);
       setStatus('authorized');
     }
 
-    checkAdmin();
+    initAdmin();
   }, []);
 
   const handleLogout = async () => {
@@ -54,15 +54,8 @@ export default function AdminPage() {
   if (status === 'loading') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-[#020617]">
-        <div className="relative">
-          <Loader2 className="animate-spin text-indigo-500" size={48} />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-          </div>
-        </div>
-        <div className="text-center space-y-2">
-          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">Decrypting Clearance...</p>
-        </div>
+        <Loader2 className="animate-spin text-indigo-500" size={48} />
+        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">Decrypting Authorization...</p>
       </div>
     );
   }
@@ -70,30 +63,18 @@ export default function AdminPage() {
   if (status === 'unauthorized') {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#020617] text-center">
-        <GlassCard className="p-12 rounded-[5rem] border-rose-500/20 max-w-md space-y-8 shadow-[0_50px_100px_-20px_rgba(225,29,72,0.15)]">
-          <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center text-rose-500 mx-auto border border-rose-500/20">
-            <ShieldAlert size={40} />
-          </div>
+        <GlassCard className="p-12 rounded-[5rem] border-rose-500/20 max-w-md space-y-8 shadow-2xl">
+          <ShieldAlert size={60} className="text-rose-500 mx-auto" />
           <div className="space-y-4">
             <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter">Clearance Denied</h1>
-            <p className="text-sm text-slate-400 leading-relaxed italic">
-              "Your current identification profile lacks high-level administrative clearance."
-            </p>
+            <p className="text-sm text-slate-400 italic">"Your identification lacks administrative privileges."</p>
           </div>
-          <div className="space-y-4 pt-4">
-            <button 
-              onClick={() => spaNavigate('/')}
-              className="w-full py-5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-white hover:bg-white/10 transition-all"
-            >
-              Return to Base
-            </button>
-            <button 
-              onClick={handleLogout}
-              className="w-full text-[10px] font-black text-rose-500/60 hover:text-rose-400 uppercase tracking-widest"
-            >
-              Terminate Session
-            </button>
-          </div>
+          <button 
+            onClick={() => spaNavigate('/')}
+            className="w-full py-5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-white"
+          >
+            Return to Terminal
+          </button>
         </GlassCard>
       </div>
     );
@@ -102,33 +83,27 @@ export default function AdminPage() {
   return (
     <div className="min-h-screen pt-12 pb-32 px-4 bg-[#020617]">
       <div className="max-w-6xl mx-auto mb-12 flex justify-between items-center px-4">
-        <GlassCard className="px-8 py-4 rounded-full border-indigo-500/20 flex items-center gap-6">
-          <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg">
-            <ShieldCheck size={20} />
+        <div className="flex items-center gap-6">
+          <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-lg ring-4 ring-indigo-500/20">
+            <ShieldCheck size={24} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Logged as Admin</span>
-            <span className="text-sm font-bold text-white italic">{userProfile?.email}</span>
+            <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Admin Node Active</span>
+            <span className="text-lg font-bold text-white italic">{profile?.email}</span>
           </div>
-        </GlassCard>
+        </div>
         
         <button 
           onClick={handleLogout}
-          className="p-4 bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 rounded-3xl text-slate-600 hover:text-rose-500 transition-all shadow-xl"
+          className="p-4 bg-white/5 hover:bg-rose-500/10 border border-white/5 hover:border-rose-500/20 rounded-3xl text-slate-500 hover:text-rose-500 transition-all shadow-xl"
         >
           <LogOut size={24} />
         </button>
       </div>
 
-      <AnimatePresence mode="wait">
-        <m.div 
-          initial={{ opacity: 0, y: 15 }} 
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-6xl mx-auto"
-        >
-          <AdminView onBack={() => spaNavigate('/')} />
-        </m.div>
-      </AnimatePresence>
+      <m.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto">
+        <AdminView onBack={() => spaNavigate('/')} />
+      </m.div>
     </div>
   );
 }
