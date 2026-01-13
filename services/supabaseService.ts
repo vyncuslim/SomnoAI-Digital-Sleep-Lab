@@ -8,14 +8,17 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
  * AUTHENTICATION PROTOCOLS
+ * Using strict 6-digit Email OTP (One-Time Password)
  */
 
 export const sendEmailOTP = async (email: string) => {
+  // Supabase sends a 6-digit code instead of a magic link when emailRedirectTo is null
+  // or when the email template is configured to include the {{ .Token }} variable.
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       shouldCreateUser: true,
-      emailRedirectTo: window.location.origin
+      emailRedirectTo: null as any // Forces numeric code behavior in many project configs
     }
   });
   if (error) throw error;
@@ -25,7 +28,7 @@ export const verifyEmailOTP = async (email: string, token: string) => {
   const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
-    type: 'email'
+    type: 'email' // Specifically identifying the token type as email OTP
   });
   if (error) throw error;
   return data.session;
@@ -36,17 +39,13 @@ export const signInWithGoogle = async () => {
     provider: 'google',
     options: {
       redirectTo: window.location.origin,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'select_account',
-      },
     },
   });
   if (error) throw error;
 };
 
 /**
- * RBAC & COMMAND CENTER API
+ * RBAC & DATA MANAGEMENT API
  */
 export const adminApi = {
   checkAdminStatus: async (userId: string) => {
@@ -65,10 +64,7 @@ export const adminApi = {
 
   getUsers: async () => {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (error) {
-      if (error.code === '42P01') throw new Error("DB_SCHEMA_MISSING: The 'profiles' table does not exist.");
-      throw error;
-    }
+    if (error) throw error;
     return data || [];
   },
   
@@ -106,7 +102,7 @@ export const adminApi = {
     ];
   },
 
-  deleteRecord: async (table: 'profiles' | 'sleep_records' | 'feedback', id: string) => {
+  deleteRecord: async (table: string, id: string) => {
     const { error } = await supabase.from(table).delete().eq('id', id);
     if (error) throw error;
   }

@@ -46,7 +46,14 @@ export const translations = {
       activateEngine: 'Initialize AI Engine',
       engineReady: 'Engine Ready',
       awaitingKey: 'Awaiting API Key',
-      invalidKey: 'Invalid Key: API keys are usually 20+ characters.'
+      invalidKey: 'Invalid Key: API keys are usually 20+ characters.',
+      enterEmail: 'Enter Laboratory Email',
+      sendCode: 'Send Verification Code',
+      verifyCode: 'Verify 6-Digit Code',
+      checkEmail: 'A 6-digit code has been sent to your inbox.',
+      resendCode: 'Resend Code',
+      resendIn: 'Resend in',
+      googleSign: 'Continue with Google'
     },
     assistant: {
       title: 'AI Insights Lab',
@@ -199,7 +206,7 @@ export const translations = {
     },
     auth: {
       lab: '实验室',
-      tagline: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。基于 Health Connect SDK。',
+      tagline: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
       securityStatement: '连接哲学',
       securityDetail: '连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。无登录页，无 Token，仅系统级授权，数据所有权始终属于用户。',
       connect: '建立安全连接',
@@ -209,7 +216,14 @@ export const translations = {
       activateEngine: '初始化 AI 引擎',
       engineReady: '引擎已就绪',
       awaitingKey: '等待 API 密钥',
-      invalidKey: '密钥无效：通常包含 20+ 字符'
+      invalidKey: '密钥无效：通常包含 20+ 字符',
+      enterEmail: '输入实验室邮箱',
+      sendCode: '发送验证码',
+      verifyCode: '验证 6 位验证码',
+      checkEmail: '6 位验证码已发送至您的电子邮箱。',
+      resendCode: '重新发送代码',
+      resendIn: '重新发送于',
+      googleSign: '使用 Google 继续'
     },
     assistant: {
       title: 'AI 实验洞察室',
@@ -293,11 +307,11 @@ export const translations = {
       visionText: '让睡眠不再是健康盲区。',
       protocolTitle: 'SDK 官方握手协议',
       toolboxTitle: '开发者工具箱 (压力测试泵)',
-      toolboxDesc: '利用 Health Connect Developer Toolbox 执行端到端读取/写入测试。通过悬浮窗 UI 和通知逻辑，在不离开实验室环境的情况下快速注入信号或查看数据更新，极大缩短调试周期。',
+      toolboxDesc: '利用 Health Connect Developer Toolbox 执行端到端读取/写入测试。通过衡量 UI 和通知逻辑，在不离开实验室环境的情况下快速注入信号或查看数据更新，极大缩短调试周期。',
       whsTitle: 'Wear OS 桥接 (WHS API)',
       whsDesc: 'Health Connect 不在 Wear OS 运行，故采用 Wear Health Services (WHS) API 低功耗采集手表端数据。数据先同步至手机端“蓄水池”（本地存储），再由手机应用写入系统主网。',
       waterAnalogyTitle: '生物识别供水系统',
-      waterAnalogyDesc: '集成就像架设水管。Toolbox 是压力测试泵，无需泵房建好即可测通；Wear OS 逻辑则是从偏远水源取水，需先用小水管（WHS）引流到蓄水池（手机应用），最后排入市政主网。',
+      waterAnalogyDesc: '集成就像架设水管。Toolbox 是压力测试泵，无需泵房建好即可测通；Wear OS 逻辑则是从偏远水源取水，需先上小水管（WHS）引流到蓄水池（手机应用），最后排入市政主网。',
       feedingTitle: '数据注入协议 (Feeding)',
       feedingStep1: 'InsertRecords: 自动判断逻辑，执行列表级增量同步。',
       feedingStep2: 'clientRecordID: 映射本地唯一键，确保系统级幂等。',
@@ -308,7 +322,7 @@ export const translations = {
       consumingStep3: 'Package Filter: 基于包名过滤信号，隔离自身冗余。',
       tokenTitle: '同步令牌游标',
       tokenInitial: '1. getChangesToken: 申请针对特定数据类型的初始读取“书签”。',
-      tokenCycle: '2. 循环更新: getChanges 返回增量列表，并配发下一个书签。',
+      tokenCycle: '2. 循环更新: getChanges 返回增量列表，配发下一个书签。',
       tokenStore: '3. 本地持久化: 在本地存储最新令牌以精准追踪数据偏移。',
       tokenExpire: '4. 过期处理: 令牌 30 天失效，需触发自动重新初始化逻辑。',
       recordsTitle: '数字化记录架构',
@@ -372,7 +386,14 @@ export const translations = {
       activateEngine: 'KI-Engine initialisieren',
       engineReady: 'Engine bereit',
       awaitingKey: 'Warte auf API-Schlüssel',
-      invalidKey: 'Ungültiger Schlüssel.'
+      invalidKey: 'Ungültiger Schlüssel.',
+      enterEmail: 'E-Mail eingeben',
+      sendCode: 'Code senden',
+      verifyCode: 'Code verifizieren',
+      checkEmail: 'Prüfen Sie Ihre E-Mail auf den 6-stelligen Code.',
+      resendCode: 'Code erneut senden',
+      resendIn: 'Erneut senden in',
+      googleSign: 'Mit Google fortfahren'
     },
     assistant: {
       title: 'KI Einblicke Labor',
@@ -535,7 +556,14 @@ export const translations = {
       activateEngine: 'Initialiser le moteur IA',
       engineReady: 'Moteur prêt',
       awaitingKey: 'Attente de la clé API',
-      invalidKey: 'Clé invalide.'
+      invalidKey: 'Clé invalide.',
+      enterEmail: 'Saisir l\'e-mail',
+      sendCode: 'Envoyer le code',
+      verifyCode: 'Vérifier le code',
+      checkEmail: 'Vérifiez vos e-mails pour le code à 6 chiffres.',
+      resendCode: 'Renvoyer le code',
+      resendIn: 'Renvoyer dans',
+      googleSign: 'Continuer avec Google'
     },
     assistant: {
       title: 'Labo d\'insights IA',
