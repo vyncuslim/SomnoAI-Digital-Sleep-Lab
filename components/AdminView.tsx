@@ -4,7 +4,7 @@ import {
   Users, MessageSquare, Database, ShieldAlert, 
   Trash2, Search, ExternalLink, ArrowUpRight, 
   Settings, Layers, RefreshCw, Filter, MoreHorizontal,
-  CheckCircle, Loader2, AlertCircle, HardDrive, Cpu, Terminal, Zap, Calendar, Edit3, X, Save, Shield
+  CheckCircle, Loader2, AlertCircle, HardDrive, Cpu, Terminal, Zap, Calendar, Edit3, X, Save, Shield, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -13,13 +13,15 @@ import { adminApi } from '../services/supabaseService.ts';
 const m = motion as any;
 
 type DataSource = 'supabase' | 'local_json' | 'mysql';
-type AdminTab = 'overview' | 'users' | 'records' | 'feedback' | 'data_source';
+type AdminTab = 'overview' | 'users' | 'records' | 'feedback' | 'audit_logs';
 
 export const AdminView: React.FC = () => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [dataSource, setDataSource] = useState<DataSource>('supabase');
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<{ users: any[], records: any[], feedback: any[] }>({ users: [], records: [], feedback: [] });
+  const [data, setData] = useState<{ users: any[], records: any[], feedback: any[], logs: any[] }>({ 
+    users: [], records: [], feedback: [], logs: [] 
+  });
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
@@ -32,19 +34,21 @@ export const AdminView: React.FC = () => {
     setError(null);
     try {
       if (dataSource === 'supabase') {
-        const [users, records, feedback] = await Promise.all([
+        const [users, records, feedback, logs] = await Promise.all([
           adminApi.getUsers().catch(() => []),
           adminApi.getSleepRecords().catch(() => []),
-          adminApi.getFeedback().catch(() => [])
+          adminApi.getFeedback().catch(() => []),
+          adminApi.getAuditLogs().catch(() => [])
         ]);
-        setData({ users, records, feedback });
+        setData({ users, records, feedback, logs });
       } else {
         // Mocking alternate data sources
         setTimeout(() => {
           setData({
-            users: [{ id: 'mock-1', email: 'legacy.subject@mysql.net', is_admin: false, created_at: new Date().toISOString() }],
+            users: [{ id: 'mock-1', email: 'subject.01@mock.net', is_admin: false, created_at: new Date().toISOString() }],
             records: [{ id: 'rec-1', score: 92, efficiency: 98, date: '2026-05-15', created_at: new Date().toISOString() }],
-            feedback: [{ id: 'f-1', content: 'MySQL Node stable.', status: 'pending', created_at: new Date().toISOString() }]
+            feedback: [{ id: 'f-1', content: 'Synthetic data node stable.', status: 'pending', created_at: new Date().toISOString() }],
+            logs: [{ id: 'l-1', action: 'MOCK_NODE_ACTIVE', user: 'sys', timestamp: new Date().toISOString() }]
           });
           setLoading(false);
         }, 800);
@@ -61,12 +65,12 @@ export const AdminView: React.FC = () => {
   }, [fetchAllData]);
 
   const handleDelete = async (table: any, id: string) => {
-    if (!confirm(`Are you sure you want to permanently delete this ${table} entry?`)) return;
+    if (!confirm(`Confirm revocation of record from ${table}?`)) return;
     try {
       await adminApi.deleteRecord(table, id);
       fetchAllData();
     } catch (err) {
-      alert("Delete Failed: Security violation or network error.");
+      alert("Revocation Failed");
     }
   };
 
@@ -78,6 +82,8 @@ export const AdminView: React.FC = () => {
         await adminApi.updateUserRole(editingItem.item.id, editingItem.item.is_admin);
       } else if (editingItem.table === 'sleep_records') {
         await adminApi.updateSleepRecord(editingItem.item.id, { score: editingItem.item.score });
+      } else if (editingItem.table === 'feedback') {
+        await adminApi.resolveFeedback(editingItem.item.id);
       }
       setEditingItem(null);
       fetchAllData();
@@ -93,6 +99,7 @@ export const AdminView: React.FC = () => {
     if (activeTab === 'users') return data.users.filter(u => u.email?.toLowerCase().includes(q));
     if (activeTab === 'records') return data.records.filter(r => r.id?.toLowerCase().includes(q) || r.user_id?.toLowerCase().includes(q));
     if (activeTab === 'feedback') return data.feedback.filter(f => f.content?.toLowerCase().includes(q) || f.email?.toLowerCase().includes(q));
+    if (activeTab === 'audit_logs') return data.logs.filter(l => l.action?.toLowerCase().includes(q));
     return [];
   };
 
@@ -101,17 +108,17 @@ export const AdminView: React.FC = () => {
       {/* Admin Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
         <div className="space-y-1">
-          <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase">Lab <span className="text-rose-500">Command</span></h1>
+          <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none">Lab <span className="text-rose-500">Command</span></h1>
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${loading ? 'bg-amber-500 animate-pulse' : 'bg-emerald-500'}`} />
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
-              Node: {dataSource.toUpperCase()} // Auth: Verified
+              Node: {dataSource.toUpperCase()} // clearance: superuser
             </p>
           </div>
         </div>
         
         <nav className="flex flex-wrap gap-2 bg-slate-900/60 p-1 rounded-full border border-white/5 backdrop-blur-3xl shadow-xl overflow-x-auto no-scrollbar">
-          {(['overview', 'users', 'records', 'feedback', 'data_source'] as AdminTab[]).map((tab) => (
+          {(['overview', 'users', 'records', 'feedback', 'audit_logs'] as AdminTab[]).map((tab) => (
             <button 
               key={tab}
               onClick={() => setActiveTab(tab)}
@@ -131,8 +138,8 @@ export const AdminView: React.FC = () => {
               {[
                 { icon: Users, label: 'Subject Registry', value: data.users.length, color: 'text-rose-400' },
                 { icon: Database, label: 'Biometric Archive', value: data.records.length, color: 'text-indigo-400' },
-                { icon: MessageSquare, label: 'Pending Logs', value: data.feedback.filter(f => f.status !== 'resolved').length, color: 'text-emerald-400' },
-                { icon: Terminal, label: 'Network Operations', value: 'Live', color: 'text-amber-400' }
+                { icon: MessageSquare, label: 'Feedback Loop', value: data.feedback.filter(f => f.status !== 'resolved').length, color: 'text-emerald-400' },
+                { icon: Terminal, label: 'Active Streams', value: '4', color: 'text-amber-400' }
               ].map((stat, i) => (
                 <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-3 text-center" hoverScale={true}>
                   <div className={`p-4 rounded-2xl bg-white/5 ${stat.color}`}>
@@ -150,39 +157,39 @@ export const AdminView: React.FC = () => {
               <GlassCard className="md:col-span-2 p-10 rounded-[4rem] border-white/10" intensity={1.1}>
                 <div className="flex items-center justify-between mb-10">
                   <div className="flex items-center gap-3">
-                    <Layers size={18} className="text-rose-500" />
-                    <h3 className="text-xs font-black italic text-white uppercase tracking-widest">Administrative Throughput</h3>
+                    <Activity size={18} className="text-rose-500" />
+                    <h3 className="text-xs font-black italic text-white uppercase tracking-widest">Global Telemetry Flow</h3>
                   </div>
                 </div>
                 <div className="h-56 flex items-end gap-2 px-1">
-                  {[30, 45, 60, 50, 80, 70, 90, 85, 95, 75, 88, 60, 40, 65, 90].map((h, i) => (
+                  {[40, 55, 65, 45, 85, 60, 95, 80, 70, 85, 90, 60, 50, 75, 95].map((h, i) => (
                     <m.div 
                       key={i}
                       initial={{ height: 0 }}
                       animate={{ height: `${h}%` }}
                       transition={{ delay: i * 0.05, duration: 1 }}
-                      className="flex-1 bg-gradient-to-t from-rose-900/20 via-rose-500 to-rose-400 rounded-t-lg shadow-[0_0_15px_rgba(244,63,94,0.1)]"
+                      className="flex-1 bg-gradient-to-t from-rose-900/20 via-rose-500 to-rose-400 rounded-t-lg"
                     />
                   ))}
                 </div>
                 <div className="flex justify-between mt-8 text-[9px] font-black text-slate-600 uppercase tracking-[0.3em] border-t border-white/5 pt-6">
-                  <span>BIO-NODE ALPHA</span>
-                  <span>SYNC STATUS: STABLE</span>
+                  <span>BIO-SYNC: STABLE</span>
+                  <span>ENCRYPTION: AES-256-GCM</span>
                 </div>
               </GlassCard>
 
               <GlassCard className="p-10 rounded-[4rem] border-white/10 flex flex-col justify-between">
                 <div className="space-y-8">
                   <div className="flex items-center gap-3">
-                    <ShieldAlert size={18} className="text-amber-400" />
-                    <h3 className="text-xs font-black italic text-white uppercase tracking-widest">Security Audit</h3>
+                    <Shield size={18} className="text-amber-400" />
+                    <h3 className="text-xs font-black italic text-white uppercase tracking-widest">System Health</h3>
                   </div>
                   <div className="space-y-4">
                     {[
-                      { l: 'Auth Gateway', s: 'ENCRYPTED', c: 'text-emerald-400' },
-                      { l: 'Supabase Node', s: 'AUTHORIZED', c: 'text-emerald-400' },
-                      { l: 'RLS Status', s: 'ENFORCED', c: 'text-sky-400' },
-                      { l: 'Admin Access', s: 'SUPERUSER', c: 'text-rose-400' }
+                      { l: 'Auth Gateway', s: 'STABLE', c: 'text-emerald-400' },
+                      { l: 'Supabase DB', s: 'ONLINE', c: 'text-emerald-400' },
+                      { l: 'RLS Policies', s: 'ENFORCED', c: 'text-sky-400' },
+                      { l: 'Legacy Node', s: 'PASSIVE', c: 'text-slate-400' }
                     ].map((row, i) => (
                       <div key={i} className="flex justify-between items-center text-[10px] font-black tracking-widest uppercase">
                         <span className="text-slate-500">{row.l}</span>
@@ -195,27 +202,27 @@ export const AdminView: React.FC = () => {
                   onClick={fetchAllData}
                   className="w-full py-5 mt-10 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase text-slate-500 hover:text-white transition-all flex items-center justify-center gap-3 group"
                 >
-                  <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> RE-INITIALIZE REGISTRY
+                  <RefreshCw size={14} className={loading ? 'animate-spin' : ''} /> RE-SCAN ALL NODES
                 </button>
               </GlassCard>
             </div>
           </m.div>
         )}
 
-        {(activeTab === 'users' || activeTab === 'records' || activeTab === 'feedback') && (
+        {(activeTab === 'users' || activeTab === 'records' || activeTab === 'feedback' || activeTab === 'audit_logs') && (
           <m.div key={activeTab} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="mx-2">
             <GlassCard className="p-12 rounded-[5rem] border-white/10 min-h-[600px] shadow-2xl">
               <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-500">
-                    {activeTab === 'users' ? <Users size={24} /> : activeTab === 'records' ? <Database size={24} /> : <MessageSquare size={24} />}
+                    {activeTab === 'users' ? <Users size={24} /> : activeTab === 'records' ? <Database size={24} /> : activeTab === 'feedback' ? <MessageSquare size={24} /> : <Terminal size={24} />}
                   </div>
                   <div>
                     <h3 className="text-xl font-black italic text-white uppercase tracking-tight leading-none">
-                      {activeTab === 'users' ? 'Registry Management' : activeTab === 'records' ? 'Telemetry Archive' : 'Feedback Loop'}
+                      {activeTab === 'users' ? 'Subject Registry' : activeTab === 'records' ? 'Biometric Archive' : activeTab === 'feedback' ? 'Feedback Loop' : 'Security Logs'}
                     </h3>
                     <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mt-1">
-                      Direct node interaction for {dataSource}
+                      Managing {dataSource} endpoint records
                     </p>
                   </div>
                 </div>
@@ -235,18 +242,34 @@ export const AdminView: React.FC = () => {
                 <table className="w-full text-left">
                   <thead>
                     <tr className="text-[10px] font-black uppercase text-slate-500 tracking-[0.3em] border-b border-white/5">
-                      <th className="pb-8 px-6">Identity Cluster</th>
-                      <th className="pb-8 px-6">Role / Metric</th>
-                      <th className="pb-8 px-6">Sync Epoch</th>
+                      <th className="pb-8 px-6">Identity / Action</th>
+                      <th className="pb-8 px-6">Status / Metric</th>
+                      <th className="pb-8 px-6">Timestamp</th>
                       <th className="pb-8 px-6 text-right">Commands</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-white/5">
-                    {filteredItems().length > 0 ? filteredItems().map((item: any) => (
+                    {activeTab === 'audit_logs' ? data.logs.map((log: any) => (
+                      <tr key={log.id} className="group hover:bg-white/[0.02] transition-colors">
+                        <td className="py-8 px-6">
+                           <span className="text-sm font-black text-rose-500 italic block">{log.action}</span>
+                           <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">Initiator: {log.user}</span>
+                        </td>
+                        <td className="py-8 px-6">
+                           <span className="px-4 py-1.5 rounded-full bg-white/5 text-slate-400 text-[9px] font-black uppercase tracking-widest">Logged</span>
+                        </td>
+                        <td className="py-8 px-6 text-xs font-bold italic text-slate-400 font-mono">
+                          {new Date(log.timestamp).toLocaleString()}
+                        </td>
+                        <td className="py-8 px-6 text-right">
+                           <ExternalLink size={16} className="text-slate-700 ml-auto" />
+                        </td>
+                      </tr>
+                    )) : filteredItems().length > 0 ? filteredItems().map((item: any) => (
                       <tr key={item.id} className="group hover:bg-white/[0.02] transition-colors">
                         <td className="py-8 px-6">
                           <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center font-black ${item.is_admin ? 'text-rose-500 border-rose-500/30' : 'text-slate-500'}`}>
+                            <div className={`w-10 h-10 rounded-full bg-slate-900 border border-white/5 flex items-center justify-center font-black ${item.is_admin ? 'text-rose-500 border-rose-500/40' : 'text-slate-500'}`}>
                               {activeTab === 'users' ? (item.is_admin ? <Shield size={14}/> : 'U') : activeTab === 'records' ? 'R' : 'F'}
                             </div>
                             <div className="flex flex-col">
@@ -293,52 +316,12 @@ export const AdminView: React.FC = () => {
                       <tr>
                         <td colSpan={4} className="py-32 text-center">
                           <AlertCircle size={48} className="mx-auto text-slate-800 mb-4 opacity-20" />
-                          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 italic">Registry Empty // Node Passive</p>
+                          <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 italic">No Registry Entries Found</p>
                         </td>
                       </tr>
                     )}
                   </tbody>
                 </table>
-              </div>
-            </GlassCard>
-          </m.div>
-        )}
-
-        {activeTab === 'data_source' && (
-          <m.div key="data_source" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="mx-auto max-w-2xl px-2">
-            <GlassCard className="p-12 rounded-[4rem] border-white/10 space-y-10 shadow-2xl">
-              <div className="text-center space-y-2">
-                <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Active Infrastructure</h3>
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Select target biometric endpoint</p>
-              </div>
-
-              <div className="space-y-4">
-                {[
-                  { id: 'supabase', label: 'Supabase Node', desc: 'Authoritative biometric cloud with RLS encryption.', icon: Database },
-                  { id: 'mysql', label: 'MySQL Integration', desc: 'Secure SQL bridge for laboratory data.', icon: HardDrive },
-                  { id: 'local_json', label: 'Local Sandbox', desc: 'Synthetic data node for UX simulation.', icon: Cpu }
-                ].map((source) => (
-                  <button
-                    key={source.id}
-                    onClick={() => setDataSource(source.id as any)}
-                    className={`w-full p-8 rounded-[2.5rem] border text-left transition-all flex items-center gap-6 ${dataSource === source.id ? 'bg-rose-600/10 border-rose-500 text-white' : 'bg-white/5 border-white/5 text-slate-500 hover:bg-white/10'}`}
-                  >
-                    <div className={`p-4 rounded-2xl ${dataSource === source.id ? 'bg-rose-600 text-white' : 'bg-white/5'}`}>
-                      <source.icon size={24} />
-                    </div>
-                    <div>
-                      <h4 className="text-sm font-black italic uppercase tracking-widest mb-1">{source.label}</h4>
-                      <p className="text-[10px] font-medium leading-relaxed italic opacity-60">{source.desc}</p>
-                    </div>
-                  </button>
-                ))}
-              </div>
-
-              <div className="p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-3xl flex gap-4">
-                 <ShieldAlert size={20} className="text-indigo-400 shrink-0" />
-                 <p className="text-[10px] text-slate-400 italic leading-relaxed">
-                   Changes to infrastructure nodes require a system handshake. Administrative clearance is preserved across nodes.
-                 </p>
               </div>
             </GlassCard>
           </m.div>
@@ -361,8 +344,8 @@ export const AdminView: React.FC = () => {
                       <Edit3 size={20}/>
                     </div>
                     <div>
-                      <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Edit Cluster Entry</h3>
-                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Target: {editingItem.table.toUpperCase()}</p>
+                      <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Update Record</h3>
+                      <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Node: {editingItem.table.toUpperCase()}</p>
                     </div>
                   </div>
 
@@ -386,7 +369,7 @@ export const AdminView: React.FC = () => {
                     ) : editingItem.table === 'sleep_records' ? (
                       <div className="space-y-4">
                          <div className="p-6 bg-white/5 rounded-3xl border border-white/5">
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Efficiency Score</p>
+                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">Efficiency Correction</p>
                             <input 
                               type="range" min="0" max="100" 
                               value={editingItem.item.score}
@@ -397,7 +380,7 @@ export const AdminView: React.FC = () => {
                          </div>
                       </div>
                     ) : (
-                      <div className="p-10 text-center text-slate-600 italic">Feedback entries are read-only protocols. Use "Resolve" command from main console.</div>
+                      <div className="p-10 text-center text-slate-600 italic">Feedback protocols are read-only. Use "Resolve" command to close the loop.</div>
                     )}
                   </div>
 
@@ -407,7 +390,7 @@ export const AdminView: React.FC = () => {
                     className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 transition-all flex items-center justify-center gap-3"
                   >
                     {isSaving ? <Loader2 className="animate-spin" /> : <Save size={16}/>}
-                    {isSaving ? 'ENCODING UPDATES' : 'COMMIT COMMAND'}
+                    {isSaving ? 'ENCODING...' : 'COMMIT CHANGES'}
                   </button>
                 </div>
               </GlassCard>

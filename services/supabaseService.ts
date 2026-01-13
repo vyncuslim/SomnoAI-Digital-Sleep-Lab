@@ -43,7 +43,6 @@ export const signInWithGoogle = async () => {
 
 /**
  * RBAC & COMMAND CENTER API
- * Implementation of full CRUD for administrative management.
  */
 export const adminApi = {
   checkAdminStatus: async (userId: string) => {
@@ -62,6 +61,7 @@ export const adminApi = {
     if (error) throw error;
     return data || [];
   },
+  
   updateUserRole: async (id: string, isAdmin: boolean) => {
     const { error } = await supabase.from('profiles').update({ is_admin: isAdmin }).eq('id', id);
     if (error) throw error;
@@ -73,6 +73,7 @@ export const adminApi = {
     if (error) throw error;
     return data || [];
   },
+
   updateSleepRecord: async (id: string, updates: any) => {
     const { error } = await supabase.from('sleep_records').update(updates).eq('id', id);
     if (error) throw error;
@@ -84,9 +85,19 @@ export const adminApi = {
     if (error) throw error;
     return data || [];
   },
+
   resolveFeedback: async (id: string) => {
     const { error } = await supabase.from('feedback').update({ status: 'resolved' }).eq('id', id);
     if (error) throw error;
+  },
+
+  // AUDIT LOGS (MOCKED)
+  getAuditLogs: async () => {
+    // In a production environment, this would query an audit_logs table
+    return [
+      { id: '1', action: 'ACCESS_GRANTED', user: 'system', timestamp: new Date().toISOString() },
+      { id: '2', action: 'RECORD_PURGED', user: 'admin_primary', timestamp: new Date(Date.now() - 3600000).toISOString() },
+    ];
   },
 
   // GENERIC DELETE
