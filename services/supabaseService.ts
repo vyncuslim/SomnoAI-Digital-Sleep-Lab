@@ -6,6 +6,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// Auth Helpers
 export const getSession = async () => {
   const { data: { session } } = await supabase.auth.getSession();
   return session;
@@ -13,4 +14,26 @@ export const getSession = async () => {
 
 export const signOut = async () => {
   await supabase.auth.signOut();
+};
+
+// Admin Data Helpers (Assuming standard table names: 'profiles' and 'feedback')
+export const adminApi = {
+  getUsers: async () => {
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  getFeedback: async () => {
+    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+  resolveFeedback: async (id: string) => {
+    const { error } = await supabase.from('feedback').update({ status: 'resolved' }).eq('id', id);
+    if (error) throw error;
+  },
+  deleteUser: async (id: string) => {
+    const { error } = await supabase.from('profiles').delete().eq('id', id);
+    if (error) throw error;
+  }
 };
