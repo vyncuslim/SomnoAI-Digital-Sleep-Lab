@@ -7,13 +7,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 /**
- * MASTER DATABASE SETUP REQUIRED:
- * If you encounter "relation does not exist" errors, you must run the following SQL
- * in your Supabase SQL Editor to initialize the schema:
- * 
- * CREATE TABLE public.profiles (id UUID REFERENCES auth.users PRIMARY KEY, email TEXT, is_admin BOOLEAN DEFAULT FALSE, created_at TIMESTAMPTZ DEFAULT NOW());
- * CREATE TABLE public.sleep_records (id UUID DEFAULT gen_random_uuid() PRIMARY KEY, user_id UUID REFERENCES public.profiles(id), date TEXT, score INTEGER, created_at TIMESTAMPTZ DEFAULT NOW());
- * CREATE TABLE public.feedback (id UUID DEFAULT gen_random_uuid() PRIMARY KEY, user_id UUID REFERENCES public.profiles(id), content TEXT, status TEXT DEFAULT 'pending', created_at TIMESTAMPTZ DEFAULT NOW());
+ * AUTHENTICATION PROTOCOLS
  */
 
 export const sendEmailOTP = async (email: string) => {
@@ -37,6 +31,23 @@ export const verifyEmailOTP = async (email: string, token: string) => {
   return data.session;
 };
 
+export const signInWithGoogle = async () => {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'select_account',
+      },
+    },
+  });
+  if (error) throw error;
+};
+
+/**
+ * RBAC & COMMAND CENTER API
+ */
 export const adminApi = {
   checkAdminStatus: async (userId: string) => {
     try {
@@ -55,7 +66,7 @@ export const adminApi = {
   getUsers: async () => {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (error) {
-      if (error.code === '42P01') throw new Error("DB_SCHEMA_MISSING: The 'profiles' table does not exist. Please run the SQL setup script.");
+      if (error.code === '42P01') throw new Error("DB_SCHEMA_MISSING: The 'profiles' table does not exist.");
       throw error;
     }
     return data || [];
@@ -68,10 +79,7 @@ export const adminApi = {
 
   getSleepRecords: async () => {
     const { data, error } = await supabase.from('sleep_records').select('*').order('created_at', { ascending: false });
-    if (error) {
-      if (error.code === '42P01') throw new Error("DB_SCHEMA_MISSING: The 'sleep_records' table does not exist.");
-      throw error;
-    }
+    if (error) throw error;
     return data || [];
   },
 
@@ -82,10 +90,7 @@ export const adminApi = {
 
   getFeedback: async () => {
     const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
-    if (error) {
-      if (error.code === '42P01') throw new Error("DB_SCHEMA_MISSING: The 'feedback' table does not exist.");
-      throw error;
-    }
+    if (error) throw error;
     return data || [];
   },
 
