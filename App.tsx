@@ -51,7 +51,9 @@ const App: React.FC = () => {
       if (session) {
         setIsAdmin(true);
         setIsLoggedIn(true);
-        setActiveView('admin');
+        if (window.location.pathname.includes('/admin')) {
+          setActiveView('admin');
+        }
       }
     });
 
@@ -87,9 +89,25 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // Robust check for sandboxed/blob/restricted origins
+    const isRestrictedEnv = 
+      window.location.protocol.includes('blob') || 
+      window.location.origin === 'null' ||
+      window.location.hostname === '' ||
+      window.location.hostname.includes('usercontent.goog') ||
+      window.location.hostname.includes('googleusercontent.com') ||
+      window.location.hostname.includes('ai.studio');
+
+    if (isRestrictedEnv) return;
+
     const targetPath = activeView === 'dashboard' ? '/' : `/${activeView}`;
-    if (window.location.pathname !== targetPath) {
-      window.history.pushState({ view: activeView }, '', targetPath);
+    try {
+      if (window.location.pathname !== targetPath) {
+        // Use relative path to avoid origin mismatch issues in certain environments
+        window.history.pushState({ view: activeView }, '', targetPath);
+      }
+    } catch (e) {
+      console.warn("SomnoAI: Navigation history update failed due to environment security restrictions.", e);
     }
   }, [activeView]);
 

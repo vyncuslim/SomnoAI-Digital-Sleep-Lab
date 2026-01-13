@@ -6,31 +6,46 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// Auth Helpers
-export const getSession = async () => {
-  const { data: { session } } = await supabase.auth.getSession();
-  return session;
+/**
+ * ADMINISTRATIVE AUTHENTICATION PROTOCOLS
+ */
+
+export const sendEmailOTP = async (email: string) => {
+  const { error } = await supabase.auth.signInWithOtp({
+    email,
+    options: {
+      shouldCreateUser: true,
+      emailRedirectTo: window.location.origin + '/admin'
+    }
+  });
+  if (error) throw error;
+};
+
+export const verifyEmailOTP = async (email: string, token: string) => {
+  const { data, error } = await supabase.auth.verifyOtp({
+    email,
+    token,
+    type: 'email'
+  });
+  if (error) throw error;
+  return data.session;
 };
 
 export const signInWithGoogle = async () => {
-  const { data, error } = await supabase.auth.signInWithOAuth({
+  const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: window.location.origin + '/admin'
     }
   });
   if (error) throw error;
-  return data;
 };
 
-export const signOut = async () => {
-  await supabase.auth.signOut();
-};
-
-// Admin Data Helpers
+/**
+ * COMMAND CENTER API
+ */
 export const adminApi = {
   getUsers: async () => {
-    // Note: 'profiles' table should store user metadata
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
