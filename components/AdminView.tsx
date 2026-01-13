@@ -4,7 +4,7 @@ import {
   Users, MessageSquare, Database, ShieldAlert, 
   Trash2, Search, ExternalLink, ArrowUpRight, 
   Settings, Layers, RefreshCw, Filter, MoreHorizontal,
-  CheckCircle, Loader2, AlertCircle, HardDrive, Cpu, Terminal, Zap, Calendar, Edit3, X, Save, Shield, Activity, DatabaseZap
+  CheckCircle, Loader2, AlertCircle, HardDrive, Cpu, Terminal, Zap, Calendar, Edit3, X, Save, Shield, Activity, DatabaseZap, ChevronLeft
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -15,7 +15,11 @@ const m = motion as any;
 type DataSource = 'supabase' | 'local_json' | 'mysql';
 type AdminTab = 'overview' | 'users' | 'records' | 'feedback' | 'audit_logs';
 
-export const AdminView: React.FC = () => {
+interface AdminViewProps {
+  onBack?: () => void;
+}
+
+export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [dataSource, setDataSource] = useState<DataSource>('supabase');
   const [loading, setLoading] = useState(true);
@@ -109,13 +113,20 @@ export const AdminView: React.FC = () => {
     <div className="space-y-10 pb-32 max-w-6xl mx-auto animate-in fade-in duration-700">
       {/* Admin Header */}
       <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
-        <div className="space-y-1">
-          <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none">Lab <span className="text-rose-500">Command</span></h1>
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${loading ? 'bg-amber-500 animate-pulse' : (error ? 'bg-rose-500' : 'bg-emerald-500')}`} />
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
-              Node: {dataSource.toUpperCase()} // clearance: superuser
-            </p>
+        <div className="flex items-center gap-4">
+          {onBack && (
+            <button onClick={onBack} className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all">
+              <ChevronLeft size={20} />
+            </button>
+          )}
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none">Lab <span className="text-rose-500">Command</span></h1>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${loading ? 'bg-amber-500 animate-pulse' : (error ? 'bg-rose-500' : 'bg-emerald-500')}`} />
+              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
+                Node: {dataSource.toUpperCase()} // clearance: superuser
+              </p>
+            </div>
           </div>
         </div>
         

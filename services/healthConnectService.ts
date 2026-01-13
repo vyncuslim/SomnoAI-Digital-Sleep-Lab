@@ -1,16 +1,12 @@
 
-import { SleepRecord, SleepStage, HeartRateData } from "../types.ts";
+import { SleepRecord, SleepStage } from "../types.ts";
 
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
-const CLIENT_SECRET = "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";
 const SCOPES = [
   "https://www.googleapis.com/auth/fitness.sleep.read",
   "https://www.googleapis.com/auth/fitness.heart_rate.read",
   "https://www.googleapis.com/auth/fitness.activity.read",
-  "https://www.googleapis.com/auth/fitness.body.read",
-  "openid",
-  "profile",
-  "email"
+  "https://www.googleapis.com/auth/fitness.body.read"
 ];
 
 declare var google: any;
@@ -27,27 +23,6 @@ const toMillis = (val: any): number => {
   return n > 10000000000000 ? Math.floor(n / 1000000) : n;
 };
 
-/**
- * HealthConnectService: Handles biometric data synchronization via the cloud bridge.
- * Aligns with high-fidelity 8-step SDK protocol for reliable extraction & injection.
- * 
- * --- FEEDING PROTOCOL (Writing Logic - The Warehouse Packing Slip) ---
- * 1. InsertRecords: SDK-level implicit update/insert logic via metadata.
- * 2. clientRecordID: Unique local DB mapping prevents telemetry duplication (Idempotency).
- * 3. clientRecordVersion: Timestamp-based conflict resolution for signal accuracy.
- * 4. Batching: Series data is batched per 1000 records for efficient throughput.
- * 
- * --- CONSUMING PROTOCOL (Reading Logic - The Inventory Report) ---
- * 1. Changes Sync API: Tracking stateful UpsertionChange and DeletionChange events.
- * 2. Token Lifecycle (The Manga Bookmark): getChangesToken initiates a cursor. 
- *    Calling getChanges returns updates + next token.
- *    Tokens have a rolling 30-day lifespan (Reading progress bookmark).
- * 3. Signal Filtering (Forensics): Isolation based on Package Name to exclude self-generated loops.
- * 
- * --- SECURITY & PRIVACY ---
- * 1. Foreground Restriction: Biometric reading restricted to active UI session (Warehouse door open).
- * 2. User Sovereignty: System-level permission UI ensures user control over scopes.
- */
 export class HealthConnectService {
   private accessToken: string | null = null;
   private tokenClient: any = null;
@@ -58,6 +33,7 @@ export class HealthConnectService {
     this.accessToken = localStorage.getItem('health_connect_token');
   }
 
+  // Renamed isLinked to hasToken to match App.tsx usage
   public hasToken(): boolean {
     return !!this.accessToken;
   }
@@ -99,6 +75,7 @@ export class HealthConnectService {
     return this.initPromise;
   }
 
+  // Renamed linkAccount to authorize to match App.tsx usage
   public async authorize(forcePrompt = false): Promise<string> {
     await this.ensureClientInitialized();
     if (!this.tokenClient) {
@@ -118,21 +95,16 @@ export class HealthConnectService {
       });
     }
 
-    if (this.accessToken && !forcePrompt) return this.accessToken;
-
     return new Promise((resolve, reject) => {
       this.authPromise = { resolve, reject };
       this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
     });
   }
 
+  // Renamed unlink to logout to match App.tsx usage
   public logout() {
-    const token = this.accessToken || localStorage.getItem('health_connect_token');
     this.accessToken = null;
     localStorage.removeItem('health_connect_token');
-    if (token && typeof google !== 'undefined') {
-      google.accounts.oauth2.revoke(token, () => {});
-    }
   }
 
   private async fetchAggregate(token: string, startTime: number, endTime: number, dataTypeName: string) {
@@ -155,7 +127,7 @@ export class HealthConnectService {
 
   public async fetchSleepData(): Promise<Partial<SleepRecord>> {
     const token = this.accessToken || localStorage.getItem('health_connect_token');
-    if (!token) throw new Error("AUTH_REQUIRED");
+    if (!token) throw new Error("LINK_REQUIRED");
 
     const now = Date.now();
     const searchWindowStart = now - (96 * 60 * 60 * 1000); 
@@ -165,33 +137,14 @@ export class HealthConnectService {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
-    let sTime = 0;
-    let eTime = 0;
     const sessionData = await sessionRes.json();
     const sleepSessions = (sessionData.session || []).filter((s: any) => s.activityType === 72);
 
-    if (sleepSessions.length > 0) {
-      const latest = sleepSessions[sleepSessions.length - 1];
-      sTime = toMillis(latest.startTimeMillis);
-      eTime = toMillis(latest.endTimeMillis);
-    } else {
-      const rawSegments = await this.fetchAggregate(token, now - (48 * 60 * 60 * 1000), now, "com.google.sleep.segment");
-      const points = rawSegments?.bucket?.[0]?.dataset?.[0]?.point || [];
-      
-      if (points.length > 0) {
-        sTime = nanostampsToMillis(points[0].startTimeNanos);
-        eTime = nanostampsToMillis(points[points.length - 1].endTimeNanos);
-      } else {
-        const activitySegments = await this.fetchAggregate(token, now - (48 * 60 * 60 * 1000), now, "com.google.activity.segment");
-        const actPoints = activitySegments?.bucket?.[0]?.dataset?.[0]?.point || [];
-        const sleepPoints = actPoints.filter((p: any) => p.value?.[0]?.intVal === 72);
-        
-        if (sleepPoints.length === 0) throw new Error("SLEEP_DATA_SPECIFICALLY_NOT_FOUND");
-        
-        sTime = nanostampsToMillis(sleepPoints[0].startTimeNanos);
-        eTime = nanostampsToMillis(sleepPoints[sleepPoints.length - 1].endTimeNanos);
-      }
-    }
+    if (sleepSessions.length === 0) throw new Error("SLEEP_DATA_NOT_FOUND");
+
+    const latest = sleepSessions[sleepSessions.length - 1];
+    const sTime = toMillis(latest.startTimeMillis);
+    const eTime = toMillis(latest.endTimeMillis);
 
     const segmentData = await this.fetchAggregate(token, sTime, eTime, "com.google.sleep.segment");
     const stages: SleepStage[] = [];
@@ -199,31 +152,21 @@ export class HealthConnectService {
 
     const allPoints = segmentData?.bucket?.[0]?.dataset?.[0]?.point || [];
     
-    if (allPoints.length === 0) {
-      const durationMins = (eTime - sTime) / (60 * 1000);
-      stages.push({ 
-        name: 'Light', 
-        duration: Math.round(durationMins), 
-        startTime: new Date(sTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
-      });
-      lightMins = durationMins;
-    } else {
-      allPoints.forEach((p: any) => {
-        const type = p.value?.[0]?.intVal;
-        const start = nanostampsToMillis(p.startTimeNanos);
-        const end = nanostampsToMillis(p.endTimeNanos);
-        const duration = (end - start) / (60 * 1000);
-        const startTimeStr = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        let stageName: any = 'Light';
-        if (type === 1) { stageName = 'Awake'; awakeMins += duration; }
-        else if (type === 4) { stageName = 'Light'; lightMins += duration; }
-        else if (type === 5) { stageName = 'Deep'; deepMins += duration; }
-        else if (type === 6) { stageName = 'REM'; remMins += duration; }
+    allPoints.forEach((p: any) => {
+      const type = p.value?.[0]?.intVal;
+      const start = nanostampsToMillis(p.startTimeNanos);
+      const end = nanostampsToMillis(p.endTimeNanos);
+      const duration = (end - start) / (60 * 1000);
+      const startTimeStr = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      
+      let stageName: any = 'Light';
+      if (type === 1) { stageName = 'Awake'; awakeMins += duration; }
+      else if (type === 4) { stageName = 'Light'; lightMins += duration; }
+      else if (type === 5) { stageName = 'Deep'; deepMins += duration; }
+      else if (type === 6) { stageName = 'REM'; remMins += duration; }
 
-        stages.push({ name: stageName, duration: Math.max(1, Math.round(duration)), startTime: startTimeStr });
-      });
-    }
+      stages.push({ name: stageName, duration: Math.max(1, Math.round(duration)), startTime: startTimeStr });
+    });
 
     const totalDuration = (eTime - sTime) / (60 * 1000);
 
@@ -237,29 +180,12 @@ export class HealthConnectService {
     }
 
     const hrHistory: { time: string; bpm: number }[] = [];
-    try {
-      const startTimeNanos = BigInt(sTime) * BigInt(1000000);
-      const endTimeNanos = BigInt(eTime) * BigInt(1000000);
-      const hrStreamRes = await fetch(
-        `https://www.googleapis.com/fitness/v1/users/me/dataSources/derived:com.google.heart_rate.bpm:com.google.android.gms:merge_heart_rate_bpm/datasets/${startTimeNanos}-${endTimeNanos}`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (hrStreamRes.ok) {
-        const streamData = await hrStreamRes.ok ? await hrStreamRes.json() : { point: [] };
-        (streamData.point || []).slice(-50).forEach((p: any) => {
-          const bpm = p.value[0].fpVal;
-          const time = new Date(nanostampsToMillis(p.startTimeNanos)).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-          hrHistory.push({ time, bpm: Math.round(bpm) });
-        });
-      }
-    } catch (e) { console.warn("HR Stream Fetch Error", e); }
-
     const efficiency = totalDuration > 0 ? Math.round(((totalDuration - awakeMins) / totalDuration) * 100) : 0;
     const scoreBase = Math.min(100, (totalDuration / 450) * 100);
     const finalScore = Math.round((scoreBase * 0.7) + (efficiency * 0.3));
 
     return {
-      date: new Date(sTime).toLocaleDateString(navigator.language, { month: 'long', day: 'numeric', weekday: 'long' }),
+      date: latest.name || new Date(sTime).toLocaleDateString(),
       score: finalScore,
       totalDuration: Math.round(totalDuration),
       deepRatio: totalDuration > 0 ? Math.round((deepMins / totalDuration) * 100) : 0,

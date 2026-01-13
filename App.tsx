@@ -3,7 +3,7 @@ import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Auth } from './Auth.tsx';
 import { ViewType, SleepRecord, SyncStatus, ThemeMode, AccentColor } from './types.ts';
-import { User, Loader2, Activity, Zap, TriangleAlert, RefreshCw, Shield, WifiOff } from 'lucide-react';
+import { User, Loader2, Activity, Zap, TriangleAlert, RefreshCw, Shield, WifiOff, Lock, ChevronLeft } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -54,6 +54,23 @@ const App: React.FC = () => {
   const [requestedAdminFlow, setRequestedAdminFlow] = useState(window.location.pathname.startsWith('/admin'));
   const [syncPhase, setSyncPhase] = useState<string>("");
 
+  // Helper to safely update URL without crashing in sandboxed environments
+  const updateUrl = (path: string) => {
+    try {
+      window.history.pushState({}, '', path);
+    } catch (e) {
+      console.warn('Navigation: Could not update URL in current environment', e);
+    }
+  };
+
+  // Check initial route on mount
+  useEffect(() => {
+    if (window.location.pathname.startsWith('/admin')) {
+      setRequestedAdminFlow(true);
+      setActiveView('admin');
+    }
+  }, []);
+
   // Dismiss global HTML loader
   useEffect(() => {
     if ((window as any).dismissLoader) {
@@ -62,10 +79,15 @@ const App: React.FC = () => {
   }, []);
 
   const checkAdminPrivileges = useCallback(async (userId: string) => {
-    const isUserAdmin = await adminApi.checkAdminStatus(userId);
-    setIsAdmin(isUserAdmin);
-    if (isUserAdmin && window.location.pathname.includes('/admin')) {
-      setActiveView('admin');
+    try {
+      const isUserAdmin = await adminApi.checkAdminStatus(userId);
+      setIsAdmin(isUserAdmin);
+      // If user is admin and specifically on admin path, ensure view is set
+      if (isUserAdmin && window.location.pathname.includes('/admin')) {
+        setActiveView('admin');
+      }
+    } catch (e) {
+      console.error("Admin check failed", e);
     }
   }, []);
 
@@ -80,7 +102,6 @@ const App: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setIsLoggedIn(true);
-        setRequestedAdminFlow(false);
         checkAdminPrivileges(session.user.id);
       } else {
         setIsAdmin(false);
@@ -95,7 +116,6 @@ const App: React.FC = () => {
     setIsLoading(true);
     setErrorToast(null);
     
-    // Safety timeout to prevent infinite loading if the biometric link hangs
     const syncTimeout = setTimeout(() => {
       if (isLoading) {
         setIsLoading(false);
@@ -138,12 +158,12 @@ const App: React.FC = () => {
   }, [lang, isLoading]);
 
   useEffect(() => {
-    if (isLoggedIn && !currentRecord && !isLoading && !isAdmin && !errorToast) {
+    if (isLoggedIn && !currentRecord && !isLoading && !isAdmin && !errorToast && activeView === 'dashboard') {
       handleSyncHealthConnect(false).catch(() => {
         setIsLoading(false);
       });
     }
-  }, [isLoggedIn, isAdmin, currentRecord, isLoading, errorToast, handleSyncHealthConnect]);
+  }, [isLoggedIn, isAdmin, currentRecord, isLoading, errorToast, handleSyncHealthConnect, activeView]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -152,11 +172,18 @@ const App: React.FC = () => {
     setIsGuest(false);
     setIsAdmin(false);
     setCurrentRecord(null);
-    window.location.href = '/';
+    // Use window.location.origin for a safer relative redirect
+    window.location.href = window.location.origin;
   };
 
   const isPublicView = activeView === 'privacy' || activeView === 'terms' || activeView === 'about';
-  const showAuthScreen = (!isLoggedIn && !isGuest && !isPublicView) || (requestedAdminFlow && !isAdmin);
+  
+  // Auth Screen logic: Show if not logged in AND not a public view
+  // Also show if they are on /admin but we don't know if they are admin yet
+  const showAuthScreen = (!isLoggedIn && !isGuest && !isPublicView);
+
+  // Unauthorized State: Logged in but trying to access admin without privileges
+  const isUnauthorized = isLoggedIn && requestedAdminFlow && !isAdmin;
 
   return (
     <div className={`flex-1 flex flex-col min-h-screen relative`}>
@@ -165,16 +192,52 @@ const App: React.FC = () => {
           <Auth 
             lang={lang} 
             isAdminFlow={requestedAdminFlow} 
-            onLogin={() => setIsLoggedIn(true)} 
+            onLogin={() => {
+              setIsLoggedIn(true);
+              // requestedAdminFlow is kept true to trigger admin check once session is established
+            }} 
             onGuest={() => setIsGuest(true)} 
             onNavigate={setActiveView} 
           />
+        ) : isUnauthorized ? (
+          <div className="min-h-[70vh] flex flex-col items-center justify-center p-6 text-center space-y-8">
+            <GlassCard className="p-12 rounded-[5rem] border-rose-500/20 max-w-md space-y-8">
+              <div className="w-20 h-20 bg-rose-500/10 rounded-full flex items-center justify-center mx-auto text-rose-500">
+                <Lock size={32} />
+              </div>
+              <div className="space-y-3">
+                <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Clearance Denied</h2>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest leading-relaxed px-4">
+                  Your identity signature lacks administrative privileges for this node.
+                </p>
+              </div>
+              <div className="flex flex-col gap-3">
+                <button 
+                  onClick={() => {
+                    setRequestedAdminFlow(false);
+                    setActiveView('dashboard');
+                    updateUrl('/');
+                  }}
+                  className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl flex items-center justify-center gap-2"
+                >
+                  <ChevronLeft size={14} /> Return to Lab
+                </button>
+                <button onClick={handleLogout} className="text-[10px] font-black uppercase text-slate-600 hover:text-white transition-colors">
+                  Switch Identity
+                </button>
+              </div>
+            </GlassCard>
+          </div>
         ) : (
           <Suspense fallback={<LoadingSpinner label="Compiling Lab..." />}>
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 {activeView === 'admin' ? (
-                  isAdmin ? <AdminView /> : <div className="p-20 text-center uppercase font-black text-slate-700">Restricted</div>
+                  isAdmin ? <AdminView onBack={() => {
+                    setRequestedAdminFlow(false);
+                    setActiveView('dashboard');
+                    updateUrl('/');
+                  }} /> : <LoadingSpinner label="Verifying Credentials..." />
                 ) : activeView === 'privacy' || activeView === 'terms' ? (
                   <LegalView type={activeView as any} lang={lang} onBack={() => setActiveView('dashboard')} />
                 ) : activeView === 'about' ? (
@@ -223,21 +286,30 @@ const App: React.FC = () => {
         )}
       </main>
 
-      {(isLoggedIn || isGuest) && !isPublicView && (
+      {(isLoggedIn || isGuest) && !isPublicView && !isUnauthorized && (
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
           <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl">
             {[
               { id: 'dashboard', icon: Logo, label: 'LAB' },
               { id: 'calendar', icon: Activity, label: 'TRND' },
               { id: 'assistant', icon: Zap, label: 'CORE' },
-              { id: isAdmin ? 'admin' : 'profile', icon: isAdmin ? Shield : User, label: 'CFG' }
+              { id: isAdmin ? 'admin' : 'profile', icon: isAdmin ? Shield : User, label: isAdmin ? 'ADM' : 'CFG' }
             ].map((nav) => {
               const isActive = activeView === nav.id;
               return (
                 <button 
                   key={nav.id} 
-                  onClick={() => setActiveView(nav.id as any)} 
-                  className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${isActive ? (isAdmin ? 'bg-rose-600' : 'bg-indigo-600') + ' text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                  onClick={() => {
+                    setActiveView(nav.id as any);
+                    if (nav.id === 'admin') {
+                      updateUrl('/admin');
+                      setRequestedAdminFlow(true);
+                    } else {
+                      updateUrl('/');
+                      setRequestedAdminFlow(false);
+                    }
+                  }} 
+                  className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${isActive ? (isAdmin && nav.id === 'admin' ? 'bg-rose-600' : 'bg-indigo-600') + ' text-white' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                   <SpatialIcon icon={nav.icon} size={20} animated={isActive} threeD={threeDEnabled} color={isActive ? '#fff' : '#475569'} />
                   {isActive && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
