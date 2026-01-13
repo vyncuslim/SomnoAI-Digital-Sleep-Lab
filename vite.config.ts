@@ -5,7 +5,8 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   define: {
-    'process.env': process.env
+    // Targeted injection to satisfy @google/genai and avoid leaking entire process.env
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY)
   },
   server: {
     port: 3000
