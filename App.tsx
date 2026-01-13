@@ -10,7 +10,7 @@ import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
 import { GlassCard } from './components/GlassCard.tsx';
 
-// 懒加载页面组件
+// 懒加载页面：必须在 Suspense 内运行
 const LoginPage = lazy(() => import('./app/login/page.tsx'));
 const AdminPage = lazy(() => import('./app/admin/page.tsx'));
 
@@ -23,26 +23,24 @@ const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ def
 const m = motion as any;
 
 const LoadingSpinner = ({ label = "Loading..." }: { label?: string }) => (
-  <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
+  <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 text-center">
     <div className="relative">
-      <Loader2 size={40} className="animate-spin text-indigo-500 opacity-50" />
+      <Loader2 size={48} className="animate-spin text-indigo-500 opacity-50" />
       <div className="absolute inset-0 flex items-center justify-center">
-         <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+         <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
       </div>
     </div>
-    <p className="text-slate-500 font-black uppercase text-[9px] tracking-widest">{label}</p>
+    <p className="text-slate-500 font-black uppercase text-[10px] tracking-[0.4em] animate-pulse">{label}</p>
   </div>
 );
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
   
-  // 路径归一化函数：移除结尾斜杠并转为小写
+  // 路径归一化
   const getNormalizedPath = () => {
     let path = window.location.pathname.toLowerCase();
-    if (path.length > 1 && path.endsWith('/')) {
-      path = path.slice(0, -1);
-    }
+    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
     return path || '/';
   };
 
@@ -59,10 +57,10 @@ const App: React.FC = () => {
     };
     window.addEventListener('popstate', handlePopState);
     
-    // 初始化时如果已经在 /admin，确保路径正确
-    const currentPath = getNormalizedPath();
-    if (currentPath !== activeRoute) {
-      setActiveRoute(currentPath);
+    // 强制执行初始同步
+    const pathOnMount = getNormalizedPath();
+    if (activeRoute !== pathOnMount) {
+      setActiveRoute(pathOnMount);
     }
 
     if ((window as any).dismissLoader) (window as any).dismissLoader();
@@ -93,58 +91,54 @@ const App: React.FC = () => {
     }
   }, [lang]);
 
-  // 内部导航函数
   const navigateTo = (path: string) => {
     const normalized = path.toLowerCase();
     window.history.pushState({}, '', normalized);
     setActiveRoute(normalized);
   };
 
-  // 路由分发逻辑
-  const renderContent = () => {
-    // 使用归一化后的路径进行匹配
+  // 路由渲染逻辑
+  const renderRoute = () => {
     if (activeRoute === '/login') return <LoginPage />;
     if (activeRoute === '/admin') return <AdminPage />;
     
-    // 默认主页逻辑
+    // 主实验室界面 (Root /)
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40">
-        <Suspense fallback={<LoadingSpinner label="Compiling Lab..." />}>
-          <AnimatePresence mode="wait">
-            <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              {activeView === 'dashboard' ? (
-                currentRecord ? (
-                  <Dashboard data={currentRecord} lang={lang} onSyncHealth={(p) => handleSyncHealthConnect(false, p)} onNavigate={setActiveView} />
-                ) : errorToast ? (
-                  <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center">
-                    <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 max-w-sm space-y-6">
-                      <WifiOff size={48} className="text-rose-500 mx-auto" />
-                      <p className="text-sm text-slate-400">{errorToast}</p>
-                      <button onClick={() => handleSyncHealthConnect(true)} className="w-full py-4 bg-indigo-600 text-white rounded-full font-bold uppercase tracking-widest text-[10px]">Retry</button>
-                    </GlassCard>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center h-[70vh]">
-                    <button onClick={() => handleSyncHealthConnect(true)} className="px-8 py-4 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Initialize Digital Handshake</button>
-                  </div>
-                )
-              ) : activeView === 'calendar' ? (
-                <Trends history={history} lang={lang} />
-              ) : activeView === 'assistant' ? (
-                <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} />
-              ) : activeView === 'profile' ? (
-                <Settings 
-                  lang={lang} onLanguageChange={setLang} onLogout={() => supabase.auth.signOut().then(() => navigateTo('/login'))} onNavigate={setActiveView}
-                  theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
-                  threeDEnabled={true} onThreeDChange={() => {}} staticMode={false} onStaticModeChange={() => {}}
-                  lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncHealthConnect(true)}
-                />
-              ) : null}
-            </m.div>
-          </AnimatePresence>
-        </Suspense>
+        <AnimatePresence mode="wait">
+          <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+            {activeView === 'dashboard' ? (
+              currentRecord ? (
+                <Dashboard data={currentRecord} lang={lang} onSyncHealth={(p) => handleSyncHealthConnect(false, p)} onNavigate={setActiveView} />
+              ) : errorToast ? (
+                <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center">
+                  <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 max-w-sm space-y-6">
+                    <WifiOff size={48} className="text-rose-500 mx-auto" />
+                    <p className="text-sm text-slate-400">{errorToast}</p>
+                    <button onClick={() => handleSyncHealthConnect(true)} className="w-full py-4 bg-indigo-600 text-white rounded-full font-bold uppercase tracking-widest text-[10px]">Retry</button>
+                  </GlassCard>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center h-[70vh]">
+                  <button onClick={() => handleSyncHealthConnect(true)} className="px-8 py-4 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Initialize Digital Handshake</button>
+                </div>
+              )
+            ) : activeView === 'calendar' ? (
+              <Trends history={history} lang={lang} />
+            ) : activeView === 'assistant' ? (
+              <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} />
+            ) : activeView === 'profile' ? (
+              <Settings 
+                lang={lang} onLanguageChange={setLang} onLogout={() => supabase.auth.signOut().then(() => navigateTo('/login'))} onNavigate={setActiveView}
+                theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
+                threeDEnabled={true} onThreeDChange={() => {}} staticMode={false} onStaticModeChange={() => {}}
+                lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncHealthConnect(true)}
+              />
+            ) : null}
+          </m.div>
+        </AnimatePresence>
 
-        {/* 全局浮动导航栏 */}
+        {/* 浮动导航栏 */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
           <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl overflow-hidden">
             {[
@@ -181,7 +175,9 @@ const App: React.FC = () => {
 
   return (
     <RootLayout>
-      {renderContent()}
+      <Suspense fallback={<LoadingSpinner label="Decrypting Laboratory Node..." />}>
+        {renderRoute()}
+      </Suspense>
     </RootLayout>
   );
 };
