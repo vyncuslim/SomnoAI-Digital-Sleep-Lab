@@ -45,6 +45,9 @@ const App: React.FC = () => {
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [isApiDenied, setIsApiDenied] = useState(false);
 
+  // Detect hidden /admin entry point
+  const [requestedAdminFlow, setRequestedAdminFlow] = useState(false);
+
   // Supabase Session Logic
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -58,6 +61,8 @@ const App: React.FC = () => {
       if (session) {
         setIsAdmin(true);
         setIsLoggedIn(true);
+        setRequestedAdminFlow(false);
+        setActiveView('admin');
       } else {
         setIsAdmin(false);
       }
@@ -69,34 +74,31 @@ const App: React.FC = () => {
   // Sync state with URL path
   useEffect(() => {
     const path = window.location.pathname.replace(/^\//, '');
-    if (path === 'about') setActiveView('about');
+    if (path === 'admin') {
+      setRequestedAdminFlow(true);
+      setActiveView('admin');
+    } else if (path === 'about') setActiveView('about');
     else if (path === 'calendar') setActiveView('calendar');
     else if (path === 'assistant') setActiveView('assistant');
     else if (path === 'profile') setActiveView('profile');
     else if (path === 'privacy') setActiveView('privacy');
     else if (path === 'terms') setActiveView('terms');
-    else if (path === 'admin') setActiveView('admin');
   }, []);
 
-  // Resilient pushState for Preview/Sandboxed environments
+  // Resilient pushState for SPA routing
   useEffect(() => {
     const isBlob = window.location.protocol === 'blob:';
     const isSandboxed = window.location.origin === 'null' || window.location.hostname.includes('usercontent.goog');
     
     if (isBlob || isSandboxed) return; 
 
-    const publicViews = ['privacy', 'terms', 'about'];
-    const spaViews = ['dashboard', 'calendar', 'assistant', 'profile', 'admin'];
-    
-    if (publicViews.includes(activeView) || spaViews.includes(activeView as any)) {
-      const targetPath = activeView === 'dashboard' ? '/' : `/${activeView}`;
-      try {
-        if (window.location.pathname !== targetPath) {
-          window.history.pushState({ view: activeView }, '', targetPath);
-        }
-      } catch (e) {
-        console.warn("Navigation history update failed.", e);
+    const targetPath = activeView === 'dashboard' ? '/' : `/${activeView}`;
+    try {
+      if (window.location.pathname !== targetPath) {
+        window.history.pushState({ view: activeView }, '', targetPath);
       }
+    } catch (e) {
+      console.warn("Navigation history update failed.", e);
     }
   }, [activeView]);
 
@@ -154,10 +156,10 @@ const App: React.FC = () => {
   }, [lang]);
 
   useEffect(() => {
-    if (isLoggedIn && !currentRecord && !isLoading) {
+    if (isLoggedIn && !currentRecord && !isLoading && !isAdmin) {
       handleSyncHealthConnect(false);
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isAdmin]);
 
   const generateMockData = useCallback(async () => {
     setIsLoading(true);
@@ -188,19 +190,28 @@ const App: React.FC = () => {
     setIsLoggedIn(false);
     setIsGuest(false);
     setIsAdmin(false);
+    setRequestedAdminFlow(false);
     setCurrentRecord(null);
     localStorage.removeItem('health_connect_token');
     window.location.reload();
   };
 
   const isPublicView = activeView === 'privacy' || activeView === 'terms' || activeView === 'about';
-  const isShowAuth = !isLoggedIn && !isGuest && !isPublicView;
+  
+  // Logical gating for Auth screen
+  const isShowAuth = (!isLoggedIn && !isGuest && !isPublicView) || (requestedAdminFlow && !isAdmin);
 
   return (
     <div className={`flex-1 flex flex-col min-h-screen relative`}>
       <main className="flex-1 w-full mx-auto p-4 pt-10 pb-40">
         {isShowAuth ? (
-          <Auth lang={lang} onLogin={() => setIsLoggedIn(true)} onGuest={() => { setIsGuest(true); generateMockData(); }} onNavigate={setActiveView} />
+          <Auth 
+            lang={lang} 
+            isAdminFlow={requestedAdminFlow} 
+            onLogin={() => setIsLoggedIn(true)} 
+            onGuest={() => { setIsGuest(true); generateMockData(); }} 
+            onNavigate={setActiveView} 
+          />
         ) : (
           <Suspense fallback={<LoadingSpinner />}>
             <AnimatePresence mode="wait">
@@ -210,7 +221,7 @@ const App: React.FC = () => {
                 ) : activeView === 'about' ? (
                   <AboutView lang={lang} onBack={() => setActiveView('dashboard')} />
                 ) : activeView === 'admin' ? (
-                  <AdminView />
+                  isAdmin ? <AdminView /> : <div className="p-20 text-center text-slate-500 font-black italic uppercase">Unauthorized Node</div>
                 ) : (
                   isLoading && !currentRecord ? (
                     <LoadingSpinner />

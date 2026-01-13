@@ -1,6 +1,6 @@
 
-import React, { useState, useEffect } from 'react';
-import { Loader2, ArrowRight, Cpu, TriangleAlert, Database, Lock, ShieldCheck, Mail, Key } from 'lucide-react';
+import React, { useState } from 'react';
+import { Loader2, ArrowRight, Cpu, TriangleAlert, Lock, ShieldCheck, Mail, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { healthConnect } from './services/healthConnectService.ts';
@@ -15,12 +15,12 @@ interface AuthProps {
   onLogin: () => void;
   onGuest: () => void;
   onNavigate?: (view: any) => void;
+  isAdminFlow?: boolean; // Prop to trigger hidden admin mode
 }
 
-export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
+export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate, isAdminFlow = false }) => {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
-  const [authMode, setAuthMode] = useState<'user' | 'admin'>('user');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
 
@@ -50,7 +50,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       if (error) throw error;
       onLogin();
     } catch (error: any) {
-      setLocalError(error.message || "Admin Login Failed");
+      setLocalError(error.message || "Admin Session Initialization Failed");
     } finally {
       setIsLoggingIn(false);
     }
@@ -62,34 +62,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-lg space-y-10 text-center relative z-10">
         <div className="relative flex flex-col items-center">
-          <m.div className="w-32 h-32 rounded-full bg-indigo-600/10 border border-indigo-500/10 flex items-center justify-center mb-10">
+          <m.div 
+            animate={{ rotate: isAdminFlow ? 180 : 0 }}
+            className={`w-32 h-32 rounded-full border flex items-center justify-center mb-10 transition-colors duration-700 ${isAdminFlow ? 'bg-rose-600/10 border-rose-500/20' : 'bg-indigo-600/10 border-indigo-500/10'}`}
+          >
             <Logo size={80} animated={true} />
           </m.div>
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none">
-              SomnoAI <br/><span className="text-indigo-400">Digital Sleep Lab</span>
+              SomnoAI <br/>
+              <span className={isAdminFlow ? "text-rose-500" : "text-indigo-400"}>
+                {isAdminFlow ? "Admin Engine" : "Digital Sleep Lab"}
+              </span>
             </h1>
           </div>
         </div>
 
-        <div className="flex justify-center gap-4 mb-8">
-           <button 
-             onClick={() => setAuthMode('user')}
-             className={`px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest transition-all ${authMode === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-500'}`}
-           >
-             Patient Portal
-           </button>
-           <button 
-             onClick={() => setAuthMode('admin')}
-             className={`px-8 py-3 rounded-full font-black text-[10px] uppercase tracking-widest transition-all ${authMode === 'admin' ? 'bg-rose-600 text-white' : 'bg-white/5 text-slate-500'}`}
-           >
-             Admin Engine
-           </button>
-        </div>
-
-        <GlassCard className="p-10 rounded-[4rem] space-y-8 relative border-white/10" intensity={1.1}>
+        <GlassCard className={`p-10 rounded-[4rem] space-y-8 relative border-white/10 transition-all duration-700 ${isAdminFlow ? 'shadow-[0_0_100px_rgba(244,63,94,0.1)]' : ''}`} intensity={1.1}>
           <AnimatePresence mode="wait">
-            {authMode === 'user' ? (
+            {!isAdminFlow ? (
               <m.div key="user" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
                 <div className="space-y-3">
                   <div className="flex items-center justify-center gap-2 text-indigo-400">
@@ -97,7 +88,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                     <span className="text-[10px] font-black uppercase tracking-widest">{t.securityStatement}</span>
                   </div>
                    <p className="text-[11px] text-slate-400 italic px-4">
-                    Connecting to Health Connect for biometric extraction. No login required.
+                    Neural Link established. Synchronize with Health Connect to begin biometric analysis.
                   </p>
                 </div>
 
@@ -120,8 +111,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                       type="email" 
                       value={email} 
                       onChange={e => setEmail(e.target.value)}
-                      placeholder="Admin Email"
-                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm outline-none focus:border-rose-500/50"
+                      placeholder="Access Terminal Email"
+                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm outline-none focus:border-rose-500/50 text-white italic"
                       required
                     />
                   </div>
@@ -131,15 +122,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                       type="password" 
                       value={password} 
                       onChange={e => setPassword(e.target.value)}
-                      placeholder="Encryption Key"
-                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm outline-none focus:border-rose-500/50"
+                      placeholder="Cryptographic Key"
+                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm outline-none focus:border-rose-500/50 text-white italic"
                       required
                     />
                   </div>
                 </div>
                 <button type="submit" disabled={isLoggingIn} className="w-full py-6 rounded-[2.5rem] bg-rose-600 text-white font-black text-sm uppercase tracking-widest hover:scale-105 active:scale-95 transition-all shadow-xl shadow-rose-950/20">
                   {isLoggingIn ? <Loader2 className="animate-spin" size={20} /> : <Lock size={20} className="inline mr-2" />}
-                  INITIALIZE ADMIN SESSION
+                  INITIALIZE COMMAND ACCESS
                 </button>
               </m.form>
             )}
@@ -152,6 +143,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           )}
         </GlassCard>
       </m.div>
+
+      {/* Secret return link for those who accidentally land on /admin */}
+      {isAdminFlow && (
+        <button 
+          onClick={() => window.location.href = '/'}
+          className="fixed bottom-10 text-[10px] font-black uppercase text-slate-600 tracking-widest hover:text-slate-400 transition-colors"
+        >
+          Return to Patient Portal
+        </button>
+      )}
     </div>
   );
 };
