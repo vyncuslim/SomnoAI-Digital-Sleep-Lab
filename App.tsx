@@ -48,8 +48,8 @@ const App: React.FC = () => {
   const [errorToast, setErrorToast] = useState<string | null>(null);
   const [syncPhase, setSyncPhase] = useState<string>("");
 
-  // 核心权限检查逻辑
-  const syncIdentity = useCallback(async (user: any) => {
+  // 核心权限检查与路由同步逻辑
+  const syncIdentityAndRoute = useCallback(async (user: any) => {
     if (!user) {
       setIsAdmin(false);
       setIsLoggedIn(false);
@@ -60,13 +60,11 @@ const App: React.FC = () => {
     const isAdminUser = await adminApi.checkAdminStatus(user.id);
     setIsAdmin(isAdminUser);
 
-    // 路由守卫：检测 URL 指令
     const path = window.location.pathname;
     if (path === '/admin') {
       if (isAdminUser) {
         setActiveView('admin');
       } else {
-        // 纵深防御：拦截非授权进入后台
         window.history.replaceState({}, '', '/');
         setActiveView('dashboard');
       }
@@ -74,24 +72,39 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // 1. 初始化 Session
+    // 1. 初始化会话
     supabase.auth.getSession().then(({ data: { session } }) => {
-      syncIdentity(session?.user);
+      syncIdentityAndRoute(session?.user);
     });
 
-    // 2. 监听 Auth 状态变更
+    // 2. 监听浏览器导航 (Back/Forward)
+    const handlePopState = () => {
+      const path = window.location.pathname;
+      if (path === '/admin' && isAdmin) {
+        setActiveView('admin');
+      } else if (path === '/') {
+        setActiveView('dashboard');
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+
+    // 3. 监听 Auth 状态变更
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      syncIdentity(session?.user);
+      syncIdentityAndRoute(session?.user);
       if (event === 'SIGNED_OUT') {
         setIsGuest(false);
         setActiveView('dashboard');
+        window.history.replaceState({}, '', '/');
       }
     });
 
     if ((window as any).dismissLoader) (window as any).dismissLoader();
 
-    return () => subscription.unsubscribe();
-  }, [syncIdentity]);
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      subscription.unsubscribe();
+    };
+  }, [syncIdentityAndRoute, isAdmin]);
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsLoading(true);
@@ -146,7 +159,12 @@ const App: React.FC = () => {
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 {activeView === 'admin' ? (
-                  isAdmin ? <AdminView onBack={() => setActiveView('dashboard')} /> : <LoadingSpinner label="Access Denied" />
+                  isAdmin ? (
+                    <AdminView onBack={() => {
+                      setActiveView('dashboard');
+                      window.history.pushState({}, '', '/');
+                    }} />
+                  ) : <LoadingSpinner label="Access Denied" />
                 ) : activeView === 'privacy' || activeView === 'terms' ? (
                   <LegalView type={activeView as any} lang={lang} onBack={() => setActiveView('dashboard')} />
                 ) : activeView === 'about' ? (
