@@ -24,7 +24,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!assets/|favicon.ico|manifest.json|sw.js|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
   ]
