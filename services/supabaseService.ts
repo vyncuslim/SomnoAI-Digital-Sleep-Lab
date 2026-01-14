@@ -6,6 +6,27 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+// --- 身份验证增强 ---
+
+export async function signUpWithPassword(email: string, pass: string) {
+  const { data, error } = await supabase.auth.signUp({
+    email,
+    password: pass,
+    options: { emailRedirectTo: window.location.origin + '/login' }
+  });
+  if (error) throw error;
+  return data;
+}
+
+export async function signInWithPassword(email: string, pass: string) {
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password: pass,
+  });
+  if (error) throw error;
+  return data.session;
+}
+
 export async function signInWithEmailOTP(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
@@ -37,25 +58,27 @@ export const signInWithGoogle = async () => {
   if (error) throw error;
 };
 
+// --- 管理员 API ---
+
 export const adminApi = {
+  getProfile: async (userId: string) => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
+    if (error) throw error;
+    return data;
+  },
+
   checkAdminStatus: async (userId: string) => {
     if (!userId) return false;
-    try {
-      // 这里的逻辑必须能够应对 profiles 记录延迟创建的情况
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .maybeSingle();
-        
-      if (error) {
-        console.error("Admin check failed", error);
-        return false;
-      }
-      return data?.role === 'admin';
-    } catch {
-      return false;
-    }
+    const { data } = await supabase
+      .from('profiles')
+      .select('role')
+      .eq('id', userId)
+      .single();
+    return data?.role === 'admin';
   },
 
   getUsers: async () => {
@@ -92,13 +115,14 @@ export const adminApi = {
     if (error) throw error;
   },
 
-  resolveFeedback: async (id: string) => {
-    const { error } = await supabase.from('feedback').update({ status: 'resolved' }).eq('id', id);
+  // Added updateSleepRecord to allow admins to modify biometric data entries
+  updateSleepRecord: async (id: string, updates: any) => {
+    const { error } = await supabase.from('sleep_records').update(updates).eq('id', id);
     if (error) throw error;
   },
 
-  updateSleepRecord: async (id: string, updates: any) => {
-    const { error } = await supabase.from('sleep_records').update(updates).eq('id', id);
+  resolveFeedback: async (id: string) => {
+    const { error } = await supabase.from('feedback').update({ status: 'resolved' }).eq('id', id);
     if (error) throw error;
   }
 };

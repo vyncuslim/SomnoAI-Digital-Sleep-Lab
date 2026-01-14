@@ -1,135 +1,163 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Zap, Loader2, ShieldCheck, ChevronLeft, TriangleAlert } from 'lucide-react';
-import { supabase } from '../../lib/supabaseClient.ts';
+import { Mail, Zap, Loader2, ShieldCheck, ChevronLeft, TriangleAlert, Lock, Key, UserPlus, LogIn, Github } from 'lucide-react';
+import { signInWithEmailOTP, verifyOtp, signInWithGoogle, signInWithPassword, signUpWithPassword } from '../../services/supabaseService.ts';
 import { Logo } from '../../components/Logo.tsx';
 import { GlassCard } from '../../components/GlassCard.tsx';
 
 const m = motion as any;
 
+type AuthMode = 'password' | 'otp' | 'signup';
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
-  const [step, setStep] = useState<'email' | 'otp'>('email');
+  const [mode, setMode] = useState<AuthMode>('password');
+  const [step, setStep] = useState<'input' | 'verify'>('input');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
 
   const spaNavigate = (path: string) => {
-    window.history.pushState({}, '', path);
+    try {
+      window.history.pushState({}, '', path);
+    } catch (e) {
+      console.warn("Internal navigation failed to update URL. Redirecting view via popstate trigger.", e);
+    }
     window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
-      const { error } = await supabase.auth.signInWithOtp({ 
-        email,
-        options: { shouldCreateUser: true }
-      });
-      if (error) throw error;
-      setStep('otp');
+      if (mode === 'password') {
+        await signInWithPassword(email, password);
+        // App.tsx contains the actual logic for redirection via onAuthStateChange
+      } else if (mode === 'signup') {
+        await signUpWithPassword(email, password);
+        setSuccess('Laboratory invitation sent. Please check your neural link (email).');
+      } else if (mode === 'otp') {
+        if (step === 'input') {
+          await signInWithEmailOTP(email);
+          setStep('verify');
+        } else {
+          await verifyOtp(email, otp);
+        }
+      }
     } catch (err: any) {
-      setError(err.message || 'Verification failed.');
+      setError(err.message || 'Identity verification failed.');
     } finally {
       setLoading(false);
-    }
-  };
-
-  const handleVerifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
-    try {
-      const { data, error } = await supabase.auth.verifyOtp({ email, token: otp, type: 'email' });
-      if (error) throw error;
-      spaNavigate('/admin');
-    } catch (err: any) {
-      setError(err.message || 'Invalid token.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleGoogleLogin = async () => {
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: { redirectTo: window.location.origin + '/admin' }
-      });
-      if (error) throw error;
-    } catch (err: any) {
-      setError(err.message);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-[#020617] relative overflow-hidden">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 rounded-full blur-[120px] pointer-events-none" />
+    <div className="min-h-screen flex items-center justify-center p-6 bg-[#020617] relative overflow-hidden font-sans">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none" />
+      
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md relative z-10">
         <div className="text-center mb-12">
-          <Logo size={80} animated={true} className="mx-auto mb-6" />
-          <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter">SomnoAI Access</h1>
+          <Logo size={80} animated={true} className="mx-auto mb-8" />
+          <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none mb-3">SomnoAI Lab</h1>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">Digital Biometric Access Protocol</p>
         </div>
         
-        <GlassCard className="p-10 rounded-[4rem] border-white/10 shadow-3xl space-y-8">
+        <GlassCard className="p-10 md:p-14 rounded-[4.5rem] border-white/10 shadow-3xl space-y-10">
+          <div className="flex bg-slate-950/60 p-1.5 rounded-full border border-white/5">
+            {(['password', 'otp', 'signup'] as AuthMode[]).map((m) => (
+              <button
+                key={m}
+                onClick={() => { setMode(m); setStep('input'); setError(null); }}
+                className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${mode === m ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                {m}
+              </button>
+            ))}
+          </div>
+
           <AnimatePresence mode="wait">
-            {step === 'email' ? (
-              <m.div key="email" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-6">
-                <button 
-                  onClick={handleGoogleLogin}
-                  className="w-full py-5 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 transition-transform active:scale-95"
-                >
-                  <img src="https://img.icons8.com/color/24/google-logo.png" className="w-5 h-5" alt="G" />
-                  Continue with Google
-                </button>
-
-                <div className="flex items-center gap-4 opacity-20">
-                  <div className="flex-1 h-px bg-white" />
-                  <span className="text-[10px] font-black uppercase">OR</span>
-                  <div className="flex-1 h-px bg-white" />
-                </div>
-
-                <form onSubmit={handleSendOtp} className="space-y-4">
+            <m.form 
+              key={`${mode}-${step}`}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              onSubmit={handleAuth} 
+              className="space-y-6"
+            >
+              <div className="space-y-4">
+                <div className="relative group">
+                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
                   <input 
                     type="email" 
                     value={email} 
                     onChange={e => setEmail(e.target.value)} 
-                    placeholder="Email" 
-                    className="w-full bg-slate-950/60 border border-white/5 rounded-[1.5rem] px-8 py-5 text-white outline-none focus:border-indigo-500/50" 
+                    placeholder="Terminal Email" 
+                    className="w-full bg-slate-950/80 border border-white/10 rounded-[1.8rem] pl-16 pr-6 py-6 text-sm text-white outline-none focus:border-indigo-500/50" 
                     required 
                   />
-                  <button disabled={loading} className="w-full py-5 bg-indigo-600 rounded-full font-black text-xs uppercase tracking-[0.3em] text-white">
-                    {loading ? <Loader2 className="animate-spin inline mr-2" /> : <Zap className="inline mr-2" />} Dispatch Token
-                  </button>
-                </form>
-              </m.div>
-            ) : (
-              <m.form key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} onSubmit={handleVerifyOtp} className="space-y-8 text-center">
-                <p className="text-sm text-slate-400">Token dispatched to {email}</p>
-                <input 
-                  type="text" 
-                  value={otp} 
-                  onChange={e => setOtp(e.target.value)} 
-                  placeholder="000000" 
-                  className="w-full bg-slate-950/60 border border-white/5 rounded-[1.5rem] px-8 py-5 text-center text-2xl font-black tracking-[0.5em] text-indigo-400 outline-none" 
-                  required 
-                />
-                <button disabled={loading} className="w-full py-5 bg-indigo-600 rounded-full font-black text-xs uppercase tracking-[0.3em] text-white">
-                  Verify Node
-                </button>
-                <button type="button" onClick={() => setStep('email')} className="text-[10px] font-black uppercase text-slate-600 hover:text-white">Change Email</button>
-              </m.form>
-            )}
+                </div>
+
+                {mode !== 'otp' && (
+                  <div className="relative group">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                    <input 
+                      type="password" 
+                      value={password} 
+                      onChange={e => setPassword(e.target.value)} 
+                      placeholder="Security Passkey" 
+                      className="w-full bg-slate-950/80 border border-white/10 rounded-[1.8rem] pl-16 pr-6 py-6 text-sm text-white outline-none focus:border-indigo-500/50" 
+                      required 
+                    />
+                  </div>
+                )}
+
+                {mode === 'otp' && step === 'verify' && (
+                  <div className="relative group">
+                    <Key className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                    <input 
+                      type="text" 
+                      value={otp} 
+                      onChange={e => setOtp(e.target.value)} 
+                      placeholder="Neural Verification Code" 
+                      className="w-full bg-slate-950/80 border border-white/10 rounded-[1.8rem] pl-16 pr-6 py-6 text-sm text-white font-mono tracking-[0.5em] outline-none focus:border-indigo-500/50 text-center" 
+                      required 
+                    />
+                  </div>
+                )}
+              </div>
+
+              <button disabled={loading} className="w-full py-6 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.3em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                {loading ? <Loader2 className="animate-spin" size={18} /> : mode === 'signup' ? <UserPlus size={18}/> : <Zap size={18} />}
+                {loading ? 'Decrypting...' : step === 'verify' ? 'Confirm Identity' : `Authorize ${mode}`}
+              </button>
+            </m.form>
           </AnimatePresence>
-          
-          <button onClick={() => spaNavigate('/')} className="w-full text-[10px] font-black text-slate-600 uppercase flex items-center justify-center gap-2">
-            <ChevronLeft size={14} /> Back to Lab
+
+          <div className="relative flex items-center py-2 opacity-10">
+            <div className="flex-grow border-t border-white"></div>
+            <span className="flex-shrink mx-4 text-[9px] font-black uppercase tracking-widest">or</span>
+            <div className="flex-grow border-t border-white"></div>
+          </div>
+
+          <button 
+             onClick={() => signInWithGoogle()}
+             className="w-full py-5 bg-white text-slate-950 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-4 active:scale-[0.98] transition-all shadow-xl"
+          >
+             <img src="https://img.icons8.com/color/24/google-logo.png" className="w-5 h-5" alt="G" />
+             Google Neural Link
           </button>
 
-          {error && <p className="mt-4 text-rose-500 text-xs text-center font-bold">{error}</p>}
+          <p className="text-[9px] text-center text-slate-500 italic uppercase tracking-wider">
+            Clearance required for laboratory interaction.
+          </p>
+          
+          {error && <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-rose-500 text-[11px] text-center font-bold italic tracking-tight">{error}</m.p>}
+          {success && <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500 text-[11px] text-center font-bold italic tracking-tight">{success}</m.p>}
         </GlassCard>
       </m.div>
     </div>

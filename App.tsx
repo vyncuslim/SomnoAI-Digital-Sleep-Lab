@@ -10,9 +10,9 @@ import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
 import { GlassCard } from './components/GlassCard.tsx';
 
-// 懒加载页面：使用绝对路径以防 404
-const LoginPage = lazy(() => import('/app/login/page.tsx'));
-const AdminPage = lazy(() => import('/app/admin/page.tsx'));
+// Fixed module specifiers from absolute to relative paths
+const LoginPage = lazy(() => import('./app/login/page.tsx'));
+const AdminPage = lazy(() => import('./app/admin/page.tsx'));
 
 // 核心组件
 import { Dashboard } from './components/Dashboard.tsx';
@@ -22,8 +22,8 @@ const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ def
 
 const m = motion as any;
 
-const LoadingSpinner = ({ label = "Loading..." }: { label?: string }) => (
-  <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6 text-center">
+const LoadingSpinner = ({ label = "Initializing..." }: { label?: string }) => (
+  <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617]">
     <div className="relative">
       <Loader2 size={48} className="animate-spin text-indigo-500 opacity-50" />
       <div className="absolute inset-0 flex items-center justify-center">
@@ -36,6 +36,8 @@ const LoadingSpinner = ({ label = "Loading..." }: { label?: string }) => (
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
+  const [session, setSession] = useState<any>(null);
+  const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
   
   const getNormalizedPath = () => {
     let path = window.location.pathname.toLowerCase();
@@ -50,19 +52,48 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
+  // 初始化 Auth 监听
   useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setIsInitialAuthCheck(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+      // 如果登录了且在登录页，自动跳回首页
+      if (session && window.location.pathname === '/login') {
+        navigateTo('/');
+      }
+      // 如果退出了，自动跳回登录页
+      if (!session) {
+        navigateTo('/login');
+      }
+    });
+
     const handlePopState = () => {
       setActiveRoute(getNormalizedPath());
     };
     window.addEventListener('popstate', handlePopState);
     if ((window as any).dismissLoader) (window as any).dismissLoader();
-    return () => window.removeEventListener('popstate', handlePopState);
+    
+    return () => {
+      window.removeEventListener('popstate', handlePopState);
+      subscription.unsubscribe();
+    };
   }, []);
 
   const navigateTo = (path: string) => {
     const normalized = path.toLowerCase();
-    window.history.pushState({}, '', normalized);
-    setActiveRoute(normalized);
+    if (activeRoute !== normalized) {
+      try {
+        // Wrap pushState in try-catch to prevent crash on restricted origins
+        window.history.pushState({}, '', normalized);
+      } catch (e) {
+        console.warn("Navigation pushState failed. Continuing with internal state routing.", e);
+      }
+      setActiveRoute(normalized);
+    }
   };
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
@@ -89,12 +120,22 @@ const App: React.FC = () => {
     }
   }, [lang]);
 
-  // Added explicit return type React.ReactNode to clarify the component's output for TypeScript's JSX children validation
+  // 如果还在检查初始登录状态，显示加载器
+  if (isInitialAuthCheck) {
+    return <LoadingSpinner label="Synchronizing Identity Node..." />;
+  }
+
   const renderRoute = (): React.ReactNode => {
-    // 基础路由分发
+    // 权限校验：未登录状态下，除了登录页，其余全部拦截并显示登录页
+    if (!session && activeRoute !== '/login') {
+      return <LoginPage />;
+    }
+
+    // 已登录状态下，拦截并分发
     if (activeRoute === '/login') return <LoginPage />;
     if (activeRoute === '/admin') return <AdminPage />;
     
+    // 默认首页（用户实验室）
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40">
         <AnimatePresence mode="wait">
@@ -120,6 +161,7 @@ const App: React.FC = () => {
             ) : activeView === 'assistant' ? (
               <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} />
             ) : activeView === 'profile' ? (
+              /* Fixed: Removed duplicate props (threeDEnabled and onThemeChange) which caused a JSX compilation error */
               <Settings 
                 lang={lang} onLanguageChange={setLang} onLogout={() => supabase.auth.signOut().then(() => navigateTo('/login'))} onNavigate={setActiveView}
                 theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
