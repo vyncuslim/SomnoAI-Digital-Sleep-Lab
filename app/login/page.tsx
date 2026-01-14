@@ -10,14 +10,14 @@ interface UserLoginPageProps {
 }
 
 /**
- * 核心登录路由页面。
+ * Subject Entry Terminal - Primary Authorization Node
  */
 export default function UserLoginPage({ onSuccess, onSandbox }: UserLoginPageProps) {
   const handleSuccess = () => {
     if (onSuccess) {
       onSuccess();
     } else {
-      window.location.href = '/';
+      window.location.hash = '/';
     }
   };
 
@@ -25,7 +25,7 @@ export default function UserLoginPage({ onSuccess, onSandbox }: UserLoginPagePro
     if (onSandbox) {
       onSandbox();
     } else {
-      window.location.href = '/?sandbox=true';
+      window.location.hash = '/?sandbox=true';
     }
   };
 

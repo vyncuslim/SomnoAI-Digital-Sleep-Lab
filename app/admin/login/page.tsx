@@ -11,6 +11,9 @@ import { supabase } from '../../../lib/supabaseClient.ts';
 
 const m = motion as any;
 
+/**
+ * Administrative Access Node - Specialized login for staff with role verification.
+ */
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -22,19 +25,19 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError(null);
     try {
-      // 1. Authenticate credentials
+      // 1. Authenticate standard credentials
       const sessionData = await signInWithPassword(email, password);
       if (!sessionData) throw new Error("Invalid credentials.");
       
-      // 2. Perform secondary check for 'admin' role in profiles
+      // 2. Perform mandatory secondary check for 'admin' role in profiles
       const isAdmin = await adminApi.checkAdminStatus(sessionData.user.id);
       if (!isAdmin) {
-        // Log out immediately if not an admin
+        // Log out immediately if the subject lacks clearance
         await supabase.auth.signOut();
         throw new Error('Access Denied: Administrative role required.');
       }
 
-      // 3. Successful elevation - Use hash for SPA navigation to avoid security errors
+      // 3. Successful elevation - Route to command deck
       window.location.hash = '/admin';
     } catch (err: any) {
       setError(err.message || 'Authorization failed.');

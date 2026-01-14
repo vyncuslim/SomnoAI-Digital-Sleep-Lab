@@ -8,7 +8,8 @@ import { ShieldCheck, LogOut, Loader2, Lock } from 'lucide-react';
 import { adminApi } from '../../services/supabaseService.ts';
 
 /**
- * Admin Dashboard - RBAC Verified Node
+ * Command Deck - Restricted Node
+ * Protected by multi-layer role verification from the 'profiles' table.
  */
 export default function AdminDashboard() {
   const [session, setSession] = useState<any>(null);
@@ -26,11 +27,11 @@ export default function AdminDashboard() {
         }
 
         setSession(currentSession);
-        // Verify role in 'profiles' table (standard RBAC practice)
+        // Deep verification of role clearance
         const isUserAdmin = await adminApi.checkAdminStatus(currentSession.user.id);
         
         if (isUserAdmin === false) {
-           // Forced redirect for unauthorized access
+           // Security Intercept: Redirect unauthorized subject to user terminal
            setTimeout(() => {
              window.location.hash = '/login';
            }, 2000);
@@ -56,7 +57,7 @@ export default function AdminDashboard() {
     );
   }
 
-  // Redirect or Show Access Denied if not admin
+  // Access Intercept UI
   if (!session || isAdmin === false) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
@@ -66,7 +67,7 @@ export default function AdminDashboard() {
           </div>
           <h1 className="text-2xl font-black text-rose-500 uppercase italic tracking-tighter leading-none">Access Revoked</h1>
           <p className="text-slate-500 text-sm font-medium leading-relaxed">
-            Administrative credentials required. This unauthorized attempt has been logged. Redirecting to user terminal...
+            Administrative credentials required. This unauthorized attempt has been logged. Redirecting...
           </p>
           <div className="flex flex-col gap-4">
             <button 
