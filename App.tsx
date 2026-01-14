@@ -17,7 +17,6 @@ const AdminLoginPage = lazy(() => import('./app/admin/login/page.tsx'));
 const LegalView = lazy(() => import('./components/LegalView.tsx').then(m => ({ default: m.LegalView })));
 
 import { Dashboard } from './components/Dashboard.tsx';
-// GlassCard import added to fix errors on line 152 and 157
 import { GlassCard } from './components/GlassCard.tsx';
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
@@ -74,6 +73,27 @@ const App: React.FC = () => {
     localStorage.setItem('somno_sandbox_active', 'true');
     navigateTo('/?sandbox=true');
   }, [navigateTo]);
+
+  const handleLogout = useCallback(async () => {
+    if (isSandbox) {
+      setIsSandbox(false);
+      localStorage.removeItem('somno_sandbox_active');
+      navigateTo('/');
+    } else {
+      try {
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
+        if (currentSession) {
+          await supabase.auth.signOut();
+        }
+      } catch (err) {
+        console.warn("Sign out encountered a node sync issue, but proceeding with local clearing.");
+      } finally {
+        setSession(null);
+        setIsAdmin(false);
+        navigateTo('/');
+      }
+    }
+  }, [isSandbox, navigateTo]);
 
   useEffect(() => {
     document.title = "SomnoAI Lab | Digital Sleep Master";
@@ -202,15 +222,7 @@ const App: React.FC = () => {
             ) : activeView === 'profile' ? (
               <Settings 
                 lang={lang} onLanguageChange={setLang} 
-                onLogout={() => {
-                  if (isSandbox) {
-                    setIsSandbox(false);
-                    localStorage.removeItem('somno_sandbox_active');
-                    navigateTo('/');
-                  } else {
-                    supabase.auth.signOut();
-                  }
-                }} 
+                onLogout={handleLogout} 
                 onNavigate={(v) => typeof v === 'string' && (v === 'admin' ? navigateTo('/admin') : setActiveView(v as any))}
                 theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
                 threeDEnabled={true} onThreeDChange={() => {}} staticMode={false} onStaticModeChange={() => {}}
