@@ -8,7 +8,6 @@ import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
-import { adminApi } from './services/supabaseService.ts';
 
 const LoginPage = lazy(() => import('./app/login/page.tsx'));
 const AdminPage = lazy(() => import('./app/admin/page.tsx'));
@@ -38,22 +37,23 @@ const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
   
-  const getNormalizedRoute = () => {
-    // Priority 1: Direct Pathname (Matches specified mandatory paths)
-    const path = window.location.pathname.toLowerCase();
+  const getNormalizedRoute = useCallback(() => {
+    let path = window.location.pathname.toLowerCase();
+    
+    // Clean trailing slashes
+    if (path.length > 1 && path.endsWith('/')) {
+      path = path.slice(0, -1);
+    }
+
+    // Direct path mapping
     if (path === '/login') return 'login';
     if (path === '/admin') return 'admin';
     if (path === '/admin/login') return 'admin/login';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
 
-    // Priority 2: Hash (Internal state fallback)
-    let hash = window.location.hash.replace('#', '').toLowerCase();
-    if (hash.startsWith('/')) hash = hash.slice(1);
-    if (hash) return hash;
-    
-    return '/';
-  };
+    return path === '/' ? '/' : path.slice(1);
+  }, []);
 
   const [activeRoute, setActiveRoute] = useState<string>(getNormalizedRoute());
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
@@ -62,7 +62,7 @@ const App: React.FC = () => {
 
   const navigateTo = (path: string) => {
     const finalPath = path.startsWith('/') ? path : '/' + path;
-    window.history.pushState({}, '', finalPath === '//' ? '/' : finalPath);
+    window.history.pushState({}, '', finalPath);
     setActiveRoute(getNormalizedRoute());
   };
 
@@ -79,7 +79,7 @@ const App: React.FC = () => {
       const currentRoute = getNormalizedRoute();
       if (session) {
         if (currentRoute === 'login') navigateTo('/');
-        if (currentRoute === 'admin/login') navigateTo('admin');
+        if (currentRoute === 'admin/login') navigateTo('/admin');
       }
     });
 
@@ -92,7 +92,7 @@ const App: React.FC = () => {
       window.removeEventListener('popstate', handleRouteChange);
       subscription.unsubscribe();
     };
-  }, []);
+  }, [getNormalizedRoute]);
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     try {
@@ -120,18 +120,20 @@ const App: React.FC = () => {
   const renderRoute = (): React.ReactNode => {
     const route = activeRoute === '' ? '/' : activeRoute;
 
-    // 1. PUBLIC ROUTES (Guaranteed 200 OK)
+    // Public / Legal Routes
     if (route === 'terms') return <LegalView type="terms" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => navigateTo('/')} />;
+    
+    // Auth Routes
     if (route === 'login') return <LoginPage isAdminPortal={false} />;
     if (route === 'admin/login') return <LoginPage isAdminPortal={true} />;
 
-    // 2. PROTECTED ADMIN ROUTE
+    // Protected Admin Route
     if (route === 'admin') {
       return <AdminPage />;
     }
 
-    // 3. MAIN DASHBOARD / PRIVATE LAB
+    // Main App logic
     if (!session) {
       return <LoginPage isAdminPortal={false} />;
     }
