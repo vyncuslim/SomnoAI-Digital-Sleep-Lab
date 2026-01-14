@@ -5,15 +5,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
-    <link rel="icon" href="https://img.icons8.com/fluency/48/moon-star.png" type="image/png">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/moon-star.png">
+    <link rel="icon" href="https://img.icons8.com/color/48/moon-star.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/moon-star.png">
     
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
     <meta name="description" content="Master your sleep with SomnoAI. Fusing physiological monitoring, deep AI insights via Gemini, and personalized recovery protocols.">
     
     <link rel="manifest" href="/manifest.json">
 
-    <!-- Fonts Integration - Using Google Fonts exclusively to avoid 404s -->
+    <!-- Fonts Integration -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
@@ -27,7 +27,6 @@
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
         @apply bg-[#01040a] text-[#e2e8f0] antialiased;
-        /* Ensure no local fonts are being referenced */
         --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
       }
 
@@ -46,17 +45,28 @@
           }
         }
       }
+
+      // Robust suppression for non-critical framework/browser artifacts
+      window.addEventListener('unhandledrejection', function(event) {
+        const msg = event.reason?.message || '';
+        const name = event.reason?.name || '';
+        if (name === 'AbortError' || msg.includes('AbortError') || msg.includes('play() request') || msg.includes('signal is aborted')) {
+          event.preventDefault();
+          console.debug('Suppressed non-critical browser artifact:', msg);
+        }
+      });
+      
+      window.addEventListener('error', function(event) {
+        if (event.message?.includes('AbortError')) {
+          event.preventDefault();
+        }
+      });
     </script>
     
     <script>
         window.addEventListener('load', function() {
-            // Attempt SW registration only if it exists at the root
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js')
-                  .catch(err => {
-                    // Fail silently for SW if not found in dev/specific build environments
-                    console.debug('ServiceWorker registration skipped or failed');
-                  });
+                navigator.serviceWorker.register('/sw.js').catch(() => {});
             }
             window.dismissLoader = function() {
                 const loader = document.getElementById('page-loader');

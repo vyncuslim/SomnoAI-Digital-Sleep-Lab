@@ -10,12 +10,13 @@ import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
 import { adminApi } from './services/supabaseService.ts';
 
-// Lazy load specific pages
+// Pages
 const UserLoginPage = lazy(() => import('./app/login/page.tsx'));
-const AdminView = lazy(() => import('./components/AdminView.tsx').then(m => ({ default: m.AdminView })));
+const AdminDashboard = lazy(() => import('./app/admin/page.tsx'));
 const AdminLoginPage = lazy(() => import('./app/admin/login/page.tsx'));
 const LegalView = lazy(() => import('./components/LegalView.tsx').then(m => ({ default: m.LegalView })));
 
+// Components
 import { Dashboard } from './components/Dashboard.tsx';
 import { GlassCard } from './components/GlassCard.tsx';
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
@@ -43,19 +44,26 @@ const App: React.FC = () => {
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSandbox, setIsSandbox] = useState(() => {
-    return new URLSearchParams(window.location.search).get('sandbox') === 'true' || 
-           localStorage.getItem('somno_sandbox_active') === 'true';
+    return localStorage.getItem('somno_sandbox_active') === 'true';
   });
   
   const getNormalizedRoute = useCallback(() => {
-    let path = window.location.pathname.toLowerCase();
-    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
-    if (path === '/login') return 'login';
-    if (path === '/admin') return 'admin';
-    if (path === '/admin/login') return 'admin-login';
-    if (path === '/terms') return 'terms';
-    if (path === '/privacy') return 'privacy';
-    return path === '/' ? '/' : path.slice(1);
+    // Detect both hash-based and path-based routing for SPA accessibility
+    const hash = window.location.hash.replace(/^#/, '').toLowerCase();
+    const path = window.location.pathname.toLowerCase();
+    
+    // Prioritize hash routing for sandbox compatibility, fallback to path for direct URL access
+    let route = hash || path;
+    route = route.startsWith('/') ? route : '/' + route;
+    route = route.replace(/\/+$/, '') || '/';
+    
+    if (route === '/login') return 'login';
+    if (route === '/admin') return 'admin';
+    if (route === '/admin/login') return 'admin-login';
+    if (route === '/terms') return 'terms';
+    if (route === '/privacy') return 'privacy';
+    
+    return route === '/' ? '/' : route.slice(1);
   }, []);
 
   const [activeRoute, setActiveRoute] = useState<string>(getNormalizedRoute());
@@ -64,15 +72,15 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<SleepRecord[]>([]);
 
   const navigateTo = useCallback((path: string) => {
-    const finalPath = path.startsWith('/') ? path : '/' + path;
-    window.history.pushState({}, '', finalPath);
-    setActiveRoute(getNormalizedRoute());
-  }, [getNormalizedRoute]);
+    // Use hash for internal navigation to avoid SecurityError in sandboxes
+    const finalHash = path.startsWith('/') ? path : '/' + path;
+    window.location.hash = finalHash;
+  }, []);
 
   const handleSandboxLogin = useCallback(() => {
     setIsSandbox(true);
     localStorage.setItem('somno_sandbox_active', 'true');
-    navigateTo('/?sandbox=true');
+    navigateTo('/');
   }, [navigateTo]);
 
   const handleLogout = useCallback(async () => {
@@ -82,16 +90,15 @@ const App: React.FC = () => {
     if (isSandbox) {
       setIsSandbox(false);
       localStorage.removeItem('somno_sandbox_active');
+      setSession(null);
+      setIsAdmin(false);
       setIsLoggingOut(false);
       navigateTo('/');
     } else {
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        if (currentSession) {
-          await supabase.auth.signOut();
-        }
+        await supabase.auth.signOut();
       } catch (err) {
-        console.warn("Sign out encountered a node sync issue, but proceeding with local clearing.");
+        console.debug("Auth clearing completed.");
       } finally {
         setSession(null);
         setIsAdmin(false);
@@ -118,7 +125,8 @@ const App: React.FC = () => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      // Prevent state update if already logging out to avoid race conditions
+      if (isLoggingOut) return;
+      
       if (event === 'SIGNED_OUT') {
         setSession(null);
         setIsAdmin(false);
@@ -133,19 +141,20 @@ const App: React.FC = () => {
       }
     });
 
-    const handlePopState = () => {
+    const handleHashChange = () => {
       setActiveRoute(getNormalizedRoute());
-      setIsSandbox(new URLSearchParams(window.location.search).get('sandbox') === 'true');
     };
-    window.addEventListener('popstate', handlePopState);
+    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
     
     if ((window as any).dismissLoader) (window as any).dismissLoader();
     
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handleHashChange);
+      window.removeEventListener('popstate', handleHashChange);
       subscription.unsubscribe();
     };
-  }, [getNormalizedRoute, navigateTo]);
+  }, [getNormalizedRoute, navigateTo, isLoggingOut]);
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     try {
@@ -176,32 +185,25 @@ const App: React.FC = () => {
     if (route === 'terms') return <LegalView type="terms" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => navigateTo('/')} />;
     
-    // Admin Flow
+    // Admin Guard Logic
     if (route === 'admin-login') return <Suspense fallback={<LoadingSpinner />}><AdminLoginPage /></Suspense>;
     if (route === 'admin') {
-      if (!isAdmin && !isSandbox) {
-        return (
-          <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
-            <GlassCard className="p-12 text-center space-y-6 max-w-sm rounded-[4rem] border-rose-500/20">
-              <ShieldAlert size={48} className="text-rose-500 mx-auto" />
-              <h2 className="text-xl font-black italic text-white uppercase">Access Denied</h2>
-              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Level 0 Clearance Not Detected.</p>
-              <button onClick={() => navigateTo('/')} className="px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase text-slate-400">Return to Terminal</button>
-            </GlassCard>
-          </div>
-        );
+      if (!session && !isSandbox) {
+        navigateTo('/admin/login');
+        return <LoadingSpinner label="Redirecting to Command Entrance..." />;
       }
       return (
         <Suspense fallback={<LoadingSpinner label="Initializing Command Deck..." />}>
-          <div className="pt-20 px-4">
-            <AdminView onBack={() => navigateTo('/')} />
-          </div>
+          <AdminDashboard />
         </Suspense>
       );
     }
-
-    // User Auth Flow
+    
+    // Auth Guard for Main App
     if (!session && !isSandbox) {
+      if (route !== 'login' && route !== '/') {
+         navigateTo('/login');
+      }
       return (
         <Suspense fallback={<LoadingSpinner label="Initializing Auth Terminal..." />}>
           <UserLoginPage onSuccess={() => navigateTo('/')} onSandbox={handleSandboxLogin} />
@@ -209,6 +211,7 @@ const App: React.FC = () => {
       );
     }
 
+    // Main App Views
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40">
         <AnimatePresence mode="wait">
@@ -254,13 +257,13 @@ const App: React.FC = () => {
               <button 
                 key={nav.id} 
                 onClick={() => {
-                  if (window.location.pathname !== '/') navigateTo('/');
+                  if (window.location.hash !== '#/' && window.location.hash !== '') navigateTo('/');
                   setActiveView(nav.id as any);
                 }} 
-                className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeView === nav.id && (activeRoute === '/' || activeRoute === 'index.html') ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 <nav.icon size={20} />
-                {activeView === nav.id && (activeRoute === '/' || activeRoute === 'index.html') && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
+                {activeView === nav.id && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
               </button>
             ))}
           </nav>

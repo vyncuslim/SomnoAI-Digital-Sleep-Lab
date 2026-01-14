@@ -3,25 +3,11 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
-    {
-      "source": "/assets/:path*",
-      "destination": "/assets/:path*"
-    },
-    {
-      "source": "/fonts/:path*",
-      "destination": "/fonts/:path*"
-    },
-    {
-      "source": "/favicon.png",
-      "destination": "/favicon.png"
-    },
-    {
-      "source": "/sw.js",
-      "destination": "/sw.js"
-    },
-    {
-      "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|.*\\.[a-zA-Z0-9]+$).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/admin/login", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/terms", "destination": "/index.html" },
+    { "source": "/privacy", "destination": "/index.html" },
+    { "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
   ]
 }
