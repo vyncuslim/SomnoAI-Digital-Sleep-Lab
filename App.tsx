@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
@@ -35,7 +36,6 @@ const LoadingSpinner = ({ label = "Synchronizing Laboratory Nodes..." }: { label
 );
 
 const App: React.FC = () => {
-  // Default to English as requested
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
   const [session, setSession] = useState<any>(null);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
@@ -43,10 +43,12 @@ const App: React.FC = () => {
   const getNormalizedRoute = useCallback(() => {
     let path = window.location.pathname.toLowerCase();
     
+    // Clean trailing slashes
     if (path.length > 1 && path.endsWith('/')) {
       path = path.slice(0, -1);
     }
 
+    // Explicit SPA Route Matching
     if (path === '/login') return 'login';
     if (path === '/admin') return 'admin';
     if (path === '/admin/login') return 'admin-login';
@@ -79,6 +81,7 @@ const App: React.FC = () => {
       setSession(session);
       const currentRoute = getNormalizedRoute();
       
+      // Handle navigation logic on auth change
       if (session) {
         if (currentRoute === 'login') navigateTo('/');
       }
@@ -115,18 +118,20 @@ const App: React.FC = () => {
   }, [lang]);
 
   if (isInitialAuthCheck) {
-    return <LoadingSpinner label="Decoding Laboratory Protocol..." />;
+    return <LoadingSpinner label="Accessing Lab Environment..." />;
   }
 
   const renderContent = () => {
     const route = activeRoute;
 
+    // Prioritized Admin & Legal Routes
     if (route === 'terms') return <LegalView type="terms" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'login') return <UserLoginPage />;
     if (route === 'admin-login') return <AdminLoginPage />;
     if (route === 'admin') return <AdminDashboard />;
 
+    // Main Subject Lab Logic
     if (!session) {
       return <UserLoginPage />;
     }

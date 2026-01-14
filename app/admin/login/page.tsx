@@ -1,6 +1,7 @@
+
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, ShieldCheck, Loader2, Key, TriangleAlert, Lock, ArrowLeft, Zap } from 'lucide-react';
+import { Mail, ShieldCheck, Loader2, Key, TriangleAlert, Lock, ArrowLeft, Zap, ShieldAlert } from 'lucide-react';
 import { signInWithPassword, signInWithEmailOTP, verifyOtp, adminApi } from '../../../services/supabaseService.ts';
 import { Logo } from '../../../components/Logo.tsx';
 import { GlassCard } from '../../../components/GlassCard.tsx';
@@ -12,7 +13,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
+  const [step, setStep] = useState<'credentials' | 'otp-verify'>('credentials');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -22,22 +23,23 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError(null);
     try {
-      // 1. Verify Credentials
+      // Stage 1: Password Verification
       const session = await signInWithPassword(email, password);
       
-      // 2. Strict Role Check
+      // Stage 2: Database Role Verification
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
       
       if (!isAdmin) {
+        // Immediate expulsion for non-admin credentials
         await supabase.auth.signOut();
-        throw new Error('Access Denied: This account does not have administrative clearance.');
+        throw new Error('Access Denied: Administrative clearance not detected for this subject.');
       }
 
-      // 3. Trigger 2FA for Admins
+      // Stage 3: Initiate MFA (OTP)
       await signInWithEmailOTP(email);
-      setStep('otp');
+      setStep('otp-verify');
     } catch (err: any) {
-      setError(err.message || 'Authentication Failed: Invalid credentials or node unreachable.');
+      setError(err.message || 'Identity verification failed. Protocol mismatch.');
     } finally {
       setLoading(false);
     }
@@ -58,9 +60,16 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       await verifyOtp(email, token);
+      // Secondary Check - Ensure user is still admin after OTP
+      const { data: { session } } = await supabase.auth.getSession();
+      const isAdmin = await adminApi.checkAdminStatus(session?.user.id || '');
+      if (!isAdmin) {
+         await supabase.auth.signOut();
+         throw new Error("Clearance revoked during synchronization.");
+      }
       window.location.href = '/admin';
     } catch (err: any) {
-      setError('Token invalid or expired.');
+      setError(err.message || 'Token synchronization failed.');
     } finally {
       setLoading(false);
     }
@@ -74,36 +83,45 @@ export default function AdminLoginPage() {
         <div className="text-center mb-10">
           <Logo size={80} animated={true} className="mx-auto mb-6" />
           <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter">Somno <span className="text-rose-500">Admin</span></h1>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] mt-2">Classified Access Portal</p>
+          <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.4em] mt-2">Classified Terminal Access</p>
         </div>
         
         <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 shadow-2xl">
           <AnimatePresence mode="wait">
             {step === 'credentials' ? (
-              <form onSubmit={handleAdminAuth} className="space-y-6">
-                <div className="relative group">
-                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-rose-400" size={18} />
-                  <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Admin Email" className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-16 pr-6 py-5 text-sm text-white outline-none focus:border-rose-500/50" required />
+              <m.div key="creds" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
+                <div className="text-center">
+                  <h2 className="text-sm font-black text-white uppercase tracking-widest">Privileged Authentication</h2>
                 </div>
-                <div className="relative group">
-                  <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-rose-400" size={18} />
-                  <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Access Key" className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-16 pr-6 py-5 text-sm text-white outline-none focus:border-rose-500/50" required />
-                </div>
-                <button disabled={loading} className="w-full py-5 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95">
-                  {loading ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                  Execute Auth Check
-                </button>
+
+                <form onSubmit={handleAdminAuth} className="space-y-5">
+                  <div className="relative group">
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-rose-400" size={18} />
+                    <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="Admin Email" className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-16 pr-6 py-5 text-sm text-white outline-none focus:border-rose-500/50" required />
+                  </div>
+                  
+                  <div className="relative group">
+                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-rose-400" size={18} />
+                    <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Access Password" className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-16 pr-6 py-5 text-sm text-white outline-none focus:border-rose-500/50" required />
+                  </div>
+
+                  <button disabled={loading} className="w-full py-5 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-xl transition-all flex items-center justify-center gap-3 active:scale-95">
+                    {loading ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                    Execute Clearance Check
+                  </button>
+                </form>
+                
                 <div className="text-center">
                   <a href="/" className="text-[10px] font-black text-slate-600 hover:text-white uppercase tracking-widest flex items-center justify-center gap-2">
-                    <ArrowLeft size={12} /> Return to User Lab
+                    <ArrowLeft size={12} /> Return to Subject Terminal
                   </a>
                 </div>
-              </form>
+              </m.div>
             ) : (
-              <m.div className="space-y-8">
+              <m.div key="otp" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-8">
                 <div className="text-center">
-                   <h2 className="text-xl font-black text-white uppercase italic tracking-tight">Identity Token</h2>
-                   <p className="text-[9px] text-rose-400 mt-2 font-bold tracking-widest uppercase">Token Sent To: {email}</p>
+                   <h2 className="text-xl font-black text-white uppercase italic tracking-tight">Identity Confirmation</h2>
+                   <p className="text-[9px] text-rose-400 mt-2 font-bold tracking-widest uppercase">MFA Token Transmitted To: {email}</p>
                 </div>
                 <div className="flex justify-between gap-2">
                   {otp.map((digit, idx) => (
@@ -112,12 +130,12 @@ export default function AdminLoginPage() {
                 </div>
                 <button onClick={handleOtpVerify} disabled={loading || otp.some(d => !d)} className="w-full py-5 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-xl flex items-center justify-center gap-3 active:scale-95">
                   {loading ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                  Synchronize Access
+                  Synchronize Administrator
                 </button>
               </m.div>
             )}
           </AnimatePresence>
-          {error && <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-[10px] font-bold text-center italic uppercase flex items-center justify-center gap-3"><TriangleAlert size={16} /> {error}</m.div>}
+          {error && <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-[10px] font-bold text-center italic uppercase flex items-center justify-center gap-3"><ShieldAlert size={16} /> {error}</m.div>}
         </GlassCard>
       </m.div>
     </div>
