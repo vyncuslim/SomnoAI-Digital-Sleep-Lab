@@ -4,17 +4,29 @@
 import React from 'react';
 import { Auth } from '../../Auth.tsx';
 
+interface UserLoginPageProps {
+  onSuccess?: () => void;
+  onSandbox?: () => void;
+}
+
 /**
  * 核心登录路由页面。
- * 如果出现 404，请确保此文件路径在项目的 app/ 目录下，且名为 login/page.tsx。
  */
-export default function UserLoginPage() {
+export default function UserLoginPage({ onSuccess, onSandbox }: UserLoginPageProps) {
   const handleSuccess = () => {
-    window.location.href = '/';
+    if (onSuccess) {
+      onSuccess();
+    } else {
+      window.location.href = '/';
+    }
   };
 
   const handleSandbox = () => {
-    window.location.href = '/?sandbox=true';
+    if (onSandbox) {
+      onSandbox();
+    } else {
+      window.location.href = '/?sandbox=true';
+    }
   };
 
   return (

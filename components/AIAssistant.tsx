@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, User, Loader2, BrainCircuit, ExternalLink, Cpu, Trash2, Key, Beaker, Lock, Settings as SettingsIcon
+  Send, User, Loader2, BrainCircuit, ExternalLink, Cpu, Trash2, Key, Beaker, Lock, Settings as SettingsIcon, CreditCard
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
@@ -42,10 +42,12 @@ interface AIAssistantProps {
   lang: Language;
   data: SleepRecord | null;
   onNavigate?: (view: any) => void;
+  isSandbox?: boolean;
 }
 
-export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate }) => {
+export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate, isSandbox = false }) => {
   const t = translations[lang].assistant;
+  const isZh = lang === 'zh';
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
@@ -55,6 +57,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const checkKey = async () => {
+    // If sandbox mode is active, we don't block the user with the key selector
+    if (isSandbox) {
+      setHasKey(true);
+      return;
+    }
+
     const manualKey = localStorage.getItem('somno_manual_gemini_key');
     if ((window as any).aistudio) {
       const selected = await (window as any).aistudio.hasSelectedApiKey();
@@ -66,17 +74,19 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
 
   useEffect(() => {
     checkKey();
-    // 监听 Storage 变化，以便从设置页面回来后自动更新状态
     const handleStorage = () => checkKey();
     window.addEventListener('storage', handleStorage);
     return () => window.removeEventListener('storage', handleStorage);
-  }, []);
+  }, [isSandbox]);
 
   useEffect(() => {
     if (messages.length === 0 && hasKey === true) {
-      setMessages([{ role: 'assistant', content: t.intro, timestamp: new Date() }]);
+      const initialMessage = isSandbox 
+        ? (isZh ? "【沙盒模式】神经网络模拟已激活。由于未检测到物理秘钥，我将使用本地推理核心进行回复。" : "[Sandbox Mode] Neural simulation active. Local core reasoning will be used as no physical key detected.")
+        : t.intro;
+      setMessages([{ role: 'assistant', content: initialMessage, timestamp: new Date() }]);
     }
-  }, [hasKey]);
+  }, [hasKey, t.intro, isSandbox]);
 
   useEffect(() => {
     scrollRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -91,19 +101,42 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     setIsTyping(true);
 
     try {
+      const manualKey = localStorage.getItem('somno_manual_gemini_key');
+      const apiKeyExists = !!process.env.API_KEY || !!manualKey;
+
+      // Handle sandbox mode mock response if no API key is present
+      if (isSandbox && !apiKeyExists) {
+        setTimeout(() => {
+          const mockResponse = isZh 
+            ? `[模拟回复] 我已接收到关于“${userMsg.content}”的查询流。在沙盒模式下，我的神经元会模拟真实反馈。您的睡眠评分显示出良好的生理恢复迹象。`
+            : `[Simulated] Received query stream regarding "${userMsg.content}". In sandbox mode, neural feedback is simulated. Your sleep metrics show positive signs of recovery.`;
+          setMessages(prev => [...prev, { role: 'assistant', content: mockResponse, timestamp: new Date() }]);
+          setIsTyping(false);
+        }, 1500);
+        return;
+      }
+
       const historyForAi = messages.concat(userMsg).map(m => ({ role: m.role, content: m.content }));
       const response = await chatWithCoach(historyForAi, lang, data);
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: response.text, 
-        sources: response.sources,
-        timestamp: new Date() 
-      }]);
-    } catch (err: any) {
-      if (err.message?.includes("404") || err.message?.includes("not found")) {
-        setHasKey(false);
+      if (response) {
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: response.text, 
+          sources: response.sources,
+          timestamp: new Date() 
+        }]);
       }
-      setMessages(prev => [...prev, { role: 'assistant', content: t.error, timestamp: new Date() }]);
+    } catch (err: any) {
+      if (err.message === "KEY_INVALID_OR_NOT_FOUND") {
+        setHasKey(false);
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: isZh ? "API 密钥已过期或项目未激活。请重新初始化引擎。" : "API Key expired or project inactive. Please re-initialize engine.", 
+          timestamp: new Date() 
+        }]);
+      } else {
+        setMessages(prev => [...prev, { role: 'assistant', content: t.error, timestamp: new Date() }]);
+      }
     } finally {
       setIsTyping(false);
     }
@@ -114,42 +147,58 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     if (aistudio) {
       try {
         await aistudio.openSelectKey();
+        // GUIDELINE: Assume success and proceed immediately to mitigate race conditions
         setHasKey(true);
       } catch (e) {
         console.error("Failed to open key selector:", e);
       }
-    } else {
-      // 非 AI Studio 环境下，直接引导至设置页
-      if (onNavigate) {
-        onNavigate('profile');
-      } else {
-        alert("Please go to Settings (CFG) to configure your AI Engine API Key.");
-      }
+    } else if (onNavigate) {
+      onNavigate('profile');
     }
   };
 
   const handleDesign = async () => {
-    if (!data || isDesigning || !hasKey) return;
+    if (!data || isDesigning) return;
     setIsDesigning(true);
-    setIsTyping(true);
     try {
-      const exp = await designExperiment(data, lang);
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: `🧪 **Protocol Generated**\n\n**Hypothesis**: ${exp.hypothesis}\n\n**Impact**: ${exp.expectedImpact}`,
-        timestamp: new Date()
+      const manualKey = localStorage.getItem('somno_manual_gemini_key');
+      const apiKeyExists = !!process.env.API_KEY || !!manualKey;
+
+      if (isSandbox && !apiKeyExists) {
+        setTimeout(() => {
+          const mockProtocol = isZh 
+            ? "【模拟实验】针对当前深睡不足，建议在睡前 2 小时执行热量限制，并保持环境温度在 19°C。"
+            : "[Simulated Protocol] Given the lack of deep sleep, suggest thermal restriction 2 hours before bed and room temp at 19°C.";
+          setMessages(prev => [...prev, { role: 'assistant', content: mockProtocol, timestamp: new Date() }]);
+          setIsDesigning(false);
+        }, 1500);
+        return;
+      }
+
+      const experiment = await designExperiment(data, lang);
+      const content = lang === 'zh' 
+        ? `为你生成了新的睡眠实验方案：\n\n**假设**: ${experiment.hypothesis}\n\n**实验步骤**:\n${experiment.protocol.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n**预期效果**: ${experiment.expectedImpact}`
+        : `Generated a new sleep experiment for you:\n\n**Hypothesis**: ${experiment.hypothesis}\n\n**Protocol**:\n${experiment.protocol.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n**Expected Impact**: ${experiment.expectedImpact}`;
+      
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content, 
+        timestamp: new Date() 
       }]);
     } catch (err) {
-      console.error(err);
+      setMessages(prev => [...prev, { 
+        role: 'assistant', 
+        content: isZh ? "实验设计失败，请检查神经网络连接。" : "Experiment design failed. Check neural link.", 
+        timestamp: new Date() 
+      }]);
     } finally {
       setIsDesigning(false);
-      setIsTyping(false);
     }
   };
 
   if (hasKey === false) {
     return (
-      <div className="flex flex-col items-center justify-center h-[70vh] text-center p-6 space-y-8">
+      <div className="flex flex-col items-center justify-center h-[70vh] text-center p-6 space-y-10">
         <div className="w-24 h-24 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 shadow-2xl relative">
           <Lock size={40} className="text-indigo-400" />
           <m.div 
@@ -162,9 +211,22 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
           <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Neural Core Offline</h2>
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest px-10 leading-relaxed">
             { (window as any).aistudio ? 
-              "Select an API Key to enable laboratory insights." : 
-              "Manual configuration required. Please enter your API Key in the System Settings."}
+              (isZh ? "请选择付费 GCP 项目的 API Key 以启用实验室深度分析。" : "Select an API Key from a paid GCP project to enable deep lab insights.") : 
+              (isZh ? "请在系统设置中手动配置您的 API Key。" : "Manual configuration required in System Settings.")}
           </p>
+          
+          <div className="pt-2">
+            <a 
+              href="https://ai.google.dev/gemini-api/docs/billing" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-white transition-colors"
+            >
+              <CreditCard size={12} />
+              {isZh ? "查看计费说明文档" : "View Billing Documentation"}
+              <ExternalLink size={10} />
+            </a>
+          </div>
         </div>
         
         <button 
@@ -172,7 +234,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
           className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all hover:bg-indigo-500 flex items-center gap-3"
         >
           { (window as any).aistudio ? <Cpu size={14} /> : <SettingsIcon size={14} /> }
-          { (window as any).aistudio ? "Initialize AI Engine" : "Go to Settings" }
+          { (window as any).aistudio ? (isZh ? "初始化神经内核" : "Initialize Neural Core") : (isZh ? "前往设置" : "Go to Settings") }
         </button>
       </div>
     );
@@ -193,7 +255,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
           <div className="w-12 h-12 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
             <Cpu size={20} />
           </div>
-          <h1 className="text-lg font-black italic text-white uppercase">{t.title}</h1>
+          <div>
+            <h1 className="text-lg font-black italic text-white uppercase leading-none">{t.title}</h1>
+            {isSandbox && <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1">Sandbox Environment</p>}
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={handleDesign} disabled={!data || isDesigning} className="p-3 bg-white/5 rounded-full text-indigo-400 hover:bg-white/10 transition-all">
@@ -218,7 +283,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap gap-2">
                       {msg.sources.map((s, i) => s.web?.uri && (
-                        <a key={i} href={s.web.uri} target="_blank" className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full text-[9px] text-indigo-400 border border-white/5 hover:bg-white/10">
+                        <a key={i} href={s.web.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full text-[9px] text-indigo-400 border border-white/5 hover:bg-white/10">
                           <ExternalLink size={10} /> {s.web.title || 'Source'}
                         </a>
                       ))}

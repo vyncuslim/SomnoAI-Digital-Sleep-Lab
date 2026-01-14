@@ -2,20 +2,23 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, Activity, Zap, User, BrainCircuit } from 'lucide-react';
+import { Loader2, Activity, Zap, User, BrainCircuit, ShieldAlert } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
+import { adminApi } from './services/supabaseService.ts';
 
 // Lazy load specific pages
 const UserLoginPage = lazy(() => import('./app/login/page.tsx'));
-const AdminDashboard = lazy(() => import('./app/admin/page.tsx'));
+const AdminView = lazy(() => import('./components/AdminView.tsx').then(m => ({ default: m.AdminView })));
 const AdminLoginPage = lazy(() => import('./app/admin/login/page.tsx'));
 const LegalView = lazy(() => import('./components/LegalView.tsx').then(m => ({ default: m.LegalView })));
 
 import { Dashboard } from './components/Dashboard.tsx';
+// GlassCard import added to fix errors on line 152 and 157
+import { GlassCard } from './components/GlassCard.tsx';
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
 const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ default: m.Settings })));
@@ -37,21 +40,21 @@ const LoadingSpinner = ({ label = "Connecting Lab Nodes..." }: { label?: string 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
   const [session, setSession] = useState<any>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
+  const [isSandbox, setIsSandbox] = useState(() => {
+    return new URLSearchParams(window.location.search).get('sandbox') === 'true' || 
+           localStorage.getItem('somno_sandbox_active') === 'true';
+  });
   
   const getNormalizedRoute = useCallback(() => {
     let path = window.location.pathname.toLowerCase();
-    
-    if (path.length > 1 && path.endsWith('/')) {
-      path = path.slice(0, -1);
-    }
-
+    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
     if (path === '/login') return 'login';
     if (path === '/admin') return 'admin';
     if (path === '/admin/login') return 'admin-login';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
-    
     return path === '/' ? '/' : path.slice(1);
   }, []);
 
@@ -60,38 +63,58 @@ const App: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
 
-  const navigateTo = (path: string) => {
+  const navigateTo = useCallback((path: string) => {
     const finalPath = path.startsWith('/') ? path : '/' + path;
     window.history.pushState({}, '', finalPath);
     setActiveRoute(getNormalizedRoute());
-  };
+  }, [getNormalizedRoute]);
+
+  const handleSandboxLogin = useCallback(() => {
+    setIsSandbox(true);
+    localStorage.setItem('somno_sandbox_active', 'true');
+    navigateTo('/?sandbox=true');
+  }, [navigateTo]);
 
   useEffect(() => {
     document.title = "SomnoAI Lab | Digital Sleep Master";
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
+    const checkAuth = async () => {
+      const { data: { session: currentSession } } = await supabase.auth.getSession();
+      setSession(currentSession);
+      
+      if (currentSession) {
+        const adminStatus = await adminApi.checkAdminStatus(currentSession.user.id);
+        setIsAdmin(adminStatus);
+      }
       setIsInitialAuthCheck(false);
-    });
+    };
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      setSession(session);
-      const currentRoute = getNormalizedRoute();
-      if (session && (currentRoute === 'login')) {
-        navigateTo('/');
+    checkAuth();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      setSession(newSession);
+      if (newSession) {
+        const adminStatus = await adminApi.checkAdminStatus(newSession.user.id);
+        setIsAdmin(adminStatus);
+        if (getNormalizedRoute() === 'login') navigateTo('/');
+      } else {
+        setIsAdmin(false);
       }
     });
 
-    const handleRouteChange = () => setActiveRoute(getNormalizedRoute());
-    window.addEventListener('popstate', handleRouteChange);
+    const handlePopState = () => {
+      setActiveRoute(getNormalizedRoute());
+      setIsSandbox(new URLSearchParams(window.location.search).get('sandbox') === 'true');
+    };
+    window.addEventListener('popstate', handlePopState);
     
     if ((window as any).dismissLoader) (window as any).dismissLoader();
     
     return () => {
-      window.removeEventListener('popstate', handleRouteChange);
+      window.removeEventListener('popstate', handlePopState);
       subscription.unsubscribe();
     };
-  }, [getNormalizedRoute]);
+  }, [getNormalizedRoute, navigateTo]);
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     try {
@@ -119,16 +142,40 @@ const App: React.FC = () => {
   const renderContent = () => {
     const route = activeRoute;
 
-    // Prioritize specific routes
     if (route === 'terms') return <LegalView type="terms" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => navigateTo('/')} />;
-    if (route === 'login') return <UserLoginPage />;
-    if (route === 'admin-login') return <AdminLoginPage />;
-    if (route === 'admin') return <AdminDashboard />;
+    
+    // Admin Flow
+    if (route === 'admin-login') return <Suspense fallback={<LoadingSpinner />}><AdminLoginPage /></Suspense>;
+    if (route === 'admin') {
+      if (!isAdmin && !isSandbox) {
+        return (
+          <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
+            <GlassCard className="p-12 text-center space-y-6 max-w-sm rounded-[4rem] border-rose-500/20">
+              <ShieldAlert size={48} className="text-rose-500 mx-auto" />
+              <h2 className="text-xl font-black italic text-white uppercase">Access Denied</h2>
+              <p className="text-xs text-slate-500 font-bold uppercase tracking-widest">Level 0 Clearance Not Detected.</p>
+              <button onClick={() => navigateTo('/')} className="px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase text-slate-400">Return to Terminal</button>
+            </GlassCard>
+          </div>
+        );
+      }
+      return (
+        <Suspense fallback={<LoadingSpinner label="Initializing Command Deck..." />}>
+          <div className="pt-20 px-4">
+            <AdminView onBack={() => navigateTo('/')} />
+          </div>
+        </Suspense>
+      );
+    }
 
-    // Protected default view
-    if (!session) {
-      return <UserLoginPage />;
+    // User Auth Flow
+    if (!session && !isSandbox) {
+      return (
+        <Suspense fallback={<LoadingSpinner label="Initializing Auth Terminal..." />}>
+          <UserLoginPage onSuccess={() => navigateTo('/')} onSandbox={handleSandboxLogin} />
+        </Suspense>
+      );
     }
 
     return (
@@ -139,17 +186,32 @@ const App: React.FC = () => {
               currentRecord ? (
                 <Dashboard data={currentRecord} lang={lang} onSyncHealth={(p) => handleSyncHealthConnect(false, p)} onNavigate={setActiveView} />
               ) : (
-                <div className="flex items-center justify-center h-[70vh]">
-                  <button onClick={() => handleSyncHealthConnect(true)} className="px-8 py-4 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Connect Lab Nodes</button>
+                <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
+                  <div className="w-20 h-20 rounded-full bg-indigo-500/10 flex items-center justify-center border border-indigo-500/20 mb-4">
+                    <Activity className="text-indigo-400 animate-pulse" size={32} />
+                  </div>
+                  <h2 className="text-xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
+                  <button onClick={() => handleSyncHealthConnect(true)} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-indigo-500 transition-all active:scale-95">Connect Lab Nodes</button>
+                  {isSandbox && <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest italic">Sandbox Mode Active • Simulated telemetry enabled</p>}
                 </div>
               )
             ) : activeView === 'calendar' ? (
               <Trends history={history} lang={lang} />
             ) : activeView === 'assistant' ? (
-              <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} />
+              <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} isSandbox={isSandbox} />
             ) : activeView === 'profile' ? (
               <Settings 
-                lang={lang} onLanguageChange={setLang} onLogout={() => supabase.auth.signOut()} onNavigate={setActiveView}
+                lang={lang} onLanguageChange={setLang} 
+                onLogout={() => {
+                  if (isSandbox) {
+                    setIsSandbox(false);
+                    localStorage.removeItem('somno_sandbox_active');
+                    navigateTo('/');
+                  } else {
+                    supabase.auth.signOut();
+                  }
+                }} 
+                onNavigate={(v) => typeof v === 'string' && (v === 'admin' ? navigateTo('/admin') : setActiveView(v as any))}
                 theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
                 threeDEnabled={true} onThreeDChange={() => {}} staticMode={false} onStaticModeChange={() => {}}
                 lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncHealthConnect(true)}
@@ -187,9 +249,7 @@ const App: React.FC = () => {
   return (
     <RootLayout>
       <Suspense fallback={<LoadingSpinner label="Decrypting Lab Nodes..." />}>
-        <div className="min-h-screen">
-          {renderContent()}
-        </div>
+        <div className="min-h-screen">{renderContent()}</div>
       </Suspense>
     </RootLayout>
   );

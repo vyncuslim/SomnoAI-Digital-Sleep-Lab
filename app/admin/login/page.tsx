@@ -22,15 +22,18 @@ export default function AdminLoginPage() {
     setLoading(true);
     setError(null);
     try {
-      const session = await signInWithPassword(email, password);
-      const isAdmin = await adminApi.checkAdminStatus(session.user.id);
+      const sessionData = await signInWithPassword(email, password);
+      if (!sessionData) throw new Error("Authentication failed.");
       
+      const isAdmin = await adminApi.checkAdminStatus(sessionData.user.id);
       if (!isAdmin) {
         await supabase.auth.signOut();
         throw new Error('Access Denied: Level 0 Clearance Required.');
       }
 
-      window.location.href = '/admin';
+      // Navigate within SPA context
+      window.history.pushState({}, '', '/admin');
+      window.dispatchEvent(new PopStateEvent('popstate'));
     } catch (err: any) {
       setError(err.message || 'Verification Failed.');
     } finally {
@@ -66,9 +69,9 @@ export default function AdminLoginPage() {
           </form>
           
           <div className="mt-8 text-center">
-            <a href="/login" className="text-[10px] font-black text-slate-600 hover:text-white uppercase tracking-widest flex items-center justify-center gap-2">
+            <button onClick={() => { window.history.pushState({}, '', '/'); window.dispatchEvent(new PopStateEvent('popstate')); }} className="text-[10px] font-black text-slate-600 hover:text-white uppercase tracking-widest flex items-center justify-center gap-2 mx-auto">
               <ArrowLeft size={12} /> Exit to Lab Terminal
-            </a>
+            </button>
           </div>
 
           {error && <div className="mt-8 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-[10px] font-bold text-center uppercase flex items-center justify-center gap-3"><ShieldAlert size={16} /> {error}</div>}

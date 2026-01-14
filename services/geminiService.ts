@@ -14,17 +14,12 @@ const getAIProvider = (): AIProvider => {
 };
 
 /**
- * The API key must be obtained exclusively from the environment variable process.env.API_KEY.
- * It's injected by the system via the openSelectKey() workflow when using high-end models.
+ * API Key is obtained from process.env.API_KEY which is injected by the platform.
  */
-const getGeminiApiKey = () => {
-  return process.env.API_KEY;
-};
-
-const getOpenAIKey = () => (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
+const getGeminiApiKey = () => process.env.API_KEY;
 
 const callOpenAI = async (prompt: string, systemInstruction?: string, isJson: boolean = false) => {
-  const apiKey = getOpenAIKey();
+  const apiKey = (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
   if (!apiKey) throw new Error("OpenAI API Key missing");
 
   const messages: any[] = [];
@@ -56,6 +51,19 @@ const callOpenAI = async (prompt: string, systemInstruction?: string, isJson: bo
   return data.choices[0].message.content;
 };
 
+/**
+ * Handles common Gemini API errors, specifically the "Requested entity was not found" error
+ * which requires re-selection of the API key.
+ */
+const handleGeminiError = (err: any) => {
+  console.error("Gemini API Error Context:", err);
+  if (err.message?.includes("Requested entity was not found")) {
+    // Notify app to reset key state if possible, but here we throw a specific message
+    throw new Error("KEY_INVALID_OR_NOT_FOUND");
+  }
+  throw err;
+};
+
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const provider = getAIProvider();
   const prompt = `你是一位世界级的睡眠科学家。请根据以下生理指标进行高精度分析。
@@ -68,14 +76,13 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
 
   try {
     if (provider === 'openai') {
-      const result = await callOpenAI(prompt + " 请仅返回原始 JSON 数组，不要包含 Markdown 代码块标记。", "You are a specialized Sleep Scientist. Always output valid JSON arrays.", true);
+      const result = await callOpenAI(prompt, "You are a specialized Sleep Scientist. Always output valid JSON arrays.", true);
       const parsed = JSON.parse(result || "[]");
       return Array.isArray(parsed) ? parsed : (parsed.insights || parsed.results || Object.values(parsed));
     } else {
       const apiKey = getGeminiApiKey();
       if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
       
-      // Always initialize right before making an API call
       const ai = new GoogleGenAI({ apiKey });
       const response = await ai.models.generateContent({
         model: 'gemini-3-flash-preview',
@@ -89,54 +96,11 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
           }
         }
       });
-      // Corrected: Accessing .text as a property, as per GenAI SDK requirements.
       return JSON.parse(response.text || "[]");
     }
   } catch (err) {
-    console.error("AI Insight Error:", err);
-    return lang === 'en' 
-      ? ["Insight synthesis temporarily offline.", "Biometric telemetry link stable.", "Awaiting next data stream for analysis."] 
-      : ["洞察合成暂时离线。", "生物识别遥测链路稳定。", "等待下一流数据进行分析。"];
-  }
-};
-
-export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
-  const provider = getAIProvider();
-  const prompt = `作为首席研究官，请根据受试者的最新指标设计一个 24 小时数字睡眠实验方案。
-    当前数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, 静息心率 ${data.heartRate?.resting}bpm。
-    输出语言: ${lang === 'zh' ? '中文' : '英文'}。
-    必须返回 JSON 格式，包含键: hypothesis (string), protocol (string array), expectedImpact (string)。`;
-
-  try {
-    if (provider === 'openai') {
-      const result = await callOpenAI(prompt, "You are a Chief Research Officer designing scientific protocols.", true);
-      return JSON.parse(result || "{}");
-    } else {
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
-      // Always initialize right before making an API call
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              hypothesis: { type: Type.STRING },
-              protocol: { type: Type.ARRAY, items: { type: Type.STRING } },
-              expectedImpact: { type: Type.STRING }
-            },
-            required: ["hypothesis", "protocol", "expectedImpact"]
-          }
-        }
-      });
-      // Corrected: Accessing .text as a property.
-      return JSON.parse(response.text || "{}");
-    }
-  } catch (err) {
-    throw err;
+    handleGeminiError(err);
+    return [];
   }
 };
 
@@ -154,12 +118,12 @@ export const chatWithCoach = async (
   }
 
   const systemInstruction = lang === 'en' 
-    ? `You are the Somno Chief Research Officer (CRO), a world-class AI Sleep Coach. You are professional, scientific, and data-driven. ${biometricContext}`
-    : `你是 Somno 首席研究官 (CRO)，世界级的 AI 睡眠教练。你专业、科学并以数据为导向。 ${biometricContext}`;
+    ? `You are the Somno Chief Research Officer (CRO), a world-class AI Sleep Coach. Professional and data-driven. ${biometricContext}`
+    : `你是 Somno 首席研究官 (CRO)，世界级的 AI 睡眠教练。专业并以数据为导向。 ${biometricContext}`;
 
   try {
     if (provider === 'openai') {
-      const apiKey = getOpenAIKey();
+      const apiKey = (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
       const messages = history.map(m => ({ 
         role: m.role === 'assistant' ? 'assistant' : 'user', 
         content: m.content 
@@ -178,14 +142,10 @@ export const chatWithCoach = async (
         })
       });
       const data = await response.json();
-      return {
-        text: data.choices[0].message.content,
-        sources: []
-      };
+      return { text: data.choices[0].message.content, sources: [] };
     } else {
       const apiKey = getGeminiApiKey();
       if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
-      // Always initialize right before making an API call
       const ai = new GoogleGenAI({ apiKey });
       
       const lastMessage = history[history.length - 1].content;
@@ -206,47 +166,68 @@ export const chatWithCoach = async (
           temperature: 0.75,
         }
       });
-      // Corrected: Accessing .text as a property.
       return {
         text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
         sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
       };
     }
   } catch (err) {
+    handleGeminiError(err);
+  }
+};
+
+export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
+  const provider = getAIProvider();
+  const prompt = `设计一个 24 小时数字睡眠实验。数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, RHR ${data.heartRate?.resting}bpm。语言: ${lang === 'zh' ? '中文' : '英文'}。`;
+
+  try {
+    if (provider === 'openai') {
+      const result = await callOpenAI(prompt, "You are a Chief Research Officer.", true);
+      return JSON.parse(result || "{}");
+    } else {
+      const apiKey = getGeminiApiKey();
+      if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+      const ai = new GoogleGenAI({ apiKey });
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-pro-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              hypothesis: { type: Type.STRING },
+              protocol: { type: Type.ARRAY, items: { type: Type.STRING } },
+              expectedImpact: { type: Type.STRING }
+            },
+            required: ["hypothesis", "protocol", "expectedImpact"]
+          }
+        }
+      });
+      return JSON.parse(response.text || "{}");
+    }
+  } catch (err) {
+    handleGeminiError(err);
     throw err;
   }
 };
 
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
-  const provider = getAIProvider();
-  const dataSummary = history.slice(0, 7).map(h => ({
-    date: h.date,
-    score: h.score,
-    efficiency: h.efficiency
-  }));
-
-  const prompt = `As a world-class Sleep Scientist, analyze the following sleep trend data and provide a concise summary (2 sentences). Language: ${lang === 'zh' ? 'Chinese' : 'English'}. Data: ${JSON.stringify(dataSummary)}`;
+  const dataSummary = history.slice(0, 7).map(h => ({ date: h.date, score: h.score }));
+  const prompt = `作为睡眠科学家分析这些趋势并提供 2 句话总结。语言: ${lang === 'zh' ? '中文' : '英文'}。数据: ${JSON.stringify(dataSummary)}`;
 
   try {
-    if (provider === 'openai') {
-      return await callOpenAI(prompt, "You are a Sleep Scientist providing reports.");
-    } else {
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
-      // Always initialize right before making an API call
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: {
-          temperature: 0.7,
-        }
-      });
-      // Corrected: Accessing .text as a property.
-      return response.text || (lang === 'en' ? "Trend analysis unavailable." : "趋势分析不可用。");
-    }
+    const apiKey = getGeminiApiKey();
+    if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: { temperature: 0.7 }
+    });
+    return response.text || "Analysis failed.";
   } catch (err) {
-    console.error("Weekly Summary Error:", err);
-    return lang === 'en' ? "Failed to synthesize trend report." : "无法合成趋势报告。";
+    handleGeminiError(err);
+    return "Error generating summary.";
   }
 };
