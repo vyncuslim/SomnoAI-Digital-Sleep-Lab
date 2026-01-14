@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -6,12 +5,14 @@ const m = motion as any;
 
 /**
  * RootLayout component that wraps the main application content.
- * Using optional children to satisfy strict prop checking and prevent "missing children" errors in some build environments.
  */
 export default function RootLayout({ children }: { children?: React.ReactNode }) {
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
-      {/* 核心布局外壳 */}
+      {/* 
+        NOTE: In this Vite environment, index.html manages the real <head>.
+        This structure is kept for semantic organization and future portability.
+      */}
       <div className="relative z-10">
         {children}
       </div>

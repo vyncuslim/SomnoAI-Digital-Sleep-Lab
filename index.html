@@ -1,11 +1,11 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
-    <link rel="icon" href="https://img.icons8.com/color/48/moon-star.png" type="image/png">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/color/192/moon-star.png">
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/moon-star.png">
     
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
     <meta name="description" content="Master your sleep with SomnoAI. Fusing physiological monitoring, deep AI insights via Gemini, and personalized recovery protocols.">
@@ -30,16 +30,13 @@
         }
       }
 
-      // Robust suppression for non-critical framework/browser artifacts
       window.addEventListener('unhandledrejection', function(event) {
         const msg = event.reason?.message || '';
-        const name = event.reason?.name || '';
-        if (name === 'AbortError' || msg.includes('AbortError') || msg.includes('signal is aborted')) {
+        if (msg.includes('AbortError') || msg.includes('play()')) {
           event.preventDefault();
         }
       });
 
-      // Unified loader dismissal
       window.dismissLoader = function() {
           const loader = document.getElementById('page-loader');
           if (loader) {
@@ -49,8 +46,7 @@
           }
       };
       
-      // Safety timeout for the loader
-      setTimeout(window.dismissLoader, 10000);
+      setTimeout(window.dismissLoader, 15000);
     </script>
     
     <style type="text/tailwindcss">
@@ -61,7 +57,6 @@
       body {
         font-family: 'Plus Jakarta Sans', sans-serif;
         @apply bg-[#01040a] text-[#e2e8f0] antialiased;
-        --font-sans: 'Plus Jakarta Sans', ui-sans-serif, system-ui;
       }
       ::-webkit-scrollbar { display: none; }
       * { -ms-overflow-style: none; scrollbar-width: none; }

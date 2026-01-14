@@ -1,4 +1,3 @@
-
 import { SleepRecord, SleepStage } from "../types.ts";
 
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
@@ -33,7 +32,6 @@ export class HealthConnectService {
     this.accessToken = localStorage.getItem('health_connect_token');
   }
 
-  // Renamed isLinked to hasToken to match App.tsx usage
   public hasToken(): boolean {
     return !!this.accessToken;
   }
@@ -75,7 +73,6 @@ export class HealthConnectService {
     return this.initPromise;
   }
 
-  // Renamed linkAccount to authorize to match App.tsx usage
   public async authorize(forcePrompt = false): Promise<string> {
     await this.ensureClientInitialized();
     if (!this.tokenClient) {
@@ -101,7 +98,6 @@ export class HealthConnectService {
     });
   }
 
-  // Renamed unlink to logout to match App.tsx usage
   public logout() {
     this.accessToken = null;
     localStorage.removeItem('health_connect_token');
@@ -130,7 +126,8 @@ export class HealthConnectService {
     if (!token) throw new Error("LINK_REQUIRED");
 
     const now = Date.now();
-    const searchWindowStart = now - (96 * 60 * 60 * 1000); 
+    // Search window: last 5 days
+    const searchWindowStart = now - (120 * 60 * 60 * 1000); 
 
     const sessionRes = await fetch(
       `https://www.googleapis.com/fitness/v1/users/me/sessions?startTime=${new Date(searchWindowStart).toISOString()}&endTime=${new Date(now).toISOString()}`,
@@ -140,33 +137,54 @@ export class HealthConnectService {
     const sessionData = await sessionRes.json();
     const sleepSessions = (sessionData.session || []).filter((s: any) => s.activityType === 72);
 
-    if (sleepSessions.length === 0) throw new Error("SLEEP_DATA_NOT_FOUND");
+    if (sleepSessions.length === 0) {
+       // Fallback: Check raw sleep segments if no session is wrapped
+       const rawCheck = await this.fetchAggregate(token, searchWindowStart, now, "com.google.sleep.segment");
+       if (!rawCheck || !rawCheck.bucket?.[0]?.dataset?.[0]?.point?.length) {
+         throw new Error("SLEEP_DATA_NOT_FOUND");
+       }
+       
+       const p = rawCheck.bucket[0].dataset[0].point[rawCheck.bucket[0].dataset[0].point.length - 1];
+       const sTime = nanostampsToMillis(p.startTimeNanos);
+       const eTime = nanostampsToMillis(p.endTimeNanos);
+       return this.processDetailedData(token, sTime, eTime, "Extrapolated Lab Session");
+    }
 
     const latest = sleepSessions[sleepSessions.length - 1];
     const sTime = toMillis(latest.startTimeMillis);
     const eTime = toMillis(latest.endTimeMillis);
 
+    return this.processDetailedData(token, sTime, eTime, latest.name || "Biometric Session");
+  }
+
+  private async processDetailedData(token: string, sTime: number, eTime: number, sessionName: string): Promise<Partial<SleepRecord>> {
     const segmentData = await this.fetchAggregate(token, sTime, eTime, "com.google.sleep.segment");
     const stages: SleepStage[] = [];
     let deepMins = 0, remMins = 0, lightMins = 0, awakeMins = 0;
 
     const allPoints = segmentData?.bucket?.[0]?.dataset?.[0]?.point || [];
     
-    allPoints.forEach((p: any) => {
-      const type = p.value?.[0]?.intVal;
-      const start = nanostampsToMillis(p.startTimeNanos);
-      const end = nanostampsToMillis(p.endTimeNanos);
-      const duration = (end - start) / (60 * 1000);
-      const startTimeStr = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-      
-      let stageName: any = 'Light';
-      if (type === 1) { stageName = 'Awake'; awakeMins += duration; }
-      else if (type === 4) { stageName = 'Light'; lightMins += duration; }
-      else if (type === 5) { stageName = 'Deep'; deepMins += duration; }
-      else if (type === 6) { stageName = 'REM'; remMins += duration; }
+    if (allPoints.length === 0) {
+      const durationMins = (eTime - sTime) / (60 * 1000);
+      stages.push({ name: 'Light', duration: Math.round(durationMins), startTime: new Date(sTime).toLocaleTimeString() });
+      lightMins = durationMins;
+    } else {
+      allPoints.forEach((p: any) => {
+        const type = p.value?.[0]?.intVal;
+        const start = nanostampsToMillis(p.startTimeNanos);
+        const end = nanostampsToMillis(p.endTimeNanos);
+        const duration = (end - start) / (60 * 1000);
+        const startTimeStr = new Date(start).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        
+        let stageName: any = 'Light';
+        if (type === 1) { stageName = 'Awake'; awakeMins += duration; }
+        else if (type === 4) { stageName = 'Light'; lightMins += duration; }
+        else if (type === 5) { stageName = 'Deep'; deepMins += duration; }
+        else if (type === 6) { stageName = 'REM'; remMins += duration; }
 
-      stages.push({ name: stageName, duration: Math.max(1, Math.round(duration)), startTime: startTimeStr });
-    });
+        stages.push({ name: stageName, duration: Math.max(1, Math.round(duration)), startTime: startTimeStr });
+      });
+    }
 
     const totalDuration = (eTime - sTime) / (60 * 1000);
 
@@ -179,20 +197,19 @@ export class HealthConnectService {
       min = Math.round(hrVal[2]?.fpVal || min);
     }
 
-    const hrHistory: { time: string; bpm: number }[] = [];
     const efficiency = totalDuration > 0 ? Math.round(((totalDuration - awakeMins) / totalDuration) * 100) : 0;
     const scoreBase = Math.min(100, (totalDuration / 450) * 100);
     const finalScore = Math.round((scoreBase * 0.7) + (efficiency * 0.3));
 
     return {
-      date: latest.name || new Date(sTime).toLocaleDateString(),
+      date: new Date(sTime).toLocaleDateString(navigator.language, { month: 'long', day: 'numeric', weekday: 'long' }),
       score: finalScore,
       totalDuration: Math.round(totalDuration),
       deepRatio: totalDuration > 0 ? Math.round((deepMins / totalDuration) * 100) : 0,
       remRatio: totalDuration > 0 ? Math.round((remMins / totalDuration) * 100) : 0,
       efficiency,
       stages,
-      heartRate: { resting: min, max, min, average, history: hrHistory }
+      heartRate: { resting: min, max, min, average, history: [] }
     };
   }
 }

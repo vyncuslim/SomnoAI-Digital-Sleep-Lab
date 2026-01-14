@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, 
-  HeartHandshake, Shield, FileText, Copy, Smartphone, Scan, 
-  Globe, Zap, RefreshCw, Palette, Box, Info, ShieldCheck, Activity, Terminal, Lock, Loader2, CreditCard, ChevronRight
+  HeartHandshake, Smartphone, Globe, Lock, Loader2, CreditCard, 
+  ChevronRight, Heart, Copy, QrCode, Languages
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
@@ -43,7 +43,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [manualKey, setManualKey] = useState(localStorage.getItem('somno_manual_gemini_key') || '');
   const [showKey, setShowKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState(false);
-  const [isSyncing, setIsSyncing] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   // Password update states
   const [newPassword, setNewPassword] = useState('');
@@ -64,7 +64,7 @@ export const Settings: React.FC<SettingsProps> = ({
         const adminStatus = await adminApi.checkAdminStatus(session.user.id);
         setIsAdmin(adminStatus);
       } else if (isSandbox) {
-        setIsAdmin(true); // Sandbox users can explore admin mock views
+        setIsAdmin(true);
       }
 
       if ((window as any).aistudio) {
@@ -88,6 +88,12 @@ export const Settings: React.FC<SettingsProps> = ({
     localStorage.setItem('somno_manual_gemini_key', manualKey);
     setSaveStatus(true);
     setTimeout(() => setSaveStatus(false), 2000);
+  };
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const handlePasswordUpdate = async () => {
@@ -119,27 +125,31 @@ export const Settings: React.FC<SettingsProps> = ({
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">{t.subtitle}</p>
       </header>
 
-      {/* Admin Entry - Laboratory Command */}
-      {(isAdmin || isSandbox) && (
-        <GlassCard 
-          onClick={() => onNavigate('admin')}
-          className="p-8 rounded-[4rem] border-rose-500/20 bg-rose-500/[0.03] cursor-pointer group"
-          hoverScale={true}
-        >
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-6">
-              <div className="w-14 h-14 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400 shadow-[0_0_20px_rgba(225,29,72,0.2)]">
-                <Terminal size={24} />
-              </div>
-              <div>
-                <h2 className="text-lg font-black italic text-white uppercase tracking-tight">Laboratory Command</h2>
-                <p className="text-[10px] text-rose-500 font-bold uppercase tracking-widest">{isSandbox ? 'Sandbox Simulation' : 'Level 0 Clearance Active'}</p>
-              </div>
+      {/* Language Switcher Section */}
+      <GlassCard className="p-8 rounded-[4rem] border-white/5 bg-white/[0.02]">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+              <Languages size={20} />
             </div>
-            <ChevronRight size={24} className="text-rose-500 opacity-50 group-hover:opacity-100 group-hover:translate-x-2 transition-all" />
+            <div>
+              <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{isZh ? '系统语言' : 'System Language'}</h2>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Select UI Protocol</p>
+            </div>
           </div>
-        </GlassCard>
-      )}
+          <div className="flex bg-slate-950/80 p-1 rounded-full border border-white/5 shadow-inner">
+            {(['en', 'zh', 'de', 'fr'] as Language[]).map((l) => (
+              <button
+                key={l}
+                onClick={() => onLanguageChange(l)}
+                className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                {l.toUpperCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      </GlassCard>
 
       {/* Account Security Section */}
       <GlassCard className="p-8 rounded-[4rem] space-y-8">
@@ -240,20 +250,106 @@ export const Settings: React.FC<SettingsProps> = ({
 
         <div className="space-y-4 pt-6">
           <button 
+            type="button"
             onClick={() => setShowDonation(true)}
-            className="w-full py-5 rounded-full bg-rose-600/10 border border-rose-500/30 text-rose-400 font-black text-[11px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all"
+            className="w-full py-5 rounded-full bg-rose-600/10 border border-rose-500/30 text-rose-400 font-black text-[11px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-3 relative overflow-hidden z-[50]"
           >
-            <HeartHandshake size={18} className="inline mr-3" /> {t.coffee}
+            <HeartHandshake size={18} /> {t.coffee}
           </button>
           
           <button 
             onClick={onLogout}
-            className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-black text-[11px] uppercase tracking-widest hover:text-rose-400 transition-all"
+            className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-black text-[11px] uppercase tracking-widest hover:text-rose-400 transition-all flex items-center justify-center gap-3"
           >
-            <LogOut size={16} className="inline mr-3" /> {t.logout}
+            <LogOut size={16} /> {t.logout}
           </button>
         </div>
       </GlassCard>
+
+      {/* Donation Modal - Enhanced with QR & English Defaults */}
+      <AnimatePresence>
+        {showDonation && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
+            <m.div 
+              initial={{ scale: 0.8, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.8, opacity: 0 }}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              className="w-full max-w-xl"
+            >
+              <GlassCard className="p-10 md:p-14 rounded-[5rem] border-rose-500/30 shadow-3xl">
+                <div className="flex flex-col items-center gap-10">
+                  <div className="w-24 h-24 rounded-full bg-rose-500 flex items-center justify-center text-white shadow-2xl relative">
+                    <Heart size={40} />
+                    <m.div animate={{ scale: [1, 1.4, 1], opacity: [0.5, 0, 0.5] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-0 bg-rose-500/30 rounded-full" />
+                  </div>
+                  
+                  <div className="text-center space-y-4">
+                    <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">{t.thankYouTitle}</h2>
+                    <p className="text-sm text-slate-400 italic leading-relaxed px-6">
+                      {isZh ? '您的支持将维持实验室算力运行。支付详情如下（默认英文）：' : 'Your support fuels lab processing. Payment details follow (English Default):'}
+                    </p>
+                  </div>
+
+                  <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+                    {/* QR Code Section */}
+                    <div className="flex flex-col items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-[3rem]">
+                       <div className="p-4 bg-white rounded-[2rem] shadow-2xl">
+                          <img 
+                            src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(t.paypalLink)}&color=020617&bgcolor=ffffff`}
+                            alt="Payment QR" 
+                            className="w-32 h-32 md:w-40 md:h-40"
+                          />
+                       </div>
+                       <div className="flex items-center gap-2 text-rose-400">
+                         <QrCode size={14} />
+                         <span className="text-[10px] font-black uppercase tracking-widest">SCAN TO PAYPAL</span>
+                       </div>
+                    </div>
+
+                    {/* Text IDs Section */}
+                    <div className="space-y-4">
+                      {/* Fixed: Completed truncated array and added .map() for ReactNode compatibility */}
+                      {[
+                        { id: 'duitnow', label: 'DUITNOW / TNG', value: t.duitNowId },
+                        { id: 'paypal', label: 'PayPal', value: t.paypalId }
+                      ].map((item) => (
+                        <div key={item.id} className="p-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-between">
+                          <div className="space-y-1">
+                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
+                            <p className="text-xs font-bold text-white italic">{item.value}</p>
+                          </div>
+                          <button 
+                            onClick={() => handleCopy(item.id, item.value)}
+                            className={`p-2 rounded-xl transition-all ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-500 hover:text-white bg-white/5'}`}
+                          >
+                            {copiedId === item.id ? <CheckCircle2 size={16} /> : <Copy size={16} />}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="w-full pt-4">
+                     <a 
+                       href={t.paypalLink}
+                       target="_blank"
+                       rel="noopener noreferrer"
+                       className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:bg-indigo-500 transition-all flex items-center justify-center gap-3"
+                     >
+                       <ExternalLink size={16} /> {isZh ? '前往 PayPal 页面' : 'Go to PayPal Page'}
+                     </a>
+                  </div>
+                  
+                  <button onClick={() => setShowDonation(false)} className="text-[10px] font-black uppercase text-slate-600 hover:text-white transition-colors">
+                    {t.closeReceipt}
+                  </button>
+                </div>
+              </GlassCard>
+            </m.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

@@ -11,6 +11,7 @@ export async function signUpWithPassword(email: string, pass: string) {
     email,
     password: pass,
     options: { 
+      // 显式配置重定向
       emailRedirectTo: window.location.origin,
       data: {
         role: 'user' // 初始权限等级
@@ -73,7 +74,6 @@ export const signInWithGoogle = async () => {
   if (error) throw error;
 };
 
-// Fix: Added missing updateUserPassword export as required by Settings.tsx
 /**
  * 更新当前登录用户的密码
  */
@@ -88,7 +88,6 @@ export async function updateUserPassword(newPassword: string) {
 // --- 管理员特权服务 ---
 
 export const adminApi = {
-  // Fix: Unified table name to 'profiles' as expected by AdminView.tsx
   checkAdminStatus: async (userId: string) => {
     if (!userId) return false;
     const { data, error } = await supabase
@@ -101,7 +100,6 @@ export const adminApi = {
     return data?.role === 'admin';
   },
 
-  // Fix: Added missing methods required by AdminView.tsx
   getUsers: async () => {
     const { data, error } = await supabase
       .from('profiles')

@@ -1,27 +1,13 @@
-'use client';
-
 import React from 'react';
 import { Auth } from '../../Auth.tsx';
 
-/**
- * Subject Entry Node
- * Primary gateway for standard biometric telemetry access.
- */
-export default function UserLoginPage() {
-  const handleSuccess = () => {
-    window.location.hash = '/';
-  };
-
-  const handleSandbox = () => {
-    window.location.hash = '/?sandbox=true';
-  };
-
+export default function UserLoginPage({ onSuccess, onSandbox }: { onSuccess: () => void, onSandbox: () => void }) {
   return (
-    <div className="min-h-screen bg-[#020617]">
+    <div className="min-h-screen bg-[#020617] pt-10">
       <Auth 
-        lang="zh" 
-        onLogin={handleSuccess} 
-        onGuest={handleSandbox} 
+        lang={navigator.language.startsWith('zh') ? 'zh' : 'en'} 
+        onLogin={onSuccess} 
+        onGuest={onSandbox} 
       />
     </div>
   );

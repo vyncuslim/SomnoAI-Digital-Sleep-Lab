@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -10,7 +9,6 @@ interface LogoProps {
   staticMode?: boolean;
 }
 
-// Fix: Use any cast to bypass broken library types for motion props
 const m = motion as any;
 
 export const Logo: React.FC<LogoProps> = ({ 
@@ -21,6 +19,7 @@ export const Logo: React.FC<LogoProps> = ({
   staticMode = false 
 }) => {
   const shouldAnimate = animated && !staticMode;
+  const initialD = "M30 85 Q 40 75, 50 85 T 70 85";
 
   return (
     <m.svg
@@ -102,16 +101,16 @@ export const Logo: React.FC<LogoProps> = ({
       </m.g>
 
       <m.path
-        d="M30 85 Q 40 75, 50 85 T 70 85"
+        d={initialD}
         stroke="url(#moonGlow)"
         strokeWidth="2"
         strokeLinecap="round"
         className="opacity-30"
         animate={shouldAnimate ? {
           d: [
-            "M30 85 Q 40 75, 50 85 T 70 85",
+            initialD,
             "M30 85 Q 40 95, 50 85 T 70 85",
-            "M30 85 Q 40 75, 50 85 T 70 85"
+            initialD
           ]
         } : {}}
         transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
