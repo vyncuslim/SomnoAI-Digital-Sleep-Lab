@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -8,8 +7,8 @@ import { ShieldCheck, LogOut, Loader2, Lock } from 'lucide-react';
 import { adminApi } from '../../services/supabaseService.ts';
 
 /**
- * Command Deck - Restricted Node
- * Protected by multi-layer role verification from the 'profiles' table.
+ * Laboratory Command Center
+ * Secured entry point for cross-subject data management and system auditing.
  */
 export default function AdminDashboard() {
   const [session, setSession] = useState<any>(null);
@@ -17,7 +16,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function checkAccess() {
+    async function verifyClearance() {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
@@ -27,14 +26,13 @@ export default function AdminDashboard() {
         }
 
         setSession(currentSession);
-        // Deep verification of role clearance
         const isUserAdmin = await adminApi.checkAdminStatus(currentSession.user.id);
         
         if (isUserAdmin === false) {
-           // Security Intercept: Redirect unauthorized subject to user terminal
+           // Direct unauthorized users to the main terminal
            setTimeout(() => {
              window.location.hash = '/login';
-           }, 2000);
+           }, 2500);
         }
         
         setIsAdmin(isUserAdmin);
@@ -45,19 +43,18 @@ export default function AdminDashboard() {
       }
     }
 
-    checkAccess();
+    verifyClearance();
   }, []);
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center text-white gap-4">
         <Loader2 className="animate-spin text-rose-500" size={32} />
-        <p className="font-black uppercase tracking-widest text-slate-500 text-[10px]">Initializing Level 0 Clearance...</p>
+        <p className="font-black uppercase tracking-widest text-slate-500 text-[10px]">Initializing Level 0 Command Stream...</p>
       </div>
     );
   }
 
-  // Access Intercept UI
   if (!session || isAdmin === false) {
     return (
       <div className="min-h-screen bg-[#020617] flex items-center justify-center p-6">
@@ -67,16 +64,8 @@ export default function AdminDashboard() {
           </div>
           <h1 className="text-2xl font-black text-rose-500 uppercase italic tracking-tighter leading-none">Access Revoked</h1>
           <p className="text-slate-500 text-sm font-medium leading-relaxed">
-            Administrative credentials required. This unauthorized attempt has been logged. Redirecting...
+            Administrative credentials required for this node. Redirecting...
           </p>
-          <div className="flex flex-col gap-4">
-            <button 
-              onClick={() => window.location.hash = '/admin/login'}
-              className="w-full py-4 bg-rose-600 text-white rounded-full text-[10px] font-bold uppercase tracking-widest hover:bg-rose-500 transition-all shadow-xl"
-            >
-              Re-authorize Terminal
-            </button>
-          </div>
         </div>
       </div>
     );
@@ -91,7 +80,7 @@ export default function AdminDashboard() {
           </div>
           <div className="flex flex-col">
             <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Master Command Node</span>
-            <span className="text-lg font-bold text-white italic truncate max-w-[200px] md:max-w-none">
+            <span className="text-lg font-bold text-white italic truncate">
               {session.user.email}
             </span>
           </div>

@@ -1,39 +1,28 @@
-
 'use client';
 
 import React from 'react';
 import { Auth } from '../../Auth.tsx';
 
-interface UserLoginPageProps {
-  onSuccess?: () => void;
-  onSandbox?: () => void;
-}
-
 /**
- * Subject Entry Terminal - Primary Authorization Node
+ * Subject Entry Node
+ * Primary gateway for standard biometric telemetry access.
  */
-export default function UserLoginPage({ onSuccess, onSandbox }: UserLoginPageProps) {
+export default function UserLoginPage() {
   const handleSuccess = () => {
-    if (onSuccess) {
-      onSuccess();
-    } else {
-      window.location.hash = '/';
-    }
+    window.location.hash = '/';
   };
 
   const handleSandbox = () => {
-    if (onSandbox) {
-      onSandbox();
-    } else {
-      window.location.hash = '/?sandbox=true';
-    }
+    window.location.hash = '/?sandbox=true';
   };
 
   return (
-    <Auth 
-      lang="zh" 
-      onLogin={handleSuccess} 
-      onGuest={handleSandbox} 
-    />
+    <div className="min-h-screen bg-[#020617]">
+      <Auth 
+        lang="zh" 
+        onLogin={handleSuccess} 
+        onGuest={handleSandbox} 
+      />
+    </div>
   );
 }

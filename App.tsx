@@ -48,11 +48,9 @@ const App: React.FC = () => {
   });
   
   const getNormalizedRoute = useCallback(() => {
-    // Detect both hash-based and path-based routing for SPA accessibility
     const hash = window.location.hash.replace(/^#/, '').toLowerCase();
     const path = window.location.pathname.toLowerCase();
     
-    // Prioritize hash routing for sandbox compatibility, fallback to path for direct URL access
     let route = hash || path;
     route = route.startsWith('/') ? route : '/' + route;
     route = route.replace(/\/+$/, '') || '/';
@@ -72,7 +70,6 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<SleepRecord[]>([]);
 
   const navigateTo = useCallback((path: string) => {
-    // Use hash for internal navigation to avoid SecurityError in sandboxes
     const finalHash = path.startsWith('/') ? path : '/' + path;
     window.location.hash = finalHash;
   }, []);
@@ -112,27 +109,46 @@ const App: React.FC = () => {
     document.title = "SomnoAI Lab | Digital Sleep Master";
 
     const checkAuth = async () => {
-      const { data: { session: currentSession } } = await supabase.auth.getSession();
-      setSession(currentSession);
+      // 引入超时保护：如果 4 秒内没反应，强行跳过加载状态
+      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 4000));
       
-      if (currentSession) {
-        const adminStatus = await adminApi.checkAdminStatus(currentSession.user.id);
-        setIsAdmin(adminStatus);
+      try {
+        const { data: { session: currentSession } } = await (Promise.race([
+          supabase.auth.getSession(),
+          timeoutPromise
+        ]) as Promise<any>);
+        
+        setSession(currentSession);
+        
+        if (currentSession) {
+          const adminStatus = await adminApi.checkAdminStatus(currentSession.user.id);
+          setIsAdmin(adminStatus);
+        }
+      } catch (err) {
+        console.warn("Auth initialization warning/timeout:", err);
+      } finally {
+        setIsInitialAuthCheck(false);
+        // 确保无论如何都尝试移除 HTML 层的 Loader
+        if ((window as any).dismissLoader) (window as any).dismissLoader();
       }
-      setIsInitialAuthCheck(false);
     };
 
     checkAuth();
 
+    // 监听哈希和路由变化
+    const handleHashChange = () => {
+      setActiveRoute(getNormalizedRoute());
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    window.addEventListener('popstate', handleHashChange);
+    
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (isLoggingOut) return;
-      
       if (event === 'SIGNED_OUT') {
         setSession(null);
         setIsAdmin(false);
         return;
       }
-      
       setSession(newSession);
       if (newSession) {
         const adminStatus = await adminApi.checkAdminStatus(newSession.user.id);
@@ -141,20 +157,22 @@ const App: React.FC = () => {
       }
     });
 
-    const handleHashChange = () => {
-      setActiveRoute(getNormalizedRoute());
-    };
-    window.addEventListener('hashchange', handleHashChange);
-    window.addEventListener('popstate', handleHashChange);
-    
-    if ((window as any).dismissLoader) (window as any).dismissLoader();
-    
     return () => {
       window.removeEventListener('hashchange', handleHashChange);
       window.removeEventListener('popstate', handleHashChange);
       subscription.unsubscribe();
     };
   }, [getNormalizedRoute, navigateTo, isLoggingOut]);
+
+  // 挂载后保底逻辑：再次确认移除 Loader
+  useEffect(() => {
+    if (!isInitialAuthCheck) {
+      const t = setTimeout(() => {
+        if ((window as any).dismissLoader) (window as any).dismissLoader();
+      }, 500);
+      return () => clearTimeout(t);
+    }
+  }, [isInitialAuthCheck]);
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     try {
@@ -185,12 +203,11 @@ const App: React.FC = () => {
     if (route === 'terms') return <LegalView type="terms" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => navigateTo('/')} />;
     
-    // Admin Guard Logic
     if (route === 'admin-login') return <Suspense fallback={<LoadingSpinner />}><AdminLoginPage /></Suspense>;
     if (route === 'admin') {
       if (!session && !isSandbox) {
         navigateTo('/admin/login');
-        return <LoadingSpinner label="Redirecting to Command Entrance..." />;
+        return <LoadingSpinner label="Redirecting..." />;
       }
       return (
         <Suspense fallback={<LoadingSpinner label="Initializing Command Deck..." />}>
@@ -199,7 +216,6 @@ const App: React.FC = () => {
       );
     }
     
-    // Auth Guard for Main App
     if (!session && !isSandbox) {
       if (route !== 'login' && route !== '/') {
          navigateTo('/login');
@@ -211,7 +227,6 @@ const App: React.FC = () => {
       );
     }
 
-    // Main App Views
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40">
         <AnimatePresence mode="wait">
