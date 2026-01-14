@@ -7,7 +7,12 @@ export async function signUpWithPassword(email: string, pass: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password: pass,
-    options: { emailRedirectTo: window.location.origin }
+    options: { 
+      emailRedirectTo: window.location.origin,
+      data: {
+        role: 'user' // Default role
+      }
+    }
   });
   if (error) throw error;
   return data;
@@ -27,7 +32,7 @@ export async function signInWithEmailOTP(email: string) {
     email,
     options: {
       emailRedirectTo: window.location.origin,
-      shouldCreateUser: false, 
+      shouldCreateUser: true, // Enabled registration via OTP
     }
   });
   if (error) throw error;
