@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabaseClient.ts';
 
-// --- Auth Enhancement ---
+// --- Auth Services ---
 
 export async function signUpWithPassword(email: string, pass: string) {
   const { data, error } = await supabase.auth.signUp({
@@ -21,35 +21,22 @@ export async function signInWithPassword(email: string, pass: string) {
   return data.session;
 }
 
-export async function updateUserPassword(newPassword: string) {
-  const { data, error } = await supabase.auth.updateUser({
-    password: newPassword
-  });
-  if (error) throw error;
-  return data;
-}
-
-export async function signInWithEmailOTP(email: string, isSignUp: boolean = false) {
+export async function signInWithEmailOTP(email: string) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: window.location.origin,
-      shouldCreateUser: isSignUp,
+      shouldCreateUser: false, 
     }
   });
-  if (error) {
-    if (error.message.includes('fetch')) {
-      throw new Error("Network Error: Failed to reach identity server.");
-    }
-    throw error;
-  }
+  if (error) throw error;
 }
 
-export async function verifyOtp(email: string, token: string) {
+export async function verifyOtp(email: string, token: string, type: 'email' | 'signup' | 'recovery' = 'email') {
   const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
-    type: 'email'
+    type
   });
   if (error) throw error;
   return data.session;
@@ -65,33 +52,41 @@ export const signInWithGoogle = async () => {
   if (error) throw error;
 };
 
-// --- Admin API ---
+export async function updateUserPassword(password: string) {
+  const { data, error } = await supabase.auth.updateUser({
+    password: password
+  });
+  if (error) throw error;
+  return data;
+}
+
+// --- Admin Services (using 'role' column in 'users' table) ---
 
 export const adminApi = {
-  getProfile: async (userId: string) => {
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', userId)
-      .maybeSingle();
-    if (error) throw error;
-    return data;
-  },
-
   checkAdminStatus: async (userId: string) => {
     if (!userId) return false;
-    const { data } = await supabase
-      .from('profiles')
+    const { data, error } = await supabase
+      .from('users')
       .select('role')
       .eq('id', userId)
-      .single();
+      .maybeSingle();
+    
+    if (error) {
+      console.error("Permission check failed:", error);
+      return false;
+    }
     return data?.role === 'admin';
   },
 
   getUsers: async () => {
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('users').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
+  },
+
+  updateUserRole: async (id: string, role: 'user' | 'admin') => {
+    const { error } = await supabase.from('users').update({ role }).eq('id', id);
+    if (error) throw error;
   },
 
   getSleepRecords: async () => {
@@ -114,11 +109,6 @@ export const adminApi = {
 
   deleteRecord: async (table: string, id: string) => {
     const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) throw error;
-  },
-
-  updateUserRole: async (id: string, role: 'user' | 'admin') => {
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
     if (error) throw error;
   },
 

@@ -22,7 +22,7 @@ const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ def
 
 const m = motion as any;
 
-const LoadingSpinner = ({ label = "Synchronizing..." }: { label?: string }) => (
+const LoadingSpinner = ({ label = "Synchronizing Laboratory Nodes..." }: { label?: string }) => (
   <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617]">
     <div className="relative">
       <Loader2 size={48} className="animate-spin text-indigo-500 opacity-50" />
@@ -35,6 +35,7 @@ const LoadingSpinner = ({ label = "Synchronizing..." }: { label?: string }) => (
 );
 
 const App: React.FC = () => {
+  // Default to English as requested
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
   const [session, setSession] = useState<any>(null);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
@@ -42,23 +43,15 @@ const App: React.FC = () => {
   const getNormalizedRoute = useCallback(() => {
     let path = window.location.pathname.toLowerCase();
     
-    // Clean trailing slashes
     if (path.length > 1 && path.endsWith('/')) {
       path = path.slice(0, -1);
     }
 
-    // Direct path mapping for SPA routing
     if (path === '/login') return 'login';
     if (path === '/admin') return 'admin';
     if (path === '/admin/login') return 'admin-login';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
-
-    // Hash fallback/support
-    let hash = window.location.hash.replace('#', '').toLowerCase();
-    if (hash.startsWith('/')) hash = hash.slice(1);
-    if (hash === 'login') return 'login';
-    if (hash === 'admin') return 'admin';
     
     return path === '/' ? '/' : path.slice(1);
   }, []);
@@ -75,7 +68,7 @@ const App: React.FC = () => {
   };
 
   useEffect(() => {
-    document.title = "SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights";
+    document.title = "SomnoAI Lab | Digital Sleep Master";
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
@@ -87,9 +80,7 @@ const App: React.FC = () => {
       const currentRoute = getNormalizedRoute();
       
       if (session) {
-        // Handle post-login redirection logic
         if (currentRoute === 'login') navigateTo('/');
-        if (currentRoute === 'admin-login') navigateTo('/admin');
       }
     });
 
@@ -124,26 +115,18 @@ const App: React.FC = () => {
   }, [lang]);
 
   if (isInitialAuthCheck) {
-    return <LoadingSpinner label="Decrypting Laboratory Node..." />;
+    return <LoadingSpinner label="Decoding Laboratory Protocol..." />;
   }
 
   const renderContent = () => {
-    const route = activeRoute === '' ? '/' : activeRoute;
+    const route = activeRoute;
 
-    // Public / Legal Routes
     if (route === 'terms') return <LegalView type="terms" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => navigateTo('/')} />;
-    
-    // Auth Portal Routes
     if (route === 'login') return <UserLoginPage />;
     if (route === 'admin-login') return <AdminLoginPage />;
+    if (route === 'admin') return <AdminDashboard />;
 
-    // Protected Admin Context
-    if (route === 'admin') {
-      return <AdminDashboard />;
-    }
-
-    // Main App logic - default to login if no session
     if (!session) {
       return <UserLoginPage />;
     }
