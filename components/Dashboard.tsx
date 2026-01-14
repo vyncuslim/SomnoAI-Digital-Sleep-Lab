@@ -5,7 +5,8 @@ import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, BrainCircuit, HeartPulse, Cpu, Zap, 
-  ShieldCheck, Microchip, Layers, Share2, X, CheckCircle2
+  ShieldCheck, Microchip, Layers, Share2, X, CheckCircle2,
+  Signal, Activity, Radio
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
@@ -72,6 +73,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
           </div>
         </div>
         
+        <div className="hidden md:flex items-center gap-6 px-6 border-x border-white/5">
+           <div className="flex flex-col items-center">
+              <span className="text-[8px] font-black text-slate-600 uppercase mb-1">Signal</span>
+              <div className="flex gap-1">
+                 {[1, 2, 3, 4].map(i => (
+                   <div key={i} className={`w-1 h-3 rounded-full ${i <= (engineActive ? 4 : 1) ? 'bg-indigo-500' : 'bg-slate-800'}`} />
+                 ))}
+              </div>
+           </div>
+           <div className="flex flex-col items-center">
+              <span className="text-[8px] font-black text-slate-600 uppercase mb-1">Node</span>
+              <Activity size={12} className={engineActive ? 'text-emerald-500' : 'text-slate-700'} />
+           </div>
+        </div>
+
         <div className="flex gap-4">
           <button 
             onClick={handleSync} 

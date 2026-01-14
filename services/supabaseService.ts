@@ -1,7 +1,7 @@
 
 import { supabase } from '../lib/supabaseClient.ts';
 
-// --- 身份验证增强 (Auth Enhancement) ---
+// --- Auth Enhancement ---
 
 export async function signUpWithPassword(email: string, pass: string) {
   const { data, error } = await supabase.auth.signUp({
@@ -30,16 +30,12 @@ export async function updateUserPassword(newPassword: string) {
   return data;
 }
 
-/**
- * 发送 Magic Link / OTP。
- * 建议在 redirectTo 中始终指向根目录。
- */
 export async function signInWithEmailOTP(email: string, isSignUp: boolean = false) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: window.location.origin,
-      shouldCreateUser: isSignUp, // 仅在注册模式下创建新用户
+      shouldCreateUser: isSignUp,
     }
   });
   if (error) {
@@ -64,13 +60,13 @@ export const signInWithGoogle = async () => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin, // 必须指向根目录处理 Hash
+      redirectTo: window.location.origin,
     },
   });
   if (error) throw error;
 };
 
-// --- 管理员 API (Admin API) ---
+// --- Admin API ---
 
 export const adminApi = {
   getProfile: async (userId: string) => {

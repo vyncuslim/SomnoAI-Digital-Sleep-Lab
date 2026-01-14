@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'zh' | 'de' | 'fr';
 
 export const translations = {
@@ -36,7 +35,7 @@ export const translations = {
     },
     auth: {
       lab: 'Lab',
-      tagline: 'SomnoAI Digital Sleep Lab fuses physiological monitoring, AI deep insights, and health advice for a comprehensive digital sleep lab experience via Android Health Connect.',
+      tagline: 'SomnoAI Digital Sleep Lab fuses physiological monitoring, AI deep insights, and professional health advice for a comprehensive digital sleep lab experience via high-fidelity biometric telemetry.',
       securityStatement: 'Connection Philosophy',
       securityDetail: 'Connection = Detect -> Initialize Client -> Request Permission -> Read Data. No login, no tokens, zero backend storage. System-level authorization ensures data belongs to you.',
       connect: 'Establish Secure Connection',
@@ -206,7 +205,7 @@ export const translations = {
     },
     auth: {
       lab: '实验室',
-      tagline: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
+      tagline: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验，助力掌握生理节律与深度修复。',
       securityStatement: '连接哲学',
       securityDetail: '连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。无登录页，无 Token，仅系统级授权，数据所有权始终属于用户。',
       connect: '建立安全连接',
@@ -311,7 +310,7 @@ export const translations = {
       whsTitle: 'Wear OS 桥接 (WHS API)',
       whsDesc: 'Health Connect 不在 Wear OS 运行，故采用 Wear Health Services (WHS) API 低功耗采集手表端数据。数据先同步至手机端“蓄水池”（本地存储），再由手机应用写入系统主网。',
       waterAnalogyTitle: '生物识别供水系统',
-      waterAnalogyDesc: '集成就像架设水管。Toolbox 是压力测试泵，无需泵房建好即可测通；Wear OS 逻辑则是从偏远水源取水，需先上小水管（WHS）引流到蓄水池（手机应用），最后排入市政主网。',
+      waterAnalogyDesc: '集成就像架设水管。Toolbox 是压力测试泵，无需泵房建好即可测通；Wear OS 逻辑则是从偏远水源取水，需先上小水管（WHS）引流到蓄水池（手机应用），最后排入系统主网。',
       feedingTitle: '数据注入协议 (Feeding)',
       feedingStep1: 'InsertRecords: 自动判断逻辑，执行列表级增量同步。',
       feedingStep2: 'clientRecordID: 映射本地唯一键，确保系统级幂等。',
@@ -563,7 +562,7 @@ export const translations = {
       checkEmail: 'Vérifiez vos e-mails pour le code à 6 chiffres.',
       resendCode: 'Renvoyer le code',
       resendIn: 'Renvoyer dans',
-      googleSign: 'Continuer avec Google'
+      googleSign: 'Continuer with Google'
     },
     assistant: {
       title: 'Labo d\'insights IA',
@@ -654,7 +653,7 @@ export const translations = {
       waterAnalogyDesc: 'Intégration comme la plomberie.',
       feedingTitle: 'Injection de données',
       feedingStep1: 'InsertRecords: Synchronisation par lot.',
-      feedingStep2: 'clientRecordID: Idempotence.',
+      feedingStep2: 'clientRecordID: Idempotenz.',
       feedingStep3: 'clientRecordVersion: Résolution.',
       consumingTitle: 'Consommation',
       consumingStep1: 'Disponibilité: Vérification SDK.',
@@ -665,7 +664,7 @@ export const translations = {
       tokenCycle: '2. getChanges: Retourne updates.',
       tokenStore: '3. Stockage: Token local.',
       tokenExpire: '4. TTL: Expire après 30 jours.',
-      recordsTitle: 'Architecture Bio-Digital',
+      recordsTitle: 'Bio-Digital Architecture',
       sampleType: 'Atomic Sample',
       sampleDesc: 'Mesure (WeightRecord).',
       intervalType: 'Interval',

@@ -13,8 +13,9 @@ export default function AdminPage() {
   const [profile, setProfile] = useState<any>(null);
 
   const spaNavigate = (path: string) => {
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    window.location.hash = cleanPath || '/';
+    const finalPath = path.startsWith('/') ? path : '/' + path;
+    window.history.pushState({}, '', finalPath);
+    window.dispatchEvent(new PopStateEvent('popstate'));
   };
 
   useEffect(() => {
@@ -23,11 +24,11 @@ export default function AdminPage() {
       
       if (!session) {
         setStatus('unauthenticated');
-        spaNavigate('login');
+        spaNavigate('/admin/login');
         return;
       }
 
-      // Fetch role from Profiles - enhanced RLS compatibility
+      // Query Profile for Clearance
       const { data: userProfile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -36,6 +37,8 @@ export default function AdminPage() {
 
       if (error || !userProfile || userProfile.role !== 'admin') {
         setStatus('unauthorized');
+        // Specific delay before mandatory redirect
+        setTimeout(() => spaNavigate('/admin/login'), 2000);
         return;
       }
 
@@ -48,7 +51,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    spaNavigate('login');
+    spaNavigate('/admin/login');
   };
 
   if (status === 'loading') {
@@ -71,15 +74,24 @@ export default function AdminPage() {
             <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter">Clearance Denied</h1>
             <p className="text-sm text-slate-400 italic">"Node identity lacks superuser privileges. Access to laboratory admin terminal revoked."</p>
           </div>
-          <button 
-            onClick={() => spaNavigate('')}
-            className="w-full py-5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-white transition-all"
-          >
-            Return to Terminal
-          </button>
+          <div className="pt-4">
+            <div className="w-full bg-white/5 h-1 rounded-full overflow-hidden">
+              <m.div 
+                initial={{ width: 0 }} 
+                animate={{ width: "100%" }} 
+                transition={{ duration: 2.0, ease: "linear" }} 
+                className="h-full bg-rose-500" 
+              />
+            </div>
+            <p className="text-[8px] font-black uppercase text-slate-600 mt-2 tracking-widest">Protocol: Redirecting to Login Portal</p>
+          </div>
         </GlassCard>
       </div>
     );
+  }
+
+  if (status === 'unauthenticated') {
+     return <div className="min-h-screen bg-[#020617]" />;
   }
 
   return (
@@ -104,7 +116,7 @@ export default function AdminPage() {
       </div>
 
       <m.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto">
-        <AdminView onBack={() => spaNavigate('')} />
+        <AdminView onBack={() => spaNavigate('/')} />
       </m.div>
     </div>
   );

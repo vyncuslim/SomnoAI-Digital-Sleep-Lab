@@ -37,25 +37,32 @@ export default function LoginPage({ isAdminPortal = false }: LoginPageProps) {
     setSuccess(null);
     try {
       if (step === 'input') {
+        // Validation check
+        if (!email || !email.includes('@')) throw new Error("Please enter a valid laboratory email.");
+        
         await signInWithEmailOTP(email, mode === 'signup');
         setStep('verify');
         setResendTimer(60);
         setSuccess('Access Token transmitted. Check your email for the 6-digit passcode.');
       } else {
+        if (otp.length < 6) throw new Error("Identity token must be 6 digits.");
         await verifyOtp(email, otp);
-        // App.tsx onAuthStateChange will handle navigation
+        // App.tsx onAuthStateChange will handle navigation after session is established
       }
     } catch (err: any) {
       console.error("Auth Error:", err);
       let msg = err.message || 'Identity verification failed.';
+      
       if (msg.toLowerCase().includes('failed to fetch')) {
-        msg = "Laboratory Node Unreachable. Please check your internet connection.";
+        msg = "Laboratory Node Unreachable. Please check your internet connection or proxy settings.";
       } else if (msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid')) {
-        msg = "The token has expired or is invalid. Please try again or request a new code.";
+        msg = "The token has expired or is invalid. Please request a new code or try again.";
+        setOtp(''); // Clear invalid OTP
+      } else if (msg.toLowerCase().includes('rate limit')) {
+        msg = "Rate limit reached. Please wait a few minutes before requesting a new token.";
       }
+      
       setError(msg);
-      // If it's an OTP error, clear the input
-      if (step === 'verify') setOtp('');
     } finally {
       setLoading(false);
     }
@@ -65,10 +72,11 @@ export default function LoginPage({ isAdminPortal = false }: LoginPageProps) {
     if (resendTimer > 0 || loading) return;
     setLoading(true);
     setError(null);
+    setSuccess(null);
     try {
       await signInWithEmailOTP(email, mode === 'signup');
       setResendTimer(60);
-      setSuccess('A new Access Token has been transmitted.');
+      setSuccess('A new Access Token has been transmitted to your email.');
     } catch (err: any) {
       setError(err.message || 'Failed to resend token.');
     } finally {
@@ -95,12 +103,14 @@ export default function LoginPage({ isAdminPortal = false }: LoginPageProps) {
           {step === 'input' && !isAdminPortal && (
             <div className="flex bg-slate-950/60 p-1.5 rounded-full border border-white/5">
               <button
+                type="button"
                 onClick={() => setMode('login')}
                 className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${mode === 'login' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
               >
                 <LogIn size={14} /> Login
               </button>
               <button
+                type="button"
                 onClick={() => setMode('signup')}
                 className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${mode === 'signup' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
               >
@@ -209,14 +219,14 @@ export default function LoginPage({ isAdminPortal = false }: LoginPageProps) {
                 exit={{ opacity: 0 }}
                 className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 text-rose-500 text-[11px] font-bold italic"
               >
-                <TriangleAlert size={16} className="shrink-0" />
-                <p>{error}</p>
+                <div className="shrink-0 pt-0.5"><TriangleAlert size={16} /></div>
+                <p className="leading-snug">{error}</p>
               </m.div>
             )}
             {success && (
-              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500 text-[11px] text-center font-bold italic tracking-tight">
+              <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-500 text-[11px] text-center font-bold italic tracking-tight">
                 {success}
-              </m.p>
+              </m.div>
             )}
           </AnimatePresence>
         </GlassCard>

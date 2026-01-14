@@ -1,6 +1,10 @@
-
 User-agent: *
 Allow: /
+Allow: /login
+Allow: /admin
+Allow: /admin/login
+Allow: /terms
+Allow: /privacy
 
 # Host
 Host: https://sleepsomno.com
