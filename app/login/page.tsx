@@ -1,33 +1,34 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Zap, Loader2, ShieldCheck, ChevronLeft, TriangleAlert, Lock, Key, UserPlus, LogIn, Github } from 'lucide-react';
-import { signInWithEmailOTP, verifyOtp, signInWithGoogle, signInWithPassword, signUpWithPassword } from '../../services/supabaseService.ts';
+import { Mail, Zap, Loader2, Key, Fingerprint, TriangleAlert, LogIn, UserPlus, RefreshCcw } from 'lucide-react';
+import { signInWithEmailOTP, verifyOtp, signInWithGoogle } from '../../services/supabaseService.ts';
 import { Logo } from '../../components/Logo.tsx';
 import { GlassCard } from '../../components/GlassCard.tsx';
 
 const m = motion as any;
 
-type AuthMode = 'password' | 'otp' | 'signup';
+interface LoginPageProps {
+  isAdminPortal?: boolean;
+}
 
-export default function LoginPage() {
+export default function LoginPage({ isAdminPortal = false }: LoginPageProps) {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
   const [otp, setOtp] = useState('');
-  const [mode, setMode] = useState<AuthMode>('password');
+  const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [step, setStep] = useState<'input' | 'verify'>('input');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [resendTimer, setResendTimer] = useState(0);
 
-  const spaNavigate = (path: string) => {
-    try {
-      window.history.pushState({}, '', path);
-    } catch (e) {
-      console.warn("Internal navigation failed to update URL. Redirecting view via popstate trigger.", e);
+  useEffect(() => {
+    let interval: any;
+    if (resendTimer > 0) {
+      interval = setInterval(() => setResendTimer(prev => prev - 1), 1000);
     }
-    window.dispatchEvent(new PopStateEvent('popstate'));
-  };
+    return () => clearInterval(interval);
+  }, [resendTimer]);
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -35,22 +36,41 @@ export default function LoginPage() {
     setError(null);
     setSuccess(null);
     try {
-      if (mode === 'password') {
-        await signInWithPassword(email, password);
-        // App.tsx contains the actual logic for redirection via onAuthStateChange
-      } else if (mode === 'signup') {
-        await signUpWithPassword(email, password);
-        setSuccess('Laboratory invitation sent. Please check your neural link (email).');
-      } else if (mode === 'otp') {
-        if (step === 'input') {
-          await signInWithEmailOTP(email);
-          setStep('verify');
-        } else {
-          await verifyOtp(email, otp);
-        }
+      if (step === 'input') {
+        await signInWithEmailOTP(email, mode === 'signup');
+        setStep('verify');
+        setResendTimer(60);
+        setSuccess('Access Token transmitted. Check your email for the 6-digit passcode.');
+      } else {
+        await verifyOtp(email, otp);
+        // App.tsx onAuthStateChange will handle navigation
       }
     } catch (err: any) {
-      setError(err.message || 'Identity verification failed.');
+      console.error("Auth Error:", err);
+      let msg = err.message || 'Identity verification failed.';
+      if (msg.toLowerCase().includes('failed to fetch')) {
+        msg = "Laboratory Node Unreachable. Please check your internet connection.";
+      } else if (msg.toLowerCase().includes('expired') || msg.toLowerCase().includes('invalid')) {
+        msg = "The token has expired or is invalid. Please try again or request a new code.";
+      }
+      setError(msg);
+      // If it's an OTP error, clear the input
+      if (step === 'verify') setOtp('');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    if (resendTimer > 0 || loading) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await signInWithEmailOTP(email, mode === 'signup');
+      setResendTimer(60);
+      setSuccess('A new Access Token has been transmitted.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend token.');
     } finally {
       setLoading(false);
     }
@@ -63,22 +83,31 @@ export default function LoginPage() {
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md relative z-10">
         <div className="text-center mb-12">
           <Logo size={80} animated={true} className="mx-auto mb-8" />
-          <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none mb-3">SomnoAI Lab</h1>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">Digital Biometric Access Protocol</p>
+          <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none mb-3">
+            {isAdminPortal ? 'Admin Command' : 'SomnoAI Lab'}
+          </h1>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">
+            {isAdminPortal ? 'Secure Administrator Access' : 'Digital Biometric Access Protocol'}
+          </p>
         </div>
         
         <GlassCard className="p-10 md:p-14 rounded-[4.5rem] border-white/10 shadow-3xl space-y-10">
-          <div className="flex bg-slate-950/60 p-1.5 rounded-full border border-white/5">
-            {(['password', 'otp', 'signup'] as AuthMode[]).map((m) => (
+          {step === 'input' && !isAdminPortal && (
+            <div className="flex bg-slate-950/60 p-1.5 rounded-full border border-white/5">
               <button
-                key={m}
-                onClick={() => { setMode(m); setStep('input'); setError(null); }}
-                className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all ${mode === m ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                onClick={() => setMode('login')}
+                className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${mode === 'login' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                {m}
+                <LogIn size={14} /> Login
               </button>
-            ))}
-          </div>
+              <button
+                onClick={() => setMode('signup')}
+                className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${mode === 'signup' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+              >
+                <UserPlus size={14} /> Register
+              </button>
+            </div>
+          )}
 
           <AnimatePresence mode="wait">
             <m.form 
@@ -90,51 +119,67 @@ export default function LoginPage() {
               className="space-y-6"
             >
               <div className="space-y-4">
-                <div className="relative group">
-                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
-                  <input 
-                    type="email" 
-                    value={email} 
-                    onChange={e => setEmail(e.target.value)} 
-                    placeholder="Terminal Email" 
-                    className="w-full bg-slate-950/80 border border-white/10 rounded-[1.8rem] pl-16 pr-6 py-6 text-sm text-white outline-none focus:border-indigo-500/50" 
-                    required 
-                  />
-                </div>
-
-                {mode !== 'otp' && (
+                {step === 'input' && (
                   <div className="relative group">
-                    <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
                     <input 
-                      type="password" 
-                      value={password} 
-                      onChange={e => setPassword(e.target.value)} 
-                      placeholder="Security Passkey" 
+                      type="email" 
+                      value={email} 
+                      onChange={e => setEmail(e.target.value)} 
+                      placeholder="Terminal Email" 
                       className="w-full bg-slate-950/80 border border-white/10 rounded-[1.8rem] pl-16 pr-6 py-6 text-sm text-white outline-none focus:border-indigo-500/50" 
                       required 
                     />
                   </div>
                 )}
 
-                {mode === 'otp' && step === 'verify' && (
-                  <div className="relative group">
-                    <Key className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
-                    <input 
-                      type="text" 
-                      value={otp} 
-                      onChange={e => setOtp(e.target.value)} 
-                      placeholder="Neural Verification Code" 
-                      className="w-full bg-slate-950/80 border border-white/10 rounded-[1.8rem] pl-16 pr-6 py-6 text-sm text-white font-mono tracking-[0.5em] outline-none focus:border-indigo-500/50 text-center" 
-                      required 
-                    />
+                {step === 'verify' && (
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-2 px-4">
+                       <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+                       <span className="text-[9px] font-black uppercase text-indigo-400 tracking-widest">Awaiting Neural Token...</span>
+                    </div>
+                    <div className="relative group">
+                      <Key className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                      <input 
+                        type="text" 
+                        value={otp} 
+                        onChange={e => setOtp(e.target.value)} 
+                        placeholder="6-Digit Passcode" 
+                        autoFocus
+                        className="w-full bg-slate-950/80 border border-white/10 rounded-[1.8rem] pl-16 pr-6 py-6 text-sm text-white font-mono tracking-[0.5em] outline-none focus:border-indigo-500/50 text-center" 
+                        required 
+                      />
+                    </div>
                   </div>
                 )}
               </div>
 
               <button disabled={loading} className="w-full py-6 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.3em] shadow-xl active:scale-[0.98] transition-all flex items-center justify-center gap-3">
-                {loading ? <Loader2 className="animate-spin" size={18} /> : mode === 'signup' ? <UserPlus size={18}/> : <Zap size={18} />}
-                {loading ? 'Decrypting...' : step === 'verify' ? 'Confirm Identity' : `Authorize ${mode}`}
+                {loading ? <Loader2 className="animate-spin" size={18} /> : step === 'verify' ? <Fingerprint size={18} /> : <Zap size={18} />}
+                {loading ? 'Processing...' : step === 'verify' ? 'Authorize Identity' : mode === 'signup' ? 'Initiate Registration' : 'Request Access'}
               </button>
+
+              {step === 'verify' && (
+                <div className="flex flex-col gap-4">
+                  <button 
+                    type="button" 
+                    onClick={handleResend}
+                    disabled={resendTimer > 0 || loading}
+                    className="w-full flex items-center justify-center gap-2 text-[9px] font-black uppercase text-slate-400 hover:text-white transition-colors tracking-widest disabled:opacity-30"
+                  >
+                    <RefreshCcw size={12} className={loading ? 'animate-spin' : ''} />
+                    {resendTimer > 0 ? `Resend Token in ${resendTimer}s` : 'Resend Token'}
+                  </button>
+                  <button 
+                    type="button" 
+                    onClick={() => { setStep('input'); setSuccess(null); setError(null); }}
+                    className="w-full text-[9px] font-black uppercase text-slate-600 hover:text-slate-400 transition-colors tracking-widest"
+                  >
+                    Edit Email Address
+                  </button>
+                </div>
+              )}
             </m.form>
           </AnimatePresence>
 
@@ -156,8 +201,24 @@ export default function LoginPage() {
             Clearance required for laboratory interaction.
           </p>
           
-          {error && <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-rose-500 text-[11px] text-center font-bold italic tracking-tight">{error}</m.p>}
-          {success && <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500 text-[11px] text-center font-bold italic tracking-tight">{success}</m.p>}
+          <AnimatePresence>
+            {error && (
+              <m.div 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                exit={{ opacity: 0 }}
+                className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 text-rose-500 text-[11px] font-bold italic"
+              >
+                <TriangleAlert size={16} className="shrink-0" />
+                <p>{error}</p>
+              </m.div>
+            )}
+            {success && (
+              <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-emerald-500 text-[11px] text-center font-bold italic tracking-tight">
+                {success}
+              </m.p>
+            )}
+          </AnimatePresence>
         </GlassCard>
       </m.div>
     </div>

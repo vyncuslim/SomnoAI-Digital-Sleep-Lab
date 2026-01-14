@@ -13,12 +13,8 @@ export default function AdminPage() {
   const [profile, setProfile] = useState<any>(null);
 
   const spaNavigate = (path: string) => {
-    try {
-      window.history.pushState({}, '', path);
-    } catch (e) {
-      console.warn("Internal navigation failed to update URL. Redirecting view via popstate trigger.", e);
-    }
-    window.dispatchEvent(new PopStateEvent('popstate'));
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    window.location.hash = cleanPath || '/';
   };
 
   useEffect(() => {
@@ -27,11 +23,11 @@ export default function AdminPage() {
       
       if (!session) {
         setStatus('unauthenticated');
-        spaNavigate('/login');
+        spaNavigate('login');
         return;
       }
 
-      // 获取 Profiles 表中的角色 - 增强 RLS 兼容性
+      // Fetch role from Profiles - enhanced RLS compatibility
       const { data: userProfile, error } = await supabase
         .from('profiles')
         .select('*')
@@ -52,7 +48,7 @@ export default function AdminPage() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
-    spaNavigate('/login');
+    spaNavigate('login');
   };
 
   if (status === 'loading') {
@@ -76,7 +72,7 @@ export default function AdminPage() {
             <p className="text-sm text-slate-400 italic">"Node identity lacks superuser privileges. Access to laboratory admin terminal revoked."</p>
           </div>
           <button 
-            onClick={() => spaNavigate('/')}
+            onClick={() => spaNavigate('')}
             className="w-full py-5 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-[0.3em] text-slate-400 hover:text-white transition-all"
           >
             Return to Terminal
@@ -108,7 +104,7 @@ export default function AdminPage() {
       </div>
 
       <m.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="max-w-6xl mx-auto">
-        <AdminView onBack={() => spaNavigate('/')} />
+        <AdminView onBack={() => spaNavigate('')} />
       </m.div>
     </div>
   );

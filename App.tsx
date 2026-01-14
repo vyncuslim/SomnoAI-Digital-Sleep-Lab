@@ -2,19 +2,16 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, Activity, Zap, WifiOff, ShieldCheck, User, BrainCircuit } from 'lucide-react';
+import { Loader2, Activity, Zap, ShieldCheck, User, BrainCircuit } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
-import { GlassCard } from './components/GlassCard.tsx';
 
-// Fixed module specifiers from absolute to relative paths
 const LoginPage = lazy(() => import('./app/login/page.tsx'));
 const AdminPage = lazy(() => import('./app/admin/page.tsx'));
 
-// 核心组件
 import { Dashboard } from './components/Dashboard.tsx';
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
@@ -39,61 +36,56 @@ const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
   
-  const getNormalizedPath = () => {
-    let path = window.location.pathname.toLowerCase();
-    if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1);
-    return path || '/';
+  // Use Hash Routing to prevent pushState origin errors and 404s
+  const getHashRoute = () => {
+    const hash = window.location.hash.replace('#', '').toLowerCase();
+    return hash || '/';
   };
 
-  const [activeRoute, setActiveRoute] = useState<string>(getNormalizedPath());
+  const [activeRoute, setActiveRoute] = useState<string>(getHashRoute());
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [errorToast, setErrorToast] = useState<string | null>(null);
 
-  // 初始化 Auth 监听
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       setIsInitialAuthCheck(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setSession(session);
-      // 如果登录了且在登录页，自动跳回首页
-      if (session && window.location.pathname === '/login') {
-        navigateTo('/');
-      }
-      // 如果退出了，自动跳回登录页
-      if (!session) {
-        navigateTo('/login');
+      if (session) {
+        // Successful login redirect logic using hash
+        const currentHash = getHashRoute();
+        if (currentHash === 'login' || currentHash === 'admin/login') {
+          navigateTo(currentHash.includes('admin') ? 'admin' : '/');
+        }
+      } else {
+        // Auto redirect to login if no session and not already on a login page
+        const currentHash = getHashRoute();
+        if (currentHash !== 'login' && currentHash !== 'admin/login') {
+          navigateTo('login');
+        }
       }
     });
 
-    const handlePopState = () => {
-      setActiveRoute(getNormalizedPath());
-    };
-    window.addEventListener('popstate', handlePopState);
+    const handleHashChange = () => setActiveRoute(getHashRoute());
+    window.addEventListener('hashchange', handleHashChange);
     if ((window as any).dismissLoader) (window as any).dismissLoader();
     
     return () => {
-      window.removeEventListener('popstate', handlePopState);
+      window.removeEventListener('hashchange', handleHashChange);
       subscription.unsubscribe();
     };
   }, []);
 
   const navigateTo = (path: string) => {
-    const normalized = path.toLowerCase();
-    if (activeRoute !== normalized) {
-      try {
-        // Wrap pushState in try-catch to prevent crash on restricted origins
-        window.history.pushState({}, '', normalized);
-      } catch (e) {
-        console.warn("Navigation pushState failed. Continuing with internal state routing.", e);
-      }
-      setActiveRoute(normalized);
-    }
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    // We use window.location.hash directly to avoid pushState cross-origin issues
+    window.location.hash = cleanPath || '/';
   };
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
@@ -120,91 +112,76 @@ const App: React.FC = () => {
     }
   }, [lang]);
 
-  // 如果还在检查初始登录状态，显示加载器
   if (isInitialAuthCheck) {
     return <LoadingSpinner label="Synchronizing Identity Node..." />;
   }
 
   const renderRoute = (): React.ReactNode => {
-    // 权限校验：未登录状态下，除了登录页，其余全部拦截并显示登录页
-    if (!session && activeRoute !== '/login') {
-      return <LoginPage />;
+    if (!session) {
+      if (activeRoute === 'admin/login') return <LoginPage isAdminPortal={true} />;
+      return <LoginPage isAdminPortal={false} />;
     }
 
-    // 已登录状态下，拦截并分发
-    if (activeRoute === '/login') return <LoginPage />;
-    if (activeRoute === '/admin') return <AdminPage />;
-    
-    // 默认首页（用户实验室）
-    return (
-      <div className="max-w-4xl mx-auto p-4 pt-10 pb-40">
-        <AnimatePresence mode="wait">
-          <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            {activeView === 'dashboard' ? (
-              currentRecord ? (
-                <Dashboard data={currentRecord} lang={lang} onSyncHealth={(p) => handleSyncHealthConnect(false, p)} onNavigate={setActiveView} />
-              ) : errorToast ? (
-                <div className="flex flex-col items-center justify-center h-[70vh] p-8 text-center">
-                  <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 max-w-sm space-y-6">
-                    <WifiOff size={48} className="text-rose-500 mx-auto" />
-                    <p className="text-sm text-slate-400">{errorToast}</p>
-                    <button onClick={() => handleSyncHealthConnect(true)} className="w-full py-4 bg-indigo-600 text-white rounded-full font-bold uppercase tracking-widest text-[10px]">Retry</button>
-                  </GlassCard>
-                </div>
-              ) : (
-                <div className="flex items-center justify-center h-[70vh]">
-                  <button onClick={() => handleSyncHealthConnect(true)} className="px-8 py-4 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Initialize Digital Handshake</button>
-                </div>
-              )
-            ) : activeView === 'calendar' ? (
-              <Trends history={history} lang={lang} />
-            ) : activeView === 'assistant' ? (
-              <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} />
-            ) : activeView === 'profile' ? (
-              /* Fixed: Removed duplicate props (threeDEnabled and onThemeChange) which caused a JSX compilation error */
-              <Settings 
-                lang={lang} onLanguageChange={setLang} onLogout={() => supabase.auth.signOut().then(() => navigateTo('/login'))} onNavigate={setActiveView}
-                theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
-                threeDEnabled={true} onThreeDChange={() => {}} staticMode={false} onStaticModeChange={() => {}}
-                lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncHealthConnect(true)}
-              />
-            ) : null}
-          </m.div>
-        </AnimatePresence>
+    if (activeRoute === 'login' || activeRoute === 'admin/login') {
+      return activeRoute.includes('admin') ? <AdminPage /> : renderLab();
+    }
 
-        <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
-          <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl overflow-hidden">
-            {[
-              { id: 'dashboard', icon: Activity, label: 'LAB' },
-              { id: 'calendar', icon: Zap, label: 'TRND' },
-              { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
-              { id: 'profile', icon: User, label: 'CFG' }
-            ].map((nav) => (
-              <button 
-                key={nav.id} 
-                onClick={() => {
-                  if (activeRoute !== '/') navigateTo('/');
-                  setActiveView(nav.id as any);
-                }} 
-                className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeView === nav.id && activeRoute === '/' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                <nav.icon size={20} />
-                {activeView === nav.id && activeRoute === '/' && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
-              </button>
-            ))}
-            <div className="w-[1px] h-8 bg-white/10 mx-1 self-center" />
-            <button 
-              onClick={() => navigateTo('/admin')}
-              className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeRoute === '/admin' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-500 hover:text-rose-400'}`}
-            >
-              <ShieldCheck size={20} />
-              {activeRoute === '/admin' && <m.span layoutId="nav-text-admin" className="text-[10px] font-black uppercase tracking-widest">ADM</m.span>}
-            </button>
-          </nav>
-        </div>
-      </div>
-    );
+    if (activeRoute === 'admin') return <AdminPage />;
+    
+    return renderLab();
   };
+
+  const renderLab = () => (
+    <div className="max-w-4xl mx-auto p-4 pt-10 pb-40">
+      <AnimatePresence mode="wait">
+        <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+          {activeView === 'dashboard' ? (
+            currentRecord ? (
+              <Dashboard data={currentRecord} lang={lang} onSyncHealth={(p) => handleSyncHealthConnect(false, p)} onNavigate={setActiveView} />
+            ) : (
+              <div className="flex items-center justify-center h-[70vh]">
+                <button onClick={() => handleSyncHealthConnect(true)} className="px-8 py-4 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Initialize Digital Handshake</button>
+              </div>
+            )
+          ) : activeView === 'calendar' ? (
+            <Trends history={history} lang={lang} />
+          ) : activeView === 'assistant' ? (
+            <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} />
+          ) : activeView === 'profile' ? (
+            <Settings 
+              lang={lang} onLanguageChange={setLang} onLogout={() => supabase.auth.signOut()} onNavigate={setActiveView}
+              theme="dark" onThemeChange={() => {}} accentColor="indigo" onAccentChange={() => {}}
+              threeDEnabled={true} onThreeDChange={() => {}} staticMode={false} onStaticModeChange={() => {}}
+              lastSyncTime={localStorage.getItem('somno_last_sync')} onManualSync={() => handleSyncHealthConnect(true)}
+            />
+          ) : null}
+        </m.div>
+      </AnimatePresence>
+
+      <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
+        <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl">
+          {[
+            { id: 'dashboard', icon: Activity, label: 'LAB' },
+            { id: 'calendar', icon: Zap, label: 'TRND' },
+            { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
+            { id: 'profile', icon: User, label: 'CFG' }
+          ].map((nav) => (
+            <button 
+              key={nav.id} 
+              onClick={() => {
+                if (activeRoute !== '/') navigateTo('/');
+                setActiveView(nav.id as any);
+              }} 
+              className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeView === nav.id && (activeRoute === '/' || activeRoute === '') ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              <nav.icon size={20} />
+              {activeView === nav.id && (activeRoute === '/' || activeRoute === '') && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
+            </button>
+          ))}
+        </nav>
+      </div>
+    </div>
+  );
 
   return (
     <RootLayout>

@@ -1,18 +1,13 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient.ts';
 
-const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qY3Z2dHlhZWJkb2RtZWd3cWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyODc2ODgsImV4cCI6MjA4Mzg2MzY4OH0.FJY9V6fdTFOFCXeqWNwv1cQnsnQfq4RZq-5WyLNzPCg';
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
-// --- 身份验证增强 ---
+// --- 身份验证增强 (Auth Enhancement) ---
 
 export async function signUpWithPassword(email: string, pass: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password: pass,
-    options: { emailRedirectTo: window.location.origin + '/login' }
+    options: { emailRedirectTo: window.location.origin }
   });
   if (error) throw error;
   return data;
@@ -27,15 +22,32 @@ export async function signInWithPassword(email: string, pass: string) {
   return data.session;
 }
 
-export async function signInWithEmailOTP(email: string) {
+export async function updateUserPassword(newPassword: string) {
+  const { data, error } = await supabase.auth.updateUser({
+    password: newPassword
+  });
+  if (error) throw error;
+  return data;
+}
+
+/**
+ * 发送 Magic Link / OTP。
+ * 建议在 redirectTo 中始终指向根目录。
+ */
+export async function signInWithEmailOTP(email: string, isSignUp: boolean = false) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
-      emailRedirectTo: window.location.origin + '/admin',
-      shouldCreateUser: true,
+      emailRedirectTo: window.location.origin,
+      shouldCreateUser: isSignUp, // 仅在注册模式下创建新用户
     }
   });
-  if (error) throw error;
+  if (error) {
+    if (error.message.includes('fetch')) {
+      throw new Error("Network Error: Failed to reach identity server.");
+    }
+    throw error;
+  }
 }
 
 export async function verifyOtp(email: string, token: string) {
@@ -52,13 +64,13 @@ export const signInWithGoogle = async () => {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin + '/admin',
+      redirectTo: window.location.origin, // 必须指向根目录处理 Hash
     },
   });
   if (error) throw error;
 };
 
-// --- 管理员 API ---
+// --- 管理员 API (Admin API) ---
 
 export const adminApi = {
   getProfile: async (userId: string) => {
@@ -115,7 +127,6 @@ export const adminApi = {
     if (error) throw error;
   },
 
-  // Added updateSleepRecord to allow admins to modify biometric data entries
   updateSleepRecord: async (id: string, updates: any) => {
     const { error } = await supabase.from('sleep_records').update(updates).eq('id', id);
     if (error) throw error;

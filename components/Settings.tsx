@@ -4,11 +4,12 @@ import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, 
   HeartHandshake, Shield, FileText, Copy, Smartphone, Scan, 
-  Globe, Zap, RefreshCw, Palette, Box, Info, ShieldCheck, Activity, Terminal
+  Globe, Zap, RefreshCw, Palette, Box, Info, ShieldCheck, Activity, Terminal, Lock, Loader2
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { updateUserPassword } from '../services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -43,7 +44,14 @@ export const Settings: React.FC<SettingsProps> = ({
   const [copyStatus, setCopyStatus] = useState<'none' | 'paypal' | 'duitnow'>('none');
   const [isSyncing, setIsSyncing] = useState(false);
 
+  // Password update states
+  const [newPassword, setNewPassword] = useState('');
+  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
+  const [passwordStatus, setPasswordStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [passwordError, setPasswordError] = useState('');
+
   const t = translations[lang].settings;
+  const isZh = lang === 'zh';
 
   useEffect(() => {
     const checkKey = async () => {
@@ -71,6 +79,28 @@ export const Settings: React.FC<SettingsProps> = ({
     setTimeout(() => setSaveStatus(false), 2000);
   };
 
+  const handlePasswordUpdate = async () => {
+    if (newPassword.length < 6) {
+      setPasswordError(isZh ? "密码至少需要 6 个字符" : "Password must be at least 6 characters");
+      setPasswordStatus('error');
+      return;
+    }
+
+    setIsUpdatingPassword(true);
+    setPasswordStatus('idle');
+    try {
+      await updateUserPassword(newPassword);
+      setPasswordStatus('success');
+      setNewPassword('');
+      setTimeout(() => setPasswordStatus('idle'), 3000);
+    } catch (err: any) {
+      setPasswordError(err.message || (isZh ? "密码更新失败" : "Password update failed"));
+      setPasswordStatus('error');
+    } finally {
+      setIsUpdatingPassword(false);
+    }
+  };
+
   const handleCopy = (text: string, type: 'paypal' | 'duitnow') => {
     navigator.clipboard.writeText(text);
     setCopyStatus(type);
@@ -84,9 +114,6 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const handleManagePermissions = () => {
-    // In a real Android context, this would trigger:
-    // val intent = Intent(HealthConnectClient.ACTION_HEALTH_CONNECT_SETTINGS)
-    // startActivity(intent)
     alert(lang === 'zh' ? '正在重定向至 Android 系统 Health Connect 设置界面...' : 'Redirecting to Android System Health Connect Settings...');
   };
 
@@ -96,6 +123,61 @@ export const Settings: React.FC<SettingsProps> = ({
         <h1 className="text-3xl font-black tracking-tighter text-white italic uppercase">{t.title}</h1>
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">{t.subtitle}</p>
       </header>
+
+      {/* Account Security Section */}
+      <GlassCard className="p-8 rounded-[4rem] space-y-8">
+        <div className="flex items-center gap-4">
+          <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
+            <Lock size={20} />
+          </div>
+          <div>
+            <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{isZh ? '账户安全' : 'Account Security'}</h2>
+            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Update Access Credentials</p>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <label className="text-[10px] font-black uppercase text-slate-500 px-4">{isZh ? '设置新访问密码' : 'Set New Access Password'}</label>
+          <div className="relative group">
+            <input 
+              type="password"
+              value={newPassword}
+              onChange={(e) => {
+                setNewPassword(e.target.value);
+                if (passwordStatus === 'error') setPasswordStatus('idle');
+              }}
+              placeholder={isZh ? "输入新密码" : "Enter new password"}
+              className="w-full bg-slate-950/60 border border-white/5 rounded-full px-8 py-5 text-xs text-white outline-none focus:border-indigo-500/50 transition-all"
+            />
+            <button 
+              onClick={handlePasswordUpdate}
+              disabled={isUpdatingPassword || !newPassword}
+              className={`absolute right-2 top-1/2 -translate-y-1/2 px-6 py-3 rounded-full font-black text-[9px] uppercase tracking-widest transition-all ${
+                passwordStatus === 'success' ? 'bg-emerald-500 text-white' : 
+                passwordStatus === 'error' ? 'bg-rose-500 text-white' : 
+                'bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-30'
+              }`}
+            >
+              {isUpdatingPassword ? <Loader2 size={14} className="animate-spin" /> : 
+               passwordStatus === 'success' ? <CheckCircle2 size={14} /> : 
+               passwordStatus === 'error' ? <X size={14} /> : 
+               (isZh ? '更新' : 'Update')}
+            </button>
+          </div>
+          <AnimatePresence>
+            {passwordStatus === 'error' && (
+              <m.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="text-rose-500 text-[9px] font-bold uppercase px-4 italic">
+                {passwordError}
+              </m.p>
+            )}
+            {passwordStatus === 'success' && (
+              <m.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="text-emerald-500 text-[9px] font-bold uppercase px-4 italic">
+                {isZh ? '密码更新成功，已同步至实验室节点' : 'Password synchronized to lab nodes'}
+              </m.p>
+            )}
+          </AnimatePresence>
+        </div>
+      </GlassCard>
 
       {/* Language Section */}
       <GlassCard className="p-8 rounded-[4rem] space-y-6">
@@ -172,7 +254,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
 
-        {/* Health Connect Ecosystem Module - Mandatory Logic Entry */}
+        {/* Health Connect Ecosystem Module */}
         <div className="pt-6 border-t border-white/5 space-y-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
