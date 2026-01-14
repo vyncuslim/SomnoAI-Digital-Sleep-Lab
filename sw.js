@@ -1,7 +1,9 @@
-const CACHE_NAME = 'somno-v1.3';
+
+const CACHE_NAME = 'somno-v1.4';
 const ASSETS_TO_CACHE = [
   '/',
-  '/index.html'
+  '/index.html',
+  'https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&family=JetBrains+Mono:wght@700;800&display=swap'
 ];
 
 self.addEventListener('install', event => {
@@ -37,17 +39,21 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Cache-First for assets (JS, CSS, Images)
+  // Skip caching for external API calls and Supabase
+  if (event.request.url.includes('supabase.co') || event.request.url.includes('googleapis.com')) {
+    return;
+  }
+
+  // Cache-First for local assets
   event.respondWith(
     caches.match(event.request).then(response => {
       return response || fetch(event.request).then(fetchResponse => {
-        // Only cache successful responses to avoid caching 404 HTML as JS
         if (fetchResponse.ok) {
           const copy = fetchResponse.clone();
           caches.open(CACHE_NAME).then(cache => cache.put(event.request, copy));
         }
         return fetchResponse;
-      });
+      }).catch(() => null);
     })
   );
 });

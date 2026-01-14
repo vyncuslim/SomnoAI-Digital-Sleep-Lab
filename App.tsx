@@ -41,6 +41,7 @@ const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [isSandbox, setIsSandbox] = useState(() => {
     return new URLSearchParams(window.location.search).get('sandbox') === 'true' || 
            localStorage.getItem('somno_sandbox_active') === 'true';
@@ -75,9 +76,13 @@ const App: React.FC = () => {
   }, [navigateTo]);
 
   const handleLogout = useCallback(async () => {
+    if (isLoggingOut) return;
+    setIsLoggingOut(true);
+
     if (isSandbox) {
       setIsSandbox(false);
       localStorage.removeItem('somno_sandbox_active');
+      setIsLoggingOut(false);
       navigateTo('/');
     } else {
       try {
@@ -90,10 +95,11 @@ const App: React.FC = () => {
       } finally {
         setSession(null);
         setIsAdmin(false);
+        setIsLoggingOut(false);
         navigateTo('/');
       }
     }
-  }, [isSandbox, navigateTo]);
+  }, [isSandbox, navigateTo, isLoggingOut]);
 
   useEffect(() => {
     document.title = "SomnoAI Lab | Digital Sleep Master";
@@ -112,13 +118,18 @@ const App: React.FC = () => {
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      // Prevent state update if already logging out to avoid race conditions
+      if (event === 'SIGNED_OUT') {
+        setSession(null);
+        setIsAdmin(false);
+        return;
+      }
+      
       setSession(newSession);
       if (newSession) {
         const adminStatus = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(adminStatus);
         if (getNormalizedRoute() === 'login') navigateTo('/');
-      } else {
-        setIsAdmin(false);
       }
     });
 
