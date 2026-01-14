@@ -4,25 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
-    <link rel="icon" href="https://img.icons8.com/fluency/48/moon-star.png" type="image/png">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/96/moon-star.png">
-    
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "WebSite",
-      "name": "SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights",
-      "alternateName": "SomnoAI",
-      "url": "https://sleepsomno.com/"
-    }
-    </script>
-
-    <meta name="theme-color" content="#020617">
-    <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <meta name="apple-mobile-web-app-title" content="SomnoAI Lab">
-    
-    <link rel="canonical" href="https://sleepsomno.com/" />
+    <!-- Localized Favicon and PWA icons -->
+    <link rel="icon" href="/favicon.png" type="image/png">
+    <link rel="apple-touch-icon" href="/favicon.png">
     
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
     <meta name="description" content="Master your sleep with SomnoAI. Fusing physiological monitoring, deep AI insights via Gemini, and personalized recovery protocols for a complete digital sleep experience.">
@@ -30,12 +14,30 @@
     
     <link rel="manifest" href="/manifest.json">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap">
-
+    <!-- CSS / Tailwind Integration - Using localized config for production stability -->
     <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+      @tailwind base;
+      @tailwind components;
+      @tailwind utilities;
+
+      @font-face {
+        font-family: 'Plus Jakarta Sans';
+        src: url('/fonts/PlusJakartaSans-Regular.woff2') format('woff2');
+        font-weight: 400;
+        font-style: normal;
+        font-display: swap;
+      }
+
+      body {
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        @apply bg-[#01040a] text-[#e2e8f0] antialiased;
+      }
+
+      ::-webkit-scrollbar { display: none; }
+      * { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+    
     <script>
       tailwind.config = {
         theme: {
@@ -52,47 +54,24 @@
     <script>
         window.addEventListener('load', function() {
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' })
-                    .catch(err => console.warn('SW failed:', err));
+                navigator.serviceWorker.register('/sw.js', { updateViaCache: 'none' }).catch(err => console.warn('SW failed:', err));
             }
-
-            setTimeout(function() {
-                var loader = document.getElementById('page-loader');
-                if (loader) {
-                    var forceBtn = document.getElementById('force-start-btn');
-                    if (forceBtn) forceBtn.style.display = 'block';
-                }
-            }, 3000);
-
+            // Dismiss loader when app is ready
             window.dismissLoader = function() {
-                var loader = document.getElementById('page-loader');
+                const loader = document.getElementById('page-loader');
                 if (loader) {
                     loader.style.opacity = '0';
                     loader.style.pointerEvents = 'none';
-                    setTimeout(function() { loader.remove(); }, 800);
+                    setTimeout(() => loader.remove(), 800);
                 }
             }
         });
     </script>
     
     <style>
-        :root { --perspective: 1500px; }
-        @keyframes liquid-drift {
-            0% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(5%, 5%) scale(1.1); }
-            66% { transform: translate(-5%, 2%) scale(0.95); }
-            100% { transform: translate(0, 0) scale(1); }
-        }
-        html, body {
-            height: 100%; margin: 0; padding: 0;
-            background-color: #01040a; color: #e2e8f0;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            -webkit-font-smoothing: antialiased; overflow-x: hidden;
-        }
         #spatial-bg {
             position: fixed; inset: 0; z-index: -1;
-            background: #01040a;
-            overflow: hidden;
+            background: #01040a; overflow: hidden;
         }
         .liquid-blob {
             position: absolute; border-radius: 50%;
@@ -100,21 +79,18 @@
             animation: liquid-drift 25s infinite alternate ease-in-out;
             pointer-events: none;
         }
+        @keyframes liquid-drift {
+            0% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(5%, 5%) scale(1.1); }
+            66% { transform: translate(-5%, 2%) scale(0.95); }
+            100% { transform: translate(0, 0) scale(1); }
+        }
         .initial-loader {
             display: flex; flex-direction: column; align-items: center; justify-content: center;
             height: 100vh; width: 100%; gap: 1.5rem; position: fixed;
             top: 0; left: 0; background-color: #01040a; z-index: 1000;
             transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        #force-start-btn {
-            display: none; margin-top: 24px; padding: 14px 32px;
-            background: rgba(99, 102, 241, 0.1); border: 1px solid rgba(99, 102, 241, 0.3);
-            border-radius: 999px; color: #818cf8; font-size: 10px; font-weight: 800;
-            text-transform: uppercase; letter-spacing: 0.2em; cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        ::-webkit-scrollbar { display: none; }
-        * { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
     <script type="importmap">
 {
@@ -128,10 +104,10 @@
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
     "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
@@ -150,7 +126,6 @@
                 </circle>
             </svg>
             <div style="color: #fff; letter-spacing: 0.8em; font-weight: 900; font-style: italic; font-size: 11px;">SOMNOAI DIGITAL SLEEP LAB</div>
-            <button id="force-start-btn" onclick="window.dismissLoader()">INITIALIZE LAB</button>
         </div>
     </div>
     <script type="module" src="/index.tsx"></script>

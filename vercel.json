@@ -1,8 +1,19 @@
-
 {
   "cleanUrls": true,
   "trailingSlash": false,
   "rewrites": [
+    {
+      "source": "/assets/:path*",
+      "destination": "/assets/:path*"
+    },
+    {
+      "source": "/fonts/:path*",
+      "destination": "/fonts/:path*"
+    },
+    {
+      "source": "/favicon.png",
+      "destination": "/favicon.png"
+    },
     {
       "source": "/login",
       "destination": "/index.html"
@@ -24,7 +35,7 @@
       "destination": "/index.html"
     },
     {
-      "source": "/((?!assets/|favicon.ico|favicon.png|manifest.json|sw.js|.*\\.[a-zA-Z0-9]+$).*)",
+      "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
     }
   ]

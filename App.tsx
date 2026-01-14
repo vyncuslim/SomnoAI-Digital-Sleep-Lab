@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
@@ -8,9 +7,12 @@ import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
+import { adminApi } from './services/supabaseService.ts';
 
-const LoginPage = lazy(() => import('./app/login/page.tsx'));
-const AdminPage = lazy(() => import('./app/admin/page.tsx'));
+// Lazy load specific pages
+const UserLoginPage = lazy(() => import('./app/login/page.tsx'));
+const AdminDashboard = lazy(() => import('./app/admin/page.tsx'));
+const AdminLoginPage = lazy(() => import('./app/admin/login/page.tsx'));
 const LegalView = lazy(() => import('./components/LegalView.tsx').then(m => ({ default: m.LegalView })));
 
 import { Dashboard } from './components/Dashboard.tsx';
@@ -20,7 +22,7 @@ const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ def
 
 const m = motion as any;
 
-const LoadingSpinner = ({ label = "Initializing..." }: { label?: string }) => (
+const LoadingSpinner = ({ label = "Synchronizing..." }: { label?: string }) => (
   <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617]">
     <div className="relative">
       <Loader2 size={48} className="animate-spin text-indigo-500 opacity-50" />
@@ -45,13 +47,19 @@ const App: React.FC = () => {
       path = path.slice(0, -1);
     }
 
-    // Direct path mapping
+    // Direct path mapping for SPA routing
     if (path === '/login') return 'login';
     if (path === '/admin') return 'admin';
-    if (path === '/admin/login') return 'admin/login';
+    if (path === '/admin/login') return 'admin-login';
     if (path === '/terms') return 'terms';
     if (path === '/privacy') return 'privacy';
 
+    // Hash fallback/support
+    let hash = window.location.hash.replace('#', '').toLowerCase();
+    if (hash.startsWith('/')) hash = hash.slice(1);
+    if (hash === 'login') return 'login';
+    if (hash === 'admin') return 'admin';
+    
     return path === '/' ? '/' : path.slice(1);
   }, []);
 
@@ -74,12 +82,14 @@ const App: React.FC = () => {
       setIsInitialAuthCheck(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       const currentRoute = getNormalizedRoute();
+      
       if (session) {
+        // Handle post-login redirection logic
         if (currentRoute === 'login') navigateTo('/');
-        if (currentRoute === 'admin/login') navigateTo('/admin');
+        if (currentRoute === 'admin-login') navigateTo('/admin');
       }
     });
 
@@ -114,28 +124,28 @@ const App: React.FC = () => {
   }, [lang]);
 
   if (isInitialAuthCheck) {
-    return <LoadingSpinner label="Synchronizing Identity Node..." />;
+    return <LoadingSpinner label="Decrypting Laboratory Node..." />;
   }
 
-  const renderRoute = (): React.ReactNode => {
+  const renderContent = () => {
     const route = activeRoute === '' ? '/' : activeRoute;
 
     // Public / Legal Routes
     if (route === 'terms') return <LegalView type="terms" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => navigateTo('/')} />;
     
-    // Auth Routes
-    if (route === 'login') return <LoginPage isAdminPortal={false} />;
-    if (route === 'admin/login') return <LoginPage isAdminPortal={true} />;
+    // Auth Portal Routes
+    if (route === 'login') return <UserLoginPage />;
+    if (route === 'admin-login') return <AdminLoginPage />;
 
-    // Protected Admin Route
+    // Protected Admin Context
     if (route === 'admin') {
-      return <AdminPage />;
+      return <AdminDashboard />;
     }
 
-    // Main App logic
+    // Main App logic - default to login if no session
     if (!session) {
-      return <LoginPage isAdminPortal={false} />;
+      return <UserLoginPage />;
     }
 
     return (
@@ -193,9 +203,9 @@ const App: React.FC = () => {
 
   return (
     <RootLayout>
-      <Suspense fallback={<LoadingSpinner label="Decrypting Laboratory Node..." />}>
+      <Suspense fallback={<LoadingSpinner label="Accessing Core Protocols..." />}>
         <div className="min-h-screen">
-          {renderRoute()}
+          {renderContent()}
         </div>
       </Suspense>
     </RootLayout>
