@@ -61,13 +61,9 @@ export async function updateUserPassword(password: string) {
   return data;
 }
 
-// --- Admin Services (using 'role' column in 'users' table) ---
+// --- Admin Services ---
 
 export const adminApi = {
-  /**
-   * Strictly verifies if the user has the 'admin' role in the database.
-   * This is the single source of truth for administrative access.
-   */
   checkAdminStatus: async (userId: string) => {
     if (!userId) return false;
     const { data, error } = await supabase
@@ -76,10 +72,7 @@ export const adminApi = {
       .eq('id', userId)
       .maybeSingle();
     
-    if (error) {
-      console.error("Administrative clearance check failed:", error);
-      return false;
-    }
+    if (error) return false;
     return data?.role === 'admin';
   },
 

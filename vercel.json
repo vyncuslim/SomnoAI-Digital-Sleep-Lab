@@ -16,24 +16,8 @@
       "destination": "/favicon.png"
     },
     {
-      "source": "/login",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/admin",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/admin/login",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/terms",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/privacy",
-      "destination": "/index.html"
+      "source": "/sw.js",
+      "destination": "/sw.js"
     },
     {
       "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|.*\\.[a-zA-Z0-9]+$).*)",

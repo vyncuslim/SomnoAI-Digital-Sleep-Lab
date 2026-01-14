@@ -8,7 +8,6 @@ import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
-import { adminApi } from './services/supabaseService.ts';
 
 // Lazy load specific pages
 const UserLoginPage = lazy(() => import('./app/login/page.tsx'));
@@ -23,7 +22,7 @@ const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ def
 
 const m = motion as any;
 
-const LoadingSpinner = ({ label = "Synchronizing Laboratory Nodes..." }: { label?: string }) => (
+const LoadingSpinner = ({ label = "Connecting Lab Nodes..." }: { label?: string }) => (
   <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617]">
     <div className="relative">
       <Loader2 size={48} className="animate-spin text-indigo-500 opacity-50" />
@@ -43,12 +42,10 @@ const App: React.FC = () => {
   const getNormalizedRoute = useCallback(() => {
     let path = window.location.pathname.toLowerCase();
     
-    // Clean trailing slashes
     if (path.length > 1 && path.endsWith('/')) {
       path = path.slice(0, -1);
     }
 
-    // Explicit SPA Route Matching
     if (path === '/login') return 'login';
     if (path === '/admin') return 'admin';
     if (path === '/admin/login') return 'admin-login';
@@ -80,10 +77,8 @@ const App: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       setSession(session);
       const currentRoute = getNormalizedRoute();
-      
-      // Handle navigation logic on auth change
-      if (session) {
-        if (currentRoute === 'login') navigateTo('/');
+      if (session && (currentRoute === 'login')) {
+        navigateTo('/');
       }
     });
 
@@ -118,20 +113,20 @@ const App: React.FC = () => {
   }, [lang]);
 
   if (isInitialAuthCheck) {
-    return <LoadingSpinner label="Accessing Lab Environment..." />;
+    return <LoadingSpinner label="Accessing Lab..." />;
   }
 
   const renderContent = () => {
     const route = activeRoute;
 
-    // Prioritized Admin & Legal Routes
+    // Prioritize specific routes
     if (route === 'terms') return <LegalView type="terms" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => navigateTo('/')} />;
     if (route === 'login') return <UserLoginPage />;
     if (route === 'admin-login') return <AdminLoginPage />;
     if (route === 'admin') return <AdminDashboard />;
 
-    // Main Subject Lab Logic
+    // Protected default view
     if (!session) {
       return <UserLoginPage />;
     }
@@ -145,7 +140,7 @@ const App: React.FC = () => {
                 <Dashboard data={currentRecord} lang={lang} onSyncHealth={(p) => handleSyncHealthConnect(false, p)} onNavigate={setActiveView} />
               ) : (
                 <div className="flex items-center justify-center h-[70vh]">
-                  <button onClick={() => handleSyncHealthConnect(true)} className="px-8 py-4 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Initialize Digital Handshake</button>
+                  <button onClick={() => handleSyncHealthConnect(true)} className="px-8 py-4 bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 rounded-full font-black uppercase text-[10px] tracking-widest hover:bg-indigo-600 hover:text-white transition-all">Connect Lab Nodes</button>
                 </div>
               )
             ) : activeView === 'calendar' ? (
@@ -191,7 +186,7 @@ const App: React.FC = () => {
 
   return (
     <RootLayout>
-      <Suspense fallback={<LoadingSpinner label="Accessing Core Protocols..." />}>
+      <Suspense fallback={<LoadingSpinner label="Decrypting Lab Nodes..." />}>
         <div className="min-h-screen">
           {renderContent()}
         </div>
