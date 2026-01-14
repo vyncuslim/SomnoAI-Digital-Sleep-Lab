@@ -1,60 +1,36 @@
 
-import React, { useEffect, useState } from 'react';
-import { supabase } from '../../lib/supabaseClient.ts';
+import React from 'react';
+import { createSupabaseServer } from '../../lib/supabase/server.ts';
 import { AdminView } from '../../components/AdminView.tsx';
-import { Loader2, ShieldAlert, LogOut, ShieldCheck } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { GlassCard } from '../../components/GlassCard.tsx';
-import { adminApi } from '../../services/supabaseService.ts';
+import { ShieldCheck, LogOut } from 'lucide-react';
 
-const m = motion as any;
+export default async function AdminDashboard() {
+  const supabase = createSupabaseServer();
+  const { data: { session } } = await supabase.auth.getSession();
 
-export default function AdminDashboard() {
-  const [status, setStatus] = useState<'loading' | 'authorized' | 'unauthorized'>('loading');
-  const [profile, setProfile] = useState<any>(null);
-
-  useEffect(() => {
-    async function verify() {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (!session) {
-        window.location.href = '/admin/login';
-        return;
-      }
-      
-      const isAdmin = await adminApi.checkAdminStatus(session.user.id);
-      
-      if (!isAdmin) {
-        setStatus('unauthorized');
-        await supabase.auth.signOut();
-        setTimeout(() => { window.location.href = '/login'; }, 3000);
-        return;
-      }
-
-      const { data: userProfile } = await supabase.from('users').select('*').eq('id', session.user.id).single();
-      setProfile(userProfile);
-      setStatus('authorized');
-    }
-    verify();
-  }, []);
-
-  if (status === 'loading') {
+  if (!session) {
+    // Note: Usually handled by middleware, but added as a fail-safe
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center gap-8 bg-[#020617]">
-        <Loader2 className="text-rose-500 animate-spin" size={56} />
-        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-500">Syncing Administration Nodes...</p>
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center text-white">
+        <p className="font-black uppercase tracking-widest text-slate-500">Initializing Clearance...</p>
       </div>
     );
   }
 
-  if (status === 'unauthorized') {
+  const { data: profile } = await supabase
+    .from('users')
+    .select('role')
+    .eq('id', session.user.id)
+    .single();
+
+  if (profile?.role !== 'admin') {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center p-8 bg-[#020617] text-center">
-        <GlassCard className="p-12 rounded-[5rem] border-rose-500/20 max-w-md space-y-8 shadow-2xl">
-          <ShieldAlert size={60} className="text-rose-500 mx-auto" />
-          <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter">Access Denied</h1>
-          <p className="text-sm text-slate-400 italic">Unauthorized node access detected. Purging session...</p>
-        </GlassCard>
+      <div className="min-h-screen bg-[#020617] flex items-center justify-center">
+        <div className="text-center space-y-4">
+          <h1 className="text-2xl font-black text-rose-500 uppercase italic">Access Denied</h1>
+          <p className="text-slate-500 text-sm">Level 0 Clearance Not Detected.</p>
+          <a href="/login" className="text-indigo-400 text-xs font-bold uppercase tracking-widest block pt-4">Return to Subject Lab</a>
+        </div>
       </div>
     );
   }
@@ -67,15 +43,15 @@ export default function AdminDashboard() {
             <ShieldCheck size={28} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Master Admin Terminal</span>
-            <span className="text-lg font-bold text-white italic">{profile?.email}</span>
+            <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Master Admin Node</span>
+            <span className="text-lg font-bold text-white italic">{session.user.email}</span>
           </div>
         </div>
         <button 
-          onClick={async () => { await supabase.auth.signOut(); window.location.href = '/admin/login'; }} 
+          onClick={() => { window.location.href = '/login'; }}
           className="px-8 py-3 bg-white/5 border border-white/10 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-rose-400 transition-all flex items-center gap-3"
         >
-          <LogOut size={16} /> Disconnect
+          <LogOut size={16} /> Disconnect Node
         </button>
       </div>
       <AdminView onBack={() => { window.location.href = '/'; }} />
