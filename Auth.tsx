@@ -81,25 +81,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
     try {
       if (method === 'otp') {
-        // Pure OTP Login Flow
         await signInWithEmailOTP(cleanEmail);
         setStep('otp-verify');
         setError({
-          message: isZh ? "验证码已发送！请检查您的收件箱。" : "Verification token sent! Please check your inbox.",
+          message: isZh ? "令牌已发出！请检查收件箱。" : "Token sent! Please check your inbox.",
           type: 'success'
         });
         setTimeout(() => otpRefs.current[0]?.focus(), 500);
       } else {
         if (mode === 'login') {
-          // Normal Password Login
           await signInWithPassword(cleanEmail, password);
           onLogin();
         } else {
-          // Password Registration - Now uses OTP verification code instead of confirmation link
           await signUpWithPassword(cleanEmail, password);
           setStep('otp-verify');
           setError({ 
-            message: isZh ? "注册信息已提交。请输入发送到您邮箱的 6 位验证码以激活实验室账户。" : "Registration submitted. Enter the 6-digit code sent to your email to activate your lab account.",
+            message: isZh ? "注册成功！请输入发送至邮箱的 6 位验证码以激活账号。" : "Registration successful! Enter the 6-digit code sent to your email to activate.",
             type: 'success'
           });
           setTimeout(() => otpRefs.current[0]?.focus(), 500);
@@ -109,7 +106,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       const rawMsg = err.message || "";
       if (rawMsg === "Invalid login credentials") {
         setError({
-          message: isZh ? "验证失败：账号或密码错误。如果是新用户，请切换到“注册”模式。" : "Authorization Failed: Credentials mismatch. Switch to 'Register' mode if you are new.",
+          message: isZh ? "验证失败：账号或密码错误。新用户请切换到“注册”。" : "Authorization Failed: Credentials mismatch. Switch to 'Register' for new accounts.",
           type: 'auth_fail'
         });
       } else {
@@ -130,14 +127,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     setError(null);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      // 'signup' type is used when verifying a newly registered account code
-      // 'email' type is used for general OTP logins
       const verificationType = (method === 'password' && mode === 'register') ? 'signup' : 'email';
       await verifyOtp(cleanEmail, token, verificationType);
       onLogin();
     } catch (err: any) {
       setError({
-        message: isZh ? "验证码无效或已过期。如果是注册验证，请确认该邮箱尚未激活。" : "Verification Failed: Token mismatch or expired. Ensure the email is not already activated.",
+        message: isZh ? "验证码错误或已过期。" : "Verification Failed: Token mismatch or expired.",
         type: 'default'
       });
     } finally {
@@ -180,13 +175,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                       onClick={() => { setMethod('otp'); setError(null); }}
                       className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${method === 'otp' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                      OTP Only
+                      {isZh ? '验证码模式' : 'OTP Only'}
                     </button>
                     <button 
                       onClick={() => { setMethod('password'); setError(null); }}
                       className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${method === 'password' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                      Password
+                      {isZh ? '密码模式' : 'Password'}
                     </button>
                   </div>
 
@@ -241,7 +236,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                     className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-3"
                   >
                     {isProcessing ? <Loader2 className="animate-spin" size={18} /> : (method === 'otp' ? <Zap size={18} /> : (mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />))}
-                    {method === 'otp' ? (isZh ? '获取实验室令牌' : 'Request Lab Token') : (mode === 'login' ? (isZh ? '授权登录' : 'Authorize Access') : (isZh ? '确认并发送代码' : 'Confirm & Send Code'))}
+                    {method === 'otp' ? (isZh ? '获取实验室令牌' : 'Request Lab Token') : (mode === 'login' ? (isZh ? '授权登录' : 'Authorize Access') : (isZh ? '确认注册' : 'Confirm Registration'))}
                   </button>
                 </form>
 
@@ -251,7 +246,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                       <img src="https://img.icons8.com/color/18/google-logo.png" alt="G" /> Google
                     </button>
                     <button onClick={onGuest} className="flex-1 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-all">
-                      <Fingerprint size={16} className="text-indigo-400" /> Sandbox
+                      <Fingerprint size={16} className="text-indigo-400" /> {isZh ? '沙盒模式' : 'Sandbox'}
                     </button>
                   </div>
                 </div>
@@ -266,7 +261,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                     {isZh ? '输入 6 位验证码' : 'Enter 6-Digit Code'}
                   </h2>
                   <p className="text-xs text-slate-500 font-medium italic">
-                    {isZh ? `代码已发送至 ${email}` : `Verification code sent to ${email}`}
+                    {isZh ? `验证码已发送至 ${email}` : `Token sent to ${email}`}
                   </p>
                 </div>
 
@@ -293,7 +288,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                     className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-2xl flex items-center justify-center gap-3 disabled:opacity-50"
                   >
                     {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                    {isZh ? '确认激活' : 'Confirm Activation'}
+                    {isZh ? '完成验证' : 'Complete Verification'}
                   </button>
                 </div>
               </m.div>
@@ -306,15 +301,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 {error.type === 'success' ? <CheckCircle2 size={18} className="shrink-0" /> : <TriangleAlert size={18} className="shrink-0" />}
                 <p className="flex-1 leading-relaxed">{error.message}</p>
               </div>
-              
-              {error.type === 'success' && (
-                <div className="p-3 bg-white/5 rounded-2xl flex gap-3 items-start border border-white/5">
-                  <Info size={14} className="text-emerald-400 shrink-0 mt-0.5" />
-                  <p className="text-[10px] text-slate-400 leading-relaxed italic">
-                    {isZh ? "重要：验证码 5 分钟内有效。如未收到，请务必检查【垃圾邮件】文件夹。" : "IMPORTANT: Token valid for 5 mins. If not received, please check your SPAM folder."}
-                  </p>
-                </div>
-              )}
             </m.div>
           )}
 

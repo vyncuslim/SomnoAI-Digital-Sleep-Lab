@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldAlert, Lock, Fingerprint, Loader2, ChevronLeft, ArrowRight, Mail, Key } from 'lucide-react';
+import { ShieldAlert, Lock, Fingerprint, Loader2, ChevronLeft, ArrowRight, Mail } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../../components/GlassCard.tsx';
 import { supabase } from '../../../lib/supabaseClient.ts';
