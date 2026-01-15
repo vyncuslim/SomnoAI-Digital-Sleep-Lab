@@ -1,6 +1,5 @@
-
 import React, { useState } from 'react';
-import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, Binary, Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, Info, Code2, ListTree, Timer, Layers, Zap, Download, Upload, BookOpen, Warehouse, LayoutList, Fingerprint, Network, Bookmark, History, RotateCcw, Filter, Boxes, PackageSearch, Pipette, Droplets, Watch, Hammer, Eye, ChevronRight, FileCode, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, Binary, Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, Info, Code2, ListTree, Timer, Layers, Zap, Download, Upload, BookOpen, Warehouse, LayoutList, Fingerprint, Network, Bookmark, History, RotateCcw, Filter, Boxes, PackageSearch, Pipette, Droplets, Watch, Hammer, Eye, ChevronRight, FileCode, ShieldCheck, Sparkles } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -52,7 +51,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
       title: 'Verification', 
       desc: t.step6, 
       code: 'val granted = client.permissionController.getGrantedPermissions()',
-      // Added ShieldCheck to imports to resolve the reported error
       icon: ShieldCheck 
     },
     { 
@@ -93,6 +91,28 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
       </header>
 
       <div className="space-y-8 max-w-2xl mx-auto px-2 text-slate-300">
+        
+        {/* Lab Manifesto / Vision Card */}
+        <GlassCard className="p-10 border-indigo-500/30 bg-indigo-600/[0.05] rounded-[4.5rem] relative overflow-hidden group">
+          <m.div 
+            animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.05, 1] }}
+            transition={{ duration: 5, repeat: Infinity }}
+            className="absolute -top-10 -right-10 bg-indigo-500/10 w-40 h-40 blur-[50px] rounded-full pointer-events-none"
+          />
+          <div className="relative z-10 flex flex-col gap-6">
+            <div className="flex items-center gap-3 text-indigo-400">
+              <Sparkles size={20} className="animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.4em]">Laboratory Manifesto</span>
+            </div>
+            <p className="text-xl md:text-2xl font-black italic text-white tracking-tight leading-relaxed">
+              "{t.manifesto}"
+            </p>
+            <div className="h-[1px] w-12 bg-indigo-500/50" />
+            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
+              Neural Integrity Protocol Alpha-0.1
+            </p>
+          </div>
+        </GlassCard>
         
         {/* Interactive 8-Step Handshake Terminal */}
         <GlassCard className="p-10 space-y-10 border-indigo-500/20 bg-indigo-500/[0.01] rounded-[4rem]">
@@ -169,7 +189,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                 Next Sequence <ChevronRight size={12} />
               </button>
            </div>
-        </GlassCard>
+        </AboutView>
 
         {/* Plumbing Analogy Module */}
         <GlassCard className="p-10 space-y-6 border-blue-500/20 bg-blue-500/[0.03] rounded-[4rem] relative overflow-hidden">

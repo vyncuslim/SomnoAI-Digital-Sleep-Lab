@@ -40,8 +40,7 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('somno_lang');
     if (saved) return saved as Language;
-    const browserLang = navigator.language.toLowerCase();
-    if (browserLang.startsWith('zh')) return 'zh';
+    // Default to 'en' as requested for the laboratory entry experience
     return 'en';
   });
   
@@ -212,7 +211,7 @@ const App: React.FC = () => {
     }
     
     if (!session && !isSandbox) {
-      return <Suspense fallback={<LoadingSpinner label="Initializing Auth Terminal..." />}><UserLoginPage onSuccess={() => navigateTo('/')} onSandbox={handleSandboxLogin} /></Suspense>;
+      return <Suspense fallback={<LoadingSpinner label="Initializing Auth Terminal..." />}><UserLoginPage onSuccess={() => navigateTo('/')} onSandbox={handleSandboxLogin} lang={lang} /></Suspense>;
     }
 
     return (

@@ -31,15 +31,25 @@ export const translations = {
       shareTitle: 'Export Lab Summary',
       shareBody: 'Sharing my latest biometric synthesis from the SomnoAI Digital Sleep Lab.',
       copyText: 'Copy Text',
-      postLinked: 'Post to LinkedIn'
+      postLinked: 'Post to LinkedIn',
+      manifesto: 'SomnoAI fuses physiological monitoring, deep AI insights, and professional health guidance into a comprehensive digital sleep laboratory experience.'
     },
     auth: {
-      lab: 'SomnoAI Lab',
-      tagline: 'Digital Identity Telemetry',
+      lab: 'SOMNOAI LAB',
+      tagline: 'DIGITAL IDENTITY TELEMETRY',
       securityStatement: 'Connection Philosophy',
       securityDetail: 'Connection = Detect -> Initialize Client -> Request Permission -> Read Data. No login, no tokens, zero backend storage. System-level authorization ensures data belongs to you.',
-      connect: 'OTP Mode',
-      guest: 'Sandbox Mode',
+      otpMode: 'OTP MODE',
+      passwordMode: 'PASSWORD MODE',
+      login: 'LOGIN',
+      register: 'REGISTER',
+      emailLabel: 'Email Address',
+      passwordLabel: 'Access Password',
+      authorize: 'AUTHORIZE ACCESS',
+      confirmRegister: 'CONFIRM REGISTRATION',
+      google: 'GOOGLE',
+      sandboxMode: 'SANDBOX MODE',
+      cannotActivate: 'CANNOT ACTIVATE ACCOUNT?',
       privacyPolicy: 'Privacy Policy',
       termsOfService: 'Terms of Service',
       activateEngine: 'Initialize AI Engine',
@@ -52,7 +62,9 @@ export const translations = {
       checkEmail: 'A 6-digit code has been sent to your inbox.',
       resendCode: 'Resend Code',
       resendIn: 'Resend in',
-      googleSign: 'Google'
+      googleSign: 'Google',
+      loginCta: 'Connect with Google Fit',
+      virtualLab: 'Virtual Lab Access'
     },
     assistant: {
       title: 'AI Insights Lab',
@@ -128,6 +140,7 @@ export const translations = {
     },
     about: {
       title: 'Technical Protocol',
+      manifesto: 'SomnoAI fuses physiological monitoring, deep AI insights, and professional health guidance into a comprehensive digital sleep laboratory experience.',
       mission: 'Our Mission',
       missionText: 'To democratize high-fidelity sleep science through edge computing and empathetic AI, powered by the Health Connect ecosystem.',
       tech: 'AI Technology',
@@ -201,15 +214,25 @@ export const translations = {
       shareTitle: '导出数字化实验摘要',
       shareBody: '分享我来自 SomnoAI 数字化睡眠实验室的最新生物识别报告。',
       copyText: '复制报告文本',
-      postLinked: '发布到 LinkedIn'
+      postLinked: '发布到 LinkedIn',
+      manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室。'
     },
     auth: {
-      lab: 'SomnoAI Lab',
+      lab: 'SOMNOAI LAB',
       tagline: '数字化身份遥测',
       securityStatement: '连接哲学',
       securityDetail: '连接 = 检测可用 → 初始化客户端 → 请求权限 → 读写数据。无登录页，无 Token，仅系统级授权，数据所有权始终属于用户。',
-      connect: '验证码模式',
-      guest: '沙盒模式',
+      otpMode: '验证码模式',
+      passwordMode: '密码模式',
+      login: '登录',
+      register: '注册',
+      emailLabel: '电子邮件地址',
+      passwordLabel: '访问密码',
+      authorize: '授权访问',
+      confirmRegister: '确认注册',
+      google: 'GOOGLE',
+      sandboxMode: '沙盒模式',
+      cannotActivate: '无法激活账户？',
       privacyPolicy: '隐私政策',
       termsOfService: '服务条款',
       activateEngine: '初始化 AI 引擎',
@@ -222,7 +245,9 @@ export const translations = {
       checkEmail: '6 位验证码已发送至您的电子邮箱。',
       resendCode: '重新发送代码',
       resendIn: '重新发送于',
-      googleSign: 'Google'
+      googleSign: 'Google',
+      loginCta: '连接 Google Fit',
+      virtualLab: '虚拟实验室访问'
     },
     assistant: {
       title: 'AI 实验洞察室',
@@ -298,6 +323,7 @@ export const translations = {
     },
     about: {
       title: '技术集成协议',
+      manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室。',
       mission: '研究使命',
       missionText: '通过边缘计算、Android Health Connect 生态系统和共情 AI，实现高保真睡眠科学的普及。',
       tech: 'AI 神经技术',
@@ -371,15 +397,25 @@ export const translations = {
       shareTitle: 'Laborzusammenfassung exportieren',
       shareBody: 'Teile meine neueste biometrische Synthese aus dem SomnoAI Digital Sleep Lab.',
       copyText: 'Text kopieren',
-      postLinked: 'Auf LinkedIn posten'
+      postLinked: 'Auf LinkedIn posten',
+      manifesto: 'SomnoAI fusionne la surveillance physiologique, les informations IA et les conseils de santé pour un laboratoire numérique complet.'
     },
     auth: {
-      lab: 'SomnoAI Lab',
+      lab: 'SOMNOAI LAB',
       tagline: 'Digital Identity Telemetry',
       securityStatement: 'Sicherheit',
       securityDetail: 'Kein Login, keine Tokens. Systemweite Autorisierung über Android Health Connect garantiert absolute Privatsphäre.',
-      connect: 'OTP Mode',
-      guest: 'Sandbox Mode',
+      otpMode: 'OTP Mode',
+      passwordMode: 'PASSWORD MODE',
+      login: 'LOGIN',
+      register: 'REGISTER',
+      emailLabel: 'E-Mail eingeben',
+      passwordLabel: 'Passwort',
+      authorize: 'ZUGRIFF AUTORISIEREN',
+      confirmRegister: 'REGISTRIERUNG BESTÄTIGEN',
+      google: 'GOOGLE',
+      sandboxMode: 'SANDBOX MODE',
+      cannotActivate: 'KONTO KANN NICHT AKTIVIERT WERDEN?',
       privacyPolicy: 'Datenschutzrichtlinie',
       termsOfService: 'Nutzungsbedingungen',
       activateEngine: 'KI-Engine initialisieren',
@@ -392,7 +428,9 @@ export const translations = {
       checkEmail: 'Prüfen Sie Ihre E-Mail auf den 6-stelligen Code.',
       resendCode: 'Code erneut senden',
       resendIn: 'Erneut senden in',
-      googleSign: 'Mit Google fortfahren'
+      googleSign: 'Mit Google fortfahren',
+      loginCta: 'Connect Google Fit',
+      virtualLab: 'Virtual Lab'
     },
     assistant: {
       title: 'KI Einblicke Labor',
@@ -468,6 +506,7 @@ export const translations = {
     },
     about: {
       title: 'Dokumentation',
+      manifesto: 'SomnoAI fusionne la surveillance physiologique, les informations IA et les conseils de santé pour un laboratoire numérique complet.',
       mission: 'Mission',
       missionText: 'Demokratisierung der Schlafwissenschaft.',
       tech: 'KI-Technologie',
@@ -541,15 +580,25 @@ export const translations = {
       shareTitle: 'Exporter le résumé du labo',
       shareBody: 'Je partage ma dernière synthèse biométrique du SomnoAI Digital Sleep Lab.',
       copyText: 'Copier le texte',
-      postLinked: 'Publier sur LinkedIn'
+      postLinked: 'Publier sur LinkedIn',
+      manifesto: 'SomnoAI fusionne la surveillance physiologique, les informations IA et les conseils de santé pour un laboratoire numérique complet.'
     },
     auth: {
-      lab: 'SomnoAI Lab',
+      lab: 'SOMNOAI LAB',
       tagline: 'Digital Identity Telemetry',
       securityStatement: 'Sécurité',
       securityDetail: 'Pas de connexion, pas de tokens. L\'autorisation au niveau du système garantit une confidentialité totale.',
-      connect: 'OTP Mode',
-      guest: 'Sandbox Mode',
+      otpMode: 'OTP Mode',
+      passwordMode: 'PASSWORD MODE',
+      login: 'LOGIN',
+      register: 'REGISTER',
+      emailLabel: 'E-mail',
+      passwordLabel: 'Mot de passe',
+      authorize: 'AUTORISER L\'ACCÈS',
+      confirmRegister: 'CONFIRMER L\'INSCRIPTION',
+      google: 'GOOGLE',
+      sandboxMode: 'SANDBOX MODE',
+      cannotActivate: 'IMPOSSIBLE D\'ACTIVER LE COMPTE?',
       privacyPolicy: 'Politique de confidentialité',
       termsOfService: 'Conditions d\'utilisation',
       activateEngine: 'Initialiser le moteur IA',
@@ -562,7 +611,9 @@ export const translations = {
       checkEmail: 'Vérifiez vos e-mails pour le code à 6 chiffres.',
       resendCode: 'Renvoyer le code',
       resendIn: 'Renvoyer dans',
-      googleSign: 'Continuer with Google'
+      googleSign: 'Continuer with Google',
+      loginCta: 'Connecter Google Fit',
+      virtualLab: 'Labo virtuel'
     },
     assistant: {
       title: 'Labo d\'insights IA',
@@ -638,6 +689,7 @@ export const translations = {
     },
     about: {
       title: 'Documentation',
+      manifesto: 'SomnoAI fusionne la surveillance physiologique, les informations IA et les conseils de santé pour un laboratoire numérique complet.',
       mission: 'Mission',
       missionText: 'Démocratiser la science du sommeil.',
       tech: 'IA Technologie',

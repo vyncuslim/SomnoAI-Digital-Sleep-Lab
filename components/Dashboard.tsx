@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -6,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, BrainCircuit, HeartPulse, Cpu, Zap, 
   ShieldCheck, Microchip, Layers, Share2, X, CheckCircle2,
-  Signal, Activity, Radio
+  Signal, Activity, Radio, Sparkles
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
@@ -129,6 +128,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
               </div>
             </div>
           </div>
+
+          {/* Manifesto Badge */}
+          <m.div 
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="px-8 py-4 bg-white/5 border border-white/10 rounded-[2rem] flex items-center gap-4 max-w-xl"
+          >
+            <Sparkles size={16} className="text-indigo-400 shrink-0" />
+            <p className="text-[11px] font-medium text-slate-400 italic leading-relaxed text-center">
+              {t.manifesto}
+            </p>
+          </m.div>
 
           {/* AI 洞察流 - 气泡形态 */}
           <div className="w-full grid grid-cols-1 md:grid-cols-3 gap-4">
