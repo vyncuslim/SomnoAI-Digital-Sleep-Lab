@@ -22,7 +22,6 @@ export default function AdminLoginPage() {
     setError(null);
 
     try {
-      // Clean trim before submission to avoid common validation errors
       const cleanEmail = email.trim().toLowerCase();
 
       const { data, error: authError } = await supabase.auth.signInWithPassword({
@@ -33,7 +32,7 @@ export default function AdminLoginPage() {
       if (authError) throw authError;
       if (!data.session) throw new Error("Authentication failed: Node rejected session.");
 
-      // Strict role verification
+      // Strict role verification to ensure only administrators gain access
       const isAdmin = await adminApi.checkAdminStatus(data.user.id);
 
       if (!isAdmin) {
@@ -128,7 +127,7 @@ export default function AdminLoginPage() {
               className="mt-8 p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4 text-rose-400 text-[11px] font-bold"
             >
               <ShieldAlert size={18} className="shrink-0 mt-0.5" />
-              <p className="italic leading-relaxed">{error}</p>
+              <p className="italic font-bold text-rose-400 leading-relaxed">{error}</p>
             </m.div>
           )}
         </AnimatePresence>
@@ -144,7 +143,7 @@ export default function AdminLoginPage() {
       </GlassCard>
 
       <footer className="text-center text-slate-800 font-black uppercase text-[8px] tracking-[0.6em] pointer-events-none pb-12">
-        SomnoAI Digital Sleep Lab • Neural Grid v2.5
+        SomnoAI Digital Sleep Lab • Neural Grid Access
       </footer>
     </div>
   );

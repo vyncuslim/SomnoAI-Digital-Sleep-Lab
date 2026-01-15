@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /terms
+Allow: /privacy
+
+# 保护管理边界，禁止爬取后台及登录终端
+Disallow: /admin
+Disallow: /admin/login
+Disallow: /login
+Disallow: /api/
+
+# 站点地图指引
+Sitemap: https://sleepsomno.com/sitemap.xml
+
+# 主机定义
+Host: https://sleepsomno.com

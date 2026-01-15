@@ -9,7 +9,7 @@ const m = motion as any;
 
 /**
  * Admin Command Deck - Restricted Terminal for Laboratory Management.
- * Optimized for SomnoAI high-fidelity aesthetic.
+ * Features advanced telemetry and secure registry oversight.
  */
 export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
@@ -27,7 +27,6 @@ export default function AdminDashboard() {
       const status = await adminApi.checkAdminStatus(session.user.id);
       
       if (!status) {
-        // Unauthorized - Purge local session and return to login portal
         await supabase.auth.signOut();
         window.location.hash = '#/admin/login';
         return;
