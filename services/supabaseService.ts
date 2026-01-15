@@ -17,7 +17,7 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
   });
   
   if (error) {
-    // Supabase returns specific errors if shouldCreateUser is false and user doesn't exist
+    // Handle restricted access errors
     if (error.message.includes('signups not allowed') || error.message.includes('not found')) {
       throw new Error("Access Denied: Identity not recognized in the Laboratory Registry.");
     }
@@ -27,6 +27,7 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
 
 /**
  * Verify the 6-digit neural token.
+ * For Admin Login where shouldCreateUser=false, type MUST be 'email'.
  */
 export async function verifyOtp(email: string, token: string, type: 'email' | 'signup' | 'magiclink' = 'email') {
   const { data, error } = await supabase.auth.verifyOtp({
@@ -34,7 +35,12 @@ export async function verifyOtp(email: string, token: string, type: 'email' | 's
     token,
     type
   });
-  if (error) throw error;
+  
+  if (error) {
+    if (error.message.includes('expired')) throw new Error("Token Expired: Please request a new handshake.");
+    if (error.message.includes('invalid')) throw new Error("Invalid Token: Signature mismatch.");
+    throw error;
+  }
   return data.session;
 }
 
@@ -69,7 +75,6 @@ export async function updateUserPassword(newPassword: string) {
 export const adminApi = {
   /**
    * Verification Gate: Checks if a subject has Clearance Level 0 (Admin).
-   * This is the source of truth for authorization.
    */
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     if (!userId) return false;
@@ -81,7 +86,7 @@ export const adminApi = {
         .maybeSingle();
       
       if (error) {
-        console.error("Clearance Check Error:", error);
+        console.error("Clearance Audit Failure:", error);
         return false;
       }
       return data?.role === 'admin';

@@ -1,5 +1,5 @@
-import React, { useState, useRef } from 'react';
-import { ShieldAlert, Loader2, ChevronLeft, ArrowRight, Mail, ShieldCheck, Zap } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { ShieldAlert, Loader2, ChevronLeft, ArrowRight, Mail, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../../components/GlassCard.tsx';
 import { supabase } from '../../../lib/supabaseClient.ts';
@@ -9,25 +9,46 @@ const m = motion as any;
 
 /**
  * Restricted Portal for Laboratory Administrators.
- * Implements Passwordless OTP with strict role validation.
+ * Implements hardened Passwordless OTP with zero-trust role auditing.
  */
 export default function AdminLoginPage() {
   const [step, setStep] = useState<'initial' | 'otp-verify'>('initial');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // Normalization utility
+  const getNormalizedEmail = () => email.trim().toLowerCase();
+
+  // Cooldown timer for OTP requests
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
+
   const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (cooldown > 0 || isProcessing) return;
+
     setIsProcessing(true);
     setError(null);
+
     try {
-      const cleanEmail = email.trim().toLowerCase();
-      // CRITICAL: shouldCreateUser = false to ensure only pre-registered admins can log in
-      await signInWithEmailOTP(cleanEmail, false);
+      const targetEmail = getNormalizedEmail();
+      if (!targetEmail) throw new Error("Identifier required.");
+      
+      // shouldCreateUser = false ensures we only target existing admins
+      await signInWithEmailOTP(targetEmail, false);
+      
       setStep('otp-verify');
+      setCooldown(60); // Prevent token spam which invalidates the last token
+      setOtp(['', '', '', '', '', '']); // Clear previous attempts
+      
       setTimeout(() => otpRefs.current[0]?.focus(), 500);
     } catch (err: any) {
       setError(err.message || "Laboratory Handshake Failed.");
@@ -37,15 +58,18 @@ export default function AdminLoginPage() {
   };
 
   const handleOtpInput = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return;
+    if (!/^\d*$/.test(value) || isProcessing) return;
+    
     const newOtp = [...otp];
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
     
+    // Auto-focus logic
     if (value && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
     
+    // Automatic verification on 6th digit
     if (newOtp.every(d => d !== '') && index === 5) {
       executeVerify(newOtp.join(''));
     }
@@ -53,30 +77,32 @@ export default function AdminLoginPage() {
 
   const executeVerify = async (fullOtp?: string) => {
     const token = fullOtp || otp.join('');
-    if (token.length < 6) return;
+    if (token.length < 6 || isProcessing) return;
     
     setIsProcessing(true);
     setError(null);
 
     try {
-      const cleanEmail = email.trim().toLowerCase();
-      const session = await verifyOtp(cleanEmail, token, 'email');
+      const targetEmail = getNormalizedEmail();
+      
+      // For Admin OTP (shouldCreateUser:false), type MUST be 'email'
+      const session = await verifyOtp(targetEmail, token, 'email');
 
       if (!session) throw new Error("Link Rejected: Node denied session creation.");
 
-      // CRITICAL: Decoupled Role Check
+      // Post-Auth Authorization Check (The Firewall)
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
 
       if (!isAdmin) {
-        // Immediate expulsion for non-admin subjects
         await supabase.auth.signOut();
-        throw new Error("Access Denied: Subject lacks administrative clearance level 0.");
+        throw new Error("Access Denied: Subject lacks Administrative Clearance (Level 0).");
       }
 
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Neural override verification failed.");
       setIsProcessing(false);
+      // Don't clear OTP immediately to allow manual correction if it was a typo
     }
   };
 
@@ -138,11 +164,11 @@ export default function AdminLoginPage() {
               
               <button 
                 type="submit"
-                disabled={isProcessing}
+                disabled={isProcessing || cooldown > 0}
                 className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                {isProcessing ? 'HANDSHAKING...' : 'REQUEST LAB TOKEN'}
+                {isProcessing ? 'HANDSHAKING...' : (cooldown > 0 ? `RETRY IN ${cooldown}s` : 'REQUEST LAB TOKEN')}
               </button>
             </m.form>
           ) : (
@@ -154,37 +180,57 @@ export default function AdminLoginPage() {
               className="space-y-12"
             >
               <div className="text-center space-y-4">
-                <button onClick={() => setStep('initial')} className="text-[10px] font-black text-slate-600 hover:text-rose-400 uppercase tracking-widest flex items-center gap-2 mx-auto transition-colors">
-                  <ChevronLeft size={14} /> Change Identifier
+                <button 
+                  onClick={() => { setStep('initial'); setError(null); }} 
+                  className="text-[10px] font-black text-slate-600 hover:text-rose-400 uppercase tracking-widest flex items-center gap-2 mx-auto transition-colors"
+                >
+                  <ChevronLeft size={14} /> Back to Identifier
                 </button>
-                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Neural Verification</h2>
-                <p className="text-xs text-slate-500 font-medium italic">Token sent to {email}</p>
+                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Neural Handshake</h2>
+                <p className="text-xs text-slate-500 font-medium italic truncate max-w-full">Token dispatched to {email}</p>
               </div>
 
               <div className="flex justify-between gap-3 px-2">
                 {otp.map((digit, idx) => (
-                  <input
+                  <m.input
                     key={idx}
                     ref={el => { otpRefs.current[idx] = el; }}
                     type="text"
                     inputMode="numeric"
                     maxLength={1}
                     value={digit}
+                    animate={digit ? { scale: [1, 1.1, 1] } : {}}
                     onChange={(e) => handleOtpInput(idx, e.target.value)}
-                    onKeyDown={(e) => e.key === 'Backspace' && !otp[idx] && idx > 0 && otpRefs.current[idx - 1]?.focus()}
-                    className="w-11 h-14 bg-white/[0.03] border border-white/10 rounded-2xl text-2xl text-center text-white font-black focus:border-rose-500 outline-none transition-all"
+                    onKeyDown={(e) => {
+                      if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
+                        otpRefs.current[idx - 1]?.focus();
+                      }
+                    }}
+                    disabled={isProcessing}
+                    className="w-11 h-14 bg-white/[0.03] border border-white/10 rounded-2xl text-2xl text-center text-white font-black focus:border-rose-500 outline-none transition-all disabled:opacity-50"
                   />
                 ))}
               </div>
 
-              <button 
-                onClick={() => executeVerify()}
-                disabled={isProcessing || otp.some(d => !d)}
-                className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 disabled:opacity-50"
-              >
-                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                {isProcessing ? 'VALIDATING...' : 'INITIALIZE OVERRIDE'}
-              </button>
+              <div className="space-y-4">
+                <button 
+                  onClick={() => executeVerify()}
+                  disabled={isProcessing || otp.some(d => !d)}
+                  className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 disabled:opacity-50 active:scale-95 transition-all"
+                >
+                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                  {isProcessing ? 'AUTHORIZING...' : 'INITIALIZE OVERRIDE'}
+                </button>
+
+                <button 
+                  onClick={handleRequestOtp}
+                  disabled={isProcessing || cooldown > 0}
+                  className="w-full py-4 bg-white/5 text-slate-500 rounded-full font-black text-[9px] uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-2"
+                >
+                  <RefreshCw size={14} className={isProcessing ? 'animate-spin' : ''} />
+                  {cooldown > 0 ? `NEW TOKEN IN ${cooldown}s` : 'RESEND LAB TOKEN'}
+                </button>
+              </div>
             </m.div>
           )}
         </AnimatePresence>
@@ -198,14 +244,19 @@ export default function AdminLoginPage() {
               className="mt-8 p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4 text-rose-400 text-[11px] font-bold"
             >
               <ShieldAlert size={18} className="shrink-0 mt-0.5" />
-              <p className="italic font-bold text-rose-400 leading-relaxed">{error}</p>
+              <div className="space-y-1">
+                <p className="italic font-bold text-rose-400 leading-relaxed">{error}</p>
+                {error.includes('Expired') && (
+                  <p className="text-[9px] text-slate-500 uppercase">Wait for the cooldown to clear before requesting again.</p>
+                )}
+              </div>
             </m.div>
           )}
         </AnimatePresence>
 
         <div className="mt-12 pt-10 border-t border-white/5 text-center space-y-6">
            <p className="text-[9px] text-slate-800 font-bold uppercase tracking-widest leading-relaxed italic">
-            All administrative activity is logged and monitored at the network edge.
+            This terminal monitors all neural entry events. Attempt logs are synchronized at the edge.
           </p>
           <a href="/" className="inline-flex items-center gap-2 text-[9px] font-black text-slate-500 hover:text-indigo-400 uppercase tracking-widest transition-colors">
             Return to Public Dashboard <ArrowRight size={12} />
