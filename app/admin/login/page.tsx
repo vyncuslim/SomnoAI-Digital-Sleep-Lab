@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ShieldAlert, Fingerprint, Loader2, ChevronLeft, ArrowRight, Mail, ShieldCheck, Zap } from 'lucide-react';
+import { ShieldAlert, Loader2, ChevronLeft, ArrowRight, Mail, ShieldCheck, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../../components/GlassCard.tsx';
 import { supabase } from '../../../lib/supabaseClient.ts';
@@ -8,8 +8,8 @@ import { adminApi, signInWithEmailOTP, verifyOtp } from '../../../services/supab
 const m = motion as any;
 
 /**
- * Admin Access Portal for SomnoAI Laboratory.
- * OTP-only protocol with automatic user creation DISABLED for security.
+ * Restricted Portal for Laboratory Administrators.
+ * Implements Passwordless OTP with strict role validation.
  */
 export default function AdminLoginPage() {
   const [step, setStep] = useState<'initial' | 'otp-verify'>('initial');
@@ -25,13 +25,12 @@ export default function AdminLoginPage() {
     setError(null);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      // CRITICAL: Set shouldCreateUser (2nd param) to false for Admin Login
+      // CRITICAL: shouldCreateUser = false to ensure only pre-registered admins can log in
       await signInWithEmailOTP(cleanEmail, false);
       setStep('otp-verify');
       setTimeout(() => otpRefs.current[0]?.focus(), 500);
     } catch (err: any) {
-      // Provide a clearer message if it's an identity failure
-      setError(err.message || "Failed to dispatch lab token.");
+      setError(err.message || "Laboratory Handshake Failed.");
     } finally {
       setIsProcessing(false);
     }
@@ -63,19 +62,20 @@ export default function AdminLoginPage() {
       const cleanEmail = email.trim().toLowerCase();
       const session = await verifyOtp(cleanEmail, token, 'email');
 
-      if (!session) throw new Error("Verification failed: Node rejected session.");
+      if (!session) throw new Error("Link Rejected: Node denied session creation.");
 
-      // Strict role verification
+      // CRITICAL: Decoupled Role Check
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
 
       if (!isAdmin) {
+        // Immediate expulsion for non-admin subjects
         await supabase.auth.signOut();
-        throw new Error("Access Denied: Subject lacks administrative clearance.");
+        throw new Error("Access Denied: Subject lacks administrative clearance level 0.");
       }
 
       window.location.hash = '#/admin';
     } catch (err: any) {
-      setError(err.message || "Credential override failed.");
+      setError(err.message || "Neural override verification failed.");
       setIsProcessing(false);
     }
   };
@@ -157,8 +157,8 @@ export default function AdminLoginPage() {
                 <button onClick={() => setStep('initial')} className="text-[10px] font-black text-slate-600 hover:text-rose-400 uppercase tracking-widest flex items-center gap-2 mx-auto transition-colors">
                   <ChevronLeft size={14} /> Change Identifier
                 </button>
-                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Enter 6-Digit Token</h2>
-                <p className="text-xs text-slate-500 font-medium italic">Sent to {email}</p>
+                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Neural Verification</h2>
+                <p className="text-xs text-slate-500 font-medium italic">Token sent to {email}</p>
               </div>
 
               <div className="flex justify-between gap-3 px-2">
@@ -183,7 +183,7 @@ export default function AdminLoginPage() {
                 className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 disabled:opacity-50"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                {isProcessing ? 'DECRYPTING...' : 'INITIALIZE OVERRIDE'}
+                {isProcessing ? 'VALIDATING...' : 'INITIALIZE OVERRIDE'}
               </button>
             </m.div>
           )}
@@ -205,7 +205,7 @@ export default function AdminLoginPage() {
 
         <div className="mt-12 pt-10 border-t border-white/5 text-center space-y-6">
            <p className="text-[9px] text-slate-800 font-bold uppercase tracking-widest leading-relaxed italic">
-            This terminal is monitored. All authentication attempts are logged at the neural edge.
+            All administrative activity is logged and monitored at the network edge.
           </p>
           <a href="/" className="inline-flex items-center gap-2 text-[9px] font-black text-slate-500 hover:text-indigo-400 uppercase tracking-widest transition-colors">
             Return to Public Dashboard <ArrowRight size={12} />
