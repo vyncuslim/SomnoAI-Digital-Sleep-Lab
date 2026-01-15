@@ -27,6 +27,16 @@ export interface SleepRecord {
   aiInsights: string[];
 }
 
+export interface SecurityEvent {
+  id: string;
+  user_id: string;
+  email: string;
+  event_type: 'AUTO_BLOCK' | 'SUSPICIOUS_LOGIN' | 'IP_THROTTLED';
+  event_reason: string;
+  created_at: string;
+  notified: boolean;
+}
+
 export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'about';
 export type TimeRange = 'week' | 'month' | 'year';
 export type AIProvider = 'gemini' | 'openai';

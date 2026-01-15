@@ -1,9 +1,12 @@
+
 import { supabase } from '../lib/supabaseClient.ts';
 
 // --- Subject Identity Services ---
 
 /**
  * Request an OTP Lab Token.
+ * @param email The target identity.
+ * @param createIfNotFound If false, prevents automatic registration (for restricted portals).
  */
 export async function signInWithEmailOTP(email: string, createIfNotFound = true) {
   const { error } = await supabase.auth.signInWithOtp({
@@ -16,7 +19,7 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
   
   if (error) {
     if (error.message.includes('signups not allowed') || error.message.includes('not found')) {
-      throw new Error("Access Denied: Identity not recognized in Registry.");
+      throw new Error("Access Denied: Identity not recognized in the Laboratory Registry.");
     }
     throw error;
   }
@@ -24,9 +27,11 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
 
 /**
  * Verify the 6-digit neural token.
- * Strict 'email' type to prevent Supabase invalid token errors.
+ * Strict 'email' type mapping to prevent Supabase consumption errors.
+ * Includes a real-time clearance check for blocked subjects.
  */
 export async function verifyOtp(email: string, token: string) {
+  // CRITICAL: Type MUST be 'email' for signInWithOtp flow
   const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
@@ -34,13 +39,13 @@ export async function verifyOtp(email: string, token: string) {
   });
   
   if (error) {
-    if (error.message.includes('expired')) throw new Error("Token Expired: Request a new handshake.");
-    if (error.message.includes('invalid')) throw new Error("Token Invalid: Already consumed or incorrect signature.");
+    if (error.message.includes('expired')) throw new Error("Token Expired: Please request a new handshake.");
+    if (error.message.includes('invalid')) throw new Error("Token Invalid: Signature mismatch or already consumed.");
     throw error;
   }
 
   if (data.session) {
-    // SECURITY: Immediate post-auth clearance check
+    // SECURITY: Post-Auth Clearance Audit
     const { data: profile } = await supabase
       .from('profiles')
       .select('is_blocked')
@@ -49,7 +54,7 @@ export async function verifyOtp(email: string, token: string) {
 
     if (profile?.is_blocked) {
       await supabase.auth.signOut();
-      throw new Error("Access Restricted: Your identity node has been suspended.");
+      throw new Error("Access Restricted: Your identity node has been suspended by system policy.");
     }
   }
 
@@ -62,7 +67,7 @@ export async function updateUserPassword(newPassword: string) {
   return data;
 }
 
-// --- Administrative Services ---
+// --- Administrative Privilege Services (Level 0) ---
 
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
@@ -88,12 +93,18 @@ export const adminApi = {
   },
 
   blockUser: async (id: string) => {
-    const { error } = await supabase.from('profiles').update({ is_blocked: true, blocked_at: new Date().toISOString() }).eq('id', id);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_blocked: true, blocked_at: new Date().toISOString() })
+      .eq('id', id);
     if (error) throw error;
   },
 
   unblockUser: async (id: string) => {
-    const { error } = await supabase.from('profiles').update({ is_blocked: false, blocked_at: null }).eq('id', id);
+    const { error } = await supabase
+      .from('profiles')
+      .update({ is_blocked: false, blocked_at: null })
+      .eq('id', id);
     if (error) throw error;
   },
 
@@ -111,6 +122,12 @@ export const adminApi = {
 
   getAuditLogs: async () => {
     const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
+    if (error) throw error;
+    return data || [];
+  },
+
+  getSecurityEvents: async () => {
+    const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
   },

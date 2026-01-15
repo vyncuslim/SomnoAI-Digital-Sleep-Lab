@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'zh' | 'de' | 'fr';
 
 export const translations = {
@@ -56,6 +57,15 @@ export const translations = {
       never: 'Never',
       thankYouTitle: 'Contribution Acknowledged',
       closeReceipt: 'Return to Lab'
+    },
+    admin: {
+      securityTitle: 'Security Pulse',
+      autoBlock: 'Account Auto-Blocked',
+      eventTime: 'Detection Time',
+      reason: 'Trigger Logic',
+      status: 'Notification Status',
+      acknowledged: 'Logged & Notified',
+      pending: 'Pending Admin Alert'
     }
   },
   zh: {
@@ -100,6 +110,15 @@ export const translations = {
       accessRestricted: '访问受限',
       policyNotice: '请等待冷却时间结束后再重新请求。',
       auditNotice: '此终端内的所有神经活动均经过加密记录。访问尝试受到实时审计。'
+    },
+    admin: {
+      securityTitle: '安全监测脉搏',
+      autoBlock: '账号自动封禁',
+      eventTime: '触发时间',
+      reason: '风控策略',
+      status: '通知状态',
+      acknowledged: '已通知管理员',
+      pending: '等待推送通知'
     },
     settings: {
       title: 'SomnoAI 数字化睡眠实验室',
