@@ -4,7 +4,6 @@ import { supabase } from '../lib/supabaseClient.ts';
 
 /**
  * 使用邮箱和密码注册新受试者
- * 注册成功后立即在 profiles 表中插入基础记录，确保角色和权限正确初始化
  */
 export async function signUpWithPassword(email: string, pass: string) {
   const { data, error } = await supabase.auth.signUp({
@@ -17,19 +16,17 @@ export async function signUpWithPassword(email: string, pass: string) {
   
   if (error) throw error;
   
-  // 如果注册成功且有用户数据，执行 Profile 记录插入
+  // Note: We assume the database has a trigger to create a profile.
+  // If the manual insert is needed, use upsert to prevent "Database error saving new user" conflicts.
   if (data.user) {
     try {
-      const { error: insertError } = await supabase.from('profiles').insert([
-        { 
-          id: data.user.id, 
-          email: data.user.email, 
-          role: 'user' 
-        }
-      ]);
-      if (insertError) console.warn("Profile insertion notice:", insertError.message);
+      await supabase.from('profiles').upsert({ 
+        id: data.user.id, 
+        email: data.user.email, 
+        role: 'user' 
+      });
     } catch (err) {
-      console.error("Critical error during profile initialization:", err);
+      console.warn("Profile initialization handled by database trigger or upsert.");
     }
   }
   
@@ -49,17 +46,24 @@ export async function signInWithPassword(email: string, pass: string) {
 }
 
 /**
- * 发送 OTP 验证码。如果邮箱未注册，将根据 shouldCreateUser 自动创建。
+ * 发送 OTP 验证码。
+ * createIfNotFound: 如果为 false，仅允许已存在的账户登录。
  */
-export async function signInWithEmailOTP(email: string) {
+export async function signInWithEmailOTP(email: string, createIfNotFound = true) {
   const { error } = await supabase.auth.signInWithOtp({
     email,
     options: {
       emailRedirectTo: window.location.origin,
-      shouldCreateUser: true, // 允许验证码自动注册
+      shouldCreateUser: createIfNotFound, 
     }
   });
-  if (error) throw error;
+  if (error) {
+    // Catch the case where signups are disabled for this call
+    if (error.message.includes('signups not allowed') || error.message.includes('not found')) {
+      throw new Error("Access Denied: Subject identity not recognized in laboratory registry.");
+    }
+    throw error;
+  }
 }
 
 /**

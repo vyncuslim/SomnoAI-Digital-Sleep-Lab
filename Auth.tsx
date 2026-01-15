@@ -2,8 +2,7 @@ import React, { useState, useRef } from 'react';
 import { 
   Loader2, Mail, Lock, Zap, UserPlus, LogIn, 
   ChevronLeft, Eye, EyeOff, TriangleAlert, 
-  ShieldCheck, Fingerprint, Info, ArrowRight,
-  HelpCircle, CheckCircle2, Shield, Activity
+  ShieldCheck, Fingerprint, HelpCircle, CheckCircle2, Shield, Activity
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './components/Logo.tsx';
@@ -33,8 +32,7 @@ const validateEmailFormat = (email: string) => {
     );
 };
 
-export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
-  const isZh = lang === 'zh';
+export const Auth: React.FC<AuthProps> = ({ onLogin, onGuest }) => {
   const [method, setMethod] = useState<AuthMethod>('otp');
   const [mode, setMode] = useState<AuthMode>('login');
   const [step, setStep] = useState<AuthStep>('initial');
@@ -70,7 +68,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     
     if (!cleanEmail || !validateEmailFormat(cleanEmail)) {
       setError({
-        message: isZh ? "无效的邮箱地址，请检查拼写。" : "Invalid identity signature. Please check the email format.",
+        message: "Invalid identity signature. Please check the email format.",
         type: 'default'
       });
       return;
@@ -84,7 +82,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         await signInWithEmailOTP(cleanEmail);
         setStep('otp-verify');
         setError({
-          message: isZh ? "令牌已发出！请检查收件箱。" : "Token sent! Please check your inbox.",
+          message: "Token dispatched! Please check your inbox.",
           type: 'success'
         });
         setTimeout(() => otpRefs.current[0]?.focus(), 500);
@@ -96,7 +94,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
           await signUpWithPassword(cleanEmail, password);
           setStep('otp-verify');
           setError({ 
-            message: isZh ? "注册成功！请输入验证码以激活账号。" : "Registration successful! Enter code to activate account.",
+            message: "Registration successful! Enter code to activate account.",
             type: 'success'
           });
           setTimeout(() => otpRefs.current[0]?.focus(), 500);
@@ -106,7 +104,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       const rawMsg = err.message || "";
       if (rawMsg === "Invalid login credentials") {
         setError({
-          message: isZh ? "验证失败：账号或密码错误。" : "Authorization Failed: Credentials mismatch.",
+          message: "Authorization Failed: Credentials mismatch.",
           type: 'auth_fail'
         });
       } else {
@@ -132,7 +130,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       onLogin();
     } catch (err: any) {
       setError({
-        message: isZh ? "验证码错误或已过期。" : "Verification Failed: Token mismatch or expired.",
+        message: "Verification Failed: Token mismatch or expired.",
         type: 'default'
       });
     } finally {
@@ -160,7 +158,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               SomnoAI Lab
             </m.h1>
             <m.p layout className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
-              {isZh ? '数字化身份遥测' : 'Digital Identity Telemetry'}
+              Digital Identity Telemetry
             </m.p>
           </div>
         </header>
@@ -175,23 +173,23 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                       onClick={() => { setMethod('otp'); setError(null); }}
                       className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${method === 'otp' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                      {isZh ? '验证码模式' : 'OTP Mode'}
+                      OTP Mode
                     </button>
                     <button 
                       onClick={() => { setMethod('password'); setError(null); }}
                       className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${method === 'password' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                      {isZh ? '密码模式' : 'Password Mode'}
+                      Password Mode
                     </button>
                   </div>
 
                   {method === 'password' && (
                     <m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="flex justify-center gap-8">
                       <button onClick={() => { setMode('login'); setError(null); }} className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${mode === 'login' ? 'text-indigo-400' : 'text-slate-600 hover:text-slate-400'}`}>
-                        <LogIn size={14} /> {isZh ? '登录' : 'Login'}
+                        <LogIn size={14} /> Login
                       </button>
                       <button onClick={() => { setMode('register'); setError(null); }} className={`text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-2 ${mode === 'register' ? 'text-indigo-400' : 'text-slate-600 hover:text-slate-400'}`}>
-                        <UserPlus size={14} /> {isZh ? '注册' : 'Register'}
+                        <UserPlus size={14} /> Register
                       </button>
                     </m.div>
                   )}
@@ -206,7 +204,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                         autoComplete="email"
                         value={email}
                         onChange={e => setEmail(e.target.value)}
-                        placeholder={isZh ? "电子邮箱" : "Email Address"}
+                        placeholder="Email Address"
                         className="w-full bg-[#020617]/80 border border-white/10 rounded-[1.8rem] px-16 py-5 text-sm text-white font-medium outline-none focus:border-indigo-500/50 transition-all"
                         required
                       />
@@ -220,7 +218,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                           autoComplete="current-password"
                           value={password}
                           onChange={e => setPassword(e.target.value)}
-                          placeholder={isZh ? "访问密码" : "Access Password"}
+                          placeholder="Access Password"
                           className="w-full bg-[#020617]/80 border border-white/10 rounded-[1.8rem] px-16 py-5 text-sm text-white font-medium outline-none focus:border-indigo-500/50 transition-all"
                           required
                         />
@@ -236,7 +234,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                     className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] transition-all active:scale-[0.98] shadow-2xl flex items-center justify-center gap-3"
                   >
                     {isProcessing ? <Loader2 className="animate-spin" size={18} /> : (method === 'otp' ? <Zap size={18} /> : (mode === 'login' ? <LogIn size={18} /> : <UserPlus size={18} />))}
-                    {method === 'otp' ? (isZh ? '获取实验室令牌' : 'Request Lab Token') : (mode === 'login' ? (isZh ? '授权登录' : 'Authorize Access') : (isZh ? '确认注册' : 'Confirm Registration'))}
+                    {method === 'otp' ? 'Request Lab Token' : (mode === 'login' ? 'Authorize Access' : 'Confirm Registration')}
                   </button>
                 </form>
 
@@ -246,7 +244,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                       <img src="https://img.icons8.com/color/18/google-logo.png" alt="G" /> Google
                     </button>
                     <button onClick={onGuest} className="flex-1 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-all">
-                      <Fingerprint size={16} className="text-indigo-400" /> {isZh ? '沙盒模式' : 'Sandbox Mode'}
+                      <Fingerprint size={16} className="text-indigo-400" /> Sandbox Mode
                     </button>
                   </div>
                 </div>
@@ -255,13 +253,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               <m.div key="otp-verify" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
                 <div className="text-center space-y-4">
                   <button onClick={() => setStep('initial')} className="text-[10px] font-black text-slate-500 hover:text-indigo-400 uppercase tracking-widest flex items-center gap-2 mx-auto transition-colors">
-                    <ChevronLeft size={14} /> {isZh ? '返回修改' : 'Change Info'}
+                    <ChevronLeft size={14} /> Change Info
                   </button>
                   <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">
-                    {isZh ? '输入 6 位验证码' : 'Enter 6-Digit Code'}
+                    Enter 6-Digit Code
                   </h2>
                   <p className="text-xs text-slate-500 font-medium italic">
-                    {isZh ? `验证码已发送至 ${email}` : `Token sent to ${email}`}
+                    Token sent to {email}
                   </p>
                 </div>
 
@@ -288,7 +286,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                     className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-2xl flex items-center justify-center gap-3 disabled:opacity-50"
                   >
                     {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                    {isZh ? '完成验证' : 'Complete Verification'}
+                    Complete Verification
                   </button>
                 </div>
               </m.div>
@@ -309,7 +307,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               onClick={() => setShowHelp(!showHelp)}
               className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-600 hover:text-slate-400 transition-colors"
             >
-              <HelpCircle size={14} /> {isZh ? '无法激活账户？' : 'Cannot activate account?'}
+              <HelpCircle size={14} /> Cannot activate account?
             </button>
             
             <AnimatePresence>
@@ -317,9 +315,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 <m.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
                   <div className="pt-4 space-y-3">
                     {[
-                      { icon: Shield, text: isZh ? "1. 检查垃圾邮件 (Spam) 文件夹。" : "1. Check your Spam folder." },
-                      { icon: Activity, text: isZh ? "2. 验证码发送频率限制为每小时 3 次。" : "2. Token limit is 3 requests per hour." },
-                      { icon: Fingerprint, text: isZh ? "3. 推荐使用 Sandbox 模式快速体验。" : "3. Try Sandbox Mode for instant access." }
+                      { icon: Shield, text: "1. Check your Spam folder." },
+                      { icon: Activity, text: "2. Token limit is 3 requests per hour." },
+                      { icon: Fingerprint, text: "3. Try Sandbox Mode for instant access." }
                     ].map((item, i) => (
                       <div key={i} className="flex gap-3 items-center text-[10px] text-slate-500 italic">
                         <item.icon size={12} className="shrink-0" />

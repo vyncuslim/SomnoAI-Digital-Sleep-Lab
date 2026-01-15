@@ -9,7 +9,7 @@ const m = motion as any;
 
 /**
  * Admin Access Portal for SomnoAI Laboratory.
- * Updated to use OTP-only protocol for enhanced neural security.
+ * OTP-only protocol with automatic user creation DISABLED for security.
  */
 export default function AdminLoginPage() {
   const [step, setStep] = useState<'initial' | 'otp-verify'>('initial');
@@ -25,10 +25,12 @@ export default function AdminLoginPage() {
     setError(null);
     try {
       const cleanEmail = email.trim().toLowerCase();
-      await signInWithEmailOTP(cleanEmail);
+      // CRITICAL: Set shouldCreateUser (2nd param) to false for Admin Login
+      await signInWithEmailOTP(cleanEmail, false);
       setStep('otp-verify');
       setTimeout(() => otpRefs.current[0]?.focus(), 500);
     } catch (err: any) {
+      // Provide a clearer message if it's an identity failure
       setError(err.message || "Failed to dispatch lab token.");
     } finally {
       setIsProcessing(false);
