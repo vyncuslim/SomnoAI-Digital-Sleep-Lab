@@ -1,12 +1,32 @@
-
 import { supabase } from '../lib/supabaseClient.ts';
 
 // --- Subject Identity Services ---
 
 /**
+ * Ensures a profile exists in the 'profiles' table for the given user.
+ * Acts as a fail-safe if the database trigger is not configured.
+ */
+export async function ensureProfile(userId: string, email: string) {
+  try {
+    const { data: profile, error: fetchError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (!profile && !fetchError) {
+      // Create missing identity node
+      await supabase.from('profiles').insert([
+        { id: userId, email: email, role: 'user', is_blocked: false }
+      ]);
+    }
+  } catch (err) {
+    console.warn("Identity synchronization deferred:", err);
+  }
+}
+
+/**
  * Request an OTP Lab Token.
- * @param email The target identity.
- * @param createIfNotFound If false, prevents automatic registration (for restricted portals).
  */
 export async function signInWithEmailOTP(email: string, createIfNotFound = true) {
   const { error } = await supabase.auth.signInWithOtp({
@@ -27,11 +47,8 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
 
 /**
  * Verify the 6-digit neural token.
- * Strict 'email' type mapping to prevent Supabase consumption errors.
- * Includes a real-time clearance check for blocked subjects.
  */
 export async function verifyOtp(email: string, token: string) {
-  // CRITICAL: Type MUST be 'email' for signInWithOtp flow
   const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
@@ -45,7 +62,9 @@ export async function verifyOtp(email: string, token: string) {
   }
 
   if (data.session) {
-    // SECURITY: Post-Auth Clearance Audit
+    // Ensure profile exists immediately after successful handshake
+    await ensureProfile(data.session.user.id, data.session.user.email || '');
+    
     const { data: profile } = await supabase
       .from('profiles')
       .select('is_blocked')
@@ -59,6 +78,19 @@ export async function verifyOtp(email: string, token: string) {
   }
 
   return data.session;
+}
+
+/**
+ * Google OAuth Handshake.
+ */
+export async function signInWithGoogle() {
+  const { error } = await supabase.auth.signInWithOAuth({
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin,
+    }
+  });
+  if (error) throw error;
 }
 
 export async function updateUserPassword(newPassword: string) {
@@ -79,8 +111,8 @@ export const adminApi = {
         .eq('id', userId)
         .maybeSingle();
       
-      if (error || data?.is_blocked) return false;
-      return data?.role === 'admin';
+      if (error || !data || data.is_blocked) return false;
+      return data.role === 'admin';
     } catch (err) {
       return false;
     }

@@ -7,7 +7,7 @@ import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
-import { adminApi } from './services/supabaseService.ts';
+import { adminApi, ensureProfile } from './services/supabaseService.ts';
 
 // Pages
 const UserLoginPage = lazy(() => import('./app/login/page.tsx'));
@@ -40,7 +40,6 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('somno_lang');
     if (saved) return saved as Language;
-    // Default to 'en' as requested for the laboratory entry experience
     return 'en';
   });
   
@@ -57,11 +56,8 @@ const App: React.FC = () => {
   });
   
   const getNormalizedRoute = useCallback(() => {
-    // Extract path from hash OR pathname to support both clean URLs and hash routing
     const hashPart = window.location.hash.replace(/^#/, '');
     const pathPart = window.location.pathname;
-    
-    // Prioritize specific routes found in either part
     const fullPath = (hashPart || pathPart).toLowerCase();
     
     if (fullPath.includes('/admin/login')) return 'admin-login';
@@ -115,35 +111,46 @@ const App: React.FC = () => {
   }, [isSandbox, navigateTo, isLoggingOut]);
 
   useEffect(() => {
+    let checkTimeout: any;
+
     const checkAuth = async () => {
+      // Safety timeout: dismiss loader after 10s no matter what
+      checkTimeout = setTimeout(() => {
+        setIsInitialAuthCheck(false);
+        if ((window as any).dismissLoader) (window as any).dismissLoader();
+      }, 10000);
+
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (currentSession) {
-          // POST-AUTH: Check for blocked status even on refresh
+          // Failure point protection: ensure profile exists
+          await ensureProfile(currentSession.user.id, currentSession.user.email || '');
+
           const { data: profile } = await supabase
             .from('profiles')
             .select('is_blocked')
             .eq('id', currentSession.user.id)
-            .single();
+            .maybeSingle();
 
           if (profile?.is_blocked) {
             await supabase.auth.signOut();
             setSession(null);
-            return;
+          } else {
+            setSession(currentSession);
+            const adminStatus = await adminApi.checkAdminStatus(currentSession.user.id);
+            setIsAdmin(adminStatus);
           }
-
-          setSession(currentSession);
-          const adminStatus = await adminApi.checkAdminStatus(currentSession.user.id);
-          setIsAdmin(adminStatus);
         }
       } catch (err) {
-        console.warn("Auth check error:", err);
+        console.warn("Auth check sequence disruption:", err);
       } finally {
+        clearTimeout(checkTimeout);
         setIsInitialAuthCheck(false);
         if ((window as any).dismissLoader) (window as any).dismissLoader();
       }
     };
+    
     checkAuth();
 
     const syncRoute = () => setActiveRoute(getNormalizedRoute());
@@ -159,21 +166,20 @@ const App: React.FC = () => {
       }
       
       if (newSession) {
-        // Verification loop for blocked identities
+        await ensureProfile(newSession.user.id, newSession.user.email || '');
         const { data: profile } = await supabase
           .from('profiles')
           .select('is_blocked')
           .eq('id', newSession.user.id)
-          .single();
+          .maybeSingle();
 
         if (profile?.is_blocked) {
           await supabase.auth.signOut();
-          return;
+        } else {
+          setSession(newSession);
+          const adminStatus = await adminApi.checkAdminStatus(newSession.user.id);
+          setIsAdmin(adminStatus);
         }
-
-        setSession(newSession);
-        const adminStatus = await adminApi.checkAdminStatus(newSession.user.id);
-        setIsAdmin(adminStatus);
       }
     });
 
@@ -181,6 +187,7 @@ const App: React.FC = () => {
       window.removeEventListener('hashchange', syncRoute);
       window.removeEventListener('popstate', syncRoute);
       subscription.unsubscribe();
+      clearTimeout(checkTimeout);
     };
   }, [getNormalizedRoute, navigateTo, isLoggingOut]);
 
@@ -205,14 +212,10 @@ const App: React.FC = () => {
       localStorage.setItem('somno_last_sync', new Date().toLocaleString());
       onProgress?.('success');
     } catch (err: any) {
-      console.error("Sync Failure Details:", err);
       onProgress?.('error');
-      
       let msg = translations[lang].errors.syncFailed;
       if (err.message?.includes('SLEEP_DATA_NOT_FOUND') || err.message?.includes('404')) {
-        msg = isZh ? "未发现近期的生理记录。请确保 Google Fit 已启用睡眠跟踪且数据已上传。" : "No recent physiological records found. Ensure Google Fit has sleep tracking enabled and data is synced.";
-      } else if (err.message?.includes('LINK_REQUIRED') || err.message?.includes('401')) {
-        msg = translations[lang].errors.authExpired;
+        msg = isZh ? "未发现近期的生理记录。请确保 Google Fit 已启用睡眠跟踪。" : "No recent physiological records found. Ensure Google Fit has sleep tracking enabled.";
       }
       setSyncErrorMessage(msg);
       setTimeout(() => setSyncErrorMessage(null), 8000);
@@ -221,7 +224,7 @@ const App: React.FC = () => {
     }
   }, [lang, isZh]);
 
-  if (isInitialAuthCheck) return <LoadingSpinner label="Accessing Lab..." />;
+  if (isInitialAuthCheck) return <LoadingSpinner label="Decrypting Lab Access..." />;
 
   const renderContent = () => {
     const route = activeRoute;
@@ -238,7 +241,7 @@ const App: React.FC = () => {
     }
     
     if (!session && !isSandbox) {
-      return <Suspense fallback={<LoadingSpinner label="Initializing Auth Terminal..." />}><UserLoginPage onSuccess={() => navigateTo('/')} onSandbox={handleSandboxLogin} lang={lang} /></Suspense>;
+      return <Suspense fallback={<LoadingSpinner label="Warming Auth Nodes..." />}><UserLoginPage onSuccess={() => navigateTo('/')} onSandbox={handleSandboxLogin} lang={lang} /></Suspense>;
     }
 
     return (
@@ -254,20 +257,12 @@ const App: React.FC = () => {
                     <Activity className="text-indigo-400 animate-pulse" size={32} />
                   </div>
                   <h2 className="text-xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
-                  <p className="text-xs text-slate-500 max-w-xs italic mb-4">Establishing secure telemetry link with Google Health Connect. Ensure your source app (Fit/Oura/Zepp) has synchronized.</p>
+                  <p className="text-xs text-slate-500 max-w-xs italic mb-4">Establishing secure telemetry link with Google Health Connect. Ensure your source app has synchronized.</p>
                   
-                  <button 
-                    onClick={() => handleSyncHealthConnect(true)} 
-                    disabled={isSyncing}
-                    className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50"
-                  >
+                  <button onClick={() => handleSyncHealthConnect(true)} disabled={isSyncing} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50">
                     {isSyncing ? <RefreshCw className="animate-spin" size={14} /> : <Zap size={14} />}
                     {isSyncing ? 'Linking Nodes...' : 'Connect Lab Nodes'}
                   </button>
-                  
-                  <a href="https://support.google.com/fit/answer/6075068" target="_blank" className="text-[10px] font-bold text-slate-600 uppercase tracking-widest hover:text-indigo-400 flex items-center gap-2 transition-colors">
-                    <HelpCircle size={12} /> Sync Help
-                  </a>
                 </div>
               )
             ) : activeView === 'calendar' ? (
@@ -284,25 +279,6 @@ const App: React.FC = () => {
               />
             ) : null}
           </m.div>
-        </AnimatePresence>
-
-        <AnimatePresence>
-          {syncErrorMessage && (
-            <m.div 
-              initial={{ opacity: 0, y: 50 }} 
-              animate={{ opacity: 1, y: 0 }} 
-              exit={{ opacity: 0, y: 20 }}
-              className="fixed bottom-28 left-1/2 -translate-x-1/2 z-[100] w-[90%] max-w-sm"
-            >
-              <div className="bg-rose-950/90 backdrop-blur-3xl border border-rose-500/30 p-5 rounded-[2rem] shadow-2xl flex items-center gap-4">
-                <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><AlertTriangle size={20} /></div>
-                <div className="flex-1">
-                  <p className="text-[10px] font-black uppercase text-rose-400 tracking-widest mb-1">Telemetry Disruption</p>
-                  <p className="text-11px] font-bold text-slate-200 leading-tight italic">{syncErrorMessage}</p>
-                </div>
-              </div>
-            </m.div>
-          )}
         </AnimatePresence>
 
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
