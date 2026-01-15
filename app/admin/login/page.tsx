@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { ShieldAlert, Loader2, ChevronLeft, ArrowRight, Mail, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
+import { ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../../components/GlassCard.tsx';
 import { supabase } from '../../../lib/supabaseClient.ts';
@@ -9,7 +9,7 @@ const m = motion as any;
 
 /**
  * Restricted Portal for Laboratory Administrators.
- * Implements hardened Passwordless OTP with zero-trust role auditing.
+ * hardened flow: No auto-send, strict verifyOtp type.
  */
 export default function AdminLoginPage() {
   const [step, setStep] = useState<'initial' | 'otp-verify'>('initial');
@@ -20,10 +20,8 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Normalization utility to prevent case-sensitivity issues
   const getNormalizedEmail = () => email.trim().toLowerCase();
 
-  // Cooldown timer for OTP requests
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
@@ -42,16 +40,13 @@ export default function AdminLoginPage() {
       const targetEmail = getNormalizedEmail();
       if (!targetEmail) throw new Error("Identifier required.");
       
-      // CRITICAL: shouldCreateUser = false ensures we only target existing admins.
-      // If the email is not in Auth, Supabase will reject the sign-in attempt.
+      // CRITICAL: shouldCreateUser = false for admin restricted target.
       await signInWithEmailOTP(targetEmail, false);
       
       setStep('otp-verify');
       setCooldown(60); 
       setOtp(['', '', '', '', '', '']); 
-      
-      // Allow DOM to render before focus
-      setTimeout(() => otpRefs.current[0]?.focus(), 500);
+      setTimeout(() => otpRefs.current[0]?.focus(), 200);
     } catch (err: any) {
       setError(err.message || "Laboratory Handshake Failed.");
     } finally {
@@ -66,42 +61,37 @@ export default function AdminLoginPage() {
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
     
-    // Predictive focus
     if (value && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
     
-    // Auto-verify on completion
-    if (newOtp.every(d => d !== '') && index === 5) {
+    if (newOtp.every(d => d !== '') && index === 5 && !isProcessing) {
       executeVerify(newOtp.join(''));
     }
   };
 
   const executeVerify = async (fullOtp?: string) => {
+    if (isProcessing) return;
+    
     const token = fullOtp || otp.join('');
-    if (token.length < 6 || isProcessing) return;
+    if (token.length < 6) return;
     
     setIsProcessing(true);
     setError(null);
 
     try {
       const targetEmail = getNormalizedEmail();
-      
-      // For Admin OTP restricted login, the type in verifyOtp must be 'email'
-      const session = await verifyOtp(targetEmail, token, 'email');
+      const session = await verifyOtp(targetEmail, token);
 
       if (!session) throw new Error("Link Rejected: Node denied session creation.");
 
-      // Post-Auth Clearance Gate (The Firewall)
+      // Clearance Audit
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
-
       if (!isAdmin) {
-        // Purge unauthorized session immediately
         await supabase.auth.signOut();
         throw new Error("Access Denied: Subject lacks Administrative Clearance (Level 0).");
       }
 
-      // Successful Handshake
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Neural override verification failed.");
@@ -111,15 +101,15 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 space-y-12 font-sans overflow-hidden relative">
-      {/* Bio-Atmosphere Background */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-rose-500/10 rounded-full blur-[120px]" />
       </div>
 
       <div className="text-center space-y-6 relative z-10">
         <button 
-          onClick={() => window.location.hash = '#/'}
-          className="text-[10px] font-black text-slate-600 hover:text-white uppercase tracking-[0.3em] flex items-center gap-3 mx-auto mb-12 transition-all group"
+          onClick={() => { if(!isProcessing) window.location.hash = '#/'; }}
+          disabled={isProcessing}
+          className="text-[10px] font-black text-slate-600 hover:text-white uppercase tracking-[0.3em] flex items-center gap-3 mx-auto mb-12 transition-all group disabled:opacity-30"
         >
           <ChevronLeft size={16} className="group-hover:-translate-x-1 transition-transform" /> ABORT OVERRIDE
         </button>
@@ -162,6 +152,7 @@ export default function AdminLoginPage() {
                     placeholder="Admin Identifier"
                     className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white font-medium outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
                     required
+                    autoFocus
                   />
                 </div>
               </div>
@@ -185,8 +176,9 @@ export default function AdminLoginPage() {
             >
               <div className="text-center space-y-4">
                 <button 
-                  onClick={() => { setStep('initial'); setError(null); }} 
-                  className="text-[10px] font-black text-slate-600 hover:text-rose-400 uppercase tracking-widest flex items-center gap-2 mx-auto transition-colors"
+                  onClick={() => { if(!isProcessing) { setStep('initial'); setError(null); } }} 
+                  disabled={isProcessing}
+                  className="text-[10px] font-black text-slate-600 hover:text-rose-400 uppercase tracking-widest flex items-center gap-2 mx-auto transition-colors disabled:opacity-30"
                 >
                   <ChevronLeft size={14} /> Back to Identifier
                 </button>
@@ -211,7 +203,7 @@ export default function AdminLoginPage() {
                       }
                     }}
                     disabled={isProcessing}
-                    className="w-11 h-14 bg-white/[0.03] border border-white/10 rounded-2xl text-2xl text-center text-white font-black focus:border-rose-500 outline-none transition-all disabled:opacity-50"
+                    className="w-11 h-14 bg-white/[0.03] border border-white/10 rounded-2xl text-2xl text-center text-white font-mono font-black focus:border-rose-500 outline-none transition-all disabled:opacity-50"
                   />
                 ))}
               </div>
@@ -250,23 +242,18 @@ export default function AdminLoginPage() {
               <ShieldAlert size={18} className="shrink-0 mt-0.5" />
               <div className="space-y-2">
                 <p className="italic font-bold text-rose-400 leading-relaxed">{error}</p>
-                {(error.includes('Expired') || error.includes('Invalid')) && (
-                  <p className="text-[9px] text-slate-500 uppercase tracking-widest">
-                    Wait for the cooldown to clear before requesting again.
-                  </p>
-                )}
+                <p className="text-[9px] text-slate-500 uppercase tracking-widest">
+                  {cooldown > 0 ? `Rate limit active. Clear cooldown before retry.` : `Handshake signature invalid. Try once more.`}
+                </p>
               </div>
             </m.div>
           )}
         </AnimatePresence>
 
-        <div className="mt-12 pt-10 border-t border-white/5 text-center space-y-6">
+        <div className="mt-12 pt-10 border-t border-white/5 text-center">
            <p className="text-[9px] text-slate-800 font-bold uppercase tracking-widest leading-relaxed italic">
             Neural activity within this terminal is cryptographically logged. Access attempts are audited in real-time.
           </p>
-          <a href="/" className="inline-flex items-center gap-2 text-[9px] font-black text-slate-500 hover:text-indigo-400 uppercase tracking-widest transition-colors">
-            Return to Public Dashboard <ArrowRight size={12} />
-          </a>
         </div>
       </GlassCard>
 

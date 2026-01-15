@@ -4,8 +4,6 @@ import { supabase } from '../lib/supabaseClient.ts';
 
 /**
  * Request an OTP Lab Token.
- * @param email The target identity.
- * @param createIfNotFound If false, prevents automatic registration. Crucial for restricted portals.
  */
 export async function signInWithEmailOTP(email: string, createIfNotFound = true) {
   const { error } = await supabase.auth.signInWithOtp({
@@ -17,9 +15,8 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
   });
   
   if (error) {
-    // Handle restricted access errors
     if (error.message.includes('signups not allowed') || error.message.includes('not found')) {
-      throw new Error("Access Denied: Identity not recognized in the Laboratory Registry.");
+      throw new Error("Access Denied: Identity not recognized in Registry.");
     }
     throw error;
   }
@@ -27,42 +24,37 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
 
 /**
  * Verify the 6-digit neural token.
- * For Admin Login where shouldCreateUser=false, type MUST be 'email'.
+ * Strict 'email' type to prevent Supabase invalid token errors.
  */
-export async function verifyOtp(email: string, token: string, type: 'email' | 'signup' | 'magiclink' = 'email') {
+export async function verifyOtp(email: string, token: string) {
   const { data, error } = await supabase.auth.verifyOtp({
     email,
     token,
-    type
+    type: 'email'
   });
   
   if (error) {
-    if (error.message.includes('expired')) throw new Error("Token Expired: Please request a new handshake.");
-    if (error.message.includes('invalid')) throw new Error("Invalid Token: Signature mismatch.");
+    if (error.message.includes('expired')) throw new Error("Token Expired: Request a new handshake.");
+    if (error.message.includes('invalid')) throw new Error("Token Invalid: Already consumed or incorrect signature.");
     throw error;
   }
+
+  if (data.session) {
+    // SECURITY: Immediate post-auth clearance check
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_blocked')
+      .eq('id', data.session.user.id)
+      .single();
+
+    if (profile?.is_blocked) {
+      await supabase.auth.signOut();
+      throw new Error("Access Restricted: Your identity node has been suspended.");
+    }
+  }
+
   return data.session;
 }
-
-export async function signInWithPassword(email: string, pass: string) {
-  const { data, error } = await supabase.auth.signInWithPassword({ email, password: pass });
-  if (error) throw error;
-  return data.session;
-}
-
-export async function signUpWithPassword(email: string, pass: string) {
-  const { data, error } = await supabase.auth.signUp({ email, password: pass });
-  if (error) throw error;
-  return data;
-}
-
-export const signInWithGoogle = async () => {
-  const { error } = await supabase.auth.signInWithOAuth({
-    provider: 'google',
-    options: { redirectTo: window.location.origin }
-  });
-  if (error) throw error;
-};
 
 export async function updateUserPassword(newPassword: string) {
   const { data, error } = await supabase.auth.updateUser({ password: newPassword });
@@ -70,25 +62,19 @@ export async function updateUserPassword(newPassword: string) {
   return data;
 }
 
-// --- Administrative Privilege Services (Restricted) ---
+// --- Administrative Services ---
 
 export const adminApi = {
-  /**
-   * Verification Gate: Checks if a subject has Clearance Level 0 (Admin).
-   */
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     if (!userId) return false;
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, is_blocked')
         .eq('id', userId)
         .maybeSingle();
       
-      if (error) {
-        console.error("Clearance Audit Failure:", error);
-        return false;
-      }
+      if (error || data?.is_blocked) return false;
       return data?.role === 'admin';
     } catch (err) {
       return false;
@@ -99,6 +85,16 @@ export const adminApi = {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (error) throw error;
     return data || [];
+  },
+
+  blockUser: async (id: string) => {
+    const { error } = await supabase.from('profiles').update({ is_blocked: true, blocked_at: new Date().toISOString() }).eq('id', id);
+    if (error) throw error;
+  },
+
+  unblockUser: async (id: string) => {
+    const { error } = await supabase.from('profiles').update({ is_blocked: false, blocked_at: null }).eq('id', id);
+    if (error) throw error;
   },
 
   getSleepRecords: async () => {

@@ -118,8 +118,22 @@ const App: React.FC = () => {
     const checkAuth = async () => {
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
+        
         if (currentSession) {
+          // POST-AUTH: Check for blocked status even on refresh
+          const { data: profile } = await supabase
+            .from('profiles')
+            .select('is_blocked')
+            .eq('id', currentSession.user.id)
+            .single();
+
+          if (profile?.is_blocked) {
+            await supabase.auth.signOut();
+            setSession(null);
+            return;
+          }
+
+          setSession(currentSession);
           const adminStatus = await adminApi.checkAdminStatus(currentSession.user.id);
           setIsAdmin(adminStatus);
         }
@@ -143,8 +157,21 @@ const App: React.FC = () => {
         setIsAdmin(false);
         return;
       }
-      setSession(newSession);
+      
       if (newSession) {
+        // Verification loop for blocked identities
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('is_blocked')
+          .eq('id', newSession.user.id)
+          .single();
+
+        if (profile?.is_blocked) {
+          await supabase.auth.signOut();
+          return;
+        }
+
+        setSession(newSession);
         const adminStatus = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(adminStatus);
       }
@@ -271,7 +298,7 @@ const App: React.FC = () => {
                 <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><AlertTriangle size={20} /></div>
                 <div className="flex-1">
                   <p className="text-[10px] font-black uppercase text-rose-400 tracking-widest mb-1">Telemetry Disruption</p>
-                  <p className="text-[11px] font-bold text-slate-200 leading-tight italic">{syncErrorMessage}</p>
+                  <p className="text-11px] font-bold text-slate-200 leading-tight italic">{syncErrorMessage}</p>
                 </div>
               </div>
             </m.div>
