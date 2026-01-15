@@ -20,7 +20,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Normalization utility
+  // Normalization utility to prevent case-sensitivity issues
   const getNormalizedEmail = () => email.trim().toLowerCase();
 
   // Cooldown timer for OTP requests
@@ -42,13 +42,15 @@ export default function AdminLoginPage() {
       const targetEmail = getNormalizedEmail();
       if (!targetEmail) throw new Error("Identifier required.");
       
-      // shouldCreateUser = false ensures we only target existing admins
+      // CRITICAL: shouldCreateUser = false ensures we only target existing admins.
+      // If the email is not in Auth, Supabase will reject the sign-in attempt.
       await signInWithEmailOTP(targetEmail, false);
       
       setStep('otp-verify');
-      setCooldown(60); // Prevent token spam which invalidates the last token
-      setOtp(['', '', '', '', '', '']); // Clear previous attempts
+      setCooldown(60); 
+      setOtp(['', '', '', '', '', '']); 
       
+      // Allow DOM to render before focus
       setTimeout(() => otpRefs.current[0]?.focus(), 500);
     } catch (err: any) {
       setError(err.message || "Laboratory Handshake Failed.");
@@ -64,12 +66,12 @@ export default function AdminLoginPage() {
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
     
-    // Auto-focus logic
+    // Predictive focus
     if (value && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
     
-    // Automatic verification on 6th digit
+    // Auto-verify on completion
     if (newOtp.every(d => d !== '') && index === 5) {
       executeVerify(newOtp.join(''));
     }
@@ -85,29 +87,31 @@ export default function AdminLoginPage() {
     try {
       const targetEmail = getNormalizedEmail();
       
-      // For Admin OTP (shouldCreateUser:false), type MUST be 'email'
+      // For Admin OTP restricted login, the type in verifyOtp must be 'email'
       const session = await verifyOtp(targetEmail, token, 'email');
 
       if (!session) throw new Error("Link Rejected: Node denied session creation.");
 
-      // Post-Auth Authorization Check (The Firewall)
+      // Post-Auth Clearance Gate (The Firewall)
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
 
       if (!isAdmin) {
+        // Purge unauthorized session immediately
         await supabase.auth.signOut();
         throw new Error("Access Denied: Subject lacks Administrative Clearance (Level 0).");
       }
 
+      // Successful Handshake
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Neural override verification failed.");
       setIsProcessing(false);
-      // Don't clear OTP immediately to allow manual correction if it was a typo
     }
   };
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 space-y-12 font-sans overflow-hidden relative">
+      {/* Bio-Atmosphere Background */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-rose-500/10 rounded-full blur-[120px]" />
       </div>
@@ -121,11 +125,11 @@ export default function AdminLoginPage() {
         </button>
         
         <m.div 
-          animate={{ rotate: [0, 5, -5, 0] }}
+          animate={{ rotate: [0, 3, -3, 0] }}
           transition={{ duration: 10, repeat: Infinity }}
-          className="w-28 h-28 bg-rose-500/5 rounded-full flex items-center justify-center text-rose-500 border border-rose-500/20 mx-auto mb-6 shadow-[0_0_80px_rgba(225,29,72,0.1)]"
+          className="w-24 h-24 bg-rose-500/5 rounded-full flex items-center justify-center text-rose-500 border border-rose-500/20 mx-auto mb-6 shadow-[0_0_80px_rgba(225,29,72,0.1)]"
         >
-          <ShieldAlert size={48} strokeWidth={1.5} />
+          <ShieldCheck size={40} strokeWidth={1.5} />
         </m.div>
         
         <div className="space-y-1">
@@ -141,9 +145,9 @@ export default function AdminLoginPage() {
           {step === 'initial' ? (
             <m.form 
               key="initial"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 20 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
               onSubmit={handleRequestOtp} 
               className="space-y-8"
             >
@@ -168,7 +172,7 @@ export default function AdminLoginPage() {
                 className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                {isProcessing ? 'HANDSHAKING...' : (cooldown > 0 ? `RETRY IN ${cooldown}s` : 'REQUEST LAB TOKEN')}
+                {isProcessing ? 'HANDSHAKING...' : (cooldown > 0 ? `COOLDOWN ACTIVE (${cooldown}S)` : 'REQUEST LAB TOKEN')}
               </button>
             </m.form>
           ) : (
@@ -228,7 +232,7 @@ export default function AdminLoginPage() {
                   className="w-full py-4 bg-white/5 text-slate-500 rounded-full font-black text-[9px] uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-2"
                 >
                   <RefreshCw size={14} className={isProcessing ? 'animate-spin' : ''} />
-                  {cooldown > 0 ? `NEW TOKEN IN ${cooldown}s` : 'RESEND LAB TOKEN'}
+                  {cooldown > 0 ? `WAIT ${cooldown}S FOR RETRY` : 'RESEND LAB TOKEN'}
                 </button>
               </div>
             </m.div>
@@ -244,10 +248,12 @@ export default function AdminLoginPage() {
               className="mt-8 p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4 text-rose-400 text-[11px] font-bold"
             >
               <ShieldAlert size={18} className="shrink-0 mt-0.5" />
-              <div className="space-y-1">
+              <div className="space-y-2">
                 <p className="italic font-bold text-rose-400 leading-relaxed">{error}</p>
-                {error.includes('Expired') && (
-                  <p className="text-[9px] text-slate-500 uppercase">Wait for the cooldown to clear before requesting again.</p>
+                {(error.includes('Expired') || error.includes('Invalid')) && (
+                  <p className="text-[9px] text-slate-500 uppercase tracking-widest">
+                    Wait for the cooldown to clear before requesting again.
+                  </p>
                 )}
               </div>
             </m.div>
@@ -256,7 +262,7 @@ export default function AdminLoginPage() {
 
         <div className="mt-12 pt-10 border-t border-white/5 text-center space-y-6">
            <p className="text-[9px] text-slate-800 font-bold uppercase tracking-widest leading-relaxed italic">
-            This terminal monitors all neural entry events. Attempt logs are synchronized at the edge.
+            Neural activity within this terminal is cryptographically logged. Access attempts are audited in real-time.
           </p>
           <a href="/" className="inline-flex items-center gap-2 text-[9px] font-black text-slate-500 hover:text-indigo-400 uppercase tracking-widest transition-colors">
             Return to Public Dashboard <ArrowRight size={12} />
@@ -265,7 +271,7 @@ export default function AdminLoginPage() {
       </GlassCard>
 
       <footer className="text-center text-slate-800 font-black uppercase text-[8px] tracking-[0.6em] pointer-events-none pb-12">
-        SomnoAI Digital Sleep Lab • Neural Grid Access
+        SomnoAI Digital Sleep Lab • Secure Grid Infrastructure
       </footer>
     </div>
   );
