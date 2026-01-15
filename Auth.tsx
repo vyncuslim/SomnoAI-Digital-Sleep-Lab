@@ -96,7 +96,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
           await signUpWithPassword(cleanEmail, password);
           setStep('otp-verify');
           setError({ 
-            message: isZh ? "注册成功！请输入发送至邮箱的 6 位验证码以激活账号。" : "Registration successful! Enter the 6-digit code sent to your email to activate.",
+            message: isZh ? "注册成功！请输入验证码以激活账号。" : "Registration successful! Enter code to activate account.",
             type: 'success'
           });
           setTimeout(() => otpRefs.current[0]?.focus(), 500);
@@ -106,7 +106,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       const rawMsg = err.message || "";
       if (rawMsg === "Invalid login credentials") {
         setError({
-          message: isZh ? "验证失败：账号或密码错误。新用户请切换到“注册”。" : "Authorization Failed: Credentials mismatch. Switch to 'Register' for new accounts.",
+          message: isZh ? "验证失败：账号或密码错误。" : "Authorization Failed: Credentials mismatch.",
           type: 'auth_fail'
         });
       } else {
@@ -160,7 +160,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               SomnoAI Lab
             </m.h1>
             <m.p layout className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
-              Digital Identity Telemetry
+              {isZh ? '数字化身份遥测' : 'Digital Identity Telemetry'}
             </m.p>
           </div>
         </header>
@@ -175,13 +175,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                       onClick={() => { setMethod('otp'); setError(null); }}
                       className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${method === 'otp' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                      {isZh ? '验证码模式' : 'OTP Only'}
+                      {isZh ? '验证码模式' : 'OTP Mode'}
                     </button>
                     <button 
                       onClick={() => { setMethod('password'); setError(null); }}
                       className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${method === 'password' ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
                     >
-                      {isZh ? '密码模式' : 'Password'}
+                      {isZh ? '密码模式' : 'Password Mode'}
                     </button>
                   </div>
 
@@ -246,7 +246,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                       <img src="https://img.icons8.com/color/18/google-logo.png" alt="G" /> Google
                     </button>
                     <button onClick={onGuest} className="flex-1 py-4 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center gap-3 text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-all">
-                      <Fingerprint size={16} className="text-indigo-400" /> {isZh ? '沙盒模式' : 'Sandbox'}
+                      <Fingerprint size={16} className="text-indigo-400" /> {isZh ? '沙盒模式' : 'Sandbox Mode'}
                     </button>
                   </div>
                 </div>
@@ -319,7 +319,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                     {[
                       { icon: Shield, text: isZh ? "1. 检查垃圾邮件 (Spam) 文件夹。" : "1. Check your Spam folder." },
                       { icon: Activity, text: isZh ? "2. 验证码发送频率限制为每小时 3 次。" : "2. Token limit is 3 requests per hour." },
-                      { icon: Fingerprint, text: isZh ? "3. 推荐使用 Sandbox 模式快速体验。" : "3. Try Sandbox mode for instant access." }
+                      { icon: Fingerprint, text: isZh ? "3. 推荐使用 Sandbox 模式快速体验。" : "3. Try Sandbox Mode for instant access." }
                     ].map((item, i) => (
                       <div key={i} className="flex gap-3 items-center text-[10px] text-slate-500 italic">
                         <item.icon size={12} className="shrink-0" />

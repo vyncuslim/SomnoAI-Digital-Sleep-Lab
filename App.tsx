@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
@@ -38,7 +37,6 @@ const LoadingSpinner = ({ label = "Connecting Lab Nodes..." }: { label?: string 
 );
 
 const App: React.FC = () => {
-  // 优化：优先检测本地存储或浏览器语言
   const [lang, setLang] = useState<Language>(() => {
     const saved = localStorage.getItem('somno_lang');
     if (saved) return saved as Language;
@@ -60,20 +58,20 @@ const App: React.FC = () => {
   });
   
   const getNormalizedRoute = useCallback(() => {
-    const hash = window.location.hash.replace(/^#/, '').toLowerCase();
-    const path = window.location.pathname.toLowerCase();
+    // Extract path from hash OR pathname to support both clean URLs and hash routing
+    const hashPart = window.location.hash.replace(/^#/, '');
+    const pathPart = window.location.pathname;
     
-    let route = hash || path;
-    route = route.startsWith('/') ? route : '/' + route;
-    route = route.replace(/\/+$/, '') || '/';
+    // Prioritize specific routes found in either part
+    const fullPath = (hashPart || pathPart).toLowerCase();
     
-    if (route === '/login') return 'login';
-    if (route === '/admin') return 'admin';
-    if (route === '/admin/login') return 'admin-login';
-    if (route === '/terms') return 'terms';
-    if (route === '/privacy') return 'privacy';
+    if (fullPath.includes('/admin/login')) return 'admin-login';
+    if (fullPath.includes('/admin')) return 'admin';
+    if (fullPath.includes('/login')) return 'login';
+    if (fullPath.includes('/terms')) return 'terms';
+    if (fullPath.includes('/privacy')) return 'privacy';
     
-    return route === '/' ? '/' : route.slice(1);
+    return '/';
   }, []);
 
   const [activeRoute, setActiveRoute] = useState<string>(getNormalizedRoute());
@@ -119,20 +117,15 @@ const App: React.FC = () => {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('AUTH_TIMEOUT')), 5000));
       try {
-        const { data: { session: currentSession } } = await (Promise.race([
-          supabase.auth.getSession(),
-          timeoutPromise
-        ]) as Promise<any>);
-        
+        const { data: { session: currentSession } } = await supabase.auth.getSession();
         setSession(currentSession);
         if (currentSession) {
           const adminStatus = await adminApi.checkAdminStatus(currentSession.user.id);
           setIsAdmin(adminStatus);
         }
       } catch (err) {
-        console.warn("Auth initialization skipped or timed out:", err);
+        console.warn("Auth check error:", err);
       } finally {
         setIsInitialAuthCheck(false);
         if ((window as any).dismissLoader) (window as any).dismissLoader();
@@ -140,9 +133,9 @@ const App: React.FC = () => {
     };
     checkAuth();
 
-    const handleHashChange = () => setActiveRoute(getNormalizedRoute());
-    window.addEventListener('hashchange', handleHashChange);
-    window.addEventListener('popstate', handleHashChange);
+    const syncRoute = () => setActiveRoute(getNormalizedRoute());
+    window.addEventListener('hashchange', syncRoute);
+    window.addEventListener('popstate', syncRoute);
     
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (isLoggingOut) return;
@@ -155,13 +148,12 @@ const App: React.FC = () => {
       if (newSession) {
         const adminStatus = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(adminStatus);
-        if (getNormalizedRoute() === 'login') navigateTo('/');
       }
     });
 
     return () => {
-      window.removeEventListener('hashchange', handleHashChange);
-      window.removeEventListener('popstate', handleHashChange);
+      window.removeEventListener('hashchange', syncRoute);
+      window.removeEventListener('popstate', syncRoute);
       subscription.unsubscribe();
     };
   }, [getNormalizedRoute, navigateTo, isLoggingOut]);
@@ -220,7 +212,6 @@ const App: React.FC = () => {
     }
     
     if (!session && !isSandbox) {
-      if (route !== 'login' && route !== '/') navigateTo('/login');
       return <Suspense fallback={<LoadingSpinner label="Initializing Auth Terminal..." />}><UserLoginPage onSuccess={() => navigateTo('/')} onSandbox={handleSandboxLogin} /></Suspense>;
     }
 
@@ -258,7 +249,6 @@ const App: React.FC = () => {
             ) : activeView === 'assistant' ? (
               <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} isSandbox={isSandbox} />
             ) : activeView === 'profile' ? (
-              /* Fixed: Added missing required onThreeDChange prop */
               <Settings 
                 lang={lang} onLanguageChange={(l) => { setLang(l); localStorage.setItem('somno_lang', l); }} onLogout={handleLogout} 
                 onNavigate={(v) => typeof v === 'string' && (v === 'admin' ? navigateTo('/admin') : setActiveView(v as any))}

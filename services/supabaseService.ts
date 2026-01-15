@@ -1,24 +1,38 @@
-
 import { supabase } from '../lib/supabaseClient.ts';
 
 // --- 用户身份验证服务 ---
 
 /**
  * 使用邮箱和密码注册新受试者
+ * 注册成功后立即在 profiles 表中插入基础记录，确保角色和权限正确初始化
  */
 export async function signUpWithPassword(email: string, pass: string) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password: pass,
     options: { 
-      // 显式配置重定向
       emailRedirectTo: window.location.origin,
-      data: {
-        role: 'user' // 初始权限等级
-      }
     }
   });
+  
   if (error) throw error;
+  
+  // 如果注册成功且有用户数据，执行 Profile 记录插入
+  if (data.user) {
+    try {
+      const { error: insertError } = await supabase.from('profiles').insert([
+        { 
+          id: data.user.id, 
+          email: data.user.email, 
+          role: 'user' 
+        }
+      ]);
+      if (insertError) console.warn("Profile insertion notice:", insertError.message);
+    } catch (err) {
+      console.error("Critical error during profile initialization:", err);
+    }
+  }
+  
   return data;
 }
 
@@ -42,7 +56,7 @@ export async function signInWithEmailOTP(email: string) {
     email,
     options: {
       emailRedirectTo: window.location.origin,
-      shouldCreateUser: true, // 允许验证码注册
+      shouldCreateUser: true, // 允许验证码自动注册
     }
   });
   if (error) throw error;

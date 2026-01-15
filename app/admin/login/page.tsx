@@ -1,46 +1,76 @@
-import React, { useState } from 'react';
-import { ShieldAlert, Lock, Fingerprint, Loader2, ChevronLeft, ArrowRight, Mail } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ShieldAlert, Fingerprint, Loader2, ChevronLeft, ArrowRight, Mail, ShieldCheck, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../../components/GlassCard.tsx';
 import { supabase } from '../../../lib/supabaseClient.ts';
-import { adminApi } from '../../../services/supabaseService.ts';
+import { adminApi, signInWithEmailOTP, verifyOtp } from '../../../services/supabaseService.ts';
 
 const m = motion as any;
 
 /**
  * Admin Access Portal for SomnoAI Laboratory.
+ * Updated to use OTP-only protocol for enhanced neural security.
  */
 export default function AdminLoginPage() {
+  const [step, setStep] = useState<'initial' | 'otp-verify'>('initial');
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  const handleAdminLogin = async (e: React.FormEvent) => {
+  const handleRequestOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setIsProcessing(true);
+    setError(null);
+    try {
+      const cleanEmail = email.trim().toLowerCase();
+      await signInWithEmailOTP(cleanEmail);
+      setStep('otp-verify');
+      setTimeout(() => otpRefs.current[0]?.focus(), 500);
+    } catch (err: any) {
+      setError(err.message || "Failed to dispatch lab token.");
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleOtpInput = (index: number, value: string) => {
+    if (!/^\d*$/.test(value)) return;
+    const newOtp = [...otp];
+    newOtp[index] = value.slice(-1);
+    setOtp(newOtp);
+    
+    if (value && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+    
+    if (newOtp.every(d => d !== '') && index === 5) {
+      executeVerify(newOtp.join(''));
+    }
+  };
+
+  const executeVerify = async (fullOtp?: string) => {
+    const token = fullOtp || otp.join('');
+    if (token.length < 6) return;
+    
     setIsProcessing(true);
     setError(null);
 
     try {
       const cleanEmail = email.trim().toLowerCase();
+      const session = await verifyOtp(cleanEmail, token, 'email');
 
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: cleanEmail,
-        password,
-      });
+      if (!session) throw new Error("Verification failed: Node rejected session.");
 
-      if (authError) throw authError;
-      if (!data.session) throw new Error("Authentication failed: Node rejected session.");
-
-      // Strict role verification to ensure only administrators gain access
-      const isAdmin = await adminApi.checkAdminStatus(data.user.id);
+      // Strict role verification
+      const isAdmin = await adminApi.checkAdminStatus(session.user.id);
 
       if (!isAdmin) {
         await supabase.auth.signOut();
         throw new Error("Access Denied: Subject lacks administrative clearance.");
       }
 
-      // Success - Redirect to internal command center
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Credential override failed.");
@@ -50,7 +80,6 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 space-y-12 font-sans overflow-hidden relative">
-      {/* Background Ambience */}
       <div className="absolute inset-0 pointer-events-none opacity-20">
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-rose-500/10 rounded-full blur-[120px]" />
       </div>
@@ -80,43 +109,83 @@ export default function AdminLoginPage() {
       </div>
 
       <GlassCard className="w-full max-w-md p-10 md:p-14 rounded-[4.5rem] border-rose-500/20 relative z-10 shadow-3xl">
-        <form onSubmit={handleAdminLogin} className="space-y-8">
-          <div className="space-y-4">
-            <div className="relative group">
-              <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-800" size={18} />
-              <input 
-                type="email" 
-                autoComplete="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="Admin Identifier"
-                className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white font-medium outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
-                required
-              />
-            </div>
-            <div className="relative group">
-              <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-800" size={18} />
-              <input 
-                type="password" 
-                autoComplete="current-password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Security Key"
-                className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-rose-500 font-mono outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
-                required
-              />
-            </div>
-          </div>
-          
-          <button 
-            type="submit"
-            disabled={isProcessing}
-            className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
-          >
-            {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Fingerprint size={18} />}
-            {isProcessing ? 'HANDSHAKING...' : 'INITIALIZE OVERRIDE'}
-          </button>
-        </form>
+        <AnimatePresence mode="wait">
+          {step === 'initial' ? (
+            <m.form 
+              key="initial"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              onSubmit={handleRequestOtp} 
+              className="space-y-8"
+            >
+              <div className="space-y-4">
+                <div className="relative group">
+                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-800" size={18} />
+                  <input 
+                    type="email" 
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Admin Identifier"
+                    className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white font-medium outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
+                    required
+                  />
+                </div>
+              </div>
+              
+              <button 
+                type="submit"
+                disabled={isProcessing}
+                className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
+              >
+                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+                {isProcessing ? 'HANDSHAKING...' : 'REQUEST LAB TOKEN'}
+              </button>
+            </m.form>
+          ) : (
+            <m.div 
+              key="otp-verify"
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+              className="space-y-12"
+            >
+              <div className="text-center space-y-4">
+                <button onClick={() => setStep('initial')} className="text-[10px] font-black text-slate-600 hover:text-rose-400 uppercase tracking-widest flex items-center gap-2 mx-auto transition-colors">
+                  <ChevronLeft size={14} /> Change Identifier
+                </button>
+                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Enter 6-Digit Token</h2>
+                <p className="text-xs text-slate-500 font-medium italic">Sent to {email}</p>
+              </div>
+
+              <div className="flex justify-between gap-3 px-2">
+                {otp.map((digit, idx) => (
+                  <input
+                    key={idx}
+                    ref={el => { otpRefs.current[idx] = el; }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => handleOtpInput(idx, e.target.value)}
+                    onKeyDown={(e) => e.key === 'Backspace' && !otp[idx] && idx > 0 && otpRefs.current[idx - 1]?.focus()}
+                    className="w-11 h-14 bg-white/[0.03] border border-white/10 rounded-2xl text-2xl text-center text-white font-black focus:border-rose-500 outline-none transition-all"
+                  />
+                ))}
+              </div>
+
+              <button 
+                onClick={() => executeVerify()}
+                disabled={isProcessing || otp.some(d => !d)}
+                className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 disabled:opacity-50"
+              >
+                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                {isProcessing ? 'DECRYPTING...' : 'INITIALIZE OVERRIDE'}
+              </button>
+            </m.div>
+          )}
+        </AnimatePresence>
 
         <AnimatePresence>
           {error && (
