@@ -35,7 +35,7 @@ export default function AdminLoginPage() {
 
     try {
       const targetEmail = getNormalizedEmail();
-      if (!targetEmail) throw new Error("Identifier required.");
+      if (!targetEmail) throw new Error("Identifier required for terminal access.");
       
       await signInWithEmailOTP(targetEmail, false);
       
@@ -44,7 +44,7 @@ export default function AdminLoginPage() {
       setOtp(['', '', '', '', '', '']); 
       setTimeout(() => otpRefs.current[0]?.focus(), 200);
     } catch (err: any) {
-      setError(err.message || "Laboratory Handshake Failed.");
+      setError(err.message || "Laboratory Handshake Synchronous Error.");
     } finally {
       setIsProcessing(false);
     }
@@ -79,18 +79,18 @@ export default function AdminLoginPage() {
       const targetEmail = getNormalizedEmail();
       const session = await verifyOtp(targetEmail, token);
 
-      if (!session) throw new Error("Link Rejected: Node denied session creation.");
+      if (!session) throw new Error("Link Rejected: Security layer denied session creation.");
 
       // Clearance Audit
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
       if (!isAdmin) {
         await supabase.auth.signOut();
-        throw new Error("Access Denied: Subject lacks Administrative Clearance (Level 0).");
+        throw new Error("Access Denied: Subject lacks Administrative Clearance Level 0.");
       }
 
       window.location.hash = '#/admin';
     } catch (err: any) {
-      setError(err.message || "Neural override verification failed.");
+      setError(err.message || "Neural override authentication failure.");
     } finally {
       setIsProcessing(false);
     }
@@ -123,7 +123,7 @@ export default function AdminLoginPage() {
           <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none">
             Restricted <span className="text-rose-500">Portal</span>
           </h1>
-          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">Clearance Level 0 Only</p>
+          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em]">Command Deck Clearance Only</p>
         </div>
       </div>
 
@@ -142,10 +142,10 @@ export default function AdminLoginPage() {
                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-800" size={18} />
                     <input 
                       type="email" 
-                      autoComplete="email"
+                      autoComplete="username email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder="Admin Identifier"
+                      placeholder="Administrator Identifier"
                       className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white font-medium outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
                       required
                       autoFocus
@@ -159,7 +159,7 @@ export default function AdminLoginPage() {
                   className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
                 >
                   {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                  {isProcessing ? 'HANDSHAKING...' : (cooldown > 0 ? `COOLDOWN ACTIVE (${cooldown}S)` : 'REQUEST LAB TOKEN')}
+                  {isProcessing ? 'AUTHORIZING...' : (cooldown > 0 ? `COOLING (${cooldown}S)` : 'REQUEST ACCESS TOKEN')}
                 </button>
               </form>
             </m.div>
@@ -179,7 +179,7 @@ export default function AdminLoginPage() {
                 >
                   <ChevronLeft size={14} /> Back to Identifier
                 </button>
-                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Neural Handshake</h2>
+                <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter">Neural Verification</h2>
                 <p className="text-xs text-slate-500 font-medium italic truncate max-w-full">Token dispatched to {email}</p>
               </div>
 
@@ -212,7 +212,7 @@ export default function AdminLoginPage() {
                   className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 disabled:opacity-50 active:scale-95 transition-all"
                 >
                   {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
-                  {isProcessing ? 'AUTHORIZING...' : 'INITIALIZE OVERRIDE'}
+                  {isProcessing ? 'SYNCHRONIZING...' : 'INITIALIZE OVERRIDE'}
                 </button>
 
                 <button 
@@ -221,7 +221,7 @@ export default function AdminLoginPage() {
                   className="w-full py-4 bg-white/5 text-slate-500 rounded-full font-black text-[9px] uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-2"
                 >
                   <RefreshCw size={14} className={isProcessing ? 'animate-spin' : ''} />
-                  {cooldown > 0 ? `WAIT ${cooldown}S FOR RETRY` : 'RESEND LAB TOKEN'}
+                  {cooldown > 0 ? `RETRY IN ${cooldown}S` : 'RESEND LAB TOKEN'}
                 </button>
               </div>
             </m.div>
@@ -239,19 +239,13 @@ export default function AdminLoginPage() {
               <ShieldAlert size={18} className="shrink-0 mt-0.5" />
               <div className="space-y-2">
                 <p className="italic font-bold text-rose-400 leading-relaxed">{error}</p>
-                <p className="text-[9px] text-slate-500 uppercase tracking-widest">
-                  {cooldown > 0 ? `Rate limit active. Clear cooldown before retry.` : `Handshake signature invalid. Try once more.`}
+                <p className="text-[9px] text-slate-500 uppercase tracking-widest italic">
+                  Command registry requires specific admin credentials.
                 </p>
               </div>
             </m.div>
           )}
         </AnimatePresence>
-
-        <div className="mt-12 pt-10 border-t border-white/5 text-center">
-           <p className="text-[9px] text-slate-800 font-bold uppercase tracking-widest leading-relaxed italic">
-            Neural activity within this terminal is cryptographically logged. Access attempts are audited in real-time.
-          </p>
-        </div>
       </GlassCard>
 
       <footer className="text-center text-slate-800 font-black uppercase text-[8px] tracking-[0.6em] pointer-events-none pb-12">

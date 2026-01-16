@@ -45,19 +45,23 @@
         }
       }
 
+      // GLOBAL ERROR HANDLING FOR DEPLOYMENT SYNCHRONIZATION
       window.addEventListener('unhandledrejection', function(event) {
         const msg = event.reason?.message || '';
+        // Silence noise from expected audio interruptions
         if (msg.includes('AbortError') || msg.includes('play()')) {
           event.preventDefault();
         }
-        if (msg.includes('Failed to fetch dynamically imported module')) {
-           console.warn("Chunk loading error detected. Potential app update. Refreshing...");
+        // Handle Vite Chunk 404s (Failed to fetch dynamically imported module)
+        if (msg.includes('Failed to fetch') || msg.includes('dynamically imported module')) {
+           console.warn("Outdated application chunk detected. Synchronizing terminal...");
            window.location.reload();
         }
       });
 
       window.addEventListener('error', function(event) {
-        if (event.message?.includes('Failed to fetch dynamically imported module')) {
+        if (event.message?.includes('Failed to fetch') || event.message?.includes('dynamically imported module')) {
+           console.warn("Neural link mismatch. Refreshing protocol...");
            window.location.reload();
         }
       }, true);
@@ -71,8 +75,8 @@
           }
       };
       
-      // Safety auto-dismiss
-      setTimeout(window.dismissLoader, 10000);
+      // Safety auto-dismiss for the initial loading screen
+      setTimeout(window.dismissLoader, 8000);
     </script>
     
     <style type="text/tailwindcss">

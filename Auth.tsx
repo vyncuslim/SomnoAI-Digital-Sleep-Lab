@@ -49,7 +49,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       setCooldown(60);
       setTimeout(() => otpRefs.current[0]?.focus(), 300);
     } catch (err: any) {
-      setError(err.message || "Failed to dispatch token.");
+      setError(err.message || "Failed to dispatch neural token.");
     } finally {
       setIsProcessing(false);
     }
@@ -81,7 +81,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       const session = await verifyOtp(email.trim().toLowerCase(), token);
       if (session) onLogin();
     } catch (err: any) {
-      setError(err.message || "Verification failed.");
+      setError(err.message || "Neural handshake verification failed.");
     } finally {
       setIsProcessing(false);
     }
@@ -100,7 +100,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       if (error) throw error;
       onLogin();
     } catch (err: any) {
-      setError(err.message || "Authentication failed.");
+      setError(err.message || "Biometric authentication failed.");
     } finally {
       setIsProcessing(false);
     }
@@ -108,10 +108,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
   const handleGoogleLogin = async () => {
     setIsProcessing(true);
+    setError(null);
     try {
       await signInWithGoogle();
     } catch (err: any) {
-      setError(err.message || "Google handshake failed.");
+      setError(err.message || "Google neural link failed.");
       setIsProcessing(false);
     }
   };
@@ -138,7 +139,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={16} />
                     <input 
                       type="email" 
-                      autoComplete="email"
+                      autoComplete="username email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={t.emailLabel}
@@ -155,7 +156,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                         autoComplete="current-password"
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        placeholder="Password"
+                        placeholder="Neural Access Key"
                         className="w-full bg-slate-950/60 border border-white/10 rounded-full px-14 py-4 text-sm text-white focus:border-indigo-500/50 outline-none transition-all"
                         required
                       />
@@ -169,7 +170,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                   className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl hover:bg-indigo-500 disabled:opacity-50 transition-all flex items-center justify-center gap-3"
                 >
                   {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                  {isProcessing ? 'PROCESSING...' : (authMode === 'otp' ? (cooldown > 0 ? `WAIT ${cooldown}S` : t.sendCode) : 'SIGN IN')}
+                  {isProcessing ? 'AUTHORIZING...' : (authMode === 'otp' ? (cooldown > 0 ? `WAIT ${cooldown}S` : t.sendCode) : 'SIGN IN')}
                 </button>
 
                 <div className="flex items-center gap-4 py-2">
@@ -188,7 +189,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                   </button>
                   <button 
                     type="button"
-                    onClick={() => setAuthMode(authMode === 'otp' ? 'password' : 'otp')} 
+                    onClick={() => {
+                      setAuthMode(authMode === 'otp' ? 'password' : 'otp');
+                      setError(null);
+                    }} 
                     className="py-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
                   >
                     <Fingerprint size={14} /> {authMode === 'otp' ? 'Password' : 'OTP'}
@@ -199,7 +203,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           ) : (
             <m.div key="verify" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
               <div className="text-center space-y-2">
-                <button onClick={() => setStep('input')} className="text-[10px] font-black text-indigo-400 hover:text-white uppercase flex items-center gap-2 mx-auto transition-colors">
+                <button 
+                  onClick={() => {
+                    setStep('input');
+                    setError(null);
+                  }} 
+                  className="text-[10px] font-black text-indigo-400 hover:text-white uppercase flex items-center gap-2 mx-auto transition-colors"
+                >
                   <ChevronLeft size={14} /> {t.back}
                 </button>
                 <h2 className="text-xl font-black text-white uppercase italic">{t.handshake}</h2>
@@ -231,6 +241,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
                 {isProcessing ? 'AUTHORIZING...' : t.initialize}
+              </button>
+
+              <button 
+                onClick={handleRequestOtp}
+                disabled={isProcessing || cooldown > 0}
+                className="w-full py-2 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
+              >
+                {cooldown > 0 ? `RESEND IN ${cooldown}S` : 'RESEND LAB TOKEN'}
               </button>
             </m.div>
           )}
