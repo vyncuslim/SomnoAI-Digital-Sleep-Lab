@@ -50,7 +50,17 @@
         if (msg.includes('AbortError') || msg.includes('play()')) {
           event.preventDefault();
         }
+        if (msg.includes('Failed to fetch dynamically imported module')) {
+           console.warn("Chunk loading error detected. Potential app update. Refreshing...");
+           window.location.reload();
+        }
       });
+
+      window.addEventListener('error', function(event) {
+        if (event.message?.includes('Failed to fetch dynamically imported module')) {
+           window.location.reload();
+        }
+      }, true);
 
       window.dismissLoader = function() {
           const loader = document.getElementById('page-loader');

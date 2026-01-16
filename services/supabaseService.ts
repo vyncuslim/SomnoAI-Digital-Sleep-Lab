@@ -4,12 +4,12 @@ import { supabase } from '../lib/supabaseClient.ts';
 // --- Subject Identity Services ---
 
 /**
- * Ensures a profile exists in the 'profiles' table for the given user.
- * Improved to be fully non-blocking and silent if the table/schema is missing.
+ * Ensures a profile exists in the 'profiles' table.
+ * Fully decoupled to prevent schema-related 400 errors from blocking UI.
  */
 export async function ensureProfile(userId: string, email: string) {
   try {
-    // Attempting a shallow check
+    // Attempt a check without blocking
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
       .select('id')
@@ -17,19 +17,17 @@ export async function ensureProfile(userId: string, email: string) {
       .maybeSingle();
 
     if (fetchError) {
-      console.warn("Profile table check failed (likely schema not ready):", fetchError.message);
-      return; // Silent fail to allow login to proceed
+      console.warn("Profile system deferred: Schema may not be initialized or accessible.");
+      return;
     }
 
     if (!profile) {
-      // Attempt to create missing identity node, but catch errors silently
-      const { error: insertError } = await supabase.from('profiles').insert([
+      await supabase.from('profiles').insert([
         { id: userId, email: email, role: 'user', is_blocked: false }
       ]);
-      if (insertError) console.warn("Auto-profile creation deferred.");
     }
   } catch (err) {
-    console.debug("Identity sync deferred (Supabase connection state).");
+    console.debug("Background profile sync deferred.");
   }
 }
 
@@ -47,7 +45,7 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
   
   if (error) {
     if (error.message.includes('signups not allowed') || error.message.includes('not found')) {
-      throw new Error("Access Denied: Identity not recognized in the Laboratory Registry.");
+      throw new Error("Identity not recognized in the Laboratory Registry.");
     }
     throw error;
   }
@@ -64,30 +62,14 @@ export async function verifyOtp(email: string, token: string) {
   });
   
   if (error) {
-    if (error.message.includes('expired')) throw new Error("Token Expired: Please request a new handshake.");
-    if (error.message.includes('invalid')) throw new Error("Token Invalid: Signature mismatch or already consumed.");
+    if (error.message.includes('expired')) throw new Error("Token Expired.");
+    if (error.message.includes('invalid')) throw new Error("Token Invalid.");
     throw error;
   }
 
   if (data.session) {
-    // We initiate ensureProfile but DO NOT await it to avoid blocking the login completion
+    // Fire and forget: don't let this block the UI transition
     ensureProfile(data.session.user.id, data.session.user.email || '').catch(() => {});
-    
-    // Check if blocked, but handle table missing error gracefully
-    try {
-      const { data: profile, error: profileError } = await supabase
-        .from('profiles')
-        .select('is_blocked')
-        .eq('id', data.session.user.id)
-        .maybeSingle();
-
-      if (!profileError && profile?.is_blocked) {
-        await supabase.auth.signOut();
-        throw new Error("Access Restricted: Your identity node has been suspended by system policy.");
-      }
-    } catch (e) {
-      console.debug("Status check bypassed (table missing).");
-    }
   }
 
   return data.session;
@@ -124,7 +106,7 @@ export async function updateUserPassword(newPassword: string) {
   return data;
 }
 
-// --- Administrative Privilege Services (Level 0) ---
+// --- Admin Services (Level 0) ---
 
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
@@ -132,11 +114,11 @@ export const adminApi = {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('role, is_blocked')
+        .select('role')
         .eq('id', userId)
         .maybeSingle();
       
-      if (error || !data || data.is_blocked) return false;
+      if (error || !data) return false;
       return data.role === 'admin';
     } catch (err) {
       return false;
@@ -145,67 +127,34 @@ export const adminApi = {
 
   getUsers: async () => {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (error) return []; // Fallback for missing table
-    return data || [];
+    return error ? [] : (data || []);
   },
 
   blockUser: async (id: string) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ is_blocked: true, blocked_at: new Date().toISOString() })
-      .eq('id', id);
-    if (error) throw error;
+    await supabase.from('profiles').update({ is_blocked: true, blocked_at: new Date().toISOString() }).eq('id', id);
   },
 
   unblockUser: async (id: string) => {
-    const { error } = await supabase
-      .from('profiles')
-      .update({ is_blocked: false, blocked_at: null })
-      .eq('id', id);
-    if (error) throw error;
+    await supabase.from('profiles').update({ is_blocked: false, blocked_at: null }).eq('id', id);
   },
 
   getSleepRecords: async () => {
     const { data, error } = await supabase.from('sleep_records').select('*').order('created_at', { ascending: false });
-    if (error) return [];
-    return data || [];
+    return error ? [] : (data || []);
   },
 
   getFeedback: async () => {
     const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
-    if (error) return [];
-    return data || [];
+    return error ? [] : (data || []);
   },
 
   getAuditLogs: async () => {
     const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
-    if (error) return [];
-    return data || [];
+    return error ? [] : (data || []);
   },
 
   getSecurityEvents: async () => {
     const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
-    if (error) return [];
-    return data || [];
-  },
-
-  deleteRecord: async (table: string, id: string) => {
-    const { error } = await supabase.from(table).delete().eq('id', id);
-    if (error) throw error;
-  },
-
-  updateUserRole: async (id: string, role: string) => {
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
-    if (error) throw error;
-  },
-
-  updateSleepRecord: async (id: string, updates: any) => {
-    const { error } = await supabase.from('sleep_records').update(updates).eq('id', id);
-    if (error) throw error;
-  },
-
-  resolveFeedback: async (id: string) => {
-    const { error } = await supabase.from('feedback').update({ status: 'resolved' }).eq('id', id);
-    if (error) throw error;
+    return error ? [] : (data || []);
   }
 };
