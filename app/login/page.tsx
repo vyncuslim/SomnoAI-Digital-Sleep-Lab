@@ -1,5 +1,5 @@
 import React from 'react';
-import { Auth } from '../../Auth.tsx';
+import { Auth } from '../../components/Auth.tsx';
 import { Language } from '../../services/i18n.ts';
 
 /**

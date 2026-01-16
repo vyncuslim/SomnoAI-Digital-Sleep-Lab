@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, 
   HeartHandshake, Globe, Lock, Loader2, CreditCard, 
-  Heart, Copy, QrCode, Languages, UserCircle, Settings as SettingsIcon, Brain
+  Heart, Copy, QrCode, Languages, UserCircle, Settings as SettingsIcon, Brain, ShieldAlert
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
@@ -29,11 +28,13 @@ interface SettingsProps {
   onStaticModeChange: (enabled: boolean) => void;
   lastSyncTime: string | null;
   onManualSync: () => void;
+  isRecoveringPassword?: boolean;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, 
-  lastSyncTime, onManualSync, onNavigate
+  lastSyncTime, onManualSync, onNavigate,
+  isRecoveringPassword = false
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [isEngineLinked, setIsEngineLinked] = useState(false);
@@ -122,6 +123,19 @@ export const Settings: React.FC<SettingsProps> = ({
         <h1 className="text-3xl font-black tracking-tighter text-white italic uppercase">{isZh ? '系统配置' : 'System Config'}</h1>
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">{t.subtitle}</p>
       </header>
+
+      {isRecoveringPassword && (
+        <m.div 
+          initial={{ opacity: 0, scale: 0.95 }} 
+          animate={{ opacity: 1, scale: 1 }} 
+          className="p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-[2.5rem] flex items-start gap-4 text-indigo-400"
+        >
+          <ShieldAlert size={20} className="shrink-0 mt-0.5" />
+          <p className="text-[11px] font-bold italic leading-relaxed">
+            {t.passwordRecoveryNotice}
+          </p>
+        </m.div>
+      )}
 
       {/* Language Switcher Section */}
       <GlassCard className="p-8 rounded-[3.5rem] border-white/5 bg-white/[0.01]">

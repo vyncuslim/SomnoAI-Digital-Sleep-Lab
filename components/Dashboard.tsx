@@ -4,8 +4,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, BrainCircuit, HeartPulse, Cpu, Zap, 
-  ShieldCheck, Microchip, Layers, Share2, X, CheckCircle2,
-  Signal, Activity, Radio, Sparkles
+  Share2, Activity, Sparkles
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
@@ -155,7 +154,8 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
                   <BrainCircuit size={16} />
                 </div>
                 <p className="text-[12px] font-medium italic text-slate-300 leading-relaxed">
-                  {insight}
+                  {/* Defensive rendering for insight content */}
+                  {typeof insight === 'string' ? insight : String(insight)}
                 </p>
               </m.div>
             ))}
@@ -163,12 +163,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
         </div>
       </GlassCard>
 
-      {/* 圆角指标卡片组 */}
+      {/* 圆角指标卡片组组 */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-2">
         {[
           { icon: HeartPulse, label: 'Heart Rate', value: `${data.heartRate.resting} BPM`, color: 'text-rose-400' },
           { icon: Cpu, label: 'Processing', value: `${data.efficiency}%`, color: 'text-cyan-400' },
-          { icon: Layers, label: 'Deep Neural', value: `${data.deepRatio}%`, color: 'text-indigo-400' },
+          { icon: Activity, label: 'Deep Neural', value: `${data.deepRatio}%`, color: 'text-indigo-400' },
           { icon: Zap, label: 'Metabolism', value: `${data.calories || 2150}`, color: 'text-amber-400' }
         ].map((item, i) => (
           <GlassCard key={i} className="p-8 rounded-full flex flex-col items-center gap-3 text-center" hoverScale={true}>

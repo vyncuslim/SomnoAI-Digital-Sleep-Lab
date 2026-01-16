@@ -5,8 +5,10 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   define: {
-    // Targeted injection to satisfy @google/genai and avoid leaking entire process.env
-    'process.env.API_KEY': JSON.stringify(process.env.API_KEY)
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
+    'process.env.FOREST_ENV_SECRET': JSON.stringify(process.env.FOREST_ENV_SECRET || 'dbd5c7411e0fe0688d46850fbd6dc6310bdfb1de8bf41e4d276758c26f4626bc'),
+    'process.env.FOREST_AUTH_SECRET': JSON.stringify(process.env.FOREST_AUTH_SECRET || 'ed2a662f907049be6360208157f82af15fabf31da3d27550'),
+    'process.env.DATABASE_URL': JSON.stringify(process.env.DATABASE_URL)
   },
   server: {
     port: 3000

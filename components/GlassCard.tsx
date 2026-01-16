@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
@@ -33,6 +32,12 @@ export const GlassCard: React.FC<GlassCardProps> = ({
 
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [`${8 * intensity}deg`, `${-8 * intensity}deg`]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [`${-8 * intensity}deg`, `${8 * intensity}deg`]);
+
+  // Refactored: Moved hook call out of the return statement
+  const background = useTransform(
+    [mouseXSpring, mouseYSpring],
+    ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(129, 140, 248, 0.15) 0%, transparent 70%)`
+  );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
     if (!cardRef.current) return;
@@ -72,12 +77,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
     >
       {/* 液态高光流转 */}
       <m.div 
-        style={{
-          background: useTransform(
-            [mouseXSpring, mouseYSpring],
-            ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(129, 140, 248, 0.15) 0%, transparent 70%)`
-          ),
-        }}
+        style={{ background }}
         className="absolute inset-0 pointer-events-none z-0"
       />
 

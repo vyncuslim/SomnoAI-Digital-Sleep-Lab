@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'zh' | 'de' | 'fr';
 
 export const translations = {
@@ -44,7 +43,12 @@ export const translations = {
       retry: 'FOR RETRY',
       accessRestricted: 'ACCESS RESTRICTED',
       policyNotice: 'Wait for the cooldown to clear before requesting again.',
-      auditNotice: 'Neural activity within this terminal is cryptographically logged. Access attempts are audited in real-time.'
+      auditNotice: 'Neural activity within this terminal is cryptographically logged. Access attempts are audited in real-time.',
+      forgotPassword: 'Forgot Neural Key?',
+      resetHeading: 'RECOVER ACCESS',
+      resetSub: 'Enter your email to receive a recovery link.',
+      sendReset: 'SEND RECOVERY LINK',
+      resetSuccess: 'Handshake initiated. Check your inbox for the recovery link.'
     },
     settings: {
       title: 'SomnoAI Digital Sleep Lab',
@@ -80,7 +84,8 @@ export const translations = {
       genderNone: 'Prefer not to say',
       styleClinical: 'Clinical / Scientific',
       styleMotivational: 'Motivational / Growth',
-      styleMinimal: 'Minimalist / Direct'
+      styleMinimal: 'Minimalist / Direct',
+      passwordRecoveryNotice: 'Neural Key Recovery active. Please establish a new access key below.'
     },
     admin: {
       securityTitle: 'Security Pulse',
@@ -142,7 +147,12 @@ export const translations = {
       retry: '后重试',
       accessRestricted: '访问受限',
       policyNotice: '请等待冷却时间结束后再重新请求。',
-      auditNotice: '此终端内的所有神经活动均经过加密记录。访问尝试受到实时审计。'
+      auditNotice: '此终端内的所有神经活动均经过加密记录。访问尝试受到实时审计。',
+      forgotPassword: '忘记神经访问密钥？',
+      resetHeading: '恢复访问权限',
+      resetSub: '输入您的电子邮件以获取恢复链接。',
+      sendReset: '发送恢复链接',
+      resetSuccess: '握手已启动。请检查您的收件箱以获取恢复链接。'
     },
     admin: {
       securityTitle: '安全监测脉搏',
@@ -187,7 +197,8 @@ export const translations = {
       genderNone: '不愿透露',
       styleClinical: '临床 / 科学',
       styleMotivational: '激励 / 增长',
-      styleMinimal: '极简 / 直接'
+      styleMinimal: '极简 / 直接',
+      passwordRecoveryNotice: '神经密钥恢复模式已激活。请在下方设置新的访问密钥。'
     },
     assistant: {
       title: '神经助手',

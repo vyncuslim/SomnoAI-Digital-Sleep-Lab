@@ -9,39 +9,35 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       
-      // 配置主统计 ID 与新增的 G-3F9KVPNYLR ID
-      // 禁用 send_page_view 是因为我们在 App.tsx 中根据 SPA 路由手动发送视图事件，
-      // 这样可以确保 hash 路由（如 /#/admin）也能被准确识别并满足您的“URL 包含 /admin”匹配条件。
       gtag('config', 'G-1WM4RE66ER', { send_page_view: false });
       gtag('config', 'G-3F9KVPNYLR', { send_page_view: false });
     </script>
     
     <script type="importmap">
-    {
-      "imports": {
-        "vite": "https://esm.sh/vite@^7.3.1",
-        "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-        "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
-        "recharts": "https://esm.sh/recharts@^3.6.0",
-        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
-        "react/": "https://esm.sh/react@^19.2.3/",
-        "react": "https://esm.sh/react@^19.2.3",
-        "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-        "framer-motion": "https://esm.sh/framer-motion@^12.26.2",
-        "@google/genai": "https://esm.sh/@google/genai@^1.37.0"
-      }
-    }
-    </script>
+{
+  "imports": {
+    "react": "https://esm.sh/react@18.3.1",
+    "react-dom": "https://esm.sh/react-dom@18.3.1",
+    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
+    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
+    "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1",
+    "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
+    "lucide-react": "https://esm.sh/lucide-react@0.470.0?deps=react@18.3.1",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
+    "@google/genai": "https://esm.sh/@google/genai@1.37.0",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
+  }
+}
+</script>
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
-    
     <link rel="icon" href="https://img.icons8.com/fluency/48/moon-star.png" type="image/png">
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/moon-star.png">
-    
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
-    <meta name="description" content="SomnoAI fuses physiological monitoring, deep AI insights, and professional health guidance into a comprehensive digital sleep laboratory experience.">
-    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -54,16 +50,8 @@
           }
         }
       }
-
       window.addEventListener('unhandledrejection', function(event) {
         if (event.reason?.message?.includes('AbortError')) event.preventDefault();
-      });
-
-      window.addEventListener('error', function(event) {
-        console.error("Critical System Fault:", event.message);
-        if (event.message.includes('esm.sh')) {
-           console.warn("Retrying neural link...");
-        }
       });
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">

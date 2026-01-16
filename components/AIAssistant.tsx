@@ -319,14 +319,20 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
               </div>
               <div className="space-y-3">
                 <div className={`p-6 rounded-[2.5rem] text-sm leading-relaxed ${msg.role === 'assistant' ? 'bg-slate-950/60 border border-white/5 text-slate-300' : 'bg-indigo-600 text-white shadow-xl'}`}>
-                  <div className="whitespace-pre-wrap italic">{msg.content}</div>
+                  <div className="whitespace-pre-wrap italic">
+                    {typeof msg.content === 'string' ? msg.content : String(msg.content)}
+                  </div>
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-4 pt-4 border-t border-white/5 flex flex-wrap gap-2">
-                      {msg.sources.map((s, i) => s.web?.uri && (
-                        <a key={i} href={s.web.uri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full text-[9px] text-indigo-400 border border-white/5 hover:bg-white/10">
-                          <ExternalLink size={10} /> {s.web.title || 'Source'}
-                        </a>
-                      ))}
+                      {msg.sources.map((s, i) => {
+                        const sourceTitle = s.web?.title || s.maps?.title || 'Source';
+                        const sourceUri = s.web?.uri || s.maps?.uri;
+                        return sourceUri ? (
+                          <a key={i} href={sourceUri} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 px-3 py-1.5 bg-white/5 rounded-full text-[9px] text-indigo-400 border border-white/5 hover:bg-white/10">
+                            <ExternalLink size={10} /> {typeof sourceTitle === 'string' ? sourceTitle : 'Reference'}
+                          </a>
+                        ) : null;
+                      })}
                     </div>
                   )}
                 </div>
