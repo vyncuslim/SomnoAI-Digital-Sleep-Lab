@@ -110,6 +110,17 @@ const App: React.FC = () => {
     }
   }, [isSandbox, navigateTo, isLoggingOut]);
 
+  // Google Analytics Page View Tracking for SPA
+  useEffect(() => {
+    if (typeof (window as any).gtag === 'function') {
+      const path = activeRoute === '/' ? `/${activeView}` : activeRoute;
+      (window as any).gtag('event', 'page_view', {
+        page_path: path,
+        page_title: `SomnoAI | ${activeView.toUpperCase()}`
+      });
+    }
+  }, [activeRoute, activeView]);
+
   useEffect(() => {
     let checkTimeout: any;
 

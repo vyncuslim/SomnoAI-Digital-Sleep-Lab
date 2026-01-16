@@ -1,6 +1,6 @@
 
 import React, { useState, useRef, useEffect } from 'react';
-import { Loader2, ChevronLeft, Mail, Zap, RefreshCw, ShieldAlert, ShieldCheck, Lock, Fingerprint, Globe } from 'lucide-react';
+import { Loader2, ChevronLeft, Mail, Zap, RefreshCw, ShieldAlert, ShieldCheck, Lock, Fingerprint, Globe, UserPlus, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { Logo } from './components/Logo.tsx';
@@ -18,7 +18,8 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
-  const [authMode, setAuthMode] = useState<'otp' | 'password'>('otp');
+  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [authType, setAuthType] = useState<'otp' | 'password'>('otp');
   const [step, setStep] = useState<'input' | 'verify'>('input');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -37,19 +38,55 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     }
   }, [cooldown]);
 
-  const handleRequestOtp = async (e?: React.FormEvent) => {
+  const handleAuthSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (isProcessing || cooldown > 0) return;
+    if (isProcessing) return;
 
+    if (authType === 'otp') {
+      if (cooldown > 0) return;
+      setIsProcessing(true);
+      setError(null);
+      try {
+        // shouldCreateUser=true covers both Login and Registration in OTP flow
+        await signInWithEmailOTP(email.trim().toLowerCase(), true);
+        setStep('verify');
+        setCooldown(60);
+        setTimeout(() => otpRefs.current[0]?.focus(), 300);
+      } catch (err: any) {
+        setError(err.message || "Failed to dispatch neural token.");
+      } finally {
+        setIsProcessing(false);
+      }
+    } else {
+      handlePasswordAuth();
+    }
+  };
+
+  const handlePasswordAuth = async () => {
     setIsProcessing(true);
     setError(null);
     try {
-      await signInWithEmailOTP(email.trim().toLowerCase());
-      setStep('verify');
-      setCooldown(60);
-      setTimeout(() => otpRefs.current[0]?.focus(), 300);
+      if (mode === 'register') {
+        const { error } = await supabase.auth.signUp({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+        if (error) throw error;
+        setError(lang === 'zh' ? "注册成功！请检查您的电子邮件以进行验证。" : "Registration successful! Check your email for verification.");
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({
+          email: email.trim().toLowerCase(),
+          password,
+        });
+        if (error) throw error;
+        onLogin();
+      }
     } catch (err: any) {
-      setError(err.message || "Failed to dispatch neural token.");
+      if (err.message.toLowerCase().includes('invalid login credentials') && err.message.toLowerCase().includes('database error')) {
+        setError(lang === 'zh' ? "注册系统同步异常。虽然身份已建立，但实验室档案同步失败。请重试或联系管理员。" : "Registry sync error. Identity created but profile linking failed. Please try again or contact support.");
+      } else {
+        setError(err.message || "Authentication failed.");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -87,25 +124,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     }
   };
 
-  const handlePasswordLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isProcessing) return;
-    setIsProcessing(true);
-    setError(null);
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim().toLowerCase(),
-        password,
-      });
-      if (error) throw error;
-      onLogin();
-    } catch (err: any) {
-      setError(err.message || "Biometric authentication failed.");
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
   const handleGoogleLogin = async () => {
     setIsProcessing(true);
     setError(null);
@@ -133,7 +151,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         <AnimatePresence mode="wait">
           {step === 'input' ? (
             <m.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <form onSubmit={authMode === 'otp' ? handleRequestOtp : handlePasswordLogin} className="space-y-6">
+              <div className="flex bg-slate-950/80 p-1 rounded-full border border-white/5 mb-8">
+                <button 
+                  onClick={() => { setMode('login'); setError(null); }}
+                  className={`flex-1 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${mode === 'login' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  <LogIn size={12} /> {lang === 'zh' ? '登录' : 'LOGIN'}
+                </button>
+                <button 
+                  onClick={() => { setMode('register'); setError(null); }}
+                  className={`flex-1 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center justify-center gap-2 ${mode === 'register' ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  <UserPlus size={12} /> {lang === 'zh' ? '注册' : 'REGISTER'}
+                </button>
+              </div>
+
+              <form onSubmit={handleAuthSubmit} className="space-y-6">
                 <div className="space-y-4">
                   <div className="relative">
                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={16} />
@@ -143,21 +176,21 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={t.emailLabel}
-                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-14 py-4 text-sm text-white focus:border-indigo-500/50 outline-none transition-all"
+                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-14 py-4 text-sm text-white focus:border-indigo-500/50 outline-none transition-all font-semibold"
                       required
                     />
                   </div>
 
-                  {authMode === 'password' && (
+                  {authType === 'password' && (
                     <div className="relative">
                       <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={16} />
                       <input 
                         type="password" 
-                        autoComplete="current-password"
+                        autoComplete={mode === 'register' ? "new-password" : "current-password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
                         placeholder="Neural Access Key"
-                        className="w-full bg-slate-950/60 border border-white/10 rounded-full px-14 py-4 text-sm text-white focus:border-indigo-500/50 outline-none transition-all"
+                        className="w-full bg-slate-950/60 border border-white/10 rounded-full px-14 py-4 text-sm text-white focus:border-indigo-500/50 outline-none transition-all font-semibold"
                         required
                       />
                     </div>
@@ -166,11 +199,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
                 <button 
                   type="submit"
-                  disabled={isProcessing || (authMode === 'otp' && cooldown > 0)}
-                  className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl hover:bg-indigo-500 disabled:opacity-50 transition-all flex items-center justify-center gap-3"
+                  disabled={isProcessing || (authType === 'otp' && cooldown > 0)}
+                  className={`w-full py-5 text-white rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl transition-all flex items-center justify-center gap-3 disabled:opacity-50 ${mode === 'register' ? 'bg-rose-600 hover:bg-rose-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}
                 >
                   {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                  {isProcessing ? 'AUTHORIZING...' : (authMode === 'otp' ? (cooldown > 0 ? `WAIT ${cooldown}S` : t.sendCode) : 'SIGN IN')}
+                  {isProcessing ? 'AUTHORIZING...' : (
+                    authType === 'otp' 
+                      ? (cooldown > 0 ? `WAIT ${cooldown}S` : (mode === 'register' ? (lang === 'zh' ? '立即注册' : 'REGISTER NOW') : t.sendCode)) 
+                      : (mode === 'register' ? (lang === 'zh' ? '完成注册' : 'COMPLETE REGISTRATION') : (lang === 'zh' ? '登录终端' : 'LOGIN TO TERMINAL'))
+                  )}
                 </button>
 
                 <div className="flex items-center gap-4 py-2">
@@ -190,12 +227,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                   <button 
                     type="button"
                     onClick={() => {
-                      setAuthMode(authMode === 'otp' ? 'password' : 'otp');
+                      setAuthType(authType === 'otp' ? 'password' : 'otp');
                       setError(null);
                     }} 
                     className="py-4 bg-white/5 border border-white/5 rounded-2xl flex items-center justify-center gap-2 text-slate-400 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
                   >
-                    <Fingerprint size={14} /> {authMode === 'otp' ? 'Password' : 'OTP'}
+                    <Fingerprint size={14} /> {authType === 'otp' ? 'Password' : 'OTP'}
                   </button>
                 </div>
               </form>
@@ -244,7 +281,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               </button>
 
               <button 
-                onClick={handleRequestOtp}
+                onClick={handleAuthSubmit}
                 disabled={isProcessing || cooldown > 0}
                 className="w-full py-2 text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
               >
@@ -257,7 +294,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         {error && (
           <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="mt-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3 text-rose-400 text-[10px] font-bold">
             <ShieldAlert size={14} className="shrink-0 mt-0.5" />
-            <p className="italic leading-relaxed">{error}</p>
+            <div className="space-y-1">
+              <p className="italic leading-relaxed">{error}</p>
+              {error.toLowerCase().includes('database error') && (
+                <p className="text-[8px] opacity-60 uppercase tracking-widest">Error Trace: AUTH_DB_SYNC_FAILURE</p>
+              )}
+            </div>
           </m.div>
         )}
       </GlassCard>

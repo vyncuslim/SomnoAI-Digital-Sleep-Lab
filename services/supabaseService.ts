@@ -5,29 +5,41 @@ import { supabase } from '../lib/supabaseClient.ts';
 
 /**
  * Ensures a profile exists in the 'profiles' table.
- * Fully decoupled to prevent schema-related 400 errors from blocking UI.
+ * Fully decoupled to prevent schema-related errors from blocking the core authentication flow.
  */
 export async function ensureProfile(userId: string, email: string) {
   try {
-    // Attempt a check without blocking
+    // Check if profile exists
     const { data: profile, error: fetchError } = await supabase
       .from('profiles')
       .select('id')
       .eq('id', userId)
       .maybeSingle();
 
+    // If table doesn't exist (400) or other DB errors, we log but don't throw.
+    // This prevents "Database error saving new user" from hanging the app if the user manages to log in.
     if (fetchError) {
-      console.warn("Profile system deferred: Schema may not be initialized or accessible.");
+      console.warn("[Identity Link] Profile retrieval deferred. Table may be offline or restricted.", fetchError.message);
       return;
     }
 
     if (!profile) {
-      await supabase.from('profiles').insert([
-        { id: userId, email: email, role: 'user', is_blocked: false }
+      const { error: insertError } = await supabase.from('profiles').insert([
+        { 
+          id: userId, 
+          email: email, 
+          role: 'user', 
+          is_blocked: false,
+          created_at: new Date().toISOString()
+        }
       ]);
+      
+      if (insertError) {
+        console.error("[Identity Link] Failed to initialize subject in registry:", insertError.message);
+      }
     }
   } catch (err) {
-    console.debug("Background profile sync deferred.");
+    console.debug("[Identity Link] Background sync deferred.");
   }
 }
 
@@ -44,8 +56,12 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
   });
   
   if (error) {
+    // Map cryptic Supabase errors to domain-specific messages
+    if (error.message.toLowerCase().includes('database error saving new user')) {
+      throw new Error("Subject Registry Synchronization Failure: The laboratory database could not create your record. Please contact the administrator.");
+    }
     if (error.message.includes('signups not allowed') || error.message.includes('not found')) {
-      throw new Error("Identity not recognized in the Laboratory Registry.");
+      throw new Error("Access Denied: Subject identity not recognized in the Laboratory Registry.");
     }
     throw error;
   }
@@ -62,13 +78,13 @@ export async function verifyOtp(email: string, token: string) {
   });
   
   if (error) {
-    if (error.message.includes('expired')) throw new Error("Token Expired.");
-    if (error.message.includes('invalid')) throw new Error("Token Invalid.");
+    if (error.message.includes('expired')) throw new Error("Neural Token Expired.");
+    if (error.message.includes('invalid')) throw new Error("Neural Token Invalid or Mismatched.");
     throw error;
   }
 
   if (data.session) {
-    // Fire and forget: don't let this block the UI transition
+    // Async synchronization to prevent UI lag
     ensureProfile(data.session.user.id, data.session.user.email || '').catch(() => {});
   }
 
