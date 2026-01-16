@@ -33,23 +33,23 @@ export default function AdminDashboard() {
         return;
       }
 
-      // 2. Query permissions database (The only source of truth)
-      const isAdmin = await adminApi.checkAdminStatus(session.user.id);
-      
-      if (!isAdmin) {
-        // 3. Unauthorized access detected: Purge session and expel
-        console.error("Access Denied: Subject lacks administrative clearance.");
-        await supabase.auth.signOut();
-        window.location.hash = '#/admin/login';
-        return;
-      }
-
-      // 4. Authorized: Initialize Command Deck
-      setAdminUser(session.user);
-      setIsAuthorized(true);
-      
-      // Load minimal stats for the overview
+      // 2. Query permissions database: Strict Role Validation
       try {
+        const isAdmin = await adminApi.checkAdminStatus(session.user.id);
+        
+        if (!isAdmin) {
+          // 3. Unauthorized access: Immediate expulsion
+          console.error("Critical Security Event: Unauthorized access attempt at Admin Terminal.");
+          await supabase.auth.signOut();
+          window.location.hash = '#/admin/login';
+          return;
+        }
+
+        // 4. Authorized: Initialize Command Deck
+        setAdminUser(session.user);
+        setIsAuthorized(true);
+        
+        // Load minimal stats
         const [u, r, f] = await Promise.all([
           adminApi.getUsers(),
           adminApi.getSleepRecords(),
@@ -57,10 +57,12 @@ export default function AdminDashboard() {
         ]);
         setSystemStats({ users: u.length, records: r.length, feedback: f.length });
       } catch (e) {
-        console.warn("Telemetry sync partially failed.");
+        console.error("Telemetry sync failed:", e);
+        window.location.hash = '#/admin/login';
+        return;
+      } finally {
+        setLoading(false);
       }
-      
-      setLoading(false);
     };
 
     protectAdmin();

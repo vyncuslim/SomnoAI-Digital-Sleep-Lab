@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Loader2, ChevronLeft, Mail, Zap, RefreshCw, ShieldAlert, ShieldCheck, Lock, Fingerprint, Globe, Cpu, Eye, EyeOff, LogIn as LoginIcon, UserPlus as RegisterIcon, Key } from 'lucide-react';
+import { Loader2, ChevronLeft, Mail, RefreshCw, ShieldAlert, ShieldCheck, Lock, Fingerprint, Globe, Eye, EyeOff, LogIn as LoginIcon, UserPlus as RegisterIcon, Key } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './components/GlassCard.tsx';
 import { Logo } from './components/Logo.tsx';
@@ -17,18 +17,18 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
-  // 核心状态控制
+  // Mode management: OTP vs Password
   const [authMode, setAuthMode] = useState<'otp' | 'password'>('password');
+  // Form type: Login vs Register
   const [formType, setFormType] = useState<'login' | 'register'>('login');
+  // Auth steps: input -> verify (for OTP)
   const [step, setStep] = useState<'input' | 'verify'>('input');
   
-  // 表单数据
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   
-  // 状态反馈
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
@@ -61,11 +61,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     }
 
     if (authMode === 'otp') {
-      // OTP 发送逻辑
       if (cooldown > 0) return;
       setIsProcessing(true);
       try {
-        await signInWithEmailOTP(targetEmail, true);
+        await signInWithEmailOTP(targetEmail, formType === 'register');
         if (isMounted.current) {
           setStep('verify');
           setCooldown(60);
@@ -78,15 +77,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         if (isMounted.current) setIsProcessing(false);
       }
     } else {
-      // 密码逻辑
       setIsProcessing(true);
       try {
         if (formType === 'register') {
-          const { error: signUpErr } = await (supabase as any).auth.signUp({ email: targetEmail, password });
+          const { error: signUpErr } = await supabase.auth.signUp({ email: targetEmail, password });
           if (signUpErr) throw signUpErr;
           setError(lang === 'zh' ? "注册成功！请查收验证邮件。" : "Registration successful! Check your email.");
         } else {
-          const { error: signInErr } = await (supabase as any).auth.signInWithPassword({ email: targetEmail, password });
+          const { error: signInErr } = await supabase.auth.signInWithPassword({ email: targetEmail, password });
           if (signInErr) throw signInErr;
           onLogin();
         }
@@ -124,9 +122,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#020617] relative overflow-hidden font-sans">
+      {/* Background Ambience */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-indigo-500/5 rounded-full blur-[140px] pointer-events-none" />
       
-      {/* Top Header */}
+      {/* Brand Header */}
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md space-y-8 text-center mb-6 relative z-10">
         <Logo size={96} animated={true} className="mx-auto" />
         <div className="space-y-1">
@@ -139,7 +138,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       <GlassCard className="w-full max-w-[420px] p-2 border-white/5 bg-slate-900/40 relative z-10 rounded-[3.5rem] shadow-3xl">
         <div className="p-8 space-y-10">
           
-          {/* Top Primary Toggle: OTP vs Password */}
+          {/* Top Primary Toggle: Pill Switch */}
           <div className="flex bg-slate-950/60 p-1.5 rounded-full border border-white/5">
             <button 
               onClick={() => { setAuthMode('otp'); setStep('input'); setError(null); }}
@@ -159,7 +158,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             {step === 'input' ? (
               <m.div key="input" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-8">
                 
-                {/* Secondary Toggle: Login vs Register */}
+                {/* Secondary Toggle: Underline Style */}
                 <div className="flex justify-center gap-12 pt-2">
                    <button onClick={() => setFormType('login')} className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.2em] transition-all pb-2 border-b-2 ${formType === 'login' ? 'text-white border-indigo-500' : 'text-slate-600 border-transparent hover:text-slate-400'}`}>
                       <LoginIcon size={12} /> LOGIN
@@ -171,7 +170,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
                 <form onSubmit={handleMainAction} className="space-y-6">
                   <div className="space-y-4">
-                    {/* Email Input */}
+                    {/* Identifier Input */}
                     <div className="relative group">
                       <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={18} />
                       <input 
@@ -180,6 +179,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                         className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all font-semibold placeholder:text-slate-800"
                         required
                       />
+                      {/* Biometric Status Indicator */}
                       <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-2 opacity-50 group-focus-within:opacity-100 transition-opacity">
                          <Key size={14} className="text-slate-700" />
                          <div className="w-10 h-6 bg-emerald-500/10 rounded-full flex items-center px-1 border border-emerald-500/20">
@@ -188,7 +188,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                       </div>
                     </div>
 
-                    {/* Password Input (Only in Password Mode) */}
+                    {/* Password Input (Conditional) */}
                     {authMode === 'password' && (
                       <div className="relative group">
                         <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={18} />
@@ -203,6 +203,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-700 hover:text-slate-400 transition-colors">
                              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
                            </button>
+                           {/* Password Biometric indicator */}
                            <div className="w-10 h-6 bg-indigo-500/10 rounded-full flex items-center px-1 border border-indigo-500/20">
                               <div className="w-4 h-4 bg-indigo-400 rounded-full ml-auto shadow-[0_0_10px_rgba(129,140,248,0.5)]" />
                            </div>
@@ -211,7 +212,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                     )}
                   </div>
 
-                  {/* Main Action Button */}
+                  {/* Execution Button */}
                   <button 
                     type="submit" disabled={isProcessing || (authMode === 'otp' && cooldown > 0)}
                     className="w-full py-6 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-[0.3em] shadow-2xl transition-all flex items-center justify-center gap-4 active:scale-95 disabled:opacity-50"
@@ -220,7 +221,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                     {isProcessing ? 'SYNCHRONIZING...' : (authMode === 'otp' ? (cooldown > 0 ? `WAIT ${cooldown}S` : 'REQUEST LAB TOKEN') : 'AUTHORIZE ACCESS')}
                   </button>
 
-                  {/* Grid Actions */}
+                  {/* Alternative Provider Grid */}
                   <div className="grid grid-cols-2 gap-4">
                     <button type="button" onClick={() => signInWithGoogle()} className="py-4 bg-white/5 border border-white/5 rounded-3xl flex items-center justify-center gap-3 text-slate-400 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest">
                       <Globe size={14} className="text-slate-500" /> GOOGLE
@@ -259,7 +260,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             )}
           </AnimatePresence>
 
-          {/* Global Feedback (Errors/Success) */}
+          {/* Feedback UI */}
           {error && (
             <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-[1.5rem] flex items-start gap-4 text-rose-400 text-[10px] font-bold italic leading-relaxed">
               <ShieldAlert size={16} className="shrink-0" />
@@ -268,7 +269,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           )}
         </div>
         
-        {/* Card Footer Link */}
         <div className="pb-10 text-center">
            <button className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-800 hover:text-indigo-400 transition-colors flex items-center gap-2 mx-auto justify-center group">
               <RefreshCw size={12} className="group-hover:rotate-180 transition-transform duration-700" /> CANNOT ACTIVATE ACCOUNT?
@@ -276,7 +276,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         </div>
       </GlassCard>
 
-      {/* Footer Branding */}
       <footer className="mt-16 text-center space-y-4 opacity-30 hover:opacity-100 transition-all pb-12">
         <div className="flex items-center gap-8 justify-center">
           <button onClick={() => onNavigate?.('privacy')} className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-500 hover:text-indigo-400 transition-colors">Privacy</button>

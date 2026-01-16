@@ -1,4 +1,3 @@
-
 import { supabase } from '../lib/supabaseClient.ts';
 
 // Re-export the supabase client for external access from this service layer
@@ -108,20 +107,25 @@ export async function updateUserPassword(newPassword: string) {
 
 /**
  * Administrative API: Core restricted operations.
- * All functions assume appropriate RLS (Row Level Security) is configured on Supabase.
  */
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     if (!userId) return false;
     try {
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('user_data')
         .select('role')
         .eq('id', userId)
-        .maybeSingle();
+        .single();
+      
+      if (error) {
+        console.error("[Security Pulse] Admin query error:", error.message);
+        return false;
+      }
+      
       return data?.role === 'admin';
     } catch (err) {
-      console.error("[Security Pulse] Admin check failure:", err);
+      console.error("[Security Pulse] Admin check exception:", err);
       return false;
     }
   },
