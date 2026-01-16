@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, Activity, Zap, User, BrainCircuit, AlertTriangle, RefreshCw, HelpCircle } from 'lucide-react';
+import { Loader2, Activity, Zap, User, BrainCircuit, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
 import { getSleepInsight } from './services/geminiService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,10 +17,10 @@ const LegalView = lazy(() => import('./components/LegalView.tsx').then(m => ({ d
 
 // Components
 import { Dashboard } from './components/Dashboard.tsx';
-import { GlassCard } from './components/GlassCard.tsx';
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
 const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ default: m.Settings })));
+const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(m => ({ default: m.UserProfile })));
 
 const m = motion as any;
 
@@ -48,7 +48,6 @@ const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const [syncErrorMessage, setSyncErrorMessage] = useState<string | null>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
   const [isSandbox, setIsSandbox] = useState(() => {
@@ -110,7 +109,6 @@ const App: React.FC = () => {
     }
   }, [isSandbox, navigateTo, isLoggingOut]);
 
-  // Google Analytics Page View Tracking for SPA
   useEffect(() => {
     if (typeof (window as any).gtag === 'function') {
       const path = activeRoute === '/' ? `/${activeView}` : activeRoute;
@@ -125,26 +123,22 @@ const App: React.FC = () => {
     let checkTimeout: any;
 
     const checkAuth = async () => {
-      // Safety timeout: dismiss loader after 10s no matter what
       checkTimeout = setTimeout(() => {
         setIsInitialAuthCheck(false);
-        if ((window as any).dismissLoader) (window as any).dismissLoader();
       }, 10000);
 
       try {
         const { data: { session: currentSession } } = await supabase.auth.getSession();
         
         if (currentSession) {
-          // Failure point protection: ensure profile exists
           await ensureProfile(currentSession.user.id, currentSession.user.email || '');
-
-          const { data: profile } = await supabase
-            .from('profiles')
+          const { data: userData } = await supabase
+            .from('user_data')
             .select('is_blocked')
             .eq('id', currentSession.user.id)
             .maybeSingle();
 
-          if (profile?.is_blocked) {
+          if (userData?.is_blocked) {
             await supabase.auth.signOut();
             setSession(null);
           } else {
@@ -158,7 +152,6 @@ const App: React.FC = () => {
       } finally {
         clearTimeout(checkTimeout);
         setIsInitialAuthCheck(false);
-        if ((window as any).dismissLoader) (window as any).dismissLoader();
       }
     };
     
@@ -178,13 +171,13 @@ const App: React.FC = () => {
       
       if (newSession) {
         await ensureProfile(newSession.user.id, newSession.user.email || '');
-        const { data: profile } = await supabase
-          .from('profiles')
+        const { data: userData } = await supabase
+          .from('user_data')
           .select('is_blocked')
           .eq('id', newSession.user.id)
           .maybeSingle();
 
-        if (profile?.is_blocked) {
+        if (userData?.is_blocked) {
           await supabase.auth.signOut();
         } else {
           setSession(newSession);
@@ -203,37 +196,26 @@ const App: React.FC = () => {
   }, [getNormalizedRoute, navigateTo, isLoggingOut]);
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
-    setSyncErrorMessage(null);
     setIsSyncing(true);
     try {
       onProgress?.('authorizing');
       await healthConnect.authorize(forcePrompt);
-      
       onProgress?.('fetching');
       const healthData = await healthConnect.fetchSleepData();
-      
       const updatedRecord = { id: `health-${Date.now()}`, ...healthData } as SleepRecord;
       setCurrentRecord(updatedRecord);
       setHistory(prev => [updatedRecord, ...prev].slice(0, 30));
-      
       onProgress?.('analyzing');
       const insights = await getSleepInsight(updatedRecord, lang);
       setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
-      
       localStorage.setItem('somno_last_sync', new Date().toLocaleString());
       onProgress?.('success');
     } catch (err: any) {
       onProgress?.('error');
-      let msg = translations[lang].errors.syncFailed;
-      if (err.message?.includes('SLEEP_DATA_NOT_FOUND') || err.message?.includes('404')) {
-        msg = isZh ? "未发现近期的生理记录。请确保 Google Fit 已启用睡眠跟踪。" : "No recent physiological records found. Ensure Google Fit has sleep tracking enabled.";
-      }
-      setSyncErrorMessage(msg);
-      setTimeout(() => setSyncErrorMessage(null), 8000);
     } finally {
       setIsSyncing(false);
     }
-  }, [lang, isZh]);
+  }, [lang]);
 
   if (isInitialAuthCheck) return <LoadingSpinner label="Decrypting Lab Access..." />;
 
@@ -268,11 +250,10 @@ const App: React.FC = () => {
                     <Activity className="text-indigo-400 animate-pulse" size={32} />
                   </div>
                   <h2 className="text-xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
-                  <p className="text-xs text-slate-500 max-w-xs italic mb-4">Establishing secure telemetry link with Google Health Connect. Ensure your source app has synchronized.</p>
-                  
+                  <p className="text-xs text-slate-500 max-w-xs italic mb-4">Establishing secure telemetry link. Connect lab nodes for sync.</p>
                   <button onClick={() => handleSyncHealthConnect(true)} disabled={isSyncing} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl hover:bg-indigo-500 transition-all active:scale-95 flex items-center gap-3 disabled:opacity-50">
                     {isSyncing ? <RefreshCw className="animate-spin" size={14} /> : <Zap size={14} />}
-                    {isSyncing ? 'Linking Nodes...' : 'Connect Lab Nodes'}
+                    {isSyncing ? 'Linking...' : 'Connect Lab Nodes'}
                   </button>
                 </div>
               )
@@ -281,6 +262,8 @@ const App: React.FC = () => {
             ) : activeView === 'assistant' ? (
               <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} isSandbox={isSandbox} />
             ) : activeView === 'profile' ? (
+              <UserProfile lang={lang} />
+            ) : activeView === 'settings' ? (
               <Settings 
                 lang={lang} onLanguageChange={(l) => { setLang(l); localStorage.setItem('somno_lang', l); }} onLogout={handleLogout} 
                 onNavigate={(v) => typeof v === 'string' && (v === 'admin' ? navigateTo('/admin') : setActiveView(v as any))}
@@ -292,21 +275,22 @@ const App: React.FC = () => {
           </m.div>
         </AnimatePresence>
 
-        <div className="fixed bottom-12 left-0 right-0 z-[60] px-10 flex justify-center pointer-events-none">
-          <nav className="bg-slate-900/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-2 pointer-events-auto shadow-2xl">
+        <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
+          <nav className="bg-slate-950/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar">
             {[
               { id: 'dashboard', icon: Activity, label: 'LAB' },
               { id: 'calendar', icon: Zap, label: 'TRND' },
               { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
-              { id: 'profile', icon: User, label: 'CFG' }
+              { id: 'profile', icon: User, label: 'USER' },
+              { id: 'settings', icon: SettingsIcon, label: 'CFG' }
             ].map((nav) => (
               <button 
                 key={nav.id} 
                 onClick={() => { if (window.location.hash !== '#/' && window.location.hash !== '') navigateTo('/'); setActiveView(nav.id as any); }} 
-                className={`relative flex items-center gap-2 px-6 py-4 rounded-full transition-all ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                className={`relative flex items-center gap-2 px-5 py-4 rounded-full transition-all shrink-0 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
               >
-                <nav.icon size={20} />
-                {activeView === nav.id && <m.span layoutId="nav-text" className="text-[10px] font-black uppercase tracking-widest">{nav.label}</m.span>}
+                <nav.icon size={18} />
+                {activeView === nav.id && <m.span layoutId="nav-text" className="text-[9px] font-black uppercase tracking-widest">{nav.label}</m.span>}
               </button>
             ))}
           </nav>

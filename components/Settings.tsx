@@ -4,12 +4,12 @@ import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, 
   HeartHandshake, Globe, Lock, Loader2, CreditCard, 
-  ChevronRight, Heart, Copy, QrCode, Languages, User, UserCircle, Edit2, Settings as SettingsIcon
+  Heart, Copy, QrCode, Languages, UserCircle, Settings as SettingsIcon, Brain
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { updateUserPassword, updateProfileMetadata, adminApi } from '../services/supabaseService.ts';
+import { updateUserPassword, adminApi } from '../services/supabaseService.ts';
 import { supabase } from '../lib/supabaseClient.ts';
 
 const m = motion as any;
@@ -33,8 +33,6 @@ interface SettingsProps {
 
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, 
-  theme, onThemeChange, accentColor, onAccentChange,
-  threeDEnabled, onThreeDChange, staticMode, onStaticModeChange,
   lastSyncTime, onManualSync, onNavigate
 }) => {
   const [showDonation, setShowDonation] = useState(false);
@@ -44,12 +42,6 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showKey, setShowKey] = useState(false);
   const [saveStatus, setSaveStatus] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  // Profile states
-  const [userEmail, setUserEmail] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [isUpdatingProfile, setIsUpdatingProfile] = useState(false);
-  const [profileStatus, setProfileStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   // Password update states
   const [newPassword, setNewPassword] = useState('');
@@ -67,14 +59,8 @@ export const Settings: React.FC<SettingsProps> = ({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        setUserEmail(session.user.email || '');
-        setDisplayName(session.user.user_metadata?.display_name || '');
         const adminStatus = await adminApi.checkAdminStatus(session.user.id);
         setIsAdmin(adminStatus);
-      } else if (isSandbox) {
-        setIsAdmin(true);
-        setUserEmail('sandbox@somno.lab');
-        setDisplayName('Lab Subject 01');
       }
 
       if ((window as any).aistudio) {
@@ -107,21 +93,6 @@ export const Settings: React.FC<SettingsProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleProfileUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (isUpdatingProfile) return;
-    setIsUpdatingProfile(true);
-    try {
-      await updateProfileMetadata(displayName);
-      setProfileStatus('success');
-      setTimeout(() => setProfileStatus('idle'), 3000);
-    } catch (err) {
-      setProfileStatus('error');
-    } finally {
-      setIsUpdatingProfile(false);
-    }
-  };
-
   const handlePasswordUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
@@ -146,67 +117,14 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   return (
-    <div className="space-y-12 pb-32 animate-in fade-in duration-700 max-w-2xl mx-auto">
-      <header className="px-4 text-center space-y-2">
-        <h1 className="text-3xl font-black tracking-tighter text-white italic uppercase">{t.title}</h1>
+    <div className="space-y-12 pb-32 animate-in fade-in duration-700 max-w-2xl mx-auto px-4">
+      <header className="text-center space-y-2">
+        <h1 className="text-3xl font-black tracking-tighter text-white italic uppercase">{isZh ? '系统配置' : 'System Config'}</h1>
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">{t.subtitle}</p>
       </header>
 
-      {/* Profile Section */}
-      <GlassCard className="p-8 rounded-[4rem] space-y-8 border-white/10 bg-white/[0.02]">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-            <UserCircle size={24} />
-          </div>
-          <div>
-            <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{t.profileTitle}</h2>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Biometric Identity Metadata</p>
-          </div>
-        </div>
-
-        <form onSubmit={handleProfileUpdate} className="space-y-6">
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-slate-500 px-4">{t.email}</label>
-            <div className="relative">
-              <input 
-                type="text"
-                value={userEmail}
-                readOnly
-                className="w-full bg-slate-950/40 border border-white/5 rounded-full px-8 py-5 text-xs text-slate-500 cursor-not-allowed italic"
-              />
-              <Lock className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-800" size={14} />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-[10px] font-black uppercase text-slate-500 px-4">{t.displayName}</label>
-            <div className="relative">
-              <input 
-                type="text"
-                value={displayName}
-                onChange={(e) => setDisplayName(e.target.value)}
-                placeholder="Ex: Lab Subject 42"
-                className="w-full bg-slate-950/60 border border-white/10 rounded-full px-8 py-5 text-xs text-white outline-none focus:border-indigo-500/50 transition-all font-semibold"
-              />
-              <Edit2 className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-700" size={14} />
-            </div>
-          </div>
-
-          <button 
-            type="submit"
-            disabled={isUpdatingProfile}
-            className={`w-full py-5 rounded-full font-black text-[10px] uppercase tracking-widest transition-all flex items-center justify-center gap-3 ${
-              profileStatus === 'success' ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-30'
-            }`}
-          >
-            {isUpdatingProfile ? <Loader2 size={16} className="animate-spin" /> : profileStatus === 'success' ? <CheckCircle2 size={16} /> : <Save size={16} />}
-            {profileStatus === 'success' ? t.profileSuccess : t.updateProfile}
-          </button>
-        </form>
-      </GlassCard>
-
       {/* Language Switcher Section */}
-      <GlassCard className="p-8 rounded-[4rem] border-white/5 bg-white/[0.01]">
+      <GlassCard className="p-8 rounded-[3.5rem] border-white/5 bg-white/[0.01]">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
@@ -214,7 +132,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
             <div>
               <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{isZh ? '系统语言' : 'System Language'}</h2>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Select UI Protocol</p>
+              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Protocol Interface</p>
             </div>
           </div>
           <div className="flex bg-slate-950/80 p-1 rounded-full border border-white/5 shadow-inner">
@@ -231,6 +149,61 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </GlassCard>
 
+      {/* AI Core Section */}
+      <GlassCard className="p-10 rounded-[4rem] space-y-10">
+        <div className="space-y-8">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-14 h-14 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
+                <Brain size={24} />
+              </div>
+              <div>
+                <h2 className="text-lg font-black italic text-white uppercase tracking-tight">{t.geminiCore}</h2>
+                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{isEngineLinked ? t.active : 'Disconnected'}</p>
+              </div>
+            </div>
+            <button 
+              onClick={handleLinkEngine}
+              className="px-6 py-2.5 rounded-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl"
+            >
+              Link Node
+            </button>
+          </div>
+
+          <div className="space-y-4 pt-8 border-t border-white/5">
+            <div className="flex justify-between items-center px-4">
+              <label className="text-[10px] font-black uppercase text-slate-500 italic">API Key Override</label>
+              <a 
+                href="https://ai.google.dev/gemini-api/docs/billing" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="text-[10px] font-bold text-indigo-400 hover:underline flex items-center gap-1"
+              >
+                GCP Billing <CreditCard size={10}/><ExternalLink size={10}/>
+              </a>
+            </div>
+            
+            <form onSubmit={handleSaveManualKey} className="relative">
+              <input 
+                type={showKey ? 'text' : 'password'}
+                value={manualKey}
+                onChange={(e) => setManualKey(e.target.value)}
+                placeholder="Secure API Token..."
+                className="w-full bg-slate-950/60 border border-white/10 rounded-full px-8 py-4 text-xs font-mono text-indigo-300 outline-none focus:border-indigo-500/50"
+              />
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
+                <button type="button" onClick={() => setShowKey(!showKey)} className="p-2 text-slate-600 hover:text-white transition-colors">
+                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
+                <button type="submit" className={`p-2 rounded-full ${saveStatus ? 'text-emerald-400' : 'text-slate-600 hover:text-indigo-400'}`}>
+                  {saveStatus ? <CheckCircle2 size={16} /> : <Save size={16} />}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </GlassCard>
+
       {/* Account Security Section */}
       <GlassCard className="p-8 rounded-[4rem] space-y-8">
         <div className="flex items-center gap-4">
@@ -238,13 +211,13 @@ export const Settings: React.FC<SettingsProps> = ({
             <Lock size={20} />
           </div>
           <div>
-            <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{isZh ? '账户安全' : 'Account Security'}</h2>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Update Access Credentials</p>
+            <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{isZh ? '账户安全' : 'Security Pulse'}</h2>
+            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Neural Access Key</p>
           </div>
         </div>
 
         <form onSubmit={handlePasswordUpdate} className="space-y-4">
-          <label className="text-[10px] font-black uppercase text-slate-500 px-4">{isZh ? '设置新访问密码' : 'Set New Access Password'}</label>
+          <label className="text-[10px] font-black uppercase text-slate-500 px-4">{isZh ? '设置新访问密码' : 'Reset Neural Key'}</label>
           <div className="relative group">
             <input 
               type="password"
@@ -253,7 +226,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 setNewPassword(e.target.value);
                 if (passwordStatus === 'error') setPasswordStatus('idle');
               }}
-              placeholder={isZh ? "输入新密码" : "Enter new password"}
+              placeholder={isZh ? "输入新密码" : "New Neural Key..."}
               className="w-full bg-slate-950/60 border border-white/10 rounded-full px-8 py-5 text-xs text-white outline-none focus:border-indigo-500/50 transition-all"
             />
             <button 
@@ -268,84 +241,38 @@ export const Settings: React.FC<SettingsProps> = ({
               {isUpdatingPassword ? <Loader2 size={14} className="animate-spin" /> : 
                passwordStatus === 'success' ? <CheckCircle2 size={14} /> : 
                passwordStatus === 'error' ? <X size={14} /> : 
-               (isZh ? '更新' : 'Update')}
+               (isZh ? '更新' : 'Commit')}
             </button>
           </div>
           {passwordError && <p className="text-[9px] text-rose-500 px-6">{passwordError}</p>}
         </form>
       </GlassCard>
 
-      {/* AI Core Section */}
-      <GlassCard className="p-10 rounded-[4rem] space-y-10">
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                <Key size={24} />
-              </div>
-              <div>
-                <h2 className="text-lg font-black italic text-white uppercase tracking-tight">{t.geminiCore}</h2>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{isEngineLinked ? t.active : 'Disconnected'}</p>
-              </div>
-            </div>
-            <button 
-              onClick={handleLinkEngine}
-              className="px-6 py-2.5 rounded-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl"
-            >
-              Auth AI
-            </button>
-          </div>
-
-          <div className="space-y-4 pt-8 border-t border-white/5">
-            <div className="flex justify-between items-center px-4">
-              <label className="text-[10px] font-black uppercase text-slate-500">GCP Billing Awareness</label>
-              <a 
-                href="https://ai.google.dev/gemini-api/docs/billing" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-[10px] font-bold text-indigo-400 hover:underline flex items-center gap-1"
-              >
-                Billing Info <CreditCard size={10}/><ExternalLink size={10}/>
-              </a>
-            </div>
-            
-            <form onSubmit={handleSaveManualKey} className="relative">
-              <input 
-                type={showKey ? 'text' : 'password'}
-                value={manualKey}
-                onChange={(e) => setManualKey(e.target.value)}
-                placeholder="Paste API Key here..."
-                className="w-full bg-slate-950/60 border border-white/10 rounded-full px-8 py-4 text-xs font-mono text-indigo-300 outline-none focus:border-indigo-500/50"
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
-                <button type="button" onClick={() => setShowKey(!showKey)} className="p-2 text-slate-600 hover:text-white transition-colors">
-                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-                <button type="submit" className={`p-2 rounded-full ${saveStatus ? 'text-emerald-400' : 'text-slate-600 hover:text-indigo-400'}`}>
-                  {saveStatus ? <CheckCircle2 size={16} /> : <Save size={16} />}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-
-        <div className="space-y-4 pt-6">
+      <div className="space-y-4 pt-6">
+        {isAdmin && (
           <button 
-            type="button"
-            onClick={() => setShowDonation(true)}
-            className="w-full py-5 rounded-full bg-rose-600/10 border border-rose-500/30 text-rose-400 font-black text-[11px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-3 relative overflow-hidden z-[50]"
+            onClick={() => onNavigate('admin')}
+            className="w-full py-5 rounded-full bg-rose-600/10 border border-rose-500/30 text-rose-400 font-black text-[11px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-3 shadow-xl"
           >
-            <HeartHandshake size={18} /> {t.coffee}
+            <SettingsIcon size={16} /> Command Deck
           </button>
-          
-          <button 
-            onClick={onLogout}
-            className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-black text-[11px] uppercase tracking-widest hover:text-rose-400 transition-all flex items-center justify-center gap-3"
-          >
-            <LogOut size={16} /> {t.logout}
-          </button>
-        </div>
-      </GlassCard>
+        )}
+        
+        <button 
+          type="button"
+          onClick={() => setShowDonation(true)}
+          className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-white font-black text-[11px] uppercase tracking-widest hover:bg-indigo-600/20 transition-all flex items-center justify-center gap-3"
+        >
+          <HeartHandshake size={18} className="text-rose-400" /> {t.coffee}
+        </button>
+        
+        <button 
+          onClick={onLogout}
+          className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-black text-[11px] uppercase tracking-widest hover:text-rose-400 transition-all flex items-center justify-center gap-3 italic"
+        >
+          <LogOut size={16} /> {t.logout}
+        </button>
+      </div>
 
       {/* Donation Modal */}
       <AnimatePresence>
@@ -370,7 +297,7 @@ export const Settings: React.FC<SettingsProps> = ({
                       {t.thankYouTitle}
                     </h2>
                     <p className="text-sm text-slate-400 italic leading-relaxed px-6">
-                      {isZh ? '您的支持将维持实验室算力运行。支付详情如下（默认英文）：' : 'Your support fuels lab processing. Payment details follow (English Default):'}
+                      {isZh ? '您的支持将维持实验室算力运行。' : 'Your support fuels lab processing capacity.'}
                     </p>
                   </div>
 
@@ -382,10 +309,6 @@ export const Settings: React.FC<SettingsProps> = ({
                             alt="Payment QR" 
                             className="w-32 h-32 md:w-40 md:h-40"
                           />
-                       </div>
-                       <div className="flex items-center gap-2 text-rose-400 mt-2">
-                         <QrCode size={14} className="opacity-70" />
-                         <span className="text-[10px] font-black uppercase tracking-widest opacity-80">SCAN TO PAYPAL</span>
                        </div>
                     </div>
 

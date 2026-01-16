@@ -27,6 +27,16 @@ export interface SleepRecord {
   aiInsights: string[];
 }
 
+export interface UserProfileMetadata {
+  displayName: string;
+  age?: number;
+  weight?: number; // in kg
+  height?: number; // in cm
+  gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
+  units: 'metric' | 'imperial';
+  coachingStyle: 'clinical' | 'motivational' | 'minimalist';
+}
+
 export interface SecurityEvent {
   id: string;
   user_id: string;
@@ -37,7 +47,7 @@ export interface SecurityEvent {
   notified: boolean;
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'about';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about';
 export type TimeRange = 'week' | 'month' | 'year';
 export type AIProvider = 'gemini' | 'openai';
 

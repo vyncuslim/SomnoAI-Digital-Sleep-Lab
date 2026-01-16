@@ -1,4 +1,19 @@
-
+<script type="importmap">
+{
+  "imports": {
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
+    "lucide-react": "https://esm.sh/lucide-react@^0.562.0",
+    "recharts": "https://esm.sh/recharts@^3.6.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.90.1",
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "react": "https://esm.sh/react@^19.2.3",
+    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
+    "framer-motion": "https://esm.sh/framer-motion@^12.26.2",
+    "@google/genai": "https://esm.sh/@google/genai@^1.37.0"
+  }
+}
+</script>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -8,9 +23,9 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-
       gtag('config', 'G-1WM4RE66ER');
     </script>
+    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     
@@ -18,29 +33,8 @@
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/moon-star.png">
     
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
-    <meta name="description" content="Master your sleep with SomnoAI. Fusing physiological monitoring, deep AI insights via Gemini, and personalized recovery protocols.">
+    <meta name="description" content="SomnoAI fuses physiological monitoring, deep AI insights, and professional health guidance into a comprehensive digital sleep laboratory experience.">
     
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="SomnoAI Digital Sleep Lab">
-    <meta property="og:description" content="Integrating high-fidelity physiological monitoring with deep Gemini AI insights for sleep mastery.">
-    <meta property="og:image" content="https://img.icons8.com/fluency/512/moon-star.png">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://sleepsomno.com/">
-    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab">
-    <meta property="twitter:description" content="Synthesizing precision biometric telemetry with AI-driven neural analysis.">
-    <meta property="twitter:image" content="https://img.icons8.com/fluency/512/moon-star.png">
-
-    <link rel="manifest" href="/manifest.json">
-
-    <!-- Fonts Integration -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&family=JetBrains+Mono:wght@700;800&display=swap" rel="stylesheet">
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -54,110 +48,23 @@
         }
       }
 
-      // GLOBAL ERROR HANDLING FOR DEPLOYMENT SYNCHRONIZATION
+      // 全局错误捕获，防止黑屏
       window.addEventListener('unhandledrejection', function(event) {
-        const msg = event.reason?.message || '';
-        // Silence noise from expected audio interruptions
-        if (msg.includes('AbortError') || msg.includes('play()')) {
-          event.preventDefault();
-        }
-        // Handle Vite Chunk 404s (Failed to fetch dynamically imported module)
-        if (msg.includes('Failed to fetch') || msg.includes('dynamically imported module')) {
-           console.warn("Outdated application chunk detected. Synchronizing terminal...");
-           window.location.reload();
-        }
+        if (event.reason?.message?.includes('AbortError')) event.preventDefault();
       });
 
       window.addEventListener('error', function(event) {
-        if (event.message?.includes('Failed to fetch') || event.message?.includes('dynamically imported module')) {
-           console.warn("Neural link mismatch. Refreshing protocol...");
-           window.location.reload();
+        console.error("Global system fault detected:", event.message);
+        // 如果是因为资源加载失败（如 esm.sh 抖动），尝试静默恢复
+        if (event.message.includes('Script error')) {
+           console.warn("Attempting neural link recovery...");
         }
-      }, true);
-
-      window.dismissLoader = function() {
-          const loader = document.getElementById('page-loader');
-          if (loader) {
-              loader.style.opacity = '0';
-              loader.style.pointerEvents = 'none';
-              setTimeout(() => { if(loader) loader.remove(); }, 800);
-          }
-      };
-      
-      // Safety auto-dismiss for the initial loading screen
-      setTimeout(window.dismissLoader, 8000);
+      });
     </script>
-    
-    <style type="text/tailwindcss">
-      @tailwind base;
-      @tailwind components;
-      @tailwind utilities;
-
-      body {
-        font-family: 'Plus Jakarta Sans', sans-serif;
-        @apply bg-[#01040a] text-[#e2e8f0] antialiased;
-      }
-      ::-webkit-scrollbar { display: none; }
-      * { -ms-overflow-style: none; scrollbar-width: none; }
-    </style>
-    
-    <style>
-        #spatial-bg {
-            position: fixed; inset: 0; z-index: -1;
-            background: #01040a; overflow: hidden;
-        }
-        .liquid-blob {
-            position: absolute; border-radius: 50%;
-            filter: blur(80px); opacity: 0.15;
-            animation: liquid-drift 25s infinite alternate ease-in-out;
-            pointer-events: none;
-        }
-        @keyframes liquid-drift {
-            0% { transform: translate(0, 0) scale(1); }
-            100% { transform: translate(5%, 5%) scale(1.1); }
-        }
-        .initial-loader {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            height: 100vh; width: 100%; gap: 1.5rem; position: fixed;
-            top: 0; left: 0; background-color: #01040a; z-index: 1000;
-            transition: opacity 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-    </style>
-    <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@18.3.1",
-    "react-dom": "https://esm.sh/react-dom@18.3.1",
-    "react-dom/client": "https://esm.sh/react-dom@18.3.1/client",
-    "react/jsx-runtime": "https://esm.sh/react@18.3.1/jsx-runtime",
-    "@google/genai": "https://esm.sh/@google/genai@1.34.0",
-    "lucide-react": "https://esm.sh/lucide-react@0.470.0?deps=react@18.3.1",
-    "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1,react-dom@18.3.1",
-    "framer-motion": "https://esm.sh/framer-motion@11.11.11?deps=react@18.3.1,react-dom@18.3.1",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
-  }
-}
-</script>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
 </head>
-<body>
-    <div id="spatial-bg">
-        <div class="liquid-blob" style="width: 800px; height: 800px; background: #4f46e5; top: -10%; left: -10%;"></div>
-        <div class="liquid-blob" style="width: 600px; height: 600px; background: #10b981; bottom: -10%; right: -10%;"></div>
-    </div>
-    <div id="root">
-        <div class="initial-loader" id="page-loader" role="status">
-            <svg style="width: 80px; height: 80px;" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <circle cx="50" cy="50" r="35" fill="#4f46e5" opacity="0.8">
-                    <animate attributeName="r" values="32;38;32" dur="3s" repeatCount="indefinite" />
-                </circle>
-            </svg>
-            <div style="color: #fff; letter-spacing: 0.6em; font-weight: 900; font-size: 10px; margin-top: 10px;">SOMNOAI LAB CONNECTING</div>
-        </div>
-    </div>
-    <script type="module" src="/index.tsx"></script>
+<body class="bg-[#020617] text-slate-200">
+    <div id="root"></div>
+    <script type="module" src="./index.tsx"></script>
 </body>
 </html>

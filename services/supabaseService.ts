@@ -1,46 +1,68 @@
-
 import { supabase } from '../lib/supabaseClient.ts';
 
 // --- Subject Identity Services ---
 
 /**
- * Ensures a profile exists in the 'profiles' table.
- * Fully decoupled to prevent schema-related errors from blocking the core authentication flow.
+ * Ensures a profile exists in the 'user_data' table.
  */
 export async function ensureProfile(userId: string, email: string) {
   try {
-    // Check if profile exists
     const { data: profile, error: fetchError } = await supabase
-      .from('profiles')
-      .select('id')
+      .from('user_data')
+      .select('*')
       .eq('id', userId)
       .maybeSingle();
 
-    // If table doesn't exist (400) or other DB errors, we log but don't throw.
-    // This prevents "Database error saving new user" from hanging the app if the user manages to log in.
     if (fetchError) {
-      console.warn("[Identity Link] Profile retrieval deferred. Table may be offline or restricted.", fetchError.message);
+      console.warn("[Identity Link] Profile retrieval deferred.", fetchError.message);
       return;
     }
 
     if (!profile) {
-      const { error: insertError } = await supabase.from('profiles').insert([
+      const { error: insertError } = await supabase.from('user_data').insert([
         { 
           id: userId, 
           email: email, 
           role: 'user', 
           is_blocked: false,
-          created_at: new Date().toISOString()
+          created_at: new Date().toISOString(),
+          extra: {
+            units: 'metric',
+            coachingStyle: 'clinical'
+          }
         }
       ]);
       
       if (insertError) {
-        console.error("[Identity Link] Failed to initialize subject in registry:", insertError.message);
+        console.error("[Identity Link] Failed to initialize subject:", insertError.message);
       }
     }
   } catch (err) {
     console.debug("[Identity Link] Background sync deferred.");
   }
+}
+
+export async function updateProfileMetadata(metadata: any) {
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("No active session");
+
+  // Update Auth Metadata (for display name)
+  if (metadata.displayName) {
+    await supabase.auth.updateUser({
+      data: { display_name: metadata.displayName }
+    });
+  }
+
+  // Update user_data table (for biological data/preferences)
+  const { error } = await supabase
+    .from('user_data')
+    .update({ 
+      extra: metadata,
+      display_name: metadata.displayName 
+    })
+    .eq('id', session.user.id);
+
+  if (error) throw error;
 }
 
 /**
@@ -56,12 +78,8 @@ export async function signInWithEmailOTP(email: string, createIfNotFound = true)
   });
   
   if (error) {
-    // Map cryptic Supabase errors to domain-specific messages
     if (error.message.toLowerCase().includes('database error saving new user')) {
-      throw new Error("Subject Registry Synchronization Failure: The laboratory database could not create your record. Please contact the administrator.");
-    }
-    if (error.message.includes('signups not allowed') || error.message.includes('not found')) {
-      throw new Error("Access Denied: Subject identity not recognized in the Laboratory Registry.");
+      throw new Error("Subject Registry Synchronization Failure.");
     }
     throw error;
   }
@@ -77,43 +95,23 @@ export async function verifyOtp(email: string, token: string) {
     type: 'email'
   });
   
-  if (error) {
-    if (error.message.includes('expired')) throw new Error("Neural Token Expired.");
-    if (error.message.includes('invalid')) throw new Error("Neural Token Invalid or Mismatched.");
-    throw error;
-  }
+  if (error) throw error;
 
   if (data.session) {
-    // Async synchronization to prevent UI lag
     ensureProfile(data.session.user.id, data.session.user.email || '').catch(() => {});
   }
 
   return data.session;
 }
 
-/**
- * Google OAuth Handshake.
- */
 export async function signInWithGoogle() {
   const { error } = await supabase.auth.signInWithOAuth({
     provider: 'google',
     options: {
       redirectTo: window.location.origin,
-      queryParams: {
-        prompt: 'select_account',
-        access_type: 'offline'
-      }
     }
   });
   if (error) throw error;
-}
-
-export async function updateProfileMetadata(displayName: string) {
-  const { data, error } = await supabase.auth.updateUser({
-    data: { display_name: displayName }
-  });
-  if (error) throw error;
-  return data;
 }
 
 export async function updateUserPassword(newPassword: string) {
@@ -128,30 +126,28 @@ export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     if (!userId) return false;
     try {
-      const { data, error } = await supabase
-        .from('profiles')
+      const { data } = await supabase
+        .from('user_data')
         .select('role')
         .eq('id', userId)
         .maybeSingle();
-      
-      if (error || !data) return false;
-      return data.role === 'admin';
+      return data?.role === 'admin';
     } catch (err) {
       return false;
     }
   },
 
   getUsers: async () => {
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('user_data').select('*').order('created_at', { ascending: false });
     return error ? [] : (data || []);
   },
 
   blockUser: async (id: string) => {
-    await supabase.from('profiles').update({ is_blocked: true, blocked_at: new Date().toISOString() }).eq('id', id);
+    await supabase.from('user_data').update({ is_blocked: true, blocked_at: new Date().toISOString() }).eq('id', id);
   },
 
   unblockUser: async (id: string) => {
-    await supabase.from('profiles').update({ is_blocked: false, blocked_at: null }).eq('id', id);
+    await supabase.from('user_data').update({ is_blocked: false, blocked_at: null }).eq('id', id);
   },
 
   getSleepRecords: async () => {
