@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase } from './lib/supabaseClient.ts';
 import { adminApi, ensureProfile } from './services/supabaseService.ts';
+import { trackPageView, trackEvent } from './services/analytics.ts';
 
 // Pages
 const UserLoginPage = lazy(() => import('./app/login/page.tsx'));
@@ -78,15 +79,25 @@ const App: React.FC = () => {
     window.location.hash = finalHash;
   }, []);
 
+  // Track page views on route or view changes
+  useEffect(() => {
+    const virtualPath = activeRoute === '/' ? `/${activeView}` : activeRoute;
+    const pageTitle = `SomnoAI | ${activeView.toUpperCase()}`;
+    trackPageView(virtualPath, pageTitle);
+  }, [activeRoute, activeView]);
+
   const handleSandboxLogin = useCallback(() => {
     setIsSandbox(true);
     localStorage.setItem('somno_sandbox_active', 'true');
+    trackEvent('login', { method: 'sandbox' });
     navigateTo('/');
   }, [navigateTo]);
 
   const handleLogout = useCallback(async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
+
+    trackEvent('logout');
 
     if (isSandbox) {
       setIsSandbox(false);
@@ -108,16 +119,6 @@ const App: React.FC = () => {
       }
     }
   }, [isSandbox, navigateTo, isLoggingOut]);
-
-  useEffect(() => {
-    if (typeof (window as any).gtag === 'function') {
-      const path = activeRoute === '/' ? `/${activeView}` : activeRoute;
-      (window as any).gtag('event', 'page_view', {
-        page_path: path,
-        page_title: `SomnoAI | ${activeView.toUpperCase()}`
-      });
-    }
-  }, [activeRoute, activeView]);
 
   useEffect(() => {
     let checkTimeout: any;
@@ -197,6 +198,7 @@ const App: React.FC = () => {
 
   const handleSyncHealthConnect = useCallback(async (forcePrompt = false, onProgress?: (status: SyncStatus) => void) => {
     setIsSyncing(true);
+    trackEvent('health_sync_start');
     try {
       onProgress?.('authorizing');
       await healthConnect.authorize(forcePrompt);
@@ -210,8 +212,10 @@ const App: React.FC = () => {
       setCurrentRecord(prev => prev ? ({ ...prev, aiInsights: insights }) : prev);
       localStorage.setItem('somno_last_sync', new Date().toLocaleString());
       onProgress?.('success');
+      trackEvent('health_sync_success', { score: updatedRecord.score });
     } catch (err: any) {
       onProgress?.('error');
+      trackEvent('health_sync_error', { error: err.message });
     } finally {
       setIsSyncing(false);
     }

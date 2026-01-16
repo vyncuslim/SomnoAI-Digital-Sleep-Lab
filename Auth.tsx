@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { Loader2, ChevronLeft, Mail, Zap, RefreshCw, ShieldAlert, ShieldCheck, Lock, Fingerprint, Globe, UserPlus, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,6 +6,7 @@ import { Logo } from './components/Logo.tsx';
 import { Language, translations } from './services/i18n.ts';
 import { signInWithEmailOTP, verifyOtp, signInWithGoogle } from './services/supabaseService.ts';
 import { supabase } from './lib/supabaseClient.ts';
+import { trackEvent, trackConversion } from './services/analytics.ts';
 
 const m = motion as any;
 
@@ -46,12 +46,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       if (cooldown > 0) return;
       setIsProcessing(true);
       setError(null);
+      
+      const targetEmail = email.trim().toLowerCase();
+      trackEvent('login_attempt', { 
+        method: 'otp', 
+        user_email: targetEmail,
+        mode 
+      });
+
       try {
-        // shouldCreateUser=true covers both Login and Registration in OTP flow
-        await signInWithEmailOTP(email.trim().toLowerCase(), true);
+        await signInWithEmailOTP(targetEmail, true);
         setStep('verify');
         setCooldown(60);
         setTimeout(() => otpRefs.current[0]?.focus(), 300);
+        trackEvent('auth_request_otp', { mode });
       } catch (err: any) {
         setError(err.message || "Failed to dispatch neural token.");
       } finally {
@@ -65,28 +73,34 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
   const handlePasswordAuth = async () => {
     setIsProcessing(true);
     setError(null);
+    const targetEmail = email.trim().toLowerCase();
+    
+    trackEvent('login_attempt', { 
+      method: 'password', 
+      user_email: targetEmail,
+      mode 
+    });
+
     try {
       if (mode === 'register') {
         const { error } = await supabase.auth.signUp({
-          email: email.trim().toLowerCase(),
+          email: targetEmail,
           password,
         });
         if (error) throw error;
         setError(lang === 'zh' ? "注册成功！请检查您的电子邮件以进行验证。" : "Registration successful! Check your email for verification.");
+        trackConversion('signup');
       } else {
         const { error } = await supabase.auth.signInWithPassword({
-          email: email.trim().toLowerCase(),
+          email: targetEmail,
           password,
         });
         if (error) throw error;
+        trackEvent('login_success', { method: 'password', user_email: targetEmail });
         onLogin();
       }
     } catch (err: any) {
-      if (err.message.toLowerCase().includes('invalid login credentials') && err.message.toLowerCase().includes('database error')) {
-        setError(lang === 'zh' ? "注册系统同步异常。虽然身份已建立，但实验室档案同步失败。请重试或联系管理员。" : "Registry sync error. Identity created but profile linking failed. Please try again or contact support.");
-      } else {
-        setError(err.message || "Authentication failed.");
-      }
+      setError(err.message || "Authentication failed.");
     } finally {
       setIsProcessing(false);
     }
@@ -114,9 +128,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
     setIsProcessing(true);
     setError(null);
+    const targetEmail = email.trim().toLowerCase();
+
     try {
-      const session = await verifyOtp(email.trim().toLowerCase(), token);
-      if (session) onLogin();
+      const session = await verifyOtp(targetEmail, token);
+      if (session) {
+        trackEvent('login_success', { method: 'otp', user_email: targetEmail });
+        onLogin();
+      }
     } catch (err: any) {
       setError(err.message || "Neural handshake verification failed.");
     } finally {
@@ -128,6 +147,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
     setIsProcessing(true);
     setError(null);
     try {
+      trackEvent('auth_request_google');
       await signInWithGoogle();
     } catch (err: any) {
       setError(err.message || "Google neural link failed.");
@@ -296,9 +316,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
             <ShieldAlert size={14} className="shrink-0 mt-0.5" />
             <div className="space-y-1">
               <p className="italic leading-relaxed">{error}</p>
-              {error.toLowerCase().includes('database error') && (
-                <p className="text-[8px] opacity-60 uppercase tracking-widest">Error Trace: AUTH_DB_SYNC_FAILURE</p>
-              )}
             </div>
           </m.div>
         )}

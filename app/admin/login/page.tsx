@@ -1,10 +1,10 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../../components/GlassCard.tsx';
 import { supabase } from '../../../lib/supabaseClient.ts';
 import { adminApi, signInWithEmailOTP, verifyOtp } from '../../../services/supabaseService.ts';
+import { trackEvent } from '../../../services/analytics.ts';
 
 const m = motion as any;
 
@@ -33,8 +33,15 @@ export default function AdminLoginPage() {
     setIsProcessing(true);
     setError(null);
 
+    const targetEmail = getNormalizedEmail();
+    
+    // 追踪管理员登录尝试
+    trackEvent('admin_login_attempt', {
+      user_email: targetEmail || 'anonymous',
+      step: 'request_otp'
+    });
+
     try {
-      const targetEmail = getNormalizedEmail();
       if (!targetEmail) throw new Error("Identifier required for terminal access.");
       
       await signInWithEmailOTP(targetEmail, false);
@@ -75,19 +82,22 @@ export default function AdminLoginPage() {
     setIsProcessing(true);
     setError(null);
 
+    const targetEmail = getNormalizedEmail();
+
     try {
-      const targetEmail = getNormalizedEmail();
       const session = await verifyOtp(targetEmail, token);
 
       if (!session) throw new Error("Link Rejected: Security layer denied session creation.");
 
-      // Clearance Audit
+      // 权限审计
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
       if (!isAdmin) {
+        trackEvent('admin_login_failure', { user_email: targetEmail, reason: 'insufficient_clearance' });
         await supabase.auth.signOut();
         throw new Error("Access Denied: Subject lacks Administrative Clearance Level 0.");
       }
 
+      trackEvent('admin_login_success', { user_email: targetEmail });
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Neural override authentication failure.");

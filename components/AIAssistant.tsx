@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, User, Loader2, BrainCircuit, ExternalLink, Cpu, Trash2, Key, Beaker, Lock, Settings as SettingsIcon, CreditCard, Music, Play, Square
@@ -8,6 +7,7 @@ import { ChatMessage, SleepRecord } from '../types.ts';
 import { chatWithCoach, designExperiment, generateNeuralLullaby, decodeBase64Audio, decodeAudioData } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from '../services/i18n.ts';
+import { trackEvent, trackConversion } from '../services/analytics.ts';
 
 const m = motion as any;
 
@@ -107,6 +107,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     setInput('');
     setIsTyping(true);
 
+    trackEvent('ai_chat_send', { length: userMsg.content.length });
+
     try {
       const manualKey = localStorage.getItem('somno_manual_gemini_key');
       const apiKeyExists = !!process.env.API_KEY || !!manualKey;
@@ -131,15 +133,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
           sources: response.sources,
           timestamp: new Date() 
         }]);
+        trackConversion('ai_insight');
       }
     } catch (err: any) {
       if (err.message === "KEY_INVALID_OR_NOT_FOUND") {
         setHasKey(false);
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: isZh ? "API 密钥已过期或项目未激活。请重新初始化引擎。" : "API Key expired or project inactive. Please re-initialize engine.", 
-          timestamp: new Date() 
-        }]);
       } else {
         setMessages(prev => [...prev, { role: 'assistant', content: t.error, timestamp: new Date() }]);
       }
@@ -157,6 +155,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     }
     
     setIsGeneratingAudio(true);
+    trackEvent('ai_lullaby_start');
     try {
       const base64 = await generateNeuralLullaby(data, lang);
       if (base64) {
@@ -174,13 +173,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         
         audioSourceRef.current = source;
         
-        // Handle potential play/pause interruption issues
         if (ctx.state === 'suspended') {
           await ctx.resume();
         }
         
         source.start();
         setIsPlayingAudio(true);
+        trackEvent('ai_lullaby_playing');
       }
     } catch (err) {
       console.error("Audio Synthesis Error:", err);
@@ -195,7 +194,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         audioSourceRef.current.stop(); 
         audioSourceRef.current.disconnect();
       } catch(e) {
-        console.debug("Audio stop bypassed (already finished).");
+        console.debug("Audio stop bypassed.");
       }
       audioSourceRef.current = null;
     }
@@ -219,6 +218,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   const handleDesign = async () => {
     if (!data || isDesigning) return;
     setIsDesigning(true);
+    trackEvent('ai_experiment_start');
     try {
       const experiment = await designExperiment(data, lang);
       const content = lang === 'zh' 
@@ -230,6 +230,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         content, 
         timestamp: new Date() 
       }]);
+      trackEvent('ai_experiment_success');
     } catch (err) {
       setMessages(prev => [...prev, { 
         role: 'assistant', 
@@ -259,19 +260,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
               (isZh ? "请选择付费 GCP 项目的 API Key 以启用实验室深度分析。" : "Select an API Key from a paid GCP project to enable deep lab insights.") : 
               (isZh ? "请在系统设置中手动配置您的 API Key。" : "Manual configuration required in System Settings.")}
           </p>
-          
-          <div className="pt-2">
-            <a 
-              href="https://ai.google.dev/gemini-api/docs/billing" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-white transition-colors"
-            >
-              <CreditCard size={12} />
-              {isZh ? "查看计费说明文档" : "View Billing Documentation"}
-              <ExternalLink size={10} />
-            </a>
-          </div>
         </div>
         
         <button 
