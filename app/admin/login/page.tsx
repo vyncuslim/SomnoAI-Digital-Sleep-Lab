@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -7,10 +8,6 @@ import { adminApi, signInWithEmailOTP, verifyOtp } from '../../../services/supab
 
 const m = motion as any;
 
-/**
- * Restricted Portal for Laboratory Administrators.
- * hardened flow: No auto-send, strict verifyOtp type.
- */
 export default function AdminLoginPage() {
   const [step, setStep] = useState<'initial' | 'otp-verify'>('initial');
   const [email, setEmail] = useState('');
@@ -29,8 +26,8 @@ export default function AdminLoginPage() {
     }
   }, [cooldown]);
 
-  const handleRequestOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRequestOtp = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (cooldown > 0 || isProcessing) return;
 
     setIsProcessing(true);
@@ -40,7 +37,6 @@ export default function AdminLoginPage() {
       const targetEmail = getNormalizedEmail();
       if (!targetEmail) throw new Error("Identifier required.");
       
-      // CRITICAL: shouldCreateUser = false for admin restricted target.
       await signInWithEmailOTP(targetEmail, false);
       
       setStep('otp-verify');
@@ -95,6 +91,7 @@ export default function AdminLoginPage() {
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Neural override verification failed.");
+    } finally {
       setIsProcessing(false);
     }
   };
@@ -133,39 +130,39 @@ export default function AdminLoginPage() {
       <GlassCard className="w-full max-w-md p-10 md:p-14 rounded-[4.5rem] border-rose-500/20 relative z-10 shadow-3xl">
         <AnimatePresence mode="wait">
           {step === 'initial' ? (
-            <m.form 
+            <m.div 
               key="initial"
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.95 }}
-              onSubmit={handleRequestOtp} 
-              className="space-y-8"
             >
-              <div className="space-y-4">
-                <div className="relative group">
-                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-800" size={18} />
-                  <input 
-                    type="email" 
-                    autoComplete="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="Admin Identifier"
-                    className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white font-medium outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
-                    required
-                    autoFocus
-                  />
+              <form onSubmit={handleRequestOtp} className="space-y-8">
+                <div className="space-y-4">
+                  <div className="relative group">
+                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-800" size={18} />
+                    <input 
+                      type="email" 
+                      autoComplete="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Admin Identifier"
+                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white font-medium outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
+                      required
+                      autoFocus
+                    />
+                  </div>
                 </div>
-              </div>
-              
-              <button 
-                type="submit"
-                disabled={isProcessing || cooldown > 0}
-                className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
-              >
-                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-                {isProcessing ? 'HANDSHAKING...' : (cooldown > 0 ? `COOLDOWN ACTIVE (${cooldown}S)` : 'REQUEST LAB TOKEN')}
-              </button>
-            </m.form>
+                
+                <button 
+                  type="submit"
+                  disabled={isProcessing || cooldown > 0}
+                  className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
+                >
+                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+                  {isProcessing ? 'HANDSHAKING...' : (cooldown > 0 ? `COOLDOWN ACTIVE (${cooldown}S)` : 'REQUEST LAB TOKEN')}
+                </button>
+              </form>
+            </m.div>
           ) : (
             <m.div 
               key="otp-verify"
@@ -219,7 +216,7 @@ export default function AdminLoginPage() {
                 </button>
 
                 <button 
-                  onClick={handleRequestOtp}
+                  onClick={() => handleRequestOtp()}
                   disabled={isProcessing || cooldown > 0}
                   className="w-full py-4 bg-white/5 text-slate-500 rounded-full font-black text-[9px] uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-2"
                 >

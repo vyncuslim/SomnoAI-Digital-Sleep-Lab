@@ -149,8 +149,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   };
 
   const handleLullaby = async () => {
-    if (!data || isGeneratingAudio || isPlayingAudio) {
-      if (isPlayingAudio) stopAudio();
+    if (!data || isGeneratingAudio) return;
+    
+    if (isPlayingAudio) {
+      stopAudio();
       return;
     }
     
@@ -171,11 +173,17 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         source.onended = () => setIsPlayingAudio(false);
         
         audioSourceRef.current = source;
+        
+        // Handle potential play/pause interruption issues
+        if (ctx.state === 'suspended') {
+          await ctx.resume();
+        }
+        
         source.start();
         setIsPlayingAudio(true);
       }
     } catch (err) {
-      console.error(err);
+      console.error("Audio Synthesis Error:", err);
     } finally {
       setIsGeneratingAudio(false);
     }
@@ -183,7 +191,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
 
   const stopAudio = () => {
     if (audioSourceRef.current) {
-      try { audioSourceRef.current.stop(); } catch(e) {}
+      try { 
+        audioSourceRef.current.stop(); 
+        audioSourceRef.current.disconnect();
+      } catch(e) {
+        console.debug("Audio stop bypassed (already finished).");
+      }
       audioSourceRef.current = null;
     }
     setIsPlayingAudio(false);

@@ -56,8 +56,16 @@ export const translations = {
       coffee: 'Support Research',
       lastSync: 'Last Sync',
       never: 'Never',
-      thankYouTitle: 'Contribution Acknowledged',
-      closeReceipt: 'Return to Lab'
+      thankYouTitle: 'CONTRIBUTION ACKNOWLEDGED',
+      closeReceipt: 'Return to Lab',
+      paypalLink: 'https://paypal.me/vyncuslim',
+      paypalId: 'Vyncuslim vyncuslim',
+      duitNowId: '+60 187807388',
+      profileTitle: 'Subject Identity',
+      displayName: 'Display Name',
+      email: 'Email Identifier',
+      updateProfile: 'Sync Identity',
+      profileSuccess: 'Identity update confirmed.'
     },
     admin: {
       securityTitle: 'Security Pulse',
@@ -140,8 +148,16 @@ export const translations = {
       coffee: '支持数字化科研',
       lastSync: '最后同步',
       never: '从未同步',
-      thankYouTitle: '贡献已确认',
-      closeReceipt: '返回实验室控制台'
+      thankYouTitle: '感谢您的支持',
+      closeReceipt: '返回实验室控制台',
+      paypalLink: 'https://paypal.me/vyncuslim',
+      paypalId: 'Vyncuslim vyncuslim',
+      duitNowId: '+60 187807388',
+      profileTitle: '实验主体身份',
+      displayName: '显示名称',
+      email: '身份标识 (Email)',
+      updateProfile: '同步身份信息',
+      profileSuccess: '身份信息更新已确认。'
     },
     assistant: {
       title: '神经助手',
