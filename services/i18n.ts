@@ -26,6 +26,7 @@ export const translations = {
       telemetry: 'Telemetric Flow',
       cmdSync: 'Sync Feature Stream',
       cmdExport: 'Archive Lab Data',
+      lullaby: 'Neural Lullaby',
       manifesto: 'SomnoAI fuses physiological monitoring, deep AI insights, and professional health guidance into a comprehensive digital sleep laboratory experience.'
     },
     auth: {
@@ -66,6 +67,14 @@ export const translations = {
       status: 'Notification Status',
       acknowledged: 'Logged & Notified',
       pending: 'Pending Admin Alert'
+    },
+    assistant: {
+      title: 'Neural Assistant',
+      intro: 'Neural link established. How can I optimize your biological recovery today?',
+      placeholder: 'Describe your sleep quality or ask for analysis...',
+      error: 'Neural synthesis failed. Please check your link.',
+      generateLullaby: 'Generate Neural Lullaby',
+      playing: 'Synthesizing Audio...'
     }
   },
   zh: {
@@ -92,6 +101,7 @@ export const translations = {
       telemetry: '生理指标遥测流',
       cmdSync: '注入特征数据',
       cmdExport: '归档实验报告',
+      lullaby: '神经催眠曲',
       manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室。'
     },
     auth: {
@@ -132,6 +142,14 @@ export const translations = {
       never: '从未同步',
       thankYouTitle: '贡献已确认',
       closeReceipt: '返回实验室控制台'
+    },
+    assistant: {
+      title: '神经助手',
+      intro: '神经链路已建立。今天我能为您如何优化生物恢复？',
+      placeholder: '描述您的睡眠质量或请求分析...',
+      error: '神经合成失败。请检查链路。',
+      generateLullaby: '生成神经催眠曲',
+      playing: '音频合成中...'
     }
   }
 };

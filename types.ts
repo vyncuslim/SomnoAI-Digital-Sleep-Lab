@@ -50,3 +50,9 @@ export interface ChatMessage {
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
 export type ThemeMode = 'dark' | 'light';
 export type AccentColor = 'indigo' | 'emerald' | 'rose' | 'amber' | 'sky';
+
+export interface AudioState {
+  isPlaying: boolean;
+  isGenerating: boolean;
+  progress: number;
+}

@@ -1,5 +1,5 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord, AIProvider } from "../types.ts";
 import { Language } from "./i18n.ts";
 
@@ -18,54 +18,18 @@ const getAIProvider = (): AIProvider => {
  */
 const getGeminiApiKey = () => process.env.API_KEY;
 
-const callOpenAI = async (prompt: string, systemInstruction?: string, isJson: boolean = false) => {
-  const apiKey = (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
-  if (!apiKey) throw new Error("OpenAI API Key missing");
-
-  const messages: any[] = [];
-  if (systemInstruction) {
-    messages.push({ role: "system", content: systemInstruction });
-  }
-  messages.push({ role: "user", content: prompt });
-
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "Authorization": `Bearer ${apiKey}`
-    },
-    body: JSON.stringify({
-      model: "gpt-4o",
-      messages: messages,
-      response_format: isJson ? { type: "json_object" } : { type: "text" },
-      temperature: 0.7
-    })
-  });
-
-  if (!response.ok) {
-    const errData = await response.json();
-    throw new Error(errData.error?.message || "OpenAI API Failure");
-  }
-
-  const data = await response.json();
-  return data.choices[0].message.content;
-};
-
-/**
- * Handles common Gemini API errors, specifically the "Requested entity was not found" error
- * which requires re-selection of the API key.
- */
 const handleGeminiError = (err: any) => {
   console.error("Gemini API Error Context:", err);
   if (err.message?.includes("Requested entity was not found")) {
-    // Notify app to reset key state if possible, but here we throw a specific message
     throw new Error("KEY_INVALID_OR_NOT_FOUND");
   }
   throw err;
 };
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
-  const provider = getAIProvider();
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+  
   const prompt = `你是一位世界级的睡眠科学家。请根据以下生理指标进行高精度分析。
     必须返回一个包含 3 条字符串的 JSON 数组，语言为 ${lang === 'zh' ? '中文' : '英文'}。
     1. 生理信号分析（深度/REM 睡眠架构分析）。
@@ -75,29 +39,20 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     指标数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, REM ${data.remRatio}%, 效率 ${data.efficiency}%, 静息心率 ${data.heartRate?.resting}bpm。`;
 
   try {
-    if (provider === 'openai') {
-      const result = await callOpenAI(prompt, "You are a specialized Sleep Scientist. Always output valid JSON arrays.", true);
-      const parsed = JSON.parse(result || "[]");
-      return Array.isArray(parsed) ? parsed : (parsed.insights || parsed.results || Object.values(parsed));
-    } else {
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
-      
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: { 
-          temperature: 0.8,
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.ARRAY,
-            items: { type: Type.STRING }
-          }
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-flash-preview',
+      contents: prompt,
+      config: { 
+        temperature: 0.8,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.ARRAY,
+          items: { type: Type.STRING }
         }
-      });
-      return JSON.parse(response.text || "[]");
-    }
+      }
+    });
+    return JSON.parse(response.text || "[]");
   } catch (err) {
     handleGeminiError(err);
     return [];
@@ -109,7 +64,9 @@ export const chatWithCoach = async (
   lang: Language = 'en',
   contextData?: SleepRecord | null
 ) => {
-  const provider = getAIProvider();
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+  
   let biometricContext = "";
   if (contextData) {
     biometricContext = lang === 'en' 
@@ -118,94 +75,66 @@ export const chatWithCoach = async (
   }
 
   const systemInstruction = lang === 'en' 
-    ? `You are the Somno Chief Research Officer (CRO), a world-class AI Sleep Coach. Professional and data-driven. ${biometricContext}`
-    : `你是 Somno 首席研究官 (CRO)，世界级的 AI 睡眠教练。专业并以数据为导向。 ${biometricContext}`;
+    ? `You are the Somno Chief Research Officer (CRO), a world-class AI Sleep Coach. Professional and data-driven. Use your reasoning capabilities to provide precise answers. ${biometricContext}`
+    : `你是 Somno 首席研究官 (CRO)，世界级的 AI 睡眠教练。专业并以数据为导向。利用你的推理能力提供精确的回答。 ${biometricContext}`;
 
   try {
-    if (provider === 'openai') {
-      const apiKey = (window as any).process?.env?.OPENAI_API_KEY || (process.env as any).OPENAI_API_KEY;
-      const messages = history.map(m => ({ 
-        role: m.role === 'assistant' ? 'assistant' : 'user', 
-        content: m.content 
-      }));
-      
-      const response = await fetch("https://api.openai.com/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: "gpt-4o",
-          messages: [{ role: "system", content: systemInstruction }, ...messages],
-          temperature: 0.75
-        })
-      });
-      const data = await response.json();
-      return { text: data.choices[0].message.content, sources: [] };
-    } else {
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
-      const ai = new GoogleGenAI({ apiKey });
-      
-      const lastMessage = history[history.length - 1].content;
-      const chatHistory = history.slice(0, -1).map(m => ({
-        role: m.role === 'user' ? 'user' : 'model',
-        parts: [{ text: m.content }]
-      }));
+    const ai = new GoogleGenAI({ apiKey });
+    
+    const lastMessage = history[history.length - 1].content;
+    const chatHistory = history.slice(0, -1).map(m => ({
+      role: m.role === 'user' ? 'user' : 'model',
+      parts: [{ text: m.content }]
+    }));
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: [
-          ...chatHistory,
-          { role: 'user', parts: [{ text: lastMessage }] }
-        ],
-        config: {
-          systemInstruction,
-          tools: [{ googleSearch: {} }],
-          temperature: 0.75,
-        }
-      });
-      return {
-        text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
-        sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
-      };
-    }
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: [
+        ...chatHistory,
+        { role: 'user', parts: [{ text: lastMessage }] }
+      ],
+      config: {
+        systemInstruction,
+        tools: [{ googleSearch: {} }],
+        temperature: 0.75,
+        thinkingConfig: { thinkingBudget: 32768 } // Enable reasoning for complex coaching
+      }
+    });
+    return {
+      text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
+      sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
+    };
   } catch (err) {
     handleGeminiError(err);
   }
 };
 
 export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
-  const provider = getAIProvider();
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+  
   const prompt = `设计一个 24 小时数字睡眠实验。数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, RHR ${data.heartRate?.resting}bpm。语言: ${lang === 'zh' ? '中文' : '英文'}。`;
 
   try {
-    if (provider === 'openai') {
-      const result = await callOpenAI(prompt, "You are a Chief Research Officer.", true);
-      return JSON.parse(result || "{}");
-    } else {
-      const apiKey = getGeminiApiKey();
-      if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
-      const ai = new GoogleGenAI({ apiKey });
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-pro-preview',
-        contents: prompt,
-        config: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              hypothesis: { type: Type.STRING },
-              protocol: { type: Type.ARRAY, items: { type: Type.STRING } },
-              expectedImpact: { type: Type.STRING }
-            },
-            required: ["hypothesis", "protocol", "expectedImpact"]
-          }
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: 'gemini-3-pro-preview',
+      contents: prompt,
+      config: {
+        thinkingConfig: { thinkingBudget: 16000 },
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            hypothesis: { type: Type.STRING },
+            protocol: { type: Type.ARRAY, items: { type: Type.STRING } },
+            expectedImpact: { type: Type.STRING }
+          },
+          required: ["hypothesis", "protocol", "expectedImpact"]
         }
-      });
-      return JSON.parse(response.text || "{}");
-    }
+      }
+    });
+    return JSON.parse(response.text || "{}");
   } catch (err) {
     handleGeminiError(err);
     throw err;
@@ -213,12 +142,13 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
 };
 
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+  
   const dataSummary = history.slice(0, 7).map(h => ({ date: h.date, score: h.score }));
   const prompt = `作为睡眠科学家分析这些趋势并提供 2 句话总结。语言: ${lang === 'zh' ? '中文' : '英文'}。数据: ${JSON.stringify(dataSummary)}`;
 
   try {
-    const apiKey = getGeminiApiKey();
-    if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: 'gemini-3-flash-preview',
@@ -230,4 +160,67 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
     handleGeminiError(err);
     return "Error generating summary.";
   }
+};
+
+/**
+ * Generate a personalized neural lullaby using the Gemini 2.5 Flash TTS model.
+ */
+export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 'en'): Promise<string | undefined> => {
+  const apiKey = getGeminiApiKey();
+  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
+
+  const prompt = lang === 'en' 
+    ? `Speak softly and soothingly. Based on a sleep score of ${data.score}/100 and ${data.deepRatio}% deep sleep, provide a 30-second relaxation guidance to help the user drift off. Begin with a calming hum.`
+    : `语气温柔祥和。根据睡眠分数 ${data.score}/100 和 ${data.deepRatio}% 的深睡比例，提供一段 30 秒的放松引导。以平稳的呼吸声开始。`;
+
+  try {
+    const ai = new GoogleGenAI({ apiKey });
+    const response = await ai.models.generateContent({
+      model: "gemini-2.5-flash-preview-tts",
+      contents: [{ parts: [{ text: prompt }] }],
+      config: {
+        responseModalities: [Modality.AUDIO],
+        speechConfig: {
+          voiceConfig: {
+            prebuiltVoiceConfig: { voiceName: 'Kore' },
+          },
+        },
+      },
+    });
+
+    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  } catch (err) {
+    console.error("TTS Generation Error:", err);
+    return undefined;
+  }
+};
+
+// Audio Decoding Helpers
+export const decodeBase64Audio = (base64: string) => {
+  const binaryString = atob(base64);
+  const len = binaryString.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  return bytes;
+};
+
+export const decodeAudioData = async (
+  data: Uint8Array,
+  ctx: AudioContext,
+  sampleRate: number = 24000,
+  numChannels: number = 1,
+): Promise<AudioBuffer> => {
+  const dataInt16 = new Int16Array(data.buffer);
+  const frameCount = dataInt16.length / numChannels;
+  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
+
+  for (let channel = 0; channel < numChannels; channel++) {
+    const channelData = buffer.getChannelData(channel);
+    for (let i = 0; i < frameCount; i++) {
+      channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
+    }
+  }
+  return buffer;
 };

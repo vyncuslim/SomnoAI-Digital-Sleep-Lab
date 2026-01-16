@@ -1,11 +1,11 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, User, Loader2, BrainCircuit, ExternalLink, Cpu, Trash2, Key, Beaker, Lock, Settings as SettingsIcon, CreditCard
+  Send, User, Loader2, BrainCircuit, ExternalLink, Cpu, Trash2, Key, Beaker, Lock, Settings as SettingsIcon, CreditCard, Music, Play, Square
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
-import { chatWithCoach, designExperiment } from '../services/geminiService.ts';
+import { chatWithCoach, designExperiment, generateNeuralLullaby, decodeBase64Audio, decodeAudioData } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from '../services/i18n.ts';
 
@@ -54,15 +54,19 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   const [hasKey, setHasKey] = useState<boolean | null>(null);
   const [isDesigning, setIsDesigning] = useState(false);
   
+  // Audio state
+  const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const checkKey = async () => {
-    // If sandbox mode is active, we don't block the user with the key selector
     if (isSandbox) {
       setHasKey(true);
       return;
     }
-
     const manualKey = localStorage.getItem('somno_manual_gemini_key');
     if ((window as any).aistudio) {
       const selected = await (window as any).aistudio.hasSelectedApiKey();
@@ -76,7 +80,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     checkKey();
     const handleStorage = () => checkKey();
     window.addEventListener('storage', handleStorage);
-    return () => window.removeEventListener('storage', handleStorage);
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      stopAudio();
+    };
   }, [isSandbox]);
 
   useEffect(() => {
@@ -104,7 +111,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
       const manualKey = localStorage.getItem('somno_manual_gemini_key');
       const apiKeyExists = !!process.env.API_KEY || !!manualKey;
 
-      // Handle sandbox mode mock response if no API key is present
       if (isSandbox && !apiKeyExists) {
         setTimeout(() => {
           const mockResponse = isZh 
@@ -142,12 +148,52 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     }
   };
 
+  const handleLullaby = async () => {
+    if (!data || isGeneratingAudio || isPlayingAudio) {
+      if (isPlayingAudio) stopAudio();
+      return;
+    }
+    
+    setIsGeneratingAudio(true);
+    try {
+      const base64 = await generateNeuralLullaby(data, lang);
+      if (base64) {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+        }
+        const ctx = audioContextRef.current;
+        const decoded = decodeBase64Audio(base64);
+        const buffer = await decodeAudioData(decoded, ctx);
+        
+        const source = ctx.createBufferSource();
+        source.buffer = buffer;
+        source.connect(ctx.destination);
+        source.onended = () => setIsPlayingAudio(false);
+        
+        audioSourceRef.current = source;
+        source.start();
+        setIsPlayingAudio(true);
+      }
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setIsGeneratingAudio(false);
+    }
+  };
+
+  const stopAudio = () => {
+    if (audioSourceRef.current) {
+      try { audioSourceRef.current.stop(); } catch(e) {}
+      audioSourceRef.current = null;
+    }
+    setIsPlayingAudio(false);
+  };
+
   const handleActivate = async () => {
     const aistudio = (window as any).aistudio;
     if (aistudio) {
       try {
         await aistudio.openSelectKey();
-        // GUIDELINE: Assume success and proceed immediately to mitigate race conditions
         setHasKey(true);
       } catch (e) {
         console.error("Failed to open key selector:", e);
@@ -161,20 +207,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     if (!data || isDesigning) return;
     setIsDesigning(true);
     try {
-      const manualKey = localStorage.getItem('somno_manual_gemini_key');
-      const apiKeyExists = !!process.env.API_KEY || !!manualKey;
-
-      if (isSandbox && !apiKeyExists) {
-        setTimeout(() => {
-          const mockProtocol = isZh 
-            ? "【模拟实验】针对当前深睡不足，建议在睡前 2 小时执行热量限制，并保持环境温度在 19°C。"
-            : "[Simulated Protocol] Given the lack of deep sleep, suggest thermal restriction 2 hours before bed and room temp at 19°C.";
-          setMessages(prev => [...prev, { role: 'assistant', content: mockProtocol, timestamp: new Date() }]);
-          setIsDesigning(false);
-        }, 1500);
-        return;
-      }
-
       const experiment = await designExperiment(data, lang);
       const content = lang === 'zh' 
         ? `为你生成了新的睡眠实验方案：\n\n**假设**: ${experiment.hypothesis}\n\n**实验步骤**:\n${experiment.protocol.map((p, i) => `${i+1}. ${p}`).join('\n')}\n\n**预期效果**: ${experiment.expectedImpact}`
@@ -261,6 +293,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
           </div>
         </div>
         <div className="flex gap-2">
+          <button 
+            onClick={handleLullaby} 
+            disabled={!data || isGeneratingAudio} 
+            className={`p-3 rounded-full transition-all ${isPlayingAudio ? 'bg-indigo-600 text-white animate-pulse' : 'bg-white/5 text-indigo-400 hover:bg-white/10'}`}
+          >
+            {isGeneratingAudio ? <Loader2 size={18} className="animate-spin" /> : isPlayingAudio ? <Square size={18} /> : <Music size={18} />}
+          </button>
           <button onClick={handleDesign} disabled={!data || isDesigning} className="p-3 bg-white/5 rounded-full text-indigo-400 hover:bg-white/10 transition-all">
             <Beaker size={18} />
           </button>
