@@ -49,29 +49,35 @@ const App: React.FC = () => {
 
   const [activeRoute, setActiveRoute] = useState<string>(getNormalizedRoute());
 
+  // 监听身份变化
   useEffect(() => {
     const checkAuth = async () => {
-      const { data: { session: curSession } } = await supabase.auth.getSession();
-      setSession(curSession);
-      if (curSession) {
-        const adminStatus = await adminApi.isAdmin();
-        setIsAdmin(adminStatus);
+      try {
+        const { data: { session: curSession } } = await supabase.auth.getSession();
+        setSession(curSession);
+        if (curSession) {
+          const adminStatus = await adminApi.isAdmin();
+          setIsAdmin(adminStatus);
+        }
+      } catch (err) {
+        console.error("Auth sync error:", err);
+      } finally {
+        setIsInitialAuthCheck(false);
       }
-      setIsInitialAuthCheck(false);
     };
     checkAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
-      if (event === 'SIGNED_IN') {
+      if (newSession) {
         const adminStatus = await adminApi.isAdmin();
         setIsAdmin(adminStatus);
-        setActiveView('dashboard');
-        window.location.hash = '#/dashboard';
-      }
-      if (event === 'SIGNED_OUT') {
+      } else {
         setIsAdmin(false);
-        window.location.hash = '#/login';
+      }
+      
+      if (event === 'SIGNED_IN') {
+        setActiveView('dashboard');
       }
     });
 
@@ -87,7 +93,8 @@ const App: React.FC = () => {
     await authApi.signOut();
   };
 
-  if (isInitialAuthCheck) return <LoadingSpinner label="Decrypting Lab Access..." />;
+  // Google 登录或会话加载时的加载遮罩
+  if (isInitialAuthCheck) return <LoadingSpinner label="Linking Identity Handshake..." />;
 
   const renderActiveView = () => {
     switch (activeView) {
@@ -96,7 +103,7 @@ const App: React.FC = () => {
           <div className="flex flex-col items-center justify-center h-[70vh] gap-6 text-center">
             <Activity className="text-indigo-400 animate-pulse" size={32} />
             <h2 className="text-xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
-            <button onClick={() => {}} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95">Connect Lab Nodes</button>
+            <button onClick={() => {}} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[10px] tracking-widest shadow-2xl active:scale-95 transition-all">Connect Lab Nodes</button>
           </div>
         );
       case 'calendar': return <Trends history={history} lang={lang} />;
@@ -111,7 +118,7 @@ const App: React.FC = () => {
     if (activeRoute === 'admin-login') return <AdminLoginPage />;
     if (activeRoute === 'admin') return <AdminDashboard />;
     
-    // Auth Guard
+    // 强制登录守卫（排除沙盒模式）
     if (!session && !localStorage.getItem('somno_sandbox_active')) {
       return <UserLoginPage onSuccess={() => {}} onSandbox={() => {
         localStorage.setItem('somno_sandbox_active', 'true');
