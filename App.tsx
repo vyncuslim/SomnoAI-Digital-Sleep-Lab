@@ -46,12 +46,15 @@ const App: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-
-  const isSandbox = localStorage.getItem('somno_sandbox_active') === 'true';
+  const [isSandbox, setIsSandbox] = useState(() => localStorage.getItem('somno_sandbox_active') === 'true');
 
   useEffect(() => {
     localStorage.setItem('somno_3d_enabled', threeDEnabled.toString());
   }, [threeDEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('somno_lang', lang);
+  }, [lang]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -156,6 +159,7 @@ const App: React.FC = () => {
   const handleLogout = async () => {
     if (isSandbox) {
       localStorage.removeItem('somno_sandbox_active');
+      setIsSandbox(false);
     }
     await authApi.signOut();
     setSession(null);
@@ -164,14 +168,25 @@ const App: React.FC = () => {
     setActiveView('dashboard');
   };
 
+  const enterSandbox = () => {
+    localStorage.setItem('somno_sandbox_active', 'true');
+    setIsSandbox(true);
+    setActiveView('dashboard');
+  };
+
   if (isInitialAuthCheck) return <LoadingSpinner label="Linking Identity Handshake..." />;
 
   const renderContent = () => {
     if (!session && !isSandbox) {
-      return <UserLoginPage onSuccess={() => {}} onSandbox={() => {
-        localStorage.setItem('somno_sandbox_active', 'true');
-        window.location.reload();
-      }} lang={lang} />;
+      return (
+        <Suspense fallback={<LoadingSpinner />}>
+          <UserLoginPage 
+            onSuccess={() => {}} 
+            onSandbox={enterSandbox} 
+            lang={lang} 
+          />
+        </Suspense>
+      );
     }
 
     return (

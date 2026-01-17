@@ -7,14 +7,11 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true, // 确保自动检测 URL 中的 access_token
-    flowType: 'pkce' // 使用更现代的 PKCE 流程提高稳定性
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 });
 
-/**
- * Authentication & Identity API
- */
 export const authApi = {
   signUp: (email: string, password: string) => 
     supabase.auth.signUp({ 
@@ -29,9 +26,7 @@ export const authApi = {
   sendOTP: (email: string) => 
     supabase.auth.signInWithOtp({
       email,
-      options: {
-        emailRedirectTo: `${window.location.origin}`
-      }
+      options: { emailRedirectTo: `${window.location.origin}` }
     }),
 
   verifyOTP: (email: string, token: string) => 
@@ -42,10 +37,7 @@ export const authApi = {
       provider: 'google',
       options: {
         redirectTo: `${window.location.origin}`,
-        queryParams: {
-          prompt: 'select_account',
-          access_type: 'offline'
-        }
+        queryParams: { prompt: 'select_account', access_type: 'offline' }
       }
     }),
 
@@ -84,8 +76,7 @@ export const profileApi = {
   getMyProfile: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    return data;
+    return (await supabase.from('profiles').select('*').eq('id', user.id).single()).data;
   },
   updateProfile: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
