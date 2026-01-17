@@ -70,9 +70,17 @@
           }
         }
       }
+      
+      // CRITICAL: Global suppression of non-fatal auth signal errors
       window.addEventListener('unhandledrejection', function(event) {
-        if (event.reason?.message?.includes('AbortError')) event.preventDefault();
+        if (event.reason?.message?.includes('AbortError') || event.reason?.name === 'AbortError') {
+          event.preventDefault();
+          console.debug('Auth signal handshake suppressed (AbortError).');
+        }
       });
+      window.onerror = function(message) {
+        if (message.includes('AbortError')) return true;
+      };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>

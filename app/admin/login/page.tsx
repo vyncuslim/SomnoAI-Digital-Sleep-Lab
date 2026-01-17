@@ -29,6 +29,8 @@ export default function AdminLoginPage() {
   const [cooldown, setCooldown] = useState(0);
   
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  // Use a ref to strictly prevent concurrent verification calls (fixes 403 race condition)
+  const verificationLock = useRef(false);
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -79,7 +81,8 @@ export default function AdminLoginPage() {
       otpRefs.current[index + 1]?.focus();
     }
 
-    if (newOtp.every(d => d !== '') && index === 5) {
+    // Only auto-verify if all digits are filled and we aren't already verifying
+    if (newOtp.every(d => d !== '') && index === 5 && !verificationLock.current) {
       executeOtpVerify(newOtp.join(''));
     }
   };
@@ -92,18 +95,19 @@ export default function AdminLoginPage() {
 
   const executeOtpVerify = async (fullOtp?: string) => {
     const token = fullOtp || otp.join('');
-    if (token.length < 6 || isProcessing) return;
+    if (token.length < 6 || isProcessing || verificationLock.current) return;
     
+    verificationLock.current = true;
     setIsProcessing(true);
     setError(null);
     
     try {
-      const { data, error: verifyErr } = await authApi.verifyOTP(email.trim().toLowerCase(), token);
+      const targetEmail = email.trim().toLowerCase();
+      const { data, error: verifyErr } = await authApi.verifyOTP(targetEmail, token);
       
       if (verifyErr) {
-        // Specifically handle 403 Forbidden errors
         if (verifyErr.status === 403) {
-          throw new Error("Verification Forbidden: The token is invalid, expired, or this identity lacks command deck authorization.");
+          throw new Error("Handshake Rejected: The code is invalid or this identity lacks administrative clearance.");
         }
         throw verifyErr;
       }
@@ -113,17 +117,22 @@ export default function AdminLoginPage() {
       const isAdmin = await adminApi.checkAdminStatus(data.user.id);
       if (!isAdmin) {
         await authApi.signOut();
-        throw new Error("Access Denied: Subject lacks administrative clearance.");
+        throw new Error("Access Denied: Subject level insufficient for Lab Command.");
       }
       
-      // Success: use direct hash navigation
       window.location.hash = '#/admin';
     } catch (err: any) {
+      console.warn("OTP verification attempt failed:", err.message);
       setError(err.message || "Neural handshake invalid.");
+      // Reset OTP to allow retry
       setOtp(['', '', '', '', '', '']);
-      setTimeout(() => otpRefs.current[0]?.focus(), 100);
+      setTimeout(() => {
+        const firstInput = otpRefs.current[0];
+        if (firstInput) firstInput.focus();
+      }, 100);
     } finally {
       setIsProcessing(false);
+      verificationLock.current = false;
     }
   };
 

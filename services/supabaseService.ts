@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
@@ -29,12 +28,14 @@ export const authApi = {
       email,
       options: { 
         emailRedirectTo: `${window.location.origin}`,
-        shouldCreateUser: false // For Admin login, usually we don't want to create new users
+        shouldCreateUser: false 
       }
     }),
 
   verifyOTP: async (email: string, token: string) => {
     try {
+      // For email OTPs requested via signInWithOtp, the type MUST be 'email'
+      // Use the standard object format for consistent behavior
       const result = await supabase.auth.verifyOtp({ 
         email, 
         token, 
@@ -42,7 +43,7 @@ export const authApi = {
       });
       return result;
     } catch (err) {
-      console.error("Supabase verifyOTP call crashed:", err);
+      console.error("Supabase verification system failure:", err);
       throw err;
     }
   },
