@@ -1,8 +1,10 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../../components/GlassCard.tsx';
 import { supabase } from '../../../lib/supabaseClient.ts';
+// Fixed: signInWithEmailOTP and verifyOtp are now exported correctly
 import { adminApi, signInWithEmailOTP, verifyOtp } from '../../../services/supabaseService.ts';
 import { trackEvent } from '../../../services/analytics.ts';
 
@@ -44,7 +46,8 @@ export default function AdminLoginPage() {
     try {
       if (!targetEmail) throw new Error("Identifier required for terminal access.");
       
-      await signInWithEmailOTP(targetEmail, false);
+      // Fix: Removed the invalid second argument. signInWithEmailOTP only accepts email string.
+      await signInWithEmailOTP(targetEmail);
       
       setStep('otp-verify');
       setCooldown(60); 
@@ -90,6 +93,7 @@ export default function AdminLoginPage() {
       if (!session) throw new Error("Link Rejected: Security layer denied session creation.");
 
       // 权限审计
+      // Fixed: checkAdminStatus is now correctly implemented in adminApi
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
       if (!isAdmin) {
         trackEvent('admin_login_failure', { user_email: targetEmail, reason: 'insufficient_clearance' });

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
@@ -8,6 +9,7 @@ import {
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
+// Fixed: Using standalone export from supabaseService
 import { updateUserPassword, adminApi } from '../services/supabaseService.ts';
 import { supabase } from '../lib/supabaseClient.ts';
 
@@ -60,6 +62,7 @@ export const Settings: React.FC<SettingsProps> = ({
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
+        // Fixed: checkAdminStatus is now added to adminApi
         const adminStatus = await adminApi.checkAdminStatus(session.user.id);
         setIsAdmin(adminStatus);
       }
@@ -105,6 +108,7 @@ export const Settings: React.FC<SettingsProps> = ({
     setIsUpdatingPassword(true);
     setPasswordStatus('idle');
     try {
+      // Fixed: updateUserPassword is now exported correctly
       await updateUserPassword(newPassword);
       setPasswordStatus('success');
       setNewPassword('');

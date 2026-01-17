@@ -1,14 +1,13 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Shield, SlidersHorizontal, History, Footprints, HeartPulse, Ruler, Timer, PersonStanding, Activity } from 'lucide-react';
+import { Shield, SlidersHorizontal, History, Footprints, HeartPulse, Ruler, Activity, Moon, Scale, Mail, User } from 'lucide-react';
 
 const m = motion as any;
 
 interface PermissionItem {
   id: string;
   label: string;
-  icon: React.ElementType;
+  icon: any;
   enabled: boolean;
 }
 
@@ -27,10 +26,14 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
 }) => {
   const [allowAll, setAllowAll] = useState(false);
   const [permissions, setPermissions] = useState<PermissionItem[]>([
-    { id: 'distance', label: 'Distance', icon: Footprints, enabled: false },
-    { id: 'exercise', label: 'Exercise', icon: Activity, enabled: false },
+    { id: 'distance', label: 'Distance & Location', icon: Footprints, enabled: false },
+    { id: 'exercise', label: 'Exercise & Activity', icon: Activity, enabled: false },
     { id: 'heart_rate', label: 'Heart rate', icon: HeartPulse, enabled: false },
+    { id: 'sleep', label: 'Sleep patterns', icon: Moon, enabled: false },
     { id: 'height', label: 'Height', icon: Ruler, enabled: false },
+    { id: 'weight', label: 'Weight', icon: Scale, enabled: false },
+    { id: 'profile', label: 'Profile information', icon: User, enabled: false },
+    { id: 'email', label: 'Email address', icon: Mail, enabled: false },
   ]);
 
   const handleToggleAll = (val: boolean) => {
@@ -80,7 +83,7 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
             </div>
 
             {/* Instruction List */}
-            <div className="px-8 space-y-7 pb-8">
+            <div className="px-8 space-y-7 pb-8 border-b border-[#e1e2ec]">
               <div className="flex gap-5 items-start">
                 <div className="shrink-0 mt-0.5"><SlidersHorizontal size={22} className="text-[#44474e]" strokeWidth={2} /></div>
                 <p className="text-[15px] text-[#44474e] leading-snug">
@@ -93,18 +96,12 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
                   If you give read access, this app can read new data and data from the past 30 days
                 </p>
               </div>
-              <div className="flex gap-5 items-start">
-                <div className="shrink-0 mt-0.5"><Shield size={22} className="text-[#44474e]" strokeWidth={2} /></div>
-                <p className="text-[15px] text-[#44474e] leading-snug">
-                  You can learn how {appName} handles your data in the developer's <span className="text-[#0b57d0] underline cursor-pointer font-medium decoration-1 underline-offset-2">privacy policy</span>
-                </p>
-              </div>
             </div>
 
             {/* Scrollable Toggle List */}
-            <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-hide">
+            <div className="flex-1 overflow-y-auto px-4 pb-4 scrollbar-hide bg-[#f8f9ff]">
                {/* Allow All Switch */}
-               <div className="bg-[#eef1fb] rounded-[2rem] p-6 mb-8 flex items-center justify-between mx-1">
+               <div className="bg-[#eef1fb] rounded-[2rem] p-6 mt-4 mb-6 flex items-center justify-between mx-1">
                   <span className="text-[18px] font-normal text-[#1c1b1f]">Allow all</span>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input type="checkbox" className="sr-only peer" checked={allowAll} onChange={(e) => handleToggleAll(e.target.checked)} />
@@ -114,7 +111,7 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
 
                {/* Granular Permissions */}
                <div className="px-4 space-y-9">
-                  <h2 className="text-[14px] font-medium text-[#44474e] tracking-tight">Allow '{appName}' to read</h2>
+                  <h2 className="text-[14px] font-medium text-[#44474e] tracking-tight uppercase">Allow '{appName}' to read</h2>
                   {permissions.map((p) => (
                     <div key={p.id} className="flex items-center justify-between group">
                       <div className="flex items-center gap-6">
@@ -131,7 +128,7 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
             </div>
 
             {/* Bottom Actions */}
-            <div className="px-6 py-6 bg-white flex gap-4">
+            <div className="px-6 py-6 bg-white flex gap-4 border-t border-[#e1e2ec]">
                <button 
                  onClick={onClose}
                  className="flex-1 py-3.5 text-center text-[#0b57d0] font-medium text-[14px] rounded-full border border-[#74777f] hover:bg-slate-50 active:bg-slate-100 transition-colors"

@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord, AIProvider } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -26,25 +25,30 @@ const handleGeminiError = (err: any) => {
   throw err;
 };
 
+// Stable model aliases from guidelines
+const MODEL_FLASH = 'gemini-flash-lite-latest'; // High speed for summary
+const MODEL_PRO = 'gemini-3-pro-preview';       // Reasoning for analysis
+const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
+
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const apiKey = getGeminiApiKey();
   if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   
-  const prompt = `你是一位世界级的睡眠科学家。请根据以下生理指标进行高精度分析。
-    必须返回一个包含 3 条字符串的 JSON 数组，语言为 ${lang === 'zh' ? '中文' : '英文'}。
-    1. 生理信号分析（深度/REM 睡眠架构分析）。
-    2. 认知/心理状态预测。
-    3. 针对今日的战术性生物黑客建议。
+  const prompt = `你是一位世界级的数字睡眠科学家与首席生物黑客。请根据以下高精度生理遥测指标进行深度神经分析。
+    必须返回一个包含 3 条专业字符串的 JSON 数组，语言为 ${lang === 'zh' ? '中文' : '英文'}。
+    1. 神经架构分析：基于深度与 REM 比例分析大脑清理效率与记忆巩固状态。
+    2. 生物节律诊断：评估静息心率 (RHR) 与睡眠分数的关联，预测今日认知负荷。
+    3. 战术性生物黑客建议：针对性提供一项今日可立即执行的生理优化方案（如特定波长光照、温度调节或摄入建议）。
     
     指标数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, REM ${data.remRatio}%, 效率 ${data.efficiency}%, 静息心率 ${data.heartRate?.resting}bpm。`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: MODEL_FLASH,
       contents: prompt,
       config: { 
-        temperature: 0.8,
+        temperature: 0.75,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.ARRAY,
@@ -70,13 +74,13 @@ export const chatWithCoach = async (
   let biometricContext = "";
   if (contextData) {
     biometricContext = lang === 'en' 
-      ? `\nCURRENT USER BIOMETRICS: Sleep Score: ${contextData.score}/100, Deep Sleep: ${contextData.deepRatio}%, Efficiency: ${contextData.efficiency}%.`
-      : `\n当前用户生物数据: 睡眠分数: ${contextData.score}/100, 深睡: ${contextData.deepRatio}%, 效率: ${contextData.efficiency}%.`;
+      ? `\nCURRENT LAB TELEMETRY: Subject Score: ${contextData.score}/100, Deep Neural Recovery: ${contextData.deepRatio}%, Biological Efficiency: ${contextData.efficiency}%.`
+      : `\n当前实验室遥测: 主体评分: ${contextData.score}/100, 深度神经修复: ${contextData.deepRatio}%, 生物效能: ${contextData.efficiency}%.`;
   }
 
   const systemInstruction = lang === 'en' 
-    ? `You are the Somno Chief Research Officer (CRO), a world-class AI Sleep Coach. Professional and data-driven. Use your reasoning capabilities to provide precise answers. ${biometricContext}`
-    : `你是 Somno 首席研究官 (CRO)，世界级的 AI 睡眠教练。专业并以数据为导向。利用你的推理能力提供精确的回答。 ${biometricContext}`;
+    ? `You are the Somno Chief Research Officer (CRO). Professional, data-driven, and slightly futuristic. Use advanced reasoning to provide ultra-precise health guidance. Always reference physiological metrics when available. ${biometricContext}`
+    : `你是 Somno 首席研究官 (CRO)。专业、以数据为导向且极具未来感。利用高级推理提供精确的健康指导。在可能的情况下，始终引用生理指标。 ${biometricContext}`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -88,7 +92,7 @@ export const chatWithCoach = async (
     }));
 
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: MODEL_PRO,
       contents: [
         ...chatHistory,
         { role: 'user', parts: [{ text: lastMessage }] }
@@ -96,12 +100,12 @@ export const chatWithCoach = async (
       config: {
         systemInstruction,
         tools: [{ googleSearch: {} }],
-        temperature: 0.75,
-        thinkingConfig: { thinkingBudget: 32768 } // Enable reasoning for complex coaching
+        temperature: 0.7,
+        thinkingConfig: { thinkingBudget: 32768 } 
       }
     });
     return {
-      text: response.text || (lang === 'en' ? "Synthesis failed." : "合成失败。"),
+      text: response.text || (lang === 'en' ? "Synthesis interrupted." : "合成中断。"),
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || []
     };
   } catch (err) {
@@ -113,12 +117,12 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
   const apiKey = getGeminiApiKey();
   if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   
-  const prompt = `设计一个 24 小时数字睡眠实验。数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, RHR ${data.heartRate?.resting}bpm。语言: ${lang === 'zh' ? '中文' : '英文'}。`;
+  const prompt = `设计一个 24 小时数字睡眠实验方案。基于生理指标: 评分 ${data.score}, 深度 ${data.deepRatio}%, RHR ${data.heartRate?.resting}bpm。语言: ${lang === 'zh' ? '中文' : '英文'}。要求包含科学假设、严谨步骤和预期生物学影响。`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: 'gemini-3-pro-preview',
+      model: MODEL_PRO,
       contents: prompt,
       config: {
         thinkingConfig: { thinkingBudget: 16000 },
@@ -146,16 +150,16 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
   if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   
   const dataSummary = history.slice(0, 7).map(h => ({ date: h.date, score: h.score }));
-  const prompt = `作为睡眠科学家分析这些趋势并提供 2 句话总结。语言: ${lang === 'zh' ? '中文' : '英文'}。数据: ${JSON.stringify(dataSummary)}`;
+  const prompt = `作为睡眠科学家分析这些历史趋势并提供简洁的 2 句话总结报告。语言: ${lang === 'zh' ? '中文' : '英文'}。数据: ${JSON.stringify(dataSummary)}`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: 'gemini-3-flash-preview',
+      model: MODEL_FLASH,
       contents: prompt,
-      config: { temperature: 0.7 }
+      config: { temperature: 0.5 }
     });
-    return response.text || "Analysis failed.";
+    return response.text || "Mapping failed.";
   } catch (err) {
     handleGeminiError(err);
     return "Error generating summary.";
@@ -170,13 +174,13 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
   if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
 
   const prompt = lang === 'en' 
-    ? `Speak softly and soothingly. Based on a sleep score of ${data.score}/100 and ${data.deepRatio}% deep sleep, provide a 30-second relaxation guidance to help the user drift off. Begin with a calming hum.`
-    : `语气温柔祥和。根据睡眠分数 ${data.score}/100 和 ${data.deepRatio}% 的深睡比例，提供一段 30 秒的放松引导。以平稳的呼吸声开始。`;
+    ? `Speak softly, almost whispering, like a Zen master. Based on a sleep score of ${data.score}/100, provide a 40-second neural guided meditation. Start with deep breathing cues.`
+    : `语气极度轻柔，像禅修大师一样低语。根据睡眠分数 ${data.score}/100，提供一段 40 秒的神经放松引导。以深呼吸指令开始。`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash-preview-tts",
+      model: MODEL_TTS,
       contents: [{ parts: [{ text: prompt }] }],
       config: {
         responseModalities: [Modality.AUDIO],
@@ -190,7 +194,7 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
 
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   } catch (err) {
-    console.error("TTS Generation Error:", err);
+    console.error("Neural Audio Synthesis Error:", err);
     return undefined;
   }
 };
