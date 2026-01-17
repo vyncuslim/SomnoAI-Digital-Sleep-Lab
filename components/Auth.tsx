@@ -102,7 +102,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
             onLogin();
           } else {
             setMessage(lang === 'zh' ? "注册成功，实验室访问已就绪。" : "Registration successful. Lab access granted.");
-            // Jump to OTP Verification step immediately for the user
             setTimeout(() => {
               setStep('verify');
               setOtp(['', '', '', '', '', '']);
@@ -173,7 +172,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
       <div className="w-full max-w-[460px]">
         <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-white/[0.08] rounded-[3.5rem] p-1 shadow-2xl overflow-hidden">
-          <div className="p-10 md:p-12 space-y-10">
+          <div className="p-10 md:p-12 space-y-10 text-left">
             <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5 relative">
               <button 
                 onClick={() => { setAuthMode('otp'); setStep('input'); setFormType('login'); }}
@@ -219,13 +218,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
                     <div className="space-y-5">
                       <div className="relative group">
-                        <Mail className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500" size={20} />
+                        <Mail className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors" size={22} />
                         <input 
                           type="email" 
                           value={email} 
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder={t.emailLabel}
-                          className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-36 py-6 text-base text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-900 font-bold"
+                          className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-40 py-7 text-base text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-900 font-bold shadow-inner"
                           required
                         />
                         <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
@@ -236,18 +235,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
                       {authMode === 'password' && (
                         <div className="relative group">
-                          <Lock className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400" size={20} />
+                          <Lock className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={22} />
                           <input 
                             type={showPassword ? "text" : "password"} 
                             value={password} 
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder={t.passwordLabel}
-                            className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-36 py-6 text-base text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-900 font-bold"
+                            className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-40 py-7 text-base text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-900 font-bold shadow-inner"
                             required
                           />
                           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-800 hover:text-slate-400 transition-colors mr-1">
-                               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                               {showPassword ? <EyeOff size={22} /> : <Eye size={22} />}
                              </button>
                              <HexKeyIcon active={isPasswordValid} />
                              <BiometricSwitch active={isPasswordValid} />
@@ -281,7 +280,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                           onClick={onGuest} 
                           className="py-5 bg-[#0f121e] border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-slate-500 hover:text-white transition-all text-[11px] font-black uppercase tracking-widest active:scale-95"
                         >
-                          <Fingerprint size={20} className="text-indigo-400" /> {t.sandbox}
+                          <Fingerprint size={24} className="text-indigo-400" /> {t.sandbox}
                         </button>
                       </div>
                     </div>

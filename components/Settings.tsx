@@ -62,7 +62,6 @@ export const Settings: React.FC<SettingsProps> = ({
     };
     checkState();
     
-    // Periodically poll for AI Studio status or key updates
     const timer = setInterval(checkState, 3000);
     return () => clearInterval(timer);
   }, [saveStatus]);
@@ -99,7 +98,7 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   return (
-    <div className="space-y-8 pb-32 max-w-2xl mx-auto px-4 font-sans">
+    <div className="space-y-8 pb-32 max-w-2xl mx-auto px-4 font-sans text-left">
       <header className="text-center space-y-2 mb-10">
         <h1 className="text-3xl font-black tracking-tighter text-white italic uppercase">{isZh ? '系统配置' : 'System Config'}</h1>
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">NEURAL INFRASTRUCTURE</p>
@@ -133,7 +132,7 @@ export const Settings: React.FC<SettingsProps> = ({
             )}
           </div>
 
-          <div className="space-y-6">
+          <div className="space-y-6 text-left">
             <div className="flex justify-between items-center px-2">
               <div className="flex items-center gap-2 text-slate-500">
                  <CreditCard size={14} />
@@ -172,7 +171,7 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
             </div>
             <p className="text-[9px] text-slate-600 italic px-4 leading-relaxed uppercase tracking-widest">
-              System priority: <span className="text-slate-400 font-bold">Process ENV</span> > <span className="text-slate-400 font-bold">Manual Injection</span>
+              System priority: <span className="text-slate-400 font-bold">Process ENV</span> &gt; <span className="text-slate-400 font-bold">Manual Injection</span>
             </p>
           </div>
         </div>
@@ -182,7 +181,7 @@ export const Settings: React.FC<SettingsProps> = ({
       <GlassCard className="p-8 rounded-[3.5rem] border-white/5 bg-white/[0.01]">
         <div className="space-y-10">
           <div className="space-y-6">
-            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+            <div className="flex items-center gap-3 border-b border-white/5 pb-4 px-2">
               <Languages size={18} className="text-indigo-400" />
               <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400">{t.language}</h2>
             </div>
@@ -207,7 +206,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           <div className="flex items-center justify-between px-2">
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
               <div className="flex items-center gap-2">
                 <Layers size={14} className="text-indigo-400" />
                 <p className="text-sm font-bold text-white italic">3D Neural Mapping</p>
@@ -237,7 +236,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <HeartHandshake size={20} /> {t.coffee}
         </button>
 
-        <button onClick={onLogout} className="w-full py-6 bg-slate-900 border border-white/5 rounded-[2.5rem] text-slate-800 font-black text-[10px] uppercase tracking-widest hover:text-rose-400 transition-all flex items-center justify-center gap-3 italic">
+        <button onClick={onLogout} className="w-full py-6 bg-slate-900 border border-white/5 rounded-[2.5rem] text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-rose-400 transition-all flex items-center justify-center gap-3 italic">
           <LogOut size={16} /> {t.logout}
         </button>
       </div>
@@ -271,7 +270,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-[0.9]">
                     CONTRIBUTION<br />ACKNOWLEDGED
                   </h2>
-                  <p className="text-[13px] text-slate-400 italic max-w-sm mx-auto leading-relaxed">
+                  <p className="text-[13px] text-slate-400 italic max-w-sm mx-auto leading-relaxed text-center">
                     Your support fuels lab processing. Payment details follow (English Default):
                   </p>
                 </div>
@@ -295,7 +294,7 @@ export const Settings: React.FC<SettingsProps> = ({
                       { id: 'paypal', label: 'PAYPAL', value: t.paypalId }
                     ].map((item) => (
                       <div key={item.id} className="p-6 bg-[#0f172a]/50 border border-white/5 rounded-[2rem] flex items-center justify-between group hover:border-[#4f46e5]/30 transition-all">
-                        <div className="space-y-1">
+                        <div className="space-y-1 text-left">
                           <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
                           <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>
                         </div>

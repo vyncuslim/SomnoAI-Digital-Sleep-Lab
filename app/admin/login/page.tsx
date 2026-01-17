@@ -1,10 +1,8 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, Zap, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from '../../../components/GlassCard.tsx';
 import { supabase } from '../../../lib/supabaseClient.ts';
-// Fixed: signInWithEmailOTP and verifyOtp are now exported correctly
 import { adminApi, signInWithEmailOTP, verifyOtp } from '../../../services/supabaseService.ts';
 import { trackEvent } from '../../../services/analytics.ts';
 
@@ -37,7 +35,6 @@ export default function AdminLoginPage() {
 
     const targetEmail = getNormalizedEmail();
     
-    // 追踪管理员登录尝试
     trackEvent('admin_login_attempt', {
       user_email: targetEmail || 'anonymous',
       step: 'request_otp'
@@ -46,7 +43,6 @@ export default function AdminLoginPage() {
     try {
       if (!targetEmail) throw new Error("Identifier required for terminal access.");
       
-      // Fix: Removed the invalid second argument. signInWithEmailOTP only accepts email string.
       await signInWithEmailOTP(targetEmail);
       
       setStep('otp-verify');
@@ -92,8 +88,6 @@ export default function AdminLoginPage() {
 
       if (!session) throw new Error("Link Rejected: Security layer denied session creation.");
 
-      // 权限审计
-      // Fixed: checkAdminStatus is now correctly implemented in adminApi
       const isAdmin = await adminApi.checkAdminStatus(session.user.id);
       if (!isAdmin) {
         trackEvent('admin_login_failure', { user_email: targetEmail, reason: 'insufficient_clearance' });
@@ -141,7 +135,7 @@ export default function AdminLoginPage() {
         </div>
       </div>
 
-      <GlassCard className="w-full max-w-md p-10 md:p-14 rounded-[4.5rem] border-rose-500/20 relative z-10 shadow-3xl">
+      <GlassCard className="w-full max-w-lg p-12 md:p-16 rounded-[4.5rem] border-rose-500/20 relative z-10 shadow-3xl">
         <AnimatePresence mode="wait">
           {step === 'initial' ? (
             <m.div 
@@ -153,14 +147,14 @@ export default function AdminLoginPage() {
               <form onSubmit={handleRequestOtp} className="space-y-8">
                 <div className="space-y-4">
                   <div className="relative group">
-                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-800" size={18} />
+                    <Mail className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-800 transition-colors group-focus-within:text-rose-500" size={22} />
                     <input 
                       type="email" 
                       autoComplete="username email"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder="Administrator Identifier"
-                      className="w-full bg-slate-950/60 border border-white/10 rounded-full px-16 py-5 text-sm text-white font-medium outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
+                      className="w-full bg-slate-950/60 border border-white/10 rounded-full pl-16 pr-10 py-7 text-base text-white font-bold outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-900 shadow-inner"
                       required
                       autoFocus
                     />
@@ -170,9 +164,9 @@ export default function AdminLoginPage() {
                 <button 
                   type="submit"
                   disabled={isProcessing || cooldown > 0}
-                  className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
+                  className="w-full py-7 bg-rose-600 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all hover:bg-rose-500 flex items-center justify-center gap-4 disabled:opacity-50"
                 >
-                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
+                  {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} />}
                   {isProcessing ? 'AUTHORIZING...' : (cooldown > 0 ? `COOLING (${cooldown}S)` : 'REQUEST ACCESS TOKEN')}
                 </button>
               </form>
@@ -214,7 +208,7 @@ export default function AdminLoginPage() {
                       }
                     }}
                     disabled={isProcessing}
-                    className="w-11 h-14 bg-white/[0.03] border border-white/10 rounded-2xl text-2xl text-center text-white font-mono font-black focus:border-rose-500 outline-none transition-all disabled:opacity-50"
+                    className="w-12 h-16 bg-white/[0.03] border border-white/10 rounded-2xl text-3xl text-center text-white font-mono font-black focus:border-rose-500 outline-none transition-all disabled:opacity-50 shadow-inner"
                   />
                 ))}
               </div>
@@ -223,9 +217,9 @@ export default function AdminLoginPage() {
                 <button 
                   onClick={() => executeVerify()}
                   disabled={isProcessing || otp.some(d => !d)}
-                  className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 disabled:opacity-50 active:scale-95 transition-all"
+                  className="w-full py-7 bg-rose-600 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 disabled:opacity-50 active:scale-95 transition-all"
                 >
-                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <ShieldCheck size={18} />}
+                  {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <ShieldCheck size={24} />}
                   {isProcessing ? 'SYNCHRONIZING...' : 'INITIALIZE OVERRIDE'}
                 </button>
 
@@ -253,7 +247,7 @@ export default function AdminLoginPage() {
               <ShieldAlert size={18} className="shrink-0 mt-0.5" />
               <div className="space-y-2">
                 <p className="italic font-bold text-rose-400 leading-relaxed">{error}</p>
-                <p className="text-[9px] text-slate-500 uppercase tracking-widest italic">
+                <p className="text-[9px] text-slate-500 uppercase tracking-widest italic text-left">
                   Command registry requires specific admin credentials.
                 </p>
               </div>

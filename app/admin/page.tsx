@@ -18,7 +18,8 @@ export default function AdminDashboard() {
       }
 
       try {
-        const isAdmin = await adminApi.isAdmin();
+        // Explicitly check role via profile to ensure current clearance
+        const isAdmin = await adminApi.checkAdminStatus(session.user.id);
         
         if (!isAdmin) {
           console.error('Access denied: Unauthorized role detected.');
@@ -28,6 +29,7 @@ export default function AdminDashboard() {
 
         setIsAuthorized(true);
       } catch (e) {
+        console.error('Admin verification failed:', e);
         window.location.hash = '#/admin/login';
       } finally {
         setLoading(false);
