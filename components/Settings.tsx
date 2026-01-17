@@ -3,7 +3,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, 
   HeartHandshake, Globe, Lock, Loader2, CreditCard, 
-  Heart, Copy, QrCode, Languages, UserCircle, Settings as SettingsIcon, Brain, ShieldAlert, RefreshCw
+  Heart, Copy, QrCode, Languages, UserCircle, Settings as SettingsIcon, Brain, ShieldAlert, Layers
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
@@ -33,12 +33,11 @@ interface SettingsProps {
 
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, 
-  onNavigate, onManualSync, isRecoveringPassword = false
+  onNavigate, threeDEnabled, onThreeDChange, isRecoveringPassword = false
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [isSyncing, setIsSyncing] = useState(false);
 
   const t = translations[lang].settings;
   const isZh = lang === 'zh';
@@ -60,12 +59,6 @@ export const Settings: React.FC<SettingsProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const triggerSync = async () => {
-    setIsSyncing(true);
-    await onManualSync();
-    setTimeout(() => setIsSyncing(false), 2000);
-  };
-
   return (
     <div className="space-y-12 pb-32 max-w-2xl mx-auto px-4">
       <header className="text-center space-y-2">
@@ -73,16 +66,33 @@ export const Settings: React.FC<SettingsProps> = ({
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">NEURAL INFRASTRUCTURE</p>
       </header>
 
-      <div className="space-y-4">
-        {/* 手动同步按钮 */}
-        <button 
-          onClick={triggerSync}
-          disabled={isSyncing}
-          className="w-full py-6 rounded-[2rem] bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 active:scale-95 transition-all shadow-xl"
-        >
-          {isSyncing ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
-          {isSyncing ? 'Syncing Telemetry...' : 'Sync Biometric Data'}
-        </button>
+      <div className="space-y-6">
+        <GlassCard className="p-8 md:p-10 rounded-[3.5rem] border-white/5 bg-white/[0.01]">
+          <div className="space-y-8">
+            <div className="flex items-center gap-3 border-b border-white/5 pb-4">
+              <Layers size={18} className="text-indigo-400" />
+              <h2 className="text-[11px] font-black uppercase tracking-widest text-slate-400">Visual Parameters</h2>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                <p className="text-sm font-bold text-white italic">3D Neural Mapping</p>
+                <p className="text-[10px] text-slate-500 font-medium italic">Enables spatial rendering and glow effects on lab interface.</p>
+              </div>
+              <button 
+                onClick={() => onThreeDChange(!threeDEnabled)}
+                className={`w-12 h-7 rounded-full border border-white/10 flex items-center px-1 bg-black/40 relative overflow-hidden transition-all duration-500 ${threeDEnabled ? 'border-indigo-500/40 shadow-[0_0_12px_rgba(79,70,229,0.3)]' : ''}`}
+              >
+                <m.div 
+                  animate={{ x: threeDEnabled ? 20 : 0 }}
+                  transition={{ type: "spring", stiffness: 450, damping: 25 }}
+                  className={`w-5 h-5 rounded-full relative z-10 ${threeDEnabled ? 'bg-white shadow-[0_0_8px_rgba(255,255,255,1)]' : 'bg-slate-700'}`}
+                />
+                {threeDEnabled && <m.div initial={{ opacity: 0 }} animate={{ opacity: 0.2 }} className="absolute inset-0 bg-indigo-500" />}
+              </button>
+            </div>
+          </div>
+        </GlassCard>
 
         <button 
           onClick={() => setShowDonation(true)}
@@ -90,15 +100,13 @@ export const Settings: React.FC<SettingsProps> = ({
         >
           <HeartHandshake size={20} /> {t.coffee}
         </button>
-      </div>
 
-      <div className="pt-10 border-t border-white/5 space-y-4">
         <button onClick={onLogout} className="w-full py-4 text-slate-800 font-black text-[10px] uppercase tracking-widest hover:text-rose-400 transition-all flex items-center justify-center gap-3 italic">
           <LogOut size={16} /> {t.logout}
         </button>
 
         {isAdmin && (
-          <button onClick={() => onNavigate('admin')} className="w-full py-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-full font-black text-[10px] uppercase tracking-widest">
+          <button onClick={() => onNavigate('admin')} className="w-full py-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-full font-black text-[10px] uppercase tracking-widest mt-4">
             Command Deck
           </button>
         )}

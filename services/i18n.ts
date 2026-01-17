@@ -55,7 +55,7 @@ export const translations = {
       resetHeading: 'RECOVER ACCESS',
       resetSub: 'Enter your email to receive a recovery link.',
       sendReset: 'SEND RECOVERY LINK',
-      resetSuccess: 'Handshake initiated. Check your inbox.'
+      resetSuccess: 'Handshake initiated.'
     },
     settings: {
       title: 'SomnoAI Digital Sleep Lab',
@@ -214,7 +214,7 @@ export const translations = {
       resetHeading: '恢复访问权限',
       resetSub: '输入您的电子邮件以获取恢复链接。',
       sendReset: '发送恢复链接',
-      resetSuccess: '握手已启动。请检查您的收件箱。'
+      resetSuccess: '握手已启动。'
     },
     admin: {
       securityTitle: '安全监测脉搏',
@@ -264,7 +264,7 @@ export const translations = {
     },
     assistant: {
       title: '神经助手',
-      intro: '神经链路已建立。今天我能为您如何 optimize 生物恢复？',
+      intro: '神经链路已建立。今天我能为您如何优化生物恢复？',
       placeholder: '描述您的睡眠质量或请求分析...',
       error: '神经合成失败。请检查链路。',
       generateLullaby: '生成神经催眠曲',

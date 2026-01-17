@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
@@ -8,7 +7,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true, // 确保自动检测 URL 中的 access_token
+    flowType: 'pkce' // 使用更现代的 PKCE 流程提高稳定性
   }
 });
 
@@ -20,7 +20,7 @@ export const authApi = {
     supabase.auth.signUp({ 
       email, 
       password,
-      options: { emailRedirectTo: `${window.location.origin}/#/dashboard` }
+      options: { emailRedirectTo: `${window.location.origin}` }
     }),
   
   signIn: (email: string, password: string) => 
@@ -30,7 +30,7 @@ export const authApi = {
     supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/#/dashboard`
+        emailRedirectTo: `${window.location.origin}`
       }
     }),
 
@@ -41,8 +41,7 @@ export const authApi = {
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/#/dashboard`,
-        // 关键修复：强制弹出 Google 账号选择器
+        redirectTo: `${window.location.origin}`,
         queryParams: {
           prompt: 'select_account',
           access_type: 'offline'
@@ -59,20 +58,6 @@ export const authApi = {
     supabase.auth.updateUser({ password }),
 
   signOut: () => supabase.auth.signOut()
-};
-
-export const profileApi = {
-  getMyProfile: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    return data;
-  },
-  updateProfile: async (updates: any) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Auth required');
-    return supabase.from('profiles').update(updates).eq('id', user.id);
-  }
 };
 
 export const adminApi = {
@@ -93,6 +78,20 @@ export const adminApi = {
   getSleepRecords: async () => [],
   getFeedback: async () => [],
   getAuditLogs: async () => []
+};
+
+export const profileApi = {
+  getMyProfile: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    return data;
+  },
+  updateProfile: async (updates: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Auth required');
+    return supabase.from('profiles').update(updates).eq('id', user.id);
+  }
 };
 
 export const updateUserPassword = authApi.updatePassword;

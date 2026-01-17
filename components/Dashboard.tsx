@@ -19,9 +19,17 @@ interface DashboardProps {
   onSyncHealth?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
   onNavigate?: (view: any) => void;
   staticMode?: boolean;
+  threeDEnabled?: boolean;
 }
 
-export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, onNavigate, staticMode = false }) => {
+export const Dashboard: React.FC<DashboardProps> = ({ 
+  data, 
+  lang, 
+  onSyncHealth, 
+  onNavigate, 
+  staticMode = false,
+  threeDEnabled = true
+}) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [engineActive, setEngineActive] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
@@ -72,7 +80,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
       <div className="flex justify-between items-center bg-slate-950/60 px-8 py-5 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
         <div className="flex items-center gap-5">
           <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-            <Logo size={32} animated={engineActive} />
+            <Logo size={32} animated={engineActive} threeD={threeDEnabled} />
           </div>
           <div className="flex flex-col">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Neural Node Alpha</span>
@@ -122,7 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
         
         {/* Left: Efficiency Score & Insights */}
         <div className="lg:col-span-7 space-y-10">
-          <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[500px] flex flex-col justify-between" intensity={1.5}>
+          <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[500px] flex flex-col justify-between" intensity={threeDEnabled ? 1.5 : 0}>
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-sm font-black italic text-indigo-400 uppercase tracking-[0.4em] mb-2">Subject Efficiency</h2>
@@ -168,7 +176,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
 
         {/* Right: Neural Architecture & Metrics */}
         <div className="lg:col-span-5 space-y-8">
-          <GlassCard className="p-10 rounded-[4rem] h-full flex flex-col gap-10">
+          <GlassCard className="p-10 rounded-[4rem] h-full flex flex-col gap-10" intensity={threeDEnabled ? 1 : 0}>
             <div className="flex items-center justify-between">
                <div className="flex items-center gap-3">
                  <Binary size={20} className="text-indigo-400" />
@@ -233,7 +241,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
           { icon: Binary, label: 'Session Time', value: `${Math.floor(data.totalDuration/60)}H`, unit: `${data.totalDuration%60}M`, color: 'text-indigo-400' },
           { icon: Zap, label: 'Metabolic Load', value: `${data.calories || 2150}`, unit: 'KCAL', color: 'text-amber-400' }
         ].map((item, i) => (
-          <GlassCard key={i} className="p-10 rounded-[3rem] flex flex-col items-center gap-4 text-center group" hoverScale={true}>
+          <GlassCard key={i} className="p-10 rounded-[3rem] flex flex-col items-center gap-4 text-center group" hoverScale={true} intensity={threeDEnabled ? 1 : 0}>
             <div className={`p-5 rounded-[2rem] bg-white/5 ${item.color} group-hover:scale-110 transition-transform duration-500 shadow-xl`}>
               <item.icon size={26} strokeWidth={2.5} />
             </div>
@@ -253,7 +261,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
         {showShareModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-3xl" onClick={() => setShowShareModal(false)}>
             <m.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} onClick={(e: any) => e.stopPropagation()}>
-              <GlassCard className="p-16 rounded-[5rem] max-w-md border-white/20 text-center space-y-10">
+              <GlassCard className="p-16 rounded-[5rem] max-w-md border-white/20 text-center space-y-10" intensity={threeDEnabled ? 2 : 0}>
                    <div className="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-2xl mx-auto">
                      <Share2 size={36} />
                    </div>

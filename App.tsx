@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
@@ -39,6 +38,10 @@ const App: React.FC = () => {
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
+  const [threeDEnabled, setThreeDEnabled] = useState<boolean>(() => {
+    const saved = localStorage.getItem('somno_3d_enabled');
+    return saved !== null ? saved === 'true' : true;
+  });
   
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
@@ -47,17 +50,23 @@ const App: React.FC = () => {
   const isSandbox = localStorage.getItem('somno_sandbox_active') === 'true';
 
   useEffect(() => {
+    localStorage.setItem('somno_3d_enabled', threeDEnabled.toString());
+  }, [threeDEnabled]);
+
+  useEffect(() => {
     const initAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        setSession(initialSession);
+        
         if (initialSession) {
-          adminApi.isAdmin().then(status => setIsAdmin(status));
+          setSession(initialSession);
+          const status = await adminApi.checkAdminStatus(initialSession.user.id);
+          setIsAdmin(status);
         }
       } catch (err) {
-        console.error("Auth init failure:", err);
+        console.error("Auth initialization failed:", err);
       } finally {
-        setTimeout(() => setIsInitialAuthCheck(false), 300);
+        setTimeout(() => setIsInitialAuthCheck(false), 500);
       }
     };
     
@@ -65,15 +74,20 @@ const App: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
+      
       if (newSession) {
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
+        
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          setActiveView('dashboard');
+        }
       } else {
         setIsAdmin(false);
-      }
-      
-      if (event === 'SIGNED_IN') {
-        setActiveView('dashboard');
+        if (event === 'SIGNED_OUT') {
+           setActiveView('dashboard');
+           setCurrentRecord(null);
+        }
       }
     });
 
@@ -82,11 +96,9 @@ const App: React.FC = () => {
 
   const handleSyncHealth = async () => {
     if (syncStatus !== 'idle' && syncStatus !== 'error') return;
-    
     setSyncStatus('authorizing');
     
     try {
-      // 如果处于沙盒模式，模拟成功反馈
       if (isSandbox) {
         await new Promise(r => setTimeout(r, 1000));
         setSyncStatus('fetching');
@@ -113,7 +125,6 @@ const App: React.FC = () => {
         return;
       }
 
-      // 真实 Google Health Connect 同步
       await healthConnect.authorize();
       setSyncStatus('fetching');
       const data = await healthConnect.fetchSleepData();
@@ -142,12 +153,12 @@ const App: React.FC = () => {
     }
   };
 
-  // Fix: Added handleLogout to resolve 'Cannot find name handleLogout' error.
   const handleLogout = async () => {
     if (isSandbox) {
       localStorage.removeItem('somno_sandbox_active');
     }
     await authApi.signOut();
+    setSession(null);
     setCurrentRecord(null);
     setHistory([]);
     setActiveView('dashboard');
@@ -169,7 +180,7 @@ const App: React.FC = () => {
           <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             {activeView === 'dashboard' && (
               currentRecord ? (
-                <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={setActiveView} />
+                <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={setActiveView} threeDEnabled={threeDEnabled} />
               ) : (
                 <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
                   <div className="relative">
@@ -195,7 +206,26 @@ const App: React.FC = () => {
             {activeView === 'calendar' && <Trends history={history} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} isSandbox={isSandbox} />}
             {activeView === 'profile' && <UserProfile lang={lang} />}
-            {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} onManualSync={handleSyncHealth} theme="dark" onThemeChange={()=>{}} accentColor="indigo" onAccentChange={()=>{}} threeDEnabled={true} onThreeDChange={()=>{}} staticMode={false} onStaticModeChange={()=>{}} lastSyncTime={null} />}
+            {activeView === 'settings' && (
+              <Suspense fallback={<LoadingSpinner />}>
+                <Settings 
+                  lang={lang} 
+                  onLanguageChange={setLang} 
+                  onLogout={handleLogout} 
+                  onNavigate={setActiveView}
+                  threeDEnabled={threeDEnabled}
+                  onThreeDChange={setThreeDEnabled}
+                  theme="dark"
+                  onThemeChange={()=>{}}
+                  accentColor="indigo"
+                  onAccentChange={()=>{}}
+                  staticMode={false}
+                  onStaticModeChange={()=>{}}
+                  lastSyncTime={null}
+                  onManualSync={() => {}}
+                />
+              </Suspense>
+            )}
           </m.div>
         </AnimatePresence>
 
