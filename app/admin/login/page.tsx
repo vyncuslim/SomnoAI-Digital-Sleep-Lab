@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, 
-  Shield, Key
+  Shield, Key, Lock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../../../components/Logo.tsx';
@@ -10,7 +10,7 @@ import { adminApi, authApi } from '../../../services/supabaseService.ts';
 const m = motion as any;
 
 /**
- * Robust Status Indicator for the restricted portal
+ * Enhanced Status Indicator for restricted portals
  */
 const StatusIndicator = ({ active = false }: { active?: boolean }) => (
   <div className="flex items-center">
@@ -30,7 +30,9 @@ export default function AdminLoginPage() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
-  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+  
+  // Robust ref management
+  const otpRefs = useRef<HTMLInputElement[]>([]);
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -48,54 +50,80 @@ export default function AdminLoginPage() {
 
     const targetEmail = email.trim().toLowerCase();
     setIsProcessing(true);
+    
     try {
       if (cooldown > 0) return;
+      
       const { error: otpErr } = await authApi.sendOTP(targetEmail);
       if (otpErr) throw otpErr;
       
       setStep('verify');
       setCooldown(60);
+      
+      // Focus the first input after step changes
       setTimeout(() => {
         if (otpRefs.current[0]) otpRefs.current[0].focus();
-      }, 500);
+      }, 300);
     } catch (err: any) {
-      setError(err.message || "Token Request Failed. Grid Unreachable.");
+      setError(err.message || "Identity synchronization failed. Grid status unknown.");
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleOtpInput = (index: number, value: string) => {
+    // Only allow numeric input
     if (!/^\d*$/.test(value)) return;
+    
+    const val = value.slice(-1);
     const newOtp = [...otp];
-    newOtp[index] = value.slice(-1);
+    newOtp[index] = val;
     setOtp(newOtp);
-    if (value && index < 5) otpRefs.current[index + 1]?.focus();
-    if (newOtp.every(d => d !== '') && index === 5) executeOtpVerify(newOtp.join(''));
+
+    // Auto-focus next input
+    if (val !== '' && index < 5) {
+      otpRefs.current[index + 1]?.focus();
+    }
+
+    // Auto-trigger verification
+    if (newOtp.every(d => d !== '') && index === 5) {
+      executeOtpVerify(newOtp.join(''));
+    }
+  };
+
+  const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Backspace' && !otp[index] && index > 0) {
+      otpRefs.current[index - 1]?.focus();
+    }
   };
 
   const executeOtpVerify = async (fullOtp?: string) => {
     const token = fullOtp || otp.join('');
     if (token.length < 6 || isProcessing) return;
+    
     setIsProcessing(true);
+    setError(null);
+    
     try {
       const { data, error: verifyErr } = await authApi.verifyOTP(email.trim().toLowerCase(), token);
       if (verifyErr) throw verifyErr;
       
-      if (!data?.user) throw new Error("Verification failed.");
+      if (!data?.user) throw new Error("Verification failed: Session corrupted.");
 
+      // Critical Admin Check
       const isAdmin = await adminApi.checkAdminStatus(data.user.id);
       if (!isAdmin) {
         await authApi.signOut();
-        throw new Error("Access Denied: Subject lacks administrative clearance.");
+        throw new Error("Access Denied: Subject lacks Command Deck clearance.");
       }
       
-      // Clean redirect to dashboard
+      // Success: Route to Admin Dashboard
       window.location.hash = '#/admin';
     } catch (err: any) {
-      setError(err.message || "Verification Token Invalid.");
+      setError(err.message || "Neural handshake invalid.");
+      // Clear OTP on error for retry
       setOtp(['', '', '', '', '', '']);
-      if (otpRefs.current[0]) otpRefs.current[0].focus();
+      setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } finally {
       setIsProcessing(false);
     }
@@ -103,97 +131,117 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-      {/* Centered Logo & Branding */}
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10 flex flex-col items-center gap-4 z-10">
-        <div className="w-24 h-24 mb-2 flex items-center justify-center">
-          <Logo size={96} animated={true} />
-        </div>
-        <div className="space-y-2">
-          <h1 className="text-4xl font-black tracking-tighter text-white uppercase italic leading-none">
+      {/* Visual Identity Section */}
+      <m.div 
+        initial={{ opacity: 0, scale: 0.9 }} 
+        animate={{ opacity: 1, scale: 1 }} 
+        className="text-center mb-10 flex flex-col items-center gap-4 z-10"
+      >
+        <Logo size={80} animated={true} />
+        <div className="space-y-1">
+          <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic leading-none">
             SOMNOAI <span className="text-rose-600">LAB</span>
           </h1>
-          <p className="text-slate-600 font-bold uppercase text-[10px] tracking-[0.5em] mt-2">
-            DIGITAL IDENTITY TELEMETRY
+          <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.5em] mt-2">
+            RESTRICTED INFRASTRUCTURE
           </p>
         </div>
       </m.div>
 
-      <div className="w-full max-w-[460px] z-10">
-        <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-rose-600/10 rounded-[3.5rem] p-1 shadow-[0_0_80px_rgba(225,29,72,0.15)]">
-          <div className="p-10 md:p-12 space-y-10">
-            
+      <div className="w-full max-w-[440px] z-10">
+        <div className="bg-[#050a1f]/95 backdrop-blur-3xl border border-rose-600/10 rounded-[3rem] p-1 shadow-2xl relative">
+          {/* Decorative glow */}
+          <div className="absolute -inset-10 bg-rose-600/5 blur-[100px] pointer-events-none" />
+          
+          <div className="p-8 md:p-10 space-y-10 relative z-10">
             <div className="text-center space-y-2">
-              <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Restricted Portal</h2>
-              <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.3em]">Command Deck Clearance Only</p>
+              <h2 className="text-xl font-black italic text-white uppercase tracking-tighter">Command Authentication</h2>
+              <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.2em]">OTP-Only Restricted Access</p>
             </div>
 
             <AnimatePresence mode="wait">
               {step === 'input' ? (
-                <m.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-10">
-                  <p className="text-[12px] text-slate-500 text-center leading-relaxed italic px-2 font-medium">
-                    It integrates physiological indicator monitoring, AI deep insights and health advice into one, providing users with a full range of digital sleep experiments.
+                <m.div 
+                  key="input" 
+                  initial={{ opacity: 0, y: 10 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  className="space-y-8"
+                >
+                  <p className="text-[11px] text-slate-500 text-center leading-relaxed italic px-4">
+                    Neural authentication is required to access the lab command deck. Enter your administrator identifier to request a secure token.
                   </p>
 
-                  <form onSubmit={handleRequestToken} className="space-y-8">
-                    <div className="space-y-6">
-                      <div className="relative group">
-                        <Mail className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-rose-500 transition-colors" size={20} />
-                        <input 
-                          type="email" 
-                          value={email} 
-                          onChange={(e) => setEmail(e.target.value)}
-                          placeholder="Administrator Identifier"
-                          className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-24 py-6 text-sm text-white focus:border-rose-600/40 outline-none transition-all placeholder:text-slate-900 font-bold shadow-inner"
-                          required
-                        />
-                        <div className="absolute right-6 top-1/2 -translate-y-1/2">
-                           <StatusIndicator active={isEmailValid} />
-                        </div>
+                  <form onSubmit={handleRequestToken} className="space-y-6">
+                    <div className="relative group">
+                      <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-rose-500 transition-colors" size={20} />
+                      <input 
+                        type="email" 
+                        value={email} 
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder="Administrator Identifier"
+                        className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-14 pr-24 py-5 text-sm text-white focus:border-rose-600/40 outline-none transition-all placeholder:text-slate-900 font-bold"
+                        required
+                        autoComplete="email"
+                      />
+                      <div className="absolute right-6 top-1/2 -translate-y-1/2">
+                        <StatusIndicator active={isEmailValid} />
                       </div>
                     </div>
 
-                    <div className="space-y-4 pt-2">
-                      <button 
-                        type="submit" 
-                        disabled={isProcessing || !isEmailValid}
-                        className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 active:scale-[0.98] transition-all shadow-xl hover:bg-rose-500 disabled:opacity-30"
-                      >
-                        {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Shield size={18} fill="currentColor" />}
-                        {isProcessing ? 'SYNCHRONIZING...' : 'REQUEST ACCESS TOKEN'}
-                      </button>
-                    </div>
+                    <button 
+                      type="submit" 
+                      disabled={isProcessing || !isEmailValid}
+                      className="w-full py-5 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-3 shadow-xl hover:bg-rose-500 active:scale-[0.98] transition-all disabled:opacity-30"
+                    >
+                      {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Shield size={16} fill="currentColor" />}
+                      {isProcessing ? 'SYNCHRONIZING...' : 'REQUEST LAB TOKEN'}
+                    </button>
                   </form>
                 </m.div>
               ) : (
-                <m.div key="verify" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
+                <m.div 
+                  key="verify" 
+                  initial={{ opacity: 0, x: 20 }} 
+                  animate={{ opacity: 1, x: 0 }} 
+                  exit={{ opacity: 0, x: -20 }}
+                  className="space-y-10"
+                >
                   <div className="text-center space-y-4">
-                    <button onClick={() => setStep('input')} className="text-[11px] font-black text-rose-500 uppercase flex items-center gap-2 mx-auto hover:text-rose-400">
-                      <ChevronLeft size={16} /> Back to Identifier
+                    <button 
+                      onClick={() => setStep('input')} 
+                      className="text-[10px] font-black text-rose-500 uppercase flex items-center gap-2 mx-auto hover:text-rose-400"
+                    >
+                      <ChevronLeft size={14} /> Back to Identifier
                     </button>
-                    <h2 className="text-3xl font-black text-white uppercase italic tracking-tighter">Neural Handshake</h2>
-                    <p className="text-[12px] text-slate-600 font-medium italic truncate px-8">Token dispatched to {email}</p>
+                    <div className="space-y-1">
+                      <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Identity Handshake</h3>
+                      <p className="text-[11px] text-slate-600 font-medium italic px-4">Verification token dispatched to grid identifier.</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between gap-3 px-8">
+
+                  <div className="flex justify-between gap-2.5">
                     {otp.map((digit, idx) => (
                       <input 
                         key={idx} 
-                        ref={el => { otpRefs.current[idx] = el; }} 
+                        ref={(el) => { if (el) otpRefs.current[idx] = el; }}
                         type="text" 
                         inputMode="numeric" 
                         maxLength={1} 
                         value={digit}
                         onChange={(e) => handleOtpInput(idx, e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Backspace' && !otp[idx] && idx > 0) otpRefs.current[idx-1]?.focus(); }}
-                        className="w-12 h-16 bg-slate-950/60 border border-white/10 rounded-2xl text-3xl text-center text-white font-mono font-black focus:border-rose-600 outline-none transition-all shadow-inner"
+                        onKeyDown={(e) => handleKeyDown(idx, e)}
+                        className="w-10 h-14 bg-slate-950/60 border border-white/10 rounded-2xl text-2xl text-center text-white font-mono font-black focus:border-rose-600 outline-none transition-all"
                       />
                     ))}
                   </div>
+
                   <button 
                     onClick={() => executeOtpVerify()} 
                     disabled={isProcessing || otp.some(d => !d)} 
-                    className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-rose-500 active:scale-[0.97] transition-all disabled:opacity-50 shadow-2xl"
+                    className="w-full py-5 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-rose-500 active:scale-[0.97] transition-all disabled:opacity-50 shadow-2xl"
                   >
-                    {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <ShieldCheck size={24} />}
+                    {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
                     VERIFY NEURAL TOKEN
                   </button>
                 </m.div>
@@ -201,7 +249,11 @@ export default function AdminLoginPage() {
             </AnimatePresence>
 
             {error && (
-              <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 border border-rose-500/20 bg-rose-500/10 rounded-[2rem] flex items-start gap-4 text-[11px] font-bold italic text-rose-400 leading-relaxed shadow-lg">
+              <m.div 
+                initial={{ opacity: 0, y: 10 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                className="p-5 border border-rose-500/20 bg-rose-500/10 rounded-[2rem] flex items-start gap-4 text-[11px] font-bold italic text-rose-400"
+              >
                 <ShieldAlert size={18} className="shrink-0 mt-0.5" />
                 <p>{error}</p>
               </m.div>
@@ -210,15 +262,10 @@ export default function AdminLoginPage() {
         </div>
       </div>
 
-      <footer className="mt-16 text-center space-y-4 opacity-40 hover:opacity-100 transition-all duration-700 pb-12">
-        <div className="flex flex-col items-center gap-2">
-           <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-slate-800 italic font-black">
-             SomnoAI Digital Sleep Lab • Secure Grid Infrastructure
-           </p>
-           <p className="text-[9px] font-mono uppercase tracking-[0.8em] text-slate-800 italic font-black">
-             @2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
-           </p>
-        </div>
+      <footer className="mt-12 text-center opacity-30 pointer-events-none">
+        <p className="text-[8px] font-mono uppercase tracking-[0.8em] text-slate-800 italic font-black">
+          SomnoAI Digital Sleep Lab • Neural Core Access
+        </p>
       </footer>
     </div>
   );

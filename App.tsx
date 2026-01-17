@@ -8,9 +8,10 @@ import { supabase, adminApi, authApi } from './services/supabaseService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
 
-const UserLoginPage = lazy(() => import('./app/login/page.tsx'));
-const AdminDashboard = lazy(() => import('./app/admin/page.tsx'));
-const AdminLoginPage = lazy(() => import('./app/admin/login/page.tsx'));
+// Direct imports for critical auth components to prevent lazy-load black screens
+import AdminLoginPage from './app/admin/login/page.tsx';
+import AdminDashboard from './app/admin/page.tsx';
+import UserLoginPage from './app/login/page.tsx';
 
 import { Dashboard } from './components/Dashboard.tsx';
 const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
@@ -96,9 +97,10 @@ const App: React.FC = () => {
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
         
-        // Prevent auto-redirect to dashboard if we are on an admin route
+        // Handle transitions after auth events
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
           const hash = window.location.hash;
+          // Only auto-redirect standard users to dashboard
           if (hash !== '#/admin' && hash !== '#/admin/login') {
             setActiveView('dashboard');
           }
@@ -181,34 +183,27 @@ const App: React.FC = () => {
   if (isInitialAuthCheck) return <LoadingSpinner label="Linking Identity Handshake..." />;
 
   const renderContent = () => {
+    // Admin specific routes
     if (activeView === 'admin-login') {
-      return (
-        <Suspense fallback={<LoadingSpinner />}>
-          <AdminLoginPage />
-        </Suspense>
-      );
+      return <AdminLoginPage />;
     }
 
     if (activeView === 'admin') {
-      return (
-        <Suspense fallback={<LoadingSpinner />}>
-          <AdminDashboard />
-        </Suspense>
-      );
+      return <AdminDashboard />;
     }
 
+    // Standard authentication wall
     if (!session && !isSandbox) {
       return (
-        <Suspense fallback={<LoadingSpinner />}>
-          <UserLoginPage 
-            onSuccess={() => {}} 
-            onSandbox={enterSandbox} 
-            lang={lang} 
-          />
-        </Suspense>
+        <UserLoginPage 
+          onSuccess={() => {}} 
+          onSandbox={enterSandbox} 
+          lang={lang} 
+        />
       );
     }
 
+    // Main authenticated application views
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40 min-h-screen">
         <AnimatePresence mode="wait">
@@ -238,9 +233,21 @@ const App: React.FC = () => {
                 </div>
               )
             )}
-            {activeView === 'calendar' && <Trends history={history} lang={lang} />}
-            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} />}
-            {activeView === 'profile' && <UserProfile lang={lang} />}
+            {activeView === 'calendar' && (
+              <Suspense fallback={<LoadingSpinner />}>
+                <Trends history={history} lang={lang} />
+              </Suspense>
+            )}
+            {activeView === 'assistant' && (
+              <Suspense fallback={<LoadingSpinner />}>
+                <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} />
+              </Suspense>
+            )}
+            {activeView === 'profile' && (
+              <Suspense fallback={<LoadingSpinner />}>
+                <UserProfile lang={lang} />
+              </Suspense>
+            )}
             {activeView === 'settings' && (
               <Suspense fallback={<LoadingSpinner />}>
                 <Settings 
@@ -264,6 +271,7 @@ const App: React.FC = () => {
           </m.div>
         </AnimatePresence>
 
+        {/* Global Navigation Hub */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
           <nav className="bg-slate-950/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl">
             {[
