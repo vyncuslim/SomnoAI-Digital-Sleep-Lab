@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
@@ -96,8 +95,11 @@ const App: React.FC = () => {
       if (newSession) {
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
+        
+        // Prevent auto-redirect to dashboard if we are on an admin route
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          if (activeView !== 'admin' && activeView !== 'admin-login') {
+          const hash = window.location.hash;
+          if (hash !== '#/admin' && hash !== '#/admin/login') {
             setActiveView('dashboard');
           }
         }
@@ -111,7 +113,7 @@ const App: React.FC = () => {
       }
     });
     return () => subscription.unsubscribe();
-  }, [activeView]);
+  }, []);
 
   const handleSyncHealth = async () => {
     if (syncStatus !== 'idle' && syncStatus !== 'error') return;

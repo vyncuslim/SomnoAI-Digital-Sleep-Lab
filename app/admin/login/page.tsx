@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, 
-  Zap, Lock, Eye, EyeOff, Hexagon, Key, Shield
+  Shield, Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../../../components/Logo.tsx';
@@ -16,12 +15,8 @@ const m = motion as any;
 const StatusIndicator = ({ active = false }: { active?: boolean }) => (
   <div className="flex items-center">
     <div className={`w-10 h-6 rounded-full border border-white/10 flex items-center px-0.5 bg-black/40 relative overflow-hidden transition-all duration-500 ${active ? 'border-rose-500/40 shadow-[0_0_10px_rgba(225,29,72,0.2)]' : ''}`}>
-      <div 
-        className={`absolute inset-0 bg-rose-600 transition-opacity duration-500 ${active ? 'opacity-20' : 'opacity-0'}`}
-      />
-      <div 
-        className={`w-4 h-4 rounded-full relative z-10 flex items-center justify-center transition-all duration-300 transform ${active ? 'translate-x-4 bg-white shadow-[0_0_8px_white]' : 'translate-x-0 bg-slate-700'}`}
-      >
+      <div className={`absolute inset-0 bg-rose-600 transition-opacity duration-500 ${active ? 'opacity-20' : 'opacity-0'}`} />
+      <div className={`w-4 h-4 rounded-full relative z-10 flex items-center justify-center transition-all duration-300 transform ${active ? 'translate-x-4 bg-white shadow-[0_0_8px_white]' : 'translate-x-0 bg-slate-700'}`}>
         {active && <div className="w-2 h-2 bg-rose-600 rounded-full blur-[0.5px]" />}
       </div>
     </div>
@@ -60,7 +55,6 @@ export default function AdminLoginPage() {
       
       setStep('verify');
       setCooldown(60);
-      // Delayed focus for smooth transition
       setTimeout(() => {
         if (otpRefs.current[0]) otpRefs.current[0].focus();
       }, 500);
@@ -96,10 +90,10 @@ export default function AdminLoginPage() {
         throw new Error("Access Denied: Subject lacks administrative clearance.");
       }
       
+      // Clean redirect to dashboard
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Verification Token Invalid.");
-      // Clear OTP on error
       setOtp(['', '', '', '', '', '']);
       if (otpRefs.current[0]) otpRefs.current[0].focus();
     } finally {
@@ -110,11 +104,7 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
       {/* Centered Logo & Branding */}
-      <m.div 
-        initial={{ opacity: 0, y: 20 }} 
-        animate={{ opacity: 1, y: 0 }} 
-        className="text-center mb-10 flex flex-col items-center gap-4 z-10"
-      >
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-10 flex flex-col items-center gap-4 z-10">
         <div className="w-24 h-24 mb-2 flex items-center justify-center">
           <Logo size={96} animated={true} />
         </div>
@@ -129,10 +119,9 @@ export default function AdminLoginPage() {
       </m.div>
 
       <div className="w-full max-w-[460px] z-10">
-        <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-rose-600/10 rounded-[3.5rem] p-1 shadow-[0_0_80px_rgba(225,29,72,0.1)]">
+        <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-rose-600/10 rounded-[3.5rem] p-1 shadow-[0_0_80px_rgba(225,29,72,0.15)]">
           <div className="p-10 md:p-12 space-y-10">
             
-            {/* restricted portal header */}
             <div className="text-center space-y-2">
               <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Restricted Portal</h2>
               <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.3em]">Command Deck Clearance Only</p>
@@ -140,13 +129,7 @@ export default function AdminLoginPage() {
 
             <AnimatePresence mode="wait">
               {step === 'input' ? (
-                <m.div 
-                  key="input" 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  exit={{ opacity: 0, scale: 0.95 }} 
-                  className="space-y-10"
-                >
+                <m.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }} className="space-y-10">
                   <p className="text-[12px] text-slate-500 text-center leading-relaxed italic px-2 font-medium">
                     It integrates physiological indicator monitoring, AI deep insights and health advice into one, providing users with a full range of digital sleep experiments.
                   </p>
@@ -178,34 +161,11 @@ export default function AdminLoginPage() {
                         {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Shield size={18} fill="currentColor" />}
                         {isProcessing ? 'SYNCHRONIZING...' : 'REQUEST ACCESS TOKEN'}
                       </button>
-
-                      <div className="grid grid-cols-2 gap-4">
-                        <button 
-                          type="button" 
-                          onClick={() => authApi.signInWithGoogle()} 
-                          className="py-5 bg-[#0f121e] border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-slate-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
-                        >
-                          GOOGLE
-                        </button>
-                        <button 
-                          type="button" 
-                          onClick={() => window.location.hash = '#/'} 
-                          className="py-5 bg-[#0f121e] border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-slate-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest"
-                        >
-                          SANDBOX MODE
-                        </button>
-                      </div>
                     </div>
                   </form>
                 </m.div>
               ) : (
-                <m.div 
-                  key="verify" 
-                  initial={{ opacity: 0, x: 20 }} 
-                  animate={{ opacity: 1, x: 0 }} 
-                  exit={{ opacity: 0, x: -20 }} 
-                  className="space-y-12"
-                >
+                <m.div key="verify" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
                   <div className="text-center space-y-4">
                     <button onClick={() => setStep('input')} className="text-[11px] font-black text-rose-500 uppercase flex items-center gap-2 mx-auto hover:text-rose-400">
                       <ChevronLeft size={16} /> Back to Identifier
