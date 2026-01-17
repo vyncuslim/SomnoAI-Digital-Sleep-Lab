@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, 
-  Shield, Key, Lock
+  Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../../../components/Logo.tsx';
@@ -9,9 +9,6 @@ import { adminApi, authApi } from '../../../services/supabaseService.ts';
 
 const m = motion as any;
 
-/**
- * Enhanced Status Indicator for restricted portals
- */
 const StatusIndicator = ({ active = false }: { active?: boolean }) => (
   <div className="flex items-center">
     <div className={`w-10 h-6 rounded-full border border-white/10 flex items-center px-0.5 bg-black/40 relative overflow-hidden transition-all duration-500 ${active ? 'border-rose-500/40 shadow-[0_0_10px_rgba(225,29,72,0.2)]' : ''}`}>
@@ -31,8 +28,7 @@ export default function AdminLoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
   
-  // Robust ref management
-  const otpRefs = useRef<HTMLInputElement[]>([]);
+  const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -60,19 +56,18 @@ export default function AdminLoginPage() {
       setStep('verify');
       setCooldown(60);
       
-      // Focus the first input after step changes
       setTimeout(() => {
-        if (otpRefs.current[0]) otpRefs.current[0].focus();
+        const firstInput = otpRefs.current[0];
+        if (firstInput) firstInput.focus();
       }, 300);
     } catch (err: any) {
-      setError(err.message || "Identity synchronization failed. Grid status unknown.");
+      setError(err.message || "Identity synchronization failed.");
     } finally {
       setIsProcessing(false);
     }
   };
 
   const handleOtpInput = (index: number, value: string) => {
-    // Only allow numeric input
     if (!/^\d*$/.test(value)) return;
     
     const val = value.slice(-1);
@@ -80,12 +75,10 @@ export default function AdminLoginPage() {
     newOtp[index] = val;
     setOtp(newOtp);
 
-    // Auto-focus next input
     if (val !== '' && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
 
-    // Auto-trigger verification
     if (newOtp.every(d => d !== '') && index === 5) {
       executeOtpVerify(newOtp.join(''));
     }
@@ -110,18 +103,15 @@ export default function AdminLoginPage() {
       
       if (!data?.user) throw new Error("Verification failed: Session corrupted.");
 
-      // Critical Admin Check
       const isAdmin = await adminApi.checkAdminStatus(data.user.id);
       if (!isAdmin) {
         await authApi.signOut();
-        throw new Error("Access Denied: Subject lacks Command Deck clearance.");
+        throw new Error("Access Denied: Subject lacks clearance.");
       }
       
-      // Success: Route to Admin Dashboard
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Neural handshake invalid.");
-      // Clear OTP on error for retry
       setOtp(['', '', '', '', '', '']);
       setTimeout(() => otpRefs.current[0]?.focus(), 100);
     } finally {
@@ -131,7 +121,6 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-      {/* Visual Identity Section */}
       <m.div 
         initial={{ opacity: 0, scale: 0.9 }} 
         animate={{ opacity: 1, scale: 1 }} 
@@ -150,9 +139,6 @@ export default function AdminLoginPage() {
 
       <div className="w-full max-w-[440px] z-10">
         <div className="bg-[#050a1f]/95 backdrop-blur-3xl border border-rose-600/10 rounded-[3rem] p-1 shadow-2xl relative">
-          {/* Decorative glow */}
-          <div className="absolute -inset-10 bg-rose-600/5 blur-[100px] pointer-events-none" />
-          
           <div className="p-8 md:p-10 space-y-10 relative z-10">
             <div className="text-center space-y-2">
               <h2 className="text-xl font-black italic text-white uppercase tracking-tighter">Command Authentication</h2>
@@ -169,7 +155,7 @@ export default function AdminLoginPage() {
                   className="space-y-8"
                 >
                   <p className="text-[11px] text-slate-500 text-center leading-relaxed italic px-4">
-                    Neural authentication is required to access the lab command deck. Enter your administrator identifier to request a secure token.
+                    Enter your administrator identifier to request a secure access token.
                   </p>
 
                   <form onSubmit={handleRequestToken} className="space-y-6">
@@ -179,8 +165,8 @@ export default function AdminLoginPage() {
                         type="email" 
                         value={email} 
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder="Administrator Identifier"
-                        className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-14 pr-24 py-5 text-sm text-white focus:border-rose-600/40 outline-none transition-all placeholder:text-slate-900 font-bold"
+                        placeholder="Identifier"
+                        className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-14 pr-24 py-5 text-sm text-white focus:border-rose-600/40 outline-none transition-all font-bold"
                         required
                         autoComplete="email"
                       />
@@ -212,19 +198,19 @@ export default function AdminLoginPage() {
                       onClick={() => setStep('input')} 
                       className="text-[10px] font-black text-rose-500 uppercase flex items-center gap-2 mx-auto hover:text-rose-400"
                     >
-                      <ChevronLeft size={14} /> Back to Identifier
+                      <ChevronLeft size={14} /> Back
                     </button>
                     <div className="space-y-1">
-                      <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">Identity Handshake</h3>
-                      <p className="text-[11px] text-slate-600 font-medium italic px-4">Verification token dispatched to grid identifier.</p>
+                      <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">Identity Handshake</h3>
+                      <p className="text-[11px] text-slate-600 font-medium italic px-4 truncate">Sent to {email}</p>
                     </div>
                   </div>
 
-                  <div className="flex justify-between gap-2.5">
+                  <div className="flex justify-between gap-2">
                     {otp.map((digit, idx) => (
                       <input 
                         key={idx} 
-                        ref={(el) => { if (el) otpRefs.current[idx] = el; }}
+                        ref={(el) => { otpRefs.current[idx] = el; }}
                         type="text" 
                         inputMode="numeric" 
                         maxLength={1} 
@@ -261,12 +247,6 @@ export default function AdminLoginPage() {
           </div>
         </div>
       </div>
-
-      <footer className="mt-12 text-center opacity-30 pointer-events-none">
-        <p className="text-[8px] font-mono uppercase tracking-[0.8em] text-slate-800 italic font-black">
-          SomnoAI Digital Sleep Lab • Neural Core Access
-        </p>
-      </footer>
     </div>
   );
 }

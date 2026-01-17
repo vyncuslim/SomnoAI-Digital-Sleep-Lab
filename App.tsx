@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { Loader2, Activity, Zap, User, BrainCircuit, Settings as SettingsIcon, WifiOff, RefreshCw } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi } from './services/supabaseService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
 
-// Direct imports for critical auth components to prevent lazy-load black screens
+// Direct imports for stable routing
 import AdminLoginPage from './app/admin/login/page.tsx';
 import AdminDashboard from './app/admin/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
@@ -80,13 +80,20 @@ const App: React.FC = () => {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         if (initialSession) {
           setSession(initialSession);
-          const status = await adminApi.checkAdminStatus(initialSession.user.id);
-          setIsAdmin(status);
+          try {
+            const status = await adminApi.checkAdminStatus(initialSession.user.id);
+            setIsAdmin(status);
+          } catch (e) {
+            console.warn("Admin check skipped during init:", e);
+          }
         }
-      } catch (err) {
-        console.error("Auth initialization failed:", err);
+      } catch (err: any) {
+        // Suppress AbortError which is common in strict mode / rapid navigation
+        if (err.name !== 'AbortError') {
+          console.error("Auth initialization failed:", err);
+        }
       } finally {
-        setTimeout(() => setIsInitialAuthCheck(false), 500);
+        setIsInitialAuthCheck(false);
       }
     };
     initAuth();
@@ -94,13 +101,15 @@ const App: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
       if (newSession) {
-        const status = await adminApi.checkAdminStatus(newSession.user.id);
-        setIsAdmin(status);
+        try {
+          const status = await adminApi.checkAdminStatus(newSession.user.id);
+          setIsAdmin(status);
+        } catch (e) {
+          console.warn("Failed to update admin status on auth change");
+        }
         
-        // Handle transitions after auth events
-        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+        if (event === 'SIGNED_IN') {
           const hash = window.location.hash;
-          // Only auto-redirect standard users to dashboard
           if (hash !== '#/admin' && hash !== '#/admin/login') {
             setActiveView('dashboard');
           }
@@ -108,7 +117,6 @@ const App: React.FC = () => {
       } else {
         setIsAdmin(false);
         if (event === 'SIGNED_OUT') {
-           setActiveView('dashboard');
            setCurrentRecord(null);
            window.location.hash = '#/';
         }
@@ -183,16 +191,9 @@ const App: React.FC = () => {
   if (isInitialAuthCheck) return <LoadingSpinner label="Linking Identity Handshake..." />;
 
   const renderContent = () => {
-    // Admin specific routes
-    if (activeView === 'admin-login') {
-      return <AdminLoginPage />;
-    }
+    if (activeView === 'admin-login') return <AdminLoginPage />;
+    if (activeView === 'admin') return <AdminDashboard />;
 
-    if (activeView === 'admin') {
-      return <AdminDashboard />;
-    }
-
-    // Standard authentication wall
     if (!session && !isSandbox) {
       return (
         <UserLoginPage 
@@ -203,75 +204,59 @@ const App: React.FC = () => {
       );
     }
 
-    // Main authenticated application views
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40 min-h-screen">
-        <AnimatePresence mode="wait">
-          <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-            {activeView === 'dashboard' && (
-              currentRecord ? (
-                <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => window.location.hash = `#/${v}`} threeDEnabled={threeDEnabled} />
-              ) : (
-                <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
-                  <div className="relative">
-                    <WifiOff size={60} className="text-slate-800" />
-                    <m.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -inset-8 bg-indigo-500/5 rounded-full blur-2xl" />
-                  </div>
-                  <div className="space-y-4">
-                    <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
-                    <p className="text-xs text-slate-500 font-bold uppercase tracking-widest max-w-sm mx-auto leading-relaxed px-6">
-                      {translations[lang].dashboard.manifesto}
-                    </p>
-                  </div>
-                  <button 
-                    onClick={handleSyncHealth}
-                    disabled={syncStatus !== 'idle'}
-                    className="px-12 py-6 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 hover:bg-indigo-500 transition-all flex items-center gap-4"
-                  >
-                    {syncStatus === 'idle' ? <><RefreshCw size={18} /> CONNECT LAB NODES</> : <><Loader2 size={18} className="animate-spin" /> {syncStatus.toUpperCase()}...</>}
-                  </button>
+        <div key={activeView}>
+          {activeView === 'dashboard' && (
+            currentRecord ? (
+              <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => window.location.hash = `#/${v}`} threeDEnabled={threeDEnabled} />
+            ) : (
+              <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
+                <div className="relative">
+                  <WifiOff size={60} className="text-slate-800" />
+                  <m.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -inset-8 bg-indigo-500/5 rounded-full blur-2xl" />
                 </div>
-              )
-            )}
-            {activeView === 'calendar' && (
-              <Suspense fallback={<LoadingSpinner />}>
-                <Trends history={history} lang={lang} />
-              </Suspense>
-            )}
-            {activeView === 'assistant' && (
-              <Suspense fallback={<LoadingSpinner />}>
-                <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} />
-              </Suspense>
-            )}
-            {activeView === 'profile' && (
-              <Suspense fallback={<LoadingSpinner />}>
-                <UserProfile lang={lang} />
-              </Suspense>
-            )}
-            {activeView === 'settings' && (
-              <Suspense fallback={<LoadingSpinner />}>
-                <Settings 
-                  lang={lang} 
-                  onLanguageChange={setLang} 
-                  onLogout={handleLogout} 
-                  onNavigate={(v: any) => window.location.hash = `#/${v}`}
-                  threeDEnabled={threeDEnabled}
-                  onThreeDChange={setThreeDEnabled}
-                  theme="dark"
-                  onThemeChange={()=>{}}
-                  accentColor="indigo"
-                  onAccentChange={()=>{}}
-                  staticMode={false}
-                  onStaticModeChange={()=>{}}
-                  lastSyncTime={null}
-                  onManualSync={() => {}}
-                />
-              </Suspense>
-            )}
-          </m.div>
-        </AnimatePresence>
+                <div className="space-y-4">
+                  <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
+                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest max-w-sm mx-auto leading-relaxed px-6">
+                    {translations[lang].dashboard.manifesto}
+                  </p>
+                </div>
+                <button 
+                  onClick={handleSyncHealth}
+                  disabled={syncStatus !== 'idle'}
+                  className="px-12 py-6 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 hover:bg-indigo-500 transition-all flex items-center gap-4"
+                >
+                  {syncStatus === 'idle' ? <><RefreshCw size={18} /> CONNECT LAB NODES</> : <><Loader2 size={18} className="animate-spin" /> {syncStatus.toUpperCase()}...</>}
+                </button>
+              </div>
+            )
+          )}
+          {activeView === 'calendar' && <Suspense fallback={<LoadingSpinner />}><Trends history={history} lang={lang} /></Suspense>}
+          {activeView === 'assistant' && <Suspense fallback={<LoadingSpinner />}><AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} /></Suspense>}
+          {activeView === 'profile' && <Suspense fallback={<LoadingSpinner />}><UserProfile lang={lang} /></Suspense>}
+          {activeView === 'settings' && (
+            <Suspense fallback={<LoadingSpinner />}>
+              <Settings 
+                lang={lang} 
+                onLanguageChange={setLang} 
+                onLogout={handleLogout} 
+                onNavigate={(v: any) => window.location.hash = `#/${v}`}
+                threeDEnabled={threeDEnabled}
+                onThreeDChange={setThreeDEnabled}
+                theme="dark"
+                onThemeChange={()=>{}}
+                accentColor="indigo"
+                onAccentChange={()=>{}}
+                staticMode={false}
+                onStaticModeChange={()=>{}}
+                lastSyncTime={null}
+                onManualSync={() => {}}
+              />
+            </Suspense>
+          )}
+        </div>
 
-        {/* Global Navigation Hub */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
           <nav className="bg-slate-950/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl">
             {[
