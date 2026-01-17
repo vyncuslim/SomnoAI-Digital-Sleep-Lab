@@ -1,15 +1,13 @@
-
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, 
   HeartHandshake, Globe, Lock, Loader2, CreditCard, 
-  Heart, Copy, QrCode, Languages, UserCircle, Settings as SettingsIcon, Brain, ShieldAlert
+  Heart, Copy, QrCode, Languages, UserCircle, Settings as SettingsIcon, Brain, ShieldAlert, RefreshCw
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-// Fixed: Using standalone export from supabaseService
 import { updateUserPassword, adminApi } from '../services/supabaseService.ts';
 import { supabase } from '../lib/supabaseClient.ts';
 
@@ -35,61 +33,26 @@ interface SettingsProps {
 
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, 
-  lastSyncTime, onManualSync, onNavigate,
-  isRecoveringPassword = false
+  onNavigate, onManualSync, isRecoveringPassword = false
 }) => {
   const [showDonation, setShowDonation] = useState(false);
-  const [isEngineLinked, setIsEngineLinked] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [manualKey, setManualKey] = useState(localStorage.getItem('somno_manual_gemini_key') || '');
-  const [showKey, setShowKey] = useState(false);
-  const [saveStatus, setSaveStatus] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-
-  // Password update states
-  const [newPassword, setNewPassword] = useState('');
-  const [isUpdatingPassword, setIsUpdatingPassword] = useState(false);
-  const [passwordStatus, setPasswordStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  const [passwordError, setPasswordError] = useState('');
+  const [isSyncing, setIsSyncing] = useState(false);
 
   const t = translations[lang].settings;
   const isZh = lang === 'zh';
-  const isSandbox = localStorage.getItem('somno_sandbox_active') === 'true';
 
   useEffect(() => {
     const checkState = async () => {
-      const storedKey = localStorage.getItem('somno_manual_gemini_key');
       const { data: { session } } = await supabase.auth.getSession();
-      
       if (session) {
-        // Fixed: checkAdminStatus is now added to adminApi
         const adminStatus = await adminApi.checkAdminStatus(session.user.id);
         setIsAdmin(adminStatus);
       }
-
-      if ((window as any).aistudio) {
-        const selected = await (window as any).aistudio.hasSelectedApiKey();
-        setIsEngineLinked(selected || !!process.env.API_KEY || !!storedKey);
-      } else {
-        setIsEngineLinked(!!process.env.API_KEY || !!storedKey);
-      }
     };
     checkState();
-  }, [saveStatus, isSandbox]);
-
-  const handleLinkEngine = async () => {
-    if ((window as any).aistudio) {
-      await (window as any).aistudio.openSelectKey();
-      setIsEngineLinked(true);
-    }
-  };
-
-  const handleSaveManualKey = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    localStorage.setItem('somno_manual_gemini_key', manualKey);
-    setSaveStatus(true);
-    setTimeout(() => setSaveStatus(false), 2000);
-  };
+  }, []);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -97,276 +60,122 @@ export const Settings: React.FC<SettingsProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handlePasswordUpdate = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 6) {
-      setPasswordError(isZh ? "密码至少需要 6 个字符" : "Password must be at least 6 characters");
-      setPasswordStatus('error');
-      return;
-    }
-
-    setIsUpdatingPassword(true);
-    setPasswordStatus('idle');
-    try {
-      // Fixed: updateUserPassword is now exported correctly
-      await updateUserPassword(newPassword);
-      setPasswordStatus('success');
-      setNewPassword('');
-      setTimeout(() => setPasswordStatus('idle'), 3000);
-    } catch (err: any) {
-      setPasswordError(err.message || (isZh ? "密码更新失败" : "Password update failed"));
-      setPasswordStatus('error');
-    } finally {
-      setIsUpdatingPassword(false);
-    }
+  const triggerSync = async () => {
+    setIsSyncing(true);
+    await onManualSync();
+    setTimeout(() => setIsSyncing(false), 2000);
   };
 
   return (
-    <div className="space-y-12 pb-32 animate-in fade-in duration-700 max-w-2xl mx-auto px-4">
+    <div className="space-y-12 pb-32 max-w-2xl mx-auto px-4">
       <header className="text-center space-y-2">
         <h1 className="text-3xl font-black tracking-tighter text-white italic uppercase">{isZh ? '系统配置' : 'System Config'}</h1>
-        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">{t.subtitle}</p>
+        <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">NEURAL INFRASTRUCTURE</p>
       </header>
 
-      {isRecoveringPassword && (
-        <m.div 
-          initial={{ opacity: 0, scale: 0.95 }} 
-          animate={{ opacity: 1, scale: 1 }} 
-          className="p-6 bg-indigo-500/10 border border-indigo-500/20 rounded-[2.5rem] flex items-start gap-4 text-indigo-400"
-        >
-          <ShieldAlert size={20} className="shrink-0 mt-0.5" />
-          <p className="text-[11px] font-bold italic leading-relaxed">
-            {t.passwordRecoveryNotice}
-          </p>
-        </m.div>
-      )}
-
-      {/* Language Switcher Section */}
-      <GlassCard className="p-8 rounded-[3.5rem] border-white/5 bg-white/[0.01]">
-        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-              <Languages size={20} />
-            </div>
-            <div>
-              <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{isZh ? '系统语言' : 'System Language'}</h2>
-              <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Protocol Interface</p>
-            </div>
-          </div>
-          <div className="flex bg-slate-950/80 p-1 rounded-full border border-white/5 shadow-inner">
-            {(['en', 'zh', 'de', 'fr'] as Language[]).map((l) => (
-              <button
-                key={l}
-                onClick={() => onLanguageChange(l)}
-                className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-xl' : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                {l.toUpperCase()}
-              </button>
-            ))}
-          </div>
-        </div>
-      </GlassCard>
-
-      {/* AI Core Section */}
-      <GlassCard className="p-10 rounded-[4rem] space-y-10">
-        <div className="space-y-8">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="w-14 h-14 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                <Brain size={24} />
-              </div>
-              <div>
-                <h2 className="text-lg font-black italic text-white uppercase tracking-tight">{t.geminiCore}</h2>
-                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{isEngineLinked ? t.active : 'Disconnected'}</p>
-              </div>
-            </div>
-            <button 
-              onClick={handleLinkEngine}
-              className="px-6 py-2.5 rounded-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-widest transition-all hover:scale-105 active:scale-95 shadow-xl"
-            >
-              Link Node
-            </button>
-          </div>
-
-          <div className="space-y-4 pt-8 border-t border-white/5">
-            <div className="flex justify-between items-center px-4">
-              <label className="text-[10px] font-black uppercase text-slate-500 italic">API Key Override</label>
-              <a 
-                href="https://ai.google.dev/gemini-api/docs/billing" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-[10px] font-bold text-indigo-400 hover:underline flex items-center gap-1"
-              >
-                GCP Billing <CreditCard size={10}/><ExternalLink size={10}/>
-              </a>
-            </div>
-            
-            <form onSubmit={handleSaveManualKey} className="relative">
-              <input 
-                type={showKey ? 'text' : 'password'}
-                value={manualKey}
-                onChange={(e) => setManualKey(e.target.value)}
-                placeholder="Secure API Token..."
-                className="w-full bg-slate-950/60 border border-white/10 rounded-full px-8 py-4 text-xs font-mono text-indigo-300 outline-none focus:border-indigo-500/50"
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex gap-2">
-                <button type="button" onClick={() => setShowKey(!showKey)} className="p-2 text-slate-600 hover:text-white transition-colors">
-                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-                <button type="submit" className={`p-2 rounded-full ${saveStatus ? 'text-emerald-400' : 'text-slate-600 hover:text-indigo-400'}`}>
-                  {saveStatus ? <CheckCircle2 size={16} /> : <Save size={16} />}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      </GlassCard>
-
-      {/* Account Security Section */}
-      <GlassCard className="p-8 rounded-[4rem] space-y-8">
-        <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-rose-500/10 flex items-center justify-center text-rose-400">
-            <Lock size={20} />
-          </div>
-          <div>
-            <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{isZh ? '账户安全' : 'Security Pulse'}</h2>
-            <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">Neural Access Key</p>
-          </div>
-        </div>
-
-        <form onSubmit={handlePasswordUpdate} className="space-y-4">
-          <label className="text-[10px] font-black uppercase text-slate-500 px-4">{isZh ? '设置新访问密码' : 'Reset Neural Key'}</label>
-          <div className="relative group">
-            <input 
-              type="password"
-              value={newPassword}
-              onChange={(e) => {
-                setNewPassword(e.target.value);
-                if (passwordStatus === 'error') setPasswordStatus('idle');
-              }}
-              placeholder={isZh ? "输入新密码" : "New Neural Key..."}
-              className="w-full bg-slate-950/60 border border-white/10 rounded-full px-8 py-5 text-xs text-white outline-none focus:border-indigo-500/50 transition-all"
-            />
-            <button 
-              type="submit"
-              disabled={isUpdatingPassword || !newPassword}
-              className={`absolute right-2 top-1/2 -translate-y-1/2 px-6 py-3 rounded-full font-black text-[9px] uppercase tracking-widest transition-all ${
-                passwordStatus === 'success' ? 'bg-emerald-500 text-white' : 
-                passwordStatus === 'error' ? 'bg-rose-500 text-white' : 
-                'bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-30'
-              }`}
-            >
-              {isUpdatingPassword ? <Loader2 size={14} className="animate-spin" /> : 
-               passwordStatus === 'success' ? <CheckCircle2 size={14} /> : 
-               passwordStatus === 'error' ? <X size={14} /> : 
-               (isZh ? '更新' : 'Commit')}
-            </button>
-          </div>
-          {passwordError && <p className="text-[9px] text-rose-500 px-6">{passwordError}</p>}
-        </form>
-      </GlassCard>
-
-      <div className="space-y-4 pt-6">
-        {isAdmin && (
-          <button 
-            onClick={() => onNavigate('admin')}
-            className="w-full py-5 rounded-full bg-rose-600/10 border border-rose-500/30 text-rose-400 font-black text-[11px] uppercase tracking-widest hover:bg-rose-600 hover:text-white transition-all flex items-center justify-center gap-3 shadow-xl"
-          >
-            <SettingsIcon size={16} /> Command Deck
-          </button>
-        )}
-        
+      <div className="space-y-4">
+        {/* 手动同步按钮 */}
         <button 
-          type="button"
-          onClick={() => setShowDonation(true)}
-          className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-white font-black text-[11px] uppercase tracking-widest hover:bg-indigo-600/20 transition-all flex items-center justify-center gap-3"
+          onClick={triggerSync}
+          disabled={isSyncing}
+          className="w-full py-6 rounded-[2rem] bg-emerald-600/10 border border-emerald-500/30 text-emerald-400 font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-4 active:scale-95 transition-all shadow-xl"
         >
-          <HeartHandshake size={18} className="text-rose-400" /> {t.coffee}
+          {isSyncing ? <Loader2 size={20} className="animate-spin" /> : <RefreshCw size={20} />}
+          {isSyncing ? 'Syncing Telemetry...' : 'Sync Biometric Data'}
         </button>
-        
+
         <button 
-          onClick={onLogout}
-          className="w-full py-5 rounded-full bg-white/5 border border-white/10 text-slate-500 font-black text-[11px] uppercase tracking-widest hover:text-rose-400 transition-all flex items-center justify-center gap-3 italic"
+          onClick={() => setShowDonation(true)}
+          className="w-full py-6 rounded-[2rem] bg-[#4f46e5] text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl flex items-center justify-center gap-3 active:scale-95 transition-transform"
         >
-          <LogOut size={16} /> {t.logout}
+          <HeartHandshake size={20} /> {t.coffee}
         </button>
       </div>
 
-      {/* Donation Modal */}
+      <div className="pt-10 border-t border-white/5 space-y-4">
+        <button onClick={onLogout} className="w-full py-4 text-slate-800 font-black text-[10px] uppercase tracking-widest hover:text-rose-400 transition-all flex items-center justify-center gap-3 italic">
+          <LogOut size={16} /> {t.logout}
+        </button>
+
+        {isAdmin && (
+          <button onClick={() => onNavigate('admin')} className="w-full py-4 bg-rose-500/10 border border-rose-500/20 text-rose-500 rounded-full font-black text-[10px] uppercase tracking-widest">
+            Command Deck
+          </button>
+        )}
+      </div>
+
       <AnimatePresence>
         {showDonation && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/80 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
             <m.div 
-              initial={{ scale: 0.8, opacity: 0 }} 
+              initial={{ scale: 0.9, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.8, opacity: 0 }}
+              exit={{ scale: 0.9, opacity: 0 }}
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
-              className="w-full max-w-xl"
+              className="w-full max-w-2xl"
             >
-              <GlassCard className="p-10 md:p-14 rounded-[5rem] border-rose-500/30 shadow-3xl bg-[#01040a]/90">
-                <div className="flex flex-col items-center gap-10">
-                  <div className="w-24 h-24 rounded-full bg-[#f43f5e] flex items-center justify-center text-white shadow-2xl relative">
-                    <Heart size={40} strokeWidth={2.5} />
-                    <m.div animate={{ scale: [1, 1.4, 1], opacity: [0.3, 0, 0.3] }} transition={{ duration: 2, repeat: Infinity }} className="absolute inset-0 bg-white/20 rounded-full" />
-                  </div>
-                  
-                  <div className="text-center space-y-4">
-                    <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight drop-shadow-md">
-                      {t.thankYouTitle}
-                    </h2>
-                    <p className="text-sm text-slate-400 italic leading-relaxed px-6">
-                      {isZh ? '您的支持将维持实验室算力运行。' : 'Your support fuels lab processing capacity.'}
-                    </p>
-                  </div>
-
-                  <div className="w-full grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
-                    <div className="flex flex-col items-center gap-4 p-6 bg-white/5 border border-white/10 rounded-[3rem] relative group">
-                       <div className="p-4 bg-white rounded-[2rem] shadow-2xl">
-                          <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(t.paypalLink)}&color=020617&bgcolor=ffffff`}
-                            alt="Payment QR" 
-                            className="w-32 h-32 md:w-40 md:h-40"
-                          />
-                       </div>
-                    </div>
-
-                    <div className="space-y-6 pt-2">
-                      {[
-                        { id: 'duitnow', label: 'DUITNOW / TNG', value: t.duitNowId },
-                        { id: 'paypal', label: 'PAYPAL', value: t.paypalId }
-                      ].map((item) => (
-                        <div key={item.id} className="p-5 bg-white/5 border border-white/10 rounded-3xl flex items-center justify-between relative group hover:border-indigo-500/30 transition-all">
-                          <div className="space-y-1">
-                            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
-                            <p className="text-sm font-bold text-white italic tracking-tight">{item.value}</p>
-                          </div>
-                          <button 
-                            onClick={() => handleCopy(item.id, item.value)}
-                            className={`p-2.5 rounded-xl transition-all ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-600 hover:text-white bg-white/5'}`}
-                          >
-                            {copiedId === item.id ? <CheckCircle2 size={18} /> : <Copy size={18} />}
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="w-full pt-4">
-                     <a 
-                       href={t.paypalLink}
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       className="w-full py-5 rounded-full bg-[#4f46e5] text-white font-black text-xs uppercase tracking-[0.3em] shadow-2xl hover:bg-[#6366f1] transition-all flex items-center justify-center gap-3 active:scale-95"
-                     >
-                       <ExternalLink size={16} /> {isZh ? '前往 PayPal 页面' : 'GO TO PAYPAL PAGE'}
-                     </a>
-                  </div>
-                  
-                  <button onClick={() => setShowDonation(false)} className="text-[10px] font-black uppercase text-slate-700 hover:text-slate-400 transition-colors tracking-widest">
-                    {t.closeReceipt}
-                  </button>
+              <div className="flex flex-col items-center gap-10">
+                <m.div 
+                  initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  className="w-24 h-24 rounded-full bg-[#f43f5e] flex items-center justify-center text-white shadow-[0_0_50px_rgba(244,63,94,0.4)]"
+                >
+                  <Heart size={48} fill="white" strokeWidth={0} />
+                </m.div>
+                
+                <div className="text-center space-y-4">
+                  <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-[0.9]">
+                    CONTRIBUTION<br />ACKNOWLEDGED
+                  </h2>
+                  <p className="text-[13px] text-slate-400 italic max-w-sm mx-auto leading-relaxed">
+                    Your support fuels lab processing. Payment details follow (English Default):
+                  </p>
                 </div>
-              </GlassCard>
+
+                <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-6 items-start">
+                  <div className="md:col-span-2 p-8 bg-[#0f172a]/80 border border-white/5 rounded-[3rem] flex flex-col items-center gap-6 shadow-inner">
+                     <div className="bg-white p-5 rounded-[2rem] shadow-2xl">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(t.paypalLink)}&color=020617&bgcolor=ffffff`}
+                          alt="QR" className="w-36 h-36 md:w-44 md:h-44"
+                        />
+                     </div>
+                     <p className="text-[10px] font-black text-[#f43f5e] uppercase tracking-[0.3em] flex items-center gap-2">
+                        <QrCode size={14} /> SCAN TO PAYPAL
+                     </p>
+                  </div>
+
+                  <div className="md:col-span-3 space-y-4">
+                    {[
+                      { id: 'duitnow', label: 'DUITNOW / TNG', value: t.duitNowId },
+                      { id: 'paypal', label: 'PAYPAL', value: t.paypalId }
+                    ].map((item) => (
+                      <div key={item.id} className="p-6 bg-[#0f172a]/50 border border-white/5 rounded-[2rem] flex items-center justify-between group hover:border-[#4f46e5]/30 transition-all">
+                        <div className="space-y-1">
+                          <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
+                          <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>
+                        </div>
+                        <button 
+                          onClick={() => handleCopy(item.id, item.value)}
+                          className={`p-3 rounded-xl transition-all ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-600 hover:text-white bg-white/5'}`}
+                        >
+                          <Copy size={20} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <button 
+                  onClick={() => window.open(t.paypalLink, '_blank')}
+                  className="w-full py-6 rounded-full bg-[#4f46e5] text-white font-black text-sm uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl active:scale-95 transition-transform"
+                >
+                  <ExternalLink size={20} /> GO TO PAYPAL PAGE
+                </button>
+
+                <button onClick={() => setShowDonation(false)} className="text-[10px] font-black uppercase text-slate-700 hover:text-slate-400 transition-colors tracking-widest">
+                  ABORT VIEWING
+                </button>
+              </div>
             </m.div>
           </div>
         )}

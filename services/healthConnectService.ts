@@ -16,8 +16,12 @@ declare var google: any;
 
 const nanostampsToMillis = (nanos: any): number => {
   if (nanos === null || nanos === undefined) return Date.now();
-  const n = BigInt(nanos);
-  return Number(n / BigInt(1000000));
+  try {
+    const n = BigInt(nanos);
+    return Number(n / BigInt(1000000));
+  } catch (e) {
+    return Number(nanos) / 1000000;
+  }
 };
 
 const toMillis = (val: any): number => {
@@ -29,7 +33,6 @@ const toMillis = (val: any): number => {
 export class HealthConnectService {
   private accessToken: string | null = null;
   private tokenClient: any = null;
-  private initPromise: Promise<void> | null = null;
   private authPromise: { resolve: (t: string) => void; reject: (e: Error) => void } | null = null;
 
   constructor() {
@@ -40,65 +43,60 @@ export class HealthConnectService {
     return !!this.accessToken;
   }
 
-  private async injectGoogleScript(): Promise<void> {
-    if (typeof google !== 'undefined' && google.accounts?.oauth2) return;
+  private ensureTokenClientInitialized() {
+    if (this.tokenClient) return;
     
-    return new Promise((resolve, reject) => {
-      const scriptId = 'google-gsi-sks';
-      if (document.getElementById(scriptId)) {
-        let checkInterval = setInterval(() => {
-          if (typeof google !== 'undefined' && google.accounts?.oauth2) {
-            clearInterval(checkInterval);
-            resolve();
-          }
-        }, 100);
-        return;
-      }
+    // 检查 Google SDK 是否加载
+    if (typeof google === 'undefined' || !google.accounts?.oauth2) {
+      console.error("Health Connect Bridge: Google OAuth2 SDK not found.");
+      throw new Error("HEALTH_CONNECT_SDK_MISSING");
+    }
 
-      const script = document.createElement('script');
-      script.id = scriptId;
-      script.src = "https://accounts.google.com/gsi/client";
-      script.async = true;
-      script.defer = true;
-      script.onload = () => {
-        setTimeout(() => {
-          if (google && google.accounts?.oauth2) resolve();
-          else reject(new Error("GOOGLE_SDK_INIT_FAILED"));
-        }, 200);
-      };
-      script.onerror = () => reject(new Error("GOOGLE_SDK_LOAD_ERROR"));
-      document.head.appendChild(script);
+    this.tokenClient = google.accounts.oauth2.initTokenClient({
+      client_id: CLIENT_ID,
+      scope: SCOPES.join(' '),
+      callback: (response: any) => {
+        if (response.error) {
+          this.authPromise?.reject(new Error(response.error_description || response.error));
+        } else {
+          this.accessToken = response.access_token;
+          localStorage.setItem('health_connect_token', this.accessToken!);
+          this.authPromise?.resolve(this.accessToken!);
+        }
+        this.authPromise = null;
+      }
     });
   }
 
-  public async ensureClientInitialized(): Promise<void> {
-    if (this.initPromise) return this.initPromise;
-    this.initPromise = this.injectGoogleScript();
-    return this.initPromise;
-  }
-
   public async authorize(forcePrompt = false): Promise<string> {
-    await this.ensureClientInitialized();
-    if (!this.tokenClient) {
-      this.tokenClient = google.accounts.oauth2.initTokenClient({
-        client_id: CLIENT_ID,
-        scope: SCOPES.join(' '),
-        callback: (response: any) => {
-          if (response.error) {
-            this.authPromise?.reject(new Error(response.error_description || response.error));
-          } else {
-            this.accessToken = response.access_token;
-            localStorage.setItem('health_connect_token', this.accessToken!);
-            this.authPromise?.resolve(this.accessToken!);
-          }
-          this.authPromise = null;
-        }
-      });
+    try {
+      this.ensureTokenClientInitialized();
+    } catch (e) {
+      // 延迟重试，防止脚本解析竞态
+      await new Promise(r => setTimeout(r, 800));
+      this.ensureTokenClientInitialized();
     }
 
     return new Promise((resolve, reject) => {
-      this.authPromise = { resolve, reject };
-      this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
+      // 设置 10 秒超时，防止弹出窗口被拦截后无限挂起
+      const timeout = setTimeout(() => {
+        if (this.authPromise) {
+          this.authPromise.reject(new Error("AUTHORIZATION_TIMEOUT"));
+          this.authPromise = null;
+        }
+      }, 10000);
+
+      this.authPromise = { 
+        resolve: (token) => { clearTimeout(timeout); resolve(token); }, 
+        reject: (err) => { clearTimeout(timeout); reject(err); } 
+      };
+
+      try {
+        this.tokenClient.requestAccessToken({ prompt: forcePrompt ? 'consent' : '' });
+      } catch (e) {
+        clearTimeout(timeout);
+        reject(new Error("POPUP_BLOCKED_OR_FAILED"));
+      }
     });
   }
 
@@ -108,21 +106,25 @@ export class HealthConnectService {
   }
 
   private async fetchAggregate(token: string, startTime: number, endTime: number, dataTypeName: string) {
-    const response = await fetch(`https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        aggregateBy: [{ dataTypeName }],
-        startTimeMillis: startTime,
-        endTimeMillis: endTime,
-        bucketByTime: { durationMillis: endTime - startTime }
-      })
-    });
-    if (!response.ok) return null;
-    return response.json();
+    try {
+      const response = await fetch(`https://www.googleapis.com/fitness/v1/users/me/dataset:aggregate`, {
+        method: 'POST',
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          aggregateBy: [{ dataTypeName }],
+          startTimeMillis: startTime,
+          endTimeMillis: endTime,
+          bucketByTime: { durationMillis: endTime - startTime }
+        })
+      });
+      if (!response.ok) return null;
+      return response.json();
+    } catch (e) {
+      return null;
+    }
   }
 
   public async fetchSleepData(): Promise<Partial<SleepRecord>> {
@@ -130,7 +132,6 @@ export class HealthConnectService {
     if (!token) throw new Error("LINK_REQUIRED");
 
     const now = Date.now();
-    // Search window: last 5 days
     const searchWindowStart = now - (120 * 60 * 60 * 1000); 
 
     const sessionRes = await fetch(
@@ -138,27 +139,28 @@ export class HealthConnectService {
       { headers: { Authorization: `Bearer ${token}` } }
     );
 
+    if (!sessionRes.ok) throw new Error("HEALTH_CONNECT_API_DENIED");
     const sessionData = await sessionRes.json();
+    // 过滤出 activityType 为 72 (Sleep) 的会话
     const sleepSessions = (sessionData.session || []).filter((s: any) => s.activityType === 72);
 
     if (sleepSessions.length === 0) {
-       // Fallback: Check raw sleep segments if no session is wrapped
        const rawCheck = await this.fetchAggregate(token, searchWindowStart, now, "com.google.sleep.segment");
        if (!rawCheck || !rawCheck.bucket?.[0]?.dataset?.[0]?.point?.length) {
-         throw new Error("SLEEP_DATA_NOT_FOUND");
+         throw new Error("NO_HEALTH_CONNECT_DATA");
        }
        
        const p = rawCheck.bucket[0].dataset[0].point[rawCheck.bucket[0].dataset[0].point.length - 1];
        const sTime = nanostampsToMillis(p.startTimeNanos);
        const eTime = nanostampsToMillis(p.endTimeNanos);
-       return this.processDetailedData(token, sTime, eTime, "Extrapolated Lab Session");
+       return this.processDetailedData(token, sTime, eTime, "Health Connect Session");
     }
 
     const latest = sleepSessions[sleepSessions.length - 1];
     const sTime = toMillis(latest.startTimeMillis);
     const eTime = toMillis(latest.endTimeMillis);
 
-    return this.processDetailedData(token, sTime, eTime, latest.name || "Biometric Session");
+    return this.processDetailedData(token, sTime, eTime, latest.name || "Health Connect Biometrics");
   }
 
   private async processDetailedData(token: string, sTime: number, eTime: number, sessionName: string): Promise<Partial<SleepRecord>> {

@@ -1,4 +1,3 @@
-
 import { supabase } from '../lib/supabaseClient.ts';
 
 // Re-export the supabase client for external access
@@ -48,7 +47,7 @@ export const authApi = {
     supabase.auth.signUp({ 
       email, 
       password,
-      options: { emailRedirectTo: 'https://sleepsomno.com/#/dashboard' }
+      options: { emailRedirectTo: `${window.location.origin}/#/dashboard` }
     }),
   
   signIn: (email: string, password: string) => 
@@ -59,7 +58,7 @@ export const authApi = {
     supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: 'https://sleepsomno.com/#/dashboard'
+        emailRedirectTo: `${window.location.origin}/#/dashboard`
       }
     }),
 
@@ -71,7 +70,7 @@ export const authApi = {
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://sleepsomno.com/#/dashboard'
+        redirectTo: `${window.location.origin}/#/dashboard`
       }
     }),
 
@@ -94,29 +93,37 @@ export const adminApi = {
    * Strictly verifies if the current user has the 'admin' role.
    */
   isAdmin: async () => {
-    // Refactored to fetch the current user's session first to ensure ID matching.
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user) return false;
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', session.user.id)
-      .single();
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) return false;
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
 
-    return profile?.role === 'admin';
+      return profile?.role === 'admin';
+    } catch (e) {
+      console.warn("Admin check failed, defaulting to false.", e);
+      return false;
+    }
   },
 
   /**
    * Checks if a specific user has admin privileges.
    */
   checkAdminStatus: async (userId: string) => {
-    const { data: profile } = await supabase
-      .from('profiles')
-      .select('role')
-      .eq('id', userId)
-      .single();
+    try {
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .single();
 
-    return profile?.role === 'admin';
+      return profile?.role === 'admin';
+    } catch (e) {
+      return false;
+    }
   },
 
   getUsers: async () => {
@@ -125,12 +132,10 @@ export const adminApi = {
   },
 
   blockUser: async (id: string) => {
-    // Sets is_blocked flag for the targeted user.
     await supabase.from('profiles').update({ is_blocked: true }).eq('id', id);
   },
 
   unblockUser: async (id: string) => {
-    // Resets is_blocked flag for the targeted user.
     await supabase.from('profiles').update({ is_blocked: false }).eq('id', id);
   },
 
