@@ -55,7 +55,7 @@ export const translations = {
       resetHeading: 'RECOVER ACCESS',
       resetSub: 'Enter your email to receive a recovery link.',
       sendReset: 'SEND RECOVERY LINK',
-      resetSuccess: 'Handshake initiated. Check your inbox for the recovery link.'
+      resetSuccess: 'Handshake initiated. Check your inbox.'
     },
     settings: {
       title: 'SomnoAI Digital Sleep Lab',
@@ -110,10 +110,58 @@ export const translations = {
       error: 'Neural synthesis failed. Please check your link.',
       generateLullaby: 'Generate Neural Lullaby',
       playing: 'Synthesizing Audio...'
+    },
+    about: {
+      title: 'Technical Specs',
+      manifesto: 'It integrates physiological indicator monitoring, AI deep insights and health advice into one, providing users with a full range of digital sleep experiments.',
+      protocolTitle: 'Health Connect Bridge Protocol',
+      waterAnalogyTitle: 'Biological Flow Analogy',
+      waterAnalogyDesc: 'Think of Health Connect as a central water reservoir. Your watch fills it with pure physiological water. SomnoAI opens the valve to channel this flow into our neural filters for purification and insight.',
+      toolboxTitle: 'Bio-Digital Toolbox',
+      toolboxDesc: 'We use Android Health Connect SDK for precise cross-app communication.',
+      whsTitle: 'Warehouse Sync',
+      whsDesc: 'Data moves through atomic record updates, ensuring zero latency.',
+      tokenTitle: 'Sync Token Lifecycle',
+      step1: 'Identify SDK availability on host.',
+      step2: 'Initiate Health Connect client.',
+      step3: 'Validate Manifest permission blocks.',
+      step4: 'Register result contract launcher.',
+      step5: 'Launch system permission dialog.',
+      step6: 'Verify granted cryptographic hashes.',
+      step7: 'Read biometric records via TimeRange.',
+      step8: 'Initialize continuous sync loop.',
+      tokenInitial: 'Token: Initial Handshake Generated.',
+      tokenCycle: 'Token: 30-day lookback active.',
+      tokenStore: 'Token: Client storage secured.',
+      tokenExpire: 'Token: TTL Reached (30 Days).'
     }
   },
   zh: {
     nav: { lab: '实验室', trends: '趋势分析', insights: 'AI 洞察', settings: '系统设置' },
+    about: {
+      title: '技术规格',
+      manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
+      protocolTitle: 'Health Connect 桥接协议',
+      waterAnalogyTitle: '生物流类比',
+      waterAnalogyDesc: '将 Health Connect 想象成一个中央水库。您的手表将纯净的生理指标注入其中。SomnoAI 打开阀门，将这些流量引导至我们的神经过滤器中，进行净化和洞察。',
+      toolboxTitle: '数字生物工具箱',
+      toolboxDesc: '我们使用 Android Health Connect SDK 进行精确的跨应用通信。',
+      whsTitle: '仓库同步',
+      whsDesc: '数据通过原子记录更新移动，确保零延迟。',
+      tokenTitle: '同步令牌生命周期',
+      step1: '识别主机 SDK 可用性。',
+      step2: '启动 Health Connect 客户端。',
+      step3: '验证清单权限块。',
+      step4: '注册结果合同启动器。',
+      step5: '启动系统权限对话框。',
+      step6: '验证授予的加密哈希。',
+      step7: '通过时间范围读取生物识别记录。',
+      step8: '初始化持续同步循环。',
+      tokenInitial: '令牌：生成初始握手。',
+      tokenCycle: '令牌：30 天追溯激活。',
+      tokenStore: '令牌：客户端存储已加密。',
+      tokenExpire: '令牌：达到 TTL（30 天）。'
+    },
     errors: {
       healthApiDenied: '连接被拒绝：请确保在 Android 设置中授予了权限。',
       syncFailed: '遥测同步失败。请检查系统健康链路。',
@@ -166,7 +214,7 @@ export const translations = {
       resetHeading: '恢复访问权限',
       resetSub: '输入您的电子邮件以获取恢复链接。',
       sendReset: '发送恢复链接',
-      resetSuccess: '握手已启动。请检查您的收件箱以获取恢复链接。'
+      resetSuccess: '握手已启动。请检查您的收件箱。'
     },
     admin: {
       securityTitle: '安全监测脉搏',
@@ -216,7 +264,7 @@ export const translations = {
     },
     assistant: {
       title: '神经助手',
-      intro: '神经链路已建立。今天我能为您如何优化生物恢复？',
+      intro: '神经链路已建立。今天我能为您如何 optimize 生物恢复？',
       placeholder: '描述您的睡眠质量或请求分析...',
       error: '神经合成失败。请检查链路。',
       generateLullaby: '生成神经催眠曲',

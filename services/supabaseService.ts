@@ -1,48 +1,21 @@
-import { supabase } from '../lib/supabaseClient.ts';
 
-// Re-export the supabase client for external access
-export { supabase };
+import { createClient } from '@supabase/supabase-js';
 
-/**
- * Profiles Management API
- */
-export const profileApi = {
-  getMyProfile: async () => {
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
-    if (userError || !user) return null;
+const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qY3Z2dHlhZWJkb2RtZWd3cWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyODc2ODgsImV4cCI6MjA4Mzg2MzY4OH0.FJY9V6fdTFOFCXeqWNwv1cQnsnQfq4RZq-5WyLNzPCg';
 
-    const { data, error } = await supabase
-      .from('profiles')
-      .select('*')
-      .eq('id', user.id)
-      .single();
-
-    return data;
-  },
-
-  updateProfile: async (updates: {
-    full_name?: string;
-    avatar_url?: string;
-    preferences?: any;
-  }) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Authentication required');
-
-    return supabase
-      .from('profiles')
-      .update({
-        ...updates,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', user.id);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
   }
-};
+});
 
 /**
- * Authentication & Identity API (Strictly following provided logic)
+ * Authentication & Identity API
  */
 export const authApi = {
-  // Email + Password Auth
   signUp: (email: string, password: string) => 
     supabase.auth.signUp({ 
       email, 
@@ -53,7 +26,6 @@ export const authApi = {
   signIn: (email: string, password: string) => 
     supabase.auth.signInWithPassword({ email, password }),
 
-  // Email OTP Auth
   sendOTP: (email: string) => 
     supabase.auth.signInWithOtp({
       email,
@@ -65,12 +37,16 @@ export const authApi = {
   verifyOTP: (email: string, token: string) => 
     supabase.auth.verifyOtp({ email, token, type: 'email' }),
 
-  // Google OAuth Auth
   signInWithGoogle: () => 
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: `${window.location.origin}/#/dashboard`
+        redirectTo: `${window.location.origin}/#/dashboard`,
+        // 关键修复：强制弹出 Google 账号选择器
+        queryParams: {
+          prompt: 'select_account',
+          access_type: 'offline'
+        }
       }
     }),
 
@@ -85,71 +61,40 @@ export const authApi = {
   signOut: () => supabase.auth.signOut()
 };
 
-/**
- * Administrative Logic (RBAC via profiles.role)
- */
+export const profileApi = {
+  getMyProfile: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    return data;
+  },
+  updateProfile: async (updates: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('Auth required');
+    return supabase.from('profiles').update(updates).eq('id', user.id);
+  }
+};
+
 export const adminApi = {
-  /**
-   * Strictly verifies if the current user has the 'admin' role.
-   */
   isAdmin: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return false;
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      return profile?.role === 'admin';
-    } catch (e) {
-      console.warn("Admin check failed, defaulting to false.", e);
-      return false;
-    }
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) return false;
+    const { data } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
+    return data?.role === 'admin';
   },
-
-  /**
-   * Checks if a specific user has admin privileges.
-   */
   checkAdminStatus: async (userId: string) => {
-    try {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', userId)
-        .single();
-
-      return profile?.role === 'admin';
-    } catch (e) {
-      return false;
-    }
+    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
+    return data?.role === 'admin';
   },
-
-  getUsers: async () => {
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    return data || [];
-  },
-
-  blockUser: async (id: string) => {
-    await supabase.from('profiles').update({ is_blocked: true }).eq('id', id);
-  },
-
-  unblockUser: async (id: string) => {
-    await supabase.from('profiles').update({ is_blocked: false }).eq('id', id);
-  },
-
-  getSecurityEvents: async () => {
-    const { data } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
-    return data || [];
-  },
-  
+  getUsers: async () => (await supabase.from('profiles').select('*')).data || [],
+  blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
+  unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
+  getSecurityEvents: async () => (await supabase.from('security_events').select('*')).data || [],
   getSleepRecords: async () => [],
   getFeedback: async () => [],
   getAuditLogs: async () => []
 };
 
-// Legacy support for standalone component exports
 export const updateUserPassword = authApi.updatePassword;
 export const signInWithEmailOTP = authApi.sendOTP;
 export const verifyOtp = async (email: string, token: string) => {
