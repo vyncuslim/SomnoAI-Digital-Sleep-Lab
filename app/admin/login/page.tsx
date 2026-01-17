@@ -29,7 +29,6 @@ export default function AdminLoginPage() {
   const [cooldown, setCooldown] = useState(0);
   
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-  // Use a ref to strictly prevent concurrent verification calls (fixes 403 race condition)
   const verificationLock = useRef(false);
 
   useEffect(() => {
@@ -39,7 +38,7 @@ export default function AdminLoginPage() {
     }
   }, [cooldown]);
 
-  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
 
   const handleRequestToken = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -53,7 +52,12 @@ export default function AdminLoginPage() {
       if (cooldown > 0) return;
       
       const { error: otpErr } = await authApi.sendOTP(targetEmail);
-      if (otpErr) throw otpErr;
+      if (otpErr) {
+        if (otpErr.message.includes("User not found")) {
+          throw new Error("Target identity not found in Lab Registry. Access denied.");
+        }
+        throw otpErr;
+      }
       
       setStep('verify');
       setCooldown(60);
@@ -63,7 +67,7 @@ export default function AdminLoginPage() {
         if (firstInput) firstInput.focus();
       }, 300);
     } catch (err: any) {
-      setError(err.message || "Identity synchronization failed. Terminal unreachable.");
+      setError(err.message || "Failed to initiate handshake. Terminal offline.");
     } finally {
       setIsProcessing(false);
     }
@@ -81,7 +85,6 @@ export default function AdminLoginPage() {
       otpRefs.current[index + 1]?.focus();
     }
 
-    // Only auto-verify if all digits are filled and we aren't already verifying
     if (newOtp.every(d => d !== '') && index === 5 && !verificationLock.current) {
       executeOtpVerify(newOtp.join(''));
     }
@@ -105,26 +108,31 @@ export default function AdminLoginPage() {
       const targetEmail = email.trim().toLowerCase();
       const { data, error: verifyErr } = await authApi.verifyOTP(targetEmail, token);
       
+      // 第一步：验证令牌本身是否有效
       if (verifyErr) {
+        console.error("[Login] OTP Verification Error:", verifyErr);
         if (verifyErr.status === 403) {
-          throw new Error("Handshake Rejected: The code is invalid or this identity lacks administrative clearance.");
+          throw new Error("Invalid Handshake: The token provided is incorrect, expired, or the identifier is invalid.");
         }
         throw verifyErr;
       }
       
-      if (!data?.user) throw new Error("Verification failed: Neural session corrupted.");
+      if (!data?.user) throw new Error("Synchronization Error: Neural session data corrupted.");
 
+      // 第二步：令牌通过后，检查数据库中该用户的 Role 字段
       const isAdmin = await adminApi.checkAdminStatus(data.user.id);
+      
       if (!isAdmin) {
+        // 如果虽然令牌对了但角色不对，强制注销，防止“蹭进”普通用户界面
         await authApi.signOut();
-        throw new Error("Access Denied: Subject level insufficient for Lab Command.");
+        throw new Error("Clearance Rejected: Identity verified, but you lack the 'admin' role in the Command Registry.");
       }
       
+      // 成功：一切正常
       window.location.hash = '#/admin';
     } catch (err: any) {
-      console.warn("OTP verification attempt failed:", err.message);
-      setError(err.message || "Neural handshake invalid.");
-      // Reset OTP to allow retry
+      console.warn("[Login] Sequence Aborted:", err.message);
+      setError(err.message || "Access Protocol Invalid.");
       setOtp(['', '', '', '', '', '']);
       setTimeout(() => {
         const firstInput = otpRefs.current[0];

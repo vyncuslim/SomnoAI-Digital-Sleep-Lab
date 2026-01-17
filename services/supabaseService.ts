@@ -15,17 +15,20 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
 export const authApi = {
   signUp: (email: string, password: string) => 
     supabase.auth.signUp({ 
-      email, 
+      email: email.trim().toLowerCase(), 
       password,
       options: { emailRedirectTo: `${window.location.origin}` }
     }),
   
   signIn: (email: string, password: string) => 
-    supabase.auth.signInWithPassword({ email, password }),
+    supabase.auth.signInWithPassword({ 
+      email: email.trim().toLowerCase(), 
+      password 
+    }),
 
   sendOTP: (email: string) => 
     supabase.auth.signInWithOtp({
-      email,
+      email: email.trim().toLowerCase(),
       options: { 
         emailRedirectTo: `${window.location.origin}`,
         shouldCreateUser: false 
@@ -34,16 +37,17 @@ export const authApi = {
 
   verifyOTP: async (email: string, token: string) => {
     try {
-      // For email OTPs requested via signInWithOtp, the type MUST be 'email'
-      // Use the standard object format for consistent behavior
+      const normalizedEmail = email.trim().toLowerCase();
+      console.debug(`[Auth] Attempting OTP verification for: ${normalizedEmail}`);
+      
       const result = await supabase.auth.verifyOtp({ 
-        email, 
+        email: normalizedEmail, 
         token, 
         type: 'email' 
       });
       return result;
     } catch (err) {
-      console.error("Supabase verification system failure:", err);
+      console.error("[Auth] Supabase verification crashed:", err);
       throw err;
     }
   },
@@ -58,7 +62,7 @@ export const authApi = {
     }),
 
   resetPassword: (email: string) => 
-    supabase.auth.resetPasswordForEmail(email, {
+    supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
       redirectTo: window.location.origin + '/#/login'
     }),
 
@@ -68,7 +72,6 @@ export const authApi = {
   signOut: () => supabase.auth.signOut()
 };
 
-// Fix: Exporting the function used in Settings.tsx
 export const updateUserPassword = authApi.updatePassword;
 
 export const adminApi = {
@@ -76,14 +79,43 @@ export const adminApi = {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user) return false;
     const { data } = await supabase.from('profiles').select('role').eq('id', session.user.id).single();
-    return data?.role === 'admin';
+    return data?.role?.toLowerCase().trim() === 'admin';
   },
   checkAdminStatus: async (userId: string) => {
     try {
-      const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
-      if (error) return false;
-      return data?.role === 'admin';
-    } catch {
+      console.group(`[Admin Clearance Check] UID: ${userId}`);
+      
+      // 强制从服务器获取最新的 Profile 数据
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*') // 获取所有字段以便调试
+        .eq('id', userId)
+        .single();
+      
+      if (error) {
+        console.error("[-] Profile Fetch Failed:", error.message);
+        console.groupEnd();
+        return false;
+      }
+
+      console.debug("[+] Registry Record Found:", data);
+      
+      // 鲁棒的角色检查：忽略大小写，去除首尾空格
+      const rawRole = data?.role || 'null';
+      const normalizedRole = rawRole.toString().toLowerCase().trim();
+      const isAuthorized = normalizedRole === 'admin';
+
+      if (!isAuthorized) {
+        console.warn(`[!] ACCESS REJECTED: Current role is '${rawRole}'. Expected 'admin'.`);
+      } else {
+        console.info("[*] ACCESS GRANTED: Admin status confirmed.");
+      }
+      
+      console.groupEnd();
+      return isAuthorized;
+    } catch (err) {
+      console.error("[!] Critical Exception during role validation:", err);
+      console.groupEnd();
       return false;
     }
   },
