@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, User, Loader2, BrainCircuit, Cpu, Trash2, Key, Beaker, Terminal, Radio, Music, Square
@@ -7,6 +8,7 @@ import { ChatMessage, SleepRecord } from '../types.ts';
 import { chatWithCoach, designExperiment, generateNeuralLullaby, decodeBase64Audio, decodeAudioData } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from '../services/i18n.ts';
+import { Logo } from './Logo.tsx';
 
 const m = motion as any;
 

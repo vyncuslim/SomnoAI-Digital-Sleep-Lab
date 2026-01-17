@@ -47,7 +47,7 @@ export interface SecurityEvent {
   notified: boolean;
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login';
 export type TimeRange = 'week' | 'month' | 'year';
 export type AIProvider = 'gemini' | 'openai';
 

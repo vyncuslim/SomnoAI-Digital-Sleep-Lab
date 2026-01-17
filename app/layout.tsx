@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children?: React.ReactNode })
       {/* 底部版权信息 */}
       <footer className="py-12 flex flex-col items-center gap-4 opacity-30 pointer-events-none">
         <p className="text-[10px] font-mono uppercase tracking-[0.5em]">
-          SomnoAI Digital Sleep Lab • Neural Infrastructure
+          @2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
         </p>
       </footer>
     </div>

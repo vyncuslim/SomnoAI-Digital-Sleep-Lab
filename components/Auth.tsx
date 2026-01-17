@@ -15,7 +15,10 @@ const m = motion as any;
 const BiometricSwitch = ({ active = false }: { active?: boolean }) => (
   <div className="flex items-center">
     <div className={`w-12 h-7 rounded-full border border-white/10 flex items-center px-1 bg-black/40 relative overflow-hidden transition-all duration-500 ${active ? 'border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)]' : ''}`}>
-      <m.div animate={{ opacity: active ? 0.35 : 0 }} className="absolute inset-0 bg-[#00f2fe]" />
+      <m.div 
+        animate={{ opacity: active ? 0.35 : 0 }}
+        className="absolute inset-0 bg-[#00f2fe]"
+      />
       <m.div 
         animate={{ x: active ? 20 : 0 }}
         transition={{ type: "spring", stiffness: 450, damping: 25 }}
@@ -43,7 +46,7 @@ interface AuthProps {
   onNavigate?: (view: string) => void;
 }
 
-export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
+export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }) => {
   const t = translations[lang].auth;
   const [authMode, setAuthMode] = useState<'otp' | 'password'>('password');
   const [formType, setFormType] = useState<'login' | 'register' | 'reset'>('login');
@@ -101,12 +104,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
           if (data?.session) {
             onLogin();
           } else {
-            setMessage(lang === 'zh' ? "注册成功，实验室访问已就绪。" : "Registration successful. Lab access granted.");
-            setTimeout(() => {
-              setStep('verify');
-              setOtp(['', '', '', '', '', '']);
-              setTimeout(() => otpRefs.current[0]?.focus(), 400);
-            }, 1500);
+            setMessage(lang === 'zh' ? "账户注册成功，实验室访问已就绪。" : "Registration successful. Lab access granted.");
+            setFormType('login');
           }
           trackEvent('auth_signup');
         } else {
@@ -160,11 +159,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 bg-[#020617] font-sans">
-      <m.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12 space-y-4">
-        <div className="flex justify-center">
-          <Logo size={100} animated={true} />
+      {/* 居中图标展示区域 */}
+      <m.div 
+        initial={{ opacity: 0, y: 15 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        className="text-center mb-10 flex flex-col items-center justify-center space-y-4"
+      >
+        <div className="flex items-center justify-center w-24 h-24 mb-2">
+          <Logo size={96} animated={true} />
         </div>
-        <div className="space-y-1">
+        <div className="flex flex-col items-center">
           <h1 className="text-4xl font-black tracking-tighter text-white uppercase italic leading-none">{t.lab}</h1>
           <p className="text-slate-600 font-bold uppercase text-[10px] tracking-[0.6em] mt-3 opacity-80">{t.tagline}</p>
         </div>
@@ -173,6 +177,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       <div className="w-full max-w-[460px]">
         <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-white/[0.08] rounded-[3.5rem] p-1 shadow-2xl overflow-hidden">
           <div className="p-10 md:p-12 space-y-10 text-left">
+            
             <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5 relative">
               <button 
                 onClick={() => { setAuthMode('otp'); setStep('input'); setFormType('login'); }}
@@ -187,7 +192,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 PASSWORD MODE
               </button>
               <m.div 
-                className="absolute top-1.5 left-1.5 bottom-1.5 w-[calc(50%-4.5px)] bg-[#4f46e5] rounded-full shadow-[0_0_20px_rgba(79,70,229,0.5)]"
+                className="absolute top-1.5 left-1.5 bottom-1.5 w-[calc(50%-4.5px)] bg-[#4f46e5] rounded-full shadow-[0_0_20px_rgba(79,70_229,0.5)]"
                 animate={{ x: authMode === 'password' ? '100%' : '0%' }}
                 transition={{ type: "spring", stiffness: 400, damping: 30 }}
               />
@@ -196,6 +201,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
             <AnimatePresence mode="wait">
               {step === 'input' ? (
                 <m.div key="input" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-10">
+                  
                   <div className="flex justify-center gap-12">
                     <button 
                       onClick={() => setFormType('login')} 
@@ -216,7 +222,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                       {translations[lang].dashboard.manifesto}
                     </p>
 
-                    <div className="space-y-5">
+                    <div className="space-y-6">
                       <div className="relative group">
                         <Mail className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors" size={22} />
                         <input 
@@ -224,7 +230,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                           value={email} 
                           onChange={(e) => setEmail(e.target.value)}
                           placeholder={t.emailLabel}
-                          className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-40 py-7 text-base text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-900 font-bold shadow-inner"
+                          className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-36 py-6 text-base text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-900 font-bold shadow-inner"
                           required
                         />
                         <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
@@ -241,7 +247,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                             value={password} 
                             onChange={(e) => setPassword(e.target.value)}
                             placeholder={t.passwordLabel}
-                            className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-40 py-7 text-base text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-900 font-bold shadow-inner"
+                            className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-36 py-6 text-base text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-900 font-bold shadow-inner"
                             required
                           />
                           <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
@@ -272,7 +278,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                           disabled={isProcessing || isGoogleProcessing}
                           className="py-5 bg-[#0f121e] border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-slate-500 hover:text-white transition-all text-[11px] font-black uppercase tracking-widest disabled:opacity-30"
                         >
-                          <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>
+                          {isGoogleProcessing ? <Loader2 className="animate-spin" size={20} /> : <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>}
                           {t.google}
                         </button>
                         <button 
@@ -340,7 +346,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       </div>
 
       <footer className="mt-16 text-center space-y-4 opacity-30 hover:opacity-100 transition-all duration-700 pb-12">
-        <p className="text-[9px] font-mono uppercase tracking-[0.8em] text-slate-800 italic font-black">© 2025 SOMNO LAB • NEURAL INFRASTRUCTURE</p>
+        <p className="text-[9px] font-mono uppercase tracking-[0.8em] text-slate-800 italic font-black">@2026 SomnoAI Digital Sleep Lab • Neural Infrastructure</p>
       </footer>
     </div>
   );

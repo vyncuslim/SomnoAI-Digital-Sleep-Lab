@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect, useCallback, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, Activity, Zap, User, BrainCircuit, Settings as SettingsIcon, WifiOff, RefreshCw, FlaskConical } from 'lucide-react';
+import { Loader2, Activity, Zap, User, BrainCircuit, Settings as SettingsIcon, WifiOff, RefreshCw } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi } from './services/supabaseService.ts';
@@ -56,11 +57,27 @@ const App: React.FC = () => {
     localStorage.setItem('somno_lang', lang);
   }, [lang]);
 
+  // Handle Hash-based Routing
+  useEffect(() => {
+    const handleHash = () => {
+      const hash = window.location.hash;
+      if (hash === '#/admin') setActiveView('admin');
+      else if (hash === '#/admin/login') setActiveView('admin-login');
+      else if (hash === '#/profile') setActiveView('profile');
+      else if (hash === '#/settings') setActiveView('settings');
+      else if (hash === '#/calendar') setActiveView('calendar');
+      else if (hash === '#/assistant') setActiveView('assistant');
+      else setActiveView('dashboard');
+    };
+    handleHash();
+    window.addEventListener('hashchange', handleHash);
+    return () => window.removeEventListener('hashchange', handleHash);
+  }, []);
+
   useEffect(() => {
     const initAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
         if (initialSession) {
           setSession(initialSession);
           const status = await adminApi.checkAdminStatus(initialSession.user.id);
@@ -72,41 +89,38 @@ const App: React.FC = () => {
         setTimeout(() => setIsInitialAuthCheck(false), 500);
       }
     };
-    
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
-      
       if (newSession) {
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
-        
         if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
-          setActiveView('dashboard');
+          if (activeView !== 'admin' && activeView !== 'admin-login') {
+            setActiveView('dashboard');
+          }
         }
       } else {
         setIsAdmin(false);
         if (event === 'SIGNED_OUT') {
            setActiveView('dashboard');
            setCurrentRecord(null);
+           window.location.hash = '#/';
         }
       }
     });
-
     return () => subscription.unsubscribe();
-  }, []);
+  }, [activeView]);
 
   const handleSyncHealth = async () => {
     if (syncStatus !== 'idle' && syncStatus !== 'error') return;
     setSyncStatus('authorizing');
-    
     try {
       if (isSandbox) {
         await new Promise(r => setTimeout(r, 1000));
         setSyncStatus('fetching');
         await new Promise(r => setTimeout(r, 800));
-        
         const mock: SleepRecord = {
           id: 'mock-' + Date.now(),
           date: new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', weekday: 'long' }),
@@ -119,7 +133,6 @@ const App: React.FC = () => {
           heartRate: { resting: 62, max: 80, min: 55, average: 65, history: [] },
           aiInsights: ["Neural handshake complete. Biometric stream simulated."]
         };
-        
         setSyncStatus('analyzing');
         const insights = await getSleepInsight(mock, lang);
         setCurrentRecord({ ...mock, aiInsights: insights });
@@ -127,31 +140,19 @@ const App: React.FC = () => {
         setTimeout(() => setSyncStatus('idle'), 2000);
         return;
       }
-
       await healthConnect.authorize();
       setSyncStatus('fetching');
       const data = await healthConnect.fetchSleepData();
-      
       setSyncStatus('analyzing');
       const insights = await getSleepInsight(data as SleepRecord, lang);
       const fullRecord = { ...data, aiInsights: insights } as SleepRecord;
-      
       setCurrentRecord(fullRecord);
       setHistory(prev => [fullRecord, ...prev].slice(0, 7));
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 2000);
-
     } catch (err: any) {
       console.error("Sync Protocol Interrupted:", err);
       setSyncStatus('error');
-      
-      if (err.message === "AUTHORIZATION_TIMEOUT" || err.message === "POPUP_INIT_FAILED") {
-        alert("浏览器拦截了授权窗口。请点击浏览器地址栏右侧的‘弹出窗口已拦截’图标，并允许此网站开启弹窗。");
-      } else if (err.message === "NO_HEALTH_CONNECT_DATA") {
-        alert("Health Connect 中没有找到最近的睡眠数据。请确保您的可穿戴设备已同步到 Google 健康。");
-      } else {
-        alert(`同步失败: ${err.message}`);
-      }
       setTimeout(() => setSyncStatus('idle'), 2000);
     }
   };
@@ -166,6 +167,7 @@ const App: React.FC = () => {
     setCurrentRecord(null);
     setHistory([]);
     setActiveView('dashboard');
+    window.location.hash = '#/';
   };
 
   const enterSandbox = () => {
@@ -177,6 +179,22 @@ const App: React.FC = () => {
   if (isInitialAuthCheck) return <LoadingSpinner label="Linking Identity Handshake..." />;
 
   const renderContent = () => {
+    if (activeView === 'admin-login') {
+      return (
+        <Suspense fallback={<LoadingSpinner />}>
+          <AdminLoginPage />
+        </Suspense>
+      );
+    }
+
+    if (activeView === 'admin') {
+      return (
+        <Suspense fallback={<LoadingSpinner />}>
+          <AdminDashboard />
+        </Suspense>
+      );
+    }
+
     if (!session && !isSandbox) {
       return (
         <Suspense fallback={<LoadingSpinner />}>
@@ -195,7 +213,7 @@ const App: React.FC = () => {
           <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
             {activeView === 'dashboard' && (
               currentRecord ? (
-                <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={setActiveView} threeDEnabled={threeDEnabled} />
+                <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => window.location.hash = `#/${v}`} threeDEnabled={threeDEnabled} />
               ) : (
                 <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
                   <div className="relative">
@@ -219,7 +237,7 @@ const App: React.FC = () => {
               )
             )}
             {activeView === 'calendar' && <Trends history={history} lang={lang} />}
-            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={setActiveView} isSandbox={isSandbox} />}
+            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} />}
             {activeView === 'profile' && <UserProfile lang={lang} />}
             {activeView === 'settings' && (
               <Suspense fallback={<LoadingSpinner />}>
@@ -227,7 +245,7 @@ const App: React.FC = () => {
                   lang={lang} 
                   onLanguageChange={setLang} 
                   onLogout={handleLogout} 
-                  onNavigate={setActiveView}
+                  onNavigate={(v: any) => window.location.hash = `#/${v}`}
                   threeDEnabled={threeDEnabled}
                   onThreeDChange={setThreeDEnabled}
                   theme="dark"
@@ -253,7 +271,7 @@ const App: React.FC = () => {
               { id: 'profile', icon: User, label: 'USER' },
               { id: 'settings', icon: SettingsIcon, label: 'CFG' }
             ].map((nav) => (
-              <button key={nav.id} onClick={() => setActiveView(nav.id as any)} className={`relative flex items-center gap-2 px-5 py-4 rounded-full transition-all ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
+              <button key={nav.id} onClick={() => window.location.hash = `#/${nav.id}`} className={`relative flex items-center gap-2 px-5 py-4 rounded-full transition-all ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
                 <nav.icon size={18} />
                 {activeView === nav.id && <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>}
               </button>

@@ -343,7 +343,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       </div>
 
       <footer className="mt-8 text-center space-y-4 opacity-30 hover:opacity-100 transition-all duration-700 pb-4">
-        <p className="text-[7px] font-mono uppercase tracking-[0.5em] text-slate-800 italic">© 2025 SOMNO LAB • NEURAL INFRASTRUCTURE</p>
+        <p className="text-[7px] font-mono uppercase tracking-[0.5em] text-slate-800 italic">@2026 SomnoAI Digital Sleep Lab • Neural Infrastructure</p>
       </footer>
     </div>
   );

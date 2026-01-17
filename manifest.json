@@ -2,7 +2,7 @@
   "name": "SomnoAI Digital Sleep Lab",
   "short_name": "SomnoAI Lab",
   "description": "SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights.",
-  "start_url": "/#/",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#020617",
   "theme_color": "#020617",
@@ -22,7 +22,7 @@
       "src": "https://img.icons8.com/fluency/512/moon-star.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any"
+      "purpose": "any maskable"
     }
   ]
 }
