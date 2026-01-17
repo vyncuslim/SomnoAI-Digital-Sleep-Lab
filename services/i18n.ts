@@ -26,7 +26,7 @@ export const translations = {
       cmdSync: 'Sync Feature Stream',
       cmdExport: 'Archive Lab Data',
       lullaby: 'Neural Lullaby',
-      manifesto: 'SomnoAI fuses physiological monitoring, deep AI insights, and professional health guidance into a comprehensive digital sleep laboratory experience.'
+      manifesto: 'It integrates physiological indicator monitoring, AI deep insights and health advice into one, providing users with a full range of digital sleep experiments.'
     },
     auth: {
       lab: 'SOMNOAI LAB',

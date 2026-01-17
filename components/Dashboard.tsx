@@ -68,7 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
       animate={{ opacity: 1 }}
       className="space-y-10 pb-32 max-w-5xl mx-auto"
     >
-      {/* 顶部神经状态栏 */}
+      {/* Neural Node Status Bar */}
       <div className="flex justify-between items-center bg-slate-950/60 px-8 py-5 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
         <div className="flex items-center gap-5">
           <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
@@ -117,17 +117,17 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
         </div>
       </div>
 
-      {/* 实验室核心看板 */}
+      {/* Core Laboratory Display */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         
-        {/* 左侧：液态分数与洞察 */}
+        {/* Left: Efficiency Score & Insights */}
         <div className="lg:col-span-7 space-y-10">
           <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[500px] flex flex-col justify-between" intensity={1.5}>
             <div className="flex justify-between items-start">
               <div>
                 <h2 className="text-sm font-black italic text-indigo-400 uppercase tracking-[0.4em] mb-2">Subject Efficiency</h2>
                 <div className="flex items-baseline gap-2">
-                  <span className="text-[12rem] font-black italic tracking-tighter text-white drop-shadow-[0_0_100px_rgba(129,140,248,0.5)] leading-none select-none">
+                  <span className="text-[10rem] md:text-[12rem] font-black italic tracking-tighter text-white drop-shadow-[0_0_100px_rgba(129,140,248,0.5)] leading-none select-none">
                     {data.score}
                   </span>
                   <span className="text-2xl font-black text-slate-700 uppercase tracking-tighter">/100</span>
@@ -166,7 +166,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
           </GlassCard>
         </div>
 
-        {/* 右侧：神经架构图与指标 */}
+        {/* Right: Neural Architecture & Metrics */}
         <div className="lg:col-span-5 space-y-8">
           <GlassCard className="p-10 rounded-[4rem] h-full flex flex-col gap-10">
             <div className="flex items-center justify-between">
@@ -225,7 +225,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
         </div>
       </div>
 
-      {/* 底部生理脉搏卡片组 */}
+      {/* Physiological Pulse Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-2">
         {[
           { icon: HeartPulse, label: 'Cardiac Stability', value: `${data.heartRate.resting}`, unit: 'BPM', color: 'text-rose-500' },
@@ -244,11 +244,11 @@ export const Dashboard: React.FC<DashboardProps> = ({ data, lang, onSyncHealth, 
                 <p className="text-[10px] font-black text-slate-500 uppercase">{item.unit}</p>
               </div>
             </div>
-          </m.div>
+          </GlassCard>
         ))}
       </div>
 
-      {/* 分享弹窗 */}
+      {/* Share/Export Modal */}
       <AnimatePresence>
         {showShareModal && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-3xl" onClick={() => setShowShareModal(false)}>

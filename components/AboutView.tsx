@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, Binary, Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, Info, Code2, ListTree, Timer, Layers, Zap, Download, Upload, BookOpen, Warehouse, LayoutList, Fingerprint, Network, Bookmark, History, RotateCcw, Filter, Boxes, PackageSearch, Pipette, Droplets, Watch, Hammer, Eye, ChevronRight, FileCode, ShieldCheck, Sparkles } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
@@ -189,7 +190,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                 Next Sequence <ChevronRight size={12} />
               </button>
            </div>
-        </AboutView>
+        </GlassCard>
 
         {/* Plumbing Analogy Module */}
         <GlassCard className="p-10 space-y-6 border-blue-500/20 bg-blue-500/[0.03] rounded-[4rem] relative overflow-hidden">

@@ -13,7 +13,7 @@ import { trackEvent } from '../services/analytics.ts';
 const m = motion as any;
 
 /**
- * 设计稿风格的生物识别发光开关
+ * Biometric Glow Switch mimicking the design screenshot aesthetic.
  */
 const BiometricSwitch = ({ active = false }: { active?: boolean }) => (
   <div className="flex items-center">
@@ -37,7 +37,7 @@ const BiometricSwitch = ({ active = false }: { active?: boolean }) => (
 );
 
 /**
- * 输入框中央的 Hex-Key 装饰图标
+ * Hex Key Icon for input field centers.
  */
 const HexKeyIcon = ({ active }: { active: boolean }) => (
   <div className={`p-2 rounded-xl border border-white/5 bg-[#0f121e] flex items-center justify-center transition-all duration-700 ${active ? 'text-indigo-400 border-indigo-500/30 shadow-[0_0_15px_rgba(79,70,229,0.15)] scale-105' : 'text-slate-800'}`}>
@@ -107,7 +107,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         if (formType === 'register') {
           const { error: signUpErr } = await authApi.signUp(targetEmail, password);
           if (signUpErr) throw signUpErr;
-          setMessage(lang === 'zh' ? "注册成功！请检查邮箱完成验证。" : "Registration successful! Check email to verify.");
+          setMessage(lang === 'zh' ? "注册激活流程已启动，请检查邮箱验证身份。" : "Registration active! Check email to verify identity.");
           trackEvent('auth_signup');
         } else {
           const { error: signInErr } = await authApi.signIn(targetEmail, password);
@@ -117,7 +117,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         }
       }
     } catch (err: any) {
-      setError(err.message || "Identification sync failed.");
+      setError(err.message || "Identity link failed.");
     } finally {
       setIsProcessing(false);
     }
@@ -166,7 +166,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           <h1 className="text-5xl font-black tracking-tighter text-white uppercase leading-none italic drop-shadow-2xl">
             {t.lab}
           </h1>
-          <p className="text-slate-600 font-bold uppercase text-[11px] tracking-[0.45em] opacity-90">
+          <p className="text-slate-600 font-bold uppercase text-[11px] tracking-[0.45em] mt-1 opacity-90">
             {t.tagline}
           </p>
         </div>
@@ -176,7 +176,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-white/[0.08] rounded-[3.5rem] p-1 shadow-[0_80px_160px_-40px_rgba(0,0,0,1)]">
           <div className="p-10 md:p-12 space-y-10">
             
-            {/* 模式切换滑块 */}
+            {/* Mode Toggle Switch */}
             <div className="flex bg-black/50 p-1.5 rounded-full border border-white/5 relative overflow-hidden">
               <button 
                 onClick={() => { setAuthMode('otp'); setStep('input'); setFormType('login'); setError(null); setMessage(null); }}
@@ -201,7 +201,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               {step === 'input' ? (
                 <m.div key="input" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-10">
                   
-                  {/* 登录/注册 子选项卡 */}
+                  {/* Internal Tabs: Login vs Register */}
                   <div className="flex justify-center gap-12">
                     {formType === 'reset' ? (
                       <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-indigo-400 border-b-2 border-indigo-400 pb-3">{t.resetHeading}</h2>
@@ -229,7 +229,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                         {t.manifesto}
                       </p>
 
-                      {/* 邮箱输入 */}
                       <div className="relative group">
                         <div className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors">
                           <Mail size={18} strokeWidth={2.5} />
@@ -248,7 +247,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                         </div>
                       </div>
 
-                      {/* 密码输入 (仅限密码模式且非重置态) */}
                       {authMode === 'password' && formType !== 'reset' && (
                         <div className="space-y-4">
                           <div className="relative group">
@@ -275,14 +273,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                       )}
                     </div>
 
-                    {/* 主按钮 */}
                     <div className="space-y-6 pt-2">
                       <button 
                         type="submit" 
                         disabled={isProcessing}
                         className="w-full py-6 bg-[#4f46e5] text-white rounded-[3rem] font-black text-sm uppercase tracking-[0.4em] flex items-center justify-center gap-4 active:scale-[0.98] transition-all shadow-[0_20px_50px_-15px_rgba(79,70,229,0.5)] hover:bg-[#5a50f0] disabled:opacity-50"
                       >
-                        {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <LoginIcon size={18} strokeWidth={3} />}
+                        {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Zap size={18} fill="currentColor" />}
                         {isProcessing ? 'PROCESSING...' : formType === 'register' ? t.confirmRegister : formType === 'reset' ? t.sendReset : t.authorize}
                       </button>
 
@@ -309,7 +306,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                       )}
                     </div>
 
-                    {/* 底部社交/沙盒按钮 */}
                     {formType !== 'reset' && (
                       <div className="grid grid-cols-2 gap-4 pt-4 border-t border-white/5">
                         <button 
@@ -338,7 +334,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                 </m.div>
               ) : (
                 <m.div key="verify" initial={{ opacity: 0, x: 30 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -30 }} className="space-y-12">
-                  {/* OTP 验证步骤 */}
                   <div className="text-center space-y-4">
                     <button onClick={() => setStep('input')} className="text-[10px] font-black text-indigo-400 uppercase flex items-center gap-2 mx-auto hover:text-indigo-300 transition-colors tracking-widest">
                       <ChevronLeft size={16} /> {t.back}
@@ -387,7 +382,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
               )}
             </AnimatePresence>
 
-            {/* 错误提示 */}
             {(error || message) && (
               <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`p-6 border rounded-[2.5rem] flex items-start gap-4 text-[12px] font-bold italic leading-relaxed ${error ? 'bg-rose-500/10 border-rose-500/20 text-rose-400' : 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'}`}>
                 {error ? <ShieldAlert size={20} className="shrink-0 mt-0.5" /> : <ShieldCheck size={20} className="shrink-0 mt-0.5" />}
