@@ -61,7 +61,7 @@ export default function AdminLoginPage() {
         if (firstInput) firstInput.focus();
       }, 300);
     } catch (err: any) {
-      setError(err.message || "Identity synchronization failed.");
+      setError(err.message || "Identity synchronization failed. Terminal unreachable.");
     } finally {
       setIsProcessing(false);
     }
@@ -99,16 +99,24 @@ export default function AdminLoginPage() {
     
     try {
       const { data, error: verifyErr } = await authApi.verifyOTP(email.trim().toLowerCase(), token);
-      if (verifyErr) throw verifyErr;
       
-      if (!data?.user) throw new Error("Verification failed: Session corrupted.");
+      if (verifyErr) {
+        // Specifically handle 403 Forbidden errors
+        if (verifyErr.status === 403) {
+          throw new Error("Verification Forbidden: The token is invalid, expired, or this identity lacks command deck authorization.");
+        }
+        throw verifyErr;
+      }
+      
+      if (!data?.user) throw new Error("Verification failed: Neural session corrupted.");
 
       const isAdmin = await adminApi.checkAdminStatus(data.user.id);
       if (!isAdmin) {
         await authApi.signOut();
-        throw new Error("Access Denied: Subject lacks clearance.");
+        throw new Error("Access Denied: Subject lacks administrative clearance.");
       }
       
+      // Success: use direct hash navigation
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Neural handshake invalid.");

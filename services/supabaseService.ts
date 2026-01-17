@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
@@ -26,11 +27,25 @@ export const authApi = {
   sendOTP: (email: string) => 
     supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}` }
+      options: { 
+        emailRedirectTo: `${window.location.origin}`,
+        shouldCreateUser: false // For Admin login, usually we don't want to create new users
+      }
     }),
 
-  verifyOTP: (email: string, token: string) => 
-    supabase.auth.verifyOtp({ email, token, type: 'email' }),
+  verifyOTP: async (email: string, token: string) => {
+    try {
+      const result = await supabase.auth.verifyOtp({ 
+        email, 
+        token, 
+        type: 'email' 
+      });
+      return result;
+    } catch (err) {
+      console.error("Supabase verifyOTP call crashed:", err);
+      throw err;
+    }
+  },
 
   signInWithGoogle: () => 
     supabase.auth.signInWithOAuth({
@@ -52,6 +67,9 @@ export const authApi = {
   signOut: () => supabase.auth.signOut()
 };
 
+// Fix: Exporting the function used in Settings.tsx
+export const updateUserPassword = authApi.updatePassword;
+
 export const adminApi = {
   isAdmin: async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -60,8 +78,13 @@ export const adminApi = {
     return data?.role === 'admin';
   },
   checkAdminStatus: async (userId: string) => {
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-    return data?.role === 'admin';
+    try {
+      const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).single();
+      if (error) return false;
+      return data?.role === 'admin';
+    } catch {
+      return false;
+    }
   },
   getUsers: async () => (await supabase.from('profiles').select('*')).data || [],
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
@@ -84,13 +107,3 @@ export const profileApi = {
     return supabase.from('profiles').update(updates).eq('id', user.id);
   }
 };
-
-export const updateUserPassword = authApi.updatePassword;
-export const signInWithEmailOTP = authApi.sendOTP;
-export const verifyOtp = async (email: string, token: string) => {
-  const { data, error } = await authApi.verifyOTP(email, token);
-  if (error) throw error;
-  return data.session;
-};
-export const sendPasswordReset = authApi.resetPassword;
-export const signInWithGoogle = authApi.signInWithGoogle;

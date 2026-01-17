@@ -1,17 +1,17 @@
 
 import React, { useState, useEffect } from 'react';
-import { GlassCard } from './GlassCard.tsx';
+import { GlassCard } from './components/GlassCard.tsx';
 import { 
   LogOut, ExternalLink, Key, X, CheckCircle2, Eye, EyeOff, Save, 
   HeartHandshake, Globe, Lock, Loader2, CreditCard, 
   Heart, Copy, QrCode, Languages, UserCircle, Settings as SettingsIcon, Brain, ShieldAlert
 } from 'lucide-react';
-import { Language, translations } from '../services/i18n.ts';
-import { ThemeMode, AccentColor } from '../types.ts';
+import { Language, translations } from './services/i18n.ts';
+import { ThemeMode, AccentColor } from './types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-// Fixed: Using correct exports from supabaseService
-import { updateUserPassword, adminApi } from '../services/supabaseService.ts';
-import { supabase } from '../lib/supabaseClient.ts';
+// Fixed: Using correct import path and exported member from supabaseService
+import { updateUserPassword, adminApi } from './services/supabaseService.ts';
+import { supabase } from './lib/supabaseClient.ts';
 
 const m = motion as any;
 
@@ -48,7 +48,7 @@ export const Settings: React.FC<SettingsProps> = ({
     const checkState = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        // Fixed: checkAdminStatus is now added to adminApi
+        // Fixed: checkAdminStatus is now added to adminApi and exported correctly
         const adminStatus = await adminApi.checkAdminStatus(session.user.id);
         setIsAdmin(adminStatus);
       }
@@ -108,7 +108,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-[0.9]">
                     CONTRIBUTION<br />ACKNOWLEDGED
                   </h2>
-                  <p className="text-[13px] text-slate-400 italic max-w-sm mx-auto leading-relaxed">
+                  <p className="text-[13px] text-slate-400 italic max-sm-mx-auto leading-relaxed">
                     Your support fuels lab processing. Payment details follow (English Default):
                   </p>
                 </div>

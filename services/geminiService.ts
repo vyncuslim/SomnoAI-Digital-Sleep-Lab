@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord, AIProvider } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -8,9 +9,9 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
+// Fix: Strictly follow the guideline that API key must be from process.env.API_KEY
 const getGeminiApiKey = () => {
-  // Priority: 1. Manual User Injection (Settings) -> 2. Environment Variable
-  return localStorage.getItem('somno_manual_gemini_key') || process.env.API_KEY;
+  return process.env.API_KEY;
 };
 
 const handleGeminiError = (err: any) => {
@@ -21,8 +22,9 @@ const handleGeminiError = (err: any) => {
   throw err;
 };
 
-const MODEL_FLASH = 'gemini-flash-lite-latest';
-const MODEL_PRO = 'gemini-3-pro-preview';
+// Fix: Select models based on task type as per instructions
+const MODEL_FLASH = 'gemini-3-flash-preview'; // Basic Text Tasks
+const MODEL_PRO = 'gemini-3-pro-preview'; // Complex Text Tasks
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
@@ -38,7 +40,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm。`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: prompt,
@@ -47,7 +49,8 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
         responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
       }
     });
-    return JSON.parse(response.text || "[]");
+    // Fix: Access .text property directly and trim
+    return JSON.parse(response.text?.trim() || "[]");
   } catch (err) {
     handleGeminiError(err);
     return [];
@@ -62,12 +65,18 @@ export const chatWithCoach = async (history: { role: string; content: string }[]
   const systemInstruction = `You are the Somno Chief Research Officer. Professional, futuristic, data-driven. ${bio}`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: history.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
-      config: { systemInstruction, tools: [{ googleSearch: {} }], thinkingConfig: { thinkingBudget: 16000 } }
+      config: { 
+        systemInstruction, 
+        tools: [{ googleSearch: {} }], 
+        // Use higher thinking budget for gemini-3-pro-preview
+        thinkingConfig: { thinkingBudget: 16000 } 
+      }
     });
+    // Fix: Access .text property directly
     return { text: response.text, sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] };
   } catch (err) { handleGeminiError(err); }
 };
@@ -76,7 +85,7 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
   const apiKey = getGeminiApiKey();
   if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: `Design a sleep experiment based on: score ${data.score}, RHR ${data.heartRate?.resting}. Language: ${lang}.`,
@@ -86,10 +95,11 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
           type: Type.OBJECT,
           properties: { hypothesis: { type: Type.STRING }, protocol: { type: Type.ARRAY, items: { type: Type.STRING } }, expectedImpact: { type: Type.STRING } },
           required: ["hypothesis", "protocol", "expectedImpact"]
-        }
+        },
+        thinkingConfig: { thinkingBudget: 8000 }
       }
     });
-    return JSON.parse(response.text || "{}");
+    return JSON.parse(response.text?.trim() || "{}");
   } catch (err) { handleGeminiError(err); throw err; }
 };
 
@@ -97,7 +107,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
   const apiKey = getGeminiApiKey();
   if (!apiKey) return "API Key Missing.";
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: `Summarize trends for: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, lang: ${lang}.`,
@@ -110,11 +120,14 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
   const apiKey = getGeminiApiKey();
   if (!apiKey) return undefined;
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
-      contents: [{ parts: [{ text: `Speak softly: Sleep guided meditation based on score ${data.score}. Lang: ${lang}` }] }],
-      config: { responseModalities: [Modality.AUDIO], speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } },
+      contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on score ${data.score}. Lang: ${lang}` }] }],
+      config: { 
+        responseModalities: [Modality.AUDIO], 
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
+      },
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   } catch (err) { return undefined; }

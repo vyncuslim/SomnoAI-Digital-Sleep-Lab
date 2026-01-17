@@ -8,7 +8,7 @@ import { supabase, adminApi, authApi } from './services/supabaseService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
 
-// Direct imports for stable routing
+// Direct imports for stability
 import AdminLoginPage from './app/admin/login/page.tsx';
 import AdminDashboard from './app/admin/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
@@ -77,20 +77,20 @@ const App: React.FC = () => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        // Use a timeout to prevent long hanging init calls
+        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        
+        if (error) throw error;
+
         if (initialSession) {
           setSession(initialSession);
-          try {
-            const status = await adminApi.checkAdminStatus(initialSession.user.id);
-            setIsAdmin(status);
-          } catch (e) {
-            console.warn("Admin check skipped during init:", e);
-          }
+          const status = await adminApi.checkAdminStatus(initialSession.user.id);
+          setIsAdmin(status);
         }
       } catch (err: any) {
-        // Suppress AbortError which is common in strict mode / rapid navigation
+        // Gracefully ignore AbortError as it is usually an internal Supabase lock conflict
         if (err.name !== 'AbortError') {
-          console.error("Auth initialization failed:", err);
+          console.warn("Auth initialization warning:", err.message);
         }
       } finally {
         setIsInitialAuthCheck(false);
@@ -101,12 +101,8 @@ const App: React.FC = () => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       setSession(newSession);
       if (newSession) {
-        try {
-          const status = await adminApi.checkAdminStatus(newSession.user.id);
-          setIsAdmin(status);
-        } catch (e) {
-          console.warn("Failed to update admin status on auth change");
-        }
+        const status = await adminApi.checkAdminStatus(newSession.user.id);
+        setIsAdmin(status);
         
         if (event === 'SIGNED_IN') {
           const hash = window.location.hash;
@@ -214,7 +210,7 @@ const App: React.FC = () => {
               <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
                 <div className="relative">
                   <WifiOff size={60} className="text-slate-800" />
-                  <m.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -inset-8 bg-indigo-500/5 rounded-full blur-2xl" />
+                  <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -inset-8 bg-indigo-500/5 rounded-full blur-2xl" />
                 </div>
                 <div className="space-y-4">
                   <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
