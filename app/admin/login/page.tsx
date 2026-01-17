@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, 
-  Zap, Lock, Eye, EyeOff, Hexagon, Key
+  Zap, Lock, Eye, EyeOff, Hexagon, Key, Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../../../components/Logo.tsx';
@@ -10,8 +11,7 @@ import { adminApi, authApi } from '../../../services/supabaseService.ts';
 const m = motion as any;
 
 /**
- * 稳健的状态指示器 (Status Indicator)
- * 采用 CSS 变量和简单的 opacity 切换，确保高性能且不崩溃
+ * Robust Status Indicator for the restricted portal
  */
 const StatusIndicator = ({ active = false }: { active?: boolean }) => (
   <div className="flex items-center">
@@ -29,14 +29,9 @@ const StatusIndicator = ({ active = false }: { active?: boolean }) => (
 );
 
 export default function AdminLoginPage() {
-  const [activeTab, setActiveTab] = useState<'otp' | 'login' | 'register'>('login');
   const [step, setStep] = useState<'input' | 'verify'>('input');
-  
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
-  
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
@@ -50,41 +45,27 @@ export default function AdminLoginPage() {
   }, [cooldown]);
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
-  const isPasswordValid = password.length >= 6;
 
-  const handleMainAction = async (e?: React.FormEvent) => {
+  const handleRequestToken = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (isProcessing) return;
+    if (isProcessing || !isEmailValid) return;
     setError(null);
 
     const targetEmail = email.trim().toLowerCase();
-    if (!targetEmail) return;
-
     setIsProcessing(true);
     try {
-      if (activeTab === 'otp') {
-        if (cooldown > 0) return;
-        const { error: otpErr } = await authApi.sendOTP(targetEmail);
-        if (otpErr) throw otpErr;
-        setStep('verify');
-        setCooldown(60);
-        setTimeout(() => otpRefs.current[0]?.focus(), 400);
-      } else {
-        const { data, error: signInErr } = await authApi.signIn(targetEmail, password);
-        if (signInErr) throw signInErr;
-        
-        if (!data?.user) throw new Error("Synchronization failed.");
-
-        const isAdmin = await adminApi.checkAdminStatus(data.user.id);
-        if (!isAdmin) {
-          await authApi.signOut();
-          throw new Error("Access Denied: Subject lacks administrative clearance.");
-        }
-        
-        window.location.hash = '#/admin';
-      }
+      if (cooldown > 0) return;
+      const { error: otpErr } = await authApi.sendOTP(targetEmail);
+      if (otpErr) throw otpErr;
+      
+      setStep('verify');
+      setCooldown(60);
+      // Delayed focus for smooth transition
+      setTimeout(() => {
+        if (otpRefs.current[0]) otpRefs.current[0].focus();
+      }, 500);
     } catch (err: any) {
-      setError(err.message || "Admin Access Protocol Failed.");
+      setError(err.message || "Token Request Failed. Grid Unreachable.");
     } finally {
       setIsProcessing(false);
     }
@@ -118,6 +99,9 @@ export default function AdminLoginPage() {
       window.location.hash = '#/admin';
     } catch (err: any) {
       setError(err.message || "Verification Token Invalid.");
+      // Clear OTP on error
+      setOtp(['', '', '', '', '', '']);
+      if (otpRefs.current[0]) otpRefs.current[0].focus();
     } finally {
       setIsProcessing(false);
     }
@@ -125,13 +109,13 @@ export default function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-      {/* 居中图标区域 - SOMNOAI LAB */}
+      {/* Centered Logo & Branding */}
       <m.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
         className="text-center mb-10 flex flex-col items-center gap-4 z-10"
       >
-        <div className="w-24 h-24 mb-2">
+        <div className="w-24 h-24 mb-2 flex items-center justify-center">
           <Logo size={96} animated={true} />
         </div>
         <div className="space-y-2">
@@ -145,88 +129,56 @@ export default function AdminLoginPage() {
       </m.div>
 
       <div className="w-full max-w-[460px] z-10">
-        <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-rose-600/10 rounded-[3.5rem] p-1 shadow-2xl">
+        <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-rose-600/10 rounded-[3.5rem] p-1 shadow-[0_0_80px_rgba(225,29,72,0.1)]">
           <div className="p-10 md:p-12 space-y-10">
             
-            {/* 导航标签: OTP, LOGIN, REGISTER */}
-            <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5 relative">
-              {['otp', 'login', 'register'].map((tab) => (
-                <button 
-                  key={tab}
-                  onClick={() => { setActiveTab(tab as any); setStep('input'); }}
-                  className={`flex-1 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest z-10 transition-colors ${activeTab === tab ? 'text-white' : 'text-slate-600'}`}
-                >
-                  {tab === 'otp' ? 'OTP MODE' : tab.toUpperCase()}
-                </button>
-              ))}
-              <m.div 
-                className="absolute top-1.5 left-1.5 bottom-1.5 w-[calc(33.33%-3px)] bg-rose-600 rounded-full"
-                animate={{ x: activeTab === 'otp' ? '0%' : activeTab === 'login' ? '100%' : '200%' }}
-                transition={{ type: "spring", stiffness: 400, damping: 35 }}
-              />
+            {/* restricted portal header */}
+            <div className="text-center space-y-2">
+              <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Restricted Portal</h2>
+              <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-[0.3em]">Command Deck Clearance Only</p>
             </div>
 
             <AnimatePresence mode="wait">
               {step === 'input' ? (
-                <m.div key="input" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="space-y-10">
-                  
-                  {/* 实验室宣言文案 */}
+                <m.div 
+                  key="input" 
+                  initial={{ opacity: 0 }} 
+                  animate={{ opacity: 1 }} 
+                  exit={{ opacity: 0, scale: 0.95 }} 
+                  className="space-y-10"
+                >
                   <p className="text-[12px] text-slate-500 text-center leading-relaxed italic px-2 font-medium">
                     It integrates physiological indicator monitoring, AI deep insights and health advice into one, providing users with a full range of digital sleep experiments.
                   </p>
 
-                  <form onSubmit={handleMainAction} className="space-y-8">
+                  <form onSubmit={handleRequestToken} className="space-y-8">
                     <div className="space-y-6">
-                      {/* Email Address 字段 */}
                       <div className="relative group">
                         <Mail className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-rose-500 transition-colors" size={20} />
                         <input 
                           type="email" 
                           value={email} 
                           onChange={(e) => setEmail(e.target.value)}
-                          placeholder="Email Address"
-                          className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-24 py-6 text-sm text-white focus:border-rose-600/40 outline-none transition-all placeholder:text-slate-900 font-bold"
+                          placeholder="Administrator Identifier"
+                          className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-24 py-6 text-sm text-white focus:border-rose-600/40 outline-none transition-all placeholder:text-slate-900 font-bold shadow-inner"
                           required
                         />
                         <div className="absolute right-6 top-1/2 -translate-y-1/2">
                            <StatusIndicator active={isEmailValid} />
                         </div>
                       </div>
-
-                      {/* Access Password 字段 (仅非OTP模式显示) */}
-                      {activeTab !== 'otp' && (
-                        <div className="relative group">
-                          <Lock className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-rose-500 transition-colors" size={20} />
-                          <input 
-                            type={showPassword ? "text" : "password"} 
-                            value={password} 
-                            onChange={(e) => setPassword(e.target.value)}
-                            placeholder="Access Password"
-                            className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-24 py-6 text-sm text-white focus:border-rose-600/40 outline-none transition-all placeholder:text-slate-900 font-bold"
-                            required
-                          />
-                          <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-3">
-                             <button type="button" onClick={() => setShowPassword(!showPassword)} className="text-slate-800 hover:text-white transition-colors">
-                               {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-                             </button>
-                             <StatusIndicator active={isPasswordValid} />
-                          </div>
-                        </div>
-                      )}
                     </div>
 
                     <div className="space-y-4 pt-2">
-                      {/* 主按钮: AUTHORIZE ACCESS */}
                       <button 
                         type="submit" 
-                        disabled={isProcessing}
-                        className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 active:scale-[0.98] transition-all shadow-xl hover:bg-rose-500 disabled:opacity-50"
+                        disabled={isProcessing || !isEmailValid}
+                        className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 active:scale-[0.98] transition-all shadow-xl hover:bg-rose-500 disabled:opacity-30"
                       >
-                        {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Zap size={18} fill="currentColor" />}
-                        {isProcessing ? 'SYNCHRONIZING...' : 'AUTHORIZE ACCESS'}
+                        {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Shield size={18} fill="currentColor" />}
+                        {isProcessing ? 'SYNCHRONIZING...' : 'REQUEST ACCESS TOKEN'}
                       </button>
 
-                      {/* 次要按钮: GOOGLE, SANDBOX MODE */}
                       <div className="grid grid-cols-2 gap-4">
                         <button 
                           type="button" 
@@ -247,7 +199,13 @@ export default function AdminLoginPage() {
                   </form>
                 </m.div>
               ) : (
-                <m.div key="verify" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-12">
+                <m.div 
+                  key="verify" 
+                  initial={{ opacity: 0, x: 20 }} 
+                  animate={{ opacity: 1, x: 0 }} 
+                  exit={{ opacity: 0, x: -20 }} 
+                  className="space-y-12"
+                >
                   <div className="text-center space-y-4">
                     <button onClick={() => setStep('input')} className="text-[11px] font-black text-rose-500 uppercase flex items-center gap-2 mx-auto hover:text-rose-400">
                       <ChevronLeft size={16} /> Back to Identifier
@@ -266,14 +224,14 @@ export default function AdminLoginPage() {
                         value={digit}
                         onChange={(e) => handleOtpInput(idx, e.target.value)}
                         onKeyDown={(e) => { if (e.key === 'Backspace' && !otp[idx] && idx > 0) otpRefs.current[idx-1]?.focus(); }}
-                        className="w-12 h-16 bg-slate-950/60 border border-white/10 rounded-2xl text-3xl text-center text-white font-mono font-black focus:border-rose-600 outline-none transition-all"
+                        className="w-12 h-16 bg-slate-950/60 border border-white/10 rounded-2xl text-3xl text-center text-white font-mono font-black focus:border-rose-600 outline-none transition-all shadow-inner"
                       />
                     ))}
                   </div>
                   <button 
                     onClick={() => executeOtpVerify()} 
                     disabled={isProcessing || otp.some(d => !d)} 
-                    className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-rose-500 active:scale-[0.97] transition-all disabled:opacity-50"
+                    className="w-full py-6 bg-rose-600 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 hover:bg-rose-500 active:scale-[0.97] transition-all disabled:opacity-50 shadow-2xl"
                   >
                     {isProcessing ? <Loader2 className="animate-spin" size={24} /> : <ShieldCheck size={24} />}
                     VERIFY NEURAL TOKEN
@@ -283,8 +241,8 @@ export default function AdminLoginPage() {
             </AnimatePresence>
 
             {error && (
-              <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 border border-rose-600/20 bg-rose-600/10 rounded-[2rem] flex items-start gap-4 text-[12px] font-bold italic text-rose-400">
-                <ShieldAlert size={20} className="shrink-0 mt-1" />
+              <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 border border-rose-500/20 bg-rose-500/10 rounded-[2rem] flex items-start gap-4 text-[11px] font-bold italic text-rose-400 leading-relaxed shadow-lg">
+                <ShieldAlert size={18} className="shrink-0 mt-0.5" />
                 <p>{error}</p>
               </m.div>
             )}
@@ -292,11 +250,15 @@ export default function AdminLoginPage() {
         </div>
       </div>
 
-      {/* 页脚版权信息 */}
-      <footer className="mt-16 text-center space-y-4 opacity-40 hover:opacity-100 transition-all duration-700 pb-12 pointer-events-none">
-        <p className="text-[9px] font-mono uppercase tracking-[0.6em] text-slate-800 italic font-black">
-          @2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
-        </p>
+      <footer className="mt-16 text-center space-y-4 opacity-40 hover:opacity-100 transition-all duration-700 pb-12">
+        <div className="flex flex-col items-center gap-2">
+           <p className="text-[9px] font-mono uppercase tracking-[0.4em] text-slate-800 italic font-black">
+             SomnoAI Digital Sleep Lab • Secure Grid Infrastructure
+           </p>
+           <p className="text-[9px] font-mono uppercase tracking-[0.8em] text-slate-800 italic font-black">
+             @2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
+           </p>
+        </div>
       </footer>
     </div>
   );
