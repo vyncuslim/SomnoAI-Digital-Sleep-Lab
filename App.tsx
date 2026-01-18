@@ -214,7 +214,7 @@ const App: React.FC = () => {
                   <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -inset-12 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
                 </div>
                 <div className="space-y-4">
-                  <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
+                  <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Health Connect Node Offline</h2>
                   <p className="text-xs text-slate-500 font-bold uppercase tracking-widest max-w-sm mx-auto leading-relaxed px-6">
                     {translations[lang].dashboard.manifesto}
                   </p>
@@ -224,7 +224,7 @@ const App: React.FC = () => {
                   disabled={syncStatus !== 'idle'}
                   className="px-12 py-6 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 hover:bg-indigo-500 transition-all flex items-center gap-4"
                 >
-                  {syncStatus === 'idle' ? <><RefreshCw size={18} /> CONNECT LAB NODES</> : <><Loader2 size={18} className="animate-spin" /> {syncStatus.toUpperCase()}...</>}
+                  {syncStatus === 'idle' ? <><RefreshCw size={18} /> SYNC VIA HEALTH CONNECT</> : <><Loader2 size={18} className="animate-spin" /> {syncStatus.toUpperCase()}...</>}
                 </button>
               </div>
             )

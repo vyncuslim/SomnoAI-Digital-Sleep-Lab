@@ -5,11 +5,11 @@ export const translations = {
   en: {
     nav: { lab: 'lab', trends: 'TRENDS', insights: 'INSIGHTS', settings: 'SETTINGS' },
     errors: {
-      healthApiDenied: 'Access Denied: Please ensure permissions are granted in Android settings.',
-      syncFailed: 'Telemetry Sync Failed. Check system health link.',
-      noDataFound: 'No data identified. Ensure your wearable app has synced.',
-      noSleepData: 'No explicit "Sleep" sessions identified.',
-      authExpired: 'System Link expired. Please re-authorize.',
+      healthApiDenied: 'Access Denied: Please ensure permissions are granted in Android Health Connect settings.',
+      syncFailed: 'Telemetry Sync Failed. Check Health Connect system link.',
+      noDataFound: 'No data identified. Ensure your wearable app has synced to Health Connect.',
+      noSleepData: 'No explicit "Sleep" sessions identified in Health Connect.',
+      authExpired: 'Health Connect link expired. Please re-authorize.',
       blocked: 'Access Restricted: Node suspended by system policy.'
     },
     dashboard: {
@@ -24,10 +24,10 @@ export const translations = {
       remConsolid: 'REM Consolid',
       efficiency: 'Efficiency',
       telemetry: 'Telemetric Flow',
-      cmdSync: 'Sync Feature Stream',
+      cmdSync: 'Sync Health Connect',
       cmdExport: 'Archive Lab Data',
       lullaby: 'Neural Lullaby',
-      manifesto: 'SomnoAI integrates physiological metric monitoring, AI deep insights, and health advice into one, providing users with a full range of digital sleep experiments.'
+      manifesto: 'It integrates physiological metric monitoring, AI deep insights, and health advice into one, providing users with a full range of digital sleep experiments.'
     },
     auth: {
       lab: 'SomnoAI Digital Sleep Lab',
@@ -112,7 +112,7 @@ export const translations = {
     nav: { lab: '实验室', trends: '趋势分析', insights: 'AI 洞察', settings: '系统设置' },
     about: {
       title: '实验室技术规格',
-      manifesto: 'SomnoAI 数字化睡眠实验室：将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
+      manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
       protocolTitle: 'Health Connect 桥接协议',
       waterAnalogyTitle: '生物流类比',
       waterAnalogyDesc: '将 Health Connect 想象成一个中央水库。您的手表将纯净的生理指标注入其中。SomnoAI 打开阀门，将这些流量引导至我们的神经过滤器中，进行净化和洞察。',
@@ -143,11 +143,11 @@ export const translations = {
       guideSection3Desc: '可执行的生物黑客协议。SomnoAI 利用谷歌搜索 (Google Search Grounding) 提供基于证据的恢复方案，专为您的数据定制。'
     },
     errors: {
-      healthApiDenied: '连接被拒绝：请确保在 Android 设置中授予了权限。',
-      syncFailed: '遥测同步失败。请检查系统健康链路。',
-      noDataFound: '未发现数据。请确保您的可穿戴设备已同步。',
-      noSleepData: '未发现明确的“睡眠”会话。',
-      authExpired: '系统链路已过期。请重新连接。',
+      healthApiDenied: '连接被拒绝：请确保在 Android Health Connect 设置中授予了权限。',
+      syncFailed: '遥测同步失败。请检查 Health Connect 系统链路。',
+      noDataFound: '未发现数据。请确保您的可穿戴设备已同步至 Health Connect。',
+      noSleepData: '在 Health Connect 中未发现明确的“睡眠”会话。',
+      authExpired: 'Health Connect 链路已过期。请重新连接。',
       blocked: '访问受限：您的身份节点已被系统策略挂起。'
     },
     dashboard: {
@@ -162,15 +162,15 @@ export const translations = {
       remConsolid: 'REM 记忆巩固',
       efficiency: '生物效能',
       telemetry: '生理指标遥测流',
-      cmdSync: '注入特征数据',
+      cmdSync: '同步 Health Connect',
       cmdExport: '归档实验报告',
       lullaby: '神经催眠曲',
-      manifesto: 'SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。'
+      manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。'
     },
     auth: {
       lab: 'SomnoAI Digital Sleep Lab',
       tagline: 'DIGITAL IDENTITY TELEMETRY',
-      manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
+      manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
       sendCode: '获取实验室令牌',
       emailLabel: 'Email Address',
       passwordLabel: 'Access Password',
@@ -204,43 +204,6 @@ export const translations = {
       status: '通知状态',
       acknowledged: '已通知管理员',
       pending: '等待推送通知'
-    },
-    settings: {
-      title: 'SomnoAI 数字化睡眠实验室',
-      subtitle: '神经基础设施',
-      logout: '断开连接并注销',
-      language: '系统语言',
-      geminiCore: 'Gemini 神经内核',
-      active: '已激活',
-      coffee: '支持数字化科研',
-      lastSync: '最后同步',
-      never: '从未同步',
-      thankYouTitle: '感谢您的支持',
-      closeReceipt: '返回实验室控制台',
-      paypalLink: 'https://paypal.me/vyncuslim',
-      paypalId: 'Vyncuslim vyncuslim',
-      duitNowId: '+60 187807388',
-      profileTitle: '实验主体身份',
-      displayName: '显示名称',
-      email: '身份标识 (Email)',
-      updateProfile: '同步身份信息',
-      profileSuccess: '身份信息更新已确认。',
-      personalInfo: '生物识别元数据',
-      age: '年龄',
-      weight: '体重',
-      height: '身高',
-      gender: '性别',
-      preferences: '系统偏好',
-      units: '度量单位',
-      coaching: 'AI 指导风格',
-      genderMale: '男',
-      genderFemale: '女',
-      genderOther: '其他',
-      genderNone: '不愿透露',
-      styleClinical: '临床 / 科学',
-      styleMotivational: '激励 / 增长',
-      styleMinimal: '极简 / 直接',
-      passwordRecoveryNotice: '神经密钥恢复模式已激活。请在下方设置新的访问密钥。'
     },
     assistant: {
       title: '神经助手',

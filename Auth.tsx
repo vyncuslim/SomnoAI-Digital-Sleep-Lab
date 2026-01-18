@@ -13,9 +13,6 @@ import { trackEvent } from './services/analytics.ts';
 
 const m = motion as any;
 
-/**
- * 紧凑型生物识别开关 (Biometric Switch)
- */
 const BiometricSwitch = ({ active = false }: { active?: boolean }) => (
   <div className="flex items-center">
     <div className={`w-10 h-6 rounded-full border border-white/10 flex items-center px-0.5 bg-black/40 relative overflow-hidden transition-all duration-500 ${active ? 'border-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)]' : ''}`}>
@@ -34,9 +31,6 @@ const BiometricSwitch = ({ active = false }: { active?: boolean }) => (
   </div>
 );
 
-/**
- * 装饰性六角秘钥 (Hex Key)
- */
 const HexKeyIcon = ({ active }: { active: boolean }) => (
   <div className={`p-1.5 rounded-lg border border-white/5 bg-[#0f121e] flex items-center justify-center transition-all duration-700 ${active ? 'text-indigo-400 border-indigo-500/30 shadow-[0_0_10px_rgba(79,70,229,0.15)]' : 'text-slate-800'}`}>
     <div className="relative">
@@ -111,11 +105,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           if (data?.session) {
             onLogin();
           } else {
-            // 自动跳转到 OTP 验证界面
             setAuthMode('otp');
             setStep('verify');
             setMessage(lang === 'zh' ? "账户创建成功，验证令牌已发送至您的邮箱。" : "Account created. Verification token dispatched to your email.");
-            // 延迟聚焦以确保 DOM 已切换
             setTimeout(() => otpRefs.current[0]?.focus(), 500);
           }
           trackEvent('auth_signup');
@@ -179,8 +171,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       >
         <Logo size={70} animated={true} />
         <div className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tighter text-white italic leading-none">{t.lab}</h1>
-          <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em] opacity-80">{t.tagline}</p>
+          <h1 className="text-3xl font-black tracking-tighter text-white italic leading-none"><span>{t.lab}</span></h1>
+          <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em] opacity-80"><span>{t.tagline}</span></p>
         </div>
       </m.div>
 
@@ -188,19 +180,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
         <div className="bg-[#050a1f]/90 backdrop-blur-3xl border border-white/[0.08] rounded-[3rem] p-1 shadow-2xl overflow-hidden">
           <div className="p-8 md:p-10 space-y-8">
             
-            {/* Mode Switches */}
             <div className="flex bg-black/40 p-1 rounded-full border border-white/5 relative">
               <button 
                 onClick={() => { setAuthMode('otp'); setStep('input'); setFormType('login'); }}
                 className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest z-10 transition-colors ${authMode === 'otp' ? 'text-white' : 'text-slate-500'}`}
               >
-                OTP MODE
+                <span>OTP MODE</span>
               </button>
               <button 
                 onClick={() => { setAuthMode('password'); setStep('input'); setFormType('login'); }}
                 className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest z-10 transition-colors ${authMode === 'password' ? 'text-white' : 'text-slate-500'}`}
               >
-                PASSWORD MODE
+                <span>PASSWORD MODE</span>
               </button>
               <m.div 
                 className="absolute top-1 left-1 bottom-1 w-[calc(50%-4px)] bg-indigo-600 rounded-full shadow-[0_0_15px_rgba(79,70,229,0.4)]"
@@ -211,27 +202,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
 
             <AnimatePresence mode="wait">
               {step === 'input' ? (
-                <m.div key="input" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-8">
-                  
-                  {/* Action Tabs */}
+                <m.div key="input-view" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="space-y-8">
                   <div className="flex justify-center gap-10">
                     <button 
                       onClick={() => setFormType('login')} 
                       className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-widest pb-1.5 border-b-2 transition-all ${formType === 'login' ? 'text-indigo-400 border-indigo-400' : 'text-slate-800 border-transparent hover:text-slate-600'}`}
                     >
-                      <LoginIcon size={14} /> LOGIN
+                      <LoginIcon size={14} /> <span>LOGIN</span>
                     </button>
                     <button 
                       onClick={() => setFormType('register')} 
                       className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-widest pb-1.5 border-b-2 transition-all ${formType === 'register' ? 'text-indigo-400 border-indigo-400' : 'text-slate-800 border-transparent hover:text-slate-600'}`}
                     >
-                      <RegisterIcon size={14} /> REGISTER
+                      <RegisterIcon size={14} /> <span>REGISTER</span>
                     </button>
                   </div>
 
                   <form onSubmit={handleMainAction} className="space-y-6">
                     <p className="text-[11px] text-slate-500 text-center leading-relaxed italic px-4 font-medium">
-                      {translations[lang].dashboard.manifesto}
+                      <span>{translations[lang].dashboard.manifesto}</span>
                     </p>
 
                     <div className="space-y-4">
@@ -280,7 +269,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                         className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-xl hover:bg-indigo-500 disabled:opacity-50"
                       >
                         {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={16} fill="currentColor" />}
-                        {isProcessing ? 'SYNCHRONIZING...' : formType === 'register' ? t.confirmRegister : t.authorize}
+                        <span>{isProcessing ? 'SYNCHRONIZING...' : formType === 'register' ? t.confirmRegister : t.authorize}</span>
                       </button>
 
                       <div className="grid grid-cols-2 gap-3">
@@ -291,7 +280,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                           className="py-4 bg-[#0f121e] border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-slate-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest disabled:opacity-30"
                         >
                           {isGoogleProcessing ? <Loader2 className="animate-spin" size={16} /> : <svg className="w-4 h-4" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" /><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" /><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" /><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" /></svg>}
-                          {t.google}
+                          <span>{t.google}</span>
                         </button>
                         <button 
                           type="button" 
@@ -299,20 +288,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                           disabled={isProcessing || isGoogleProcessing}
                           className="py-4 bg-[#0f121e] border border-white/5 rounded-2xl flex items-center justify-center gap-3 text-slate-500 hover:text-white transition-all text-[10px] font-black uppercase tracking-widest disabled:opacity-30"
                         >
-                          <Fingerprint size={20} className="text-indigo-400" /> {t.sandbox}
+                          <Fingerprint size={20} className="text-indigo-400" /> <span>{t.sandbox}</span>
                         </button>
                       </div>
                     </div>
                   </form>
                 </m.div>
               ) : (
-                <m.div key="verify" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
+                <m.div key="verify-view" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
                   <div className="text-center space-y-4">
                     <button onClick={() => setStep('input')} className="text-[10px] font-black text-indigo-400 uppercase flex items-center gap-2 mx-auto hover:text-indigo-300">
-                      <ChevronLeft size={16} /> Back
+                      <ChevronLeft size={16} /> <span>Back</span>
                     </button>
-                    <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">{t.handshake}</h2>
-                    <p className="text-[11px] text-slate-600 font-medium italic truncate px-6">{t.dispatched} {email}</p>
+                    <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none"><span>{t.handshake}</span></h2>
+                    <p className="text-[11px] text-slate-600 font-medium italic truncate px-6"><span>{t.dispatched} {email}</span></p>
                   </div>
                   <div className="flex justify-between gap-2.5 px-4">
                     {otp.map((digit, idx) => (
@@ -336,7 +325,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                       className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-indigo-500 active:scale-[0.97] transition-all disabled:opacity-50 shadow-2xl"
                     >
                       {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
-                      VERIFY NEURAL TOKEN
+                      <span>VERIFY NEURAL TOKEN</span>
                     </button>
                   </div>
                 </m.div>
@@ -349,7 +338,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                   {error ? <ShieldAlert size={18} /> : <ShieldCheck size={18} />}
                 </div>
                 <div className="space-y-1">
-                  <p>{error || message}</p>
+                  <p><span>{error || message}</span></p>
                 </div>
               </m.div>
             )}
@@ -358,7 +347,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       </div>
 
       <footer className="mt-12 text-center space-y-4 opacity-30 hover:opacity-100 transition-all duration-700 pb-8">
-        <p className="text-[9px] font-mono uppercase tracking-[0.6em] text-slate-800 italic font-black">@2026 SomnoAI Digital Sleep Lab • Neural Infrastructure</p>
+        <p className="text-[9px] font-mono uppercase tracking-[0.6em] text-slate-800 italic font-black"><span>@2026 SomnoAI Digital Sleep Lab • Neural Infrastructure</span></p>
       </footer>
     </div>
   );

@@ -62,37 +62,15 @@
     <meta property="twitter:description" content="Unlock advanced sleep telemetry and AI-driven biological recovery strategies.">
     <meta property="twitter:image" content="https://img.icons8.com/fluency/512/moon.png">
 
-    <!-- Favicon Configuration: Explicit Moon Icons -->
-    <link rel="icon" type="image/png" sizes="16x16" href="https://img.icons8.com/fluency/16/moon.png">
+    <!-- Favicon Configuration: Forced Moon Branding -->
     <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/32/moon.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="https://img.icons8.com/fluency/48/moon.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="https://img.icons8.com/fluency/96/moon.png">
-    <link rel="icon" type="image/png" sizes="192x192" href="https://img.icons8.com/fluency/192/moon.png">
+    <link rel="icon" type="image/png" sizes="16x16" href="https://img.icons8.com/fluency/16/moon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/fluency/180/moon.png">
-    <link rel="shortcut icon" href="https://img.icons8.com/fluency/48/moon.png">
+    <link rel="shortcut icon" type="image/png" href="https://img.icons8.com/fluency/48/moon.png">
+    <link rel="mask-icon" href="https://img.icons8.com/fluency/180/moon.png" color="#4f46e5">
+    <meta name="msapplication-TileImage" content="https://img.icons8.com/fluency/192/moon.png">
+    <meta name="theme-color" content="#020617">
     
-    <!-- Structured Data: JSON-LD for SEO -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "SomnoAI Digital Sleep Lab",
-      "operatingSystem": "Web",
-      "applicationCategory": "HealthApplication",
-      "description": "An advanced digital sleep laboratory integrating physiological monitoring with deep AI insights for comprehensive sleep mastery.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "1024"
-      }
-    }
-    </script>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -105,16 +83,6 @@
           }
         }
       }
-      
-      window.addEventListener('unhandledrejection', function(event) {
-        if (event.reason?.message?.includes('AbortError') || event.reason?.name === 'AbortError') {
-          event.preventDefault();
-          console.debug('Auth signal handshake suppressed (AbortError).');
-        }
-      });
-      window.onerror = function(message) {
-        if (message.includes('AbortError')) return true;
-      };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>

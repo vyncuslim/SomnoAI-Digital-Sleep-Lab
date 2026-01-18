@@ -20,8 +20,6 @@ export const Logo: React.FC<LogoProps> = ({
   staticMode = false 
 }) => {
   const shouldAnimate = animated && !staticMode;
-  const initialD = "M30 85 Q 40 75, 50 85 T 70 85";
-  const waveD = "M30 85 Q 40 95, 50 85 T 70 85";
 
   return (
     <m.svg
@@ -32,72 +30,86 @@ export const Logo: React.FC<LogoProps> = ({
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Somno Lab Neural Moon Logo"
+      aria-label="Somno Lab Blue Sphere Moon Logo"
     >
       <defs>
-        <linearGradient id="moonGlow" x1="0" y1="0" x2="100" y2="100">
-          <stop offset="0%" stopColor="#4f46e5" />
-          <stop offset="50%" stopColor="#818cf8" />
-          <stop offset="100%" stopColor="#00f2fe" />
-        </linearGradient>
+        <radialGradient id="moonBaseGradient" cx="50%" cy="50%" r="50%" fx="35%" fy="35%">
+          <stop offset="0%" stopColor="#A5B4FC" />
+          <stop offset="40%" stopColor="#6366F1" />
+          <stop offset="100%" stopColor="#1E1B4B" />
+        </radialGradient>
         
-        <filter id="moonHalo" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="5" result="blur" />
+        <filter id="moonGlow" x="-50%" y="-50%" width="200%" height="200%">
+          <feGaussianBlur stdDeviation="4" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
 
-        <mask id="moonMask">
-          <circle cx="50" cy="50" r="40" fill="white" />
-          <circle cx="70" cy="35" r="35" fill="black" />
-        </mask>
+        <filter id="craterInnerShadow">
+          <feOffset dx="0.5" dy="0.5" />
+          <feGaussianBlur stdDeviation="1" result="offset-blur" />
+          <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse" />
+          <feFlood floodColor="black" floodOpacity="0.4" result="color" />
+          <feComposite operator="in" in="color" in2="inverse" result="shadow" />
+          <feComposite operator="over" in="shadow" in2="SourceGraphic" />
+        </filter>
       </defs>
 
-      {/* 外部轨道暗示 */}
-      <circle 
-        cx="50" cy="50" r="48" 
-        stroke="white" 
-        strokeWidth="0.2" 
-        strokeDasharray="2 6" 
-        className="opacity-20" 
-      />
-
-      <m.g mask="url(#moonMask)">
+      {/* 外部大气层光晕 */}
+      {threeD && (
         <m.circle
-          cx="50" cy="50" r="40"
-          fill="url(#moonGlow)"
-          filter={threeD ? "url(#moonHalo)" : "none"}
-          animate={shouldAnimate ? {
-            opacity: [0.8, 1, 0.8],
-            scale: [0.97, 1.03, 0.97]
-          } : {}}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+          cx="50"
+          cy="50"
+          r="46"
+          fill="#4F46E5"
+          fillOpacity="0.1"
+          animate={shouldAnimate ? { scale: [1, 1.08, 1], opacity: [0.1, 0.2, 0.1] } : {}}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         />
-      </m.g>
+      )}
 
-      {/* 卫星粒子 */}
-      <m.g
-        animate={shouldAnimate ? { rotate: [0, 360] } : {}}
-        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-        style={{ originX: '50px', originY: '50px' }}
-      >
-        <circle cx="50" cy="2" r="2.5" fill="#00f2fe" filter={threeD ? "url(#moonHalo)" : "none"} />
-      </m.g>
-
-      <m.path
-        d={initialD}
-        stroke="white"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-        className="opacity-20"
+      {/* 月球主体 - 高级质感蓝色球体 */}
+      <m.circle
+        cx="50"
+        cy="50"
+        r="40"
+        fill="url(#moonBaseGradient)"
+        filter={threeD ? "url(#moonGlow)" : "none"}
         animate={shouldAnimate ? {
-          d: [
-            initialD,
-            waveD,
-            initialD
-          ]
+          rotate: [0, 5, 0],
+          scale: [0.99, 1.01, 0.99]
         } : {}}
-        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
       />
+
+      {/* 真实环形山纹理 - 对应截图中的坑位特征 */}
+      <g opacity="0.15" filter="url(#craterInnerShadow)">
+        <circle cx="32" cy="38" r="7" fill="white" />
+        <circle cx="68" cy="42" r="5" fill="white" />
+        <circle cx="48" cy="68" r="8" fill="white" />
+        <circle cx="28" cy="62" r="4" fill="white" />
+        <circle cx="72" cy="22" r="3" fill="white" />
+      </g>
+
+      {/* 表面漫反射层 */}
+      <circle
+        cx="50"
+        cy="50"
+        r="40"
+        fill="white"
+        fillOpacity="0.05"
+        style={{ pointerEvents: 'none' }}
+      />
+
+      {/* 环绕的数字粒子 */}
+      {shouldAnimate && (
+        <m.g
+          animate={{ rotate: 360 }}
+          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+          style={{ originX: '50px', originY: '50px' }}
+        >
+          <circle cx="50" cy="5" r="1.5" fill="#00F2FE" filter="url(#moonGlow)" />
+        </m.g>
+      )}
     </m.svg>
   );
 };

@@ -6,12 +6,13 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, BrainCircuit, HeartPulse, Cpu, Zap, 
   Share2, Activity, Sparkles, Binary, Waves, Gauge,
-  ShieldCheck, ArrowUpRight
+  ShieldCheck, ArrowUpRight, Smartphone, Cloud, CloudUpload, CheckCircle
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { Language, translations } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
 import { COLORS } from '../constants.tsx';
+import { healthConnect } from '../services/healthConnectService.ts';
 
 const m = motion as any;
 
@@ -29,44 +30,42 @@ export const Dashboard: React.FC<DashboardProps> = ({
   lang, 
   onSyncHealth, 
   onNavigate, 
-  staticMode = false,
   threeDEnabled = true
 }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [isUploading, setIsUploading] = useState(false);
   const [engineActive, setEngineActive] = useState(false);
+  const [isNative, setIsNative] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
+  
   const t = translations[lang].dashboard;
 
   useEffect(() => {
-    const checkKey = async () => {
-      const storedKey = localStorage.getItem('somno_manual_gemini_key');
-      if ((window as any).aistudio) {
-        const selected = await (window as any).aistudio.hasSelectedApiKey();
-        setEngineActive(selected || !!process.env.API_KEY || !!storedKey);
-      } else {
-        setEngineActive(!!process.env.API_KEY || !!storedKey);
-      }
-    };
-    checkKey();
+    setIsNative(healthConnect.isNativeBridgeAvailable());
+    setEngineActive(!!process.env.API_KEY || !!localStorage.getItem('somno_manual_gemini_key'));
   }, []);
 
-  const handleSync = async () => {
-    if (!onSyncHealth || isProcessing) return;
+  const handleFullSync = async () => {
+    if (!onSyncHealth || syncStatus !== 'idle') return;
+    
     try {
-      await onSyncHealth((status) => {
-        setSyncStatus(status);
-        if (status === 'success') setTimeout(() => setSyncStatus('idle'), 2000);
-      });
+      await onSyncHealth((status) => setSyncStatus(status));
+      setIsUploading(true);
+      await healthConnect.uploadToBackend(data);
+      
+      setTimeout(() => {
+        setIsUploading(false);
+        setSyncStatus('idle');
+      }, 2000);
     } catch (err) {
       setSyncStatus('error');
     }
   };
 
-  const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
+  const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus) || isUploading;
 
-  // Process stages for the hypnogram visualization
-  const hypnogramData = (data.stages || []).map((s, i) => ({
+  const hypnogramData = (data.stages || []).map((s) => ({
     time: s.startTime,
     level: s.name === 'Awake' ? 4 : s.name === 'Light' ? 3 : s.name === 'REM' ? 2 : 1,
     name: s.name
@@ -78,18 +77,18 @@ export const Dashboard: React.FC<DashboardProps> = ({
       animate={{ opacity: 1 }}
       className="space-y-10 pb-32 max-w-5xl mx-auto"
     >
-      {/* Neural Node Status Bar */}
+      {/* 状态栏：增强节点稳定性 */}
       <div className="flex justify-between items-center bg-slate-950/60 px-8 py-5 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
         <div className="flex items-center gap-5">
           <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-            <Logo size={32} animated={engineActive} threeD={threeDEnabled} />
+            <Logo size={32} animated={isProcessing} threeD={threeDEnabled} />
           </div>
           <div className="flex flex-col text-left">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Neural Node Alpha</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Enterprise Node Alpha</span>
             <div className="flex items-center gap-2">
-               <div className={`w-1.5 h-1.5 rounded-full ${engineActive ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'}`} />
+               <div className={`w-1.5 h-1.5 rounded-full ${engineActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'}`} />
                <span className={`text-[11px] font-black tracking-widest uppercase ${engineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                 {engineActive ? 'PROTECTION ACTIVE' : 'LINK OFFLINE'}
+                 {isUploading ? <span>UPLOADING...</span> : isNative ? <span>HW-SYNC LINK</span> : <span>CLOUD-SYNC LINK</span>}
                </span>
             </div>
           </div>
@@ -97,26 +96,47 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         <div className="hidden lg:flex items-center gap-8 px-8 border-x border-white/5">
            <div className="flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Signal Strength</span>
-              <div className="flex gap-1.5">
-                 {[1, 2, 3, 4].map(i => (
-                   <div key={i} className={`w-1.5 h-4 rounded-full transition-all duration-700 ${i <= (engineActive ? 4 : 1) ? 'bg-indigo-500 shadow-[0_0_10px_rgba(99,102,241,0.5)]' : 'bg-slate-800'}`} />
-                 ))}
+              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Bridge Protocol</span>
+              <div className="flex items-center gap-2">
+                 {isNative ? <Smartphone size={16} className="text-emerald-400" /> : <Cloud size={16} className="text-indigo-400" />}
+                 <span className="text-[10px] font-black text-white">{isNative ? 'ANDROID NATIVE' : 'WEB CLIENT'}</span>
               </div>
            </div>
            <div className="flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Bio-Node</span>
-              <Activity size={18} className={engineActive ? 'text-indigo-400' : 'text-slate-700'} />
+              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Lab Cloud</span>
+              <div className="flex items-center gap-1.5">
+                <CloudUpload size={16} className={isUploading ? 'text-emerald-400' : 'text-slate-600'} />
+                <span className="text-[9px] font-black text-white">somno.com/api</span>
+              </div>
            </div>
         </div>
 
         <div className="flex gap-4">
           <button 
-            onClick={handleSync} 
+            onClick={handleFullSync} 
             disabled={isProcessing} 
-            className="w-14 h-14 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-indigo-500/20 text-indigo-400 transition-all active:scale-90 group"
+            className="w-14 h-14 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-indigo-500/20 text-indigo-400 transition-all active:scale-90 group relative"
           >
-            <RefreshCw size={20} className={`${isProcessing ? 'animate-spin' : 'group-hover:rotate-180'} transition-transform duration-700`} />
+            {isUploading ? (
+              <m.div key="upload-icon" animate={{ y: [-10, 0, -10] }} transition={{ repeat: Infinity }}>
+                <CloudUpload size={20} className="text-emerald-400" />
+              </m.div>
+            ) : (
+              <RefreshCw key="sync-icon" size={20} className={`${isProcessing ? 'animate-spin text-emerald-400' : 'group-hover:rotate-180'} transition-transform duration-700`} />
+            )}
+            <AnimatePresence>
+              {syncStatus === 'success' && (
+                <m.div 
+                  key="check-badge"
+                  initial={{ scale: 0 }}
+                  animate={{ scale: 1 }}
+                  exit={{ scale: 0 }}
+                  className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-1 shadow-lg"
+                >
+                  <CheckCircle size={10} className="text-white" />
+                </m.div>
+              )}
+            </AnimatePresence>
           </button>
           <button 
             onClick={() => setShowShareModal(true)} 
@@ -127,15 +147,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* Core Laboratory Display */}
+      {/* 核心仪表盘 */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        
-        {/* Left: Efficiency Score & Insights */}
         <div className="lg:col-span-7 space-y-10">
           <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[520px] flex flex-col justify-between" intensity={threeDEnabled ? 1.5 : 0}>
             <div className="flex justify-between items-start">
               <div className="text-left">
-                <h2 className="text-sm font-black italic text-indigo-400 uppercase tracking-[0.4em] mb-2">Subject Efficiency</h2>
+                <h2 className="text-sm font-black italic text-indigo-400 uppercase tracking-[0.4em] mb-2">Lab Efficiency</h2>
                 <div className="flex items-baseline gap-2">
                   <span className="text-[10rem] md:text-[12rem] font-black italic tracking-tighter text-white drop-shadow-[0_0_100px_rgba(129,140,248,0.5)] leading-none select-none">
                     {data.score}
@@ -145,7 +163,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
               <div className="p-6 bg-indigo-500/10 rounded-[3rem] border border-indigo-500/20 flex flex-col items-center gap-1">
                  <Gauge size={24} className="text-indigo-400 mb-1" />
-                 <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Optimal</span>
+                 <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Precision</span>
               </div>
             </div>
 
@@ -156,10 +174,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
                 <div className="flex items-center gap-3 text-indigo-400">
                    <ShieldCheck size={18} />
-                   <span className="text-[10px] font-black uppercase tracking-widest italic">Mission Protocol</span>
+                   <span className="text-[10px] font-black uppercase tracking-widest italic">Official Manifesto</span>
                 </div>
-                <p className="text-[13px] font-bold text-slate-300 italic leading-relaxed text-left">
-                  {t.manifesto}
+                <p className="text-[14px] font-bold text-slate-300 italic leading-relaxed text-left">
+                  <span>"{t.manifesto}"</span>
                 </p>
               </div>
               
@@ -169,11 +187,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       key={i}
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: i * 0.3 }}
                       className="p-6 bg-slate-900/60 rounded-[3rem] border border-white/5 border-l-2 border-l-indigo-500/50 text-left"
                     >
                       <p className="text-[13px] font-medium italic text-slate-300 leading-relaxed">
-                        {String(insight)}
+                        <span>{String(insight)}</span>
                       </p>
                     </m.div>
                  ))}
@@ -182,7 +199,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </GlassCard>
         </div>
 
-        {/* Right: Neural Architecture & Metrics */}
         <div className="lg:col-span-5 space-y-8">
           <GlassCard className="p-10 rounded-[4rem] h-full flex flex-col gap-10" intensity={threeDEnabled ? 1 : 0}>
             <div className="flex items-center justify-between">
@@ -190,105 +206,55 @@ export const Dashboard: React.FC<DashboardProps> = ({
                  <Binary size={20} className="text-indigo-400" />
                  <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Neural Mapping</span>
                </div>
-               <div className="px-3 py-1 bg-emerald-500/10 rounded-full text-[9px] font-black text-emerald-500 uppercase tracking-widest border border-emerald-500/20">
-                 High Fidelity
-               </div>
             </div>
-
             <div className="flex-1 min-h-[220px]">
                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={hypnogramData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
-                    <defs>
-                      <linearGradient id="hypnoColor" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor={COLORS.deep} stopOpacity={0.8}/>
-                        <stop offset="95%" stopColor={COLORS.deep} stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <Tooltip 
-                      contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '20px', padding: '12px' }}
-                      itemStyle={{ color: '#fff', fontSize: '10px', fontWeight: '800', textTransform: 'uppercase' }}
-                    />
-                    <Area 
-                      type="stepAfter" 
-                      dataKey="level" 
-                      stroke={COLORS.deep} 
-                      strokeWidth={3} 
-                      fillOpacity={1} 
-                      fill="url(#hypnoColor)" 
-                      animationDuration={2000}
-                    />
+                  <AreaChart data={hypnogramData}>
+                    <Area type="stepAfter" dataKey="level" stroke={COLORS.deep} strokeWidth={3} fill="rgba(99, 102, 241, 0.2)" animationDuration={2000} />
                   </AreaChart>
                </ResponsiveContainer>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/5 text-left">
-                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Deep Neural</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black italic text-white tracking-tighter">{data.deepRatio}%</span>
-                  <Waves size={12} className="text-indigo-500" />
-                </div>
-              </div>
-              <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/5 text-left">
-                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">REM Consolid</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-black italic text-white tracking-tighter">{data.remRatio}%</span>
-                  <BrainCircuit size={12} className="text-purple-500" />
-                </div>
-              </div>
             </div>
           </GlassCard>
         </div>
       </div>
 
-      {/* Physiological Pulse Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 px-2">
-        {[
-          { icon: HeartPulse, label: 'Cardiac Stability', value: `${data.heartRate.resting}`, unit: 'BPM', color: 'text-rose-500' },
-          { icon: Cpu, label: 'Sync Efficiency', value: `${data.efficiency}`, unit: '%', color: 'text-cyan-400' },
-          { icon: Binary, label: 'Session Time', value: `${Math.floor(data.totalDuration/60)}H`, unit: `${data.totalDuration%60}M`, color: 'text-indigo-400' },
-          { icon: Zap, label: 'Metabolic Load', value: `${data.calories || 2150}`, unit: 'KCAL', color: 'text-amber-400' }
-        ].map((item, i) => (
-          <GlassCard key={i} className="p-10 rounded-[3rem] flex flex-col items-center gap-4 text-center group" hoverScale={true} intensity={threeDEnabled ? 1 : 0}>
-            <div className={`p-5 rounded-[2rem] bg-white/5 ${item.color} group-hover:scale-110 transition-transform duration-500 shadow-xl`}>
-              <item.icon size={26} strokeWidth={2.5} />
-            </div>
-            <div>
-              <p className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-600 mb-2">{item.label}</p>
-              <div className="flex items-baseline justify-center gap-1.5">
-                <p className="text-3xl font-black italic text-white tracking-tighter leading-none">{item.value}</p>
-                <p className="text-[10px] font-black text-slate-500 uppercase">{item.unit}</p>
-              </div>
-            </div>
-          </GlassCard>
-        ))}
-      </div>
-
-      {/* Share/Export Modal */}
       <AnimatePresence>
         {showShareModal && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-3xl" onClick={() => setShowShareModal(false)}>
-            <m.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.8, opacity: 0 }} onClick={(e: any) => e.stopPropagation()}>
+          <m.div 
+            key="share-modal-overlay"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-3xl" 
+            onClick={() => setShowShareModal(false)}
+          >
+            <m.div 
+              key="share-modal-card"
+              initial={{ scale: 0.8, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.8, opacity: 0 }} 
+              onClick={(e: any) => e.stopPropagation()}
+            >
               <GlassCard className="p-16 rounded-[5rem] max-w-md border-white/20 text-center space-y-10" intensity={threeDEnabled ? 2 : 0}>
                    <div className="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-2xl mx-auto">
                      <Share2 size={36} />
                    </div>
                    <div className="space-y-4">
-                     <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Export Lab Report</h2>
-                     <p className="text-sm text-slate-500 italic max-w-xs mx-auto">Cryptographically signed lab metrics ready for external synchronization.</p>
+                     <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Archive Lab Metrics</h2>
+                     <p className="text-sm text-slate-500 italic max-w-xs mx-auto">Digitally signed experiment report ready for secondary analysis.</p>
                    </div>
                    <div className="space-y-4 pt-4">
                      <button 
                        onClick={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}
                        className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all"
                      >
-                       {copied ? 'SIGNAL COPIED' : 'COPY REPORT STREAM'}
+                       <span>{copied ? 'SIGNAL COPIED' : 'COPY TELEMETRY STREAM'}</span>
                      </button>
-                     <button onClick={() => setShowShareModal(false)} className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 hover:text-white transition-colors">Abort Command</button>
+                     <button onClick={() => setShowShareModal(false)} className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 hover:text-white transition-colors">Abort Archive</button>
                    </div>
               </GlassCard>
             </m.div>
-          </div>
+          </m.div>
         )}
       </AnimatePresence>
     </m.div>
