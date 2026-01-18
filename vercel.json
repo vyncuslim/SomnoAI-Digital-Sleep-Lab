@@ -1,6 +1,19 @@
+
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    {
+      "source": "/favicon.png",
+      "destination": "https://img.icons8.com/fluency/512/moon-star.png",
+      "permanent": true
+    },
+    {
+      "source": "/favicon.ico",
+      "destination": "https://img.icons8.com/fluency/48/moon-star.png",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },
