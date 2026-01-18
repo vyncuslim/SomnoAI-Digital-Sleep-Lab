@@ -1,12 +1,14 @@
+
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, Activity, Zap, User, BrainCircuit, Settings as SettingsIcon, WifiOff, RefreshCw } from 'lucide-react';
+import { Loader2, Activity, Zap, User, BrainCircuit, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi } from './services/supabaseService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
+import { Logo } from './components/Logo.tsx';
 
 // Direct imports for stability
 import AdminLoginPage from './app/admin/login/page.tsx';
@@ -18,6 +20,7 @@ const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default
 const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
 const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ default: m.Settings })));
 const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(m => ({ default: m.UserProfile })));
+const AboutView = lazy(() => import('./components/AboutView.tsx').then(m => ({ default: m.AboutView })));
 
 const m = motion as any;
 
@@ -67,6 +70,7 @@ const App: React.FC = () => {
       else if (hash === '#/settings') setActiveView('settings');
       else if (hash === '#/calendar') setActiveView('calendar');
       else if (hash === '#/assistant') setActiveView('assistant');
+      else if (hash === '#/about') setActiveView('about');
       else setActiveView('dashboard');
     };
     handleHash();
@@ -86,7 +90,6 @@ const App: React.FC = () => {
       } catch (err: any) {
         console.warn("Auth check failed:", err.message);
       } finally {
-        // 增加延迟确保 UI 不会在 Session 还没加载完就闪现登录页
         setTimeout(() => setIsInitialAuthCheck(false), 1500);
       }
     };
@@ -94,16 +97,12 @@ const App: React.FC = () => {
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.debug(`[Auth Event] ${event}`);
-      
       if (newSession) {
         setSession(newSession);
-        // 如果是登录事件，强制重新验证 Admin 状态
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
         
         if (event === 'SIGNED_IN') {
-           // 处理 Google 登录或 OTP 登录后的自动跳转
            const currentHash = window.location.hash;
            if (currentHash === '#/login' || currentHash === '' || currentHash === '#/') {
              setActiveView('dashboard');
@@ -211,8 +210,8 @@ const App: React.FC = () => {
             ) : (
               <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
                 <div className="relative">
-                  <WifiOff size={60} className="text-slate-800" />
-                  <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -inset-8 bg-indigo-500/5 rounded-full blur-2xl" />
+                  <Logo size={120} animated={true} threeD={threeDEnabled} />
+                  <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -inset-12 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
                 </div>
                 <div className="space-y-4">
                   <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Biometric Link Offline</h2>
@@ -233,6 +232,7 @@ const App: React.FC = () => {
           {activeView === 'calendar' && <Suspense fallback={<LoadingSpinner />}><Trends history={history} lang={lang} /></Suspense>}
           {activeView === 'assistant' && <Suspense fallback={<LoadingSpinner />}><AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} /></Suspense>}
           {activeView === 'profile' && <Suspense fallback={<LoadingSpinner />}><UserProfile lang={lang} /></Suspense>}
+          {activeView === 'about' && <Suspense fallback={<LoadingSpinner />}><AboutView lang={lang} onBack={() => window.location.hash = '#/'} /></Suspense>}
           {activeView === 'settings' && (
             <Suspense fallback={<LoadingSpinner />}>
               <Settings 

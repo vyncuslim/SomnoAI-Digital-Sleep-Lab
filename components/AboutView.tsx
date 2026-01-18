@@ -12,6 +12,7 @@ import {
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './Logo.tsx';
 
 const m = motion as any;
 
@@ -76,10 +77,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
     }
   ];
 
-  const tokenSteps = [
-    t.tokenInitial, t.tokenCycle, t.tokenStore, t.tokenExpire
-  ];
-
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500">
       <header className="flex items-center gap-4 mb-10 px-2">
@@ -89,13 +86,16 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
         >
           <ArrowLeft size={20} />
         </button>
-        <div>
-          <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
-            {t.title}
-          </h1>
-          <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-1">
-            Precision Bio-Digital Infrastructure
-          </p>
+        <div className="flex items-center gap-3">
+          <Logo size={40} animated={true} />
+          <div>
+            <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
+              {t.title}
+            </h1>
+            <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-1">
+              Precision Bio-Digital Infrastructure
+            </p>
+          </div>
         </div>
       </header>
 

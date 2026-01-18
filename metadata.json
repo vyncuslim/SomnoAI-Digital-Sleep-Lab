@@ -1,6 +1,6 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
-  "description": "SomnoAI Digital Sleep Lab fuses physiological monitoring, deep AI insights, and privacy-first science for comprehensive sleep mastery. Explore advanced bio-digital neural mappings.",
+  "description": "Integrating physiological monitoring, AI deep insights, and health advice for a comprehensive digital sleep lab experience.",
   "requestFramePermissions": [
     "microphone"
   ]
