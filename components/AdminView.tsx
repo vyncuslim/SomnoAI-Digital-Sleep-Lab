@@ -6,7 +6,8 @@ import {
   Loader2, AlertCircle, Terminal, Activity, 
   DatabaseZap, ChevronLeft, ShieldCheck, 
   Ban, Edit3, X, Save, Shield, MoreHorizontal,
-  Bell, Lock, History, AlertTriangle, Fingerprint
+  Bell, Lock, History, AlertTriangle, Fingerprint,
+  FileText, Clock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -15,7 +16,7 @@ import { SecurityEvent } from '../types.ts';
 
 const m = motion as any;
 
-type AdminTab = 'overview' | 'users' | 'records' | 'security';
+type AdminTab = 'overview' | 'users' | 'records' | 'security' | 'logs';
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -70,6 +71,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (activeTab === 'users') return data.users.filter(u => (u.email || u.id).toLowerCase().includes(q));
     if (activeTab === 'records') return data.records.filter(r => r.id?.toLowerCase().includes(q) || r.user_id?.toLowerCase().includes(q));
     if (activeTab === 'security') return data.security.filter(s => (s.email || '').toLowerCase().includes(q) || (s.event_type || '').toLowerCase().includes(q));
+    if (activeTab === 'logs') return data.logs.filter((l: any) => (l.action || l.message || '').toLowerCase().includes(q) || (l.user_id || '').toLowerCase().includes(q));
     return [];
   };
 
@@ -93,11 +95,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </div>
         
         <nav className="flex gap-2 bg-slate-900/60 p-1.5 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
-          {(['overview', 'users', 'records', 'security'] as AdminTab[]).map((tab) => (
+          {(['overview', 'users', 'records', 'security', 'logs'] as AdminTab[]).map((tab) => (
             <button 
               key={tab}
-              onClick={() => setActiveTab(tab)}
-              className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 ${activeTab === tab ? 'bg-rose-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+              onClick={() => { setActiveTab(tab); setSearchQuery(''); }}
+              className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab ? 'bg-rose-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
             >
               {tab === 'security' && unreadAlerts > 0 && (
                 <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
@@ -110,7 +112,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       <AnimatePresence mode="wait">
         {activeTab === 'overview' ? (
-          <m.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-8 px-2">
+          <m.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-4 gap-8 px-2">
              <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
                 <Users size={32} className="text-rose-400" />
                 <p className="text-3xl font-black text-white">{loading ? '...' : data.users.length}</p>
@@ -120,6 +122,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <ShieldAlert size={32} className={`transition-colors ${unreadAlerts > 0 ? 'text-rose-500 animate-pulse' : 'text-amber-400'}`} />
                 <p className="text-3xl font-black text-white">{loading ? '...' : data.security.length}</p>
                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Security Events</p>
+             </GlassCard>
+             <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
+                <FileText size={32} className="text-indigo-400" />
+                <p className="text-3xl font-black text-white">{loading ? '...' : data.logs.length}</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Audit Trails</p>
              </GlassCard>
              <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
                 <ShieldCheck size={32} className="text-emerald-400" />
@@ -133,7 +140,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-16 px-4">
                   <div>
                     <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">
-                      {activeTab === 'security' ? 'Security Monitoring Pulse' : `${activeTab} Registry`}
+                      {activeTab === 'security' ? 'Security Monitoring Pulse' : activeTab === 'logs' ? 'System Audit Trails' : `${activeTab} Registry`}
                     </h3>
                     <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Live Endpoint Visualization</p>
                   </div>
@@ -144,7 +151,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         type="text" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder="SCANNING NODE..." 
+                        placeholder={activeTab === 'logs' ? "FILTER AUDIT LOGS..." : "SCANNING NODE..."}
                         className="w-full bg-slate-950/60 border border-white/10 rounded-full px-10 py-4 text-[11px] font-black uppercase text-white outline-none focus:border-rose-500/50 transition-all"
                       />
                     </div>
@@ -168,15 +175,21 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
                           <td className="py-8 px-8">
                              <div className="flex items-center gap-4">
-                               {activeTab === 'security' && (
+                               {activeTab === 'security' ? (
                                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${item.event_type === 'AUTO_BLOCK' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : 'bg-amber-500/10 border-amber-500/30 text-amber-500'}`}>
                                     {item.event_type === 'AUTO_BLOCK' ? <Lock size={16}/> : <ShieldAlert size={16}/>}
                                  </div>
-                               )}
+                               ) : activeTab === 'logs' ? (
+                                 <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+                                    <History size={16} />
+                                 </div>
+                               ) : null}
                                <div>
-                                 <span className="text-white font-bold italic block leading-none mb-1">{item.email || item.id.slice(0, 16)}</span>
+                                 <span className="text-white font-bold italic block leading-none mb-1">
+                                   {activeTab === 'logs' ? (item.action || 'SYSTEM_EVENT') : (item.email || item.id.slice(0, 16))}
+                                 </span>
                                  <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">
-                                   {activeTab === 'security' ? `ID: ${item.id.slice(0,8)}` : `HASH: ${item.id.slice(0,12)}...`}
+                                   {activeTab === 'security' ? `ID: ${item.id.slice(0,8)}` : activeTab === 'logs' ? `BY: ${item.user_id?.slice(0,8) || 'SYSTEM'}` : `HASH: ${item.id.slice(0,12)}...`}
                                  </span>
                                </div>
                              </div>
@@ -204,6 +217,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                        {item.event_reason || 'Manual security override detected.'}
                                      </span>
                                    </div>
+                                 ) : activeTab === 'logs' ? (
+                                   <span className="text-[11px] font-medium text-slate-400 italic leading-relaxed">
+                                     {item.message || 'System operation executed.'}
+                                   </span>
                                  ) : (
                                    <>
                                      <div className={`w-2 h-2 rounded-full ${item.is_blocked ? 'bg-rose-500' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} />
@@ -217,11 +234,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           </td>
                           <td className="py-8 px-8 text-right">
                              <div className="flex justify-end gap-3">
-                               {activeTab === 'security' ? (
+                               {(activeTab === 'security' || activeTab === 'logs') ? (
                                  <div className="flex items-center gap-4">
                                    <div className="flex flex-col items-end">
                                      <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">Recorded On</span>
-                                     <span className="text-[10px] font-bold text-white italic">{new Date(item.created_at).toLocaleString()}</span>
+                                     <span className="text-[10px] font-bold text-white italic">
+                                       {new Date(item.created_at || item.timestamp).toLocaleString()}
+                                     </span>
                                    </div>
                                    <button className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-white transition-all border border-white/5">
                                       <Terminal size={16} />

@@ -8,16 +8,20 @@ import { ChatMessage, SleepRecord } from '../types.ts';
 import { chatWithCoach, designExperiment, generateNeuralLullaby, decodeBase64Audio, decodeAudioData } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from '../services/i18n.ts';
+import { Logo } from './Logo.tsx';
 
 const m = motion as any;
 
 const CROAvatar = ({ isProcessing = false, size = 32 }: { isProcessing?: boolean, size?: number }) => (
   <m.div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-    <svg viewBox="0 0 100 100" fill="none" className="w-full h-full">
-      <m.circle cx="50" cy="50" r="45" stroke="rgba(129, 140, 248, 0.3)" strokeWidth="1" strokeDasharray="5 5" animate={{ rotate: 360 }} transition={{ duration: 15, repeat: Infinity, ease: "linear" }} />
-      <m.path d="M50 20 L80 35 V65 L50 80 L20 65 V35 Z" fill="rgba(79, 70, 229, 0.2)" stroke="#818cf8" strokeWidth="2" animate={isProcessing ? { opacity: [0.5, 1, 0.5], scale: [0.95, 1, 0.95] } : {}} transition={{ duration: 1.5, repeat: Infinity }} />
-      <circle cx="50" cy="50" r="4" fill="white" className="opacity-80" />
-    </svg>
+    <Logo size={size} animated={isProcessing} threeD={true} />
+    {isProcessing && (
+       <m.div 
+         animate={{ scale: [1, 1.3, 1], opacity: [0, 0.2, 0] }}
+         transition={{ duration: 2, repeat: Infinity }}
+         className="absolute inset-0 bg-indigo-500 rounded-full blur-xl"
+       />
+    )}
   </m.div>
 );
 
@@ -146,7 +150,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     <div className="flex flex-col h-[calc(100vh-160px)] max-w-2xl mx-auto font-sans">
       <header className="flex items-center justify-between mb-8 px-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400"><Cpu size={20} /></div>
+          <div className="w-12 h-12 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400"><Logo size={24} animated={true} /></div>
           <div><h1 className="text-lg font-black italic text-white uppercase leading-none">{t.title}</h1><p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-1">Real-time Node Connected</p></div>
         </div>
         <div className="flex gap-2">

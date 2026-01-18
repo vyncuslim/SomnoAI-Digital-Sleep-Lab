@@ -30,120 +30,108 @@ export const Logo: React.FC<LogoProps> = ({
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Somno Master Moon Logo"
+      aria-label="Somno Crescent Moon Logo"
     >
       <defs>
-        {/* 高精度核心球体渐变：模拟深空蓝色的体积感 */}
-        <radialGradient id="masterMoonGradient" cx="30%" cy="30%" r="70%" fx="30%" fy="30%">
-          <stop offset="0%" stopColor="#DDE4FF" />
-          <stop offset="25%" stopColor="#7C72FF" />
-          <stop offset="60%" stopColor="#2D20A6" />
-          <stop offset="100%" stopColor="#0B0E23" />
-        </radialGradient>
-        
-        {/* 边缘流光渐变 (Rim Light) */}
-        <linearGradient id="rimLight" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.4" />
-          <stop offset="50%" stopColor="white" stopOpacity="0" />
+        {/* Crescent body gradient: Soft lavender-blue light */}
+        <linearGradient id="crescentGrad" x1="30%" y1="20%" x2="70%" y2="80%">
+          <stop offset="0%" stopColor="#E0E7FF" />
+          <stop offset="100%" stopColor="#C7D2FE" />
         </linearGradient>
+        
+        {/* Particle Glow (Neural Hub) */}
+        <radialGradient id="particleGrad" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stopColor="#818CF8" />
+          <stop offset="100%" stopColor="#4F46E5" />
+        </radialGradient>
 
-        {/* 分层光晕滤镜：核心辉光 + 外部扩散 */}
-        <filter id="ultraGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation="3" result="coreBlur" />
-          <feGaussianBlur stdDeviation="6" result="outerBlur" />
-          <feFlood floodColor="#6366F1" floodOpacity="0.5" result="glowColor" />
-          <feComposite in="glowColor" in2="outerBlur" operator="in" result="softGlow" />
+        {/* Global Bloom / Soft Atmosphere */}
+        <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="2.5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+
+        {/* Particle specific glow */}
+        <filter id="particleBloom">
+          <feGaussianBlur stdDeviation="3.5" result="pBlur" />
           <feMerge>
-            <feMergeNode in="softGlow" />
+            <feMergeNode in="pBlur" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
-
-        {/* 坑洞内部阴影 */}
-        <filter id="craterInner">
-          <feDropShadow dx="-0.5" dy="-0.5" stdDeviation="0.4" floodOpacity="0.5"/>
-        </filter>
       </defs>
 
-      {/* 1. 环境大气层：极弱的波动光圈 */}
-      {threeD && (
-        <m.circle
-          cx="50"
-          cy="50"
-          r="49"
-          stroke="#818cf8"
-          strokeWidth="0.5"
-          strokeOpacity="0.1"
-          animate={shouldAnimate ? { scale: [1, 1.05, 1], opacity: [0.1, 0.3, 0.1] } : {}}
-          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-        />
-      )}
-
-      {/* 2. 主球体核心 */}
-      <m.circle
+      {/* 1. Orbit Ring (Dotted/Subtle) - Matches the lab background aesthetic */}
+      <circle
         cx="50"
         cy="50"
-        r="40"
-        fill="url(#masterMoonGradient)"
-        filter={threeD ? "url(#ultraGlow)" : "none"}
-        style={{ transformOrigin: 'center' }}
+        r="44"
+        stroke="white"
+        strokeWidth="0.5"
+        strokeDasharray="1 6"
+        strokeOpacity="0.15"
+      />
+
+      {/* 2. Main Crescent Moon Shape - Mathematically defined for precision */}
+      <m.path
+        d="M68 82 C45 82 25 62 25 38 C25 24 32 12 43 5 C34 14 29 27 29 42 C29 64 47 82 69 82 C76 82 82 80 87 76 C81 81 75 82 68 82 Z"
+        fill="url(#crescentGrad)"
+        filter={threeD ? "url(#bloom)" : "none"}
         animate={shouldAnimate ? {
-          rotate: [0, 2, -2, 0],
+          rotate: [0, 1.5, -1.5, 0],
+          scale: [1, 1.02, 1]
         } : {}}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
       />
 
-      {/* 3. 表面细节：月球坑洞的有机分布 */}
-      <g opacity="0.15" style={{ mixBlendMode: 'plus-lighter' }}>
-        <circle cx="35" cy="42" r="6" fill="#1E1B4B" filter="url(#craterInner)" />
-        <circle cx="65" cy="35" r="4.5" fill="#1E1B4B" filter="url(#craterInner)" />
-        <circle cx="48" cy="62" r="7.5" fill="#1E1B4B" filter="url(#craterInner)" />
-        <circle cx="72" cy="58" r="3.2" fill="#1E1B4B" filter="url(#craterInner)" />
-        <circle cx="28" cy="68" r="4" fill="#1E1B4B" filter="url(#craterInner)" />
-      </g>
+      {/* 3. The Neural Particle (Glowing Node) - Positioned at Top Right */}
+      <m.g
+        animate={shouldAnimate ? {
+          y: [-1, 1, -1],
+          opacity: [0.8, 1, 0.8]
+        } : {}}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      >
+        {/* Glow Aura */}
+        <circle 
+          cx="78" 
+          cy="22" 
+          r="7" 
+          fill="#818CF8" 
+          fillOpacity="0.15" 
+          filter="blur(4px)"
+        />
+        {/* Core Node */}
+        <circle 
+          cx="78" 
+          cy="22" 
+          r="2.8" 
+          fill="url(#particleGrad)" 
+          filter="url(#particleBloom)"
+        />
+        {/* Center Spark */}
+        <circle 
+          cx="78" 
+          cy="22" 
+          r="0.8" 
+          fill="white" 
+        />
+      </m.g>
 
-      {/* 4. 边缘流光：增强3D感 */}
-      <circle
-        cx="50"
-        cy="50"
-        r="39.5"
-        stroke="url(#rimLight)"
-        strokeWidth="1.5"
-        strokeOpacity="0.2"
-        fill="none"
-        style={{ pointerEvents: 'none' }}
-      />
-
-      {/* 5. 顶部高光反射 */}
-      <circle
-        cx="40"
-        cy="40"
-        r="12"
-        fill="white"
-        fillOpacity="0.06"
-        style={{ pointerEvents: 'none' }}
-      />
-
-      {/* 6. 轨道卫星（青蓝色数据点）：对标视觉参考中的关键元素 */}
-      {shouldAnimate && (
-        <m.g
-          animate={{ rotate: 360 }}
-          transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
-          style={{ originX: '50px', originY: '50px' }}
-        >
+      {/* 4. Subtle Ambient Particles */}
+      {threeD && shouldAnimate && (
+        <g opacity="0.3">
           <m.circle 
-            cx="50" 
-            cy="-2" 
-            r="3.5" 
-            fill="#00F2FE" 
-            animate={{ 
-              opacity: [0.6, 1, 0.6],
-              scale: [0.9, 1.2, 0.9]
-            }}
-            transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-            style={{ filter: 'drop-shadow(0 0 8px rgba(0, 242, 254, 0.8))' }}
+            cx="20" cy="70" r="0.4" fill="white" 
+            animate={{ opacity: [0.2, 0.8, 0.2] }} 
+            transition={{ duration: 3, repeat: Infinity, delay: 0.2 }} 
           />
-        </m.g>
+          <m.circle 
+            cx="85" cy="50" r="0.4" fill="white" 
+            animate={{ opacity: [0.1, 0.6, 0.1] }} 
+            transition={{ duration: 5, repeat: Infinity, delay: 1 }} 
+          />
+        </g>
       )}
     </m.svg>
   );
