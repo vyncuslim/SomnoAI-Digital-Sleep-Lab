@@ -1,18 +1,7 @@
 
-import { createClient } from '@supabase/supabase-js';
+import { supabase } from '../lib/supabaseClient.ts';
 
-const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qY3Z2dHlhZWJkb2RtZWd3cWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyODc2ODgsImV4cCI6MjA4Mzg2MzY4OH0.FJY9V6fdTFOFCXeqWNwv1cQnsnQfq4RZq-5WyLNzPCg';
-
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce',
-    storageKey: 'somno_auth_session'
-  }
-});
+export { supabase };
 
 export const authApi = {
   signUp: (email: string, password: string) => 
@@ -68,48 +57,38 @@ export const authApi = {
 
 export const adminApi = {
   checkAdminStatus: async (userId: string, retryCount = 0): Promise<boolean> => {
+    if (!userId) return false;
+    
     try {
       if (retryCount > 0) {
         const delay = Math.pow(2, retryCount) * 200; 
         await new Promise(res => setTimeout(res, delay));
       }
 
-      // Step 1: Attempt an RPC call first as it's the most reliable way to bypass RLS recursion
+      // Step 1: Attempt an RPC call first
       const { data: rpcData, error: rpcError } = await supabase.rpc('check_is_admin');
       
       if (!rpcError && rpcData !== null) {
-        console.debug(`[Admin Security] RPC check result: ${rpcData}`);
         return !!rpcData;
-      }
-
-      if (rpcError) {
-        console.warn("[Admin Security] RPC fallback failed:", rpcError.message);
       }
 
       // Step 2: Query profiles table directly as a secondary check
       const { data, error } = await supabase
         .from('profiles')
-        .select('role, email')
+        .select('role')
         .eq('id', userId)
         .maybeSingle();
       
       if (error) {
-        console.error("[Admin Security] Profile query failed:", error.message);
-        if (retryCount < 2) return adminApi.checkAdminStatus(userId, retryCount + 1);
+        if (error.message?.includes('fetch') && retryCount < 2) {
+          return adminApi.checkAdminStatus(userId, retryCount + 1);
+        }
         return false;
       }
 
-      if (!data) {
-        console.warn("[Admin Security] Profile record not found for subject.");
-        return false;
-      }
-
-      const isAuthorized = (data.role || '').toLowerCase().trim() === 'admin';
-      console.debug(`[Admin Guard] identity: ${data.email} | registry_role: ${data.role} | authorized: ${isAuthorized}`);
-      
-      return isAuthorized;
+      return (data?.role || '').toLowerCase().trim() === 'admin';
     } catch (err) {
-      console.error("[Admin Security] Handshake critical failure:", err);
+      console.error("[Admin Security] Connection failure:", err);
       return false;
     }
   },

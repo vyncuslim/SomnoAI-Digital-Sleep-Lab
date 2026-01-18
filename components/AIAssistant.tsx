@@ -1,14 +1,13 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, User, Loader2, BrainCircuit, Cpu, Trash2, Key, Beaker, Terminal, Radio, Music, Square
+  Send, User, Loader2, Cpu, Trash2, Key, Beaker, Terminal, Radio, Music, Square
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
 import { chatWithCoach, designExperiment, generateNeuralLullaby, decodeBase64Audio, decodeAudioData } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from '../services/i18n.ts';
-import { Logo } from './Logo.tsx';
 
 const m = motion as any;
 
@@ -35,7 +34,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [hasKey, setHasKey] = useState<boolean | null>(null);
+  const [hasKey, setHasKey] = useState<boolean>(!!process.env.API_KEY);
   
   // Audio state
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
@@ -44,25 +43,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const checkKey = async () => {
-    const manualKey = localStorage.getItem('somno_manual_gemini_key');
-    const aistudio = (window as any).aistudio;
-    let apiReady = !!process.env.API_KEY || !!manualKey;
-    if (aistudio) {
-      const selected = await aistudio.hasSelectedApiKey();
-      apiReady = apiReady || selected;
-    }
-    setHasKey(apiReady);
-  };
-
   useEffect(() => {
-    checkKey();
-    const timer = setInterval(checkKey, 3000);
-    return () => { clearInterval(timer); stopAudio(); };
-  }, []);
-
-  useEffect(() => {
-    if (messages.length === 0 && hasKey === true) {
+    if (messages.length === 0 && hasKey) {
       setMessages([{ role: 'assistant', content: t.intro, timestamp: new Date() }]);
     }
   }, [hasKey, t.intro]);
@@ -83,7 +65,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
         setMessages(prev => [...prev, { role: 'assistant', content: response.text, sources: response.sources, timestamp: new Date() }]);
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: t.error, timestamp: new Date() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: t.error + " (Connection failed)", timestamp: new Date() }]);
     } finally {
       setIsTyping(false);
     }
@@ -115,14 +97,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     setIsPlayingAudio(false);
   };
 
-  if (hasKey === false) {
+  if (!hasKey) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[70vh] p-6 space-y-12 font-mono">
+      <div className="flex flex-col items-center justify-center min-h-[70vh] p-6 space-y-12 font-mono text-left">
         <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="w-full max-w-lg bg-[#020617] border border-indigo-500/20 rounded-3xl overflow-hidden shadow-[0_0_50px_rgba(79,70,229,0.1)]">
           <div className="bg-indigo-600/10 px-6 py-4 border-b border-indigo-500/20 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Sandbox Environment v0.4.2</span>
+              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">Sandbox Environment</span>
             </div>
             <Radio size={14} className="text-indigo-500/50" />
           </div>
@@ -133,9 +115,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
                 <h2 className="text-xl font-black italic text-white uppercase tracking-tighter leading-none">Degraded Neural Mode</h2>
               </div>
               <p className="text-[11px] text-slate-500 leading-relaxed uppercase tracking-wider">
-                Full neural synthesis is currently <span className="text-rose-500">unauthorized</span>. 
-                The system has reverted to a simulated laboratory shell. 
-                Advanced biometric analysis requires a valid Google Gemini API Key.
+                Full neural synthesis is currently <span className="text-rose-500">unavailable</span>. 
+                The system environment lacks the necessary biometric credentials.
               </p>
             </div>
             <div className="bg-black/40 rounded-2xl border border-white/5 p-6 space-y-4">
@@ -143,7 +124,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
                 <span>System Manifest</span><span>Status</span>
               </div>
               {[
-                { label: 'Neural Link', status: 'UNAVAILABLE', color: 'text-rose-600' },
+                { label: 'Neural Link', status: 'INACTIVE', color: 'text-rose-600' },
                 { label: 'Biometric Pulse', status: 'SIMULATED', color: 'text-amber-600' },
                 { label: 'Language Core', status: 'DEFAULT: EN', color: 'text-indigo-400' }
               ].map((item, idx) => (
@@ -152,21 +133,14 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
                 </div>
               ))}
             </div>
-            <div className="pt-4">
-               <button onClick={() => onNavigate?.('settings')} className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-3">
-                <Key size={14} /> Inject Access Key
-              </button>
-            </div>
           </div>
         </m.div>
         <footer className="text-center">
-           <p className="text-[8px] text-slate-800 uppercase tracking-[0.6em] font-black">Somno Lab • Security Protocol Locked</p>
+           <p className="text-[8px] text-slate-800 uppercase tracking-[0.6em] font-black">Somno Lab • Configuration Required</p>
         </footer>
       </div>
     );
   }
-
-  if (hasKey === null) return <div className="flex flex-col items-center justify-center min-h-[70vh] gap-6"><Loader2 className="animate-spin text-indigo-500 opacity-50" size={40} /><p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] animate-pulse italic">Scanning Neural Hardware...</p></div>;
 
   return (
     <div className="flex flex-col h-[calc(100vh-160px)] max-w-2xl mx-auto font-sans">

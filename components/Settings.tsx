@@ -1,15 +1,14 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  LogOut, ExternalLink, Key, CheckCircle2, Eye, EyeOff, Save, 
-  HeartHandshake, Languages, Cpu, Loader2, CreditCard, 
-  Heart, Copy, QrCode, Layers, Info, Trash2, ShieldAlert
+  LogOut, ExternalLink, Cpu, HeartHandshake, Languages, 
+  Layers, Heart, Copy, QrCode, ShieldAlert
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { ThemeMode, AccentColor } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { adminApi } from '../services/supabaseService.ts';
-import { supabase } from '../lib/supabaseClient.ts';
+import { adminApi, supabase } from '../services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -28,7 +27,6 @@ interface SettingsProps {
   onStaticModeChange: (enabled: boolean) => void;
   lastSyncTime: string | null;
   onManualSync: () => void;
-  isRecoveringPassword?: boolean;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
@@ -38,63 +36,26 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showDonation, setShowDonation] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  
-  // Gemini Engine State
-  const [manualKey, setManualKey] = useState(() => localStorage.getItem('somno_manual_gemini_key') || '');
-  const [showKey, setShowKey] = useState(false);
-  const [engineActive, setEngineActive] = useState(false);
-  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'success'>('idle');
+  const [engineActive, setEngineActive] = useState(!!process.env.API_KEY);
 
   const t = translations[lang].settings;
   const isZh = lang === 'zh';
 
   useEffect(() => {
-    const checkState = async () => {
+    const checkAdmin = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
         const adminStatus = await adminApi.checkAdminStatus(session.user.id);
         setIsAdmin(adminStatus);
       }
-      
-      const storedKey = localStorage.getItem('somno_manual_gemini_key');
-      const hasAiStudioKey = (window as any).aistudio ? await (window as any).aistudio.hasSelectedApiKey() : false;
-      setEngineActive(!!process.env.API_KEY || !!storedKey || hasAiStudioKey);
     };
-    checkState();
-    
-    const timer = setInterval(checkState, 3000);
-    return () => clearInterval(timer);
-  }, [saveStatus]);
-
-  const handleSaveKey = () => {
-    setSaveStatus('saving');
-    setTimeout(() => {
-      if (manualKey.trim()) {
-        localStorage.setItem('somno_manual_gemini_key', manualKey.trim());
-      } else {
-        localStorage.removeItem('somno_manual_gemini_key');
-      }
-      setSaveStatus('success');
-      setTimeout(() => setSaveStatus('idle'), 2000);
-    }, 800);
-  };
+    checkAdmin();
+  }, []);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleAuthAI = async () => {
-    if ((window as any).aistudio) {
-      try {
-        await (window as any).aistudio.openSelectKey();
-        setSaveStatus('success');
-        setTimeout(() => setSaveStatus('idle'), 1000);
-      } catch (e) {
-        console.error("AI Studio Key selection aborted.");
-      }
-    }
   };
 
   return (
@@ -104,7 +65,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <p className="text-slate-500 text-[10px] font-black uppercase tracking-[0.4em]">NEURAL INFRASTRUCTURE</p>
       </header>
 
-      {/* Gemini Core Engine Control */}
+      {/* Gemini Engine Status */}
       <GlassCard className="p-8 md:p-10 rounded-[3.5rem] border-white/10 bg-white/[0.01]">
         <div className="space-y-8">
           <div className="flex items-center justify-between border-b border-white/5 pb-6">
@@ -113,67 +74,21 @@ export const Settings: React.FC<SettingsProps> = ({
                 <Cpu size={24} />
               </div>
               <div>
-                <h2 className="text-lg font-black italic text-white uppercase tracking-tight">Gemini Core Engine</h2>
+                <h2 className="text-lg font-black italic text-white uppercase tracking-tight">Gemini Core Status</h2>
                 <div className="flex items-center gap-2 mt-1">
                   <div className={`w-1.5 h-1.5 rounded-full ${engineActive ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]' : 'bg-rose-600 shadow-[0_0_8px_#e11d48]'}`} />
                   <span className={`text-[9px] font-black uppercase tracking-widest ${engineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                    {engineActive ? 'CONNECTED' : 'DISCONNECTED'}
+                    {engineActive ? 'ACTIVE' : 'INACTIVE'}
                   </span>
                 </div>
               </div>
             </div>
-            { (window as any).aistudio && (
-              <button 
-                onClick={handleAuthAI}
-                className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all shadow-lg"
-              >
-                AUTH AI
-              </button>
-            )}
           </div>
-
-          <div className="space-y-6 text-left">
-            <div className="flex justify-between items-center px-2">
-              <div className="flex items-center gap-2 text-slate-500">
-                 <CreditCard size={14} />
-                 <span className="text-[9px] font-black uppercase tracking-widest">GCP Billing Awareness</span>
-              </div>
-              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-indigo-300 transition-colors">
-                Billing Info <ExternalLink size={10} />
-              </a>
-            </div>
-
-            <div className="relative group">
-              <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors">
-                <Key size={18} />
-              </div>
-              <input 
-                type={showKey ? "text" : "password"}
-                value={manualKey}
-                onChange={(e) => setManualKey(e.target.value)}
-                placeholder="Paste API Key here..."
-                className="w-full bg-[#0a0e1a] border border-white/5 rounded-full pl-16 pr-32 py-5 text-sm text-white font-medium outline-none focus:border-indigo-500/40 transition-all placeholder:text-slate-900"
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                <button 
-                  onClick={() => setShowKey(!showKey)}
-                  className="p-3 bg-white/5 rounded-xl text-slate-600 hover:text-white transition-all"
-                >
-                  {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
-                </button>
-                <button 
-                  onClick={handleSaveKey}
-                  disabled={saveStatus === 'saving'}
-                  className={`p-3 rounded-xl transition-all ${saveStatus === 'success' ? 'bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)]' : 'bg-indigo-600/20 text-indigo-400 hover:bg-indigo-600 hover:text-white border border-indigo-500/20'}`}
-                >
-                  {saveStatus === 'saving' ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                </button>
-              </div>
-            </div>
-            <p className="text-[9px] text-slate-600 italic px-4 leading-relaxed uppercase tracking-widest">
-              System priority: <span className="text-slate-400 font-bold">Process ENV</span> &gt; <span className="text-slate-400 font-bold">Manual Injection</span>
-            </p>
-          </div>
+          <p className="text-[10px] text-slate-500 italic px-2 leading-relaxed uppercase tracking-widest">
+            {engineActive 
+              ? "The laboratory's neural synthesis engine is online and running on authenticated hardware." 
+              : "Neural link offline. Ensure the laboratory environment is correctly configured."}
+          </p>
         </div>
       </GlassCard>
 
@@ -270,9 +185,6 @@ export const Settings: React.FC<SettingsProps> = ({
                   <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-[0.9]">
                     CONTRIBUTION<br />ACKNOWLEDGED
                   </h2>
-                  <p className="text-[13px] text-slate-400 italic max-w-sm mx-auto leading-relaxed text-center">
-                    Your support fuels lab processing. Payment details follow (English Default):
-                  </p>
                 </div>
 
                 <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-6 items-start">

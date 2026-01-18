@@ -111,8 +111,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           if (data?.session) {
             onLogin();
           } else {
-            setMessage(lang === 'zh' ? "账户注册成功，实验室访问已就绪。" : "Registration successful. Lab access granted.");
-            setFormType('login');
+            // 自动跳转到 OTP 验证界面
+            setAuthMode('otp');
+            setStep('verify');
+            setMessage(lang === 'zh' ? "账户创建成功，验证令牌已发送至您的邮箱。" : "Account created. Verification token dispatched to your email.");
+            // 延迟聚焦以确保 DOM 已切换
+            setTimeout(() => otpRefs.current[0]?.focus(), 500);
           }
           trackEvent('auth_signup');
         } else {
