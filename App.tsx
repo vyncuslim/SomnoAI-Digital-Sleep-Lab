@@ -2,7 +2,7 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, Activity, Zap, User, BrainCircuit, Settings as SettingsIcon, RefreshCw } from 'lucide-react';
+import { Loader2, Activity, Zap, User, BrainCircuit, Settings as SettingsIcon, RefreshCw, Moon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi } from './services/supabaseService.ts';
@@ -258,7 +258,7 @@ const App: React.FC = () => {
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
           <nav className="bg-slate-950/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl">
             {[
-              { id: 'dashboard', icon: Activity, label: 'LAB' },
+              { id: 'dashboard', icon: Moon, label: 'LAB' },
               { id: 'calendar', icon: Zap, label: 'TRND' },
               { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
               { id: 'profile', icon: User, label: 'USER' },

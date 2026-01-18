@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 
@@ -34,58 +35,60 @@ export const Logo: React.FC<LogoProps> = ({
       aria-label="Somno Lab Neural Moon Logo"
     >
       <defs>
-        <linearGradient id="moonGlow" x1="20" y1="20" x2="80" y2="80">
-          <stop offset="0%" stopColor="#e0e7ff" />
+        <linearGradient id="moonGlow" x1="0" y1="0" x2="100" y2="100">
+          <stop offset="0%" stopColor="#4f46e5" />
           <stop offset="50%" stopColor="#818cf8" />
-          <stop offset="100%" stopColor="#4f46e5" />
+          <stop offset="100%" stopColor="#00f2fe" />
         </linearGradient>
         
         <filter id="moonHalo" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="4" result="blur" />
+          <feGaussianBlur stdDeviation="5" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
 
         <mask id="moonMask">
-          <circle cx="50" cy="50" r="35" fill="white" />
-          <circle cx="65" cy="40" r="32" fill="black" />
+          <circle cx="50" cy="50" r="40" fill="white" />
+          <circle cx="70" cy="35" r="35" fill="black" />
         </mask>
       </defs>
 
+      {/* 外部轨道暗示 */}
       <circle 
-        cx="50" cy="50" r="45" 
+        cx="50" cy="50" r="48" 
         stroke="white" 
-        strokeWidth="0.5" 
-        strokeDasharray="1 8" 
-        className="opacity-10" 
+        strokeWidth="0.2" 
+        strokeDasharray="2 6" 
+        className="opacity-20" 
       />
 
       <m.g mask="url(#moonMask)">
         <m.circle
-          cx="50" cy="50" r="35"
+          cx="50" cy="50" r="40"
           fill="url(#moonGlow)"
           filter={threeD ? "url(#moonHalo)" : "none"}
           animate={shouldAnimate ? {
-            opacity: [0.7, 1, 0.7],
-            scale: [0.98, 1.02, 0.98]
+            opacity: [0.8, 1, 0.8],
+            scale: [0.97, 1.03, 0.97]
           } : {}}
-          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         />
       </m.g>
 
+      {/* 卫星粒子 */}
       <m.g
         animate={shouldAnimate ? { rotate: [0, 360] } : {}}
-        transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
+        transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
         style={{ originX: '50px', originY: '50px' }}
       >
-        <circle cx="50" cy="5" r="2.5" fill="#818cf8" filter={threeD ? "url(#moonHalo)" : "none"} />
+        <circle cx="50" cy="2" r="2.5" fill="#00f2fe" filter={threeD ? "url(#moonHalo)" : "none"} />
       </m.g>
 
       <m.path
         d={initialD}
-        stroke="url(#moonGlow)"
-        strokeWidth="2"
+        stroke="white"
+        strokeWidth="1.5"
         strokeLinecap="round"
-        className="opacity-30"
+        className="opacity-20"
         animate={shouldAnimate ? {
           d: [
             initialD,
@@ -93,7 +96,7 @@ export const Logo: React.FC<LogoProps> = ({
             initialD
           ]
         } : {}}
-        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+        transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
       />
     </m.svg>
   );
