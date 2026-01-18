@@ -1,14 +1,17 @@
 User-agent: *
 Allow: /
-Allow: /about
-Allow: /terms
-Allow: /privacy
+Allow: /#/assistant
+Allow: /#/about
+Allow: /#/terms
+Allow: /#/privacy
 
-# 保护管理边界，禁止爬取后台及登录终端
+# 保护私有数据路由
 Disallow: /admin
 Disallow: /admin/login
 Disallow: /login
 Disallow: /api/
+Disallow: /#/profile
+Disallow: /#/settings
 
 # 站点地图指引
 Sitemap: https://sleepsomno.com/sitemap.xml
