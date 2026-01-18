@@ -1,4 +1,4 @@
--- 1. 数据模型 (Profiles 表)
+-- 1. Profiles Table Definition
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text unique,
@@ -11,44 +11,51 @@ create table if not exists public.profiles (
   updated_at timestamp with time zone default now()
 );
 
--- 2. 打破递归的核心：定义安全检查函数
--- SECURITY DEFINER 允许函数以创建者的权限运行，从而绕过 RLS 检查
-create or replace function public.is_admin()
+-- 2. BREAKING THE RECURSION: Define a security definer function
+-- This function runs with the privileges of the creator (postgres), 
+-- bypassing RLS policies of the caller. This is the only safe way 
+-- to check role-based access on the same table being secured.
+create or replace function public.check_is_admin()
 returns boolean as $$
+declare
+  is_admin_user boolean;
 begin
-  return exists (
-    select 1 from public.profiles
-    where id = auth.uid()
-    and role = 'admin'
-  );
+  select (role = 'admin') into is_admin_user
+  from public.profiles
+  where id = auth.uid();
+  
+  return coalesce(is_admin_user, false);
 end;
 $$ language plpgsql security definer;
 
--- 3. 重新配置 RLS 策略
+-- 3. Row Level Security Configuration
 alter table public.profiles enable row level security;
 
--- 允许用户查看和更新自己的资料
+-- Policy: Users can see and update their own records
+drop policy if exists "Users can view own profile" on public.profiles;
 create policy "Users can view own profile"
 on public.profiles for select
 using (auth.uid() = id);
 
+drop policy if exists "Users can update own profile" on public.profiles;
 create policy "Users can update own profile"
 on public.profiles for update
 using (auth.uid() = id);
 
--- 使用安全函数进行 Admin 权限校验，解决无限递归问题
+-- Policy: Admins get full access (Using the non-recursive function)
+drop policy if exists "Admins full access" on public.profiles;
 create policy "Admins full access"
 on public.profiles
 for all
-using (public.is_admin());
+using (public.check_is_admin());
 
--- 4. 自动同步用户记录
+-- 4. User Lifecycle Management
 create or replace function public.handle_new_user()
 returns trigger as $$
 begin
   insert into public.profiles (id, email, role)
   values (new.id, new.email, 'user')
-  on conflict (id) do nothing;
+  on conflict (id) do update set email = excluded.email;
   return new;
 end;
 $$ language plpgsql security definer;
@@ -58,7 +65,7 @@ create trigger on_auth_user_created
 after insert on auth.users
 for each row execute procedure public.handle_new_user();
 
--- 5. 安全事件表
+-- 5. Security Logs
 create table if not exists public.security_events (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id),
@@ -70,6 +77,7 @@ create table if not exists public.security_events (
 );
 
 alter table public.security_events enable row level security;
+drop policy if exists "Admins view security" on public.security_events;
 create policy "Admins view security" 
 on public.security_events for select 
-using (public.is_admin());
+using (public.check_is_admin());

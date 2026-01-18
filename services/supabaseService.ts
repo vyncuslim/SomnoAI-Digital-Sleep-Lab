@@ -73,6 +73,7 @@ export const adminApi = {
         await new Promise(res => setTimeout(res, delay));
       }
 
+      // Try regular query first
       const { data, error } = await supabase
         .from('profiles')
         .select('role, email')
@@ -80,25 +81,30 @@ export const adminApi = {
         .maybeSingle();
       
       if (error) {
-        if (error.message.includes('infinite recursion')) {
-          console.error("CRITICAL: Supabase RLS recursion detected! Please run the SQL in setup.sql to fix policies.");
-          return false;
+        // Specifically handle the infinite recursion error by attempting an RPC call to a security definer function
+        if (error.message.includes('infinite recursion') || error.code === 'P0001') {
+          console.warn("[Admin Security] RLS Recursion detected. Attempting RPC fallback...");
+          const { data: rpcData, error: rpcError } = await supabase.rpc('check_is_admin');
+          if (!rpcError) return !!rpcData;
         }
+
+        console.error("[Admin Security] Query failed:", error.message);
         if (retryCount < 3) return adminApi.checkAdminStatus(userId, retryCount + 1);
         return false;
       }
 
       if (!data) {
+        console.warn("[Admin Security] Subject not found in registry.");
         if (retryCount < 3) return adminApi.checkAdminStatus(userId, retryCount + 1);
         return false;
       }
 
       const isAuthorized = (data.role || '').toLowerCase().trim() === 'admin';
-      console.debug(`[Admin Guard] User: ${data.email} | Role: ${data.role} | Auth: ${isAuthorized}`);
+      console.debug(`[Admin Guard] identity: ${data.email} | clearance: ${data.role} | authorized: ${isAuthorized}`);
       
       return isAuthorized;
     } catch (err) {
-      console.error("[Admin Check Exception]", err);
+      console.error("[Admin Security] Handshake critical failure:", err);
       return false;
     }
   },

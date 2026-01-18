@@ -20,6 +20,7 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
   const shouldAnimate = animated && !staticMode;
   const initialD = "M30 85 Q 40 75, 50 85 T 70 85";
+  const waveD = "M30 85 Q 40 95, 50 85 T 70 85";
 
   return (
     <m.svg
@@ -80,7 +81,7 @@ export const Logo: React.FC<LogoProps> = ({
       </m.g>
 
       <m.path
-        d={initialD || ""}
+        d={initialD}
         stroke="url(#moonGlow)"
         strokeWidth="2"
         strokeLinecap="round"
@@ -88,7 +89,7 @@ export const Logo: React.FC<LogoProps> = ({
         animate={shouldAnimate ? {
           d: [
             initialD,
-            "M30 85 Q 40 95, 50 85 T 70 85",
+            waveD,
             initialD
           ]
         } : {}}

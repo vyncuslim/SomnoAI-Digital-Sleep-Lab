@@ -40,22 +40,17 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
     <meta name="description" content="SomnoAI Digital Sleep Lab - 高级生理指标监控与 AI 深度睡眠分析实验室。">
     
-    <!-- 搜索引擎图标优化 -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23818cf8'/%3E%3Cstop offset='100%25' stop-color='%234f46e5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='45' fill='url(%23g)'/%3E%3Ccircle cx='65' cy='35' r='40' fill='%23020617'/%3E%3C/svg%3E">
+    <!-- Favicon Configuration -->
+    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/moon-star.png">
     <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/moon-star.png">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%23818cf8'/%3E%3Cstop offset='100%25' stop-color='%234f46e5'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='50' cy='50' r='45' fill='url(%23g)'/%3E%3Ccircle cx='65' cy='35' r='40' fill='%23020617'/%3E%3C/svg%3E">
     
-    <!-- Open Graph / 社交媒体图标 (影响搜索引擎预览) -->
+    <!-- Open Graph / SEO -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sleepsomno.com/">
     <meta property="og:title" content="SomnoAI Digital Sleep Lab | AI 数字化睡眠实验室">
     <meta property="og:description" content="全方位数字化睡眠实验，融合生理指标监控与 AI 深度洞察。">
     <meta property="og:image" content="https://img.icons8.com/fluency/512/moon-star.png">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://sleepsomno.com/">
-    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab">
-    <meta property="twitter:image" content="https://img.icons8.com/fluency/512/moon-star.png">
 
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Insights</title>
     <script src="https://cdn.tailwindcss.com"></script>
@@ -71,7 +66,6 @@
         }
       }
       
-      // CRITICAL: Global suppression of non-fatal auth signal errors
       window.addEventListener('unhandledrejection', function(event) {
         if (event.reason?.message?.includes('AbortError') || event.reason?.name === 'AbortError') {
           event.preventDefault();
