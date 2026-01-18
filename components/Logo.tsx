@@ -69,39 +69,18 @@ export const Logo: React.FC<LogoProps> = ({
           } : {}}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         />
-        
-        {[25, 35, 45, 55, 65, 75].map((y, i) => (
-          <line 
-            key={i}
-            x1="10" y1={y} x2="90" y2={y}
-            stroke="white"
-            strokeWidth="0.5"
-            className="opacity-10"
-          />
-        ))}
       </m.g>
 
       <m.g
-        animate={shouldAnimate ? {
-          rotate: [0, 360]
-        } : {}}
+        animate={shouldAnimate ? { rotate: [0, 360] } : {}}
         transition={{ duration: 12, repeat: Infinity, ease: "linear" }}
         style={{ originX: '50px', originY: '50px' }}
       >
         <circle cx="50" cy="5" r="2.5" fill="#818cf8" filter={threeD ? "url(#moonHalo)" : "none"} />
-        {threeD && !staticMode && (
-          <m.circle 
-            cx="50" cy="5" r="5" 
-            stroke="#818cf8" 
-            strokeWidth="0.5" 
-            animate={shouldAnimate ? { scale: [1, 2], opacity: [0.5, 0] } : {}}
-            transition={{ duration: 2, repeat: Infinity }}
-          />
-        )}
       </m.g>
 
       <m.path
-        d={initialD}
+        d={initialD || ""}
         stroke="url(#moonGlow)"
         strokeWidth="2"
         strokeLinecap="round"

@@ -66,19 +66,13 @@ export const authApi = {
 };
 
 export const adminApi = {
-  /**
-   * Authoritative check for admin status against the profiles table.
-   * Includes exponential backoff retries to handle trigger-based profile creation latency.
-   */
   checkAdminStatus: async (userId: string, retryCount = 0): Promise<boolean> => {
     try {
       if (retryCount > 0) {
-        const delay = Math.pow(2, retryCount) * 300; 
+        const delay = Math.pow(2, retryCount) * 200; 
         await new Promise(res => setTimeout(res, delay));
       }
 
-      console.debug(`[Admin Security] Validating clearance for UID: ${userId} (Attempt ${retryCount + 1})`);
-      
       const { data, error } = await supabase
         .from('profiles')
         .select('role, email')
@@ -86,31 +80,28 @@ export const adminApi = {
         .maybeSingle();
       
       if (error) {
-        console.error("[Admin Security] Database read error:", error.message);
+        if (error.message.includes('infinite recursion')) {
+          console.error("CRITICAL: Supabase RLS recursion detected! Please run the SQL in setup.sql to fix policies.");
+          return false;
+        }
         if (retryCount < 3) return adminApi.checkAdminStatus(userId, retryCount + 1);
         return false;
       }
 
-      // If profile record doesn't exist yet, retry (trigger might be running)
       if (!data) {
-        console.warn("[Admin Security] No profile record found for this identity.");
-        if (retryCount < 4) return adminApi.checkAdminStatus(userId, retryCount + 1);
+        if (retryCount < 3) return adminApi.checkAdminStatus(userId, retryCount + 1);
         return false;
       }
 
-      const rawRole = data.role || 'user';
-      const normalizedRole = rawRole.toLowerCase().trim();
-      const isAuthorized = normalizedRole === 'admin';
-      
-      console.info(`[Security Audit] User: ${data.email} | Detected Role: "${rawRole}" | Clearance: ${isAuthorized ? 'GRANTED' : 'DENIED'}`);
+      const isAuthorized = (data.role || '').toLowerCase().trim() === 'admin';
+      console.debug(`[Admin Guard] User: ${data.email} | Role: ${data.role} | Auth: ${isAuthorized}`);
       
       return isAuthorized;
     } catch (err) {
-      console.error("[Admin Security] Critical exception during handshake:", err);
+      console.error("[Admin Check Exception]", err);
       return false;
     }
   },
-  
   getUsers: async () => (await supabase.from('profiles').select('*')).data || [],
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
