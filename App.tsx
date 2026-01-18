@@ -87,28 +87,31 @@ const App: React.FC = () => {
         console.warn("Auth check failed:", err.message);
       } finally {
         // 增加延迟确保 UI 不会在 Session 还没加载完就闪现登录页
-        setTimeout(() => setIsInitialAuthCheck(false), 1000);
+        setTimeout(() => setIsInitialAuthCheck(false), 1500);
       }
     };
     
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.debug(`[Auth Lifecycle] ${event}`);
-      setSession(newSession);
+      console.debug(`[Auth Event] ${event}`);
       
       if (newSession) {
+        setSession(newSession);
+        // 如果是登录事件，强制重新验证 Admin 状态
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
         
-        // 登录后的路由处理
         if (event === 'SIGNED_IN') {
-           if (window.location.hash === '#/login' || window.location.hash === '') {
-             window.location.hash = '#/';
+           // 处理 Google 登录或 OTP 登录后的自动跳转
+           const currentHash = window.location.hash;
+           if (currentHash === '#/login' || currentHash === '' || currentHash === '#/') {
              setActiveView('dashboard');
+             window.location.hash = '#/';
            }
         }
       } else {
+        setSession(null);
         setIsAdmin(false);
         if (event === 'SIGNED_OUT') {
            setCurrentRecord(null);

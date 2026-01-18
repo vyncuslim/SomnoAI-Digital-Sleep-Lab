@@ -9,8 +9,8 @@ import {
 import { Language, translations } from './services/i18n.ts';
 import { ThemeMode, AccentColor } from './types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-// Fixed: Using correct import path and exported member from supabaseService
-import { updateUserPassword, adminApi } from './services/supabaseService.ts';
+// Fixed: Removed non-existent member updateUserPassword from the import
+import { adminApi } from './services/supabaseService.ts';
 import { supabase } from './lib/supabaseClient.ts';
 
 const m = motion as any;

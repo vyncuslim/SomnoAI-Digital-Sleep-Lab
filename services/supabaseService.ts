@@ -8,7 +8,8 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce'
+    flowType: 'pkce',
+    storageKey: 'somno_auth_session'
   }
 });
 
@@ -48,7 +49,7 @@ export const authApi = {
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin, // 统一重定向到根路径
+        redirectTo: window.location.origin,
         queryParams: { prompt: 'select_account' }
       }
     }),
@@ -64,35 +65,52 @@ export const authApi = {
   signOut: () => supabase.auth.signOut()
 };
 
-export const updateUserPassword = authApi.updatePassword;
-
 export const adminApi = {
+  /**
+   * Authoritative check for admin status against the profiles table.
+   * Includes exponential backoff retries to handle trigger-based profile creation latency.
+   */
   checkAdminStatus: async (userId: string, retryCount = 0): Promise<boolean> => {
     try {
-      // 增加延迟重试，防止数据库 RLS 延迟
-      if (retryCount > 0) await new Promise(res => setTimeout(res, 300 * retryCount));
+      if (retryCount > 0) {
+        const delay = Math.pow(2, retryCount) * 300; 
+        await new Promise(res => setTimeout(res, delay));
+      }
 
+      console.debug(`[Admin Security] Validating clearance for UID: ${userId} (Attempt ${retryCount + 1})`);
+      
       const { data, error } = await supabase
         .from('profiles')
-        .select('role')
+        .select('role, email')
         .eq('id', userId)
-        .maybeSingle(); // 使用 maybeSingle 防止 406 错误
+        .maybeSingle();
       
       if (error) {
-        if (retryCount < 2) return adminApi.checkAdminStatus(userId, retryCount + 1);
-        console.error("[Admin Check Failure]", error.message);
+        console.error("[Admin Security] Database read error:", error.message);
+        if (retryCount < 3) return adminApi.checkAdminStatus(userId, retryCount + 1);
         return false;
       }
 
-      const role = (data?.role || '').toLowerCase().trim();
-      console.debug(`[Admin Status Check] UID: ${userId}, RawRole: ${data?.role}, Normalized: ${role}`);
+      // If profile record doesn't exist yet, retry (trigger might be running)
+      if (!data) {
+        console.warn("[Admin Security] No profile record found for this identity.");
+        if (retryCount < 4) return adminApi.checkAdminStatus(userId, retryCount + 1);
+        return false;
+      }
+
+      const rawRole = data.role || 'user';
+      const normalizedRole = rawRole.toLowerCase().trim();
+      const isAuthorized = normalizedRole === 'admin';
       
-      return role === 'admin';
+      console.info(`[Security Audit] User: ${data.email} | Detected Role: "${rawRole}" | Clearance: ${isAuthorized ? 'GRANTED' : 'DENIED'}`);
+      
+      return isAuthorized;
     } catch (err) {
-      console.error("[Admin Check Exception]", err);
+      console.error("[Admin Security] Critical exception during handshake:", err);
       return false;
     }
   },
+  
   getUsers: async () => (await supabase.from('profiles').select('*')).data || [],
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
