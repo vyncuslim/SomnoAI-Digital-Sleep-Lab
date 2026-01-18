@@ -21,15 +21,15 @@ const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(m => 
 
 const m = motion as any;
 
-const LoadingSpinner = ({ label = "Connecting Lab Nodes..." }: { label?: string }) => (
+const LoadingSpinner = ({ label = "Synchronizing Neural Nodes..." }: { label?: string }) => (
   <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617] p-8">
     <div className="relative">
-      <div className="absolute -inset-4 bg-indigo-500/20 rounded-full blur-xl animate-pulse" />
-      <Loader2 size={48} className="animate-spin text-indigo-500 relative z-10" />
+      <div className="absolute -inset-6 bg-indigo-500/10 rounded-full blur-2xl animate-pulse" />
+      <Loader2 size={40} className="animate-spin text-indigo-500 relative z-10" />
     </div>
-    <div className="space-y-2 relative z-10">
-      <p className="text-white font-black uppercase text-[12px] tracking-[0.4em] italic">{label}</p>
-      <p className="text-slate-600 text-[9px] uppercase tracking-widest font-bold">Neural Protocol Synchronization In Progress</p>
+    <div className="space-y-1 relative z-10">
+      <p className="text-white font-black uppercase text-[11px] tracking-[0.4em] italic">{label}</p>
+      <p className="text-slate-600 text-[8px] uppercase tracking-widest font-bold">Neural Protocol Verification In Progress</p>
     </div>
   </div>
 );
@@ -77,40 +77,36 @@ const App: React.FC = () => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // 首先尝试获取已存在的会话
         const { data: { session: initialSession } } = await supabase.auth.getSession();
-        
         if (initialSession) {
           setSession(initialSession);
           const status = await adminApi.checkAdminStatus(initialSession.user.id);
           setIsAdmin(status);
         }
       } catch (err: any) {
-        console.warn("Auth initialization error:", err.message);
+        console.warn("Auth check failed:", err.message);
       } finally {
-        // 给 OAuth 回调留一点解析时间，延迟 500ms 结束 InitialCheck
-        setTimeout(() => setIsInitialAuthCheck(false), 500);
+        // 增加延迟确保 UI 不会在 Session 还没加载完就闪现登录页
+        setTimeout(() => setIsInitialAuthCheck(false), 1000);
       }
     };
     
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
-      console.debug(`[Auth Event] ${event}`);
+      console.debug(`[Auth Lifecycle] ${event}`);
       setSession(newSession);
       
       if (newSession) {
-        // 登录成功，立即检查 Admin
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
         
-        // 如果是从 Google 回调回来的，确保处于正确视图
-        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
-          const hash = window.location.hash;
-          if (hash === '' || hash === '#/' || hash === '#/login') {
-            setActiveView('dashboard');
-            window.location.hash = '#/';
-          }
+        // 登录后的路由处理
+        if (event === 'SIGNED_IN') {
+           if (window.location.hash === '#/login' || window.location.hash === '') {
+             window.location.hash = '#/';
+             setActiveView('dashboard');
+           }
         }
       } else {
         setIsAdmin(false);
@@ -162,7 +158,7 @@ const App: React.FC = () => {
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 2000);
     } catch (err: any) {
-      console.error("Sync Protocol Interrupted:", err);
+      console.error("Sync Interrupted:", err);
       setSyncStatus('error');
       setTimeout(() => setSyncStatus('idle'), 2000);
     }
@@ -187,7 +183,7 @@ const App: React.FC = () => {
     setActiveView('dashboard');
   };
 
-  if (isInitialAuthCheck) return <LoadingSpinner label="Synchronizing Identity Handshake..." />;
+  if (isInitialAuthCheck) return <LoadingSpinner label="Authenticating Neural Identity..." />;
 
   const renderContent = () => {
     if (activeView === 'admin-login') return <AdminLoginPage />;

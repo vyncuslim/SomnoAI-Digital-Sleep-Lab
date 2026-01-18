@@ -3,7 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qY3Z2dHlhZWJkb2RtZWd3cWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyODc2ODgsImV4cCI6MjA4Mzg2MzY4OH0.FJY9V6fdTFOFCXeqWNwv1cQnsnQfq4RZq-5WyLNzPCg';
 
-// 增强客户端配置，确保检测 URL 中的 Session
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     persistSession: true,
@@ -49,7 +48,7 @@ export const authApi = {
     supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: window.location.origin, // 确保回到根路径
+        redirectTo: window.location.origin, // 统一重定向到根路径
         queryParams: { prompt: 'select_account' }
       }
     }),
@@ -70,25 +69,27 @@ export const updateUserPassword = authApi.updatePassword;
 export const adminApi = {
   checkAdminStatus: async (userId: string, retryCount = 0): Promise<boolean> => {
     try {
-      // 增加延时重试，防止 RLS 策略在 Session 初始化瞬间未生效
-      if (retryCount > 0) await new Promise(resolve => setTimeout(resolve, 500 * retryCount));
+      // 增加延迟重试，防止数据库 RLS 延迟
+      if (retryCount > 0) await new Promise(res => setTimeout(res, 300 * retryCount));
 
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
         .eq('id', userId)
-        .single();
+        .maybeSingle(); // 使用 maybeSingle 防止 406 错误
       
       if (error) {
         if (retryCount < 2) return adminApi.checkAdminStatus(userId, retryCount + 1);
-        console.error("[Admin Check] Error:", error.message);
+        console.error("[Admin Check Failure]", error.message);
         return false;
       }
 
-      const role = data?.role?.toLowerCase().trim();
-      console.debug(`[Admin Check] UID: ${userId}, Role: ${role}`);
+      const role = (data?.role || '').toLowerCase().trim();
+      console.debug(`[Admin Status Check] UID: ${userId}, RawRole: ${data?.role}, Normalized: ${role}`);
+      
       return role === 'admin';
     } catch (err) {
+      console.error("[Admin Check Exception]", err);
       return false;
     }
   },
