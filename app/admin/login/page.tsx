@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, 
@@ -99,11 +100,11 @@ export default function AdminLoginPage() {
       
       if (!data?.user) throw new Error("Sync Error: Neural identity not established.");
 
-      // Check admin status with robust retry logic
+      // Check admin status with robust logic
       const isAdmin = await adminApi.checkAdminStatus(data.user.id);
       
       if (!isAdmin) {
-        // Log out immediately if not an admin to prevent stale sessions
+        // Log out immediately if not an admin to prevent unauthorized access
         await authApi.signOut();
         throw new Error("Clearance Denied: Your identity is valid but lacks 'admin' level privileges.");
       }
@@ -122,11 +123,11 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 font-sans relative">
       <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="text-center mb-10 space-y-4">
         <Logo size={80} animated={true} />
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic leading-none">
-            SOMNOAI <span className="text-rose-600">LAB</span>
+        <div className="space-y-1 text-center flex flex-col items-center">
+          <h1 className="text-3xl font-black tracking-tighter text-white italic leading-none">
+            SomnoAI Digital Sleep <span className="text-rose-600">Lab</span>
           </h1>
-          <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.5em] mt-2">RESTRICTED ACCESS</p>
+          <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.5em] mt-3 opacity-80">RESTRICTED ACCESS</p>
         </div>
       </m.div>
 

@@ -27,12 +27,12 @@ export const translations = {
       cmdSync: 'Sync Feature Stream',
       cmdExport: 'Archive Lab Data',
       lullaby: 'Neural Lullaby',
-      manifesto: 'SomnoAI Digital Sleep Lab integrates physiological indicator monitoring, AI deep insights and health advice into one, providing users with a full range of digital sleep experiments.'
+      manifesto: 'SomnoAI integrates physiological metric monitoring, AI deep insights, and health advice into one, providing users with a full range of digital sleep experiments.'
     },
     auth: {
       lab: 'SomnoAI Digital Sleep Lab',
       tagline: 'DIGITAL IDENTITY TELEMETRY',
-      manifesto: 'Experience the future of sleep science with SomnoAI Lab. We integrate physiological monitoring with AI-driven deep insights.',
+      manifesto: 'SomnoAI integrates physiological monitoring, AI deep insights and health advice to provide a full range of digital sleep experiments.',
       sendCode: 'REQUEST LAB TOKEN',
       emailLabel: 'Email Address',
       passwordLabel: 'Access Password',
@@ -76,8 +76,8 @@ export const translations = {
       playing: 'Synthesizing Audio...'
     },
     about: {
-      title: 'Technical Specs',
-      manifesto: 'SomnoAI Digital Sleep Lab: The intersection of biometric science and artificial intelligence.',
+      title: 'Laboratory Specifications',
+      manifesto: 'SomnoAI integrates physiological metric monitoring, AI deep insights, and health advice into one, providing users with a full range of digital sleep experiments.',
       protocolTitle: 'Health Connect Bridge Protocol',
       waterAnalogyTitle: 'Biological Flow Analogy',
       waterAnalogyDesc: 'Think of Health Connect as a central water reservoir. Your watch fills it with pure physiological water. SomnoAI opens the valve to channel this flow into our neural filters for purification and insight.',
@@ -97,14 +97,22 @@ export const translations = {
       tokenInitial: 'Token: Initial Handshake Generated.',
       tokenCycle: 'Token: 30-day lookback active.',
       tokenStore: 'Token: Client storage secured.',
-      tokenExpire: 'Token: TTL Reached (30 Days).'
+      tokenExpire: 'Token: TTL Reached (30 Days).',
+      guideTitle: 'Laboratory Operation Guide',
+      guideIntro: 'Maximize your biological recovery by mastering the lab tools.',
+      guideSection1: '1. Physiological Telemetry',
+      guideSection1Desc: 'Start from basics: Ensure your wearable is syncing to Health Connect. SomnoAI fetches RHR, REM, and Deep Sleep cycles automatically.',
+      guideSection2: '2. AI Deep Insights',
+      guideSection2Desc: 'Don\'t just look at numbers. Use the AI Core to synthesize de-identified metrics. It identifies patterns in your neural architecture.',
+      guideSection3: '3. Strategic Advice',
+      guideSection3Desc: 'Actionable biological hacking. SomnoAI uses Google Search Grounding to provide evidence-based recovery protocols tailored to your data.'
     }
   },
   zh: {
     nav: { lab: '实验室', trends: '趋势分析', insights: 'AI 洞察', settings: '系统设置' },
     about: {
-      title: '技术规格',
-      manifesto: 'SomnoAI 数字化睡眠实验室：将生理指标监控、AI 深度洞察与健康建议融为一体。',
+      title: '实验室技术规格',
+      manifesto: 'SomnoAI 数字化睡眠实验室：将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
       protocolTitle: 'Health Connect 桥接协议',
       waterAnalogyTitle: '生物流类比',
       waterAnalogyDesc: '将 Health Connect 想象成一个中央水库。您的手表将纯净的生理指标注入其中。SomnoAI 打开阀门，将这些流量引导至我们的神经过滤器中，进行净化和洞察。',
@@ -124,7 +132,15 @@ export const translations = {
       tokenInitial: '令牌：生成初始握手。',
       tokenCycle: '令牌：30 天追溯激活。',
       tokenStore: '令牌：客户端存储已加密。',
-      tokenExpire: '令牌：达到 TTL（30 天）。'
+      tokenExpire: '令牌：达到 TTL（30 天）。',
+      guideTitle: '实验室操作指南',
+      guideIntro: '通过掌握实验室工具，最大限度地提高您的生物恢复效率。',
+      guideSection1: '1. 生理指标监控',
+      guideSection1Desc: '从基础开始：确保您的可穿戴设备已同步到 Health Connect。SomnoAI 会自动获取静息心率 (RHR)、REM 和深度睡眠周期。',
+      guideSection2: '2. AI 深度洞察',
+      guideSection2Desc: '不要只看数字。使用 AI 核心合成脱敏指标。它会识别您神经架构中的潜在模式。',
+      guideSection3: '3. 科学健康建议',
+      guideSection3Desc: '可执行的生物黑客协议。SomnoAI 利用谷歌搜索 (Google Search Grounding) 提供基于证据的恢复方案，专为您的数据定制。'
     },
     errors: {
       healthApiDenied: '连接被拒绝：请确保在 Android 设置中授予了权限。',
@@ -149,12 +165,12 @@ export const translations = {
       cmdSync: '注入特征数据',
       cmdExport: '归档实验报告',
       lullaby: '神经催眠曲',
-      manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。'
+      manifesto: 'SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验。'
     },
     auth: {
       lab: 'SomnoAI Digital Sleep Lab',
       tagline: 'DIGITAL IDENTITY TELEMETRY',
-      manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体。',
+      manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。',
       sendCode: '获取实验室令牌',
       emailLabel: 'Email Address',
       passwordLabel: 'Access Password',
@@ -230,7 +246,7 @@ export const translations = {
       title: '神经助手',
       intro: '神经链路已建立。今天我能为您如何优化生物恢复？',
       placeholder: '描述您的睡眠质量或请求分析...',
-      error: '神经合成失败。请检查链路。',
+      error: '神经合成失败。请检查链路任务。',
       generateLullaby: '生成神经催眠曲',
       playing: '音频合成中...'
     }

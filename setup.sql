@@ -1,4 +1,5 @@
--- 1. Profiles Table Definition
+
+-- 1. Profiles Table Definition (Ensure it exists)
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text unique,
@@ -11,12 +12,15 @@ create table if not exists public.profiles (
   updated_at timestamp with time zone default now()
 );
 
--- 2. BREAKING THE RECURSION: Define a security definer function
--- This function runs with the privileges of the creator (postgres), 
--- bypassing RLS policies of the caller. This is the only safe way 
--- to check role-based access on the same table being secured.
+-- 2. RESOLVE RECURSION: Define a robust security definer function
+-- Setting search_path to 'public' is a security best practice for 'security definer' functions.
+-- This function bypasses RLS for the tables it queries internally.
 create or replace function public.check_is_admin()
-returns boolean as $$
+returns boolean
+language plpgsql
+security definer
+set search_path = public
+as $$
 declare
   is_admin_user boolean;
 begin
@@ -26,23 +30,20 @@ begin
   
   return coalesce(is_admin_user, false);
 end;
-$$ language plpgsql security definer;
+$$;
 
 -- 3. Row Level Security Configuration
 alter table public.profiles enable row level security;
 
--- Policy: Users can see and update their own records
+-- Policy: Users can always see their own row (Minimal check, prevents recursion)
 drop policy if exists "Users can view own profile" on public.profiles;
 create policy "Users can view own profile"
 on public.profiles for select
 using (auth.uid() = id);
 
-drop policy if exists "Users can update own profile" on public.profiles;
-create policy "Users can update own profile"
-on public.profiles for update
-using (auth.uid() = id);
-
--- Policy: Admins get full access (Using the non-recursive function)
+-- Policy: Admins get full access to all rows
+-- We use the security definer function here. Since the function runs as 'postgres',
+-- it is not restricted by RLS, breaking the recursion loop.
 drop policy if exists "Admins full access" on public.profiles;
 create policy "Admins full access"
 on public.profiles

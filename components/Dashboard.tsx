@@ -5,7 +5,8 @@ import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, BrainCircuit, HeartPulse, Cpu, Zap, 
-  Share2, Activity, Sparkles, Binary, Waves, Gauge
+  Share2, Activity, Sparkles, Binary, Waves, Gauge,
+  ShieldCheck, ArrowUpRight
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { Language, translations } from '../services/i18n.ts';
@@ -83,7 +84,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
             <Logo size={32} animated={engineActive} threeD={threeDEnabled} />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col text-left">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Neural Node Alpha</span>
             <div className="flex items-center gap-2">
                <div className={`w-1.5 h-1.5 rounded-full ${engineActive ? 'bg-emerald-500 animate-pulse shadow-[0_0_8px_#10b981]' : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'}`} />
@@ -131,9 +132,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         {/* Left: Efficiency Score & Insights */}
         <div className="lg:col-span-7 space-y-10">
-          <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[500px] flex flex-col justify-between" intensity={threeDEnabled ? 1.5 : 0}>
+          <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[520px] flex flex-col justify-between" intensity={threeDEnabled ? 1.5 : 0}>
             <div className="flex justify-between items-start">
-              <div>
+              <div className="text-left">
                 <h2 className="text-sm font-black italic text-indigo-400 uppercase tracking-[0.4em] mb-2">Subject Efficiency</h2>
                 <div className="flex items-baseline gap-2">
                   <span className="text-[10rem] md:text-[12rem] font-black italic tracking-tighter text-white drop-shadow-[0_0_100px_rgba(129,140,248,0.5)] leading-none select-none">
@@ -149,9 +150,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="space-y-6">
-              <div className="flex items-center gap-4 px-6 py-4 bg-white/5 border border-white/10 rounded-[2.5rem] max-w-lg">
-                <Sparkles size={18} className="text-indigo-400 shrink-0" />
-                <p className="text-[12px] font-medium text-slate-400 italic leading-relaxed">
+              <div className="flex flex-col gap-4 p-8 bg-indigo-500/[0.03] border border-indigo-500/10 rounded-[3.5rem] relative overflow-hidden group cursor-help" onClick={() => onNavigate?.('about')}>
+                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-100 transition-opacity">
+                   <ArrowUpRight size={20} className="text-indigo-400" />
+                </div>
+                <div className="flex items-center gap-3 text-indigo-400">
+                   <ShieldCheck size={18} />
+                   <span className="text-[10px] font-black uppercase tracking-widest italic">Mission Protocol</span>
+                </div>
+                <p className="text-[13px] font-bold text-slate-300 italic leading-relaxed text-left">
                   {t.manifesto}
                 </p>
               </div>
@@ -163,7 +170,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: i * 0.3 }}
-                      className="p-6 bg-slate-900/60 rounded-[3rem] border border-white/5 border-l-2 border-l-indigo-500/50"
+                      className="p-6 bg-slate-900/60 rounded-[3rem] border border-white/5 border-l-2 border-l-indigo-500/50 text-left"
                     >
                       <p className="text-[13px] font-medium italic text-slate-300 leading-relaxed">
                         {String(insight)}
@@ -215,14 +222,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/5">
+              <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/5 text-left">
                 <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">Deep Neural</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-black italic text-white tracking-tighter">{data.deepRatio}%</span>
                   <Waves size={12} className="text-indigo-500" />
                 </div>
               </div>
-              <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/5">
+              <div className="p-6 bg-white/5 rounded-[2.5rem] border border-white/5 text-left">
                 <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-1">REM Consolid</p>
                 <div className="flex items-baseline gap-2">
                   <span className="text-2xl font-black italic text-white tracking-tighter">{data.remRatio}%</span>

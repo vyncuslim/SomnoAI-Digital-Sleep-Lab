@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
@@ -73,7 +74,19 @@ export const adminApi = {
         await new Promise(res => setTimeout(res, delay));
       }
 
-      // Try regular query first
+      // Step 1: Attempt an RPC call first as it's the most reliable way to bypass RLS recursion
+      const { data: rpcData, error: rpcError } = await supabase.rpc('check_is_admin');
+      
+      if (!rpcError && rpcData !== null) {
+        console.debug(`[Admin Security] RPC check result: ${rpcData}`);
+        return !!rpcData;
+      }
+
+      if (rpcError) {
+        console.warn("[Admin Security] RPC fallback failed:", rpcError.message);
+      }
+
+      // Step 2: Query profiles table directly as a secondary check
       const { data, error } = await supabase
         .from('profiles')
         .select('role, email')
@@ -81,26 +94,18 @@ export const adminApi = {
         .maybeSingle();
       
       if (error) {
-        // Specifically handle the infinite recursion error by attempting an RPC call to a security definer function
-        if (error.message.includes('infinite recursion') || error.code === 'P0001') {
-          console.warn("[Admin Security] RLS Recursion detected. Attempting RPC fallback...");
-          const { data: rpcData, error: rpcError } = await supabase.rpc('check_is_admin');
-          if (!rpcError) return !!rpcData;
-        }
-
-        console.error("[Admin Security] Query failed:", error.message);
-        if (retryCount < 3) return adminApi.checkAdminStatus(userId, retryCount + 1);
+        console.error("[Admin Security] Profile query failed:", error.message);
+        if (retryCount < 2) return adminApi.checkAdminStatus(userId, retryCount + 1);
         return false;
       }
 
       if (!data) {
-        console.warn("[Admin Security] Subject not found in registry.");
-        if (retryCount < 3) return adminApi.checkAdminStatus(userId, retryCount + 1);
+        console.warn("[Admin Security] Profile record not found for subject.");
         return false;
       }
 
       const isAuthorized = (data.role || '').toLowerCase().trim() === 'admin';
-      console.debug(`[Admin Guard] identity: ${data.email} | clearance: ${data.role} | authorized: ${isAuthorized}`);
+      console.debug(`[Admin Guard] identity: ${data.email} | registry_role: ${data.role} | authorized: ${isAuthorized}`);
       
       return isAuthorized;
     } catch (err) {
