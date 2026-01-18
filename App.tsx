@@ -22,14 +22,15 @@ const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(m => 
 const m = motion as any;
 
 const LoadingSpinner = ({ label = "Connecting Lab Nodes..." }: { label?: string }) => (
-  <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617]">
+  <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617] p-8">
     <div className="relative">
-      <Loader2 size={48} className="animate-spin text-indigo-500 opacity-50" />
-      <div className="absolute inset-0 flex items-center justify-center">
-         <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse" />
-      </div>
+      <div className="absolute -inset-4 bg-indigo-500/20 rounded-full blur-xl animate-pulse" />
+      <Loader2 size={48} className="animate-spin text-indigo-500 relative z-10" />
     </div>
-    <p className="text-slate-500 font-black uppercase text-[10px] tracking-[0.4em] animate-pulse">{label}</p>
+    <div className="space-y-2 relative z-10">
+      <p className="text-white font-black uppercase text-[12px] tracking-[0.4em] italic">{label}</p>
+      <p className="text-slate-600 text-[9px] uppercase tracking-widest font-bold">Neural Protocol Synchronization In Progress</p>
+    </div>
   </div>
 );
 
@@ -57,7 +58,6 @@ const App: React.FC = () => {
     localStorage.setItem('somno_lang', lang);
   }, [lang]);
 
-  // Handle Hash-based Routing
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash;
@@ -77,37 +77,39 @@ const App: React.FC = () => {
   useEffect(() => {
     const initAuth = async () => {
       try {
-        // Use a timeout to prevent long hanging init calls
-        const { data: { session: initialSession }, error } = await supabase.auth.getSession();
+        // 首先尝试获取已存在的会话
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
         
-        if (error) throw error;
-
         if (initialSession) {
           setSession(initialSession);
           const status = await adminApi.checkAdminStatus(initialSession.user.id);
           setIsAdmin(status);
         }
       } catch (err: any) {
-        // Gracefully ignore AbortError as it is usually an internal Supabase lock conflict
-        if (err.name !== 'AbortError') {
-          console.warn("Auth initialization warning:", err.message);
-        }
+        console.warn("Auth initialization error:", err.message);
       } finally {
-        setIsInitialAuthCheck(false);
+        // 给 OAuth 回调留一点解析时间，延迟 500ms 结束 InitialCheck
+        setTimeout(() => setIsInitialAuthCheck(false), 500);
       }
     };
+    
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      console.debug(`[Auth Event] ${event}`);
       setSession(newSession);
+      
       if (newSession) {
+        // 登录成功，立即检查 Admin
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
         
-        if (event === 'SIGNED_IN') {
+        // 如果是从 Google 回调回来的，确保处于正确视图
+        if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
           const hash = window.location.hash;
-          if (hash !== '#/admin' && hash !== '#/admin/login') {
+          if (hash === '' || hash === '#/' || hash === '#/login') {
             setActiveView('dashboard');
+            window.location.hash = '#/';
           }
         }
       } else {
@@ -118,6 +120,7 @@ const App: React.FC = () => {
         }
       }
     });
+    
     return () => subscription.unsubscribe();
   }, []);
 
@@ -184,7 +187,7 @@ const App: React.FC = () => {
     setActiveView('dashboard');
   };
 
-  if (isInitialAuthCheck) return <LoadingSpinner label="Linking Identity Handshake..." />;
+  if (isInitialAuthCheck) return <LoadingSpinner label="Synchronizing Identity Handshake..." />;
 
   const renderContent = () => {
     if (activeView === 'admin-login') return <AdminLoginPage />;
