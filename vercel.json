@@ -5,12 +5,12 @@
   "redirects": [
     {
       "source": "/favicon.png",
-      "destination": "https://img.icons8.com/fluency/512/moon-and-stars.png",
+      "destination": "https://img.icons8.com/fluency/512/moon.png",
       "permanent": true
     },
     {
       "source": "/favicon.ico",
-      "destination": "https://img.icons8.com/fluency/48/moon-and-stars.png",
+      "destination": "https://img.icons8.com/fluency/48/moon.png",
       "permanent": true
     }
   ],
