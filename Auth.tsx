@@ -174,7 +174,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
       >
         <Logo size={70} animated={true} />
         <div className="space-y-1">
-          <h1 className="text-3xl font-black tracking-tighter text-white uppercase italic leading-none">{t.lab}</h1>
+          <h1 className="text-3xl font-black tracking-tighter text-white italic leading-none">{t.lab}</h1>
           <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em] opacity-80">{t.tagline}</p>
         </div>
       </m.div>
@@ -304,7 +304,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
                 <m.div key="verify" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-10">
                   <div className="text-center space-y-4">
                     <button onClick={() => setStep('input')} className="text-[10px] font-black text-indigo-400 uppercase flex items-center gap-2 mx-auto hover:text-indigo-300">
-                      <ChevronLeft size={16} /> {t.back}
+                      <ChevronLeft size={16} /> Back
                     </button>
                     <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">{t.handshake}</h2>
                     <p className="text-[11px] text-slate-600 font-medium italic truncate px-6">{t.dispatched} {email}</p>

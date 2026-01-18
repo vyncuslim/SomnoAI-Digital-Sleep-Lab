@@ -29,7 +29,7 @@ export const translations = {
       manifesto: 'SomnoAI Digital Sleep Lab integrates physiological indicator monitoring, AI deep insights and health advice into one, providing users with a full range of digital sleep experiments.'
     },
     auth: {
-      lab: 'SOMNOAI LAB',
+      lab: 'SomnoAI Digital Sleep Lab',
       tagline: 'DIGITAL IDENTITY TELEMETRY',
       manifesto: 'Experience the future of sleep science with SomnoAI Lab. We integrate physiological monitoring with AI-driven deep insights.',
       sendCode: 'REQUEST LAB TOKEN',
@@ -151,7 +151,7 @@ export const translations = {
       manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验。'
     },
     auth: {
-      lab: 'SOMNOAI LAB',
+      lab: 'SomnoAI Digital Sleep Lab',
       tagline: 'DIGITAL IDENTITY TELEMETRY',
       manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体。',
       sendCode: '获取实验室令牌',

@@ -169,7 +169,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, onNavigate }
           <Logo size={96} animated={true} />
         </div>
         <div className="flex flex-col items-center">
-          <h1 className="text-4xl font-black tracking-tighter text-white uppercase italic leading-none">{t.lab}</h1>
+          <h1 className="text-4xl font-black tracking-tighter text-white italic leading-none">{t.lab}</h1>
           <p className="text-slate-600 font-bold uppercase text-[10px] tracking-[0.6em] mt-3 opacity-80">{t.tagline}</p>
         </div>
       </m.div>
