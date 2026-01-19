@@ -42,8 +42,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const t = translations[lang].dashboard;
 
   useEffect(() => {
+    // API key must be obtained exclusively from process.env.API_KEY
     setIsNative(healthConnect.isNativeBridgeAvailable());
-    setEngineActive(!!process.env.API_KEY || !!localStorage.getItem('somno_manual_gemini_key'));
+    setEngineActive(!!process.env.API_KEY);
   }, []);
 
   const handleFullSync = async () => {
@@ -77,7 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       animate={{ opacity: 1 }}
       className="space-y-10 pb-32 max-w-5xl mx-auto"
     >
-      {/* 状态栏：增强节点稳定性 */}
+      {/* Status Node Terminal */}
       <div className="flex justify-between items-center bg-slate-950/60 px-8 py-5 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
         <div className="flex items-center gap-5">
           <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
@@ -147,7 +148,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </div>
 
-      {/* 核心仪表盘 */}
+      {/* Main Analysis Deck */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
         <div className="lg:col-span-7 space-y-10">
           <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[520px] flex flex-col justify-between" intensity={threeDEnabled ? 1.5 : 0}>

@@ -9,14 +9,16 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      
       gtag('config', 'G-1WM4RE66ER', { send_page_view: false });
       gtag('config', 'G-3F9KVNYLR', { send_page_view: false });
     </script>
 
-    <!-- Google Identity Services -->
-    <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
+    <!-- PWA & Mobile Optimization -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="SomnoAI">
+    <link rel="manifest" href="/manifest.json">
+
     <script type="importmap">
 {
   "imports": {
@@ -38,37 +40,13 @@
 </script>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0">
     
-    <!-- Primary SEO Meta Tags -->
     <title>SomnoAI | Digital Sleep Laboratory</title>
-    <meta name="title" content="SomnoAI | Digital Sleep Laboratory">
-    <meta name="description" content="SomnoAI integrates physiological monitoring, AI deep insights, and health advice for a full range of digital sleep experiments. Unlock your biological recovery potential.">
-    <meta name="keywords" content="Sleep Lab, AI Sleep Analysis, Biometric Monitoring, SomnoAI, Digital Sleep Experiment, Sleep Score, Health Connect, Neural Recovery, Biohacking">
-    <meta name="author" content="SomnoAI Lab">
-    <link rel="canonical" href="https://sleepsomno.com/" />
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="SomnoAI Lab | 数字化睡眠实验室">
-    <meta property="og:description" content="全方位数字化睡眠实验，融合生理指标监控与 AI 深度洞察。解密您的生物轴。">
-    <meta property="og:image" content="https://img.icons8.com/fluency/512/brain-network.png">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://sleepsomno.com/">
-    <meta property="twitter:title" content="SomnoAI Lab | AI-Powered Biometric Lab">
-    <meta property="twitter:description" content="It integrates physiological metric monitoring, AI deep insights, and health advice into one.">
-    <meta property="twitter:image" content="https://img.icons8.com/fluency/512/brain-network.png">
-
-    <!-- Favicon Configuration -->
-    <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/32/brain-network.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="https://img.icons8.com/fluency/16/brain-network.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/fluency/180/brain-network.png">
-    <link rel="shortcut icon" type="image/png" href="https://img.icons8.com/fluency/48/brain-network.png">
-    <link rel="mask-icon" href="https://img.icons8.com/fluency/180/brain-network.png" color="#4f46e5">
-    <meta name="msapplication-TileImage" content="https://img.icons8.com/fluency/192/brain-network.png">
+    <meta name="description" content="SomnoAI integrates physiological monitoring, AI deep insights, and health advice for a full range of digital sleep experiments.">
+    
+    <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/32/moon.png">
+    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/180/moon.png">
     <meta name="theme-color" content="#020617">
     
     <script src="https://cdn.tailwindcss.com"></script>
@@ -86,12 +64,10 @@
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
-      body { background-color: #020617; overflow-x: hidden; }
+      body { background-color: #020617; overflow-x: hidden; -webkit-tap-highlight-color: transparent; }
       #root:empty { background: #020617; height: 100vh; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      
-      /* Smooth transitions for laboratory identity */
       html { scroll-behavior: smooth; }
     </style>
 </head>

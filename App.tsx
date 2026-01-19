@@ -2,8 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, User, BrainCircuit, Settings as SettingsIcon, RefreshCw, Moon, Zap } from 'lucide-react';
-// Added AnimatePresence to the framer-motion imports to fix 'Cannot find name' errors
+import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi } from './services/supabaseService.ts';
@@ -11,7 +10,7 @@ import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
 import { Logo } from './components/Logo.tsx';
 
-// 移除 lazy loading，改用直接导入以防止黑屏
+// Components
 import AdminLoginPage from './app/admin/login/page.tsx';
 import AdminDashboard from './app/admin/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
@@ -38,13 +37,7 @@ const LoadingSpinner = ({ label = "Synchronizing Neural Nodes..." }: { label?: s
 );
 
 const App: React.FC = () => {
-  const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem('somno_lang');
-    if (saved && ['en', 'zh', 'de', 'fr'].includes(saved)) {
-      return saved as Language;
-    }
-    return 'en';
-  });
+  const [lang, setLang] = useState<Language>('en');
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
@@ -57,15 +50,11 @@ const App: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [isSandbox, setIsSandbox] = useState(() => localStorage.getItem('somno_sandbox_active') === 'true');
+  const [isSandbox, setIsSandbox] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('somno_3d_enabled', threeDEnabled.toString());
   }, [threeDEnabled]);
-
-  useEffect(() => {
-    localStorage.setItem('somno_lang', lang);
-  }, [lang]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -83,33 +72,6 @@ const App: React.FC = () => {
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
-
-  // 当进入沙盒模式时，自动生成模拟数据
-  useEffect(() => {
-    if (isSandbox && !currentRecord) {
-      const mockToday: SleepRecord = {
-        id: 'mock-today',
-        date: 'Today',
-        score: 82,
-        totalDuration: 450,
-        deepRatio: 21,
-        remRatio: 19,
-        efficiency: 92,
-        stages: [],
-        heartRate: { resting: 64, max: 82, min: 58, average: 66, history: [] },
-        aiInsights: ["Biometric stream simulated for sandbox environment."]
-      };
-      setCurrentRecord(mockToday);
-      
-      const mockHistory = Array.from({ length: 7 }, (_, i) => ({
-        ...mockToday,
-        id: `mock-${i}`,
-        date: `Day -${i + 1}`,
-        score: 70 + Math.floor(Math.random() * 25)
-      }));
-      setHistory(mockHistory);
-    }
-  }, [isSandbox]);
 
   useEffect(() => {
     const initAuth = async () => {
@@ -147,15 +109,6 @@ const App: React.FC = () => {
     if (syncStatus !== 'idle' && syncStatus !== 'error') return;
     setSyncStatus('authorizing');
     try {
-      if (isSandbox) {
-        setSyncStatus('fetching');
-        await new Promise(r => setTimeout(r, 600));
-        setSyncStatus('analyzing');
-        await new Promise(r => setTimeout(r, 600));
-        setSyncStatus('success');
-        setTimeout(() => setSyncStatus('idle'), 1500);
-        return;
-      }
       await healthConnect.authorize();
       setSyncStatus('fetching');
       const data = await healthConnect.fetchSleepData();
@@ -173,10 +126,6 @@ const App: React.FC = () => {
   };
 
   const handleLogout = async () => {
-    if (isSandbox) {
-      localStorage.removeItem('somno_sandbox_active');
-      setIsSandbox(false);
-    }
     await authApi.signOut();
     setSession(null);
     setCurrentRecord(null);
@@ -185,23 +134,17 @@ const App: React.FC = () => {
     window.location.hash = '#/';
   };
 
-  const enterSandbox = () => {
-    localStorage.setItem('somno_sandbox_active', 'true');
-    setIsSandbox(true);
-    setActiveView('dashboard');
-  };
-
   if (isInitialAuthCheck) return <LoadingSpinner label="Authenticating Neural Identity..." />;
 
   const renderContent = () => {
     if (activeView === 'admin-login') return <AdminLoginPage />;
     if (activeView === 'admin') return <AdminDashboard />;
 
-    if (!session && !isSandbox) {
+    if (!session) {
       return (
         <UserLoginPage 
           onSuccess={() => {}} 
-          onSandbox={enterSandbox} 
+          onSandbox={() => {}} 
           lang={lang} 
         />
       );
@@ -241,7 +184,7 @@ const App: React.FC = () => {
             {activeView === 'about' && <AboutView lang={lang} onBack={() => window.location.hash = '#/'} />}
             {activeView === 'settings' && (
               <Settings 
-                lang={lang} onLanguageChange={setLang} onLogout={handleLogout} 
+                lang={lang} onLanguageChange={() => {}} onLogout={handleLogout} 
                 onNavigate={(v: any) => window.location.hash = `#/${v}`}
                 threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
                 theme="dark" onThemeChange={()=>{}} accentColor="indigo" onAccentChange={()=>{}}
