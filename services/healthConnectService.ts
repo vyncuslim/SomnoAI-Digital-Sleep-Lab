@@ -1,7 +1,6 @@
 
 import { SleepRecord, SleepStage } from "../types.ts";
 
-const BACKEND_API = "https://www.sleepsomno.com/health-data";
 const CLIENT_ID = "1083641396596-7vqbum157qd03asbmare5gmrmlr020go.apps.googleusercontent.com";
 const SCOPES = [
   "https://www.googleapis.com/auth/fitness.sleep.read",
@@ -35,26 +34,6 @@ export class HealthConnectService {
     const parsed = typeof rawData === 'string' ? JSON.parse(rawData) : rawData;
     console.log("Hardware Data Received:", parsed);
     return parsed;
-  }
-
-  /**
-   * 将实验室分析结果同步到您的企业后端 API
-   */
-  public async uploadToBackend(record: SleepRecord): Promise<boolean> {
-    try {
-      const response = await fetch(BACKEND_API, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'X-Lab-Source': this.isNativeBridgeAvailable() ? 'Android-Native' : 'Web-Cloud'
-        },
-        body: JSON.stringify(record)
-      });
-      return response.ok;
-    } catch (e) {
-      console.error("Cloud Archive Failed:", e);
-      return false;
-    }
   }
 
   public async authorize(): Promise<string> {

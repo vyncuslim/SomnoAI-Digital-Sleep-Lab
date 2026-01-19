@@ -5,7 +5,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, Share2, Activity, Sparkles, Binary, Waves, Gauge,
-  ShieldCheck, ArrowUpRight, Smartphone, Cloud, CloudUpload, CheckCircle
+  ShieldCheck, ArrowUpRight, Smartphone, Cloud, CheckCircle, Database
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { Language, translations } from '../services/i18n.ts';
@@ -32,7 +32,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
   threeDEnabled = true
 }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [isUploading, setIsUploading] = useState(false);
   const [isNative, setIsNative] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -48,19 +47,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
     
     try {
       await onSyncHealth((status) => setSyncStatus(status));
-      setIsUploading(true);
-      await healthConnect.uploadToBackend(data);
-      
+      // Removed Cloud Upload logic
       setTimeout(() => {
-        setIsUploading(false);
         setSyncStatus('idle');
-      }, 2000);
+      }, 1000);
     } catch (err) {
       setSyncStatus('error');
     }
   };
 
-  const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus) || isUploading;
+  const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
 
   const hypnogramData = (data.stages || []).map((s) => ({
     time: s.startTime,
@@ -81,11 +77,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Logo size={32} animated={isProcessing} threeD={threeDEnabled} />
           </div>
           <div className="flex flex-col text-left">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Enterprise Node Alpha</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Local Lab Node Alpha</span>
             <div className="flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                <span className="text-[11px] font-black tracking-widest uppercase text-emerald-400">
-                 {isUploading ? <span>UPLOADING...</span> : isNative ? <span>HW-SYNC LINK</span> : <span>CLOUD-SYNC LINK</span>}
+                 {isNative ? <span>HARDWARE LINK ACTIVE</span> : <span>EDGE CLIENT READY</span>}
                </span>
             </div>
           </div>
@@ -93,17 +89,17 @@ export const Dashboard: React.FC<DashboardProps> = ({
         
         <div className="hidden lg:flex items-center gap-8 px-8 border-x border-white/5">
            <div className="flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Bridge Protocol</span>
+              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Protocol Type</span>
               <div className="flex items-center gap-2">
-                 {isNative ? <Smartphone size={16} className="text-emerald-400" /> : <Cloud size={16} className="text-indigo-400" />}
-                 <span className="text-[10px] font-black text-white">{isNative ? 'ANDROID NATIVE' : 'WEB CLIENT'}</span>
+                 {isNative ? <Smartphone size={16} className="text-emerald-400" /> : <Database size={16} className="text-indigo-400" />}
+                 <span className="text-[10px] font-black text-white">{isNative ? 'ANDROID NATIVE' : 'LOCAL CACHE'}</span>
               </div>
            </div>
            <div className="flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Lab Cloud</span>
+              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Security Status</span>
               <div className="flex items-center gap-1.5">
-                <CloudUpload size={16} className={isUploading ? 'text-emerald-400' : 'text-slate-600'} />
-                <span className="text-[9px] font-black text-white">somno.com/api</span>
+                <ShieldCheck size={16} className="text-emerald-400" />
+                <span className="text-[9px] font-black text-white uppercase">Encrypted Edge</span>
               </div>
            </div>
         </div>
@@ -114,13 +110,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             disabled={isProcessing} 
             className="w-14 h-14 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-indigo-500/20 text-indigo-400 transition-all active:scale-90 group relative"
           >
-            {isUploading ? (
-              <m.div key="upload-icon" animate={{ y: [-10, 0, -10] }} transition={{ repeat: Infinity }}>
-                <CloudUpload size={20} className="text-emerald-400" />
-              </m.div>
-            ) : (
-              <RefreshCw key="sync-icon" size={20} className={`${isProcessing ? 'animate-spin text-emerald-400' : 'group-hover:rotate-180'} transition-transform duration-700`} />
-            )}
+            <RefreshCw key="sync-icon" size={20} className={`${isProcessing ? 'animate-spin text-emerald-400' : 'group-hover:rotate-180'} transition-transform duration-700`} />
             <AnimatePresence>
               {syncStatus === 'success' && (
                 <m.div 
