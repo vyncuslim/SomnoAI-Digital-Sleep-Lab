@@ -1,26 +1,26 @@
 
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useState, useEffect } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, Activity, Zap, User, BrainCircuit, Settings as SettingsIcon, RefreshCw, Moon } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Loader2, User, BrainCircuit, Settings as SettingsIcon, RefreshCw, Moon, Zap } from 'lucide-react';
+// Added AnimatePresence to the framer-motion imports to fix 'Cannot find name' errors
+import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi } from './services/supabaseService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
 import { Logo } from './components/Logo.tsx';
 
-// Direct imports for stability
+// 移除 lazy loading，改用直接导入以防止黑屏
 import AdminLoginPage from './app/admin/login/page.tsx';
 import AdminDashboard from './app/admin/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
-
 import { Dashboard } from './components/Dashboard.tsx';
-const Trends = lazy(() => import('./components/Trends.tsx').then(m => ({ default: m.Trends })));
-const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(m => ({ default: m.AIAssistant })));
-const Settings = lazy(() => import('./components/Settings.tsx').then(m => ({ default: m.Settings })));
-const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(m => ({ default: m.UserProfile })));
-const AboutView = lazy(() => import('./components/AboutView.tsx').then(m => ({ default: m.AboutView })));
+import { Trends } from './components/Trends.tsx';
+import { AIAssistant } from './components/AIAssistant.tsx';
+import { Settings } from './components/Settings.tsx';
+import { UserProfile } from './components/UserProfile.tsx';
+import { AboutView } from './components/AboutView.tsx';
 
 const m = motion as any;
 
@@ -78,6 +78,33 @@ const App: React.FC = () => {
     return () => window.removeEventListener('hashchange', handleHash);
   }, []);
 
+  // 当进入沙盒模式时，自动生成模拟数据
+  useEffect(() => {
+    if (isSandbox && !currentRecord) {
+      const mockToday: SleepRecord = {
+        id: 'mock-today',
+        date: 'Today',
+        score: 82,
+        totalDuration: 450,
+        deepRatio: 21,
+        remRatio: 19,
+        efficiency: 92,
+        stages: [],
+        heartRate: { resting: 64, max: 82, min: 58, average: 66, history: [] },
+        aiInsights: ["Biometric stream simulated for sandbox environment."]
+      };
+      setCurrentRecord(mockToday);
+      
+      const mockHistory = Array.from({ length: 7 }, (_, i) => ({
+        ...mockToday,
+        id: `mock-${i}`,
+        date: `Day -${i + 1}`,
+        score: 70 + Math.floor(Math.random() * 25)
+      }));
+      setHistory(mockHistory);
+    }
+  }, [isSandbox]);
+
   useEffect(() => {
     const initAuth = async () => {
       try {
@@ -90,7 +117,7 @@ const App: React.FC = () => {
       } catch (err: any) {
         console.warn("Auth check failed:", err.message);
       } finally {
-        setTimeout(() => setIsInitialAuthCheck(false), 1500);
+        setTimeout(() => setIsInitialAuthCheck(false), 1000);
       }
     };
     
@@ -101,21 +128,9 @@ const App: React.FC = () => {
         setSession(newSession);
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
-        
-        if (event === 'SIGNED_IN') {
-           const currentHash = window.location.hash;
-           if (currentHash === '#/login' || currentHash === '' || currentHash === '#/') {
-             setActiveView('dashboard');
-             window.location.hash = '#/';
-           }
-        }
       } else {
         setSession(null);
         setIsAdmin(false);
-        if (event === 'SIGNED_OUT') {
-           setCurrentRecord(null);
-           window.location.hash = '#/';
-        }
       }
     });
     
@@ -127,26 +142,12 @@ const App: React.FC = () => {
     setSyncStatus('authorizing');
     try {
       if (isSandbox) {
-        await new Promise(r => setTimeout(r, 1000));
         setSyncStatus('fetching');
-        await new Promise(r => setTimeout(r, 800));
-        const mock: SleepRecord = {
-          id: 'mock-' + Date.now(),
-          date: new Date().toLocaleDateString(undefined, { month: 'long', day: 'numeric', weekday: 'long' }),
-          score: 85,
-          totalDuration: 460,
-          deepRatio: 22,
-          remRatio: 18,
-          efficiency: 94,
-          stages: [],
-          heartRate: { resting: 62, max: 80, min: 55, average: 65, history: [] },
-          aiInsights: ["Neural handshake complete. Biometric stream simulated."]
-        };
+        await new Promise(r => setTimeout(r, 600));
         setSyncStatus('analyzing');
-        const insights = await getSleepInsight(mock, lang);
-        setCurrentRecord({ ...mock, aiInsights: insights });
+        await new Promise(r => setTimeout(r, 600));
         setSyncStatus('success');
-        setTimeout(() => setSyncStatus('idle'), 2000);
+        setTimeout(() => setSyncStatus('idle'), 1500);
         return;
       }
       await healthConnect.authorize();
@@ -156,13 +157,12 @@ const App: React.FC = () => {
       const insights = await getSleepInsight(data as SleepRecord, lang);
       const fullRecord = { ...data, aiInsights: insights } as SleepRecord;
       setCurrentRecord(fullRecord);
-      setHistory(prev => [fullRecord, ...prev].slice(0, 7));
+      setHistory(prev => [fullRecord, ...prev].slice(0, 14));
       setSyncStatus('success');
-      setTimeout(() => setSyncStatus('idle'), 2000);
+      setTimeout(() => setSyncStatus('idle'), 1500);
     } catch (err: any) {
-      console.error("Sync Interrupted:", err);
       setSyncStatus('error');
-      setTimeout(() => setSyncStatus('idle'), 2000);
+      setTimeout(() => setSyncStatus('idle'), 1500);
     }
   };
 
@@ -203,60 +203,50 @@ const App: React.FC = () => {
 
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40 min-h-screen">
-        <div key={activeView}>
-          {activeView === 'dashboard' && (
-            currentRecord ? (
-              <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => window.location.hash = `#/${v}`} threeDEnabled={threeDEnabled} />
-            ) : (
-              <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
-                <div className="relative">
+        <AnimatePresence mode="wait">
+          <m.div 
+            key={activeView}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.3 }}
+          >
+            {activeView === 'dashboard' && (
+              currentRecord ? (
+                <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => window.location.hash = `#/${v}`} threeDEnabled={threeDEnabled} />
+              ) : (
+                <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
                   <Logo size={120} animated={true} threeD={threeDEnabled} />
-                  <motion.div animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.6, 0.3] }} transition={{ duration: 3, repeat: Infinity }} className="absolute -inset-12 bg-indigo-500/5 rounded-full blur-3xl pointer-events-none" />
+                  <div className="space-y-4">
+                    <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Laboratory Sync Required</h2>
+                    <button 
+                      onClick={handleSyncHealth}
+                      className="px-12 py-6 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 transition-all"
+                    >
+                      {syncStatus === 'idle' ? 'SYNC VIA HEALTH CONNECT' : `${syncStatus.toUpperCase()}...`}
+                    </button>
+                  </div>
                 </div>
-                <div className="space-y-4">
-                  <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Health Connect Node Offline</h2>
-                  <p className="text-xs text-slate-500 font-bold uppercase tracking-widest max-w-sm mx-auto leading-relaxed px-6">
-                    {translations[lang].dashboard.manifesto}
-                  </p>
-                </div>
-                <button 
-                  onClick={handleSyncHealth}
-                  disabled={syncStatus !== 'idle'}
-                  className="px-12 py-6 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 hover:bg-indigo-500 transition-all flex items-center gap-4"
-                >
-                  {syncStatus === 'idle' ? <><RefreshCw size={18} /> SYNC VIA HEALTH CONNECT</> : <><Loader2 size={18} className="animate-spin" /> {syncStatus.toUpperCase()}...</>}
-                </button>
-              </div>
-            )
-          )}
-          {activeView === 'calendar' && <Suspense fallback={<LoadingSpinner />}><Trends history={history} lang={lang} /></Suspense>}
-          {activeView === 'assistant' && <Suspense fallback={<LoadingSpinner />}><AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} /></Suspense>}
-          {activeView === 'profile' && <Suspense fallback={<LoadingSpinner />}><UserProfile lang={lang} /></Suspense>}
-          {activeView === 'about' && <Suspense fallback={<LoadingSpinner />}><AboutView lang={lang} onBack={() => window.location.hash = '#/'} /></Suspense>}
-          {activeView === 'settings' && (
-            <Suspense fallback={<LoadingSpinner />}>
+              )
+            )}
+            {activeView === 'calendar' && <Trends history={history} lang={lang} />}
+            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} />}
+            {activeView === 'profile' && <UserProfile lang={lang} />}
+            {activeView === 'about' && <AboutView lang={lang} onBack={() => window.location.hash = '#/'} />}
+            {activeView === 'settings' && (
               <Settings 
-                lang={lang} 
-                onLanguageChange={setLang} 
-                onLogout={handleLogout} 
+                lang={lang} onLanguageChange={setLang} onLogout={handleLogout} 
                 onNavigate={(v: any) => window.location.hash = `#/${v}`}
-                threeDEnabled={threeDEnabled}
-                onThreeDChange={setThreeDEnabled}
-                theme="dark"
-                onThemeChange={()=>{}}
-                accentColor="indigo"
-                onAccentChange={()=>{}}
-                staticMode={false}
-                onStaticModeChange={()=>{}}
-                lastSyncTime={null}
-                onManualSync={() => {}}
+                threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
+                theme="dark" onThemeChange={()=>{}} accentColor="indigo" onAccentChange={()=>{}}
+                staticMode={false} onStaticModeChange={()=>{}} lastSyncTime={null} onManualSync={() => {}}
               />
-            </Suspense>
-          )}
-        </div>
+            )}
+          </m.div>
+        </AnimatePresence>
 
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
-          <nav className="bg-slate-950/60 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl">
+          <nav className="bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl">
             {[
               { id: 'dashboard', icon: Moon, label: 'LAB' },
               { id: 'calendar', icon: Zap, label: 'TRND' },
