@@ -9,23 +9,23 @@
   "theme_color": "#020617",
   "icons": [
     {
-      "src": "https://img.icons8.com/fluency/48/moon.png",
+      "src": "https://img.icons8.com/fluency/48/brain-network.png",
       "sizes": "48x48",
       "type": "image/png"
     },
     {
-      "src": "https://img.icons8.com/fluency/96/moon.png",
+      "src": "https://img.icons8.com/fluency/96/brain-network.png",
       "sizes": "96x96",
       "type": "image/png"
     },
     {
-      "src": "https://img.icons8.com/fluency/192/moon.png",
+      "src": "https://img.icons8.com/fluency/192/brain-network.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "https://img.icons8.com/fluency/512/moon.png",
+      "src": "https://img.icons8.com/fluency/512/brain-network.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

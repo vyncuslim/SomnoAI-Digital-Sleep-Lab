@@ -38,7 +38,13 @@ const LoadingSpinner = ({ label = "Synchronizing Neural Nodes..." }: { label?: s
 );
 
 const App: React.FC = () => {
-  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en');
+  const [lang, setLang] = useState<Language>(() => {
+    const saved = localStorage.getItem('somno_lang');
+    if (saved && ['en', 'zh', 'de', 'fr'].includes(saved)) {
+      return saved as Language;
+    }
+    return 'en';
+  });
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
