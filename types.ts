@@ -17,52 +17,57 @@ export interface SleepRecord {
   id: string;
   date: string;
   score: number;
-  totalDuration: number; // minutes
-  deepRatio: number; // percentage
+  totalDuration: number;
+  deepRatio: number;
   remRatio: number;
   efficiency: number;
-  calories?: number; // kcal
+  calories?: number;
   stages: SleepStage[];
   heartRate: HeartRateData;
   aiInsights: string[];
 }
 
-export interface UserProfileMetadata {
-  displayName: string;
-  age?: number;
-  weight?: number; // in kg
-  height?: number; // in cm
-  gender?: 'male' | 'female' | 'other' | 'prefer-not-to-say';
-  units: 'metric' | 'imperial';
-  coachingStyle: 'clinical' | 'motivational' | 'minimalist';
+// 核心：Android 传输给网站的 API 数据结构
+export interface HealthTelemetryPayload {
+  source: 'health_connect' | 'android_native_bridge';
+  sync_id: string; // 唯一同步 ID，防止重复写入
+  device_metadata: {
+    model: string;
+    os_version: string;
+    app_version: string;
+    sync_latency_ms: number;
+  };
+  metrics: {
+    sleep_sessions: any[]; // 原始 Health Connect 数组
+    heart_rate_samples: any[];
+    step_counts?: any[];
+    weight_samples?: any[];
+  };
+  timestamp: string;
 }
 
-export interface SecurityEvent {
-  id: string;
-  user_id: string;
-  email: string;
-  event_type: 'AUTO_BLOCK' | 'SUSPICIOUS_LOGIN' | 'IP_THROTTLED';
-  event_reason: string;
-  created_at: string;
-  notified: boolean;
-}
-
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login';
-export type TimeRange = 'week' | 'month' | 'year';
-export type AIProvider = 'gemini' | 'openai';
-
+/**
+ * Interface representing a message in the AI assistant conversation
+ */
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
 }
 
-export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
-export type ThemeMode = 'dark' | 'light';
-export type AccentColor = 'indigo' | 'emerald' | 'rose' | 'amber' | 'sky';
-
-export interface AudioState {
-  isPlaying: boolean;
-  isGenerating: boolean;
-  progress: number;
+/**
+ * Interface for system security audit and monitoring events
+ */
+export interface SecurityEvent {
+  id: string;
+  email?: string;
+  event_type: string;
+  event_reason?: string;
+  notified?: boolean;
+  created_at?: string;
+  timestamp?: string;
 }
+
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login';
+export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
+export type Language = 'en' | 'zh';

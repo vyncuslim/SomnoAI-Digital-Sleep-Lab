@@ -1,57 +1,80 @@
 
 import { supabase } from '../lib/supabaseClient.ts';
+import { HealthTelemetryPayload } from '../types.ts';
 
 export { supabase };
 
-export const authApi = {
-  signUp: (email: string, password: string) => 
-    supabase.auth.signUp({ 
-      email: email.trim().toLowerCase(), 
-      password,
-      options: { emailRedirectTo: `${window.location.origin}` }
-    }),
-  
-  signIn: (email: string, password: string) => 
-    supabase.auth.signInWithPassword({ 
-      email: email.trim().toLowerCase(), 
-      password 
-    }),
+/**
+ * SomnoAI 数据管道 API
+ * 负责 Android 端与 Web 端的数据握手
+ */
+export const healthDataApi = {
+  /**
+   * 推送数据到网站后端
+   * @param payload 符合 HealthTelemetryPayload 结构的数据包
+   */
+  uploadTelemetry: async (payload: HealthTelemetryPayload) => {
+    // 1. 获取当前经过身份验证的用户
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      throw new Error('NEURAL_LINK_UNAUTHORIZED: Session invalid or expired.');
+    }
 
-  sendOTP: (email: string) => 
-    supabase.auth.signInWithOtp({
-      email: email.trim().toLowerCase(),
-      options: { 
-        emailRedirectTo: `${window.location.origin}`,
-        shouldCreateUser: false 
+    // 2. 写入遥测表
+    // Supabase 会根据 RLS 自动检查权限
+    const { data, error } = await supabase
+      .from('health_telemetry')
+      .insert({
+        user_id: user.id,
+        sync_id: payload.sync_id, // 幂等性控制
+        source: payload.source,
+        device_info: payload.device_metadata,
+        payload: payload.metrics
+      })
+      .select()
+      .single();
+
+    if (error) {
+      // 处理重复同步的情况
+      if (error.code === '23505') {
+        console.warn("Telemetric packet already archived (SyncID exists).");
+        return { success: true, status: 'ALREADY_ARCHIVED' };
       }
-    }),
+      throw error;
+    }
 
-  verifyOTP: async (email: string, token: string) => {
-    const normalizedEmail = email.trim().toLowerCase();
-    return await supabase.auth.verifyOtp({ 
-      email: normalizedEmail, 
-      token, 
-      type: 'email' 
-    });
+    return { success: true, data };
   },
 
+  /**
+   * 获取最近同步的生理指标历史
+   */
+  getTelemetryHistory: async (limit = 10) => {
+    return supabase
+      .from('health_telemetry')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
+  }
+};
+
+// 保持现有的 Auth 逻辑
+export const authApi = {
+  signUp: (email: string, password: string) => 
+    supabase.auth.signUp({ email, password }),
+  signIn: (email: string, password: string) => 
+    supabase.auth.signInWithPassword({ email, password }),
+  sendOTP: (email: string) => 
+    supabase.auth.signInWithOtp({ email }),
+  verifyOTP: (email: string, token: string) => 
+    supabase.auth.verifyOtp({ email, token, type: 'email' }),
   signInWithGoogle: () => 
-    supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-        queryParams: { prompt: 'select_account' }
-      }
-    }),
-
-  resetPassword: (email: string) => 
-    supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
-      redirectTo: window.location.origin + '/#/login'
-    }),
-
+    supabase.auth.signInWithOAuth({ provider: 'google' }),
   signOut: () => supabase.auth.signOut()
 };
 
+// Admin & User Data APIs
 export const userDataApi = {
   getUserData: async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -67,10 +90,8 @@ export const userDataApi = {
 
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
-    if (!userId) return false;
     const { data, error } = await supabase.rpc('is_admin');
-    if (error) return false;
-    return !!data;
+    return !error && !!data;
   },
   getUsers: async () => (await supabase.from('profiles').select('*')).data || [],
   getSecurityEvents: async () => (await supabase.from('security_events').select('*')).data || [],

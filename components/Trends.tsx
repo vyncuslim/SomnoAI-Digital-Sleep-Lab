@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { SleepRecord, TimeRange } from '../types.ts';
+// Fix: Removed missing TimeRange import to resolve compilation error
+import { SleepRecord } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
 import { Award, Activity, Database, BrainCircuit, Loader2, Sparkles, ChevronRight, Binary } from 'lucide-react';
