@@ -35,9 +35,7 @@ const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const apiKey = getActiveApiKey();
-  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   
-  // lang === 'zh' is now a valid comparison after expanding the Language type in i18n.ts.
   const prompt = `你是一位世界级的数字睡眠科学家与首席生物黑客。请根据以下高精度生理遥测指标进行深度神经分析。
     必须返回一个包含 3 条专业字符串的 JSON 数组，语言为 ${lang === 'zh' ? '中文' : '英文'}。
     1. 神经架构分析：基于深度与 REM 比例分析大脑清理效率与记忆巩固状态。
@@ -47,7 +45,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm。`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: apiKey! });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: prompt,
@@ -56,7 +54,6 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
         responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
       }
     });
-    // Accessing text as a property per latest SDK guidelines.
     return JSON.parse(response.text?.trim() || "[]");
   } catch (err) {
     handleGeminiError(err);
@@ -66,20 +63,18 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
 
 export const chatWithCoach = async (history: { role: string; content: string }[], lang: Language = 'en', contextData?: SleepRecord | null) => {
   const apiKey = getActiveApiKey();
-  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   
   const bio = contextData ? `\nTELEMETRY: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, Efficiency: ${contextData.efficiency}%.` : "";
   const systemInstruction = `You are the Somno Chief Research Officer. Professional, futuristic, data-driven. Language context: ${lang}. ${bio}`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: apiKey! });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: history.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
       config: { 
         systemInstruction, 
         tools: [{ googleSearch: {} }],
-        // Thinking budget is supported for Gemini 2.5 and 3 series models.
         thinkingConfig: { thinkingBudget: 16000 } 
       }
     });
@@ -91,9 +86,8 @@ export const chatWithCoach = async (history: { role: string; content: string }[]
 
 export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
   const apiKey = getActiveApiKey();
-  if (!apiKey) throw new Error("GEMINI_API_KEY_MISSING");
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: apiKey! });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: `Design a sleep experiment based on: score ${data.score}, RHR ${data.heartRate?.resting}. Language: ${lang}.`,
@@ -116,9 +110,8 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
 
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
   const apiKey = getActiveApiKey();
-  if (!apiKey) return "API Key Missing.";
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: apiKey! });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: `Summarize trends for: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, lang: ${lang}.`,
@@ -131,9 +124,8 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
 
 export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 'en'): Promise<string | undefined> => {
   const apiKey = getActiveApiKey();
-  if (!apiKey) return undefined;
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: apiKey! });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
       contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on score ${data.score}. Lang: ${lang}` }] }],

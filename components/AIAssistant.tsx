@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, User, Loader2, Trash2, Music, Info, ExternalLink, Moon
+  Send, User, Loader2, Trash2, Music, ExternalLink, Moon
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
@@ -38,18 +38,12 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [hasKey, setHasKey] = useState<boolean>(false);
   
   const [isGeneratingAudio, setIsGeneratingAudio] = useState(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // API key must be obtained exclusively from process.env.API_KEY
-    setHasKey(!!process.env.API_KEY);
-  }, []);
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -71,17 +65,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     
-    if (!hasKey) {
-      setTimeout(() => {
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: "I'm currently in 'Offline Mode' as the Neural API Key is not configured. Neural infrastructure is managed via environment variables.", 
-          timestamp: new Date() 
-        }]);
-      }, 600);
-      return;
-    }
-
     setIsTyping(true);
     try {
       const response = await chatWithCoach(messages.concat(userMsg).map(m => ({ role: m.role, content: m.content })), lang, data);
@@ -89,7 +72,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
         setMessages(prev => [...prev, { role: 'assistant', content: response.text, sources: response.sources, timestamp: new Date() }]);
       }
     } catch (err) {
-      setMessages(prev => [...prev, { role: 'assistant', content: "Connection timeout. Please ensure your neural link and API Key are valid.", timestamp: new Date() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Connection timeout. Please ensure your neural link is valid.", timestamp: new Date() }]);
     } finally {
       setIsTyping(false);
     }
@@ -110,7 +93,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
         const decoded = decodeBase64Audio(base64);
         const buffer = await decodeAudioData(decoded, ctx);
         
-        // Clean up previous source if any
         if (audioSourceRef.current) {
           try { audioSourceRef.current.stop(); } catch(e) {}
         }
@@ -166,13 +148,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
 
   return (
     <div className="flex flex-col h-[calc(100vh-160px)] max-w-2xl mx-auto font-sans relative">
-      {!hasKey && (
-        <div className="absolute top-0 left-0 right-0 z-20 px-4 py-2 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-3 mb-4">
-           <Info size={14} className="text-rose-500" />
-           <p className="text-[10px] font-black uppercase tracking-widest text-rose-400 italic">Neural Engine Offline - Check System Configuration</p>
-        </div>
-      )}
-
       <header className="flex items-center justify-between mb-8 px-4 pt-10">
         <div className="flex items-center gap-4 text-left">
           <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center shadow-inner relative">

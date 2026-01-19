@@ -2,8 +2,7 @@
 import React, { useState } from 'react';
 import { GlassCard } from './components/GlassCard.tsx';
 import { 
-  LogOut, Key, CheckCircle2, Eye, EyeOff, 
-  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon
+  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck
 } from 'lucide-react';
 import { Language, translations } from './services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,7 +16,6 @@ interface SettingsProps {
   onNavigate: (view: any) => void;
   threeDEnabled: boolean;
   onThreeDChange: (enabled: boolean) => void;
-  // 补充 App.tsx 传递但之前未定义的属性，防止运行时警告
   theme?: string;
   onThemeChange?: (t: any) => void;
   accentColor?: string;
@@ -30,11 +28,8 @@ interface SettingsProps {
 
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, 
-  threeDEnabled, onThreeDChange
 }) => {
   const [showDonation, setShowDonation] = useState(false);
-  const [apiKey, setApiKey] = useState('');
-  const [showKey, setShowKey] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const t = translations[lang]?.settings || translations.en.settings;
@@ -46,61 +41,33 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   return (
-    <div className="space-y-8 pb-32 max-w-2xl mx-auto px-4 font-sans text-left">
-      {/* 顶部标题栏 */}
-      <div className="bg-[#0a0f25] border border-white/5 rounded-[1.5rem] p-5 flex items-center justify-between shadow-2xl">
-        <div className="flex items-center gap-4">
-          <div className="p-2 bg-indigo-500/10 rounded-xl text-indigo-400">
-            <Key size={20} />
+    <div className="space-y-8 pb-32 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
+      <div className="absolute top-0 right-[-100px] opacity-[0.05] pointer-events-none -z-10 rotate-12">
+        <Moon size={400} fill="currentColor" className="text-indigo-400" />
+      </div>
+
+      <div className="bg-[#0a0f25] border border-white/5 rounded-[2.5rem] p-6 flex items-center justify-between shadow-2xl relative overflow-hidden group">
+        <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
+        <div className="flex items-center gap-5 relative z-10">
+          <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+            <ShieldCheck size={24} />
           </div>
           <div>
-             <h2 className="text-sm font-black italic text-white uppercase tracking-wider">GEMINI CORE ENGINE</h2>
-             <p className="text-[9px] font-bold text-slate-500 uppercase tracking-widest">
-               {process.env.API_KEY ? 'CONNECTED' : 'DISCONNECTED'}
-             </p>
+             <h2 className="text-sm font-black italic text-white uppercase tracking-wider flex items-center gap-2">
+               <Moon size={14} className="text-indigo-400" /> Neural Engine Core
+             </h2>
+             <div className="flex items-center gap-2">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                  LINK ESTABLISHED
+                </p>
+             </div>
           </div>
         </div>
-        <button className="px-6 py-2.5 bg-indigo-600 text-white rounded-full text-[10px] font-black uppercase tracking-widest shadow-lg active:scale-95 transition-all">
-          AUTH AI
-        </button>
       </div>
 
       <GlassCard className="p-8 md:p-10 rounded-[3rem] border-white/10 bg-white/[0.01]">
         <div className="space-y-10">
-          {/* GCP Billing Awareness */}
-          <div className="space-y-4">
-             <div className="flex items-center justify-between px-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">GCP BILLING AWARENESS</span>
-                <button 
-                  onClick={() => window.open('https://ai.google.dev/gemini-api/docs/billing', '_blank')}
-                  className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5 border-b border-indigo-400/30"
-                >
-                  Billing info <ArrowUpRight size={10} />
-                </button>
-             </div>
-             <div className="relative group">
-                <input 
-                  type={showKey ? "text" : "password"} 
-                  value={apiKey}
-                  onChange={(e) => setApiKey(e.target.value)}
-                  placeholder="Paste API Key here..."
-                  className="w-full bg-slate-950/60 border border-white/5 rounded-full px-8 py-5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all placeholder:text-slate-800 font-bold italic"
-                />
-                <div className="absolute right-6 top-1/2 -translate-y-1/2 flex items-center gap-4 text-slate-700">
-                   <button onClick={() => setShowKey(!showKey)} className="hover:text-indigo-400 transition-colors">
-                     {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
-                   </button>
-                   <button className="hover:text-indigo-400 transition-colors">
-                     <CheckCircle2 size={18} />
-                   </button>
-                   <button onClick={() => handleCopy('key', apiKey)} className="hover:text-indigo-400 transition-colors">
-                     <Copy size={18} />
-                   </button>
-                </div>
-             </div>
-          </div>
-
-          {/* 语言选择 */}
           <div className="space-y-4">
              <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
              <div className="flex bg-black/40 p-1 rounded-full border border-white/5">
@@ -116,7 +83,6 @@ export const Settings: React.FC<SettingsProps> = ({
              </div>
           </div>
 
-          {/* 功能按钮组 */}
           <div className="space-y-4">
              <button 
                 onClick={() => setShowDonation(true)}
@@ -135,7 +101,6 @@ export const Settings: React.FC<SettingsProps> = ({
         </div>
       </GlassCard>
 
-      {/* 贡献确认模态框 */}
       <AnimatePresence>
         {showDonation && (
           <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
@@ -158,7 +123,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   CONTRIBUTION<br />ACKNOWLEDGED
                 </h2>
                 <p className="text-[13px] text-slate-400 italic max-w-md mx-auto leading-relaxed">
-                  Your support fuels lab processing. Payment details follow (English Default):
+                  Your support fuels lab processing.
                 </p>
               </div>
 
@@ -201,10 +166,6 @@ export const Settings: React.FC<SettingsProps> = ({
                 className="w-full py-6 rounded-full bg-[#4f46e5] text-white font-black text-sm uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl active:scale-95 transition-transform"
               >
                 <ArrowUpRight size={20} /> GO TO PAYPAL PAGE
-              </button>
-
-              <button onClick={() => setShowDonation(false)} className="text-[10px] font-black uppercase text-slate-700 hover:text-slate-400 transition-colors tracking-widest">
-                ABORT VIEWING
               </button>
             </m.div>
           </div>

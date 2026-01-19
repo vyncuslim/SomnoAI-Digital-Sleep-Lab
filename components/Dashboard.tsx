@@ -4,11 +4,10 @@ import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  RefreshCw, BrainCircuit, HeartPulse, Cpu, Zap, 
-  Share2, Activity, Sparkles, Binary, Waves, Gauge,
+  RefreshCw, Share2, Activity, Sparkles, Binary, Waves, Gauge,
   ShieldCheck, ArrowUpRight, Smartphone, Cloud, CloudUpload, CheckCircle
 } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { Language, translations } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
 import { COLORS } from '../constants.tsx';
@@ -34,7 +33,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [isUploading, setIsUploading] = useState(false);
-  const [engineActive, setEngineActive] = useState(false);
   const [isNative, setIsNative] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -42,9 +40,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const t = translations[lang].dashboard;
 
   useEffect(() => {
-    // API key must be obtained exclusively from process.env.API_KEY
     setIsNative(healthConnect.isNativeBridgeAvailable());
-    setEngineActive(!!process.env.API_KEY);
   }, []);
 
   const handleFullSync = async () => {
@@ -87,8 +83,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <div className="flex flex-col text-left">
             <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Enterprise Node Alpha</span>
             <div className="flex items-center gap-2">
-               <div className={`w-1.5 h-1.5 rounded-full ${engineActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500 shadow-[0_0_8px_#ef4444]'}`} />
-               <span className={`text-[11px] font-black tracking-widest uppercase ${engineActive ? 'text-emerald-400' : 'text-rose-400'}`}>
+               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[11px] font-black tracking-widest uppercase text-emerald-400">
                  {isUploading ? <span>UPLOADING...</span> : isNative ? <span>HW-SYNC LINK</span> : <span>CLOUD-SYNC LINK</span>}
                </span>
             </div>
