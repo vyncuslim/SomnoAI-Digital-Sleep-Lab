@@ -30,108 +30,111 @@ export const Logo: React.FC<LogoProps> = ({
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="Somno Crescent Moon Logo"
+      aria-label="Somno Digital Lab Crescent Logo"
     >
       <defs>
-        {/* Crescent body gradient: Soft lavender-blue light */}
-        <linearGradient id="crescentGrad" x1="30%" y1="20%" x2="70%" y2="80%">
-          <stop offset="0%" stopColor="#E0E7FF" />
-          <stop offset="100%" stopColor="#C7D2FE" />
+        {/* 月亮主体渐变：柔和的灰紫色调 */}
+        <linearGradient id="labMoonGrad" x1="20%" y1="20%" x2="80%" y2="80%">
+          <stop offset="0%" stopColor="#CBD5E1" />
+          <stop offset="100%" stopColor="#94A3B8" />
         </linearGradient>
         
-        {/* Particle Glow (Neural Hub) */}
-        <radialGradient id="particleGrad" cx="50%" cy="50%" r="50%">
+        {/* 右侧节点发光渐变 */}
+        <radialGradient id="nodeGlowGrad" cx="50%" cy="50%" r="50%">
           <stop offset="0%" stopColor="#818CF8" />
           <stop offset="100%" stopColor="#4F46E5" />
         </radialGradient>
 
-        {/* Global Bloom / Soft Atmosphere */}
-        <filter id="bloom" x="-40%" y="-40%" width="180%" height="180%">
-          <feGaussianBlur stdDeviation="2.5" result="blur" />
+        {/* 柔和辉光滤镜 */}
+        <filter id="labBloom" x="-40%" y="-40%" width="180%" height="180%">
+          <feGaussianBlur stdDeviation="3" result="blur" />
           <feComposite in="SourceGraphic" in2="blur" operator="over" />
         </filter>
 
-        {/* Particle specific glow */}
-        <filter id="particleBloom">
-          <feGaussianBlur stdDeviation="3.5" result="pBlur" />
+        {/* 核心节点辉光 */}
+        <filter id="nodeBloom">
+          <feGaussianBlur stdDeviation="4" result="nb" />
           <feMerge>
-            <feMergeNode in="pBlur" />
+            <feMergeNode in="nb" />
             <feMergeNode in="SourceGraphic" />
           </feMerge>
         </filter>
       </defs>
 
-      {/* 1. Orbit Ring (Dotted/Subtle) - Matches the lab background aesthetic */}
-      <circle
+      {/* 1. 外部虚线轨道环 - 匹配参考图中的科技感 */}
+      <m.circle
         cx="50"
         cy="50"
-        r="44"
+        r="42"
         stroke="white"
-        strokeWidth="0.5"
-        strokeDasharray="1 6"
-        strokeOpacity="0.15"
+        strokeWidth="0.8"
+        strokeDasharray="1 8"
+        strokeOpacity="0.1"
+        animate={shouldAnimate ? { rotate: 360 } : {}}
+        transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+        style={{ originX: '50px', originY: '50px' }}
       />
 
-      {/* 2. Main Crescent Moon Shape - Mathematically defined for precision */}
+      {/* 2. 底部底座线 - 增加结构感 */}
+      <line 
+        x1="40" y1="85" x2="60" y2="85" 
+        stroke="#94A3B8" 
+        strokeWidth="1.5" 
+        strokeLinecap="round" 
+        strokeOpacity="0.4"
+      />
+
+      {/* 3. 新月造型 - 深度定制的数学曲线以匹配参考图 */}
       <m.path
-        d="M68 82 C45 82 25 62 25 38 C25 24 32 12 43 5 C34 14 29 27 29 42 C29 64 47 82 69 82 C76 82 82 80 87 76 C81 81 75 82 68 82 Z"
-        fill="url(#crescentGrad)"
-        filter={threeD ? "url(#bloom)" : "none"}
+        d="M60 78 C42 78 28 64 28 46 C28 34 34 22 44 16 C36 24 32 35 32 46 C32 62 45 75 61 75 C66 75 70 74 74 71 C70 76 65 78 60 78 Z"
+        fill="url(#labMoonGrad)"
+        filter={threeD ? "url(#labBloom)" : "none"}
         animate={shouldAnimate ? {
-          rotate: [0, 1.5, -1.5, 0],
-          scale: [1, 1.02, 1]
-        } : {}}
-        transition={{ duration: 10, repeat: Infinity, ease: "easeInOut" }}
-      />
-
-      {/* 3. The Neural Particle (Glowing Node) - Positioned at Top Right */}
-      <m.g
-        animate={shouldAnimate ? {
-          y: [-1, 1, -1],
-          opacity: [0.8, 1, 0.8]
+          y: [0, -2, 0],
         } : {}}
         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+      />
+
+      {/* 4. 右侧发光神经节点 - 匹配参考图中的位置和光效 */}
+      <m.g
+        animate={shouldAnimate ? {
+          opacity: [0.7, 1, 0.7],
+          scale: [0.95, 1.05, 0.95]
+        } : {}}
+        transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
       >
-        {/* Glow Aura */}
+        {/* 节点背景圆环 */}
         <circle 
-          cx="78" 
-          cy="22" 
-          r="7" 
-          fill="#818CF8" 
-          fillOpacity="0.15" 
-          filter="blur(4px)"
+          cx="75" 
+          cy="60" 
+          r="6" 
+          fill="#4F46E5" 
+          fillOpacity="0.1" 
         />
-        {/* Core Node */}
+        {/* 节点核心 */}
         <circle 
-          cx="78" 
-          cy="22" 
-          r="2.8" 
-          fill="url(#particleGrad)" 
-          filter="url(#particleBloom)"
+          cx="75" 
+          cy="60" 
+          r="3" 
+          fill="url(#nodeGlowGrad)" 
+          filter="url(#nodeBloom)"
         />
-        {/* Center Spark */}
+        {/* 极小的闪烁白点 */}
         <circle 
-          cx="78" 
-          cy="22" 
+          cx="75" 
+          cy="60" 
           r="0.8" 
           fill="white" 
         />
       </m.g>
 
-      {/* 4. Subtle Ambient Particles */}
-      {threeD && shouldAnimate && (
-        <g opacity="0.3">
-          <m.circle 
-            cx="20" cy="70" r="0.4" fill="white" 
-            animate={{ opacity: [0.2, 0.8, 0.2] }} 
-            transition={{ duration: 3, repeat: Infinity, delay: 0.2 }} 
-          />
-          <m.circle 
-            cx="85" cy="50" r="0.4" fill="white" 
-            animate={{ opacity: [0.1, 0.6, 0.1] }} 
-            transition={{ duration: 5, repeat: Infinity, delay: 1 }} 
-          />
-        </g>
+      {/* 5. 环境背景微光 (仅在 Logo 较大时可见) */}
+      {threeD && (
+        <circle 
+          cx="50" cy="50" r="48" 
+          fill="url(#nodeGlowGrad)" 
+          fillOpacity="0.02" 
+        />
       )}
     </m.svg>
   );

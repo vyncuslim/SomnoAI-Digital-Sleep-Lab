@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, Database, ShieldAlert, 
   Trash2, Search, RefreshCw, 
@@ -48,7 +48,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => {
     fetchAllData();
-    // Auto-refresh security pulses every 30 seconds
     const interval = setInterval(fetchAllData, 30000);
     return () => clearInterval(interval);
   }, [fetchAllData]);
@@ -66,14 +65,26 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
-  const filteredItems = () => {
+  const filteredItems = useMemo(() => {
     const q = searchQuery.toLowerCase();
+    if (!q) {
+      if (activeTab === 'users') return data.users;
+      if (activeTab === 'records') return data.records;
+      if (activeTab === 'security') return data.security;
+      if (activeTab === 'logs') return data.logs;
+      return [];
+    }
+
     if (activeTab === 'users') return data.users.filter(u => (u.email || u.id).toLowerCase().includes(q));
     if (activeTab === 'records') return data.records.filter(r => r.id?.toLowerCase().includes(q) || r.user_id?.toLowerCase().includes(q));
     if (activeTab === 'security') return data.security.filter(s => (s.email || '').toLowerCase().includes(q) || (s.event_type || '').toLowerCase().includes(q));
-    if (activeTab === 'logs') return data.logs.filter((l: any) => (l.action || l.message || '').toLowerCase().includes(q) || (l.user_id || '').toLowerCase().includes(q));
+    if (activeTab === 'logs') return data.logs.filter((l: any) => 
+      (l.action || '').toLowerCase().includes(q) || 
+      (l.message || '').toLowerCase().includes(q) || 
+      (l.user_id || '').toLowerCase().includes(q)
+    );
     return [];
-  };
+  }, [searchQuery, activeTab, data]);
 
   const unreadAlerts = data.security.filter(s => !s.notified).length;
 
@@ -145,15 +156,27 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Live Endpoint Visualization</p>
                   </div>
                   <div className="flex gap-4 w-full md:w-auto">
-                    <div className="relative w-full md:w-64">
+                    <div className="relative w-full md:w-80">
                       <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700" size={16} />
                       <input 
                         type="text" 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        placeholder={activeTab === 'logs' ? "FILTER AUDIT LOGS..." : "SCANNING NODE..."}
-                        className="w-full bg-slate-950/60 border border-white/10 rounded-full px-10 py-4 text-[11px] font-black uppercase text-white outline-none focus:border-rose-500/50 transition-all"
+                        placeholder={
+                          activeTab === 'logs' ? "SEARCH LOGS (ACTION, MSG, ID)..." : 
+                          activeTab === 'security' ? "SEARCH SECURITY EVENTS..." : 
+                          "SCAN REGISTRY..."
+                        }
+                        className="w-full bg-slate-950/60 border border-white/10 rounded-full pl-10 pr-12 py-4 text-[11px] font-black uppercase text-white outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
                       />
+                      {searchQuery && (
+                        <button 
+                          onClick={() => setSearchQuery('')}
+                          className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-600 hover:text-rose-500 transition-colors"
+                        >
+                          <X size={14} />
+                        </button>
+                      )}
                     </div>
                     <button onClick={fetchAllData} className="p-4 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all border border-white/5">
                       <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
@@ -171,7 +194,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
-                      {filteredItems().length > 0 ? filteredItems().map((item: any) => (
+                      {filteredItems.length > 0 ? filteredItems.map((item: any) => (
                         <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
                           <td className="py-8 px-8">
                              <div className="flex items-center gap-4">
@@ -186,10 +209,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                ) : null}
                                <div>
                                  <span className="text-white font-bold italic block leading-none mb-1">
-                                   {activeTab === 'logs' ? (item.action || 'SYSTEM_EVENT') : (item.email || item.id.slice(0, 16))}
+                                   {activeTab === 'logs' ? (item.action || 'SYSTEM_EVENT') : (item.email || item.id?.slice(0, 16) || 'Unknown')}
                                  </span>
                                  <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">
-                                   {activeTab === 'security' ? `ID: ${item.id.slice(0,8)}` : activeTab === 'logs' ? `BY: ${item.user_id?.slice(0,8) || 'SYSTEM'}` : `HASH: ${item.id.slice(0,12)}...`}
+                                   {activeTab === 'security' ? `ID: ${item.id?.slice(0,8)}` : activeTab === 'logs' ? `BY: ${item.user_id?.slice(0,8) || 'SYSTEM'}` : `HASH: ${item.id?.slice(0,12)}...`}
                                  </span>
                                </div>
                              </div>

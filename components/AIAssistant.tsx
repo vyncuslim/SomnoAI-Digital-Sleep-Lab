@@ -14,12 +14,13 @@ const m = motion as any;
 
 const CROAvatar = ({ isProcessing = false, size = 32 }: { isProcessing?: boolean, size?: number }) => (
   <m.div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-    <Logo size={size} animated={isProcessing} threeD={true} />
+    <div className="absolute inset-0 bg-slate-900 rounded-2xl border border-white/5 shadow-inner" />
+    <Logo size={size * 0.7} animated={isProcessing} threeD={true} />
     {isProcessing && (
        <m.div 
-         animate={{ scale: [1, 1.3, 1], opacity: [0, 0.2, 0] }}
+         animate={{ scale: [1, 1.4, 1], opacity: [0, 0.2, 0] }}
          transition={{ duration: 2, repeat: Infinity }}
-         className="absolute inset-0 bg-indigo-500 rounded-full blur-xl"
+         className="absolute inset-0 bg-indigo-500 rounded-full blur-2xl"
        />
     )}
   </m.div>
@@ -150,8 +151,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, onNavigate
     <div className="flex flex-col h-[calc(100vh-160px)] max-w-2xl mx-auto font-sans">
       <header className="flex items-center justify-between mb-8 px-4">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-full bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400"><Logo size={24} animated={true} /></div>
-          <div><h1 className="text-lg font-black italic text-white uppercase leading-none">{t.title}</h1><p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-1">Real-time Node Connected</p></div>
+          <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center shadow-inner">
+            <Logo size={24} animated={true} />
+          </div>
+          <div>
+            <h1 className="text-lg font-black italic text-white uppercase leading-none">{t.title}</h1>
+            <p className="text-[8px] font-black text-emerald-500 uppercase tracking-widest mt-1">Real-time Node Connected</p>
+          </div>
         </div>
         <div className="flex gap-2">
           <button onClick={handleLullaby} disabled={!data || isGeneratingAudio} className={`p-3 rounded-full transition-all ${isPlayingAudio ? 'bg-indigo-600 text-white animate-pulse' : 'bg-white/5 text-indigo-400 hover:bg-white/10'}`}>
