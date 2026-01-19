@@ -18,6 +18,9 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SomnoAI">
     <link rel="manifest" href="/manifest.json">
+    
+    <!-- iOS Splash Screens -->
+    <link rel="apple-touch-startup-image" href="https://img.icons8.com/fluency/512/moon.png">
 
     <script type="importmap">
 {
@@ -40,7 +43,7 @@
 </script>
 
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0, viewport-fit=cover">
     
     <title>SomnoAI | Digital Sleep Laboratory</title>
     <meta name="description" content="SomnoAI integrates physiological monitoring, AI deep insights, and health advice for a full range of digital sleep experiments.">
@@ -69,6 +72,14 @@
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       html { scroll-behavior: smooth; }
+      
+      /* App-like feel for PWA */
+      @media all and (display-mode: standalone) {
+        body {
+          padding-top: env(safe-area-inset-top);
+          padding-bottom: env(safe-area-inset-bottom);
+        }
+      }
     </style>
 </head>
 <body class="bg-[#020617] text-slate-200">

@@ -2,10 +2,10 @@
 import React, { useState, useEffect } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap } from 'lucide-react';
+import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
-import { supabase, adminApi, authApi } from './services/supabaseService.ts';
+import { supabase, adminApi, authApi, userDataApi } from './services/supabaseService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
 import { Logo } from './components/Logo.tsx';
@@ -17,9 +17,10 @@ import UserLoginPage from './app/login/page.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
 import { Trends } from './components/Trends.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
-import { Settings } from './components/Settings.tsx';
+import { Settings } from './Settings.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { AboutView } from './components/AboutView.tsx';
+import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 
 const m = motion as any;
 
@@ -40,6 +41,7 @@ const App: React.FC = () => {
   const [lang, setLang] = useState<Language>('en');
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [setupRequired, setSetupRequired] = useState(false);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [threeDEnabled, setThreeDEnabled] = useState<boolean>(() => {
@@ -50,11 +52,20 @@ const App: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [isSandbox, setIsSandbox] = useState(false);
+  const [isSimulated, setIsSimulated] = useState(false);
 
   useEffect(() => {
     localStorage.setItem('somno_3d_enabled', threeDEnabled.toString());
   }, [threeDEnabled]);
+
+  const checkSetup = async (userId: string) => {
+    const data = await userDataApi.getUserData();
+    if (!data || !data.setup_completed) {
+      setSetupRequired(true);
+    } else {
+      setSetupRequired(false);
+    }
+  };
 
   useEffect(() => {
     const handleHash = () => {
@@ -81,6 +92,7 @@ const App: React.FC = () => {
           setSession(initialSession);
           const status = await adminApi.checkAdminStatus(initialSession.user.id);
           setIsAdmin(status);
+          await checkSetup(initialSession.user.id);
         }
       } catch (err: any) {
         console.warn("Auth check failed:", err.message);
@@ -96,14 +108,47 @@ const App: React.FC = () => {
         setSession(newSession);
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
+        await checkSetup(newSession.user.id);
       } else {
         setSession(null);
         setIsAdmin(false);
+        setSetupRequired(false);
       }
     });
     
     return () => subscription.unsubscribe();
   }, []);
+
+  const handleInitializeSimulation = () => {
+    setSyncStatus('analyzing');
+    setTimeout(() => {
+      const mockRecord: SleepRecord = {
+        id: 'sim-01',
+        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
+        score: 82,
+        totalDuration: 442,
+        deepRatio: 22,
+        remRatio: 18,
+        efficiency: 91,
+        stages: [
+          { name: 'Deep', duration: 90, startTime: '01:00' },
+          { name: 'REM', duration: 80, startTime: '03:30' },
+          { name: 'Light', duration: 250, startTime: '00:30' },
+          { name: 'Awake', duration: 22, startTime: '05:00' }
+        ],
+        heartRate: { resting: 58, max: 75, min: 52, average: 62, history: [] },
+        aiInsights: [
+          "Simulation: Your neural architecture indicates strong recovery patterns.",
+          "Strategic Insight: Deep sleep cycles optimized for cognitive consolidation.",
+          "Biometric Note: Resting heart rate shows high parasympathetic activity."
+        ]
+      };
+      setCurrentRecord(mockRecord);
+      setHistory([mockRecord]);
+      setIsSimulated(true);
+      setSyncStatus('idle');
+    }, 1500);
+  };
 
   const handleSyncHealth = async () => {
     if (syncStatus !== 'idle' && syncStatus !== 'error') return;
@@ -117,6 +162,7 @@ const App: React.FC = () => {
       const fullRecord = { ...data, aiInsights: insights } as SleepRecord;
       setCurrentRecord(fullRecord);
       setHistory(prev => [fullRecord, ...prev].slice(0, 14));
+      setIsSimulated(false);
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 1500);
     } catch (err: any) {
@@ -150,6 +196,10 @@ const App: React.FC = () => {
       );
     }
 
+    if (setupRequired) {
+      return <FirstTimeSetup onComplete={() => setSetupRequired(false)} />;
+    }
+
     return (
       <div className="max-w-4xl mx-auto p-4 pt-10 pb-40 min-h-screen">
         <AnimatePresence mode="wait">
@@ -162,24 +212,49 @@ const App: React.FC = () => {
           >
             {activeView === 'dashboard' && (
               currentRecord ? (
-                <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => window.location.hash = `#/${v}`} threeDEnabled={threeDEnabled} />
+                <div className="space-y-4">
+                  {isSimulated && (
+                    <div className="px-6 py-3 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-center justify-between mb-4">
+                       <div className="flex items-center gap-3 text-amber-500">
+                         <Activity size={16} className="animate-pulse" />
+                         <span className="text-[10px] font-black uppercase tracking-widest italic">Simulation Mode Active</span>
+                       </div>
+                       <button onClick={handleSyncHealth} className="text-[9px] font-black text-white bg-amber-600 px-4 py-1.5 rounded-full uppercase tracking-widest hover:bg-amber-500 transition-all">Connect Real Data</button>
+                    </div>
+                  )}
+                  <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => window.location.hash = `#/${v}`} threeDEnabled={threeDEnabled} />
+                </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
-                  <Logo size={120} animated={true} threeD={threeDEnabled} />
-                  <div className="space-y-4">
-                    <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Laboratory Sync Required</h2>
-                    <button 
-                      onClick={handleSyncHealth}
-                      className="px-12 py-6 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 transition-all"
-                    >
-                      {syncStatus === 'idle' ? 'SYNC VIA HEALTH CONNECT' : `${syncStatus.toUpperCase()}...`}
-                    </button>
+                  <Logo size={140} animated={true} threeD={threeDEnabled} />
+                  <div className="space-y-8">
+                    <div className="space-y-2">
+                       <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Laboratory Offline</h2>
+                       <p className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.4em]">Hardware synchronization required</p>
+                    </div>
+                    
+                    <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+                      <button 
+                        onClick={handleSyncHealth}
+                        className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 transition-all w-full sm:w-auto"
+                      >
+                        {syncStatus === 'authorizing' ? 'AUTHORIZING...' : syncStatus === 'fetching' ? 'FETCHING...' : 'SYNC HEALTH CONNECT'}
+                      </button>
+                      <button 
+                        onClick={handleInitializeSimulation}
+                        disabled={syncStatus !== 'idle'}
+                        className="px-10 py-5 bg-white/5 border border-white/10 text-slate-400 rounded-full font-black uppercase text-[11px] tracking-[0.4em] hover:text-white transition-all w-full sm:w-auto flex items-center justify-center gap-3"
+                      >
+                        {syncStatus === 'analyzing' ? <Loader2 size={16} className="animate-spin" /> : <FlaskConical size={16} />}
+                        {syncStatus === 'analyzing' ? 'CALIBRATING...' : 'INITIALIZE SIMULATION'}
+                      </button>
+                    </div>
                   </div>
                 </div>
               )
             )}
             {activeView === 'calendar' && <Trends history={history} lang={lang} />}
-            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} isSandbox={isSandbox} />}
+            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} />}
             {activeView === 'profile' && <UserProfile lang={lang} />}
             {activeView === 'about' && <AboutView lang={lang} onBack={() => window.location.hash = '#/'} />}
             {activeView === 'settings' && (
@@ -187,8 +262,6 @@ const App: React.FC = () => {
                 lang={lang} onLanguageChange={() => {}} onLogout={handleLogout} 
                 onNavigate={(v: any) => window.location.hash = `#/${v}`}
                 threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
-                theme="dark" onThemeChange={()=>{}} accentColor="indigo" onAccentChange={()=>{}}
-                staticMode={false} onStaticModeChange={()=>{}} lastSyncTime={null} onManualSync={() => {}}
               />
             )}
           </m.div>

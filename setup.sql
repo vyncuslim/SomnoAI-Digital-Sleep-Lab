@@ -1,5 +1,5 @@
 
--- 1. Profiles Table Definition
+-- 1. Profiles Table Definition (Existing)
 create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   email text unique,
@@ -12,9 +12,18 @@ create table if not exists public.profiles (
   updated_at timestamp with time zone default now()
 );
 
--- 2. 修复递归的关键：定义一个 SECURITY DEFINER 函数
--- 该函数以创建者（通常是 postgres）的权限运行，因此内部的 SELECT 语句会绕过 RLS
--- 设置 search_path 为 public 是安全最佳实践，防止搜索路径攻击
+-- 2. New User Data Table for Physiological Metrics
+create table if not exists public.user_data (
+  id uuid primary key references public.profiles(id) on delete cascade,
+  age integer,
+  weight float, -- kg
+  height float, -- cm
+  gender text,
+  setup_completed boolean default false,
+  updated_at timestamp with time zone default now()
+);
+
+-- 3. Security Definer Functions
 create or replace function public.is_admin()
 returns boolean
 language plpgsql
@@ -22,7 +31,6 @@ security definer
 set search_path = public
 as $$
 begin
-  -- 直接查询表，由于是 security definer，此处不会触发 profiles 表上的 RLS 递归
   return exists (
     select 1
     from public.profiles
@@ -32,46 +40,37 @@ begin
 end;
 $$;
 
--- 3. 配置行级安全 (RLS)
-alter table public.profiles enable row level security;
+-- 4. RLS for user_data
+alter table public.user_data enable row level security;
 
--- 允许用户查看和更新自己的个人资料（非递归基础策略）
-drop policy if exists "Users can view own profile" on public.profiles;
-create policy "Users can view own profile"
-on public.profiles for select
+create policy "Users can view own user_data"
+on public.user_data for select
 using (auth.uid() = id);
 
-drop policy if exists "Users can update own profile" on public.profiles;
-create policy "Users can update own profile"
-on public.profiles for update
+create policy "Users can update own user_data"
+on public.user_data for update
 using (auth.uid() = id);
 
--- 允许管理员执行所有操作
--- 使用我们定义的 is_admin() 函数，由于它是 security definer，调用它不会导致递归
-drop policy if exists "Admins have full access" on public.profiles;
-create policy "Admins have full access"
-on public.profiles
-for all
-to authenticated
-using (public.is_admin());
+create policy "Users can insert own user_data"
+on public.user_data for insert
+with check (auth.uid() = id);
 
--- 4. 自动处理新用户注册
-create or replace function public.handle_new_user()
+-- 5. Auto-create user_data on profile creation
+create or replace function public.handle_new_user_data()
 returns trigger as $$
 begin
-  insert into public.profiles (id, email, role)
-  values (new.id, new.email, 'user')
-  on conflict (id) do update set email = excluded.email;
+  insert into public.user_data (id)
+  values (new.id);
   return new;
 end;
 $$ language plpgsql security definer;
 
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-after insert on auth.users
-for each row execute procedure public.handle_new_user();
+drop trigger if exists on_profile_created on public.profiles;
+create trigger on_profile_created
+after insert on public.profiles
+for each row execute procedure public.handle_new_user_data();
 
--- 5. 安全事件日志表
+-- 6. Security events and triggers (existing continuation)
 create table if not exists public.security_events (
   id uuid default gen_random_uuid() primary key,
   user_id uuid references auth.users(id),
@@ -81,12 +80,3 @@ create table if not exists public.security_events (
   notified boolean default false,
   created_at timestamp with time zone default now()
 );
-
-alter table public.security_events enable row level security;
-
-drop policy if exists "Admins can view security events" on public.security_events;
-create policy "Admins can view security events"
-on public.security_events
-for select
-to authenticated
-using (public.is_admin());

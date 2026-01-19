@@ -31,5 +31,18 @@
       "type": "image/png",
       "purpose": "any maskable"
     }
+  ],
+  "categories": ["health", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Open Lab",
+      "url": "/",
+      "icons": [{ "src": "https://img.icons8.com/fluency/96/moon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Neural Core",
+      "url": "/#/assistant",
+      "icons": [{ "src": "https://img.icons8.com/fluency/96/brain.png", "sizes": "96x96" }]
+    }
   ]
 }

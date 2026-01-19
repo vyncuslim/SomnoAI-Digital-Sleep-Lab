@@ -7,7 +7,8 @@ import {
   Upload, BookOpen, Warehouse, LayoutList, Fingerprint, 
   Network, Bookmark, History, RotateCcw, Filter, Boxes, 
   PackageSearch, Pipette, Droplets, Watch, Hammer, Eye, 
-  ChevronRight, FileCode, ShieldCheck, Sparkles, HelpCircle
+  ChevronRight, FileCode, ShieldCheck, Sparkles, HelpCircle,
+  Clock, Map
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -77,6 +78,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
     }
   ];
 
+  const roadmap = [
+    { stage: 'ALPHA', module: 'Telemetry Core', status: 'Active', icon: Zap, desc: 'Health Connect integration & Neural Lullaby v1.0' },
+    { stage: 'BETA', module: 'Wearable Mesh', status: 'Pending', icon: Watch, desc: 'Direct Oura, Whoop, and Garmin Cloud Bridge' },
+    { stage: 'GAMMA', module: 'Deep Neuro', status: 'Concept', icon: BrainCircuit, desc: 'EEG Raw Data analysis & Lucid Dreaming protocols' }
+  ];
+
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500">
       <header className="flex items-center gap-4 mb-10 px-2">
@@ -87,13 +94,13 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
           <ArrowLeft size={20} />
         </button>
         <div className="flex items-center gap-3">
-          <Logo size={40} animated={true} />
+          <Logo size={48} animated={true} />
           <div>
             <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
               {t.title}
             </h1>
             <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-1">
-              Precision Bio-Digital Infrastructure
+              Biological Infrastructure v2.0
             </p>
           </div>
         </div>
@@ -101,57 +108,37 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
 
       <div className="space-y-8 max-w-2xl mx-auto px-2 text-slate-300">
         
-        {/* Lab Manifesto / Vision Card */}
-        <GlassCard className="p-10 border-indigo-500/30 bg-indigo-600/[0.05] rounded-[4.5rem] relative overflow-hidden group">
-          <m.div 
-            animate={{ opacity: [0.3, 0.6, 0.3], scale: [1, 1.05, 1] }}
-            transition={{ duration: 5, repeat: Infinity }}
-            className="absolute -top-10 -right-10 bg-indigo-500/10 w-40 h-40 blur-[50px] rounded-full pointer-events-none"
-          />
-          <div className="relative z-10 flex flex-col gap-6">
-            <div className="flex items-center gap-3 text-indigo-400">
-              <Sparkles size={20} className="animate-pulse" />
-              <span className="text-[10px] font-black uppercase tracking-[0.4em]">Laboratory Manifesto</span>
-            </div>
-            <p className="text-xl md:text-2xl font-black italic text-white tracking-tight leading-relaxed">
-              "{t.manifesto}"
-            </p>
-            <div className="h-[1px] w-12 bg-indigo-500/50" />
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest italic">
-              Monitoring • Insights • Advice
-            </p>
-          </div>
-        </GlassCard>
-
-        {/* New Laboratory Operation Guide Section */}
-        <GlassCard className="p-10 space-y-8 border-emerald-500/20 bg-emerald-500/[0.01] rounded-[4rem]">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400">
-                <HelpCircle size={24} />
+        {/* Laboratory Roadmap */}
+        <GlassCard className="p-10 border-indigo-500/20 bg-indigo-500/[0.01] rounded-[4rem]">
+           <div className="flex items-center gap-4 mb-10">
+              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                <Map size={24} />
               </div>
               <div>
-                 <h2 className="text-xl font-black italic text-white uppercase tracking-tight leading-none">{t.guideTitle}</h2>
-                 <p className="text-[9px] font-bold text-emerald-400/60 uppercase tracking-widest mt-1">{t.guideIntro}</p>
+                 <h2 className="text-xl font-black italic text-white uppercase tracking-tight leading-none">Laboratory Roadmap</h2>
+                 <p className="text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest mt-1">Strategic Evolution Protocol</p>
               </div>
            </div>
 
-           <div className="space-y-6">
-              {[
-                { title: t.guideSection1, desc: t.guideSection1Desc, icon: Activity, color: 'text-blue-400' },
-                { title: t.guideSection2, desc: t.guideSection2Desc, icon: BrainCircuit, color: 'text-purple-400' },
-                { title: t.guideSection3, desc: t.guideSection3Desc, icon: Target, color: 'text-emerald-400' }
-              ].map((item, idx) => (
-                <div key={idx} className="p-6 bg-slate-900/40 border border-white/5 rounded-[2.5rem] flex gap-5 group hover:border-white/10 transition-all">
-                  <div className={`mt-1 ${item.color} shrink-0`}><item.icon size={20} /></div>
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-black text-white italic uppercase tracking-wider">{item.title}</h3>
-                    <p className="text-[11px] font-medium text-slate-500 leading-relaxed">{item.desc}</p>
-                  </div>
+           <div className="space-y-12 relative">
+              <div className="absolute left-[27px] top-4 bottom-4 w-px bg-white/5" />
+              {roadmap.map((item, idx) => (
+                <div key={idx} className="flex gap-8 group">
+                   <div className={`w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center border transition-all duration-500 ${item.status === 'Active' ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_20px_rgba(79,70,229,0.3)]' : 'bg-slate-900 border-white/5 opacity-40'}`}>
+                      <item.icon size={22} className={item.status === 'Active' ? 'text-white' : 'text-slate-500'} />
+                   </div>
+                   <div className="space-y-2">
+                      <div className="flex items-center gap-3">
+                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${item.status === 'Active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500 border border-white/5'}`}>{item.stage}</span>
+                        <h3 className="text-sm font-black italic text-white uppercase tracking-wider">{item.module}</h3>
+                      </div>
+                      <p className="text-[11px] font-medium text-slate-500 leading-relaxed italic">{item.desc}</p>
+                   </div>
                 </div>
               ))}
            </div>
         </GlassCard>
-        
+
         {/* Handshake Terminal Module */}
         <GlassCard className="p-10 space-y-10 border-indigo-500/20 bg-indigo-500/[0.01] rounded-[4rem]">
            <div className="flex items-center gap-4">
@@ -160,7 +147,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
               </div>
               <div>
                  <h2 className="text-xl font-black italic text-white uppercase tracking-tight leading-none">{t.protocolTitle}</h2>
-                 <p className="text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest mt-1">Android SDK v1.2 Implementation</p>
+                 <p className="text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest mt-1">Android SDK Implementation</p>
               </div>
            </div>
 
@@ -174,7 +161,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${activeProtocolStep === i ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'bg-slate-900 border-white/5'}`}>
                     <span className="text-[10px] font-black text-white">0{i+1}</span>
                   </div>
-                  <div className={`h-1 w-full rounded-full transition-all duration-700 ${activeProtocolStep === i ? 'bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.8)]' : 'bg-white/5'}`} />
                 </button>
               ))}
            </div>
@@ -198,14 +184,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                 </div>
 
                 <div className="bg-black/60 rounded-3xl border border-white/5 overflow-hidden group">
-                   <div className="bg-white/5 px-6 py-2 flex items-center justify-between">
-                      <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Logic Signature (Kotlin/SDK)</span>
-                      <div className="flex gap-1">
-                         <div className="w-1.5 h-1.5 rounded-full bg-rose-500/50" />
-                         <div className="w-1.5 h-1.5 rounded-full bg-amber-500/50" />
-                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500/50" />
-                      </div>
-                   </div>
                    <pre className="p-6 text-[10px] font-mono text-indigo-300/80 leading-relaxed overflow-x-auto scrollbar-hide">
                       {handshakeDetails[activeProtocolStep].code}
                    </pre>
@@ -214,34 +192,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
            </AnimatePresence>
         </GlassCard>
 
-        {/* Plumbing Analogy Module */}
-        <GlassCard className="p-10 space-y-6 border-blue-500/20 bg-blue-500/[0.03] rounded-[4rem] relative overflow-hidden">
-           <div className="absolute -top-10 -right-10 opacity-[0.05]">
-              <Droplets size={240} className="text-blue-500" />
-           </div>
-           <div className="flex items-center gap-4 relative z-10">
-              <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400 shadow-[0_0_20px_rgba(59,130,246,0.2)]">
-                <Network size={28} />
-              </div>
-              <div>
-                <h2 className="text-xl font-black italic text-white uppercase tracking-tight leading-none">{t.waterAnalogyTitle}</h2>
-                <p className="text-[9px] font-bold text-blue-500/60 uppercase tracking-widest mt-1">Bio-Digital Plumbing Protocol</p>
-              </div>
-           </div>
-           <p className="text-[12px] text-slate-300 leading-relaxed italic font-medium relative z-10 pr-10 border-l-2 border-blue-500/20 pl-6 py-2">
-              {t.waterAnalogyDesc}
-           </p>
-        </GlassCard>
-
         <footer className="pt-12 flex flex-col items-center gap-6 opacity-40">
            <div className="flex items-center gap-3">
              <FlaskConical size={14} className="text-indigo-400" />
-             <span className="text-[9px] font-mono tracking-widest uppercase">SomnoAI Lab • Secure Infrastructure v2.0</span>
-           </div>
-           <div className="p-6 bg-slate-900/40 border border-white/5 rounded-[2.5rem] text-center max-w-sm">
-             <p className="text-[10px] text-slate-500 font-bold italic leading-relaxed uppercase tracking-[0.2em]">
-               {isZh ? "数据属于用户，洞察属于未来" : "Data belongs to user, Insights belong to future"}
-             </p>
+             <span className="text-[9px] font-mono tracking-widest uppercase">SomnoAI Lab • Secure Infrastructure v2.5</span>
            </div>
         </footer>
       </div>

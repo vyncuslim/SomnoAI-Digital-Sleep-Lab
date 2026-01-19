@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
@@ -5,9 +6,8 @@ import {
   CheckCircle2, Lock, User, Info, Scale, Ruler, Brain, Heart
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
-import { UserProfileMetadata } from '../types.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { profileApi } from '../services/supabaseService.ts';
+import { profileApi, userDataApi } from '../services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -21,41 +21,38 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<any>(null);
   
-  const [formData, setFormData] = useState<UserProfileMetadata>({
+  const [formData, setFormData] = useState({
     displayName: '',
     age: 0,
     weight: 0,
     height: 0,
-    gender: 'prefer-not-to-say',
-    units: 'metric',
-    coachingStyle: 'clinical'
+    gender: 'prefer-not-to-say'
   });
 
   const t = translations[lang].settings;
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchData = async () => {
       setLoading(true);
       try {
-        const data = await profileApi.getMyProfile();
-        if (data) {
-          setProfile(data);
-          const prefs = data.preferences || {};
-          setFormData({
-            displayName: data.full_name || '',
-            age: prefs.age || 0,
-            weight: prefs.weight || 0,
-            height: prefs.height || 0,
-            gender: prefs.gender || 'prefer-not-to-say',
-            units: prefs.units || 'metric',
-            coachingStyle: prefs.coachingStyle || 'clinical'
-          });
+        const [profileData, metricsData] = await Promise.all([
+          profileApi.getMyProfile(),
+          userDataApi.getUserData()
+        ]);
+
+        if (profileData) {
+          setProfile(profileData);
+          setFormData(prev => ({
+            ...prev,
+            displayName: profileData.full_name || '',
+            ...(metricsData || {})
+          }));
         }
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+    fetchData();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -64,17 +61,15 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
     setIsUpdating(true);
     setStatus('idle');
     try {
-      await profileApi.updateProfile({
-        full_name: formData.displayName,
-        preferences: {
+      await Promise.all([
+        profileApi.updateProfile({ full_name: formData.displayName }),
+        userDataApi.updateUserData({
           age: formData.age,
           weight: formData.weight,
           height: formData.height,
-          gender: formData.gender,
-          units: formData.units,
-          coachingStyle: formData.coachingStyle
-        }
-      });
+          gender: formData.gender
+        })
+      ]);
       setStatus('success');
       setTimeout(() => setStatus('idle'), 3000);
     } catch (err) {
@@ -170,7 +165,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
                   type="number"
                   value={formData.age || ''}
                   onChange={(e) => setFormData({...formData, age: parseInt(e.target.value) || 0})}
-                  className="w-full bg-slate-950/60 border border-white/5 rounded-3xl px-8 py-5 text-sm text-white outline-none"
+                  className="w-full bg-slate-950/60 border border-white/10 rounded-3xl px-8 py-5 text-sm text-white outline-none"
                 />
               </div>
               <div className="space-y-3">
@@ -187,7 +182,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
                 </select>
               </div>
               <div className="space-y-3">
-                <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2"><Ruler size={12}/> {t.height} ({formData.units === 'metric' ? 'cm' : 'in'})</label>
+                <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2"><Ruler size={12}/> {t.height} (cm)</label>
                 <input 
                   type="number"
                   step="0.1"
@@ -197,7 +192,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
                 />
               </div>
               <div className="space-y-3">
-                <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2"><Scale size={12}/> {t.weight} ({formData.units === 'metric' ? 'kg' : 'lb'})</label>
+                <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2"><Scale size={12}/> {t.weight} (kg)</label>
                 <input 
                   type="number"
                   step="0.1"
@@ -205,41 +200,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
                   onChange={(e) => setFormData({...formData, weight: parseFloat(e.target.value) || 0})}
                   className="w-full bg-slate-950/60 border border-white/5 rounded-3xl px-8 py-5 text-sm text-white outline-none"
                 />
-              </div>
-            </div>
-          </div>
-
-          <div className="h-px bg-white/5" />
-
-          {/* Preferences Section */}
-          <div className="space-y-8">
-            <div className="flex items-center gap-3 px-2">
-              <div className="p-2 bg-amber-500/10 rounded-xl text-amber-400"><Sliders size={18} /></div>
-              <h2 className="text-sm font-black italic text-white uppercase tracking-tight">{t.preferences}</h2>
-            </div>
-
-            <div className="space-y-10">
-              <div className="space-y-4">
-                <label className="text-[9px] font-black uppercase text-slate-500 px-6">{t.units}</label>
-                <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-white/5 shadow-inner mx-2">
-                  <button type="button" onClick={() => setFormData({...formData, units: 'metric'})} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${formData.units === 'metric' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-400'}`}>Metric</button>
-                  <button type="button" onClick={() => setFormData({...formData, units: 'imperial'})} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${formData.units === 'imperial' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-400'}`}>Imperial</button>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <label className="text-[9px] font-black uppercase text-slate-500 px-6">{t.coaching}</label>
-                <div className="px-2">
-                  <select 
-                    value={formData.coachingStyle}
-                    onChange={(e) => setFormData({...formData, coachingStyle: e.target.value as any})}
-                    className="w-full bg-slate-950/60 border border-white/5 rounded-full px-8 py-5 text-[11px] font-black uppercase tracking-widest text-white outline-none focus:border-indigo-500/50 appearance-none cursor-pointer"
-                  >
-                    <option value="clinical">{t.styleClinical}</option>
-                    <option value="motivational">{t.styleMotivational}</option>
-                    <option value="minimalist">{t.styleMinimal}</option>
-                  </select>
-                </div>
               </div>
             </div>
           </div>

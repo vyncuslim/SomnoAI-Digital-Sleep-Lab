@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  CheckCircle2, Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon,
-  ShieldCheck, ShieldAlert, Moon, Loader2
+  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon,
+  ShieldCheck, ShieldAlert, Moon
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -28,14 +28,13 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
-  lang, onLogout, 
+  lang, onLanguageChange, onLogout, 
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [hasKey, setHasKey] = useState(false);
 
   useEffect(() => {
-    // API Key must be obtained exclusively from process.env.API_KEY
     setHasKey(!!process.env.API_KEY);
   }, []);
 
@@ -53,7 +52,6 @@ export const Settings: React.FC<SettingsProps> = ({
         <Moon size={400} fill="currentColor" className="text-indigo-400" />
       </div>
 
-      {/* Security Status Panel */}
       <div className="bg-[#0a0f25] border border-white/5 rounded-[2.5rem] p-6 flex items-center justify-between shadow-2xl relative overflow-hidden group">
         <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
         <div className="flex items-center gap-5 relative z-10">
@@ -76,20 +74,19 @@ export const Settings: React.FC<SettingsProps> = ({
 
       <GlassCard className="p-8 md:p-10 rounded-[3rem] border-white/10 bg-white/[0.01]">
         <div className="space-y-10">
-          {/* Billing Info Link */}
           <div className="space-y-4">
-             <div className="flex items-center justify-between px-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">ENVIRONMENT CLOUD ACCESS</span>
-                <button 
-                  onClick={() => window.open('https://ai.google.dev/gemini-api/docs/billing', '_blank')}
-                  className="text-[9px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-1.5 border-b border-indigo-400/30"
-                >
-                  Billing info <ArrowUpRight size={10} />
-                </button>
+             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
+             <div className="flex bg-black/40 p-1 rounded-full border border-white/5">
+                {['en', 'zh'].map((l) => (
+                  <button 
+                    key={l}
+                    onClick={() => onLanguageChange(l as Language)}
+                    className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    {l === 'en' ? 'ENGLISH' : '中文简体'}
+                  </button>
+                ))}
              </div>
-             <p className="px-2 text-[11px] text-slate-500 italic">
-               Neural infrastructure is managed via environment variables for enhanced security.
-             </p>
           </div>
 
           <div className="space-y-4">
@@ -154,7 +151,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     { id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' },
                     { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' }
                   ].map((item) => (
-                    <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-2rem flex items-center justify-between group hover:border-indigo-500/30 transition-all text-left">
+                    <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all text-left">
                       <div className="space-y-1">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
                         <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>

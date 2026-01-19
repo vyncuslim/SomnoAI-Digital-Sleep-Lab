@@ -57,11 +57,11 @@ const commonEn = {
   },
   auth: {
     lab: 'SomnoAI Digital Sleep Lab',
-    tagline: 'DIGITAL IDENTITY TELEMETRY',
+    tagline: 'NEURAL INFRASTRUCTURE • DIGITAL TELEMETRY',
     manifesto: 'SomnoAI integrates physiological monitoring, AI deep insights and health advice to provide a full range of digital sleep experiments.',
     sendCode: 'REQUEST LAB TOKEN',
     emailLabel: 'Email Identifier',
-    passwordLabel: 'Access Key',
+    passwordLabel: 'Access Password',
     authorize: 'AUTHORIZE ACCESS',
     confirmRegister: 'CONFIRM REGISTRATION',
     google: 'GOOGLE',

@@ -1,5 +1,5 @@
 
-const CACHE_NAME = 'somno-v1.4';
+const CACHE_NAME = 'somno-v1.5';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
@@ -25,7 +25,6 @@ self.addEventListener('activate', event => {
 });
 
 self.addEventListener('fetch', event => {
-  // Use Network-First for navigation requests (HTML)
   if (event.request.mode === 'navigate') {
     event.respondWith(
       fetch(event.request)
@@ -39,12 +38,10 @@ self.addEventListener('fetch', event => {
     return;
   }
 
-  // Skip caching for external API calls and Supabase
   if (event.request.url.includes('supabase.co') || event.request.url.includes('googleapis.com')) {
     return;
   }
 
-  // Cache-First for local assets
   event.respondWith(
     caches.match(event.request).then(response => {
       return response || fetch(event.request).then(fetchResponse => {
