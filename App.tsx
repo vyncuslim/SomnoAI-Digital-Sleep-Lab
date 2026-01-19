@@ -38,7 +38,10 @@ const LoadingSpinner = ({ label = "Synchronizing Neural Nodes..." }: { label?: s
 );
 
 const App: React.FC = () => {
-  const [lang, setLang] = useState<Language>('en');
+  const [lang, setLang] = useState<Language>(() => {
+    const saved = localStorage.getItem('somno_lang');
+    return (saved as Language) || 'en';
+  });
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [setupRequired, setSetupRequired] = useState(false);
@@ -57,6 +60,10 @@ const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('somno_3d_enabled', threeDEnabled.toString());
   }, [threeDEnabled]);
+
+  useEffect(() => {
+    localStorage.setItem('somno_lang', lang);
+  }, [lang]);
 
   const checkSetup = async (userId: string) => {
     const data = await userDataApi.getUserData();
@@ -259,9 +266,12 @@ const App: React.FC = () => {
             {activeView === 'about' && <AboutView lang={lang} onBack={() => window.location.hash = '#/'} />}
             {activeView === 'settings' && (
               <Settings 
-                lang={lang} onLanguageChange={() => {}} onLogout={handleLogout} 
+                lang={lang} 
+                onLanguageChange={setLang} 
+                onLogout={handleLogout} 
                 onNavigate={(v: any) => window.location.hash = `#/${v}`}
-                threeDEnabled={threeDEnabled} onThreeDChange={setThreeDEnabled}
+                threeDEnabled={threeDEnabled} 
+                onThreeDChange={setThreeDEnabled}
               />
             )}
           </m.div>
