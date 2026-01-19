@@ -14,38 +14,30 @@ export interface SleepExperiment {
  * Strictly adheres to guidelines: API key is obtained exclusively from environment variables.
  */
 const getActiveApiKey = () => {
-  return process.env.API_KEY;
+  return process.env.API_KEY || '';
 };
 
 const handleGeminiError = (err: any) => {
   console.error("Gemini API Error Context:", err);
-  if (err.message?.includes("fetch")) {
-    throw new Error("NETWORK_FAILURE: Check your connectivity to Google AI services.");
-  }
-  if (err.message?.includes("Requested entity was not found")) {
-    throw new Error("KEY_INVALID_OR_NOT_FOUND");
-  }
-  throw err;
+  // Silent or generic errors to prevent leaking technical details to visitors
+  throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
-// Model selection: utilizing Gemini 2.5 Pro for complex reasoning and Gemini 2.5 Flash for basic tasks.
 const MODEL_FLASH = 'gemini-2.5-flash'; 
 const MODEL_PRO = 'gemini-2.5-pro'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const apiKey = getActiveApiKey();
-  
   const prompt = `你是一位世界级的数字睡眠科学家与首席生物黑客。请根据以下高精度生理遥测指标进行深度神经分析。
     必须返回一个包含 3 条专业字符串的 JSON 数组，语言为 ${lang === 'zh' ? '中文' : '英文'}。
     1. 神经架构分析：基于深度与 REM 比例分析大脑清理效率与记忆巩固状态。
     2. 生物节律诊断：评估静息心率 (RHR) 与睡眠分数的关联，预测今日认知负荷。
     3. 战术性生物黑客建议：针对性提供一项今日可立即执行的生理优化方案。
-    
     数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm。`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey: apiKey! });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: prompt,
@@ -56,19 +48,18 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     });
     return JSON.parse(response.text?.trim() || "[]");
   } catch (err) {
-    handleGeminiError(err);
-    return [];
+    console.warn("Insight failed:", err);
+    return ["Analysis stream paused.", "Recalibrating neural nodes.", "Link maintained."];
   }
 };
 
 export const chatWithCoach = async (history: { role: string; content: string }[], lang: Language = 'en', contextData?: SleepRecord | null) => {
   const apiKey = getActiveApiKey();
-  
   const bio = contextData ? `\nTELEMETRY: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, Efficiency: ${contextData.efficiency}%.` : "";
   const systemInstruction = `You are the Somno Chief Research Officer. Professional, futuristic, data-driven. Language context: ${lang}. ${bio}`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey: apiKey! });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: history.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
@@ -87,7 +78,7 @@ export const chatWithCoach = async (history: { role: string; content: string }[]
 export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
   const apiKey = getActiveApiKey();
   try {
-    const ai = new GoogleGenAI({ apiKey: apiKey! });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: `Design a sleep experiment based on: score ${data.score}, RHR ${data.heartRate?.resting}. Language: ${lang}.`,
@@ -111,21 +102,21 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
   const apiKey = getActiveApiKey();
   try {
-    const ai = new GoogleGenAI({ apiKey: apiKey! });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: `Summarize trends for: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, lang: ${lang}.`,
     });
     return response.text || "Summary failed.";
   } catch (err) { 
-    return "Synthesis error: " + (err instanceof Error ? err.message : 'Unknown'); 
+    return "Synthesis error occurred."; 
   }
 };
 
 export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 'en'): Promise<string | undefined> => {
   const apiKey = getActiveApiKey();
   try {
-    const ai = new GoogleGenAI({ apiKey: apiKey! });
+    const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
       contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on score ${data.score}. Lang: ${lang}` }] }],

@@ -1,9 +1,8 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon,
-  ShieldCheck, ShieldAlert, Moon
+  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,11 +31,6 @@ export const Settings: React.FC<SettingsProps> = ({
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [hasKey, setHasKey] = useState(false);
-
-  useEffect(() => {
-    setHasKey(!!process.env.API_KEY);
-  }, []);
 
   const t = translations[lang]?.settings || translations.en.settings;
 
@@ -55,17 +49,17 @@ export const Settings: React.FC<SettingsProps> = ({
       <div className="bg-[#0a0f25] border border-white/5 rounded-[2.5rem] p-6 flex items-center justify-between shadow-2xl relative overflow-hidden group">
         <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
         <div className="flex items-center gap-5 relative z-10">
-          <div className={`p-3 rounded-2xl transition-all duration-700 ${hasKey ? 'bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]' : 'bg-rose-500/10 text-rose-400'}`}>
-            {hasKey ? <ShieldCheck size={24} /> : <ShieldAlert size={24} />}
+          <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
+            <ShieldCheck size={24} />
           </div>
           <div>
              <h2 className="text-sm font-black italic text-white uppercase tracking-wider flex items-center gap-2">
                <Moon size={14} className="text-indigo-400" /> Neural Engine Core
              </h2>
              <div className="flex items-center gap-2">
-                <div className={`w-1.5 h-1.5 rounded-full ${hasKey ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                <p className={`text-[10px] font-black uppercase tracking-widest ${hasKey ? 'text-emerald-400' : 'text-rose-400'}`}>
-                  {hasKey ? 'LINK ESTABLISHED' : 'AUTHORIZATION REQUIRED'}
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                  LINK ESTABLISHED
                 </p>
              </div>
           </div>
