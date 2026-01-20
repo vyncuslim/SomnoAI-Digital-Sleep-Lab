@@ -341,7 +341,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
             </p>
           </div>
         </div>
-      </header>
+      </form>
     </m.div>
   );
 };
