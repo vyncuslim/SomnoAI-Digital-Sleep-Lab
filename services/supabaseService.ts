@@ -67,10 +67,8 @@ export const authApi = {
   verifyOTP: (email: string, token: string) => 
     supabase.auth.verifyOtp({ email, token, type: 'email' }),
   signInWithGoogle: () => {
-    // Determine the most stable redirect URL
     let redirectUrl = 'https://sleepsomno.com';
     try {
-      // In sandboxed environments, window.location.origin might be 'null' or throw
       const origin = window.location.origin;
       if (origin && origin !== 'null') {
         redirectUrl = origin;
@@ -83,7 +81,6 @@ export const authApi = {
       provider: 'google',
       options: {
         redirectTo: redirectUrl,
-        // Using redirect flow instead of popup as it handles "Third-party cookie blocked" better
         skipBrowserRedirect: false, 
         queryParams: {
           access_type: 'offline',
@@ -110,8 +107,22 @@ export const userDataApi = {
 
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
-    const { data, error } = await supabase.rpc('is_admin');
-    return !error && !!data;
+    try {
+      // Set a 3s race-condition timeout for the RPC call
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("RPC_TIMEOUT")), 3000)
+      );
+      
+      const rpcPromise = supabase.rpc('is_admin');
+      
+      const { data, error }: any = await Promise.race([rpcPromise, timeoutPromise]);
+      
+      if (error) return false;
+      return !!data;
+    } catch (e) {
+      console.warn("[Admin Check] Safe fallback to non-admin status.");
+      return false;
+    }
   },
   getUsers: async () => (await supabase.from('profiles').select('*')).data || [],
   getSecurityEvents: async () => (await supabase.from('security_events').select('*')).data || [],

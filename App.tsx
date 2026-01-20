@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical } from 'lucide-react';
+import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical, AlertTriangle, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
@@ -24,23 +24,55 @@ import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 
 const m = motion as any;
 
-const LoadingSpinner = ({ label = "Synchronizing Neural Nodes..." }: { label?: string }) => (
-  <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617] p-8">
-    <div className="relative">
-      <div className="absolute -inset-6 bg-indigo-500/10 rounded-full blur-2xl animate-pulse" />
-      <Loader2 size={40} className="animate-spin text-indigo-500 relative z-10" />
+const LoadingSpinner = ({ onBypass }: { onBypass: () => void }) => {
+  const [showBypass, setShowBypass] = useState(false);
+  
+  useEffect(() => {
+    const timer = setTimeout(() => setShowBypass(true), 3000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen gap-6 text-center bg-[#020617] p-8">
+      <div className="relative">
+        <div className="absolute -inset-10 bg-indigo-500/10 rounded-full blur-3xl animate-pulse" />
+        <Loader2 size={40} className="animate-spin text-indigo-500 relative z-10" />
+      </div>
+      <div className="space-y-4 relative z-10">
+        <div className="space-y-1">
+          <p className="text-white font-black uppercase text-[11px] tracking-[0.4em] italic">Authenticating Neural Identity...</p>
+          <p className="text-slate-600 text-[8px] uppercase tracking-widest font-bold">Neural Protocol Verification In Progress</p>
+        </div>
+        
+        <AnimatePresence>
+          {showBypass && (
+            <m.div 
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="pt-6"
+            >
+              <button 
+                onClick={onBypass}
+                className="flex items-center gap-2 mx-auto px-6 py-3 bg-white/5 border border-white/10 rounded-full text-slate-400 hover:text-white transition-all text-[9px] font-black uppercase tracking-widest"
+              >
+                <AlertTriangle size={12} className="text-amber-500" />
+                Connection slow? Force Entry
+                <ChevronRight size={12} />
+              </button>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
-    <div className="space-y-1 relative z-10">
-      <p className="text-white font-black uppercase text-[11px] tracking-[0.4em] italic">{label}</p>
-      <p className="text-slate-600 text-[8px] uppercase tracking-widest font-bold">Neural Protocol Verification In Progress</p>
-    </div>
-  </div>
-);
+  );
+};
 
 const App: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => {
-    const saved = localStorage.getItem('somno_lang');
-    return (saved as Language) || 'en';
+    try {
+      const saved = localStorage.getItem('somno_lang');
+      return (saved as Language) || 'en';
+    } catch (e) { return 'en'; }
   });
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -48,8 +80,10 @@ const App: React.FC = () => {
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [threeDEnabled, setThreeDEnabled] = useState<boolean>(() => {
-    const saved = localStorage.getItem('somno_3d_enabled');
-    return saved !== null ? saved === 'true' : true;
+    try {
+      const saved = localStorage.getItem('somno_3d_enabled');
+      return saved !== null ? saved === 'true' : true;
+    } catch(e) { return true; }
   });
   
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
@@ -58,19 +92,18 @@ const App: React.FC = () => {
   const [isSimulated, setIsSimulated] = useState(false);
 
   useEffect(() => {
-    localStorage.setItem('somno_3d_enabled', threeDEnabled.toString());
-  }, [threeDEnabled]);
+    try {
+      localStorage.setItem('somno_3d_enabled', threeDEnabled.toString());
+      localStorage.setItem('somno_lang', lang);
+    } catch (e) {}
+  }, [threeDEnabled, lang]);
 
-  useEffect(() => {
-    localStorage.setItem('somno_lang', lang);
-  }, [lang]);
-
-  const checkSetup = async (userId: string) => {
-    const data = await userDataApi.getUserData();
-    if (!data || !data.setup_completed) {
-      setSetupRequired(true);
-    } else {
-      setSetupRequired(false);
+  const checkSetup = async () => {
+    try {
+      const data = await userDataApi.getUserData();
+      setSetupRequired(!data || !data.setup_completed);
+    } catch (err) {
+      console.warn("Setup check deferred.");
     }
   };
 
@@ -94,11 +127,11 @@ const App: React.FC = () => {
           };
         });
         setHistory(records as SleepRecord[]);
-        setCurrentRecord(records[0] as SleepRecord);
+        if (!currentRecord) setCurrentRecord(records[0] as SleepRecord);
         setIsSimulated(false);
       }
     } catch (err) {
-      console.warn("Telemetry fetch error:", err);
+      console.warn("Telemetry stream unreachable.");
     }
   };
 
@@ -106,7 +139,6 @@ const App: React.FC = () => {
     const handleHash = () => {
       let hash = '#/';
       try {
-        // Safe access to window.location.hash in sandboxed iframes
         hash = window.location.hash || '#/';
       } catch (e) {
         console.warn("Security Alert: Access to location.hash is restricted.");
@@ -128,34 +160,38 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // 3-second safety timer (reduced from 5s for faster feel)
+    const safetyTimer = setTimeout(() => {
+      setIsInitialAuthCheck(false);
+    }, 3000);
+
     const initAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        setSession(initialSession);
+        
         if (initialSession) {
-          setSession(initialSession);
-          const status = await adminApi.checkAdminStatus(initialSession.user.id);
-          setIsAdmin(status);
-          await checkSetup(initialSession.user.id);
-          await fetchHistory();
+          adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin).catch(() => setIsAdmin(false));
+          checkSetup();
+          fetchHistory();
         }
       } catch (err: any) {
-        console.warn("Auth check failed:", err.message);
+        console.warn("Auth sync failure:", err.message);
       } finally {
-        setTimeout(() => setIsInitialAuthCheck(false), 1000);
+        setIsInitialAuthCheck(false);
+        clearTimeout(safetyTimer);
       }
     };
     
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      setSession(newSession);
       if (newSession) {
-        setSession(newSession);
-        const status = await adminApi.checkAdminStatus(newSession.user.id);
-        setIsAdmin(status);
-        await checkSetup(newSession.user.id);
-        await fetchHistory();
+        adminApi.checkAdminStatus(newSession.user.id).then(setIsAdmin).catch(() => setIsAdmin(false));
+        checkSetup();
+        fetchHistory();
       } else {
-        setSession(null);
         setIsAdmin(false);
         setSetupRequired(false);
         setHistory([]);
@@ -163,7 +199,10 @@ const App: React.FC = () => {
       }
     });
     
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(safetyTimer);
+    };
   }, []);
 
   const handleInitializeSimulation = () => {
@@ -236,7 +275,7 @@ const App: React.FC = () => {
     } catch (e) {}
   };
 
-  if (isInitialAuthCheck) return <LoadingSpinner label="Authenticating Neural Identity..." />;
+  if (isInitialAuthCheck) return <LoadingSpinner onBypass={() => setIsInitialAuthCheck(false)} />;
 
   const renderContent = () => {
     if (activeView === 'admin-login') return <AdminLoginPage />;
