@@ -1,5 +1,5 @@
 
--- 1. 基础档案表 (存储身份信息)
+-- 1. 确保基础 profiles 表存在
 CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE,
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at timestamp with time zone DEFAULT now()
 );
 
--- 2. 生物指标表 (存储身体数据)
+-- 2. 确保 user_data 表及其所有生物指标列存在
 CREATE TABLE IF NOT EXISTS public.user_data (
   id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
   age integer,
@@ -20,7 +20,7 @@ CREATE TABLE IF NOT EXISTS public.user_data (
   updated_at timestamp with time zone DEFAULT now()
 );
 
--- 3. 字段存在性二次校验 (防止旧表缺少列)
+-- 3. 强制校验并添加缺失列 (针对已存在的旧表)
 DO $$ 
 BEGIN 
     IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='age') THEN
@@ -40,7 +40,7 @@ BEGIN
     END IF;
 END $$;
 
--- 4. 权限与触发器 (保持不变)
+-- 4. 重新应用 RLS 策略
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
 
@@ -58,6 +58,7 @@ CREATE POLICY "Users can insert own data" ON public.user_data FOR INSERT WITH CH
 DROP POLICY IF EXISTS "Users can update own data" ON public.user_data;
 CREATE POLICY "Users can update own data" ON public.user_data FOR UPDATE USING (auth.uid() = id);
 
+-- 5. 触发器：用户注册时自动创建 profile
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -73,5 +74,5 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- 5. 关键操作：强制刷新 PostgREST 架构缓存
+-- 6. 核心：强制刷新 PostgREST 架构缓存 (解决 'column not found in cache' 报错)
 NOTIFY pgrst, 'reload schema';

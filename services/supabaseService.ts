@@ -49,7 +49,7 @@ export const healthDataApi = {
 
 export const userDataApi = {
   /**
-   * 获取用户身体数据：显式查询列，避免 * 导致的缓存错误
+   * 获取用户身体数据：显式列名查询，防御架构缓存错误
    */
   getUserData: async () => {
     try {
@@ -63,11 +63,16 @@ export const userDataApi = {
         .maybeSingle();
         
       if (error) {
+        // PGRST107 = Column not found in cache
+        if (error.code === 'PGRST107') {
+          console.error("CRITICAL: Supabase Schema Cache is stale. Please run 'NOTIFY pgrst, reload schema' in SQL Editor.");
+        }
         if (error.status === 404 || error.code === 'PGRST116') return null;
         throw error;
       }
       return data;
     } catch (e) {
+      console.error("[UserData] Fetch error:", e);
       return null;
     }
   },
@@ -88,12 +93,13 @@ export const userDataApi = {
     if (profileError) throw profileError;
 
     // 2. 更新 UserData (存储生物指标)
+    // 显式构建 payload，不使用解构，确保字段与数据库严格一致
     const payload = {
       id: user.id,
-      age: parseInt(metrics.age) || 0,
-      height: parseFloat(metrics.height) || 0,
-      weight: parseFloat(metrics.weight) || 0,
-      gender: metrics.gender,
+      age: parseInt(String(metrics.age)) || 0,
+      height: parseFloat(String(metrics.height)) || 0,
+      weight: parseFloat(String(metrics.weight)) || 0,
+      gender: String(metrics.gender || 'prefer-not-to-say'),
       setup_completed: true,
       updated_at: new Date().toISOString()
     };
@@ -102,7 +108,10 @@ export const userDataApi = {
       .from('user_data')
       .upsert(payload, { onConflict: 'id' });
 
-    if (dataError) throw dataError;
+    if (dataError) {
+      console.error("[UserData] Setup error details:", dataError);
+      throw dataError;
+    }
     return data;
   },
 
@@ -110,16 +119,20 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
     
-    // 严格过滤掉 profiles 表中才有的字段，以及任何可能导致 DDL 错误的脏数据
-    const { full_name, displayName, email, ...validUpdates } = updates; 
-    
-    return await supabase
+    // 严格过滤掉非数据库字段
+    const validUpdates: any = { id: user.id, updated_at: new Date().toISOString() };
+    if (updates.age !== undefined) validUpdates.age = parseInt(String(updates.age)) || 0;
+    if (updates.height !== undefined) validUpdates.height = parseFloat(String(updates.height)) || 0;
+    if (updates.weight !== undefined) validUpdates.weight = parseFloat(String(updates.weight)) || 0;
+    if (updates.gender !== undefined) validUpdates.gender = updates.gender;
+    if (updates.setup_completed !== undefined) validUpdates.setup_completed = updates.setup_completed;
+
+    const { error } = await supabase
       .from('user_data')
-      .upsert({ 
-        id: user.id, 
-        ...validUpdates, 
-        updated_at: new Date().toISOString() 
-      }, { onConflict: 'id' });
+      .upsert(validUpdates, { onConflict: 'id' });
+      
+    if (error) throw error;
+    return { success: true };
   }
 };
 
