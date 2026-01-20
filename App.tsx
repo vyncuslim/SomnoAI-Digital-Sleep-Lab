@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical, AlertTriangle, ChevronRight } from 'lucide-react';
+import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical, AlertTriangle, ChevronRight, History } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
@@ -15,7 +15,7 @@ import AdminLoginPage from './app/admin/login/page.tsx';
 import AdminDashboard from './app/admin/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
-import { Trends } from './components/Trends.tsx';
+import { DataHistory } from './components/DataHistory.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
 import { Settings } from './Settings.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
@@ -109,7 +109,7 @@ const App: React.FC = () => {
 
   const fetchHistory = useCallback(async () => {
     try {
-      const telemetry = await healthDataApi.getTelemetryHistory();
+      const telemetry = await healthDataApi.getTelemetryHistory(30);
       if (telemetry && telemetry.length > 0) {
         const records = telemetry.map((t: any) => {
           const p = t.payload || {};
@@ -216,29 +216,23 @@ const App: React.FC = () => {
   const handleInitializeSimulation = () => {
     setSyncStatus('analyzing');
     setTimeout(() => {
-      const mockRecord: SleepRecord = {
-        id: 'sim-01',
-        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
-        score: 82,
-        totalDuration: 442,
-        deepRatio: 22,
-        remRatio: 18,
-        efficiency: 91,
-        stages: [
-          { name: 'Deep', duration: 90, startTime: '01:00' },
-          { name: 'REM', duration: 80, startTime: '03:30' },
-          { name: 'Light', duration: 250, startTime: '00:30' },
-          { name: 'Awake', duration: 22, startTime: '05:00' }
-        ],
-        heartRate: { resting: 58, max: 75, min: 52, average: 62, history: [] },
-        aiInsights: [
-          "Simulation: Your neural architecture indicates strong recovery patterns.",
-          "Strategic Insight: Deep sleep cycles optimized for cognitive consolidation.",
-          "Biometric Note: Resting heart rate shows high parasympathetic activity."
-        ]
-      };
-      setCurrentRecord(mockRecord);
-      setHistory([mockRecord]);
+      const mockRecords: SleepRecord[] = Array.from({ length: 14 }, (_, i) => {
+        const score = 75 + Math.floor(Math.random() * 20);
+        return {
+          id: `sim-${i}`,
+          date: new Date(Date.now() - i * 86400000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
+          score,
+          totalDuration: 400 + Math.floor(Math.random() * 120),
+          deepRatio: 15 + Math.floor(Math.random() * 10),
+          remRatio: 15 + Math.floor(Math.random() * 10),
+          efficiency: 85 + Math.floor(Math.random() * 10),
+          stages: [],
+          heartRate: { resting: 55 + Math.floor(Math.random() * 15), max: 75, min: 52, average: 62, history: [] },
+          aiInsights: ["Simulation cycle active."]
+        };
+      });
+      setCurrentRecord(mockRecords[0]);
+      setHistory(mockRecords);
       setIsSimulated(true);
       setSyncStatus('idle');
     }, 1500);
@@ -261,7 +255,7 @@ const App: React.FC = () => {
       });
 
       setCurrentRecord(fullRecord);
-      setHistory(prev => [fullRecord, ...prev].slice(0, 14));
+      setHistory(prev => [fullRecord, ...prev].slice(0, 30));
       setIsSimulated(false);
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 1500);
@@ -356,7 +350,7 @@ const App: React.FC = () => {
                 </div>
               )
             )}
-            {activeView === 'calendar' && <Trends history={history} lang={lang} />}
+            {activeView === 'calendar' && <DataHistory history={history} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => { try { window.location.hash = `#/${v}` } catch(e) {} }} />}
             {activeView === 'profile' && <UserProfile lang={lang} />}
             {activeView === 'about' && <AboutView lang={lang} onBack={() => { try { window.location.hash = '#/' } catch(e) {} }} />}
@@ -377,7 +371,7 @@ const App: React.FC = () => {
           <nav className="bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl">
             {[
               { id: 'dashboard', icon: Moon, label: 'LAB' },
-              { id: 'calendar', icon: Zap, label: 'TRND' },
+              { id: 'calendar', icon: History, label: 'HIST' },
               { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
               { id: 'profile', icon: User, label: 'USER' },
               { id: 'settings', icon: SettingsIcon, label: 'CFG' }

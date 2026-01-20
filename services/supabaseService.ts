@@ -35,7 +35,7 @@ export const healthDataApi = {
     try {
       const { data, error } = await supabase
         .from('health_telemetry')
-        .select('*')
+        .select('id, heart_rate, weight, recorded_at, created_at, payload, source')
         .order('created_at', { ascending: false })
         .limit(limit);
       if (error && error.status !== 404) throw error;
@@ -48,6 +48,9 @@ export const healthDataApi = {
 };
 
 export const userDataApi = {
+  /**
+   * 获取用户身体数据：显式查询列，避免 * 导致的缓存错误
+   */
   getUserData: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -55,7 +58,7 @@ export const userDataApi = {
       
       const { data, error } = await supabase
         .from('user_data')
-        .select('*')
+        .select('id, age, height, weight, gender, setup_completed')
         .eq('id', user.id)
         .maybeSingle();
         
@@ -69,14 +72,11 @@ export const userDataApi = {
     }
   },
   
-  /**
-   * 提交初始化数据：确保原子性
-   */
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
 
-    // 1. 先确保 Profile 记录存在并更新全名 (双保险)
+    // 1. 更新 Profiles (存储姓名)
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({ 
@@ -85,12 +85,9 @@ export const userDataApi = {
         full_name: fullName 
       }, { onConflict: 'id' });
     
-    if (profileError) {
-      console.error("Profile Upsert Error:", profileError);
-      throw profileError;
-    }
+    if (profileError) throw profileError;
 
-    // 2. 写入/更新生物指标
+    // 2. 更新 UserData (存储生物指标)
     const payload = {
       id: user.id,
       age: parseInt(metrics.age) || 0,
@@ -105,17 +102,24 @@ export const userDataApi = {
       .from('user_data')
       .upsert(payload, { onConflict: 'id' });
 
-    if (dataError) {
-      console.error("UserData Upsert Error:", dataError);
-      throw dataError;
-    }
+    if (dataError) throw dataError;
     return data;
   },
 
   updateUserData: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
-    return await supabase.from('user_data').upsert({ id: user.id, ...updates, updated_at: new Date().toISOString() });
+    
+    // 严格过滤掉 profiles 表中才有的字段，以及任何可能导致 DDL 错误的脏数据
+    const { full_name, displayName, email, ...validUpdates } = updates; 
+    
+    return await supabase
+      .from('user_data')
+      .upsert({ 
+        id: user.id, 
+        ...validUpdates, 
+        updated_at: new Date().toISOString() 
+      }, { onConflict: 'id' });
   }
 };
 
@@ -126,9 +130,7 @@ export const authApi = {
   verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),
   signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
     provider: 'google',
-    options: {
-      redirectTo: window.location.origin
-    }
+    options: { redirectTo: window.location.origin }
   }),
   signOut: () => supabase.auth.signOut()
 };
@@ -142,7 +144,7 @@ export const adminApi = {
     } catch (e) { return false; }
   },
   getUsers: async () => {
-    const { data } = await supabase.from('profiles').select('*');
+    const { data } = await supabase.from('profiles').select('id, email, full_name, role, is_blocked, created_at');
     return data || [];
   },
   getSecurityEvents: async () => {
@@ -160,7 +162,7 @@ export const profileApi = {
   getMyProfile: async () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+    const { data } = await supabase.from('profiles').select('id, email, full_name, role').eq('id', user.id).maybeSingle();
     return data;
   },
   updateProfile: async (updates: any) => {
