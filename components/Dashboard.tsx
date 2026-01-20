@@ -5,7 +5,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, Share2, Activity, Sparkles, Binary, Waves, Gauge,
-  ShieldCheck, ArrowUpRight, Smartphone, Cloud, CheckCircle, Database
+  ShieldCheck, ArrowUpRight, Smartphone, Cloud, CheckCircle, Database, Terminal
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { Language, translations } from '../services/i18n.ts';
@@ -47,7 +47,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
     
     try {
       await onSyncHealth((status) => setSyncStatus(status));
-      // Removed Cloud Upload logic
       setTimeout(() => {
         setSyncStatus('idle');
       }, 1000);
@@ -92,14 +91,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Protocol Type</span>
               <div className="flex items-center gap-2">
                  {isNative ? <Smartphone size={16} className="text-emerald-400" /> : <Database size={16} className="text-indigo-400" />}
-                 <span className="text-[10px] font-black text-white">{isNative ? 'ANDROID NATIVE' : 'LOCAL CACHE'}</span>
+                 <span className="text-[10px] font-black text-white">{isNative ? 'ANDROID NATIVE' : 'EDGE BRIDGE'}</span>
               </div>
            </div>
            <div className="flex flex-col items-center">
               <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Security Status</span>
               <div className="flex items-center gap-1.5">
                 <ShieldCheck size={16} className="text-emerald-400" />
-                <span className="text-[9px] font-black text-white uppercase">Encrypted Edge</span>
+                <span className="text-[9px] font-black text-white uppercase">Encrypted Handshake</span>
               </div>
            </div>
         </div>
@@ -155,17 +154,25 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="space-y-6">
-              <div className="flex flex-col gap-4 p-8 bg-indigo-500/[0.03] border border-indigo-500/10 rounded-[3.5rem] relative overflow-hidden group cursor-help" onClick={() => onNavigate?.('about')}>
-                <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:opacity-100 transition-opacity">
-                   <ArrowUpRight size={20} className="text-indigo-400" />
+              {/* Specialized Manifesto Card - Core Positioning */}
+              <div className="flex flex-col gap-5 p-10 bg-gradient-to-br from-indigo-500/[0.08] to-transparent border border-indigo-500/20 rounded-[4rem] relative overflow-hidden group cursor-help transition-all hover:border-indigo-500/40" onClick={() => onNavigate?.('about')}>
+                <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-100 transition-opacity">
+                   <Terminal size={24} className="text-indigo-400" />
                 </div>
-                <div className="flex items-center gap-3 text-indigo-400">
-                   <ShieldCheck size={18} />
-                   <span className="text-[10px] font-black uppercase tracking-widest italic">Official Manifesto</span>
+                <div className="flex items-center gap-3">
+                   <m.div 
+                     animate={{ scale: [1, 1.2, 1] }} 
+                     transition={{ duration: 3, repeat: Infinity }}
+                     className="w-2 h-2 rounded-full bg-indigo-400" 
+                   />
+                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Laboratory Manifesto</span>
                 </div>
-                <p className="text-[14px] font-bold text-slate-300 italic leading-relaxed text-left">
-                  <span>"{t.manifesto}"</span>
+                <p className="text-[16px] font-bold text-white italic leading-relaxed text-left tracking-tight">
+                  "{t.manifesto}"
                 </p>
+                <div className="flex items-center gap-2 mt-2">
+                   <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">Edge Function v1.0 • Supabase Verified</span>
+                </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

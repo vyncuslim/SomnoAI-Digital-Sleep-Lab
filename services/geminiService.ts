@@ -23,8 +23,9 @@ const handleGeminiError = (err: any) => {
   throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
-const MODEL_FLASH = 'gemini-2.5-flash'; 
-const MODEL_PRO = 'gemini-2.5-pro'; 
+/* Using recommended Gemini 3 series models for production-grade text tasks */
+const MODEL_FLASH = 'gemini-3-flash-preview'; 
+const MODEL_PRO = 'gemini-3-pro-preview'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
@@ -66,7 +67,8 @@ export const chatWithCoach = async (history: { role: string; content: string }[]
       config: { 
         systemInstruction, 
         tools: [{ googleSearch: {} }],
-        thinkingConfig: { thinkingBudget: 16000 } 
+        /* Maximum thinking budget for gemini-3-pro-preview to ensure high-quality reasoning */
+        thinkingConfig: { thinkingBudget: 32768 } 
       }
     });
     return { text: response.text, sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] };
@@ -89,7 +91,8 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
           properties: { hypothesis: { type: Type.STRING }, protocol: { type: Type.ARRAY, items: { type: Type.STRING } }, expectedImpact: { type: Type.STRING } },
           required: ["hypothesis", "protocol", "expectedImpact"]
         },
-        thinkingConfig: { thinkingBudget: 8000 }
+        /* Allocating significant budget for scientific experimental design */
+        thinkingConfig: { thinkingBudget: 16384 }
       }
     });
     return JSON.parse(response.text?.trim() || "{}");

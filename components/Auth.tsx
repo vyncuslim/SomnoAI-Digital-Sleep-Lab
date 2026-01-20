@@ -20,6 +20,12 @@ interface AuthProps {
 
 type AuthMode = 'otp' | 'password' | 'register';
 
+declare global {
+  interface Window {
+    turnstile: any;
+  }
+}
+
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
   const t = translations[lang].auth;
   const [authMode, setAuthMode] = useState<AuthMode>('otp');
@@ -32,10 +38,32 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+  
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
+  const widgetIdRef = useRef<string | null>(null);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // Rate-limiting countdown logic
+  useEffect(() => {
+    if (!otpSent && turnstileRef.current && window.turnstile) {
+      try {
+        if (widgetIdRef.current) {
+          window.turnstile.remove(widgetIdRef.current);
+        }
+        widgetIdRef.current = window.turnstile.render(turnstileRef.current, {
+          sitekey: '0x4AAAAAACNi1FM3bbfW_VsI',
+          theme: 'dark',
+          callback: (token: string) => setTurnstileToken(token),
+          'expired-callback': () => setTurnstileToken(null),
+          'error-callback': () => setTurnstileToken(null),
+        });
+      } catch (e) {
+        console.warn("Turnstile initialization failed:", e);
+      }
+    }
+  }, [authMode, otpSent]);
+
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setInterval(() => setCooldown(prev => prev - 1), 1000);
@@ -45,36 +73,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
   const handleAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isProcessing || cooldown > 0) return;
+    if (isProcessing || cooldown > 0 || !turnstileToken) return;
     setIsProcessing(true);
     setError(null);
     setSuccess(null);
 
     try {
       if (authMode === 'register') {
-        // 1. Initial Registry Creation
         const { error: signUpErr } = await authApi.signUp(email, password);
-        if (signUpErr) {
-          if (signUpErr.message.includes("security purposes")) {
-            handleRateLimit(signUpErr.message);
-            return;
-          }
-          throw signUpErr;
-        }
+        if (signUpErr) throw signUpErr;
         
-        // 2. Immediate Token Dispatch
         const { error: otpErr } = await authApi.sendOTP(email);
-        if (otpErr) {
-          if (otpErr.message.includes("security purposes")) {
-            handleRateLimit(otpErr.message);
-            // Even if immediate resend failed, we move to OTP screen 
-            // because the first signUp likely already triggered an email
-            setOtpSent(true);
-            setAuthMode('otp');
-            return;
-          }
-          throw otpErr;
-        }
+        if (otpErr) throw otpErr;
 
         setSuccess("REGISTRY CREATED. OTP TOKEN DISPATCHED.");
         setOtpSent(true);
@@ -84,29 +94,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         if (signInErr) throw signInErr;
         onLogin();
       } else {
-        // Standard OTP Request
         const { error: otpErr } = await authApi.sendOTP(email);
-        if (otpErr) {
-          if (otpErr.message.includes("security purposes")) {
-            handleRateLimit(otpErr.message);
-            return;
-          }
-          throw otpErr;
-        }
+        if (otpErr) throw otpErr;
         setSuccess("SECURITY TOKEN DISPATCHED.");
         setOtpSent(true);
       }
     } catch (err: any) {
       setError(err.message || "NEURAL LINK ESTABLISHMENT FAILED");
+      if (window.turnstile && widgetIdRef.current) window.turnstile.reset(widgetIdRef.current);
+      setTurnstileToken(null);
     } finally {
       setIsProcessing(false);
     }
-  };
-
-  const handleRateLimit = (message: string) => {
-    const seconds = parseInt(message.match(/\d+/)?.[0] || "60");
-    setCooldown(seconds);
-    setError(`NEURAL OVERLOAD: RETRY IN ${seconds}s`);
   };
 
   const handleVerifyOtp = async () => {
@@ -156,22 +155,27 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     try {
       const { error } = await authApi.signInWithGoogle();
       if (error) throw error;
+      // In redirect flow, control will leave the page
     } catch (err: any) {
-      setError(err.message || "GOOGLE HANDSHAKE FAILED");
+      console.error("Google Auth Error:", err);
+      // Fallback message for third-party cookie blocking
+      const isCookieError = err.message?.includes('cookie') || err.message?.includes('blocked');
+      const msg = isCookieError 
+        ? "THIRD-PARTY COOKIE BLOCKED. Please use OTP Mode instead."
+        : (err.message || "GOOGLE HANDSHAKE FAILED. Try OTP mode.");
+      setError(msg);
       setIsProcessing(false);
     }
   };
 
   return (
     <div className="min-h-screen w-full flex flex-col items-center justify-center p-6 bg-[#020617] font-sans relative overflow-hidden">
-      {/* Background Star Ambience */}
       <div className="absolute inset-0 opacity-20 pointer-events-none">
         <div className="absolute top-[20%] left-[10%] w-1 h-1 bg-white rounded-full animate-pulse" />
         <div className="absolute top-[40%] right-[20%] w-1 h-1 bg-white rounded-full animate-pulse delay-700" />
         <div className="absolute bottom-[15%] left-[30%] w-1 h-1 bg-white rounded-full animate-pulse delay-1000" />
       </div>
 
-      {/* Brand Header */}
       <m.div 
         initial={{ opacity: 0, y: 30 }} 
         animate={{ opacity: 1, y: 0 }} 
@@ -190,17 +194,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         </div>
       </m.div>
 
-      {/* Auth Terminal Card */}
       <div className="w-full max-w-[420px] space-y-8 relative z-10">
         {!otpSent ? (
           <>
-            {/* Mode Navigator */}
             <div className="bg-slate-900/40 backdrop-blur-3xl p-1.5 rounded-[2.2rem] border border-white/5 relative flex shadow-2xl">
               {['otp', 'password', 'register'].map((mode) => (
                 <button 
                   key={mode}
                   type="button"
-                  onClick={() => { setAuthMode(mode as AuthMode); setError(null); setSuccess(null); }}
+                  onClick={() => { 
+                    setAuthMode(mode as AuthMode); 
+                    setError(null); 
+                    setSuccess(null);
+                    setTurnstileToken(null);
+                  }}
                   className={`flex-1 py-4 rounded-full text-[10px] font-black uppercase tracking-widest z-10 transition-all ${authMode === mode ? 'text-white' : 'text-slate-500 hover:text-slate-400'}`}
                 >
                   {mode}
@@ -261,36 +268,27 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 </AnimatePresence>
               </div>
 
+              <div className="flex justify-center">
+                 <div ref={turnstileRef} className="cf-turnstile"></div>
+              </div>
+
               <button 
                 type="submit" 
-                disabled={isProcessing || cooldown > 0}
+                disabled={isProcessing || cooldown > 0 || !turnstileToken}
                 className="w-full py-6 bg-indigo-600 text-white rounded-[2rem] font-black text-[11px] uppercase tracking-[0.4em] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-2xl hover:bg-indigo-500 disabled:opacity-50 relative overflow-hidden"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : cooldown > 0 ? <Timer size={18} /> : authMode === 'register' ? <UserPlus size={16} /> : <Zap size={16} fill="currentColor" />}
                 <span>
-                  {isProcessing ? 'SYNCHRONIZING...' : cooldown > 0 ? `NEURAL COOLDOWN (${cooldown}s)` : authMode === 'register' ? 'INITIALIZE REGISTRY' : authMode === 'password' ? 'AUTHORIZE ACCESS' : 'REQUEST OTP TOKEN'}
+                  {isProcessing ? 'SYNCHRONIZING...' : cooldown > 0 ? `NEURAL COOLDOWN (${cooldown}s)` : !turnstileToken ? 'WAITING FOR VALIDATION' : authMode === 'register' ? 'INITIALIZE REGISTRY' : authMode === 'password' ? 'AUTHORIZE ACCESS' : 'REQUEST OTP TOKEN'}
                 </span>
-                
-                {cooldown > 0 && (
-                  <m.div 
-                    initial={{ width: '0%' }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: cooldown, ease: "linear" }}
-                    className="absolute bottom-0 left-0 h-1 bg-white/30"
-                  />
-                )}
               </button>
             </form>
           </>
         ) : (
-          <m.div 
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="space-y-10"
-          >
+          <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-10">
             <div className="text-center space-y-4">
               <button 
-                onClick={() => { setOtpSent(false); setOtpCode(['', '', '', '', '', '']); }}
+                onClick={() => { setOtpSent(false); setOtpCode(['', '', '', '', '', '']); setTurnstileToken(null); }}
                 className="text-[10px] font-black text-indigo-400 uppercase flex items-center gap-2 mx-auto hover:text-indigo-300 transition-colors"
               >
                 <ChevronLeft size={14} /> REVERT TO TERMINAL
@@ -328,7 +326,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
           </m.div>
         )}
 
-        {/* Global Auth Providers */}
         {!otpSent && (
           <div className="grid grid-cols-2 gap-4">
             <button 

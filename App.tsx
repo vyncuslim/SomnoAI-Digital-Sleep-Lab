@@ -5,7 +5,7 @@ import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
-import { supabase, adminApi, authApi, userDataApi } from './services/supabaseService.ts';
+import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
 import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
 import { Logo } from './components/Logo.tsx';
@@ -74,9 +74,44 @@ const App: React.FC = () => {
     }
   };
 
+  const fetchHistory = async () => {
+    try {
+      const telemetry = await healthDataApi.getTelemetryHistory();
+      if (telemetry && telemetry.length > 0) {
+        const records = telemetry.map((t: any) => {
+          const p = t.payload || {};
+          return {
+            id: t.id,
+            date: new Date(t.recorded_at || t.created_at).toLocaleDateString(),
+            score: p.score || 85,
+            totalDuration: p.totalDuration || p.duration || 480,
+            deepRatio: p.deepRatio || p.deep_ratio || 20,
+            remRatio: p.remRatio || p.rem_ratio || 20,
+            efficiency: p.efficiency || 90,
+            stages: p.stages || [],
+            heartRate: p.heartRate || p.heart_rate || { resting: t.heart_rate || 60, max: 80, min: 50, average: 65, history: [] },
+            aiInsights: p.aiInsights || p.ai_insights || []
+          };
+        });
+        setHistory(records as SleepRecord[]);
+        setCurrentRecord(records[0] as SleepRecord);
+        setIsSimulated(false);
+      }
+    } catch (err) {
+      console.warn("Telemetry fetch error:", err);
+    }
+  };
+
   useEffect(() => {
     const handleHash = () => {
-      const hash = window.location.hash;
+      let hash = '#/';
+      try {
+        // Safe access to window.location.hash in sandboxed iframes
+        hash = window.location.hash || '#/';
+      } catch (e) {
+        console.warn("Security Alert: Access to location.hash is restricted.");
+      }
+      
       if (hash === '#/admin') setActiveView('admin');
       else if (hash === '#/admin/login') setActiveView('admin-login');
       else if (hash === '#/profile') setActiveView('profile');
@@ -86,6 +121,7 @@ const App: React.FC = () => {
       else if (hash === '#/about') setActiveView('about');
       else setActiveView('dashboard');
     };
+    
     handleHash();
     window.addEventListener('hashchange', handleHash);
     return () => window.removeEventListener('hashchange', handleHash);
@@ -100,6 +136,7 @@ const App: React.FC = () => {
           const status = await adminApi.checkAdminStatus(initialSession.user.id);
           setIsAdmin(status);
           await checkSetup(initialSession.user.id);
+          await fetchHistory();
         }
       } catch (err: any) {
         console.warn("Auth check failed:", err.message);
@@ -116,10 +153,13 @@ const App: React.FC = () => {
         const status = await adminApi.checkAdminStatus(newSession.user.id);
         setIsAdmin(status);
         await checkSetup(newSession.user.id);
+        await fetchHistory();
       } else {
         setSession(null);
         setIsAdmin(false);
         setSetupRequired(false);
+        setHistory([]);
+        setCurrentRecord(null);
       }
     });
     
@@ -167,12 +207,19 @@ const App: React.FC = () => {
       setSyncStatus('analyzing');
       const insights = await getSleepInsight(data as SleepRecord, lang);
       const fullRecord = { ...data, aiInsights: insights } as SleepRecord;
+      
+      await healthDataApi.uploadTelemetry({
+        ...fullRecord,
+        source: healthConnect.isNativeBridgeAvailable() ? 'android_native_bridge' : 'health_connect'
+      });
+
       setCurrentRecord(fullRecord);
       setHistory(prev => [fullRecord, ...prev].slice(0, 14));
       setIsSimulated(false);
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 1500);
     } catch (err: any) {
+      console.error("Health Sync Failure:", err);
       setSyncStatus('error');
       setTimeout(() => setSyncStatus('idle'), 1500);
     }
@@ -184,7 +231,9 @@ const App: React.FC = () => {
     setCurrentRecord(null);
     setHistory([]);
     setActiveView('dashboard');
-    window.location.hash = '#/';
+    try {
+      window.location.hash = '#/';
+    } catch (e) {}
   };
 
   if (isInitialAuthCheck) return <LoadingSpinner label="Authenticating Neural Identity..." />;
@@ -229,7 +278,7 @@ const App: React.FC = () => {
                        <button onClick={handleSyncHealth} className="text-[9px] font-black text-white bg-amber-600 px-4 py-1.5 rounded-full uppercase tracking-widest hover:bg-amber-500 transition-all">Connect Real Data</button>
                     </div>
                   )}
-                  <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => window.location.hash = `#/${v}`} threeDEnabled={threeDEnabled} />
+                  <Dashboard data={currentRecord} lang={lang} onSyncHealth={handleSyncHealth} onNavigate={(v: any) => { try { window.location.hash = `#/${v}` } catch(e) {} }} threeDEnabled={threeDEnabled} />
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center h-[70vh] text-center gap-10">
@@ -261,15 +310,15 @@ const App: React.FC = () => {
               )
             )}
             {activeView === 'calendar' && <Trends history={history} lang={lang} />}
-            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => window.location.hash = `#/${v}`} />}
+            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => { try { window.location.hash = `#/${v}` } catch(e) {} }} />}
             {activeView === 'profile' && <UserProfile lang={lang} />}
-            {activeView === 'about' && <AboutView lang={lang} onBack={() => window.location.hash = '#/'} />}
+            {activeView === 'about' && <AboutView lang={lang} onBack={() => { try { window.location.hash = '#/' } catch(e) {} }} />}
             {activeView === 'settings' && (
               <Settings 
                 lang={lang} 
                 onLanguageChange={setLang} 
                 onLogout={handleLogout} 
-                onNavigate={(v: any) => window.location.hash = `#/${v}`}
+                onNavigate={(v: any) => { try { window.location.hash = `#/${v}` } catch(e) {} }}
                 threeDEnabled={threeDEnabled} 
                 onThreeDChange={setThreeDEnabled}
               />
@@ -286,7 +335,7 @@ const App: React.FC = () => {
               { id: 'profile', icon: User, label: 'USER' },
               { id: 'settings', icon: SettingsIcon, label: 'CFG' }
             ].map((nav) => (
-              <button key={nav.id} onClick={() => window.location.hash = `#/${nav.id}`} className={`relative flex items-center gap-2 px-5 py-4 rounded-full transition-all ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
+              <button key={nav.id} onClick={() => { try { window.location.hash = `#/${nav.id}` } catch(e) {} }} className={`relative flex items-center gap-2 px-5 py-4 rounded-full transition-all ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
                 <nav.icon size={18} />
                 {activeView === nav.id && <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>}
               </button>

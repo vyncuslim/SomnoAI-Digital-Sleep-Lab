@@ -27,7 +27,7 @@ const commonEn = {
     cmdSync: 'Sync Lab Data',
     cmdExport: 'Archive Metrics',
     lullaby: 'Neural Lullaby',
-    manifesto: 'SomnoAI integrates physiological monitoring, AI deep insights, and health advice for a full range of digital sleep experiments.'
+    manifesto: 'It integrates physiological monitoring, AI deep insights, and health advice for a full-scale digital sleep laboratory experience.'
   },
   settings: {
     title: 'Configuration',
@@ -94,7 +94,7 @@ const commonEn = {
   },
   about: {
     title: 'Specifications',
-    manifesto: 'SomnoAI integrates physiological metric monitoring, AI deep insights, and health advice into one.',
+    manifesto: 'It integrates physiological monitoring, AI deep insights, and health advice into one, providing users with a full range of digital sleep laboratory experience.',
     protocolTitle: 'Bridge Protocol',
     waterAnalogyTitle: 'Biological Flow',
     waterAnalogyDesc: 'Health Connect acts as the primary reservoir for your physiological telemetry.',
@@ -151,7 +151,7 @@ const commonZh = {
     cmdSync: '同步实验室数据',
     cmdExport: '归档指标',
     lullaby: '神经摇篮曲',
-    manifesto: 'SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。'
+    manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。'
   },
   settings: {
     title: '系统配置',
@@ -182,7 +182,7 @@ const commonZh = {
   auth: {
     lab: 'SomnoAI 数字化睡眠实验室',
     tagline: '神经基础设施 • 数字遥测',
-    manifesto: 'SomnoAI 集成了生理指标监测、AI 深度洞察和健康建议，提供全方位的数字化睡眠实验。',
+    manifesto: 'SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。',
     sendCode: '请求实验室令牌',
     emailLabel: '电子邮件识别码',
     passwordLabel: '访问密码',
@@ -218,7 +218,7 @@ const commonZh = {
   },
   about: {
     title: '技术规格',
-    manifesto: 'SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体。',
+    manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。',
     protocolTitle: '桥接协议',
     waterAnalogyTitle: '生物流',
     waterAnalogyDesc: 'Health Connect 是您生理遥测数据的主要存储库。',

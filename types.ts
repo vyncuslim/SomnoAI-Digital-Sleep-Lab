@@ -27,23 +27,18 @@ export interface SleepRecord {
   aiInsights: string[];
 }
 
-// 核心：Android 传输给网站的 API 数据结构
+/**
+ * Strategic Ingress Interface
+ * Aligns with Edge Function POST /api/health/upload
+ * Sole responsibility: Bridge telemetry to 'health_records' table.
+ */
 export interface HealthTelemetryPayload {
-  source: 'health_connect' | 'android_native_bridge';
-  sync_id: string; // 唯一同步 ID，防止重复写入
-  device_metadata: {
-    model: string;
-    os_version: string;
-    app_version: string;
-    sync_latency_ms: number;
-  };
-  metrics: {
-    sleep_sessions: any[]; // 原始 Health Connect 数组
-    heart_rate_samples: any[];
-    step_counts?: any[];
-    weight_samples?: any[];
-  };
-  timestamp: string;
+  steps: number;
+  heart_rate: number;
+  weight: number;
+  recorded_at: string;
+  source: string;
+  payload?: any; // Preserved raw metrics for secondary AI synthesis
 }
 
 /**

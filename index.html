@@ -13,8 +13,11 @@
       gtag('config', 'G-3F9KVNYLR', { send_page_view: false });
     </script>
 
+    <!-- Cloudflare Turnstile -->
+    <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+
     <!-- PWA & Mobile Optimization -->
-    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="SomnoAI">
     <link rel="manifest" href="/manifest.json">
@@ -73,7 +76,6 @@
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
       html { scroll-behavior: smooth; }
       
-      /* App-like feel for PWA */
       @media all and (display-mode: standalone) {
         body {
           padding-top: env(safe-area-inset-top);
