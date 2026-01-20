@@ -144,6 +144,12 @@ const App: React.FC = () => {
         console.warn("Security Alert: Access to location.hash is restricted.");
       }
       
+      // If there's an error in the hash, we stay on login view but let the Auth component handle the display
+      if (hash.includes('error=')) {
+        // Do not change view, let Auth component show error
+        return;
+      }
+
       if (hash === '#/admin') setActiveView('admin');
       else if (hash === '#/admin/login') setActiveView('admin-login');
       else if (hash === '#/profile') setActiveView('profile');
@@ -160,7 +166,6 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // Immediate 3s safety timeout to ensure we don't hang the UI
     const safetyTimer = setTimeout(() => {
       setIsInitialAuthCheck(prev => {
         if (prev) console.debug("App Boot: Safety timeout reached, releasing UI lock.");
@@ -170,7 +175,6 @@ const App: React.FC = () => {
 
     const initAuth = async () => {
       try {
-        // Use Promise.race to prevent getSession from hanging indefinitely in restrictive sandboxes
         const sessionPromise = supabase.auth.getSession();
         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2500));
         
@@ -287,7 +291,7 @@ const App: React.FC = () => {
       return (
         <UserLoginPage 
           onSuccess={() => {}} 
-          onSandbox={() => {}} 
+          onSandbox={() => setIsSimulated(true)} 
           lang={lang} 
         />
       );

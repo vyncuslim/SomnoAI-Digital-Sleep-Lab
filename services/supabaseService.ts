@@ -49,33 +49,49 @@ export const healthDataApi = {
 
 export const userDataApi = {
   /**
-   * 获取用户数据，带详细错误诊断
+   * 获取用户数据：通过关联查询同时获取 full_name 和生物指标
    */
   getUserData: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       
+      // 使用关联查询 (Join) 获取 profiles 表中的 full_name
+      // 这种写法能更有效地触发架构解析
       const { data, error } = await supabase
         .from('user_data')
-        .select('id, age, height, weight, gender, setup_completed')
+        .select(`
+          id, 
+          age, 
+          height, 
+          weight, 
+          gender, 
+          setup_completed,
+          profiles:id (full_name)
+        `)
         .eq('id', user.id)
         .maybeSingle();
         
       if (error) {
-        console.error("[UserData] Cache Conflict Detected:", error.message, error.code);
-        
-        // 如果是缓存错误，尝试使用通配符查询作为临时回退
+        // 如果依然报缓存错误 (PGRST107)，尝试降级到不指定列的查询
         if (error.code === 'PGRST107') {
-          const { data: fallbackData } = await supabase
+          console.error("Cache Stale. Attempting fallback query...");
+          const { data: fallback } = await supabase
             .from('user_data')
             .select('*')
             .eq('id', user.id)
             .maybeSingle();
-          return fallbackData;
+          return fallback;
         }
-        
         return null;
+      }
+
+      // 将 profiles.full_name 摊平到返回结果中
+      if (data && (data as any).profiles) {
+        return {
+          ...data,
+          full_name: (data as any).profiles.full_name
+        };
       }
       return data;
     } catch (e) {
@@ -87,7 +103,7 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
 
-    // 更新 profiles (姓名)
+    // 1. 更新 Profiles (姓名)
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({ 
@@ -98,12 +114,13 @@ export const userDataApi = {
     
     if (profileError) throw profileError;
 
-    // 显式映射字段，确保没有任何脏数据进入 user_data 表
+    // 2. 更新 UserData (生物指标)
+    // 强制类型转换，确保发送到数据库的数据是纯净的
     const payload = {
       id: user.id,
-      age: Math.max(0, parseInt(String(metrics.age)) || 0),
-      height: Math.max(0, parseFloat(String(metrics.height)) || 0),
-      weight: Math.max(0, parseFloat(String(metrics.weight)) || 0),
+      age: parseInt(String(metrics.age)) || 0,
+      height: parseFloat(String(metrics.height)) || 0,
+      weight: parseFloat(String(metrics.weight)) || 0,
       gender: String(metrics.gender || 'prefer-not-to-say'),
       setup_completed: true,
       updated_at: new Date().toISOString()
@@ -114,7 +131,7 @@ export const userDataApi = {
       .upsert(payload, { onConflict: 'id' });
 
     if (dataError) {
-      console.error("[UserData] Upsert block:", dataError);
+      console.error("[UserData] Setup error:", dataError);
       throw dataError;
     }
     return data;
@@ -124,26 +141,18 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
     
-    // 严格白名单过滤
     const sanitized: any = { id: user.id, updated_at: new Date().toISOString() };
-    const allowed = ['age', 'height', 'weight', 'gender', 'setup_completed'];
-    
-    allowed.forEach(key => {
-      if (updates[key] !== undefined) {
-        if (key === 'age') sanitized[key] = parseInt(String(updates[key]));
-        else if (key === 'height' || key === 'weight') sanitized[key] = parseFloat(String(updates[key]));
-        else sanitized[key] = updates[key];
-      }
-    });
+    if (updates.age !== undefined) sanitized.age = parseInt(String(updates.age));
+    if (updates.height !== undefined) sanitized.height = parseFloat(String(updates.height));
+    if (updates.weight !== undefined) sanitized.weight = parseFloat(String(updates.weight));
+    if (updates.gender !== undefined) sanitized.gender = String(updates.gender);
+    if (updates.setup_completed !== undefined) sanitized.setup_completed = !!updates.setup_completed;
 
     const { error } = await supabase
       .from('user_data')
       .upsert(sanitized, { onConflict: 'id' });
       
-    if (error) {
-      console.error("[UserData] Update failed:", error);
-      throw error;
-    }
+    if (error) throw error;
     return { success: true };
   }
 };
