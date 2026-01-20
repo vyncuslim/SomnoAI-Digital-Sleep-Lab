@@ -1,5 +1,5 @@
 
--- 1. Create or verify the profiles table
+-- 1. 确保基础 profiles 表结构正确
 CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE,
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
   created_at timestamp with time zone DEFAULT now()
 );
 
--- 2. Create or verify the user_data table with biometrics
+-- 2. 确保 user_data 表及其所有生物指标列存在并带有默认值
 CREATE TABLE IF NOT EXISTS public.user_data (
   id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
   age integer DEFAULT 0,
@@ -20,39 +20,51 @@ CREATE TABLE IF NOT EXISTS public.user_data (
   updated_at timestamp with time zone DEFAULT now()
 );
 
--- 3. Safety: Explicitly add columns if they were missed in a previous run
+-- 3. 强制检查列是否存在（双重保障）
 DO $$ 
 BEGIN 
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='age') THEN
+    BEGIN
         ALTER TABLE public.user_data ADD COLUMN age integer DEFAULT 0;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='height') THEN
+    EXCEPTION WHEN duplicate_column THEN 
+        RAISE NOTICE 'column age already exists';
+    END;
+    
+    BEGIN
         ALTER TABLE public.user_data ADD COLUMN height float DEFAULT 0;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='weight') THEN
+    EXCEPTION WHEN duplicate_column THEN 
+        RAISE NOTICE 'column height already exists';
+    END;
+
+    BEGIN
         ALTER TABLE public.user_data ADD COLUMN weight float DEFAULT 0;
-    END IF;
-    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='gender') THEN
-        ALTER TABLE public.user_data ADD COLUMN gender text DEFAULT 'prefer-not-to-say';
-    END IF;
+    EXCEPTION WHEN duplicate_column THEN 
+        RAISE NOTICE 'column weight already exists';
+    END;
 END $$;
 
--- 4. Re-apply RLS (Row Level Security)
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
+-- 4. 显式授予权限（解决由于权限导致的“列不可见”问题）
+GRANT ALL ON TABLE public.user_data TO authenticated;
+GRANT ALL ON TABLE public.profiles TO authenticated;
+GRANT ALL ON TABLE public.user_data TO service_role;
 
-DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
-CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
-DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
-CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+-- 5. 重新应用 RLS 策略
+ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
 
 DROP POLICY IF EXISTS "Users can view own data" ON public.user_data;
 CREATE POLICY "Users can view own data" ON public.user_data FOR SELECT USING (auth.uid() = id);
-DROP POLICY IF EXISTS "Users can update own data" ON public.user_data;
-CREATE POLICY "Users can update own data" ON public.user_data FOR UPDATE USING (auth.uid() = id);
+
 DROP POLICY IF EXISTS "Users can insert own data" ON public.user_data;
 CREATE POLICY "Users can insert own data" ON public.user_data FOR INSERT WITH CHECK (auth.uid() = id);
 
--- 5. THE CRITICAL FIX: Tell PostgREST to reload the schema cache immediately.
--- Run this in the Supabase SQL Editor if you see 'column not found' errors.
+DROP POLICY IF EXISTS "Users can update own data" ON public.user_data;
+CREATE POLICY "Users can update own data" ON public.user_data FOR UPDATE USING (auth.uid() = id);
+
+-- 6. 【核心修复步奏】强制触发缓存刷新
+-- 方法 A: 修改表注释（物理层面的 Schema 变更会强制触发 PostgREST 刷新）
+COMMENT ON TABLE public.user_data IS 'SomnoAI Subject Metrics v2.5';
+
+-- 方法 B: 显式通知
 NOTIFY pgrst, 'reload schema';
+
+-- 方法 C: 重启缓存服务 (仅在上述无效时运行)
+-- SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE usename = 'authenticator';

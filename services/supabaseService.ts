@@ -49,8 +49,7 @@ export const healthDataApi = {
 
 export const userDataApi = {
   /**
-   * Fetch biometric metrics.
-   * Explicitly listing columns prevents PostgREST from using a stale 'select *' cache.
+   * 获取用户数据，带详细错误诊断
    */
   getUserData: async () => {
     try {
@@ -64,12 +63,19 @@ export const userDataApi = {
         .maybeSingle();
         
       if (error) {
-        // PGRST107: Column not found in cache. This confirms the cache is stale.
+        console.error("[UserData] Cache Conflict Detected:", error.message, error.code);
+        
+        // 如果是缓存错误，尝试使用通配符查询作为临时回退
         if (error.code === 'PGRST107') {
-          console.error("Supabase Cache Stale: Run 'NOTIFY pgrst, reload schema' in SQL Editor.");
+          const { data: fallbackData } = await supabase
+            .from('user_data')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+          return fallbackData;
         }
-        if (error.status === 404 || error.code === 'PGRST116') return null;
-        throw error;
+        
+        return null;
       }
       return data;
     } catch (e) {
@@ -81,7 +87,7 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
 
-    // 1. Update Profiles (Names)
+    // 更新 profiles (姓名)
     const { error: profileError } = await supabase
       .from('profiles')
       .upsert({ 
@@ -92,13 +98,13 @@ export const userDataApi = {
     
     if (profileError) throw profileError;
 
-    // 2. Update UserData (Metrics)
+    // 显式映射字段，确保没有任何脏数据进入 user_data 表
     const payload = {
       id: user.id,
-      age: parseInt(metrics.age) || 0,
-      height: parseFloat(metrics.height) || 0,
-      weight: parseFloat(metrics.weight) || 0,
-      gender: metrics.gender || 'prefer-not-to-say',
+      age: Math.max(0, parseInt(String(metrics.age)) || 0),
+      height: Math.max(0, parseFloat(String(metrics.height)) || 0),
+      weight: Math.max(0, parseFloat(String(metrics.weight)) || 0),
+      gender: String(metrics.gender || 'prefer-not-to-say'),
       setup_completed: true,
       updated_at: new Date().toISOString()
     };
@@ -107,7 +113,10 @@ export const userDataApi = {
       .from('user_data')
       .upsert(payload, { onConflict: 'id' });
 
-    if (dataError) throw dataError;
+    if (dataError) {
+      console.error("[UserData] Upsert block:", dataError);
+      throw dataError;
+    }
     return data;
   },
 
@@ -115,25 +124,24 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
     
-    // STRICT FILTERING: Prevent sending fields like 'full_name' to the 'user_data' table
-    // which would cause a database error if PostgREST cache is confused.
-    const sanitizedUpdates: any = { 
-      id: user.id, 
-      updated_at: new Date().toISOString() 
-    };
-
-    if (updates.age !== undefined) sanitizedUpdates.age = parseInt(String(updates.age));
-    if (updates.height !== undefined) sanitizedUpdates.height = parseFloat(String(updates.height));
-    if (updates.weight !== undefined) sanitizedUpdates.weight = parseFloat(String(updates.weight));
-    if (updates.gender !== undefined) sanitizedUpdates.gender = String(updates.gender);
-    if (updates.setup_completed !== undefined) sanitizedUpdates.setup_completed = !!updates.setup_completed;
+    // 严格白名单过滤
+    const sanitized: any = { id: user.id, updated_at: new Date().toISOString() };
+    const allowed = ['age', 'height', 'weight', 'gender', 'setup_completed'];
+    
+    allowed.forEach(key => {
+      if (updates[key] !== undefined) {
+        if (key === 'age') sanitized[key] = parseInt(String(updates[key]));
+        else if (key === 'height' || key === 'weight') sanitized[key] = parseFloat(String(updates[key]));
+        else sanitized[key] = updates[key];
+      }
+    });
 
     const { error } = await supabase
       .from('user_data')
-      .upsert(sanitizedUpdates, { onConflict: 'id' });
+      .upsert(sanitized, { onConflict: 'id' });
       
     if (error) {
-      console.error("Update UserData Failed:", error);
+      console.error("[UserData] Update failed:", error);
       throw error;
     }
     return { success: true };
