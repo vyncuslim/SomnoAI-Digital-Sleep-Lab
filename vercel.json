@@ -15,9 +15,13 @@
     }
   ],
   "rewrites": [
+    { 
+      "source": "/api/health-upload", 
+      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" 
+    },
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },
     { "source": "/login", "destination": "/index.html" },
-    { "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|api/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
   ]
 }
