@@ -1,65 +1,88 @@
 
--- 1. 用户基础档案表 (含姓名)
-create table if not exists public.profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  email text unique,
+-- 1. 确保基础档案表存在
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  email text UNIQUE,
   full_name text, 
-  role text default 'user',
-  is_blocked boolean default false,
-  created_at timestamp with time zone default now()
+  role text DEFAULT 'user',
+  is_blocked boolean DEFAULT false,
+  created_at timestamp with time zone DEFAULT now()
 );
 
--- 2. 用户生物识别与配置状态表
-create table if not exists public.user_data (
-  id uuid primary key references public.profiles(id) on delete cascade,
+-- 2. 核心：确保 user_data 表及其所有列存在
+-- 如果表不存在，则创建
+CREATE TABLE IF NOT EXISTS public.user_data (
+  id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
   age integer,
   height float,
   weight float,
   gender text,
-  setup_completed boolean default false,
-  updated_at timestamp with time zone default now()
+  setup_completed boolean DEFAULT false,
+  updated_at timestamp with time zone DEFAULT now()
 );
 
--- 3. 自动创建 Profile 的触发器逻辑 (Supabase 标准实践)
-create or replace function public.handle_new_user()
-returns trigger as $$
-begin
-  insert into public.profiles (id, email)
-  values (new.id, new.email)
-  on conflict (id) do nothing;
-  return new;
-end;
-$$ language plpgsql security definer;
+-- 如果表已经存在，确保列存在（防止旧表导致缺失列错误）
+DO $$ 
+BEGIN 
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='age') THEN
+        ALTER TABLE public.user_data ADD COLUMN age integer;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='height') THEN
+        ALTER TABLE public.user_data ADD COLUMN height float;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='weight') THEN
+        ALTER TABLE public.user_data ADD COLUMN weight float;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='gender') THEN
+        ALTER TABLE public.user_data ADD COLUMN gender text;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='user_data' AND column_name='setup_completed') THEN
+        ALTER TABLE public.user_data ADD COLUMN setup_completed boolean DEFAULT false;
+    END IF;
+END $$;
 
--- 重置触发器
-drop trigger if exists on_auth_user_created on auth.users;
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+-- 3. 重新设置 RLS 策略，确保权限正确
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
 
--- 为现有用户补全缺失的 Profile
-insert into public.profiles (id, email)
-select id, email from auth.users
-on conflict (id) do nothing;
+-- 清理旧策略
+DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can insert own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Users can view own data" ON public.user_data;
+DROP POLICY IF EXISTS "Users can insert own data" ON public.user_data;
+DROP POLICY IF EXISTS "Users can update own data" ON public.user_data;
 
--- 4. 开启安全策略 (RLS)
-alter table public.profiles enable row level security;
-alter table public.user_data enable row level security;
+-- 重新创建策略
+CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can insert own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- Profiles 策略 (允许插入和更新)
-drop policy if exists "Users can view own profile" on public.profiles;
-drop policy if exists "Users can update own profile" on public.profiles;
-drop policy if exists "Users can insert own profile" on public.profiles;
+CREATE POLICY "Users can view own data" ON public.user_data FOR SELECT USING (auth.uid() = id);
+CREATE POLICY "Users can insert own data" ON public.user_data FOR INSERT WITH CHECK (auth.uid() = id);
+CREATE POLICY "Users can update own data" ON public.user_data FOR UPDATE USING (auth.uid() = id);
 
-create policy "Users can view own profile" on public.profiles for select using (auth.uid() = id);
-create policy "Users can insert own profile" on public.profiles for insert with check (auth.uid() = id);
-create policy "Users can update own profile" on public.profiles for update using (auth.uid() = id);
+-- 4. 触发器：新用户注册自动创建 Profile
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email)
+  VALUES (new.id, new.email)
+  ON CONFLICT (id) DO NOTHING;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- User Data 策略 (允许插入和更新)
-drop policy if exists "Users can view own data" on public.user_data;
-drop policy if exists "Users can insert own data" on public.user_data;
-drop policy if exists "Users can update own data" on public.user_data;
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
-create policy "Users can view own data" on public.user_data for select using (auth.uid() = id);
-create policy "Users can insert own data" on public.user_data for insert with check (auth.uid() = id);
-create policy "Users can update own data" on public.user_data for update using (auth.uid() = id);
+-- 补全现有用户
+INSERT INTO public.profiles (id, email)
+SELECT id, email FROM auth.users
+ON CONFLICT (id) DO NOTHING;
