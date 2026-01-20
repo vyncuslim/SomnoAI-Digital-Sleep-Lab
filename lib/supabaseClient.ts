@@ -6,21 +6,20 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 /**
  * Robust check for LocalStorage accessibility.
- * In many sandboxed environments (like iframes), accessing localStorage throws a SecurityError.
+ * In many sandboxed environments or with restricted third-party cookies, 
+ * accessing localStorage throws a SecurityError.
  */
-const checkStorageAvailability = () => {
+const getSafeStorage = () => {
   try {
     const testKey = '__somno_storage_test__';
     window.localStorage.setItem(testKey, testKey);
     window.localStorage.removeItem(testKey);
-    return true;
+    return window.localStorage;
   } catch (e) {
-    console.warn("SomnoAI Auth: LocalStorage is restricted in this environment. Falling back to memory-only session.");
-    return false;
+    console.warn("SomnoAI Auth: LocalStorage is restricted. Using in-memory fallback.");
+    return undefined; // Supabase will fallback to in-memory
   }
 };
-
-const storageAvailable = checkStorageAvailability();
 
 /**
  * Core Supabase engine for authentication and biometric data persistence.
@@ -28,12 +27,10 @@ const storageAvailable = checkStorageAvailability();
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    persistSession: storageAvailable,
-    autoRefreshToken: storageAvailable,
+    storage: getSafeStorage(),
+    persistSession: true,
+    autoRefreshToken: true,
     detectSessionInUrl: true,
-    flowType: 'pkce',
-    storageKey: 'somno_auth_session',
-    // In sandboxed environments, we prefer memory-only fallback handled by the SDK
-    // but we explicitly tell it whether to try and persist or not.
+    flowType: 'pkce'
   }
 });

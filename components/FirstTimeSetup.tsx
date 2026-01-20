@@ -3,10 +3,10 @@ import React, { useState } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   User, Brain, Ruler, Scale, Heart, Save, Loader2, 
-  Zap, Info, CheckCircle2, ShieldCheck
+  Zap, ShieldCheck
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { userDataApi, profileApi } from '../services/supabaseService.ts';
+import { motion } from 'framer-motion';
+import { userDataApi } from '../services/supabaseService.ts';
 import { Logo } from './Logo.tsx';
 
 const m = motion as any;
@@ -17,6 +17,7 @@ interface FirstTimeSetupProps {
 
 export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) => {
   const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     fullName: '',
     age: '',
@@ -28,25 +29,24 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving) return;
+    
     setIsSaving(true);
+    setError(null);
 
     try {
-      // 1. Update Profile (Full Name)
-      await profileApi.updateProfile({ full_name: formData.fullName });
-      
-      // 2. Update User Data (Metrics)
-      await userDataApi.updateUserData({
-        age: parseInt(formData.age),
-        weight: parseFloat(formData.weight),
-        height: parseFloat(formData.height),
-        gender: formData.gender,
-        setup_completed: true
+      // 使用组合式更新 API，确保 profiles 和 user_data 同时受影响
+      await userDataApi.completeSetup(formData.fullName, {
+        age: formData.age,
+        weight: formData.weight,
+        height: formData.height,
+        gender: formData.gender
       });
 
+      // 提交成功后触发回调，父组件 App.tsx 会刷新 setupRequired 状态
       onComplete();
-    } catch (err) {
-      console.error("Setup failed:", err);
-      alert("Registration sequence failed. Please verify neural link.");
+    } catch (err: any) {
+      console.error("Registration Sequence Failed:", err);
+      setError(err.message || "Registry authority rejected the data packets. Ensure SQL schema is applied.");
     } finally {
       setIsSaving(false);
     }
@@ -67,13 +67,13 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
       >
         <div className="text-center mb-10 space-y-4">
           <Logo size={80} animated={true} />
-          <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter">Subject Registration</h1>
+          <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Subject Registration</h1>
           <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em]">Initial Laboratory Onboarding required</p>
         </div>
 
         <GlassCard className="p-10 md:p-12 border-indigo-500/20 shadow-2xl rounded-[3.5rem]">
-          <form onSubmit={handleSave} className="space-y-10">
-            <div className="space-y-8">
+          <form onSubmit={handleSave} className="space-y-8">
+            <div className="space-y-6">
               <div className="space-y-3">
                 <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2">
                   <User size={12}/> Subject Identity (Full Name)
@@ -147,6 +147,12 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                 Biometric data is utilized exclusively for Neural Synthesis calibration. All metrics reside within your private lab profile.
               </p>
             </div>
+
+            {error && (
+              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-[10px] font-bold text-rose-500 uppercase tracking-widest text-center">
+                {error}
+              </div>
+            )}
 
             <button 
               type="submit"

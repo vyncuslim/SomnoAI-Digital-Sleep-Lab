@@ -19,22 +19,21 @@ export class HealthConnectService {
   }
 
   /**
-   * 确保 Google GSI 脚本已就绪
+   * Robust wait for Google Identity Services SDK to be ready.
    */
-  private async ensureSdkLoaded(): Promise<void> {
+  private async waitForGoogleSDK(): Promise<void> {
     if (typeof google !== 'undefined' && google.accounts?.oauth2) return;
     
     return new Promise((resolve, reject) => {
       let attempts = 0;
-      const maxAttempts = 50; // 5 seconds
       const interval = setInterval(() => {
         attempts++;
         if (typeof google !== 'undefined' && google.accounts?.oauth2) {
           clearInterval(interval);
           resolve();
-        } else if (attempts >= maxAttempts) {
+        } else if (attempts > 50) { // 5 seconds max
           clearInterval(interval);
-          reject(new Error("GOOGLE_SDK_LOAD_TIMEOUT"));
+          reject(new Error("GOOGLE_SDK_MISSING"));
         }
       }, 100);
     });
@@ -53,7 +52,11 @@ export class HealthConnectService {
   public async authorize(): Promise<string> {
     if (this.isNativeBridgeAvailable()) return "NATIVE_AUTHORIZED";
     
-    await this.ensureSdkLoaded();
+    try {
+      await this.waitForGoogleSDK();
+    } catch (e) {
+      throw e;
+    }
     
     return new Promise((resolve, reject) => {
       try {
