@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { GlassCard } from './components/GlassCard.tsx';
 import { 
-  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck
+  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
+  Terminal, ExternalLink, Database, ChevronRight
 } from 'lucide-react';
 import { Language, translations } from './services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -27,7 +28,7 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
-  lang, onLanguageChange, onLogout, 
+  lang, onLanguageChange, onLogout, onNavigate
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -84,6 +85,26 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           <div className="space-y-4">
+             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">Developer Tools</span>
+             <button 
+                onClick={() => onNavigate('telemetry-bridge')}
+                className="w-full p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/20 flex items-center justify-between group hover:bg-indigo-500/10 transition-all"
+             >
+                <div className="flex items-center gap-4">
+                   <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform">
+                      <Terminal size={20} />
+                   </div>
+                   <div className="text-left">
+                      <p className="text-xs font-black text-white uppercase tracking-wider">Telemetry Bridge</p>
+                      <p className="text-[10px] text-slate-500 italic">Manage API Uploads & Handshakes</p>
+                   </div>
+                </div>
+                {/* Added missing ChevronRight component */}
+                <ChevronRight size={18} className="text-slate-700 group-hover:text-indigo-400 transition-colors" />
+             </button>
+          </div>
+
+          <div className="space-y-4">
              <button 
                 onClick={() => setShowDonation(true)}
                 className="w-full py-6 rounded-full bg-[#f43f5e]/10 border border-[#f43f5e]/30 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/10"
@@ -122,7 +143,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-none">
                   CONTRIBUTION<br />ACKNOWLEDGED
                 </h2>
-                <p className="text-[13px] text-slate-400 italic max-w-md mx-auto leading-relaxed">
+                <p className="text-[13px] text-slate-400 italic max-w-md mx-auto relaxed">
                   Your support fuels lab processing.
                 </p>
               </div>

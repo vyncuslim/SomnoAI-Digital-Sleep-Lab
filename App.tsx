@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical, AlertTriangle, ChevronRight, History } from 'lucide-react';
+import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical, AlertTriangle, ChevronRight, History, Terminal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
@@ -21,6 +21,7 @@ import { Settings } from './Settings.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { AboutView } from './components/AboutView.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
+import { TelemetryTerminal } from './components/TelemetryTerminal.tsx';
 
 const m = motion as any;
 
@@ -157,6 +158,7 @@ const App: React.FC = () => {
       else if (hash === '#/calendar') setActiveView('calendar');
       else if (hash === '#/assistant') setActiveView('assistant');
       else if (hash === '#/about') setActiveView('about');
+      else if (hash === '#/telemetry-bridge') setActiveView('telemetry-bridge');
       else setActiveView('dashboard');
     };
     
@@ -358,6 +360,7 @@ const App: React.FC = () => {
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => { try { window.location.hash = `#/${v}` } catch(e) {} }} />}
             {activeView === 'profile' && <UserProfile lang={lang} />}
             {activeView === 'about' && <AboutView lang={lang} onBack={() => { try { window.location.hash = '#/' } catch(e) {} }} />}
+            {activeView === 'telemetry-bridge' && <TelemetryTerminal lang={lang} onBack={() => { try { window.location.hash = '#/settings' } catch(e) {} }} />}
             {activeView === 'settings' && (
               <Settings 
                 lang={lang} 
