@@ -59,7 +59,10 @@ export const userDataApi = {
         .eq('id', user.id)
         .maybeSingle();
         
-      if (error && error.status !== 404) throw error;
+      if (error) {
+        if (error.status === 404 || error.code === 'PGRST116') return null;
+        throw error;
+      }
       return data;
     } catch (e) {
       return null;
@@ -67,21 +70,27 @@ export const userDataApi = {
   },
   
   /**
-   * 提交初始化数据：同时更新 Profile 姓名和 User Data 生物指标
+   * 提交初始化数据：确保原子性
    */
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
 
-    // 1. 更新 Profile 姓名
+    // 1. 先确保 Profile 记录存在并更新全名 (双保险)
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ full_name: fullName })
-      .eq('id', user.id);
+      .upsert({ 
+        id: user.id, 
+        email: user.email, 
+        full_name: fullName 
+      }, { onConflict: 'id' });
     
-    if (profileError) console.warn("Profile update issue:", profileError.message);
+    if (profileError) {
+      console.error("Profile Upsert Error:", profileError);
+      throw profileError;
+    }
 
-    // 2. 更新/插入 生物指标
+    // 2. 写入/更新生物指标
     const payload = {
       id: user.id,
       age: parseInt(metrics.age) || 0,
@@ -96,7 +105,10 @@ export const userDataApi = {
       .from('user_data')
       .upsert(payload, { onConflict: 'id' });
 
-    if (dataError) throw dataError;
+    if (dataError) {
+      console.error("UserData Upsert Error:", dataError);
+      throw dataError;
+    }
     return data;
   },
 
@@ -112,7 +124,12 @@ export const authApi = {
   signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
   sendOTP: (email: string) => supabase.auth.signInWithOtp({ email }),
   verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),
-  signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google' }),
+  signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin
+    }
+  }),
   signOut: () => supabase.auth.signOut()
 };
 
