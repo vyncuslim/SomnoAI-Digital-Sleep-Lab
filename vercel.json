@@ -19,6 +19,7 @@
       "source": "/api/health-upload", 
       "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" 
     },
+    { "source": "/api/:path*", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/:path*" },
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },
     { "source": "/login", "destination": "/index.html" },

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from '../services/i18n.ts';
-import { healthDataApi } from '../services/supabaseService.ts';
+import { supabase } from '../services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -25,7 +25,7 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
   const [activeTab, setActiveTab] = useState<'info' | 'curl' | 'js'>('info');
 
   const PUBLIC_API = "https://sleepsomno.com/api/health-upload";
-  const RAW_ENDPOINT = "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder";
+  const LOCAL_PROXY = "/api/health-upload"; // Use relative path to test Vercel rewrite
 
   const addLog = (msg: string) => {
     setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 5));
@@ -33,26 +33,40 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
 
   const handlePulseTest = async () => {
     setStatus('testing');
-    addLog("Gateway: Ping sent to /api/health-upload");
+    addLog(`Gateway: Testing proxy link ${PUBLIC_API}...`);
+    
     try {
-      const result = await healthDataApi.uploadTelemetry({ 
-        source: 'gateway_diagnostic', 
-        heart_rate: 65, 
-        steps: 0, 
-        weight: 0 
+      const { data: { session } } = await supabase.auth.getSession();
+      const apiKey = (supabase as any).supabaseKey; // The anon key
+
+      // DIRECT FETCH TO PROXY URL
+      const response = await fetch(LOCAL_PROXY, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          source: 'gateway_test_pulse',
+          heart_rate: 72,
+          steps: 100,
+          recorded_at: new Date().toISOString()
+        })
       });
-      
-      if (result.success) {
+
+      if (response.ok) {
         setStatus('success');
-        addLog("Gateway: Handshake confirmed. Route optimized.");
+        addLog("Gateway: 200 OK. Public route fully operational.");
       } else {
+        const errData = await response.text();
+        addLog(`Gateway: Error ${response.status}. ${errData.slice(0, 20)}...`);
         throw new Error();
       }
     } catch (e) {
       setStatus('error');
-      addLog("Gateway: Route timed out. Check Edge Runtime.");
+      addLog("Gateway: Handshake failed. Check Vercel rewrites.");
     }
-    setTimeout(() => setStatus('idle'), 2000);
+    setTimeout(() => setStatus('idle'), 3000);
   };
 
   const copyToClipboard = (text: string) => {
@@ -70,6 +84,19 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
     "source": "wearable_node_01"
   }'`;
 
+  const jsCode = `// SomnoAI Telemetry Ingress Example
+const uploadData = async (metrics) => {
+  const response = await fetch('${PUBLIC_API}', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer YOUR_ANON_KEY'
+    },
+    body: JSON.stringify(metrics)
+  });
+  return await response.json();
+};`;
+
   return (
     <div className="space-y-10 pb-40 animate-in fade-in slide-in-from-bottom-4 duration-700 max-w-4xl mx-auto px-4 text-left">
       <header className="flex flex-col md:flex-row md:items-center justify-between gap-6">
@@ -86,7 +113,7 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
         </div>
         <div className="flex items-center gap-3 bg-indigo-500/10 px-6 py-3 rounded-2xl border border-indigo-500/20">
            <Cpu size={16} className="text-indigo-400" />
-           <span className="text-[10px] font-black text-white uppercase tracking-widest">Edge Proxy v1.0</span>
+           <span className="text-[10px] font-black text-white uppercase tracking-widest">Edge Proxy v1.1</span>
         </div>
       </header>
 
@@ -108,7 +135,7 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
                 <div className="flex justify-between items-center text-[9px] font-black text-slate-600 uppercase tracking-widest px-2">
                   <span>URL PATH</span>
                   <div className="flex items-center gap-2">
-                     <span className="text-indigo-400">REWRITTEN</span>
+                     <span className="text-indigo-400">GATEWAY ACTIVE</span>
                   </div>
                 </div>
                 <div className="text-sm font-mono text-indigo-300 break-all px-2 font-bold select-all">
@@ -149,15 +176,15 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
                          </div>
                        </div>
                        <p className="text-[10px] text-slate-500 italic leading-relaxed pt-2 border-t border-white/5">
-                         This route acts as a secure proxy to the Somno Neural Pipeline. All requests are logged for security audits.
+                         Use this endpoint for automated wearable synchronization. The request must include your project's ANON_KEY for authentication.
                        </p>
                     </m.div>
                   ) : (
                     <m.div key="code" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative group">
-                       <pre className="p-6 text-[10px] font-mono text-indigo-300/80 leading-relaxed overflow-x-auto scrollbar-hide">
-                          {activeTab === 'curl' ? curlCode : '// JavaScript Implementation coming soon...'}
+                       <pre className="p-6 text-[10px] font-mono text-indigo-300/80 leading-relaxed overflow-x-auto scrollbar-hide max-h-[300px]">
+                          {activeTab === 'curl' ? curlCode : jsCode}
                        </pre>
-                       <button onClick={() => copyToClipboard(curlCode)} className="absolute right-4 top-4 p-2 bg-white/5 text-slate-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                       <button onClick={() => copyToClipboard(activeTab === 'curl' ? curlCode : jsCode)} className="absolute right-4 top-4 p-2 bg-white/5 text-slate-400 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity">
                          <Copy size={14} />
                        </button>
                     </m.div>
@@ -173,7 +200,7 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
             <div className="flex items-center justify-between mb-10">
                <div className="flex items-center gap-3">
                  <Activity size={20} className="text-indigo-400" />
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Route Diagnostic</span>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic">Integration Test</span>
                </div>
             </div>
 
@@ -181,14 +208,22 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
               onClick={handlePulseTest}
               disabled={status === 'testing'}
               className={`w-full py-6 rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95 italic overflow-hidden relative ${
-                status === 'success' ? 'bg-emerald-600' : 
-                status === 'error' ? 'bg-rose-600' : 
-                'bg-indigo-600 hover:bg-indigo-500'
+                status === 'success' ? 'bg-emerald-600 shadow-emerald-500/20' : 
+                status === 'error' ? 'bg-rose-600 shadow-rose-500/20' : 
+                'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-500/20'
               }`}
             >
-              {/* Added missing icon component */}
               {status === 'testing' ? <RefreshCw size={18} className="animate-spin" /> : <Command size={18} />}
-              {status === 'testing' ? 'VERIFYING ROUTE...' : 'TEST PRETTY URL'}
+              {status === 'testing' ? 'VERIFYING PROXY...' : 'TEST PUBLIC URL'}
+              
+              {status === 'testing' && (
+                <m.div 
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '100%' }}
+                  transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-0 bg-white/10"
+                />
+              )}
             </button>
 
             <div className="mt-10 space-y-4">
@@ -202,12 +237,12 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
                       key={log} 
                       initial={{ opacity: 0, x: -10 }} 
                       animate={{ opacity: 1, x: 0 }} 
-                      className={`italic ${log.includes('confirmed') ? 'text-emerald-400' : log.includes('timed out') ? 'text-rose-400' : 'text-slate-500'}`}
+                      className={`italic ${log.includes('operational') || log.includes('confirmed') ? 'text-emerald-400' : log.includes('failed') || log.includes('Error') ? 'text-rose-400' : 'text-slate-500'}`}
                     >
                       {log}
                     </m.div>
                   )) : (
-                    <div className="text-slate-800 italic">Awaiting API traffic...</div>
+                    <div className="text-slate-800 italic">Ready for integrated diagnostic...</div>
                   )}
                 </AnimatePresence>
               </div>
@@ -218,16 +253,12 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
              <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Lock size={18} className="text-indigo-400" />
-                  <span className="text-[11px] font-black uppercase text-white italic">Internal Bridge</span>
+                  <span className="text-[11px] font-black uppercase text-white italic">CORS Authorization</span>
                 </div>
              </div>
-             <p className="text-[9px] text-slate-600 italic break-all">
-               {RAW_ENDPOINT}
+             <p className="text-[10px] text-slate-500 italic leading-relaxed">
+               The gateway is configured to accept requests from any origin, provided a valid <span className="text-white">Authorization</span> header is present.
              </p>
-             <div className="flex items-center gap-2 text-[8px] font-black text-slate-700 uppercase tracking-widest">
-               {/* Added missing icon component */}
-               <Info size={10} /> Hidden from public metadata
-             </div>
           </div>
         </div>
       </div>
