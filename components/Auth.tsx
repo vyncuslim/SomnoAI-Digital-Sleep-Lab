@@ -56,7 +56,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       if (errorCode === 'otp_expired') {
         setError(lang === 'zh' ? '验证链接已过期，请重新请求令牌。' : 'Verification link expired. Please request a new token.');
       } else if (errorCode === 'invalid_credentials' || errorMsg.includes('Invalid login credentials')) {
-        setError(lang === 'zh' ? '登录凭据无效：请检查邮箱和密码是否正确，或尝试使用 OTP 模式。' : 'Invalid login credentials: Check your email/password or use OTP Mode.');
+        setError(lang === 'zh' ? '登录凭据无效：请检查邮箱验证或密码是否正确。' : 'Invalid login credentials: Check your email verification or password.');
       } else {
         setError(errorMsg.replace(/\+/g, ' '));
       }
@@ -102,28 +102,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         const { data: signUpData, error: signUpErr } = await authApi.signUp(email, password);
         if (signUpErr) throw signUpErr;
         
-        // Check if user is already logged in (some Supabase configs log in immediately)
         if (signUpData?.session) {
           onLogin();
           return;
         }
         
-        // If email confirmation is required, send OTP/Magic Link
-        const { error: otpErr } = await authApi.sendOTP(email);
-        if (otpErr) {
-          // If OTP fails but sign up worked, maybe user already exists or email is restricted
-          setSuccess("REGISTRY CREATED. Please check your email for a confirmation link.");
-          return;
-        }
-
-        setSuccess("REGISTRY CREATED. OTP TOKEN DISPATCHED.");
-        setOtpSent(true);
-        setAuthMode('otp');
+        setSuccess(lang === 'zh' ? "账户已创建！请检查邮箱以进行验证。" : "Registry created! Please check your email for verification.");
+        setCooldown(60);
       } else if (authMode === 'password') {
         const { error: signInErr } = await authApi.signIn(email, password);
         if (signInErr) {
           if (signInErr.message.includes('Invalid login credentials')) {
-            throw new Error(lang === 'zh' ? "登录凭据无效。如果您刚刚注册，请先验证您的邮箱或使用 OTP 模式。" : "Invalid login credentials. If you just registered, please verify your email or try OTP Mode.");
+            throw new Error(lang === 'zh' ? "登录凭据无效。如果您刚注册，请务必先点击邮件中的验证链接。" : "Invalid credentials. If you just registered, please verify your email first.");
           }
           throw signInErr;
         }
