@@ -9,24 +9,23 @@ import App from './App.tsx';
  */
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    // Only attempt registration on secure origins that are not sandboxed 'null'
     try {
-      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost';
+      // Avoid registration if on insecure origin or specifically blocked sandboxes
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
       if (!isSecure) return;
 
+      // Use absolute path for sw.js to ensure it matches the root file
       navigator.serviceWorker.register('/sw.js').then(registration => {
         console.debug('SomnoAI PWA ServiceWorker active');
       }).catch(error => {
-        // Suppress expected 404 errors in specific preview environments
-        if (error.message && error.message.includes('404')) {
-          console.debug('ServiceWorker script not found (Skipped).');
+        if (error.message && (error.message.includes('404') || error.message.includes('not found'))) {
+          console.debug('ServiceWorker script missing from root.');
         } else {
-          console.warn('ServiceWorker registration failed:', error.message);
+          console.warn('ServiceWorker registration error:', error.message);
         }
       });
     } catch (e) {
-      // Catch SecurityError if window.location access is blocked
-      console.debug('ServiceWorker registration blocked by browser environment.');
+      console.debug('ServiceWorker init blocked.');
     }
   });
 }

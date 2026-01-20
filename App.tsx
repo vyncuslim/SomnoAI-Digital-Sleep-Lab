@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Zap, Activity, FlaskConical, AlertTriangle, ChevronRight } from 'lucide-react';
@@ -28,7 +28,7 @@ const LoadingSpinner = ({ onBypass }: { onBypass: () => void }) => {
   const [showBypass, setShowBypass] = useState(false);
   
   useEffect(() => {
-    const timer = setTimeout(() => setShowBypass(true), 3000);
+    const timer = setTimeout(() => setShowBypass(true), 2500);
     return () => clearTimeout(timer);
   }, []);
 
@@ -98,16 +98,16 @@ const App: React.FC = () => {
     } catch (e) {}
   }, [threeDEnabled, lang]);
 
-  const checkSetup = async () => {
+  const checkSetup = useCallback(async () => {
     try {
       const data = await userDataApi.getUserData();
       setSetupRequired(!data || !data.setup_completed);
     } catch (err) {
       console.warn("Setup check deferred.");
     }
-  };
+  }, []);
 
-  const fetchHistory = async () => {
+  const fetchHistory = useCallback(async () => {
     try {
       const telemetry = await healthDataApi.getTelemetryHistory();
       if (telemetry && telemetry.length > 0) {
@@ -127,13 +127,13 @@ const App: React.FC = () => {
           };
         });
         setHistory(records as SleepRecord[]);
-        if (!currentRecord) setCurrentRecord(records[0] as SleepRecord);
+        setCurrentRecord(prev => prev || (records[0] as SleepRecord));
         setIsSimulated(false);
       }
     } catch (err) {
       console.warn("Telemetry stream unreachable.");
     }
-  };
+  }, []);
 
   useEffect(() => {
     const handleHash = () => {
@@ -160,14 +160,22 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // 3-second safety timer (reduced from 5s for faster feel)
+    // Immediate 3s safety timeout to ensure we don't hang the UI
     const safetyTimer = setTimeout(() => {
-      setIsInitialAuthCheck(false);
+      setIsInitialAuthCheck(prev => {
+        if (prev) console.debug("App Boot: Safety timeout reached, releasing UI lock.");
+        return false;
+      });
     }, 3000);
 
     const initAuth = async () => {
       try {
-        const { data: { session: initialSession } } = await supabase.auth.getSession();
+        // Use Promise.race to prevent getSession from hanging indefinitely in restrictive sandboxes
+        const sessionPromise = supabase.auth.getSession();
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2500));
+        
+        const { data: { session: initialSession } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
+        
         setSession(initialSession);
         
         if (initialSession) {
@@ -176,7 +184,7 @@ const App: React.FC = () => {
           fetchHistory();
         }
       } catch (err: any) {
-        console.warn("Auth sync failure:", err.message);
+        console.warn("Auth initialization sequence bypassed:", err.message);
       } finally {
         setIsInitialAuthCheck(false);
         clearTimeout(safetyTimer);
@@ -185,7 +193,7 @@ const App: React.FC = () => {
     
     initAuth();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, newSession) => {
       setSession(newSession);
       if (newSession) {
         adminApi.checkAdminStatus(newSession.user.id).then(setIsAdmin).catch(() => setIsAdmin(false));
@@ -203,7 +211,7 @@ const App: React.FC = () => {
       subscription.unsubscribe();
       clearTimeout(safetyTimer);
     };
-  }, []);
+  }, [checkSetup, fetchHistory]);
 
   const handleInitializeSimulation = () => {
     setSyncStatus('analyzing');
