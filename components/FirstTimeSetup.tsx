@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   User, Brain, Ruler, Scale, Heart, Save, Loader2, 
-  Zap, ShieldCheck, AlertCircle
+  Zap, ShieldCheck, AlertCircle, Database, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userDataApi } from '../services/supabaseService.ts';
@@ -18,6 +18,7 @@ interface FirstTimeSetupProps {
 export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSchemaError, setIsSchemaError] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     age: '',
@@ -26,14 +27,13 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
     gender: 'prefer-not-to-say'
   });
 
-  // 安全超时：如果 15 秒内没有响应，强制恢复按钮状态
   useEffect(() => {
     let timer: any;
     if (isSaving) {
       timer = setTimeout(() => {
         if (isSaving) {
           setIsSaving(false);
-          setError("Request timed out. Please check your network or ensure SQL is applied in Supabase.");
+          setError("Network timeout. Please verify your connection or database status.");
         }
       }, 15000);
     }
@@ -46,9 +46,9 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
     
     setIsSaving(true);
     setError(null);
+    setIsSchemaError(false);
 
     try {
-      console.log("[Setup] Initiating profile commit...");
       const result = await userDataApi.completeSetup(formData.fullName, {
         age: formData.age,
         weight: formData.weight,
@@ -57,14 +57,16 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
       });
 
       if (result) {
-        console.log("[Setup] Success. Redirecting to lab...");
         onComplete();
       }
     } catch (err: any) {
-      console.error("Registration Sequence Failed:", err);
-      // 提取更具体的错误信息
-      const msg = err.message || err.details || "Registry authority rejected the data packets.";
+      console.error("Setup Error:", err);
+      const msg = err.message || "Failed to commit profile. Please try again.";
       setError(msg);
+      
+      if (msg.toLowerCase().includes('column') || msg.toLowerCase().includes('schema')) {
+        setIsSchemaError(true);
+      }
     } finally {
       setIsSaving(false);
     }
@@ -85,7 +87,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
         <div className="text-center mb-10 space-y-4">
           <Logo size={80} animated={true} />
           <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Subject Registration</h1>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em]">Initial Laboratory Onboarding required</p>
+          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em]">Initial Laboratory Onboarding</p>
         </div>
 
         <GlassCard className="p-10 md:p-12 border-indigo-500/20 shadow-2xl rounded-[3.5rem]">
@@ -171,13 +173,34 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                   initial={{ opacity: 0, height: 0 }}
                   animate={{ opacity: 1, height: 'auto' }}
                   exit={{ opacity: 0, height: 0 }}
-                  className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3"
+                  className="space-y-4"
                 >
-                  <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-black font-mono text-rose-500 uppercase tracking-widest">Protocol Error</p>
-                    <p className="text-[10px] text-rose-400 leading-tight italic">{error}</p>
+                  <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3">
+                    <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="text-[10px] font-black font-mono text-rose-500 uppercase tracking-widest">Protocol Error</p>
+                      <p className="text-[10px] text-rose-400 leading-tight italic">{error}</p>
+                    </div>
                   </div>
+                  
+                  {isSchemaError && (
+                    <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-4">
+                      <div className="flex items-center gap-2 text-amber-500">
+                        <Database size={14} />
+                        <p className="text-[10px] font-black uppercase tracking-widest">Required Action</p>
+                      </div>
+                      <p className="text-[11px] text-slate-300 italic">
+                        The laboratory database requires a manual schema update. Please copy the contents of <strong>setup.sql</strong> from your project files and run it in the Supabase SQL Editor.
+                      </p>
+                      <button 
+                        type="button"
+                        onClick={() => window.open('https://app.supabase.com', '_blank')}
+                        className="flex items-center gap-2 text-[9px] font-black text-amber-500 uppercase hover:text-white transition-colors"
+                      >
+                        Open Supabase Console <ExternalLink size={10} />
+                      </button>
+                    </div>
+                  )}
                 </m.div>
               )}
             </AnimatePresence>

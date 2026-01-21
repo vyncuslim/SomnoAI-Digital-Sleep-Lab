@@ -64,37 +64,46 @@ export const userDataApi = {
         .eq('id', user.id)
         .maybeSingle();
         
-      if (error && (error.code === 'PGRST107' || error.message.includes('column'))) {
-        const [metrics, profile] = await Promise.all([
-          supabase.from('user_data').select('*').eq('id', user.id).maybeSingle(),
-          supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
-        ]);
-        if (metrics.data) return { ...metrics.data, full_name: profile.data?.full_name || '' };
+      if (error) {
+        // Handle PostgREST cache errors by attempting a simpler query
+        if (error.code === 'PGRST107' || error.message.includes('column')) {
+          const { data: basicData } = await supabase
+            .from('user_data')
+            .select('*')
+            .eq('id', user.id)
+            .maybeSingle();
+          return basicData;
+        }
         return null;
       }
-      if (data && (data as any).profiles) return { ...data, full_name: (data as any).profiles.full_name };
+      
+      if (data && (data as any).profiles) {
+        return { ...data, full_name: (data as any).profiles.full_name };
+      }
       return data;
-    } catch (e) { return null; }
+    } catch (e) { 
+      return null; 
+    }
   },
   
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Auth required');
+    if (!user) throw new Error('Authentication required.');
 
-    // 第一步：确保 Profile 存在。使用 upsert 并在报错时尝试单独的 insert/update
+    // Step 1: Update Profile Name
     const { error: profileError } = await supabase.from('profiles').upsert({ 
       id: user.id, 
       email: user.email, 
       full_name: fullName 
-    }, { onConflict: 'id' });
+    });
 
     if (profileError) {
-      console.warn("Profile upsert failed, attempting fallback:", profileError.message);
-      // 如果 upsert 报错（可能是由于缓存找不到列），尝试直接 update
-      await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
+      console.error("Profile update failed:", profileError);
+      // Non-blocking fallback
+      await supabase.from('profiles').insert({ id: user.id, email: user.email, full_name: fullName }).select().maybeSingle();
     }
 
-    // 第二步：保存生理数据
+    // Step 2: Update User Metrics
     const payload = {
       id: user.id,
       age: parseInt(String(metrics.age)) || 0,
@@ -105,16 +114,36 @@ export const userDataApi = {
       updated_at: new Date().toISOString()
     };
 
-    const { error: dataError } = await supabase.from('user_data').upsert(payload, { onConflict: 'id' });
-    if (dataError) throw dataError;
+    const { error: dataError } = await supabase.from('user_data').upsert(payload);
+    
+    if (dataError) {
+      console.error("User data update failed:", dataError);
+      
+      // Specific handling for "column not found" error
+      if (dataError.message.includes('column') || dataError.code === 'PGRST107') {
+        const errorDetail = `Database Schema Error: The 'user_data' table is missing required columns (like 'age'). 
+        Please copy the contents of 'setup.sql' and run it in the Supabase SQL Editor.`;
+        throw new Error(errorDetail);
+      }
+      
+      throw dataError;
+    }
 
     return { success: true };
   },
 
   updateUserData: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Auth required');
-    const { error } = await supabase.from('user_data').upsert({ id: user.id, ...updates, updated_at: new Date().toISOString() });
+    if (!user) throw new Error('Authentication required.');
+    
+    const { error } = await supabase
+      .from('user_data')
+      .upsert({ 
+        id: user.id, 
+        ...updates, 
+        updated_at: new Date().toISOString() 
+      });
+      
     if (error) throw error;
     return { success: true };
   }
@@ -161,7 +190,7 @@ export const profileApi = {
   },
   updateProfile: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Auth required');
+    if (!user) throw new Error('Authentication required.');
     return await supabase.from('profiles').update(updates).eq('id', user.id);
   }
 };
