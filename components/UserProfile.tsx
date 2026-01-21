@@ -5,7 +5,7 @@ import {
   UserCircle, Edit2, Activity, Save, Loader2, 
   CheckCircle2, Lock, User, Info, Scale, Ruler, Brain, Heart,
   ShieldCheck, Fingerprint, ChevronRight, Mail, Sparkles,
-  Zap, Database, Smartphone
+  Zap, Database, Smartphone, AlertCircle
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -61,16 +61,20 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
     fetchData();
   }, []);
 
+  const isNameValid = formData.displayName.trim().length >= 2;
+  const isFormValid = isNameValid && formData.age > 0;
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isUpdating) return;
+    if (isUpdating || !isNameValid) return;
     
     setIsUpdating(true);
     setStatus('idle');
     try {
+      const cleanName = formData.displayName.trim();
       // 执行原子化更新：Profile (姓名) 与 UserData (生理指标)
       await Promise.all([
-        profileApi.updateProfile({ full_name: formData.displayName }),
+        profileApi.updateProfile({ full_name: cleanName }),
         userDataApi.updateUserData({
           age: parseInt(formData.age.toString()) || 0,
           weight: parseFloat(formData.weight.toString()) || 0,
@@ -80,6 +84,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
       ]);
       
       setStatus('success');
+      setFormData(prev => ({ ...prev, displayName: cleanName }));
       setTimeout(() => setStatus('idle'), 3000);
     } catch (err) {
       console.error("Profile Update Error:", err);
@@ -192,14 +197,38 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
                   <label className="text-[10px] font-black uppercase text-indigo-400 px-4 flex items-center gap-2 tracking-[0.3em] italic">
                     <Edit2 size={12} /> Subject Callsign (Full Name)
                   </label>
-                  <input 
-                    type="text"
-                    value={formData.displayName}
-                    onChange={(e) => setFormData({...formData, displayName: e.target.value})}
-                    className="w-full bg-[#050a1f]/80 border border-white/10 rounded-3xl px-8 py-6 text-sm text-white focus:border-indigo-500 outline-none transition-all font-semibold italic placeholder:text-slate-800 focus:shadow-[0_0_30px_rgba(79,70,229,0.15)]"
-                    placeholder="Enter full name"
-                    required
-                  />
+                  <div className="space-y-3">
+                    <input 
+                      type="text"
+                      value={formData.displayName}
+                      onChange={(e) => setFormData({...formData, displayName: e.target.value})}
+                      className={`w-full bg-[#050a1f]/80 border rounded-3xl px-8 py-6 text-sm text-white focus:border-indigo-500 outline-none transition-all font-semibold italic placeholder:text-slate-800 focus:shadow-[0_0_30px_rgba(79,70,229,0.15)] ${
+                        !isNameValid && formData.displayName.length > 0 ? 'border-rose-500/40' : 'border-white/10'
+                      }`}
+                      placeholder="Enter full name"
+                      required
+                    />
+                    <AnimatePresence mode="wait">
+                      {!isNameValid && formData.displayName.length > 0 ? (
+                        <m.p 
+                          initial={{ opacity: 0, y: -5 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          exit={{ opacity: 0 }}
+                          className="text-[10px] font-black uppercase text-rose-500 px-4 flex items-center gap-2 tracking-widest italic"
+                        >
+                          <AlertCircle size={10} /> Minimum 2 characters required
+                        </m.p>
+                      ) : isNameValid && formData.displayName.length > 0 ? (
+                        <m.p 
+                          initial={{ opacity: 0, y: -5 }} 
+                          animate={{ opacity: 1, y: 0 }} 
+                          className="text-[10px] font-black uppercase text-emerald-500 px-4 flex items-center gap-2 tracking-widest italic"
+                        >
+                          <CheckCircle2 size={10} /> Valid Identifier
+                        </m.p>
+                      ) : null}
+                    </AnimatePresence>
+                  </div>
                 </div>
               </div>
             </div>
@@ -288,13 +317,13 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
           <div className="pt-16">
             <button 
               type="submit"
-              disabled={isUpdating}
+              disabled={isUpdating || !isNameValid}
               className={`w-full py-7 rounded-full font-black text-[14px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-[0.98] italic relative overflow-hidden ${
                 status === 'success' 
                   ? 'bg-emerald-600 text-white shadow-emerald-500/20' 
                   : status === 'error' 
                     ? 'bg-rose-600 text-white shadow-rose-500/20' 
-                    : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/40'
+                    : !isNameValid ? 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-500/40'
               } disabled:opacity-50`}
             >
               <AnimatePresence mode="wait">

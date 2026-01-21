@@ -22,6 +22,7 @@ import { UserProfile } from './components/UserProfile.tsx';
 import { AboutView } from './components/AboutView.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { TelemetryTerminal } from './components/TelemetryTerminal.tsx';
+import { LegalView } from './components/LegalView.tsx';
 
 const m = motion as any;
 
@@ -139,25 +140,29 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleHash = () => {
       let hash = '#/';
+      let path = '/';
       try {
         hash = window.location.hash || '#/';
+        path = window.location.pathname || '/';
       } catch (e) {
         console.warn("Security Alert: Access to location.hash is restricted.");
       }
       
-      // If there's an error in the hash, we stay on login view but let the Auth component handle the display
-      if (hash.includes('error=')) {
-        // Do not change view, let Auth component show error
-        return;
-      }
+      if (hash.includes('error=')) return;
 
-      if (hash === '#/admin') setActiveView('admin');
+      // Check path first (for direct /terms, /privacy access)
+      if (path === '/privacy') setActiveView('privacy');
+      else if (path === '/terms' || path === '/term') setActiveView('terms');
+      // Then check hashes
+      else if (hash === '#/admin') setActiveView('admin');
       else if (hash === '#/admin/login') setActiveView('admin-login');
       else if (hash === '#/profile') setActiveView('profile');
       else if (hash === '#/settings') setActiveView('settings');
       else if (hash === '#/calendar') setActiveView('calendar');
       else if (hash === '#/assistant') setActiveView('assistant');
       else if (hash === '#/about') setActiveView('about');
+      else if (hash === '#/privacy') setActiveView('privacy');
+      else if (hash === '#/terms') setActiveView('terms');
       else if (hash === '#/telemetry-bridge') setActiveView('telemetry-bridge');
       else setActiveView('dashboard');
     };
@@ -280,6 +285,7 @@ const App: React.FC = () => {
     setActiveView('dashboard');
     try {
       window.location.hash = '#/';
+      window.history.pushState(null, '', '/');
     } catch (e) {}
   };
 
@@ -288,6 +294,8 @@ const App: React.FC = () => {
   const renderContent = () => {
     if (activeView === 'admin-login') return <AdminLoginPage />;
     if (activeView === 'admin') return <AdminDashboard />;
+    if (activeView === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => { window.location.hash = '#/'; window.history.pushState(null, '', '/'); }} />;
+    if (activeView === 'terms') return <LegalView type="terms" lang={lang} onBack={() => { window.location.hash = '#/'; window.history.pushState(null, '', '/'); }} />;
 
     if (!session) {
       return (

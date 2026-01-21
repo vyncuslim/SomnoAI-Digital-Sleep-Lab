@@ -29,8 +29,6 @@ export interface SleepRecord {
 
 /**
  * Strategic Ingress Interface
- * Aligns with Edge Function POST /api/health/upload
- * Sole responsibility: Bridge telemetry to 'health_records' table.
  */
 export interface HealthTelemetryPayload {
   steps: number;
@@ -38,21 +36,15 @@ export interface HealthTelemetryPayload {
   weight: number;
   recorded_at: string;
   source: string;
-  payload?: any; // Preserved raw metrics for secondary AI synthesis
+  payload?: any; 
 }
 
-/**
- * Interface representing a message in the AI assistant conversation
- */
 export interface ChatMessage {
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
 }
 
-/**
- * Interface for system security audit and monitoring events
- */
 export interface SecurityEvent {
   id: string;
   email?: string;
@@ -63,6 +55,6 @@ export interface SecurityEvent {
   timestamp?: string;
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'telemetry-bridge';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'telemetry-bridge' | 'privacy' | 'terms';
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
 export type Language = 'en' | 'zh';
