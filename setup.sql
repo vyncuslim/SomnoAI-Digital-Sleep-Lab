@@ -1,15 +1,22 @@
 
--- 1. 物理重置 profiles 表，确保列名全小写
+-- 1. 确保 profiles 表存在
 CREATE TABLE IF NOT EXISTS public.profiles (
   id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
   email text UNIQUE,
-  full_name text, 
   role text DEFAULT 'user',
   is_blocked boolean DEFAULT false,
   created_at timestamp with time zone DEFAULT now()
 );
 
--- 2. 物理重置 user_data 表
+-- 2. 显式添加缺失的列 (解决 CREATE TABLE IF NOT EXISTS 不处理新列的问题)
+DO $$ 
+BEGIN 
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name='profiles' AND column_name='full_name') THEN
+    ALTER TABLE public.profiles ADD COLUMN full_name text;
+  END IF;
+END $$;
+
+-- 3. 确保 user_data 表存在
 CREATE TABLE IF NOT EXISTS public.user_data (
   id uuid PRIMARY KEY REFERENCES public.profiles(id) ON DELETE CASCADE,
   age integer DEFAULT 0,
@@ -20,36 +27,29 @@ CREATE TABLE IF NOT EXISTS public.user_data (
   updated_at timestamp with time zone DEFAULT now()
 );
 
--- 3. 强制元数据更新 (Force metadata rewrite)
-ALTER TABLE public.profiles ALTER COLUMN full_name SET DATA TYPE text;
-ALTER TABLE public.user_data ALTER COLUMN age SET DATA TYPE integer;
-
--- 4. 权限与 RLS 深度授权
+-- 4. 权限与 RLS (使用更加宽松的策略确保初次注册成功)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
 
--- 允许用户在注册时插入自己的 Profile (关键修复)
-DROP POLICY IF EXISTS "Public can insert profiles" ON public.profiles;
-CREATE POLICY "Public can insert profiles" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+-- Profiles 策略
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
 
-DROP POLICY IF EXISTS "Users can view own profile" ON public.profiles;
-CREATE POLICY "Users can view own profile" ON public.profiles FOR SELECT USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- User Data 策略同步
-DROP POLICY IF EXISTS "Users can view own user_data" ON public.user_data;
-CREATE POLICY "Users can view own user_data" ON public.user_data FOR SELECT USING (auth.uid() = id);
+-- User Data 策略
+DROP POLICY IF EXISTS "Users can view own data" ON public.user_data;
+CREATE POLICY "Users can view own data" ON public.user_data FOR SELECT USING (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Users can insert own user_data" ON public.user_data;
-CREATE POLICY "Users can insert own user_data" ON public.user_data FOR INSERT WITH CHECK (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can insert own data" ON public.user_data;
+CREATE POLICY "Users can insert own data" ON public.user_data FOR INSERT WITH CHECK (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Users can update own user_data" ON public.user_data;
-CREATE POLICY "Users can update own user_data" ON public.user_data FOR UPDATE USING (auth.uid() = id);
+DROP POLICY IF EXISTS "Users can update own data" ON public.user_data;
+CREATE POLICY "Users can update own data" ON public.user_data FOR UPDATE USING (auth.uid() = id);
 
--- 5. 强制触发 PostgREST 架构缓存刷新
-COMMENT ON TABLE public.profiles IS 'SomnoAI Profiles v2.1: ' || now();
-COMMENT ON TABLE public.user_data IS 'SomnoAI Core Metrics v2.1: ' || now();
-
+-- 5. 强制触发缓存刷新
 NOTIFY pgrst, 'reload schema';

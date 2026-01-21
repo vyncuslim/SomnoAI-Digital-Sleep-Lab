@@ -5,12 +5,10 @@ export { supabase };
 
 /**
  * SomnoAI Data Pipeline API
- * 处理外部遥测数据上报
  */
 export const healthDataApi = {
   uploadTelemetry: async (metrics: any) => {
     try {
-      // 尝试通过边缘函数上报（支持 Vercel Rewrite 路径）
       const { data, error } = await supabase.functions.invoke('bright-responder', {
         method: 'POST',
         body: {
@@ -25,9 +23,6 @@ export const healthDataApi = {
       if (error) throw error;
       return { success: true, data };
     } catch (err: any) {
-      console.warn("[Telemetry] Direct bridge error, falling back to table insert:", err.message);
-      
-      // 降级方案：直接写入数据库（如果边缘函数不可用）
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { success: false, error: 'UNAUTHORIZED' };
 
@@ -38,7 +33,6 @@ export const healthDataApi = {
         payload: metrics,
         source: metrics.source || 'db_fallback'
       });
-
       return { success: !dbError, error: dbError?.message };
     }
   },
@@ -59,68 +53,48 @@ export const healthDataApi = {
 };
 
 export const userDataApi = {
-  /**
-   * 鲁棒性获取用户数据
-   * 解决 "Could not find column in schema cache" (PGRST107) 错误
-   */
   getUserData: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       
-      // 优先尝试标准关联查询
       const { data, error } = await supabase
         .from('user_data')
-        .select(`
-          *,
-          profiles (full_name)
-        `)
+        .select('*, profiles(full_name)')
         .eq('id', user.id)
         .maybeSingle();
         
-      // 如果报错 PGRST107，说明架构缓存过时，无法识别关联
-      if (error && error.code === 'PGRST107') {
-        console.debug("Schema cache stale (PGRST107). Falling back to independent queries.");
-        
-        // 降级方案：分两次查询，避开 PostgREST 关联解析
-        const [userMetrics, userProfile] = await Promise.all([
+      if (error && (error.code === 'PGRST107' || error.message.includes('column'))) {
+        const [metrics, profile] = await Promise.all([
           supabase.from('user_data').select('*').eq('id', user.id).maybeSingle(),
           supabase.from('profiles').select('full_name').eq('id', user.id).maybeSingle()
         ]);
-
-        if (userMetrics.data) {
-          return {
-            ...userMetrics.data,
-            full_name: userProfile.data?.full_name || ''
-          };
-        }
+        if (metrics.data) return { ...metrics.data, full_name: profile.data?.full_name || '' };
         return null;
       }
-
-      if (data && (data as any).profiles) {
-        return {
-          ...data,
-          full_name: (data as any).profiles.full_name
-        };
-      }
+      if (data && (data as any).profiles) return { ...data, full_name: (data as any).profiles.full_name };
       return data;
-    } catch (e) {
-      console.error("[UserData] Critical Retrieval Error:", e);
-      return null;
-    }
+    } catch (e) { return null; }
   },
   
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
 
-    // 原子化串行更新以确保一致性
-    await supabase.from('profiles').upsert({ 
+    // 第一步：确保 Profile 存在。使用 upsert 并在报错时尝试单独的 insert/update
+    const { error: profileError } = await supabase.from('profiles').upsert({ 
       id: user.id, 
       email: user.email, 
       full_name: fullName 
-    });
+    }, { onConflict: 'id' });
 
+    if (profileError) {
+      console.warn("Profile upsert failed, attempting fallback:", profileError.message);
+      // 如果 upsert 报错（可能是由于缓存找不到列），尝试直接 update
+      await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
+    }
+
+    // 第二步：保存生理数据
     const payload = {
       id: user.id,
       age: parseInt(String(metrics.age)) || 0,
@@ -131,21 +105,16 @@ export const userDataApi = {
       updated_at: new Date().toISOString()
     };
 
-    return await supabase.from('user_data').upsert(payload);
+    const { error: dataError } = await supabase.from('user_data').upsert(payload, { onConflict: 'id' });
+    if (dataError) throw dataError;
+
+    return { success: true };
   },
 
   updateUserData: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Auth required');
-    
-    const { error } = await supabase
-      .from('user_data')
-      .upsert({ 
-        id: user.id, 
-        ...updates,
-        updated_at: new Date().toISOString() 
-      });
-      
+    const { error } = await supabase.from('user_data').upsert({ id: user.id, ...updates, updated_at: new Date().toISOString() });
     if (error) throw error;
     return { success: true };
   }
@@ -156,10 +125,7 @@ export const authApi = {
   signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
   sendOTP: (email: string) => supabase.auth.signInWithOtp({ email }),
   verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),
-  signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
-    provider: 'google',
-    options: { redirectTo: window.location.origin }
-  }),
+  signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }),
   signOut: () => supabase.auth.signOut()
 };
 

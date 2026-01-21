@@ -1,11 +1,11 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   User, Brain, Ruler, Scale, Heart, Save, Loader2, 
-  Zap, ShieldCheck
+  Zap, ShieldCheck, AlertCircle
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { userDataApi } from '../services/supabaseService.ts';
 import { Logo } from './Logo.tsx';
 
@@ -26,6 +26,20 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
     gender: 'prefer-not-to-say'
   });
 
+  // 安全超时：如果 15 秒内没有响应，强制恢复按钮状态
+  useEffect(() => {
+    let timer: any;
+    if (isSaving) {
+      timer = setTimeout(() => {
+        if (isSaving) {
+          setIsSaving(false);
+          setError("Request timed out. Please check your network or ensure SQL is applied in Supabase.");
+        }
+      }, 15000);
+    }
+    return () => clearTimeout(timer);
+  }, [isSaving]);
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isSaving) return;
@@ -34,19 +48,23 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
     setError(null);
 
     try {
-      // 使用组合式更新 API，确保 profiles 和 user_data 同时受影响
-      await userDataApi.completeSetup(formData.fullName, {
+      console.log("[Setup] Initiating profile commit...");
+      const result = await userDataApi.completeSetup(formData.fullName, {
         age: formData.age,
         weight: formData.weight,
         height: formData.height,
         gender: formData.gender
       });
 
-      // 提交成功后触发回调，父组件 App.tsx 会刷新 setupRequired 状态
-      onComplete();
+      if (result) {
+        console.log("[Setup] Success. Redirecting to lab...");
+        onComplete();
+      }
     } catch (err: any) {
       console.error("Registration Sequence Failed:", err);
-      setError(err.message || "Registry authority rejected the data packets. Ensure SQL schema is applied.");
+      // 提取更具体的错误信息
+      const msg = err.message || err.details || "Registry authority rejected the data packets.";
+      setError(msg);
     } finally {
       setIsSaving(false);
     }
@@ -54,7 +72,6 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-      {/* Background Decor */}
       <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500 rounded-full blur-[120px]" />
         <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500 rounded-full blur-[120px]" />
@@ -148,19 +165,39 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
               </p>
             </div>
 
-            {error && (
-              <div className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-[10px] font-bold text-rose-500 uppercase tracking-widest text-center">
-                {error}
-              </div>
-            )}
+            <AnimatePresence>
+              {error && (
+                <m.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3"
+                >
+                  <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
+                  <div className="space-y-1">
+                    <p className="text-[10px] font-black font-mono text-rose-500 uppercase tracking-widest">Protocol Error</p>
+                    <p className="text-[10px] text-rose-400 leading-tight italic">{error}</p>
+                  </div>
+                </m.div>
+              )}
+            </AnimatePresence>
 
             <button 
               type="submit"
               disabled={isSaving}
-              className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-indigo-900/20 hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+              className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-indigo-900/20 hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50 relative overflow-hidden"
             >
               {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} />}
-              Initialize Profile
+              {isSaving ? 'Synchronizing Profile...' : 'Initialize Profile'}
+              
+              {isSaving && (
+                <m.div 
+                  initial={{ x: '-100%' }}
+                  animate={{ x: '100%' }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                />
+              )}
             </button>
           </form>
         </GlassCard>
