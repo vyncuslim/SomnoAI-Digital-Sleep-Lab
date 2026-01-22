@@ -136,7 +136,8 @@ export const authApi = {
   signUp: (email: string, password: string) => supabase.auth.signUp({ email, password }),
   signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
   sendOTP: (email: string) => supabase.auth.signInWithOtp({ email }),
-  verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),
+  verifyOTP: (email: string, token: string, type: 'email' | 'signup' | 'magiclink' | 'recovery' | 'invite' | 'phone_change' | 'email_change' = 'email') => 
+    supabase.auth.verifyOtp({ email, token, type }),
   signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }),
   signOut: () => supabase.auth.signOut()
 };
