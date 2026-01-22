@@ -153,17 +153,19 @@ export const userDataApi = {
   
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Authentication required.');
+    if (!user) throw new Error('Auth Token Expired. Please reconnect.');
 
-    // 1. Sync identity in profiles table
+    // 1. Sync identity in profiles table (removed updated_at to match schema)
     const { error: profileError } = await supabase.from('profiles').upsert({ 
       id: user.id, 
       email: user.email, 
-      full_name: fullName.trim(),
-      updated_at: new Date().toISOString()
+      full_name: fullName.trim()
     });
     
-    if (profileError) throw profileError;
+    if (profileError) {
+      console.error("Identity Registry Failure:", profileError);
+      throw new Error(`Profile sync failed: ${profileError.message}`);
+    }
 
     // 2. Sync biological metadata in user_data table
     const payload = {
@@ -177,7 +179,10 @@ export const userDataApi = {
     };
 
     const { error: dataError } = await supabase.from('user_data').upsert(payload);
-    if (dataError) throw dataError;
+    if (dataError) {
+      console.error("Biometric Registry Failure:", dataError);
+      throw new Error(`User data storage failed: ${dataError.message}`);
+    }
     
     return { success: true };
   },
@@ -186,7 +191,6 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
     
-    // Type checking for biological metrics
     const cleanedUpdates = { ...updates };
     if (updates.age) cleanedUpdates.age = parseInt(String(updates.age));
     if (updates.height) cleanedUpdates.height = parseFloat(String(updates.height));

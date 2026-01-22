@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  User, Brain, Ruler, Scale, Heart, Save, Loader2, 
-  Zap, ShieldCheck, AlertCircle, Database, ExternalLink, ChevronRight, FlaskConical, XCircle, CheckCircle2
+  User, Brain, Ruler, Scale, Heart, Loader2, 
+  Zap, ShieldCheck, AlertCircle, CheckCircle2, XCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userDataApi } from '../services/supabaseService.ts';
@@ -17,7 +17,6 @@ interface FirstTimeSetupProps {
 export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isSchemaError, setIsSchemaError] = useState(false);
   const [formData, setFormData] = useState({
     fullName: '',
     age: '',
@@ -29,24 +28,11 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
   const validations = {
     fullName: formData.fullName.trim().length >= 2,
     age: parseInt(formData.age) > 0 && parseInt(formData.age) < 120,
-    height: parseFloat(formData.height) > 50 && parseFloat(formData.height) < 300,
-    weight: parseFloat(formData.weight) > 20 && parseFloat(formData.weight) < 500
+    height: parseFloat(formData.height) > 30 && parseFloat(formData.height) < 300,
+    weight: parseFloat(formData.weight) > 10 && parseFloat(formData.weight) < 500
   };
 
   const isFormValid = Object.values(validations).every(v => v);
-
-  useEffect(() => {
-    let timer: any;
-    if (isSaving) {
-      timer = setTimeout(() => {
-        if (isSaving) {
-          setIsSaving(false);
-          setError("Connection timeout. The laboratory node responded late.");
-        }
-      }, 15000);
-    }
-    return () => clearTimeout(timer);
-  }, [isSaving]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -54,7 +40,6 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
     
     setIsSaving(true);
     setError(null);
-    setIsSchemaError(false);
 
     try {
       const result = await userDataApi.completeSetup(formData.fullName, {
@@ -64,17 +49,12 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
         gender: formData.gender
       });
 
-      if (result) {
+      if (result.success) {
         onComplete();
       }
     } catch (err: any) {
-      console.error("Setup Error:", err);
-      const msg = err.message || "Failed to commit profile. Please try again.";
-      setError(msg);
-      
-      if (msg.includes('column') || msg.includes('SCHEMA_UNINITIALIZED') || msg.includes('42P01')) {
-        setIsSchemaError(true);
-      }
+      console.error("Setup Sync Critical Error:", err);
+      setError(err.message || "Failed to establish registry link. Node rejected the package.");
     } finally {
       setIsSaving(false);
     }
@@ -82,32 +62,36 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
 
   const getInputBorderClass = (isValid: boolean, value: string) => {
     if (!value) return 'border-white/10';
-    return isValid ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-rose-500/50 shadow-[0_0_15px_rgba(244,63,94,0.1)]';
+    return isValid ? 'border-emerald-500/40 shadow-[0_0_20px_rgba(16,185,129,0.1)]' : 'border-rose-500/40 shadow-[0_0_20px_rgba(244,63,94,0.1)]';
   };
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-full opacity-5 pointer-events-none">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500 rounded-full blur-[120px]" />
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500 rounded-full blur-[120px]" />
+      {/* Neural Background Ambience */}
+      <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600 rounded-full blur-[150px]" />
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600 rounded-full blur-[150px]" />
       </div>
 
       <m.div 
-        initial={{ opacity: 0, y: 20 }} 
+        initial={{ opacity: 0, y: 30 }} 
         animate={{ opacity: 1, y: 0 }} 
         className="w-full max-w-xl z-10"
       >
         <div className="text-center mb-10 space-y-4">
-          <Logo size={80} animated={true} />
-          <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Subject Registration</h1>
-          <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.4em]">Initial Laboratory Onboarding</p>
+          <Logo size={100} animated={true} />
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Subject Registration</h1>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.5em]">Initial Laboratory Onboarding</p>
+          </div>
         </div>
 
-        <GlassCard className="p-10 md:p-12 border-indigo-500/20 shadow-2xl rounded-[3.5rem]">
-          <form onSubmit={handleSave} className="space-y-8">
-            <div className="space-y-6">
+        <GlassCard className="p-10 md:p-14 border-indigo-500/20 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] rounded-[4.5rem]">
+          <form onSubmit={handleSave} className="space-y-12">
+            <div className="space-y-8">
+              {/* Full Name */}
               <div className="space-y-3">
-                <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2 tracking-widest italic">
+                <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic">
                   <User size={12}/> Subject Identity (Full Name)
                 </label>
                 <div className="relative">
@@ -117,17 +101,18 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                     placeholder="Enter full name"
                     value={formData.fullName}
                     onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                    className={`w-full bg-slate-950/60 border rounded-full px-8 py-5 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-800 font-semibold italic ${getInputBorderClass(validations.fullName, formData.fullName)}`}
+                    className={`w-full bg-slate-950/80 border rounded-full px-8 py-6 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-800 font-bold italic ${getInputBorderClass(validations.fullName, formData.fullName)}`}
                   />
-                  <div className="absolute right-6 top-1/2 -translate-y-1/2">
-                    {formData.fullName && (validations.fullName ? <CheckCircle2 className="text-emerald-500" size={18} /> : <XCircle className="text-rose-500" size={18} />)}
+                  <div className="absolute right-8 top-1/2 -translate-y-1/2">
+                    {formData.fullName && (validations.fullName ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-500" size={20} />)}
                   </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              {/* Age & Neural Polarity */}
+              <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2 tracking-widest italic"><Brain size={12}/> Age</label>
+                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Brain size={12}/> Age</label>
                   <div className="relative">
                     <input 
                       type="number"
@@ -135,28 +120,35 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                       placeholder="Years"
                       value={formData.age}
                       onChange={(e) => setFormData({...formData, age: e.target.value})}
-                      className={`w-full bg-slate-950/60 border rounded-3xl px-8 py-5 text-sm text-white outline-none font-mono ${getInputBorderClass(validations.age, formData.age)}`}
+                      className={`w-full bg-slate-950/80 border rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.age, formData.age)}`}
                     />
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-700 uppercase tracking-widest pointer-events-none">Years</div>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2 tracking-widest italic"><Heart size={12}/> Neural Polarity</label>
-                  <select 
-                    value={formData.gender}
-                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                    className="w-full bg-slate-950/60 border border-white/10 rounded-3xl px-8 py-5 text-sm text-white outline-none appearance-none cursor-pointer font-semibold italic"
-                  >
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                    <option value="other">Other</option>
-                    <option value="prefer-not-to-say">N/A</option>
-                  </select>
+                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Heart size={12}/> Neural Polarity</label>
+                  <div className="relative">
+                    <select 
+                      value={formData.gender}
+                      onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                      className="w-full bg-slate-950/80 border border-white/10 rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none appearance-none cursor-pointer font-bold italic"
+                    >
+                      <option value="prefer-not-to-say">N/A</option>
+                      <option value="male">Male</option>
+                      <option value="female">Female</option>
+                      <option value="other">Other</option>
+                    </select>
+                    <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none opacity-30">
+                      <Zap size={14} fill="currentColor" />
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6">
+              {/* Height & Weight */}
+              <div className="grid grid-cols-2 gap-8">
                 <div className="space-y-3">
-                  <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2 tracking-widest italic"><Ruler size={12}/> Height (cm)</label>
+                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Ruler size={12}/> Height (cm)</label>
                   <div className="relative">
                     <input 
                       type="number"
@@ -164,12 +156,13 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                       placeholder="Metric CM"
                       value={formData.height}
                       onChange={(e) => setFormData({...formData, height: e.target.value})}
-                      className={`w-full bg-slate-950/60 border rounded-3xl px-8 py-5 text-sm text-white outline-none font-mono ${getInputBorderClass(validations.height, formData.height)}`}
+                      className={`w-full bg-slate-950/80 border rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.height, formData.height)}`}
                     />
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-700 uppercase tracking-widest pointer-events-none">Metric CM</div>
                   </div>
                 </div>
                 <div className="space-y-3">
-                  <label className="text-[9px] font-black uppercase text-slate-500 px-4 flex items-center gap-2 tracking-widest italic"><Scale size={12}/> Weight (kg)</label>
+                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Scale size={12}/> Weight (kg)</label>
                   <div className="relative">
                     <input 
                       type="number"
@@ -177,16 +170,17 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                       placeholder="Metric KG"
                       value={formData.weight}
                       onChange={(e) => setFormData({...formData, weight: e.target.value})}
-                      className={`w-full bg-slate-950/60 border rounded-3xl px-8 py-5 text-sm text-white outline-none font-mono ${getInputBorderClass(validations.weight, formData.weight)}`}
+                      className={`w-full bg-slate-950/80 border rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.weight, formData.weight)}`}
                     />
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-700 uppercase tracking-widest pointer-events-none">Metric KG</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] flex gap-4">
-              <ShieldCheck size={20} className="text-indigo-400 shrink-0" />
-              <p className="text-[10px] text-slate-400 italic leading-relaxed">
+            <div className="p-7 bg-indigo-500/5 border border-indigo-500/10 rounded-[2.5rem] flex gap-5">
+              <ShieldCheck size={24} className="text-indigo-400 shrink-0 mt-1" />
+              <p className="text-[11px] text-slate-400 italic leading-relaxed">
                 Biometric data is utilized exclusively for Neural Synthesis calibration within SomnoAI Digital Sleep Lab.
               </p>
             </div>
@@ -194,18 +188,13 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
             <AnimatePresence>
               {error && (
                 <m.div 
-                  initial={{ opacity: 0, height: 0 }}
-                  animate={{ opacity: 1, height: 'auto' }}
-                  exit={{ opacity: 0, height: 0 }}
-                  className="space-y-4"
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4"
                 >
-                  <div className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-start gap-3">
-                    <AlertCircle size={16} className="text-rose-500 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-black font-mono text-rose-500 uppercase tracking-widest">Protocol Error</p>
-                      <p className="text-[10px] text-rose-400 leading-tight italic">{error}</p>
-                    </div>
-                  </div>
+                  <AlertCircle size={20} className="text-rose-500 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-rose-400 font-bold italic uppercase tracking-wider">{error}</p>
                 </m.div>
               )}
             </AnimatePresence>
@@ -213,23 +202,29 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
             <button 
               type="submit"
               disabled={isSaving || !isFormValid}
-              className={`w-full py-6 rounded-full font-black text-xs uppercase tracking-[0.4em] shadow-xl shadow-indigo-900/20 active:scale-95 transition-all flex items-center justify-center gap-3 italic relative overflow-hidden ${isFormValid ? 'bg-indigo-600 text-white hover:bg-indigo-500' : 'bg-slate-800 text-slate-500 cursor-not-allowed border border-white/5 opacity-50'}`}
+              className={`w-full py-7 rounded-full font-black text-sm uppercase tracking-[0.5em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-4 italic relative overflow-hidden ${isFormValid ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30' : 'bg-slate-800 text-slate-600 cursor-not-allowed opacity-50 border border-white/5'}`}
             >
-              {isSaving ? <Loader2 size={18} className="animate-spin" /> : <Zap size={18} fill="currentColor" />}
-              {isSaving ? 'Synchronizing Profile...' : 'Initialize Profile'}
+              {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Zap size={20} fill="currentColor" />}
+              <span>{isSaving ? 'SYNCHRONIZING...' : 'Initialize Profile'}</span>
               
               {isSaving && (
                 <m.div 
                   initial={{ x: '-100%' }}
                   animate={{ x: '100%' }}
-                  transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent"
+                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                 />
               )}
             </button>
           </form>
         </GlassCard>
       </m.div>
+
+      <footer className="mt-16 text-center opacity-40">
+        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700 italic">
+          @2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
+        </p>
+      </footer>
     </div>
   );
 };
