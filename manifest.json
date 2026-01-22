@@ -1,8 +1,7 @@
-
 {
   "name": "SomnoAI Digital Sleep Lab",
   "short_name": "SomnoAI",
-  "description": "SomnoAI Digital Sleep Lab integrates high-fidelity physiological monitoring with deep Gemini AI insights.",
+  "description": "SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验体验。",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

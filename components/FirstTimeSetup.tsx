@@ -32,7 +32,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
       timer = setTimeout(() => {
         if (isSaving) {
           setIsSaving(false);
-          setError("Network timeout. Please verify your connection or database status.");
+          setError("Connection timeout. The laboratory node responded late.");
         }
       }, 15000);
     }
@@ -63,8 +63,8 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
       const msg = err.message || "Failed to commit profile. Please try again.";
       setError(msg);
       
-      // Detection of missing columns or tables (PGRST107, 42P01)
-      if (msg.includes('column') || msg.includes('SCHEMA_UNINITIALIZED') || msg.includes('missing')) {
+      // Explicitly detect schema uninitialized states
+      if (msg.includes('column') || msg.includes('SCHEMA_UNINITIALIZED') || msg.includes('42P01')) {
         setIsSchemaError(true);
       }
     } finally {
@@ -187,10 +187,10 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                     <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-4">
                       <div className="flex items-center gap-2 text-amber-500">
                         <Database size={14} />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Action Required</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest">Setup Required</p>
                       </div>
                       <p className="text-[11px] text-slate-300 italic">
-                        The laboratory database requires a manual schema update. Please run the provided <strong>setup.sql</strong> in your Supabase SQL Editor once to enable cloud metrics.
+                        The laboratory database requires a manual schema update. Please run <strong>setup.sql</strong> in your Supabase SQL Editor once to enable telemetry storage.
                       </p>
                       <div className="flex flex-col gap-3 pt-2">
                         <button 

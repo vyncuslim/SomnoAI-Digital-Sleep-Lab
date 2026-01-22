@@ -1,5 +1,9 @@
 User-agent: *
 Allow: /
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /sitemap.xml
+Allow: /manifest.json
 Allow: /#/assistant
 Allow: /#/about
 Allow: /#/terms

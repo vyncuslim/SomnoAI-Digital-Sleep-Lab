@@ -1,8 +1,12 @@
-
 {
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
+    {
+      "source": "/sitemap",
+      "destination": "/sitemap.xml",
+      "permanent": true
+    },
     {
       "source": "/favicon.png",
       "destination": "https://img.icons8.com/fluency/512/moon.png",
@@ -11,6 +15,16 @@
     {
       "source": "/favicon.ico",
       "destination": "https://img.icons8.com/fluency/48/moon.png",
+      "permanent": true
+    },
+    {
+      "source": "/apple-touch-icon.png",
+      "destination": "https://img.icons8.com/fluency/180/moon.png",
+      "permanent": true
+    },
+    {
+      "source": "/apple-touch-icon-precomposed.png",
+      "destination": "https://img.icons8.com/fluency/180/moon.png",
       "permanent": true
     }
   ],
@@ -26,6 +40,6 @@
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },
     { "source": "/login", "destination": "/index.html" },
-    { "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|api/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
+    { "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|sitemap.xml|robots.txt|api/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
   ]
 }

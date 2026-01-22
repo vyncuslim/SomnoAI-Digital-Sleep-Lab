@@ -65,13 +65,14 @@ export const userDataApi = {
         .maybeSingle();
         
       if (error) {
-        // PGRST107: Column missing, 42P01: Table missing
-        if (error.code === 'PGRST107' || error.message.includes('column') || error.code === '42P01') {
-          console.warn("Schema mismatch or table missing! Attempting status recovery.");
-          // Attempt a bare-minimum query to see if the table exists at all
+        // 42P01: Table doesn't exist. PGRST107: Column not found.
+        if (error.code === 'PGRST107' || error.code === '42P01' || error.message.toLowerCase().includes('column')) {
+          console.warn("Schema fatal: user_data node incomplete. Falling back to minimal query.");
+          
+          // Attempt recovery query to check if at least 'id' exists
           const { data: minData, error: minError } = await supabase
             .from('user_data')
-            .select('id, setup_completed')
+            .select('id')
             .eq('id', user.id)
             .maybeSingle();
             
@@ -94,11 +95,11 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
 
-    // 1. Update Profile (Usually core and stable)
+    // 1. Core Profile Handshake
     try {
       await supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName });
     } catch (e) {
-      console.error("Profile sync failed, continuing flow.");
+      console.error("Profile sync failed, bypass attempted.");
     }
 
     const payload: any = {
@@ -111,14 +112,15 @@ export const userDataApi = {
       updated_at: new Date().toISOString()
     };
 
-    // 2. Update user_data with resilience
+    // 2. Telemetry Schema Handshake
     const { error: dataError } = await supabase.from('user_data').upsert(payload);
     
     if (dataError) {
+      // PGRST107: Column missing, 42P01: Table missing
       if (dataError.message.includes('column') || dataError.code === 'PGRST107' || dataError.code === '42P01') {
-        console.warn("Schema error detected. Attempting minimal bypass.");
+        console.warn("Schema uninitialized error caught. Requesting manual setup execution.");
         
-        // Try minimal record to avoid blocking the user if they haven't run setup.sql yet
+        // Final attempt to record basic setup status
         const { error: retryError } = await supabase.from('user_data').upsert({
            id: user.id,
            setup_completed: true,
@@ -126,8 +128,7 @@ export const userDataApi = {
         });
 
         if (retryError) {
-          // Both full and minimal upsert failed - table likely missing
-          throw new Error("SCHEMA_UNINITIALIZED: The 'user_data' table or columns are missing. Please run setup.sql in Supabase SQL Editor.");
+          return { success: false, error: 'schema_error', message: "SCHEMA_UNINITIALIZED: The 'user_data' table is missing. Please run setup.sql in Supabase SQL Editor." };
         }
         return { success: true, partial: true };
       }

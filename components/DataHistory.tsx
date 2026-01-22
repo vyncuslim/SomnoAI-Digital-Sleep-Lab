@@ -166,9 +166,10 @@ export const DataHistory: React.FC<DataHistoryProps> = ({ history, lang }) => {
 
         <div className="h-[320px] w-full">
           <ResponsiveContainer width="100%" height="100%">
+            {/* Fix: Explicitly cast 'e' to 'any' to avoid Property 'activePayload' does not exist on type 'MouseHandlerDataParam' error */}
             <AreaChart 
               data={chartData} 
-              onMouseMove={(e) => e.activePayload && setHoveredData(e.activePayload[0].payload)}
+              onMouseMove={(e: any) => e?.activePayload && setHoveredData(e.activePayload[0].payload)}
               onMouseLeave={() => setHoveredData(null)}
             >
               <defs>
