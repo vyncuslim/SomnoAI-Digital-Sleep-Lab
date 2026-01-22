@@ -97,9 +97,7 @@ export const securityApi = {
       if (error || !data) return false;
       
       if (data.is_blocked) {
-        // Check if the suspension period has elapsed (Auto-unblock)
         if (data.blocked_until && new Date(data.blocked_until) < new Date()) {
-          // Cooldown expired, clear the flag for future attempts
           await supabase.from('profiles').update({ is_blocked: false, blocked_until: null }).eq('email', email.toLowerCase().trim());
           return false;
         }
@@ -157,8 +155,17 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
 
-    await supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName });
+    // 1. Sync identity in profiles table
+    const { error: profileError } = await supabase.from('profiles').upsert({ 
+      id: user.id, 
+      email: user.email, 
+      full_name: fullName.trim(),
+      updated_at: new Date().toISOString()
+    });
+    
+    if (profileError) throw profileError;
 
+    // 2. Sync biological metadata in user_data table
     const payload = {
       id: user.id,
       age: parseInt(String(metrics.age)) || 0,
@@ -169,15 +176,27 @@ export const userDataApi = {
       updated_at: new Date().toISOString()
     };
 
-    const { error } = await supabase.from('user_data').upsert(payload);
-    if (error) throw error;
+    const { error: dataError } = await supabase.from('user_data').upsert(payload);
+    if (dataError) throw dataError;
+    
     return { success: true };
   },
 
   updateUserData: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
-    return await supabase.from('user_data').upsert({ id: user.id, ...updates, updated_at: new Date().toISOString() });
+    
+    // Type checking for biological metrics
+    const cleanedUpdates = { ...updates };
+    if (updates.age) cleanedUpdates.age = parseInt(String(updates.age));
+    if (updates.height) cleanedUpdates.height = parseFloat(String(updates.height));
+    if (updates.weight) cleanedUpdates.weight = parseFloat(String(updates.weight));
+    
+    return await supabase.from('user_data').upsert({ 
+      id: user.id, 
+      ...cleanedUpdates, 
+      updated_at: new Date().toISOString() 
+    });
   }
 };
 
@@ -187,7 +206,6 @@ export const authApi = {
   signIn: async (email: string, password: string) => {
     const normalizedEmail = email.toLowerCase().trim();
     
-    // 1. Pre-Handshake Identity Verification
     const blocked = await securityApi.isBlocked(normalizedEmail);
     if (blocked) {
       throw new Error("ACCESS_RESTRICTED");
@@ -195,11 +213,8 @@ export const authApi = {
 
     const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
     
-    // 2. Post-Handshake Audit & Density Check
     if (error) {
       await securityApi.logAttempt(normalizedEmail, 'failure');
-      
-      // Density Analysis: Check if count >= 10 in the last 60 seconds
       const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
       const { count } = await supabase
         .from('login_attempts')
