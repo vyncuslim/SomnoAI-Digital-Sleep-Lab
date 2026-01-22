@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -69,6 +68,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
       animate={{ opacity: 1 }}
       className="space-y-10 pb-32 max-w-5xl mx-auto"
     >
+      {/* Visual Identity / Hidden SEO Title */}
+      <h1 className="sr-only">SomnoAI Digital Sleep Lab</h1>
+
       {/* Status Node Terminal */}
       <div className="flex justify-between items-center bg-slate-950/60 px-8 py-5 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
         <div className="flex items-center gap-5">
@@ -76,7 +78,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             <Logo size={32} animated={isProcessing} threeD={threeDEnabled} />
           </div>
           <div className="flex flex-col text-left">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500">Local Lab Node Alpha</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 italic">SomnoAI Digital Sleep Lab</span>
             <div className="flex items-center gap-2">
                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                <span className="text-[11px] font-black tracking-widest uppercase text-emerald-400">
@@ -139,7 +141,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[520px] flex flex-col justify-between" intensity={threeDEnabled ? 1.5 : 0}>
             <div className="flex justify-between items-start">
               <div className="text-left">
-                <h2 className="text-sm font-black italic text-indigo-400 uppercase tracking-[0.4em] mb-2">Lab Efficiency</h2>
+                <h2 className="text-sm font-black italic text-indigo-400 uppercase tracking-[0.4em] mb-2">Efficiency Analysis</h2>
                 <div className="flex items-baseline gap-2">
                   <span className="text-[10rem] md:text-[12rem] font-black italic tracking-tighter text-white drop-shadow-[0_0_100px_rgba(129,140,248,0.5)] leading-none select-none">
                     {data.score}
@@ -165,13 +167,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
                      transition={{ duration: 3, repeat: Infinity }}
                      className="w-2 h-2 rounded-full bg-indigo-400" 
                    />
-                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Laboratory Manifesto</span>
+                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">SomnoAI Digital Sleep Lab Manifesto</span>
                 </div>
                 <p className="text-[16px] font-bold text-white italic leading-relaxed text-left tracking-tight">
                   "{t.manifesto}"
                 </p>
                 <div className="flex items-center gap-2 mt-2">
-                   <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">Edge Function v1.0 • Supabase Verified</span>
+                   <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">Neural Synthesis Engine v3.1</span>
                 </div>
               </div>
               

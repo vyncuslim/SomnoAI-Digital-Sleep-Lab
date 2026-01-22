@@ -48,7 +48,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
   const widgetIdRef = useRef<string | null>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // 验证码倒计时
   useEffect(() => {
     if (cooldown > 0) {
       const timer = setInterval(() => setCooldown(prev => prev - 1), 1000);
@@ -56,7 +55,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     }
   }, [cooldown]);
 
-  // 转动验证码监控
   useEffect(() => {
     const timer = setTimeout(() => {
       if (!turnstileToken) setIsTurnstileStuck(true);
@@ -121,14 +119,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         if (signUpData?.session) {
           onLogin();
         } else {
-          setSuccess(lang === 'zh' ? '账号已创建，请输入邮箱收到的验证码。' : 'Registry created! Enter the code sent to your email.');
+          setSuccess(lang === 'zh' ? '账号已创建，请输入邮箱收到的 6 位验证码。' : 'Registry created! Please enter the 6-digit code from your email.');
           setStep('verify');
           setCooldown(60);
         }
       } else {
         const { error: otpErr } = await authApi.sendOTP(email);
         if (otpErr) throw otpErr;
-        setSuccess(lang === 'zh' ? '验证码已发送至邮箱。' : 'Verification code sent to email.');
+        setSuccess(lang === 'zh' ? '验证码已发送，请输入邮箱收到的 6 位验证码。' : 'Verification code sent! Please enter the 6-digit code from your email.');
         setStep('verify');
         setCooldown(60);
       }
@@ -150,8 +148,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     setError(null);
 
     try {
-      // 这里的 verifyOTP 应当能根据 context 处理不同类型的 code
-      // 如果是注册后跳转，type 应为 'signup'
       const type = authMode === 'register' ? 'signup' : 'email';
       const { error: verifyErr } = await authApi.verifyOTP(email, token, type);
       if (verifyErr) throw verifyErr;
@@ -192,7 +188,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       >
         <Logo size={80} animated={true} className="mx-auto mb-6" />
         <h1 className="text-4xl font-black tracking-tighter text-white italic uppercase leading-none">
-          SOMNOAI<span className="text-indigo-500">LAB</span>
+          SomnoAI Digital Sleep <span className="text-indigo-500">Lab</span>
         </h1>
         <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em]">NEURAL GATEWAY</p>
       </m.div>

@@ -50,16 +50,11 @@ export const healthDataApi = {
 };
 
 export const userDataApi = {
-  /**
-   * 鲁棒查询：如果由于架构缓存导致找不到特定列（如 age），
-   * 将自动降级为仅查询 setup_completed 状态。
-   */
   getUserData: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       
-      // 1. 尝试完整查询（逐一列出字段比 * 更稳健）
       const { data, error } = await supabase
         .from('user_data')
         .select('id, age, height, weight, gender, setup_completed, profiles(full_name)')
@@ -67,10 +62,8 @@ export const userDataApi = {
         .maybeSingle();
         
       if (error) {
-        // 如果错误提示列不存在（PGRST107）
         if (error.code === 'PGRST107' || error.message.includes('column')) {
           console.warn("Schema mismatch! Falling back to minimalist status query.");
-          // 2. 降级：仅查 ID 和状态，绕过报错列
           const { data: minData, error: minError } = await supabase
             .from('user_data')
             .select('id, setup_completed')
@@ -96,11 +89,9 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
 
-    // 更新 Profile
     await supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName });
 
-    // 写入指标
-    const payload = {
+    const payload: any = {
       id: user.id,
       age: parseInt(String(metrics.age)) || 0,
       height: parseFloat(String(metrics.height)) || 0,
@@ -114,8 +105,15 @@ export const userDataApi = {
     
     if (dataError) {
       if (dataError.message.includes('column') || dataError.code === 'PGRST107') {
-        // 如果依然报错找不到列，说明 SQL 编辑器操作被跳过了
-        throw new Error("SCHEMA_ERROR: 'age' column missing. Please run the code in setup.sql in your Supabase SQL Editor.");
+        // Retry with ONLY mandatory flags if columns are missing
+        console.warn("Retrying with minimal payload due to schema error.");
+        const { error: retryError } = await supabase.from('user_data').upsert({
+           id: user.id,
+           setup_completed: true,
+           updated_at: new Date().toISOString()
+        });
+        if (retryError) throw new Error("SCHEMA_FATAL: Setup failed after retry. Please run setup.sql.");
+        return { success: true, partial: true };
       }
       throw dataError;
     }
