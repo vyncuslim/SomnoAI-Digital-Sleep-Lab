@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   User, Brain, Ruler, Scale, Heart, Save, Loader2, 
-  Zap, ShieldCheck, AlertCircle, Database, ExternalLink
+  Zap, ShieldCheck, AlertCircle, Database, ExternalLink, ChevronRight, FlaskConical
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userDataApi } from '../services/supabaseService.ts';
@@ -64,7 +64,8 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
       const msg = err.message || "Failed to commit profile. Please try again.";
       setError(msg);
       
-      if (msg.toLowerCase().includes('column') || msg.toLowerCase().includes('schema')) {
+      // PGRST107, 42P01, or custom throw
+      if (msg.toLowerCase().includes('column') || msg.toLowerCase().includes('schema') || msg.toLowerCase().includes('missing')) {
         setIsSchemaError(true);
       }
     } finally {
@@ -163,7 +164,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
             <div className="p-6 bg-indigo-500/5 border border-indigo-500/10 rounded-[2rem] flex gap-4">
               <ShieldCheck size={20} className="text-indigo-400 shrink-0" />
               <p className="text-[10px] text-slate-400 italic leading-relaxed">
-                Biometric data is utilized exclusively for Neural Synthesis calibration. All metrics reside within your private lab profile.
+                Biometric data is utilized exclusively for Neural Synthesis calibration within SomnoAI Digital Sleep Lab.
               </p>
             </div>
 
@@ -190,15 +191,24 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                         <p className="text-[10px] font-black uppercase tracking-widest">Required Action</p>
                       </div>
                       <p className="text-[11px] text-slate-300 italic">
-                        The laboratory database requires a manual schema update. Please copy the contents of <strong>setup.sql</strong> from your project files and run it in the Supabase SQL Editor.
+                        The laboratory database requires a manual schema update. Please run <strong>setup.sql</strong> in the Supabase SQL Editor to enable persistent cloud storage.
                       </p>
-                      <button 
-                        type="button"
-                        onClick={() => window.open('https://app.supabase.com', '_blank')}
-                        className="flex items-center gap-2 text-[9px] font-black text-amber-500 uppercase hover:text-white transition-colors"
-                      >
-                        Open Supabase Console <ExternalLink size={10} />
-                      </button>
+                      <div className="flex flex-col gap-3 pt-2">
+                        <button 
+                          type="button"
+                          onClick={() => window.open('https://app.supabase.com', '_blank')}
+                          className="flex items-center gap-2 text-[9px] font-black text-amber-500 uppercase hover:text-white transition-colors"
+                        >
+                          Open Supabase Console <ExternalLink size={10} />
+                        </button>
+                        <button 
+                          type="button"
+                          onClick={onComplete}
+                          className="flex items-center gap-2 text-[9px] font-black text-indigo-400 uppercase hover:text-white transition-colors"
+                        >
+                          Skip & Proceed in Sandbox Mode <ChevronRight size={10} />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </m.div>

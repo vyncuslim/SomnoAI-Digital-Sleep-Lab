@@ -170,7 +170,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">SomnoAI Digital Sleep Lab Manifesto</span>
                 </div>
                 <p className="text-[16px] font-bold text-white italic leading-relaxed text-left tracking-tight">
-                  "{t.manifesto}"
+                  "SomnoAI Digital Sleep Lab is an AI-powered digital sleep laboratory that integrates physiological metrics monitoring, deep AI insights, and personalized health guidance."
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">Neural Synthesis Engine v3.1</span>
@@ -237,7 +237,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                    </div>
                    <div className="space-y-4">
                      <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Archive Lab Metrics</h2>
-                     <p className="text-sm text-slate-500 italic max-w-xs mx-auto">Digitally signed experiment report ready for secondary analysis.</p>
+                     <p className="text-sm text-slate-500 italic max-w-xs mx-auto">Digitally signed experiment report from SomnoAI Digital Sleep Lab.</p>
                    </div>
                    <div className="space-y-4 pt-4">
                      <button 

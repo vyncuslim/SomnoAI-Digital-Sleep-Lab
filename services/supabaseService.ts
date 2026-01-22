@@ -23,14 +23,18 @@ export const healthDataApi = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { success: false, error: 'UNAUTHORIZED' };
 
-      const { error: dbError } = await supabase.from('health_telemetry').insert({
-        user_id: user.id,
-        heart_rate: metrics.heart_rate || metrics.heartRate?.average || 0,
-        recorded_at: metrics.recorded_at || new Date().toISOString(),
-        payload: metrics,
-        source: metrics.source || 'db_fallback'
-      });
-      return { success: !dbError, error: dbError?.message };
+      try {
+        const { error: dbError } = await supabase.from('health_telemetry').insert({
+          user_id: user.id,
+          heart_rate: metrics.heart_rate || metrics.heartRate?.average || 0,
+          recorded_at: metrics.recorded_at || new Date().toISOString(),
+          payload: metrics,
+          source: metrics.source || 'db_fallback'
+        });
+        return { success: !dbError, error: dbError?.message };
+      } catch (e) {
+        return { success: false, error: 'TELEMETRY_STORAGE_FAILED' };
+      }
     }
   },
 
@@ -62,8 +66,9 @@ export const userDataApi = {
         .maybeSingle();
         
       if (error) {
-        if (error.code === 'PGRST107' || error.message.includes('column')) {
-          console.warn("Schema mismatch! Falling back to minimalist status query.");
+        // Handle missing columns or table gracefully
+        if (error.code === 'PGRST107' || error.message.includes('column') || error.code === '42P01') {
+          console.warn("Schema mismatch or table missing! Attempting status recovery.");
           const { data: minData, error: minError } = await supabase
             .from('user_data')
             .select('id, setup_completed')
@@ -89,7 +94,12 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
 
-    await supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName });
+    // 1. Try to update Profile (This table is usually core and exists)
+    try {
+      await supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName });
+    } catch (e) {
+      console.error("Profile upsert failed, but continuing setup flow.", e);
+    }
 
     const payload: any = {
       id: user.id,
@@ -101,18 +111,25 @@ export const userDataApi = {
       updated_at: new Date().toISOString()
     };
 
+    // 2. Try to update user_data
     const { error: dataError } = await supabase.from('user_data').upsert(payload);
     
     if (dataError) {
-      if (dataError.message.includes('column') || dataError.code === 'PGRST107') {
-        // Retry with ONLY mandatory flags if columns are missing
-        console.warn("Retrying with minimal payload due to schema error.");
+      // PGRST107: Missing Column, 42P01: Missing Table
+      if (dataError.message.includes('column') || dataError.code === 'PGRST107' || dataError.code === '42P01') {
+        console.warn("Schema error detected. Retrying with minimal record for session continuity.");
+        
         const { error: retryError } = await supabase.from('user_data').upsert({
            id: user.id,
            setup_completed: true,
            updated_at: new Date().toISOString()
-        });
-        if (retryError) throw new Error("SCHEMA_FATAL: Setup failed after retry. Please run setup.sql.");
+        }).select();
+
+        if (retryError) {
+          // If even minimal upsert fails, it means the table definitely doesn't exist.
+          // In this case, we don't crash, we just return a warning so the frontend can allow "Sandbox" mode.
+          throw new Error("SCHEMA_UNINITIALIZED: The 'user_data' table is missing. Please run setup.sql in Supabase.");
+        }
         return { success: true, partial: true };
       }
       throw dataError;
@@ -122,11 +139,15 @@ export const userDataApi = {
   },
 
   updateUserData: async (updates: any) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Authentication required.');
-    const { error } = await supabase.from('user_data').upsert({ id: user.id, ...updates, updated_at: new Date().toISOString() });
-    if (error) throw error;
-    return { success: true };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Authentication required.');
+      const { error } = await supabase.from('user_data').upsert({ id: user.id, ...updates, updated_at: new Date().toISOString() });
+      if (error) throw error;
+      return { success: true };
+    } catch (e) {
+      return { success: false, error: 'UPDATE_FAILED' };
+    }
   }
 };
 
@@ -152,12 +173,16 @@ export const adminApi = {
     } catch (e) { return false; }
   },
   getUsers: async () => {
-    const { data } = await supabase.from('profiles').select('*');
-    return data || [];
+    try {
+      const { data } = await supabase.from('profiles').select('*');
+      return data || [];
+    } catch (e) { return []; }
   },
   getSecurityEvents: async () => {
-    const { data } = await supabase.from('security_events').select('*');
-    return data || [];
+    try {
+      const { data } = await supabase.from('security_events').select('*');
+      return data || [];
+    } catch (e) { return []; }
   },
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
@@ -168,10 +193,12 @@ export const adminApi = {
 
 export const profileApi = {
   getMyProfile: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    return data;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      return data;
+    } catch (e) { return null; }
   },
   updateProfile: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
