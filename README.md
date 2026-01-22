@@ -8,6 +8,7 @@
 - **Biometric Telemetry**: Real-time visualization of neurological recovery, heart rate stability, and metabolic load.
 - **Secure Edge Processing**: Zero-backend storage. All data is processed in-browser and purged immediately upon session termination.
 - **Strategic Protocols**: Personalized, AI-driven wellness recommendations based on physiological trends.
+- **Native Bridge**: Supports direct Android Health Connect synchronization via the `window.HealthBridge` protocol.
 
 ## 🔒 Security & Compliance
 

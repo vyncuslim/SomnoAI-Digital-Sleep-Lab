@@ -91,10 +91,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         className="text-center mb-12 space-y-2"
       >
         <Logo size={80} animated={true} className="mx-auto mb-6" />
-        <h1 className="text-4xl font-black tracking-[0.1em] text-white italic uppercase">
-          SOMNOAI<span className="text-indigo-500">LAB</span>
+        <h1 className="text-4xl font-black tracking-tighter text-white italic uppercase leading-none">
+          SomnoAI Digital Sleep <span className="text-indigo-500">Lab</span>
         </h1>
-        <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em] opacity-80">
+        <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em] opacity-80 mt-2">
           DIGITAL IDENTITY TELEMETRY
         </p>
       </m.div>

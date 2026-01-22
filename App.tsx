@@ -20,7 +20,6 @@ import { Settings } from './Settings.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { AboutView } from './components/AboutView.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
-import { TelemetryTerminal } from './components/TelemetryTerminal.tsx';
 import { LegalView } from './components/LegalView.tsx';
 
 const m = motion as any;
@@ -194,7 +193,6 @@ const App: React.FC = () => {
       else if (hash === '#/about') setActiveView('about');
       else if (hash === '#/privacy') setActiveView('privacy');
       else if (hash === '#/terms') setActiveView('terms');
-      else if (hash === '#/telemetry-bridge') setActiveView('telemetry-bridge');
       else setActiveView('dashboard');
     };
     
@@ -327,7 +325,6 @@ const App: React.FC = () => {
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} onNavigate={(v: any) => { try { window.location.hash = `#/${v}` } catch(e) {} }} />}
             {activeView === 'profile' && <UserProfile lang={lang} />}
             {activeView === 'about' && <AboutView lang={lang} onBack={() => { try { window.location.hash = '#/' } catch(e) {} }} />}
-            {activeView === 'telemetry-bridge' && <TelemetryTerminal lang={lang} onBack={() => { try { window.location.hash = '#/settings' } catch(e) {} }} />}
             {activeView === 'settings' && (
               <Settings 
                 lang={lang} 

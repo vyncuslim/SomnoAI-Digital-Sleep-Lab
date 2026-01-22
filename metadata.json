@@ -1,5 +1,5 @@
 {
-  "name": "SomnoAI Digital Sleep Lab",
+  "name": "SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Health Insights",
   "description": "SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience.",
   "requestFramePermissions": [
     "microphone"

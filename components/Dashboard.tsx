@@ -69,7 +69,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       className="space-y-10 pb-32 max-w-5xl mx-auto"
     >
       {/* Visual Identity / Hidden SEO Title - Critical for Google Entity registration */}
-      <h1 className="sr-only">SomnoAI Digital Sleep Lab</h1>
+      <h1 className="sr-only">SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Health Insights</h1>
 
       {/* Status Node Terminal */}
       <div className="flex justify-between items-center bg-slate-950/60 px-8 py-5 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
@@ -167,10 +167,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                      transition={{ duration: 3, repeat: Infinity }}
                      className="w-2 h-2 rounded-full bg-indigo-400" 
                    />
-                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">SomnoAI Digital Sleep Lab Manifesto</span>
+                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Lab Manifesto</span>
                 </div>
                 <p className="text-[16px] font-bold text-white italic leading-relaxed text-left tracking-tight">
-                  "SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience."
+                  "{t.manifesto}"
                 </p>
                 <div className="flex items-center gap-2 mt-2">
                    <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">Neural Synthesis Engine v3.1</span>

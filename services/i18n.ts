@@ -150,7 +150,7 @@ const commonZh = {
     cmdSync: '同步实验室数据',
     cmdExport: '归档指标',
     lullaby: '神经摇篮曲',
-    manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验体验。'
+    manifesto: 'SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验体验。'
   },
   settings: {
     title: '系统配置',
@@ -179,9 +179,9 @@ const commonZh = {
     paypalLink: 'https://paypal.me/vyncuslim'
   },
   auth: {
-    lab: 'SomnoAI 数字化睡眠实验室',
+    lab: 'SomnoAI Digital Sleep Lab',
     tagline: '神经基础设施 • 数字遥测',
-    manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验体验。',
+    manifesto: 'SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验体验。',
     sendCode: '请求实验室令牌',
     emailLabel: '电子邮件识别码',
     passwordLabel: '访问密码',
@@ -217,7 +217,7 @@ const commonZh = {
   },
   about: {
     title: '技术规格',
-    manifesto: 'SomnoAI 数字化睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验体验。',
+    manifesto: 'SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验体验。',
     protocolTitle: '桥接协议',
     waterAnalogyTitle: '生物流',
     waterAnalogyDesc: 'Health Connect 是您生理遥测数据的主要存储库。',
