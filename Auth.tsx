@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 // Fix: Import Lock from lucide-react to avoid conflict with global Lock interface
 import { 
@@ -74,14 +73,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         setCooldown(60);
       }
     } catch (err: any) {
-      setError(err.message || "FAILED TO ESTABLISH NEURAL LINK");
+      if (err.message === 'ACCESS_RESTRICTED') {
+        setError(lang === 'zh' ? '您的账号已被封锁。请联系客服。' : 'Your account is blocked. Please contact support.');
+      } else {
+        setError(err.message || "FAILED TO ESTABLISH NEURAL LINK");
+      }
     } finally {
       setIsProcessing(false);
     }
   };
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#020617] font-sans selection:bg-indigo-500/30">
+    <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#020617] font-sans selection:bg-indigo-500/30 selection:text-indigo-200">
       <m.div 
         initial={{ opacity: 0, y: 15 }} 
         animate={{ opacity: 1, y: 0 }} 

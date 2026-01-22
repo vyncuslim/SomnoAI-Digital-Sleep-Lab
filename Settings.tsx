@@ -1,12 +1,12 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from './components/GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Terminal, ExternalLink, Database, ChevronRight
+  Terminal, ExternalLink, Database, ChevronRight, Key, Info, MessageSquare, AlertTriangle, Lightbulb, Loader2
 } from 'lucide-react';
 import { Language, translations } from './services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { feedbackApi } from './services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -17,28 +17,70 @@ interface SettingsProps {
   onNavigate: (view: any) => void;
   threeDEnabled: boolean;
   onThreeDChange: (enabled: boolean) => void;
-  theme?: string;
-  onThemeChange?: (t: any) => void;
-  accentColor?: string;
-  onAccentChange?: (c: any) => void;
-  staticMode?: boolean;
-  onStaticModeChange?: (e: boolean) => void;
-  lastSyncTime?: string | null;
-  onManualSync?: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, onNavigate
 }) => {
   const [showDonation, setShowDonation] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
+  const [feedbackType, setFeedbackType] = useState<'report' | 'suggestion' | 'improvement'>('report');
+  const [feedbackContent, setFeedbackContent] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [hasApiKey, setHasApiKey] = useState<boolean>(false);
 
   const t = translations[lang]?.settings || translations.en.settings;
+
+  useEffect(() => {
+    const checkKeyStatus = async () => {
+      if ((window as any).aistudio?.hasSelectedApiKey) {
+        try {
+          const linked = await (window as any).aistudio.hasSelectedApiKey();
+          setHasApiKey(linked);
+        } catch (e) {
+          console.debug("Neural handshake skipped.");
+        }
+      }
+    };
+    checkKeyStatus();
+  }, []);
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
+  };
+
+  const handleLinkKey = async () => {
+    if ((window as any).aistudio?.openSelectKey) {
+      await (window as any).aistudio.openSelectKey();
+      setHasApiKey(true);
+    }
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (!feedbackContent.trim() || isSubmitting) return;
+    
+    setIsSubmitting(true);
+    setFeedbackStatus('idle');
+    
+    const result = await feedbackApi.submitFeedback(feedbackType, feedbackContent);
+    
+    if (result.success) {
+      setFeedbackStatus('success');
+      setFeedbackContent('');
+      setTimeout(() => {
+        setShowFeedback(false);
+        setFeedbackStatus('idle');
+      }, 2000);
+    } else {
+      setFeedbackStatus('error');
+      setTimeout(() => setFeedbackStatus('idle'), 3000);
+    }
+    setIsSubmitting(false);
   };
 
   return (
@@ -78,30 +120,59 @@ export const Settings: React.FC<SettingsProps> = ({
                     onClick={() => onLanguageChange(l as Language)}
                     className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
                   >
-                    {l === 'en' ? 'ENGLISH' : '中文简体'}
+                    {l === 'en' ? 'ENGLISH' : 'CHINESE'}
                   </button>
                 ))}
              </div>
           </div>
 
           <div className="space-y-4">
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">Developer Tools</span>
-             <button 
-                onClick={() => onNavigate('telemetry-bridge')}
-                className="w-full p-6 rounded-3xl bg-indigo-500/5 border border-indigo-500/20 flex items-center justify-between group hover:bg-indigo-500/10 transition-all"
-             >
-                <div className="flex items-center gap-4">
-                   <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform">
-                      <Terminal size={20} />
-                   </div>
-                   <div className="text-left">
-                      <p className="text-xs font-black text-white uppercase tracking-wider">Telemetry Bridge</p>
-                      <p className="text-[10px] text-slate-500 italic">Manage API Uploads & Handshakes</p>
-                   </div>
-                </div>
-                {/* Added missing ChevronRight component */}
-                <ChevronRight size={18} className="text-slate-700 group-hover:text-indigo-400 transition-colors" />
-             </button>
+             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">Neural Credentials & Data</span>
+             <div className="space-y-3">
+               <button 
+                  onClick={handleLinkKey}
+                  className="w-full p-6 rounded-3xl bg-slate-900/50 border border-white/10 flex items-center justify-between group hover:bg-slate-900 transition-all text-left"
+               >
+                  <div className="flex items-center gap-4">
+                     <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                        <Key size={20} />
+                     </div>
+                     <div>
+                        <p className="text-xs font-black text-white uppercase tracking-wider">Gemini API Key</p>
+                        <p className="text-[10px] text-slate-500 italic">Manage your laboratory access token</p>
+                     </div>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <span className={`text-[8px] font-black uppercase px-2 py-0.5 rounded ${hasApiKey ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-500'}`}>
+                      {hasApiKey ? 'LINKED' : 'UNSET'}
+                    </span>
+                    <ChevronRight size={18} className="text-slate-700" />
+                  </div>
+               </button>
+
+               <button 
+                  onClick={() => setShowFeedback(true)}
+                  className="w-full p-6 rounded-3xl bg-slate-900/50 border border-white/10 flex items-center justify-between group hover:bg-slate-900 transition-all text-left"
+               >
+                  <div className="flex items-center gap-4">
+                     <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
+                        <MessageSquare size={20} />
+                     </div>
+                     <div>
+                        <p className="text-xs font-black text-white uppercase tracking-wider">Lab Feedback</p>
+                        <p className="text-[10px] text-slate-500 italic">Report issues or suggest upgrades</p>
+                     </div>
+                  </div>
+                  <ChevronRight size={18} className="text-slate-700" />
+               </button>
+             </div>
+             
+             <div className="p-4 bg-amber-500/5 border border-amber-500/10 rounded-2xl flex gap-3">
+                <Info size={14} className="text-amber-500 shrink-0 mt-0.5" />
+                <p className="text-[9px] text-slate-500 italic leading-relaxed">
+                  High-fidelity Neural Synthesis requires a Gemini API key from a paid GCP project. <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="text-amber-500 underline">Review Billing Documentation</a>.
+                </p>
+             </div>
           </div>
 
           <div className="space-y-4">
@@ -121,6 +192,56 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
       </GlassCard>
+
+      {/* Feedback Modal */}
+      <AnimatePresence>
+        {showFeedback && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowFeedback(false)}>
+            <m.div 
+              initial={{ scale: 0.9, opacity: 0 }} 
+              animate={{ scale: 1, opacity: 1 }} 
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e: React.MouseEvent) => e.stopPropagation()}
+              className="w-full max-w-md"
+            >
+              <GlassCard className="p-10 rounded-[3rem] border-white/10 space-y-8">
+                <div className="text-center space-y-2">
+                   <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Lab Feedback</h2>
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Node: ongyuze1401@gmail.com</p>
+                </div>
+
+                <div className="flex gap-2">
+                   {(['report', 'suggestion', 'improvement'] as const).map((type) => (
+                     <button
+                       key={type}
+                       onClick={() => setFeedbackType(type)}
+                       className={`flex-1 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest flex flex-col items-center gap-2 border transition-all ${feedbackType === type ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-slate-900 border-white/5 text-slate-500 hover:text-slate-300'}`}
+                     >
+                       {type === 'report' ? <AlertTriangle size={14} /> : type === 'suggestion' ? <MessageSquare size={14} /> : <Lightbulb size={14} />}
+                       {type}
+                     </button>
+                   ))}
+                </div>
+
+                <textarea
+                  value={feedbackContent}
+                  onChange={(e) => setFeedbackContent(e.target.value)}
+                  placeholder="Describe your issue or suggestion here..."
+                  className="w-full h-40 bg-[#050a1f] border border-white/10 rounded-[2rem] p-6 text-sm text-white placeholder:text-slate-700 outline-none focus:border-indigo-500/50 transition-all font-medium italic"
+                />
+
+                <button 
+                  onClick={handleSubmitFeedback}
+                  disabled={!feedbackContent.trim() || isSubmitting}
+                  className={`w-full py-5 rounded-full font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${feedbackStatus === 'success' ? 'bg-emerald-600' : 'bg-indigo-600 disabled:opacity-30'}`}
+                >
+                  {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : feedbackStatus === 'success' ? 'Feedback Transmitted' : 'Submit Telemetry'}
+                </button>
+              </GlassCard>
+            </m.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {showDonation && (
@@ -143,8 +264,8 @@ export const Settings: React.FC<SettingsProps> = ({
                 <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-none">
                   CONTRIBUTION<br />ACKNOWLEDGED
                 </h2>
-                <p className="text-[13px] text-slate-400 italic max-w-md mx-auto relaxed">
-                  Your support fuels lab processing.
+                <p className="text-[13px] text-slate-400 italic max-w-md mx-auto leading-relaxed">
+                  Your support fuels lab processing and neural research.
                 </p>
               </div>
 

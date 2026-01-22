@@ -3,11 +3,6 @@
   "trailingSlash": false,
   "redirects": [
     {
-      "source": "/sitemap",
-      "destination": "/sitemap.xml",
-      "permanent": true
-    },
-    {
       "source": "/favicon.png",
       "destination": "https://img.icons8.com/fluency/512/moon.png",
       "permanent": true
@@ -21,21 +16,13 @@
       "source": "/apple-touch-icon.png",
       "destination": "https://img.icons8.com/fluency/180/moon.png",
       "permanent": true
-    },
-    {
-      "source": "/apple-touch-icon-precomposed.png",
-      "destination": "https://img.icons8.com/fluency/180/moon.png",
-      "permanent": true
     }
   ],
   "rewrites": [
+    { "source": "/sitemap", "destination": "/sitemap.xml" },
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/term", "destination": "/terms.html" },
-    { 
-      "source": "/api/health-upload", 
-      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" 
-    },
+    { "source": "/api/health-upload", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" },
     { "source": "/api/:path*", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/:path*" },
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/admin/:path*", "destination": "/index.html" },

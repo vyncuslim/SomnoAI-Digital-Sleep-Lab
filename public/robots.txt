@@ -3,13 +3,14 @@ Allow: /
 Allow: /favicon.ico
 Allow: /favicon.png
 Allow: /sitemap.xml
+Allow: /sitemap
 Allow: /manifest.json
 Allow: /#/assistant
 Allow: /#/about
 Allow: /#/terms
 Allow: /#/privacy
 
-# 保护私有数据路由
+# Protect private nodes
 Disallow: /admin
 Disallow: /admin/login
 Disallow: /login
@@ -17,8 +18,7 @@ Disallow: /api/
 Disallow: /#/profile
 Disallow: /#/settings
 
-# 站点地图指引
+# Sitemap Location
 Sitemap: https://sleepsomno.com/sitemap.xml
 
-# 主机定义
 Host: https://sleepsomno.com
