@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
@@ -64,8 +63,8 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
       const msg = err.message || "Failed to commit profile. Please try again.";
       setError(msg);
       
-      // PGRST107, 42P01, or custom throw
-      if (msg.toLowerCase().includes('column') || msg.toLowerCase().includes('schema') || msg.toLowerCase().includes('missing')) {
+      // Detection of missing columns or tables (PGRST107, 42P01)
+      if (msg.includes('column') || msg.includes('SCHEMA_UNINITIALIZED') || msg.includes('missing')) {
         setIsSchemaError(true);
       }
     } finally {
@@ -188,10 +187,10 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                     <div className="p-6 bg-amber-500/10 border border-amber-500/20 rounded-2xl space-y-4">
                       <div className="flex items-center gap-2 text-amber-500">
                         <Database size={14} />
-                        <p className="text-[10px] font-black uppercase tracking-widest">Required Action</p>
+                        <p className="text-[10px] font-black uppercase tracking-widest">Action Required</p>
                       </div>
                       <p className="text-[11px] text-slate-300 italic">
-                        The laboratory database requires a manual schema update. Please run <strong>setup.sql</strong> in the Supabase SQL Editor to enable persistent cloud storage.
+                        The laboratory database requires a manual schema update. Please run the provided <strong>setup.sql</strong> in your Supabase SQL Editor once to enable cloud metrics.
                       </p>
                       <div className="flex flex-col gap-3 pt-2">
                         <button 
@@ -206,7 +205,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                           onClick={onComplete}
                           className="flex items-center gap-2 text-[9px] font-black text-indigo-400 uppercase hover:text-white transition-colors"
                         >
-                          Skip & Proceed in Sandbox Mode <ChevronRight size={10} />
+                          Proceed in Sandbox Mode (Local Only) <ChevronRight size={10} />
                         </button>
                       </div>
                     </div>

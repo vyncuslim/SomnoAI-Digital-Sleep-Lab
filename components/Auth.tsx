@@ -188,7 +188,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       >
         <Logo size={80} animated={true} className="mx-auto mb-6" />
         <h1 className="text-4xl font-black tracking-tighter text-white italic uppercase leading-none">
-          SomnoAI Digital Sleep <span className="text-indigo-500">Lab</span>
+          SomnoAI Digital Sleep Lab
         </h1>
         <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em]">NEURAL GATEWAY</p>
       </m.div>
@@ -377,7 +377,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
       <footer className="mt-20 text-center opacity-30">
         <p className="text-[9px] font-mono uppercase tracking-[0.6em] text-slate-800 italic font-black">
-          SOMNOAI LAB • ongyuze1401@gmail.com
+          SomnoAI Digital Sleep Lab • ongyuze1401@gmail.com
         </p>
       </footer>
     </div>

@@ -1,4 +1,3 @@
-
 import { supabase } from '../lib/supabaseClient.ts';
 
 export { supabase };
@@ -66,9 +65,10 @@ export const userDataApi = {
         .maybeSingle();
         
       if (error) {
-        // Handle missing columns or table gracefully
+        // PGRST107: Column missing, 42P01: Table missing
         if (error.code === 'PGRST107' || error.message.includes('column') || error.code === '42P01') {
           console.warn("Schema mismatch or table missing! Attempting status recovery.");
+          // Attempt a bare-minimum query to see if the table exists at all
           const { data: minData, error: minError } = await supabase
             .from('user_data')
             .select('id, setup_completed')
@@ -94,11 +94,11 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
 
-    // 1. Try to update Profile (This table is usually core and exists)
+    // 1. Update Profile (Usually core and stable)
     try {
       await supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName });
     } catch (e) {
-      console.error("Profile upsert failed, but continuing setup flow.", e);
+      console.error("Profile sync failed, continuing flow.");
     }
 
     const payload: any = {
@@ -111,24 +111,23 @@ export const userDataApi = {
       updated_at: new Date().toISOString()
     };
 
-    // 2. Try to update user_data
+    // 2. Update user_data with resilience
     const { error: dataError } = await supabase.from('user_data').upsert(payload);
     
     if (dataError) {
-      // PGRST107: Missing Column, 42P01: Missing Table
       if (dataError.message.includes('column') || dataError.code === 'PGRST107' || dataError.code === '42P01') {
-        console.warn("Schema error detected. Retrying with minimal record for session continuity.");
+        console.warn("Schema error detected. Attempting minimal bypass.");
         
+        // Try minimal record to avoid blocking the user if they haven't run setup.sql yet
         const { error: retryError } = await supabase.from('user_data').upsert({
            id: user.id,
            setup_completed: true,
            updated_at: new Date().toISOString()
-        }).select();
+        });
 
         if (retryError) {
-          // If even minimal upsert fails, it means the table definitely doesn't exist.
-          // In this case, we don't crash, we just return a warning so the frontend can allow "Sandbox" mode.
-          throw new Error("SCHEMA_UNINITIALIZED: The 'user_data' table is missing. Please run setup.sql in Supabase.");
+          // Both full and minimal upsert failed - table likely missing
+          throw new Error("SCHEMA_UNINITIALIZED: The 'user_data' table or columns are missing. Please run setup.sql in Supabase SQL Editor.");
         }
         return { success: true, partial: true };
       }

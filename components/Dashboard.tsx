@@ -68,7 +68,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
       animate={{ opacity: 1 }}
       className="space-y-10 pb-32 max-w-5xl mx-auto"
     >
-      {/* Visual Identity / Hidden SEO Title */}
+      {/* Visual Identity / Hidden SEO Title - Critical for Google Entity registration */}
       <h1 className="sr-only">SomnoAI Digital Sleep Lab</h1>
 
       {/* Status Node Terminal */}
