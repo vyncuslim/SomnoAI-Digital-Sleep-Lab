@@ -103,9 +103,16 @@ const App: React.FC = () => {
   const checkSetup = useCallback(async () => {
     try {
       const data = await userDataApi.getUserData();
-      setSetupRequired(!data || !data.setup_completed);
+      // 只有明确检测到 data 存在 且 setup_completed 为 false 时，才需要设置
+      // 如果读取失败或数据为空，默认为新用户需要设置，但一旦完成一次就不再进入
+      if (data) {
+        setSetupRequired(data.setup_completed === false);
+      } else {
+        setSetupRequired(true);
+      }
     } catch (err) {
-      console.warn("Setup check deferred.");
+      console.warn("CheckSetup bypassed error:", err);
+      setSetupRequired(false); // 容错：出错时不阻断用户
     }
   }, []);
 
@@ -144,16 +151,12 @@ const App: React.FC = () => {
       try {
         hash = window.location.hash || '#/';
         path = window.location.pathname || '/';
-      } catch (e) {
-        console.warn("Security Alert: Access to location.hash is restricted.");
-      }
+      } catch (e) {}
       
       if (hash.includes('error=')) return;
 
-      // Check path first (for direct /terms, /privacy access)
       if (path === '/privacy') setActiveView('privacy');
       else if (path === '/terms' || path === '/term') setActiveView('terms');
-      // Then check hashes
       else if (hash === '#/admin') setActiveView('admin');
       else if (hash === '#/admin/login') setActiveView('admin-login');
       else if (hash === '#/profile') setActiveView('profile');
@@ -173,32 +176,20 @@ const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const safetyTimer = setTimeout(() => {
-      setIsInitialAuthCheck(prev => {
-        if (prev) console.debug("App Boot: Safety timeout reached, releasing UI lock.");
-        return false;
-      });
-    }, 3000);
-
     const initAuth = async () => {
       try {
-        const sessionPromise = supabase.auth.getSession();
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), 2500));
-        
-        const { data: { session: initialSession } } = await Promise.race([sessionPromise, timeoutPromise]) as any;
-        
+        const { data: { session: initialSession } } = await supabase.auth.getSession();
         setSession(initialSession);
         
         if (initialSession) {
           adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin).catch(() => setIsAdmin(false));
-          checkSetup();
+          await checkSetup();
           fetchHistory();
         }
-      } catch (err: any) {
-        console.warn("Auth initialization sequence bypassed:", err.message);
+      } catch (err) {
+        console.warn("Auth init error:", err);
       } finally {
         setIsInitialAuthCheck(false);
-        clearTimeout(safetyTimer);
       }
     };
     
@@ -218,36 +209,8 @@ const App: React.FC = () => {
       }
     });
     
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(safetyTimer);
-    };
+    return () => subscription.unsubscribe();
   }, [checkSetup, fetchHistory]);
-
-  const handleInitializeSimulation = () => {
-    setSyncStatus('analyzing');
-    setTimeout(() => {
-      const mockRecords: SleepRecord[] = Array.from({ length: 14 }, (_, i) => {
-        const score = 75 + Math.floor(Math.random() * 20);
-        return {
-          id: `sim-${i}`,
-          date: new Date(Date.now() - i * 86400000).toLocaleDateString('en-US', { month: 'long', day: 'numeric', weekday: 'long' }),
-          score,
-          totalDuration: 400 + Math.floor(Math.random() * 120),
-          deepRatio: 15 + Math.floor(Math.random() * 10),
-          remRatio: 15 + Math.floor(Math.random() * 10),
-          efficiency: 85 + Math.floor(Math.random() * 10),
-          stages: [],
-          heartRate: { resting: 55 + Math.floor(Math.random() * 15), max: 75, min: 52, average: 62, history: [] },
-          aiInsights: ["Simulation cycle active."]
-        };
-      });
-      setCurrentRecord(mockRecords[0]);
-      setHistory(mockRecords);
-      setIsSimulated(true);
-      setSyncStatus('idle');
-    }, 1500);
-  };
 
   const handleSyncHealth = async () => {
     if (syncStatus !== 'idle' && syncStatus !== 'error') return;
@@ -270,7 +233,7 @@ const App: React.FC = () => {
       setIsSimulated(false);
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 1500);
-    } catch (err: any) {
+    } catch (err) {
       console.error("Health Sync Failure:", err);
       setSyncStatus('error');
       setTimeout(() => setSyncStatus('idle'), 1500);
@@ -343,21 +306,12 @@ const App: React.FC = () => {
                        <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Laboratory Offline</h2>
                        <p className="text-slate-500 text-[10px] uppercase font-bold tracking-[0.4em]">Hardware synchronization required</p>
                     </div>
-                    
                     <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-                      <button 
-                        onClick={handleSyncHealth}
-                        className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 transition-all w-full sm:w-auto"
-                      >
+                      <button onClick={handleSyncHealth} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black uppercase text-[11px] tracking-[0.4em] shadow-2xl active:scale-95 transition-all w-full sm:w-auto">
                         {syncStatus === 'authorizing' ? 'AUTHORIZING...' : syncStatus === 'fetching' ? 'FETCHING...' : 'SYNC HEALTH CONNECT'}
                       </button>
-                      <button 
-                        onClick={handleInitializeSimulation}
-                        disabled={syncStatus !== 'idle'}
-                        className="px-10 py-5 bg-white/5 border border-white/10 text-slate-400 rounded-full font-black uppercase text-[11px] tracking-[0.4em] hover:text-white transition-all w-full sm:w-auto flex items-center justify-center gap-3"
-                      >
-                        {syncStatus === 'analyzing' ? <Loader2 size={16} className="animate-spin" /> : <FlaskConical size={16} />}
-                        {syncStatus === 'analyzing' ? 'CALIBRATING...' : 'INITIALIZE SIMULATION'}
+                      <button onClick={() => setSyncStatus('analyzing')} className="px-10 py-5 bg-white/5 border border-white/10 text-slate-400 rounded-full font-black uppercase text-[11px] tracking-[0.4em] hover:text-white transition-all w-full sm:w-auto flex items-center justify-center gap-3">
+                         <FlaskConical size={16} /> INITIALIZE SIMULATION
                       </button>
                     </div>
                   </div>

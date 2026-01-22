@@ -3,9 +3,6 @@ import { supabase } from '../lib/supabaseClient.ts';
 
 export { supabase };
 
-/**
- * SomnoAI Data Pipeline API
- */
 export const healthDataApi = {
   uploadTelemetry: async (metrics: any) => {
     try {
@@ -53,26 +50,35 @@ export const healthDataApi = {
 };
 
 export const userDataApi = {
+  /**
+   * 鲁棒查询：如果由于架构缓存导致找不到特定列（如 age），
+   * 将自动降级为仅查询 setup_completed 状态。
+   */
   getUserData: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
       
+      // 1. 尝试完整查询（逐一列出字段比 * 更稳健）
       const { data, error } = await supabase
         .from('user_data')
-        .select('*, profiles(full_name)')
+        .select('id, age, height, weight, gender, setup_completed, profiles(full_name)')
         .eq('id', user.id)
         .maybeSingle();
         
       if (error) {
-        // Handle PostgREST cache errors by attempting a simpler query
+        // 如果错误提示列不存在（PGRST107）
         if (error.code === 'PGRST107' || error.message.includes('column')) {
-          const { data: basicData } = await supabase
+          console.warn("Schema mismatch! Falling back to minimalist status query.");
+          // 2. 降级：仅查 ID 和状态，绕过报错列
+          const { data: minData, error: minError } = await supabase
             .from('user_data')
-            .select('*')
+            .select('id, setup_completed')
             .eq('id', user.id)
             .maybeSingle();
-          return basicData;
+            
+          if (minError) return null;
+          return minData;
         }
         return null;
       }
@@ -90,20 +96,10 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
 
-    // Step 1: Update Profile Name
-    const { error: profileError } = await supabase.from('profiles').upsert({ 
-      id: user.id, 
-      email: user.email, 
-      full_name: fullName 
-    });
+    // 更新 Profile
+    await supabase.from('profiles').upsert({ id: user.id, email: user.email, full_name: fullName });
 
-    if (profileError) {
-      console.error("Profile update failed:", profileError);
-      // Non-blocking fallback
-      await supabase.from('profiles').insert({ id: user.id, email: user.email, full_name: fullName }).select().maybeSingle();
-    }
-
-    // Step 2: Update User Metrics
+    // 写入指标
     const payload = {
       id: user.id,
       age: parseInt(String(metrics.age)) || 0,
@@ -117,15 +113,10 @@ export const userDataApi = {
     const { error: dataError } = await supabase.from('user_data').upsert(payload);
     
     if (dataError) {
-      console.error("User data update failed:", dataError);
-      
-      // Specific handling for "column not found" error
       if (dataError.message.includes('column') || dataError.code === 'PGRST107') {
-        const errorDetail = `Database Schema Error: The 'user_data' table is missing required columns (like 'age'). 
-        Please copy the contents of 'setup.sql' and run it in the Supabase SQL Editor.`;
-        throw new Error(errorDetail);
+        // 如果依然报错找不到列，说明 SQL 编辑器操作被跳过了
+        throw new Error("SCHEMA_ERROR: 'age' column missing. Please run the code in setup.sql in your Supabase SQL Editor.");
       }
-      
       throw dataError;
     }
 
@@ -135,15 +126,7 @@ export const userDataApi = {
   updateUserData: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('Authentication required.');
-    
-    const { error } = await supabase
-      .from('user_data')
-      .upsert({ 
-        id: user.id, 
-        ...updates, 
-        updated_at: new Date().toISOString() 
-      });
-      
+    const { error } = await supabase.from('user_data').upsert({ id: user.id, ...updates, updated_at: new Date().toISOString() });
     if (error) throw error;
     return { success: true };
   }
@@ -162,7 +145,10 @@ export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     try {
       const { data, error } = await supabase.rpc('is_admin');
-      if (error) return false;
+      if (error) {
+        const { data: p } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+        return p?.role === 'admin';
+      }
       return !!data;
     } catch (e) { return false; }
   },
