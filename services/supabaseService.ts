@@ -153,36 +153,30 @@ export const userDataApi = {
   
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Auth Token Expired. Please reconnect.');
+    if (!user) throw new Error('AUTHENTICATION_REQUIRED');
 
-    // 1. Sync identity in profiles table (removed updated_at to match schema)
+    // 1. Establish Identity in Profiles (Required for foreign key)
     const { error: profileError } = await supabase.from('profiles').upsert({ 
       id: user.id, 
       email: user.email, 
       full_name: fullName.trim()
     });
     
-    if (profileError) {
-      console.error("Identity Registry Failure:", profileError);
-      throw new Error(`Profile sync failed: ${profileError.message}`);
-    }
+    if (profileError) throw profileError;
 
-    // 2. Sync biological metadata in user_data table
+    // 2. Transmit Biometric Payload to user_data
     const payload = {
       id: user.id,
-      age: parseInt(String(metrics.age)) || 0,
-      height: parseFloat(String(metrics.height)) || 0,
-      weight: parseFloat(String(metrics.weight)) || 0,
+      age: Math.max(0, parseInt(String(metrics.age))),
+      height: Math.max(0, parseFloat(String(metrics.height))),
+      weight: Math.max(0, parseFloat(String(metrics.weight))),
       gender: String(metrics.gender || 'prefer-not-to-say'),
       setup_completed: true,
       updated_at: new Date().toISOString()
     };
 
     const { error: dataError } = await supabase.from('user_data').upsert(payload);
-    if (dataError) {
-      console.error("Biometric Registry Failure:", dataError);
-      throw new Error(`User data storage failed: ${dataError.message}`);
-    }
+    if (dataError) throw dataError;
     
     return { success: true };
   },

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
@@ -100,22 +99,6 @@ const App: React.FC = () => {
     } catch (e) {}
   }, [threeDEnabled, lang]);
 
-  const checkSetup = useCallback(async () => {
-    try {
-      const data = await userDataApi.getUserData();
-      // 只有明确检测到 data 存在 且 setup_completed 为 false 时，才需要设置
-      // 如果读取失败或数据为空，默认为新用户需要设置，但一旦完成一次就不再进入
-      if (data) {
-        setSetupRequired(data.setup_completed === false);
-      } else {
-        setSetupRequired(true);
-      }
-    } catch (err) {
-      console.warn("CheckSetup bypassed error:", err);
-      setSetupRequired(false); // 容错：出错时不阻断用户
-    }
-  }, []);
-
   const fetchHistory = useCallback(async () => {
     try {
       const telemetry = await healthDataApi.getTelemetryHistory(30);
@@ -143,6 +126,51 @@ const App: React.FC = () => {
       console.warn("Telemetry stream unreachable.");
     }
   }, []);
+
+  const checkSetup = useCallback(async () => {
+    try {
+      const data = await userDataApi.getUserData();
+      if (data) {
+        setSetupRequired(data.setup_completed === false);
+        if (data.setup_completed) {
+          fetchHistory();
+        }
+      } else {
+        setSetupRequired(true);
+      }
+    } catch (err) {
+      console.warn("CheckSetup bypass triggered.");
+      setSetupRequired(false);
+    }
+  }, [fetchHistory]);
+
+  const handleSyncHealth = async () => {
+    if (syncStatus !== 'idle' && syncStatus !== 'error') return;
+    setSyncStatus('authorizing');
+    try {
+      await healthConnect.authorize();
+      setSyncStatus('fetching');
+      const data = await healthConnect.fetchSleepData();
+      setSyncStatus('analyzing');
+      const insights = await getSleepInsight(data as SleepRecord, lang);
+      const fullRecord = { ...data, aiInsights: insights } as SleepRecord;
+      
+      await healthDataApi.uploadTelemetry({
+        ...fullRecord,
+        source: healthConnect.isNativeBridgeAvailable() ? 'android_native_bridge' : 'health_connect'
+      });
+
+      setCurrentRecord(fullRecord);
+      setHistory(prev => [fullRecord, ...prev].slice(0, 30));
+      setIsSimulated(false);
+      setSyncStatus('success');
+      setTimeout(() => setSyncStatus('idle'), 1500);
+    } catch (err) {
+      console.error("Health Sync Failure:", err);
+      setSyncStatus('error');
+      setTimeout(() => setSyncStatus('idle'), 1500);
+    }
+  };
 
   useEffect(() => {
     const handleHash = () => {
@@ -184,7 +212,6 @@ const App: React.FC = () => {
         if (initialSession) {
           adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin).catch(() => setIsAdmin(false));
           await checkSetup();
-          fetchHistory();
         }
       } catch (err) {
         console.warn("Auth init error:", err);
@@ -200,7 +227,6 @@ const App: React.FC = () => {
       if (newSession) {
         adminApi.checkAdminStatus(newSession.user.id).then(setIsAdmin).catch(() => setIsAdmin(false));
         checkSetup();
-        fetchHistory();
       } else {
         setIsAdmin(false);
         setSetupRequired(false);
@@ -210,35 +236,7 @@ const App: React.FC = () => {
     });
     
     return () => subscription.unsubscribe();
-  }, [checkSetup, fetchHistory]);
-
-  const handleSyncHealth = async () => {
-    if (syncStatus !== 'idle' && syncStatus !== 'error') return;
-    setSyncStatus('authorizing');
-    try {
-      await healthConnect.authorize();
-      setSyncStatus('fetching');
-      const data = await healthConnect.fetchSleepData();
-      setSyncStatus('analyzing');
-      const insights = await getSleepInsight(data as SleepRecord, lang);
-      const fullRecord = { ...data, aiInsights: insights } as SleepRecord;
-      
-      await healthDataApi.uploadTelemetry({
-        ...fullRecord,
-        source: healthConnect.isNativeBridgeAvailable() ? 'android_native_bridge' : 'health_connect'
-      });
-
-      setCurrentRecord(fullRecord);
-      setHistory(prev => [fullRecord, ...prev].slice(0, 30));
-      setIsSimulated(false);
-      setSyncStatus('success');
-      setTimeout(() => setSyncStatus('idle'), 1500);
-    } catch (err) {
-      console.error("Health Sync Failure:", err);
-      setSyncStatus('error');
-      setTimeout(() => setSyncStatus('idle'), 1500);
-    }
-  };
+  }, [checkSetup]);
 
   const handleLogout = async () => {
     await authApi.signOut();
@@ -271,7 +269,14 @@ const App: React.FC = () => {
     }
 
     if (setupRequired) {
-      return <FirstTimeSetup onComplete={() => setSetupRequired(false)} />;
+      return (
+        <FirstTimeSetup 
+          onComplete={() => {
+            setSetupRequired(false);
+            fetchHistory();
+          }} 
+        />
+      );
     }
 
     return (

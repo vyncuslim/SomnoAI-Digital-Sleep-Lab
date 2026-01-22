@@ -26,7 +26,7 @@ const commonEn = {
     cmdSync: 'Sync Lab Data',
     cmdExport: 'Archive Metrics',
     lullaby: 'Neural Lullaby',
-    manifesto: 'SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI deep insights, and health advice into one, providing users with a full range of digital sleep laboratory experience.'
+    manifesto: 'SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience.'
   },
   settings: {
     title: 'Configuration',
@@ -57,7 +57,7 @@ const commonEn = {
   auth: {
     lab: 'SomnoAI Digital Sleep Lab',
     tagline: 'NEURAL INFRASTRUCTURE • DIGITAL TELEMETRY',
-    manifesto: 'SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI deep insights, and health advice into one, providing users with a full range of digital sleep laboratory experience.',
+    manifesto: 'SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience.',
     sendCode: 'REQUEST LAB TOKEN',
     emailLabel: 'Email Identifier',
     passwordLabel: 'Access Password',
@@ -93,7 +93,7 @@ const commonEn = {
   },
   about: {
     title: 'Specifications',
-    manifesto: 'SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI deep insights, and health advice into one, providing users with a full range of digital sleep laboratory experience.',
+    manifesto: 'SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience.',
     protocolTitle: 'Bridge Protocol',
     waterAnalogyTitle: 'Biological Flow',
     waterAnalogyDesc: 'Health Connect acts as the primary reservoir for your physiological telemetry.',

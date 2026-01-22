@@ -43,9 +43,9 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
 
     try {
       const result = await userDataApi.completeSetup(formData.fullName, {
-        age: formData.age,
-        weight: formData.weight,
-        height: formData.height,
+        age: parseInt(formData.age),
+        weight: parseFloat(formData.weight),
+        height: parseFloat(formData.height),
         gender: formData.gender
       });
 
@@ -53,8 +53,8 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
         onComplete();
       }
     } catch (err: any) {
-      console.error("Setup Sync Critical Error:", err);
-      setError(err.message || "Failed to establish registry link. Node rejected the package.");
+      console.error("Registry Sync Failure:", err);
+      setError(err.message || "Failed to commit metrics to laboratory node. Please check your link.");
     } finally {
       setIsSaving(false);
     }
@@ -67,31 +67,31 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
 
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-6 font-sans relative overflow-hidden">
-      {/* Neural Background Ambience */}
+      {/* Laboratory Ambient Lighting */}
       <div className="absolute top-0 left-0 w-full h-full opacity-10 pointer-events-none">
-        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-600 rounded-full blur-[150px]" />
-        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-600 rounded-full blur-[150px]" />
+        <div className="absolute top-[-20%] left-[-10%] w-[60%] h-[60%] bg-indigo-600 rounded-full blur-[180px]" />
+        <div className="absolute bottom-[-20%] right-[-10%] w-[60%] h-[60%] bg-purple-600 rounded-full blur-[180px]" />
       </div>
 
       <m.div 
-        initial={{ opacity: 0, y: 30 }} 
-        animate={{ opacity: 1, y: 0 }} 
+        initial={{ opacity: 0, scale: 0.98, y: 30 }} 
+        animate={{ opacity: 1, scale: 1, y: 0 }} 
         className="w-full max-w-xl z-10"
       >
         <div className="text-center mb-10 space-y-4">
-          <Logo size={100} animated={true} />
+          <Logo size={110} animated={true} />
           <div className="space-y-1">
             <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Subject Registration</h1>
-            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.5em]">Initial Laboratory Onboarding</p>
+            <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.6em]">Initial Laboratory Onboarding</p>
           </div>
         </div>
 
-        <GlassCard className="p-10 md:p-14 border-indigo-500/20 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.8)] rounded-[4.5rem]">
+        <GlassCard className="p-10 md:p-14 border-indigo-500/20 shadow-[0_80px_150px_-30px_rgba(0,0,0,0.9)] rounded-[5rem]">
           <form onSubmit={handleSave} className="space-y-12">
-            <div className="space-y-8">
+            <div className="space-y-10">
               {/* Full Name */}
-              <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic">
+              <div className="space-y-4">
+                <label className="text-[11px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic">
                   <User size={12}/> Subject Identity (Full Name)
                 </label>
                 <div className="relative">
@@ -101,18 +101,18 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                     placeholder="Enter full name"
                     value={formData.fullName}
                     onChange={(e) => setFormData({...formData, fullName: e.target.value})}
-                    className={`w-full bg-slate-950/80 border rounded-full px-8 py-6 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-800 font-bold italic ${getInputBorderClass(validations.fullName, formData.fullName)}`}
+                    className={`w-full bg-slate-950/90 border rounded-full px-10 py-7 text-sm text-white focus:border-indigo-500 outline-none transition-all placeholder:text-slate-800 font-bold italic ${getInputBorderClass(validations.fullName, formData.fullName)}`}
                   />
                   <div className="absolute right-8 top-1/2 -translate-y-1/2">
-                    {formData.fullName && (validations.fullName ? <CheckCircle2 className="text-emerald-500" size={20} /> : <XCircle className="text-rose-500" size={20} />)}
+                    {formData.fullName && (validations.fullName ? <CheckCircle2 className="text-emerald-500" size={24} /> : <XCircle className="text-rose-500" size={24} />)}
                   </div>
                 </div>
               </div>
 
               {/* Age & Neural Polarity */}
               <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Brain size={12}/> Age</label>
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Brain size={12}/> Age</label>
                   <div className="relative">
                     <input 
                       type="number"
@@ -120,18 +120,18 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                       placeholder="Years"
                       value={formData.age}
                       onChange={(e) => setFormData({...formData, age: e.target.value})}
-                      className={`w-full bg-slate-950/80 border rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.age, formData.age)}`}
+                      className={`w-full bg-slate-950/90 border rounded-[2.5rem] px-10 py-7 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.age, formData.age)}`}
                     />
-                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-700 uppercase tracking-widest pointer-events-none">Years</div>
+                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-800 uppercase tracking-widest pointer-events-none italic">Years</div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Heart size={12}/> Neural Polarity</label>
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Heart size={12}/> Neural Polarity</label>
                   <div className="relative">
                     <select 
                       value={formData.gender}
                       onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                      className="w-full bg-slate-950/80 border border-white/10 rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none appearance-none cursor-pointer font-bold italic"
+                      className="w-full bg-slate-950/90 border border-white/10 rounded-[2.5rem] px-10 py-7 text-sm text-white outline-none appearance-none cursor-pointer font-bold italic"
                     >
                       <option value="prefer-not-to-say">N/A</option>
                       <option value="male">Male</option>
@@ -139,7 +139,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                       <option value="other">Other</option>
                     </select>
                     <div className="absolute right-8 top-1/2 -translate-y-1/2 pointer-events-none opacity-30">
-                      <Zap size={14} fill="currentColor" />
+                      <Zap size={16} fill="currentColor" />
                     </div>
                   </div>
                 </div>
@@ -147,8 +147,8 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
 
               {/* Height & Weight */}
               <div className="grid grid-cols-2 gap-8">
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Ruler size={12}/> Height (cm)</label>
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Ruler size={12}/> Height (cm)</label>
                   <div className="relative">
                     <input 
                       type="number"
@@ -156,13 +156,12 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                       placeholder="Metric CM"
                       value={formData.height}
                       onChange={(e) => setFormData({...formData, height: e.target.value})}
-                      className={`w-full bg-slate-950/80 border rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.height, formData.height)}`}
+                      className={`w-full bg-slate-950/90 border rounded-[2.5rem] px-10 py-7 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.height, formData.height)}`}
                     />
-                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-700 uppercase tracking-widest pointer-events-none">Metric CM</div>
                   </div>
                 </div>
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Scale size={12}/> Weight (kg)</label>
+                <div className="space-y-4">
+                  <label className="text-[11px] font-black uppercase text-slate-500 px-6 flex items-center gap-2 tracking-widest italic"><Scale size={12}/> Weight (kg)</label>
                   <div className="relative">
                     <input 
                       type="number"
@@ -170,16 +169,15 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                       placeholder="Metric KG"
                       value={formData.weight}
                       onChange={(e) => setFormData({...formData, weight: e.target.value})}
-                      className={`w-full bg-slate-950/80 border rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.weight, formData.weight)}`}
+                      className={`w-full bg-slate-950/90 border rounded-[2.5rem] px-10 py-7 text-sm text-white outline-none font-mono font-bold italic ${getInputBorderClass(validations.weight, formData.weight)}`}
                     />
-                    <div className="absolute right-6 top-1/2 -translate-y-1/2 text-[9px] font-black text-slate-700 uppercase tracking-widest pointer-events-none">Metric KG</div>
                   </div>
                 </div>
               </div>
             </div>
 
-            <div className="p-7 bg-indigo-500/5 border border-indigo-500/10 rounded-[2.5rem] flex gap-5">
-              <ShieldCheck size={24} className="text-indigo-400 shrink-0 mt-1" />
+            <div className="p-8 bg-indigo-500/5 border border-indigo-500/10 rounded-[3rem] flex gap-6">
+              <ShieldCheck size={28} className="text-indigo-400 shrink-0 mt-1" />
               <p className="text-[11px] text-slate-400 italic leading-relaxed">
                 Biometric data is utilized exclusively for Neural Synthesis calibration within SomnoAI Digital Sleep Lab.
               </p>
@@ -191,10 +189,10 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
-                  className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-4"
+                  className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-5"
                 >
-                  <AlertCircle size={20} className="text-rose-500 shrink-0 mt-0.5" />
-                  <p className="text-[11px] text-rose-400 font-bold italic uppercase tracking-wider">{error}</p>
+                  <AlertCircle size={22} className="text-rose-500 shrink-0 mt-0.5" />
+                  <p className="text-[11px] text-rose-400 font-black italic uppercase tracking-wider">{error}</p>
                 </m.div>
               )}
             </AnimatePresence>
@@ -202,16 +200,16 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
             <button 
               type="submit"
               disabled={isSaving || !isFormValid}
-              className={`w-full py-7 rounded-full font-black text-sm uppercase tracking-[0.5em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-4 italic relative overflow-hidden ${isFormValid ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30' : 'bg-slate-800 text-slate-600 cursor-not-allowed opacity-50 border border-white/5'}`}
+              className={`w-full py-8 rounded-full font-black text-sm uppercase tracking-[0.5em] shadow-2xl active:scale-[0.98] transition-all flex items-center justify-center gap-5 italic relative overflow-hidden ${isFormValid ? 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30' : 'bg-slate-800 text-slate-700 cursor-not-allowed opacity-50 border border-white/5'}`}
             >
-              {isSaving ? <Loader2 size={20} className="animate-spin" /> : <Zap size={20} fill="currentColor" />}
+              {isSaving ? <Loader2 size={24} className="animate-spin" /> : <Zap size={24} fill="currentColor" />}
               <span>{isSaving ? 'SYNCHRONIZING...' : 'Initialize Profile'}</span>
               
               {isSaving && (
                 <m.div 
                   initial={{ x: '-100%' }}
                   animate={{ x: '100%' }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                   className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
                 />
               )}
@@ -221,7 +219,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
       </m.div>
 
       <footer className="mt-16 text-center opacity-40">
-        <p className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-700 italic">
+        <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 italic">
           @2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
         </p>
       </footer>

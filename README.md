@@ -1,7 +1,6 @@
-
 # SomnoAI Digital Sleep Lab 🌙
 
-**SomnoAI Digital Sleep Lab** integrates physiological monitoring, deep AI insights, and wellness protocols to deliver a comprehensive digital sleep laboratory experience. By synthesizing precision biometric telemetry with Gemini-powered neural analysis, SomnoAI provides users with high-fidelity mappings of their physiological recovery.
+**SomnoAI Digital Sleep Lab** integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience. By synthesizing precision biometric telemetry with Gemini-powered neural analysis, SomnoAI provides users with high-fidelity mappings of their physiological recovery.
 
 ## 🚀 Core Architecture
 
