@@ -333,8 +333,8 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
               </AnimatePresence>
             </button>
           </div>
-        </div>
-      </GlassCard>
+        </GlassCard>
+      </form>
 
       <div className="flex items-center gap-8 p-10 bg-indigo-500/5 border border-indigo-500/10 rounded-[4rem] relative overflow-hidden group">
         <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 relative z-10">
