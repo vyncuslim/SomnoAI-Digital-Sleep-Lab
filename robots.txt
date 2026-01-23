@@ -4,12 +4,16 @@ Allow: /favicon.ico
 Allow: /favicon.png
 Allow: /sitemap.xml
 Allow: /manifest.json
+Allow: /#/assistant
+Allow: /#/about
 
 # Protect private nodes
 Disallow: /admin
 Disallow: /admin/login
 Disallow: /login
 Disallow: /api/
+Disallow: /#/profile
+Disallow: /#/settings
 
 # Sitemap Location
 Sitemap: https://sleepsomno.com/sitemap.xml

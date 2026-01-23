@@ -1,7 +1,7 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
   "short_name": "SomnoAI Lab",
-  "description": "SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience.",
+  "description": "AI-powered digital sleep lab for physiological metrics monitoring and personalized health insights.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
@@ -40,7 +40,7 @@
     },
     {
       "name": "Neural Core",
-      "url": "/#/assistant",
+      "url": "/assistant",
       "icons": [{ "src": "https://img.icons8.com/fluency/96/brain.png", "sizes": "96x96" }]
     }
   ]

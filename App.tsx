@@ -182,23 +182,26 @@ const App: React.FC = () => {
       
       if (hash.includes('error=')) return;
 
-      if (path === '/privacy') setActiveView('privacy');
-      else if (path === '/terms' || path === '/term') setActiveView('terms');
+      // Professional Routing logic supporting both Path and Hash for SEO
+      if (path === '/privacy' || hash === '#/privacy') setActiveView('privacy');
+      else if (path === '/terms' || hash === '#/terms') setActiveView('terms');
+      else if (path === '/about' || hash === '#/about') setActiveView('about');
+      else if (path === '/assistant' || hash === '#/assistant') setActiveView('assistant');
       else if (hash === '#/admin') setActiveView('admin');
       else if (hash === '#/admin/login') setActiveView('admin-login');
       else if (hash === '#/profile') setActiveView('profile');
       else if (hash === '#/settings') setActiveView('settings');
       else if (hash === '#/calendar') setActiveView('calendar');
-      else if (hash === '#/assistant') setActiveView('assistant');
-      else if (hash === '#/about') setActiveView('about');
-      else if (hash === '#/privacy') setActiveView('privacy');
-      else if (hash === '#/terms') setActiveView('terms');
       else setActiveView('dashboard');
     };
     
     handleHash();
     window.addEventListener('hashchange', handleHash);
-    return () => window.removeEventListener('hashchange', handleHash);
+    window.addEventListener('popstate', handleHash);
+    return () => {
+      window.removeEventListener('hashchange', handleHash);
+      window.removeEventListener('popstate', handleHash);
+    };
   }, []);
 
   useEffect(() => {
