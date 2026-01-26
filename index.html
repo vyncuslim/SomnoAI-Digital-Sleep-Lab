@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en-US">
 <head>
     <!-- Google Identity Services -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
@@ -24,9 +24,6 @@
     <meta name="apple-mobile-web-app-title" content="SomnoAI">
     <link rel="manifest" href="/manifest.json">
     
-    <!-- iOS Splash Screens -->
-    <link rel="apple-touch-startup-image" href="https://img.icons8.com/fluency/512/moon.png">
-
     <script type="importmap">
 {
   "imports": {
@@ -39,10 +36,10 @@
     "lucide-react": "https://esm.sh/lucide-react@0.470.0?deps=react@18.3.1",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
     "@google/genai": "https://esm.sh/@google/genai@1.37.0",
-    "react/": "https://esm.sh/react@^19.2.3/",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
     "react-dom/": "https://esm.sh/react-dom@^19.2.3/",
-    "vite": "https://esm.sh/vite@^7.3.1"
+    "react/": "https://esm.sh/react@^19.2.3/",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>
@@ -51,47 +48,29 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0, viewport-fit=cover">
     
     <!-- Primary SEO Tags -->
-    <title>SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Insights</title>
-    <meta name="title" content="SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Insights">
-    <meta name="description" content="SomnoAI Digital Sleep Lab uses AI to analyze sleep data, interpret physiological metrics, and deliver personalized health insights to enhance sleep quality.">
-    <link rel="canonical" href="https://sleepsomno.com/">
+    <title>SomnoAI Digital Sleep Lab | Professional Sleep Analytics & AI Insights</title>
+    <meta name="title" content="SomnoAI Digital Sleep Lab | Professional Sleep Analytics & AI Insights">
+    <meta name="description" content="SomnoAI Digital Sleep Lab is a clinical-grade digital diagnostic environment that synthesizes biometric telemetry into actionable health insights using Gemini AI. Connect your wearable data securely for high-fidelity sleep analysis.">
+    <meta name="keywords" content="Sleep Lab, AI Health, Biometric Telemetry, Health Connect API, Sleep Score, Neural Analysis, SomnoAI">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://sleepsomno.com">
 
     <!-- Open Graph / Facebook -->
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Insights">
-    <meta property="og:description" content="SomnoAI Digital Sleep Lab uses AI to analyze sleep data, interpret physiological metrics, and deliver personalized health insights to enhance sleep quality.">
+    <meta property="og:url" content="https://sleepsomno.com">
+    <meta property="og:title" content="SomnoAI Digital Sleep Lab | AI-Powered Health Protocol">
+    <meta property="og:description" content="Professional-grade sleep diagnostic platform leveraging Gemini AI for biometric synthesis and circadian optimization.">
     <meta property="og:image" content="https://img.icons8.com/fluency/512/moon.png">
 
     <!-- Twitter -->
     <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://sleepsomno.com/">
-    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Insights">
-    <meta property="twitter:description" content="SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance.">
+    <meta property="twitter:url" content="https://sleepsomno.com">
+    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab">
+    <meta property="twitter:description" content="Advanced digital sleep laboratory providing high-fidelity recovery mappings.">
     <meta property="twitter:image" content="https://img.icons8.com/fluency/512/moon.png">
 
-    <!-- Structured Data (JSON-LD) -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "SomnoAI Digital Sleep Lab",
-      "operatingSystem": "Android, iOS, Web",
-      "applicationCategory": "HealthApplication",
-      "description": "SomnoAI Digital Sleep Lab integrates physiological metrics monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience.",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      }
-    }
-    </script>
-    
-    <!-- Google Favicon Snippet Optimization -->
+    <!-- Google Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/32/moon.png">
-    <link rel="icon" type="image/png" sizes="48x48" href="https://img.icons8.com/fluency/48/moon.png">
-    <link rel="icon" type="image/png" sizes="96x96" href="https://img.icons8.com/fluency/96/moon.png">
-    <link rel="shortcut icon" href="https://img.icons8.com/fluency/48/moon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="https://img.icons8.com/fluency/180/moon.png">
     
     <meta name="theme-color" content="#020617">
@@ -115,16 +94,6 @@
       #root:empty { background: #020617; height: 100vh; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      html { scroll-behavior: smooth; }
-      
-      @media all and (display-mode: standalone) {
-        body {
-          padding-top: env(safe-area-inset-top);
-          padding-bottom: env(safe-area-inset-bottom);
-        }
-      }
-      
-      /* Essential for SEO content to be indexable but not visible in the UI */
       .sr-only {
         position: absolute;
         width: 1px;
@@ -139,30 +108,29 @@
     </style>
 </head>
 <body class="bg-[#020617] text-slate-200">
-    <!-- SEO Semantic Content Layer (Indexable by Googlebot) -->
-    <main class="sr-only" aria-hidden="true">
-      <h1>SomnoAI Digital Sleep Lab</h1>
+    <!-- Production SEO Semantic content for Google Search Console -->
+    <main class="sr-only">
+      <h1>SomnoAI Digital Sleep Lab: Professional Biometric Diagnostics</h1>
       <p>
-        SomnoAI Digital Sleep Lab is an AI-powered sleep analysis platform designed to help users understand their sleep patterns, physiological signals, and personalized health insights. Using advanced machine learning and biometric data interpretation, SomnoAI transforms raw sleep metrics into clear, actionable recommendations for improving sleep quality and overall well-being.
-      </p>
-      <p>
-        Our platform integrates physiological metric monitoring, intelligent data analysis, and personalized health guidance to deliver a full digital sleep laboratory experience. With SomnoAI, individuals can explore sleep duration trends, detect sleep disruptions, and gain clarity on their sleep cycles using scientifically informed insights.
+        SomnoAI Digital Sleep Lab is a secure ingestion gateway for physiological telemetry. Our platform processes sleep architecture data via the POST /api/health-upload endpoint to generate high-fidelity recovery mappings.
       </p>
 
-      <h2>AI-Powered Sleep Data Analysis</h2>
+      <h2>Neural Architecture Synthesis</h2>
       <p>
-        SomnoAI leverages artificial intelligence to identify meaningful patterns in sleep-related biometrics such as heart rate, movement, and breathing. This allows users to go beyond basic sleep tracking and receive insights that matter—like detecting changes in sleep stages or identifying long-term trends that affect rest quality.
+        Leveraging the Gemini 3 Pro model, SomnoAI performs multi-modal analysis on Deep Sleep ratios, REM cycles, and resting heart rate (RHR) stability. Users receive personalized wellness protocols based on historical biometric trends.
       </p>
 
-      <h2>Personal Health Insights and Recommendations</h2>
+      <h2>Zero-Backend Privacy Architecture</h2>
       <p>
-        With personalized health insights, SomnoAI helps users understand how daily habits influence sleep health. Whether it’s improving sleep routines, optimizing rest environments, or tracking progress over time, our platform delivers guidance backed by data and machine learning.
+        SomnoAI adheres to the highest standards of data sovereignty. While raw data is ingested for immediate analysis, our edge-first approach ensures that sensitive biological metrics are handled with end-to-end encryption.
       </p>
 
-      <h2>Digital Sleep Laboratory for Researchers and Health Seekers</h2>
-      <p>
-        SomnoAI is suitable for health-conscious individuals, researchers, clinicians, and anyone seeking to elevate their understanding of sleep health through advanced analysis. Whether you are tracking sleep performance, exploring sleep improvement strategies, or building long-term sleep health records, SomnoAI offers meaningful insights tailored to your needs.
-      </p>
+      <ul>
+        <li>Secure Health Connect Ingress</li>
+        <li>Gemini-powered Circadian Optimization</li>
+        <li>Real-time Heart Rate Variability Tracking</li>
+        <li>Biometric Data Privacy (SOC2 Alignment)</li>
+      </ul>
     </main>
 
     <div id="root"></div>

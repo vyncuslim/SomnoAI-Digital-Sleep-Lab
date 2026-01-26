@@ -1,36 +1,94 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
+  "headers": [
+    {
+      "source": "/sitemap.xml",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "application/xml"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    },
+    {
+      "source": "/robots.txt",
+      "headers": [
+        {
+          "key": "Content-Type",
+          "value": "text/plain"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=0, must-revalidate"
+        }
+      ]
+    }
+  ],
   "redirects": [
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": true
+    },
     {
       "source": "/favicon.png",
       "destination": "https://img.icons8.com/fluency/512/moon.png",
       "permanent": true
-    },
-    {
-      "source": "/favicon.ico",
-      "destination": "https://img.icons8.com/fluency/48/moon.png",
-      "permanent": true
-    },
-    {
-      "source": "/apple-touch-icon.png",
-      "destination": "https://img.icons8.com/fluency/180/moon.png",
-      "permanent": true
     }
   ],
   "rewrites": [
-    { "source": "/sitemap", "destination": "/sitemap.xml" },
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/about", "destination": "/index.html" },
-    { "source": "/assistant", "destination": "/index.html" },
-    { "source": "/features", "destination": "/index.html" },
-    { "source": "/contact", "destination": "/index.html" },
-    { "source": "/api/health-upload", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" },
-    { "source": "/api/:path*", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/:path*" },
-    { "source": "/admin", "destination": "/index.html" },
-    { "source": "/admin/:path*", "destination": "/index.html" },
-    { "source": "/login", "destination": "/index.html" },
-    { "source": "/((?!assets/|fonts/|favicon.ico|favicon.png|manifest.json|sw.js|sitemap.xml|robots.txt|api/|.*\\.[a-zA-Z0-9]+$).*)", "destination": "/index.html" }
+    {
+      "source": "/sitemap.xml",
+      "destination": "/sitemap.xml"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/robots.txt"
+    },
+    {
+      "source": "/assistant",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/about",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/calendar",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/profile",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/api/health-upload",
+      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder"
+    },
+    {
+      "source": "/api/:path*",
+      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/:path*"
+    },
+    {
+      "source": "/((?!assets/|fonts/|favicon.*|manifest.json|sw.js|sitemap.xml|robots.txt|api/|.*\\.[a-zA-Z0-9]+$).*)",
+      "destination": "/index.html"
+    }
   ]
 }

@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -9,33 +8,27 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
-/**
- * Retrieves the currently active Gemini API key.
- * Strictly adheres to guidelines: API key is obtained exclusively from environment variables.
- */
 const getActiveApiKey = () => {
   return process.env.API_KEY || '';
 };
 
 const handleGeminiError = (err: any) => {
   console.error("Gemini API Error Context:", err);
-  // Silent or generic errors to prevent leaking technical details to visitors
   throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
-/* Using recommended Gemini 3 series models for production-grade text tasks */
 const MODEL_FLASH = 'gemini-3-flash-preview'; 
 const MODEL_PRO = 'gemini-3-pro-preview'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const apiKey = getActiveApiKey();
-  const prompt = `你是一位世界级的数字睡眠科学家与首席生物黑客。请根据以下高精度生理遥测指标进行深度神经分析。
-    必须返回一个包含 3 条专业字符串的 JSON 数组，语言为 ${lang === 'zh' ? '中文' : '英文'}。
-    1. 神经架构分析：基于深度与 REM 比例分析大脑清理效率与记忆巩固状态。
-    2. 生物节律诊断：评估静息心率 (RHR) 与睡眠分数的关联，预测今日认知负荷。
-    3. 战术性生物黑客建议：针对性提供一项今日可立即执行的生理优化方案。
-    数据: 评分 ${data.score}, 深度 ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm。`;
+  const prompt = `You are a world-class digital sleep scientist and chief biohacker. Please perform deep neural analysis based on the following high-precision physiological telemetry.
+    You MUST return a JSON array containing 3 professional strings. 
+    1. Neural Architecture Analysis: Analyze brain clearing efficiency and memory consolidation based on Deep and REM ratios.
+    2. Circadian Diagnosis: Assess the correlation between Resting Heart Rate (RHR) and Sleep Score to predict today's cognitive load.
+    3. Tactical Biohacking Suggestion: Provide one physiological optimization protocol that can be executed today.
+    Data: Score ${data.score}, Deep ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm.`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -57,7 +50,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
 export const chatWithCoach = async (history: { role: string; content: string }[], lang: Language = 'en', contextData?: SleepRecord | null) => {
   const apiKey = getActiveApiKey();
   const bio = contextData ? `\nTELEMETRY: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, Efficiency: ${contextData.efficiency}%.` : "";
-  const systemInstruction = `You are the Somno Chief Research Officer. Professional, futuristic, data-driven. Language context: ${lang}. ${bio}`;
+  const systemInstruction = `You are the Somno Chief Research Officer. Professional, futuristic, data-driven. Bio: ${bio}`;
 
   try {
     const ai = new GoogleGenAI({ apiKey });
@@ -67,7 +60,6 @@ export const chatWithCoach = async (history: { role: string; content: string }[]
       config: { 
         systemInstruction, 
         tools: [{ googleSearch: {} }],
-        /* Maximum thinking budget for gemini-3-pro-preview to ensure high-quality reasoning */
         thinkingConfig: { thinkingBudget: 32768 } 
       }
     });
@@ -83,7 +75,7 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
-      contents: `Design a sleep experiment based on: score ${data.score}, RHR ${data.heartRate?.resting}. Language: ${lang}.`,
+      contents: `Design a sleep experiment based on: score ${data.score}, RHR ${data.heartRate?.resting}.`,
       config: { 
         responseMimeType: "application/json",
         responseSchema: {
@@ -91,7 +83,6 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
           properties: { hypothesis: { type: Type.STRING }, protocol: { type: Type.ARRAY, items: { type: Type.STRING } }, expectedImpact: { type: Type.STRING } },
           required: ["hypothesis", "protocol", "expectedImpact"]
         },
-        /* Allocating significant budget for scientific experimental design */
         thinkingConfig: { thinkingBudget: 16384 }
       }
     });
@@ -108,7 +99,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
-      contents: `Summarize trends for: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, lang: ${lang}.`,
+      contents: `Summarize trends for: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, use English only.`,
     });
     return response.text || "Summary failed.";
   } catch (err) { 
@@ -122,7 +113,7 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
     const ai = new GoogleGenAI({ apiKey });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
-      contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on score ${data.score}. Lang: ${lang}` }] }],
+      contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on score ${data.score}.` }] }],
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 

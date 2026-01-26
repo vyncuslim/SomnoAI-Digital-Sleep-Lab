@@ -3,8 +3,8 @@ Disallow: /admin/
 Disallow: /login
 Disallow: /api/
 
-# Allow indexing of all public views and assets
+# Allow all public routes
 Allow: /
 
-# Canonical Sitemap Location
+# Canonical Sitemap
 Sitemap: https://sleepsomno.com/sitemap.xml

@@ -3,274 +3,134 @@ import { supabase } from '../lib/supabaseClient.ts';
 export { supabase };
 
 export const healthDataApi = {
-  uploadTelemetry: async (metrics: any) => {
+  /**
+   * Health Telemetry Ingress (Fact-based)
+   */
+  uploadTelemetry: async (data: any) => {
     try {
-      const { data, error } = await supabase.functions.invoke('bright-responder', {
-        method: 'POST',
-        body: {
-          steps: metrics.steps || 0,
-          heart_rate: metrics.heart_rate || metrics.heartRate?.average || 0,
-          weight: metrics.weight || metrics.payload?.weight || 0,
-          recorded_at: metrics.recorded_at || new Date().toISOString(),
-          source: metrics.source || 'web_bridge',
-          payload: metrics
-        }
-      });
-      if (error) throw error;
-      return { success: true, data };
-    } catch (err: any) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return { success: false, error: 'UNAUTHORIZED' };
 
-      try {
-        const { error: dbError } = await supabase.from('health_telemetry').insert({
-          user_id: user.id,
-          heart_rate: metrics.heart_rate || metrics.heartRate?.average || 0,
-          recorded_at: metrics.recorded_at || new Date().toISOString(),
-          payload: metrics,
-          source: metrics.source || 'db_fallback'
-        });
-        return { success: !dbError, error: dbError?.message };
-      } catch (e) {
-        return { success: false, error: 'TELEMETRY_STORAGE_FAILED' };
-      }
+      // Ingest Raw Fact
+      const { error: rawError } = await supabase.from('health_raw_data').insert({
+        user_id: user.id,
+        data_type: 'sleep_session_ingress',
+        recorded_at: data.recorded_at || new Date().toISOString(),
+        source: data.source || 'edge_bridge',
+        value: data
+      });
+
+      if (rawError) throw rawError;
+
+      // Update State: Confirm user has successfully used the App
+      await supabase.from('profiles').update({ has_app_data: true }).eq( 'id', user.id);
+
+      return { success: true };
+    } catch (err: any) {
+      console.error("[Health API] Telemetry Upload Failed:", err);
+      return { success: false, error: err.message };
     }
   },
 
-  getTelemetryHistory: async (limit = 14) => {
+  getTelemetryHistory: async (limit = 30) => {
     try {
-      const { data, error } = await supabase
-        .from('health_telemetry')
+      const { data } = await supabase
+        .from('health_raw_data')
         .select('*')
         .order('recorded_at', { ascending: false })
         .limit(limit);
-      if (error) throw error;
-      return data || [];
-    } catch (err: any) {
+      
+      return (data || []).map(d => ({
+        id: d.id,
+        recorded_at: d.recorded_at,
+        ...d.value
+      }));
+    } catch (err) { 
+      console.error("[Health API] History Fetch Failed:", err);
       return []; 
     }
   }
 };
 
-export const feedbackApi = {
-  submitFeedback: async (type: string, content: string) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const { error } = await supabase.from('feedback').insert({
-        user_id: user?.id,
-        email: user?.email || 'anonymous',
-        feedback_type: type,
-        content: content,
-        target_email: 'ongyuze1401@gmail.com',
-        created_at: new Date().toISOString()
-      });
-      if (error) throw error;
-      return { success: true };
-    } catch (e) {
-      console.error("Feedback transmission failed:", e);
-      return { success: false };
-    }
-  }
-};
-
-export const securityApi = {
-  logAttempt: async (email: string, status: 'success' | 'failure') => {
-    try {
-      await supabase.from('login_attempts').insert({
-        email: email.toLowerCase().trim(),
-        status: status,
-        attempt_at: new Date().toISOString()
-      });
-    } catch (e) {
-      console.debug("Audit node bypassed.");
-    }
-  },
-
-  isBlocked: async (email: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('is_blocked, blocked_until')
-        .eq('email', email.toLowerCase().trim())
-        .maybeSingle();
-      
-      if (error || !data) return false;
-      
-      if (data.is_blocked) {
-        if (data.blocked_until && new Date(data.blocked_until) < new Date()) {
-          await supabase.from('profiles').update({ is_blocked: false, blocked_until: null }).eq('email', email.toLowerCase().trim());
-          return false;
-        }
-        return true;
-      }
-      
-      return false;
-    } catch (e) {
-      return false;
-    }
-  },
-
-  enforceBlock: async (email: string, reason: string) => {
-    try {
-      const cooldownMinutes = 15;
-      const blockedUntil = new Date(Date.now() + cooldownMinutes * 60 * 1000).toISOString();
-      
-      await supabase.from('profiles').update({ 
-        is_blocked: true,
-        blocked_until: blockedUntil 
-      }).eq('email', email.toLowerCase().trim());
-      
-      await supabase.from('security_events').insert({
-        email: email.toLowerCase().trim(),
-        event_type: 'AUTO_BLOCK',
-        event_reason: reason,
-        created_at: new Date().toISOString()
-      });
-    } catch (e) {
-      console.error("Security enforcement failed.");
-    }
-  }
-};
-
+/**
+ * Registry for Biological Metadata
+ */
 export const userDataApi = {
-  getUserData: async () => {
+  /**
+   * The Laboratory State Handshake (State Machine)
+   */
+  getProfileStatus: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      
-      const { data, error } = await supabase
-        .from('user_data')
-        .select('id, age, height, weight, gender, setup_completed, profiles(full_name)')
+
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('is_initialized, has_app_data, full_name, is_blocked')
         .eq('id', user.id)
         .maybeSingle();
+
+      if (error || !profile) return null;
+
+      // Check for blocked status immediately
+      if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
+
+      // FACT CHECK: If flag says false, but data exists in table, sync flag
+      if (!profile.has_app_data) {
+        const { count } = await supabase
+          .from('health_raw_data')
+          .select('id', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .limit(1);
         
-      if (error) return null;
-      return data;
-    } catch (e) { 
-      return null; 
+        if (count && count > 0) {
+          await supabase.from('profiles').update({ has_app_data: true }).eq('id', user.id);
+          return { ...profile, has_app_data: true };
+        }
+      }
+
+      return profile;
+    } catch (e: any) {
+      if (e.message === "BLOCK_ACTIVE") throw e;
+      console.error("[User Data API] Profile Status Error:", e);
+      return null;
     }
   },
-  
+
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('AUTHENTICATION_REQUIRED');
+    if (!user) throw new Error('UNAUTHORIZED');
 
-    // 1. Establish Identity in Profiles (Required for foreign key)
-    const { error: profileError } = await supabase.from('profiles').upsert({ 
-      id: user.id, 
-      email: user.email, 
-      full_name: fullName.trim()
-    });
+    // 1. Commit metrics
+    await supabase.from('user_data').upsert({ id: user.id, ...metrics });
+
+    // 2. Commit profile initialization state
+    const { error } = await supabase.from('profiles').update({ 
+      full_name: fullName.trim(),
+      is_initialized: true 
+    }).eq('id', user.id);
     
-    if (profileError) throw profileError;
-
-    // 2. Transmit Biometric Payload to user_data
-    const payload = {
-      id: user.id,
-      age: Math.max(0, parseInt(String(metrics.age))),
-      height: Math.max(0, parseFloat(String(metrics.height))),
-      weight: Math.max(0, parseFloat(String(metrics.weight))),
-      gender: String(metrics.gender || 'prefer-not-to-say'),
-      setup_completed: true,
-      updated_at: new Date().toISOString()
-    };
-
-    const { error: dataError } = await supabase.from('user_data').upsert(payload);
-    if (dataError) throw dataError;
-    
-    return { success: true };
+    return { success: !error };
   },
 
-  updateUserData: async (updates: any) => {
+  getUserData: async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Authentication required.');
-    
-    const cleanedUpdates = { ...updates };
-    if (updates.age) cleanedUpdates.age = parseInt(String(updates.age));
-    if (updates.height) cleanedUpdates.height = parseFloat(String(updates.height));
-    if (updates.weight) cleanedUpdates.weight = parseFloat(String(updates.weight));
-    
-    return await supabase.from('user_data').upsert({ 
-      id: user.id, 
-      ...cleanedUpdates, 
-      updated_at: new Date().toISOString() 
-    });
+    if (!user) return null;
+    const { data } = await supabase.from('user_data').select('*').eq('id', user.id).maybeSingle();
+    return data;
+  },
+
+  updateUserData: async (metrics: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: new Error('UNAUTHORIZED') };
+    const { error } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
+    return { error };
   }
 };
 
-export const authApi = {
-  signUp: (email: string, password: string) => supabase.auth.signUp({ email, password }),
-  
-  signIn: async (email: string, password: string) => {
-    const normalizedEmail = email.toLowerCase().trim();
-    
-    const blocked = await securityApi.isBlocked(normalizedEmail);
-    if (blocked) {
-      throw new Error("ACCESS_RESTRICTED");
-    }
-
-    const { data, error } = await supabase.auth.signInWithPassword({ email: normalizedEmail, password });
-    
-    if (error) {
-      await securityApi.logAttempt(normalizedEmail, 'failure');
-      const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
-      const { count } = await supabase
-        .from('login_attempts')
-        .select('*', { count: 'exact', head: true })
-        .eq('email', normalizedEmail)
-        .eq('status', 'failure')
-        .gt('attempt_at', oneMinuteAgo);
-      
-      if (count && count >= 10) {
-        await securityApi.enforceBlock(normalizedEmail, 'Brute force density trigger: 10+ failures/60s');
-        throw new Error("ACCESS_RESTRICTED");
-      }
-      
-      throw error;
-    }
-
-    await securityApi.logAttempt(normalizedEmail, 'success');
-    return { data, error: null };
-  },
-  
-  sendOTP: (email: string) => supabase.auth.signInWithOtp({ email }),
-  verifyOTP: (email: string, token: string, type: any = 'email') => 
-    supabase.auth.verifyOtp({ email, token, type }),
-  signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }),
-  signOut: () => supabase.auth.signOut()
-};
-
-export const adminApi = {
-  checkAdminStatus: async (userId: string): Promise<boolean> => {
-    try {
-      const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
-      return data?.role === 'admin';
-    } catch (e) { return false; }
-  },
-  getUsers: async () => {
-    const { data } = await supabase.from('profiles').select('*');
-    return data || [];
-  },
-  getSecurityEvents: async () => {
-    const { data } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
-    return data || [];
-  },
-  blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
-  unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false, blocked_until: null }).eq('id', id),
-  getSleepRecords: async () => {
-    const { data } = await supabase.from('health_telemetry').select('*').limit(100);
-    return data || [];
-  },
-  getFeedback: async () => {
-    const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
-    return data || [];
-  },
-  getAuditLogs: async () => {
-    const { data } = await supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100);
-    return data || [];
-  }
-};
-
+/**
+ * Profile Management API
+ */
 export const profileApi = {
   getMyProfile: async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -280,7 +140,63 @@ export const profileApi = {
   },
   updateProfile: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('Authentication required.');
-    return await supabase.from('profiles').update(updates).eq('id', user.id);
+    if (!user) return { error: new Error('UNAUTHORIZED') };
+    const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
+    return { error };
+  }
+};
+
+export const authApi = {
+  signUp: (email: string, password: string) => supabase.auth.signUp({ email, password }),
+  signIn: async (email: string, password: string) => {
+    const res = await supabase.auth.signInWithPassword({ email, password });
+    if (email) {
+      await supabase.from('login_attempts').insert({ 
+        email, 
+        success: !res.error, 
+        user_id: res.data?.user?.id 
+      });
+    }
+    return res;
+  },
+  sendOTP: (email: string) => supabase.auth.signInWithOtp({ email }),
+  verifyOTP: (email: string, token: string, type: any = 'email') => supabase.auth.verifyOtp({ email, token, type }),
+  signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
+    provider: 'google', 
+    options: { 
+      redirectTo: window.location.origin, // Crucial for multi-env support
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'consent',
+      },
+    } 
+  }),
+  signOut: () => supabase.auth.signOut()
+};
+
+export const adminApi = {
+  checkAdminStatus: async (userId: string): Promise<boolean> => {
+    const { data } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+    return data?.role === 'admin';
+  },
+  getUsers: () => supabase.from('profiles').select('*'),
+  blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
+  unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
+  getSleepRecords: () => supabase.from('health_raw_data').select('*').limit(100),
+  getFeedback: () => supabase.from('feedback').select('*').order('created_at', { ascending: false }),
+  getAuditLogs: () => supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100),
+  getSecurityEvents: () => supabase.from('security_events').select('*').order('created_at', { ascending: false })
+};
+
+export const feedbackApi = {
+  submitFeedback: async (type: string, content: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { error } = await supabase.from('feedback').insert({
+      user_id: user?.id,
+      email: user?.email,
+      feedback_type: type,
+      content: content
+    });
+    return { success: !error };
   }
 };
