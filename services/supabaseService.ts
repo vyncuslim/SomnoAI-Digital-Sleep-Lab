@@ -71,23 +71,9 @@ export const userDataApi = {
 
       if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
 
-      if (!profile.has_app_data) {
-        const { count } = await supabase
-          .from('health_raw_data')
-          .select('id', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .limit(1);
-        
-        if (count && count > 0) {
-          await supabase.from('profiles').update({ has_app_data: true }).eq('id', user.id);
-          return { ...profile, has_app_data: true };
-        }
-      }
-
       return profile;
     } catch (e: any) {
       if (e.message === "BLOCK_ACTIVE") throw e;
-      console.error("[User Data API] Profile Status Error:", e);
       return null;
     }
   },
@@ -154,11 +140,7 @@ export const authApi = {
   signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
     provider: 'google', 
     options: { 
-      redirectTo: window.location.origin,
-      queryParams: {
-        access_type: 'offline',
-        prompt: 'consent',
-      },
+      redirectTo: window.location.origin
     } 
   }),
   signOut: () => supabase.auth.signOut()
@@ -180,21 +162,13 @@ export const adminApi = {
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    // Attempt to get user session, but don't fail if it's not there (Sandbox mode)
-    const { data: authData } = await supabase.auth.getUser();
-    
+    const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from('feedback').insert({
-      user_id: authData?.user?.id || null,
+      user_id: user?.id || null,
       email: email.trim(),
       feedback_type: type,
       content: content.trim()
     });
-
-    if (error) {
-      console.error("[Supabase] Feedback Submission Failure:", error);
-      return { success: false, error: error.message };
-    }
-
-    return { success: true };
+    return { success: !error, error };
   }
 };
