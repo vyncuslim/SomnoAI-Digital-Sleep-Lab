@@ -180,14 +180,21 @@ export const adminApi = {
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
+    // Attempt to get user session, but don't fail if it's not there (Sandbox mode)
+    const { data: authData } = await supabase.auth.getUser();
+    
     const { error } = await supabase.from('feedback').insert({
-      user_id: user?.id || null,
-      email: email, // Use provided email
+      user_id: authData?.user?.id || null,
+      email: email.trim(),
       feedback_type: type,
-      content: content
+      content: content.trim()
     });
-    if (error) console.error("Feedback Save Failure:", error);
-    return { success: !error };
+
+    if (error) {
+      console.error("[Supabase] Feedback Submission Failure:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
   }
 };

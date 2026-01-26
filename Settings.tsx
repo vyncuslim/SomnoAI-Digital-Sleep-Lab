@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './components/GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Terminal, ExternalLink, Database, ChevronRight, Key, Info, MessageSquare, AlertTriangle, Lightbulb, Loader2, Mail
+  Terminal, ExternalLink, Database, ChevronRight, Key, Info, MessageSquare, AlertTriangle, Lightbulb, Loader2, Mail, CheckCircle2, XCircle, Zap
 } from 'lucide-react';
 import { Language, translations } from './services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -66,29 +66,36 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const handleSubmitFeedback = async () => {
-    if (!feedbackContent.trim() || !feedbackEmail.trim() || isSubmitting) return;
+    const emailToSubmit = feedbackEmail.trim();
+    if (!feedbackContent.trim() || !emailToSubmit || isSubmitting) return;
     
     setIsSubmitting(true);
     setFeedbackStatus('idle');
     
-    const result = await feedbackApi.submitFeedback(feedbackType, feedbackContent, feedbackEmail);
-    
-    if (result.success) {
-      setFeedbackStatus('success');
-      setFeedbackContent('');
-      setTimeout(() => {
-        setShowFeedback(false);
-        setFeedbackStatus('idle');
-      }, 2000);
-    } else {
+    try {
+      const result = await feedbackApi.submitFeedback(feedbackType, feedbackContent, emailToSubmit);
+      
+      if (result.success) {
+        setFeedbackStatus('success');
+        setFeedbackContent('');
+        // We don't clear email so they can "practice" again easily
+        setTimeout(() => {
+          setShowFeedback(false);
+          setFeedbackStatus('idle');
+        }, 2500);
+      } else {
+        setFeedbackStatus('error');
+        setTimeout(() => setFeedbackStatus('idle'), 4000);
+      }
+    } catch (err) {
       setFeedbackStatus('error');
-      setTimeout(() => setFeedbackStatus('idle'), 3000);
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   };
 
   const isEmailValid = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(feedbackEmail);
-  const canSubmit = feedbackContent.length > 5 && isEmailValid;
+  const canSubmit = feedbackContent.length >= 5 && isEmailValid;
 
   return (
     <div className="space-y-8 pb-32 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
@@ -134,7 +141,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
 
           <div className="space-y-4">
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">Neural Credentials & Data</span>
+             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">Laboratory Operations</span>
              <div className="space-y-3">
                <button 
                   onClick={handleLinkKey}
@@ -146,7 +153,7 @@ export const Settings: React.FC<SettingsProps> = ({
                      </div>
                      <div>
                         <p className="text-xs font-black text-white uppercase tracking-wider">Gemini API Key</p>
-                        <p className="text-[10px] text-slate-500 italic">Manage your laboratory access token</p>
+                        <p className="text-[10px] text-slate-500 italic">Configure analysis engine credentials</p>
                      </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -159,7 +166,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
                <button 
                   onClick={() => setShowFeedback(true)}
-                  className="w-full p-6 rounded-3xl bg-slate-900/50 border border-white/10 flex items-center justify-between group hover:bg-slate-900 transition-all text-left"
+                  className="w-full p-6 rounded-3xl bg-slate-900/50 border border-white/10 flex items-center justify-between group hover:bg-indigo-500/10 transition-all text-left"
                >
                   <div className="flex items-center gap-4">
                      <div className="p-3 bg-blue-500/10 rounded-2xl text-blue-400">
@@ -167,7 +174,7 @@ export const Settings: React.FC<SettingsProps> = ({
                      </div>
                      <div>
                         <p className="text-xs font-black text-white uppercase tracking-wider">Lab Feedback</p>
-                        <p className="text-[10px] text-slate-500 italic">Report issues or suggest upgrades</p>
+                        <p className="text-[10px] text-slate-500 italic">Submit reports or suggestions</p>
                      </div>
                   </div>
                   <ChevronRight size={18} className="text-slate-700" />
@@ -196,7 +203,7 @@ export const Settings: React.FC<SettingsProps> = ({
       {/* Feedback Modal */}
       <AnimatePresence>
         {showFeedback && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowFeedback(false)}>
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => !isSubmitting && setShowFeedback(false)}>
             <m.div 
               initial={{ scale: 0.9, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 
@@ -204,19 +211,19 @@ export const Settings: React.FC<SettingsProps> = ({
               onClick={(e: React.MouseEvent) => e.stopPropagation()}
               className="w-full max-w-md"
             >
-              <GlassCard className="p-10 rounded-[3rem] border-white/10 space-y-6">
+              <GlassCard className="p-10 rounded-[3rem] border-white/10 space-y-8">
                 <div className="text-center space-y-2">
-                   <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Lab Feedback</h2>
-                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Help us evolve the laboratory node</p>
+                   <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Laboratory Feedback</h2>
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Identify anomalies or propose improvements</p>
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex gap-2">
+                <div className="space-y-6">
+                  <div className="flex gap-2 p-1 bg-black/40 rounded-2xl border border-white/5">
                     {(['report', 'suggestion', 'improvement'] as const).map((type) => (
                       <button
                         key={type}
                         onClick={() => setFeedbackType(type)}
-                        className={`flex-1 py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest flex flex-col items-center gap-2 border transition-all ${feedbackType === type ? 'bg-indigo-600/20 border-indigo-500/50 text-white shadow-[0_0_15px_rgba(79,70,229,0.2)]' : 'bg-slate-900 border-white/5 text-slate-500 hover:text-slate-300'}`}
+                        className={`flex-1 py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex flex-col items-center gap-2 border transition-all ${feedbackType === type ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-transparent border-transparent text-slate-500 hover:text-slate-300'}`}
                       >
                         {type === 'report' ? <AlertTriangle size={14} /> : type === 'suggestion' ? <MessageSquare size={14} /> : <Lightbulb size={14} />}
                         {type}
@@ -224,39 +231,63 @@ export const Settings: React.FC<SettingsProps> = ({
                     ))}
                   </div>
 
-                  <div className="relative group">
-                    <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-500 transition-colors" size={16} />
-                    <input 
-                      type="email"
-                      value={feedbackEmail}
-                      onChange={(e) => setFeedbackEmail(e.target.value)}
-                      placeholder="Your Contact Email"
-                      className="w-full bg-[#050a1f] border border-white/5 rounded-3xl pl-14 pr-6 py-5 text-xs text-white placeholder:text-slate-700 outline-none focus:border-indigo-500/50 transition-all font-bold italic"
-                    />
-                  </div>
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 px-4 italic flex items-center gap-2">
+                        <Mail size={12} /> Contact Email (Required)
+                      </label>
+                      <div className="relative group">
+                        <input 
+                          type="email"
+                          value={feedbackEmail}
+                          onChange={(e) => setFeedbackEmail(e.target.value)}
+                          placeholder="yourname@example.com"
+                          className={`w-full bg-[#050a1f] border rounded-[1.5rem] px-6 py-5 text-sm text-white placeholder:text-slate-800 outline-none transition-all font-bold italic ${feedbackEmail ? (isEmailValid ? 'border-emerald-500/30' : 'border-rose-500/30') : 'border-white/5'}`}
+                        />
+                      </div>
+                    </div>
 
-                  <textarea
-                    value={feedbackContent}
-                    onChange={(e) => setFeedbackContent(e.target.value)}
-                    placeholder="Describe your findings or proposed upgrades..."
-                    className="w-full h-32 bg-[#050a1f] border border-white/10 rounded-[2rem] p-6 text-sm text-white placeholder:text-slate-700 outline-none focus:border-indigo-500/50 transition-all font-medium italic resize-none"
-                  />
+                    <div className="space-y-2">
+                      <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 px-4 italic flex items-center gap-2">
+                        <Terminal size={12} /> Description
+                      </label>
+                      <textarea
+                        value={feedbackContent}
+                        onChange={(e) => setFeedbackContent(e.target.value)}
+                        placeholder="Detailed metrics or logs..."
+                        className="w-full h-32 bg-[#050a1f] border border-white/5 rounded-[1.5rem] p-6 text-sm text-white placeholder:text-slate-800 outline-none focus:border-indigo-500/30 transition-all font-medium italic resize-none"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <button 
-                  onClick={handleSubmitFeedback}
-                  disabled={!canSubmit || isSubmitting}
-                  className={`w-full py-5 rounded-full font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${
-                    feedbackStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                    feedbackStatus === 'error' ? 'bg-rose-600 text-white' :
-                    'bg-indigo-600 text-white disabled:opacity-30'
-                  }`}
-                >
-                  {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : 
-                   feedbackStatus === 'success' ? 'Telemetry Transmitted' : 
-                   feedbackStatus === 'error' ? 'Transmission Failed' :
-                   'Submit Telemetry'}
-                </button>
+                <div className="space-y-4">
+                  <button 
+                    onClick={handleSubmitFeedback}
+                    disabled={!canSubmit || isSubmitting}
+                    className={`w-full py-6 rounded-full font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all flex items-center justify-center gap-3 ${
+                      feedbackStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                      feedbackStatus === 'error' ? 'bg-rose-600 text-white' :
+                      'bg-indigo-600 text-white disabled:opacity-30 disabled:grayscale'
+                    }`}
+                  >
+                    {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : 
+                     feedbackStatus === 'success' ? <CheckCircle2 size={18} /> : 
+                     feedbackStatus === 'error' ? <XCircle size={18} /> :
+                     <Zap size={18} fill="currentColor" />}
+                    
+                    <span>
+                      {isSubmitting ? 'Transmitting...' : 
+                       feedbackStatus === 'success' ? 'Log Committed' : 
+                       feedbackStatus === 'error' ? 'Registry Failure' :
+                       'Execute Submission'}
+                    </span>
+                  </button>
+                  
+                  {feedbackStatus === 'error' && (
+                    <p className="text-[9px] text-rose-500 font-bold uppercase text-center animate-pulse">Supabase Handshake Failed. Verify Network.</p>
+                  )}
+                </div>
               </GlassCard>
             </m.div>
           </div>

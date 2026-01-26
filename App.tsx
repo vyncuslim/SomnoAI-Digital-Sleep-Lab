@@ -194,7 +194,7 @@ const App: React.FC = () => {
       <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6 z-[9999]">
         <ShieldOff size={80} className="text-rose-600 mb-4 animate-pulse" />
         <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Access Revoked</h2>
-        <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed uppercase tracking-widest font-bold">Your node has been suspended. Contact Registry Authority.</p>
+        <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed uppercase tracking-widest font-bold">Your node has been suspended.</p>
         <button onClick={() => authApi.signOut()} className="px-10 py-5 bg-white/5 border border-white/10 text-slate-400 rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-all">TERMINATE SESSION</button>
       </div>
     );
@@ -215,9 +215,9 @@ const App: React.FC = () => {
     }
 
     return (
-      <div className="min-h-screen bg-[#020617] relative flex flex-col">
+      <div className="w-full flex flex-col">
         {/* Main Content Area */}
-        <main className="flex-1 w-full max-w-4xl mx-auto p-4 pt-10 pb-40">
+        <main className="flex-1 w-full max-w-4xl mx-auto p-4 pt-10 pb-48">
           <AnimatePresence mode="wait">
             <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
               {activeView === 'dashboard' && (
@@ -273,9 +273,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#020617] text-slate-200 overflow-x-hidden selection:bg-indigo-500/30">
-      <RootLayout>{renderContent()}</RootLayout>
-    </div>
+    <RootLayout>{renderContent()}</RootLayout>
   );
 };
 
