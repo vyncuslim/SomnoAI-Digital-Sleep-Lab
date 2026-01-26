@@ -56,9 +56,6 @@ export const healthDataApi = {
  * Registry for Biological Metadata
  */
 export const userDataApi = {
-  /**
-   * The Laboratory State Handshake (State Machine)
-   */
   getProfileStatus: async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -72,10 +69,8 @@ export const userDataApi = {
 
       if (error || !profile) return null;
 
-      // Check for blocked status immediately
       if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
 
-      // FACT CHECK: If flag says false, but data exists in table, sync flag
       if (!profile.has_app_data) {
         const { count } = await supabase
           .from('health_raw_data')
@@ -101,10 +96,8 @@ export const userDataApi = {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('UNAUTHORIZED');
 
-    // 1. Commit metrics
     await supabase.from('user_data').upsert({ id: user.id, ...metrics });
 
-    // 2. Commit profile initialization state
     const { error } = await supabase.from('profiles').update({ 
       full_name: fullName.trim(),
       is_initialized: true 
@@ -128,9 +121,6 @@ export const userDataApi = {
   }
 };
 
-/**
- * Profile Management API
- */
 export const profileApi = {
   getMyProfile: async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -164,7 +154,7 @@ export const authApi = {
   signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
     provider: 'google', 
     options: { 
-      redirectTo: window.location.origin, // Crucial for multi-env support
+      redirectTo: window.location.origin,
       queryParams: {
         access_type: 'offline',
         prompt: 'consent',
@@ -189,14 +179,15 @@ export const adminApi = {
 };
 
 export const feedbackApi = {
-  submitFeedback: async (type: string, content: string) => {
+  submitFeedback: async (type: string, content: string, email: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     const { error } = await supabase.from('feedback').insert({
-      user_id: user?.id,
-      email: user?.email,
+      user_id: user?.id || null,
+      email: email, // Use provided email
       feedback_type: type,
       content: content
     });
+    if (error) console.error("Feedback Save Failure:", error);
     return { success: !error };
   }
 };
