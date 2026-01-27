@@ -81,33 +81,28 @@ export const userDataApi = {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('UNAUTHORIZED');
 
-      // First try to upsert user_data
       const { error: dataError } = await supabase.from('user_data').upsert({ 
         id: user.id, 
         ...metrics 
       });
       
       if (dataError) {
-        console.error("[User Data API] user_data update failed:", dataError);
         if (dataError.status === 400 || dataError.status === 500) throw new Error("DB_CALIBRATION_REQUIRED");
         throw dataError;
       }
 
-      // Then update profile
       const { error: profileError } = await supabase.from('profiles').update({ 
         full_name: fullName.trim(),
         is_initialized: true 
       }).eq('id', user.id);
       
       if (profileError) {
-        console.error("[User Data API] profile update failed:", profileError);
         if (profileError.status === 400 || profileError.status === 500) throw new Error("DB_CALIBRATION_REQUIRED");
         throw profileError;
       }
       
       return { success: true };
     } catch (e: any) {
-      console.error("[User Data API] completeSetup Exception:", e);
       throw e;
     }
   },
@@ -164,20 +159,27 @@ export const authApi = {
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
+      // 增强容错：如果 500 或 403，记录详细日志
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', userId)
+        .maybeSingle();
+      
       if (error) {
-        if (error.status === 500) console.error("[Admin API] Possible RLS recursion detected.");
+        console.error("[Admin API] Failed to check status:", error.message);
         return false;
       }
       return data?.role === 'admin';
     } catch (e) {
+      console.error("[Admin API] Unexpected error during status check.");
       return false;
     }
   },
-  getUsers: () => supabase.from('profiles').select('*'),
+  getUsers: () => supabase.from('profiles').select('*').order('created_at', { ascending: false }),
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
-  getSleepRecords: () => supabase.from('health_raw_data').select('*').limit(100),
+  getSleepRecords: () => supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100),
   getFeedback: () => supabase.from('feedback').select('*').order('created_at', { ascending: false }),
   getAuditLogs: () => supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100),
   getSecurityEvents: () => supabase.from('security_events').select('*').order('created_at', { ascending: false })

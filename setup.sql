@@ -1,8 +1,8 @@
 -- ==========================================
--- SOMNOAI SYSTEM REPAIR: TRIGGER & RLS FIX
+-- SOMNOAI ADMIN & SECURITY INFRASTRUCTURE
 -- ==========================================
 
--- 1. 确保基础表结构正确
+-- 1. 确保核心表结构
 CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     role text DEFAULT 'user',
@@ -10,56 +10,60 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     full_name text,
     is_blocked boolean DEFAULT false,
     is_initialized boolean DEFAULT false,
-    has_app_data boolean DEFAULT false
+    has_app_data boolean DEFAULT false,
+    created_at timestamptz DEFAULT now()
 );
 
--- 2. 创建自动化触发器：当 auth.users 有新用户时，自动在 profiles 创建行
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
+-- 2. 定义安全的管理员检查函数 (避免递归)
+CREATE OR REPLACE FUNCTION public.is_admin() 
+RETURNS boolean AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, role)
-  VALUES (new.id, new.email, 'user')
-  ON CONFLICT (id) DO NOTHING;
-  RETURN new;
+  -- 使用 SECURITY DEFINER 绕过 RLS 检查角色
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND role = 'admin'
+  );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 绑定触发器（先删除防止重复）
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- 3. 修复 RLS 权限，允许初始注册时的写入
+-- 3. 重新配置 RLS 策略 (彻底修复 500 递归错误)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
-DROP POLICY IF EXISTS "Enable insert for authenticated users only" ON public.profiles;
-CREATE POLICY "Enable insert for authenticated users only" 
-ON public.profiles FOR INSERT 
-WITH CHECK (auth.uid() = id);
+-- 允许用户读取自己的资料 (不调用 is_admin 防止递归)
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
+CREATE POLICY "Users can read own profile" 
+ON public.profiles FOR SELECT 
+USING (auth.uid() = id);
 
+-- 允许管理员读取所有资料 (管理员尝试读取他人资料时，才调用检查函数)
+DROP POLICY IF EXISTS "Admins can read all profiles" ON public.profiles;
+CREATE POLICY "Admins can read all profiles" 
+ON public.profiles FOR SELECT 
+USING ( (SELECT role FROM public.profiles WHERE id = auth.uid()) = 'admin' );
+
+-- 允许用户更新自己的资料
 DROP POLICY IF EXISTS "Users can update own profile" ON public.profiles;
 CREATE POLICY "Users can update own profile" 
 ON public.profiles FOR UPDATE 
 USING (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
-CREATE POLICY "Users can read own profile" 
-ON public.profiles FOR SELECT 
-USING (auth.uid() = id OR public.is_admin());
+-- 4. 自动化触发器 (新用户注册)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, role)
+  VALUES (new.id, new.email, 'user')
+  ON CONFLICT (id) DO UPDATE SET email = new.email;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 4. 确保 user_data 也能正常写入
-CREATE TABLE IF NOT EXISTS public.user_data (
-    id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    age integer,
-    weight float,
-    height float,
-    gender text,
-    created_at timestamptz DEFAULT now()
-);
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
-ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
-DROP POLICY IF EXISTS "user_data_all_policy" ON public.user_data;
-CREATE POLICY "user_data_all_policy" ON public.user_data FOR ALL USING (auth.uid() = id);
+-- 5. 管理员提权模板 (请在 SQL Editor 中将下方邮箱替换为你自己的)
+-- UPDATE public.profiles SET role = 'admin' WHERE email = 'YOUR_EMAIL@GMAIL.COM';
 
 NOTIFY pgrst, 'reload schema';
