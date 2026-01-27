@@ -160,7 +160,7 @@ const commonZh = {
     cmdSync: '同步实验室数据',
     cmdExport: '归档指标',
     lullaby: '神经催眠曲',
-    manifesto: '融合生理指标监控、AI 深度洞察与健康建议，为您提供全方位的数字化睡眠实验体验。'
+    manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。'
   },
   settings: {
     title: '系统配置',
@@ -202,7 +202,7 @@ const commonZh = {
   auth: {
     lab: 'SomnoAI 数字睡眠实验室',
     tagline: '神经基础设施 • 数字遥测',
-    manifesto: '融合生理指标监控、AI 深度洞察与健康建议，为您提供全方位的数字化睡眠实验体验。',
+    manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。',
     sendCode: '请求实验室令牌',
     emailLabel: '邮箱标识符',
     passwordLabel: '访问密码',

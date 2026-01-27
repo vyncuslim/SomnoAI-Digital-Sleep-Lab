@@ -8,6 +8,7 @@ import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './servi
 import { healthConnect } from './services/healthConnectService.ts';
 import { getSleepInsight } from './services/geminiService.ts';
 import { Logo } from './components/Logo.tsx';
+import { notifyAdmin } from './services/telegramService.ts';
 
 // Components
 import AdminLoginPage from './app/admin/login/page.tsx';
@@ -118,6 +119,8 @@ const App: React.FC = () => {
           adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin);
           await checkLaboratoryRegistry();
         }
+      } catch (err: any) {
+        notifyAdmin({ type: 'CRITICAL_BOOT_ERROR', error: err.message });
       } finally {
         setIsInitialAuthCheck(false);
       }
@@ -178,8 +181,9 @@ const App: React.FC = () => {
       setHistory(prev => [fullRecord, ...prev]);
       setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 1500);
-    } catch (err) {
+    } catch (err: any) {
       setSyncStatus('error');
+      notifyAdmin({ type: 'TELEMETRY_SYNC_FAILURE', error: err.message });
       setTimeout(() => setSyncStatus('idle'), 2000);
     }
   };

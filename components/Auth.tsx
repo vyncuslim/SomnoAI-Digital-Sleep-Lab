@@ -77,35 +77,41 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     } catch (e) { setIsTurnstileStuck(true); }
   };
 
-  const handleInitialAction = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleInitialAction = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
     if (isProcessing || cooldown > 0) return;
     setIsProcessing(true);
     setError(null);
     setSuccess(null);
 
     try {
+      const cleanEmail = email.trim().toLowerCase();
+      if (!cleanEmail) throw new Error("Email identifier required.");
+
       if (authMode === 'password') {
-        const { error: signInErr } = await authApi.signIn(email, password);
+        const { error: signInErr } = await authApi.signIn(cleanEmail, password);
         if (signInErr) throw signInErr;
         onLogin();
       } else if (authMode === 'register') {
-        const { error: signUpErr } = await authApi.signUp(email, password);
+        const { error: signUpErr } = await authApi.signUp(cleanEmail, password);
         if (signUpErr) throw signUpErr;
-        setSuccess(lang === 'zh' ? '令牌已发送。' : 'Token dispatched.');
+        setSuccess(lang === 'zh' ? '验证令牌已发送。' : 'Security token dispatched.');
         setStep('verify');
         setCooldown(60);
       } else {
-        const { error: otpErr } = await authApi.sendOTP(email);
+        const { error: otpErr } = await authApi.sendOTP(cleanEmail);
         if (otpErr) throw otpErr;
-        setSuccess(lang === 'zh' ? '验证码已发送。' : 'Code sent.');
+        setSuccess(lang === 'zh' ? '验证码已发送至您的邮箱。' : 'Security code dispatched to your node.');
         setStep('verify');
         setCooldown(60);
       }
     } catch (err: any) {
-      setError(err.message || "AUTH_ERROR");
+      console.error("[Auth Controller Error]:", err);
+      setError(err.message || (lang === 'zh' ? '请求失败，请稍后重试' : 'Handshake failed. Check node connectivity.'));
       if (window.turnstile && widgetIdRef.current) window.turnstile.reset(widgetIdRef.current);
-    } finally { setIsProcessing(false); }
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -117,24 +123,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     setError(null);
 
     try {
-      // 智能重试逻辑：先尝试 signup 类型，如果 403 则尝试 email 类型
+      const cleanEmail = email.trim().toLowerCase();
       const primaryType = authMode === 'register' ? 'signup' : 'email';
-      const { error: verifyErr } = await authApi.verifyOTP(email, token, primaryType);
+      const { error: verifyErr } = await authApi.verifyOTP(cleanEmail, token, primaryType);
       
       if (verifyErr) {
-        // 如果是 403 Forbidden 或特定的类型错误，尝试备用类型
+        // Fallback retry for certain provider behaviors
         const secondaryType = primaryType === 'signup' ? 'email' : 'signup';
-        const { error: retryErr } = await authApi.verifyOTP(email, token, secondaryType);
-        
+        const { error: retryErr } = await authApi.verifyOTP(cleanEmail, token, secondaryType);
         if (retryErr) throw retryErr;
       }
       onLogin();
     } catch (err: any) {
-      console.error("[Verify] Error:", err);
-      setError(err.message || "VERIFICATION_FAILED");
+      console.error("[Verification Error]:", err);
+      setError(err.message || "NEURAL_TOKEN_INVALID");
       setOtp(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
-    } finally { setIsProcessing(false); }
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   const handleOtpInput = (index: number, value: string) => {
@@ -150,8 +157,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#020617] font-sans">
       <m.div initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-12">
         <Logo size={80} animated={true} className="mx-auto mb-6" />
-        <h1 className="text-4xl font-black text-white italic uppercase leading-none">SomnoAI Sleep Lab</h1>
-        <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em] mt-2">SECURE GATEWAY</p>
+        <h1 className="text-4xl font-black text-white italic uppercase leading-none tracking-tighter">SomnoAI Sleep Lab</h1>
+        <p className="text-slate-600 font-bold uppercase text-[9px] tracking-[0.4em] mt-3">SECURE ACCESS NODE</p>
       </m.div>
 
       <div className="w-full max-w-[420px] space-y-8">
@@ -160,7 +167,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
             <m.div key="input" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-8">
               <div className="bg-black/40 p-1.5 rounded-[2rem] border border-white/5 relative flex">
                 {(['otp', 'password', 'register'] as AuthMode[]).map((mode) => (
-                  <button key={mode} onClick={() => setAuthMode(mode)} className={`flex-1 py-4 rounded-full text-[10px] font-black uppercase tracking-widest z-10 transition-all ${authMode === mode ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+                  <button key={mode} onClick={() => { setAuthMode(mode); setError(null); }} className={`flex-1 py-4 rounded-full text-[10px] font-black uppercase tracking-widest z-10 transition-all ${authMode === mode ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}>
                     {mode === 'otp' ? 'OTP' : mode === 'password' ? 'LOGIN' : 'JOIN'}
                   </button>
                 ))}
@@ -173,48 +180,68 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                     <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={20} />
                     <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email Identifier" className="w-full bg-[#050a1f] border border-white/5 rounded-3xl pl-16 pr-8 py-6 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
                   </div>
-                  {authMode !== 'otp' && (
+                  {(authMode === 'password' || authMode === 'register') && (
                     <div className="relative group">
                       <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={20} />
                       <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Security Key" className="w-full bg-[#050a1f] border border-white/5 rounded-3xl pl-16 pr-16 py-6 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
+                      <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-600 hover:text-white">
+                        {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                      </button>
                     </div>
                   )}
                 </div>
                 <div ref={turnstileRef} className="cf-turnstile min-h-[65px] flex justify-center"></div>
-                <button type="submit" disabled={isProcessing || cooldown > 0} className={`w-full py-6 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-2xl ${cooldown > 0 ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-500'}`}>
+                <button type="submit" disabled={isProcessing || cooldown > 0} className={`w-full py-6 rounded-[2rem] font-black text-[12px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-[0.98] transition-all shadow-2xl ${cooldown > 0 ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30'}`}>
                   {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Zap size={18} fill="currentColor" />}
-                  <span>{isProcessing ? 'PROCESSING...' : cooldown > 0 ? `RETRY IN ${cooldown}S` : authMode === 'register' ? 'INITIALIZE JOIN' : 'AUTHORIZE'}</span>
+                  <span>{isProcessing ? 'SYNCHRONIZING...' : cooldown > 0 ? `RETRY IN ${cooldown}S` : authMode === 'register' ? 'INITIALIZE JOIN' : 'AUTHORIZE'}</span>
                 </button>
               </form>
+
+              <div className="flex flex-col gap-4 items-center">
+                 <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest">or</p>
+                 <button onClick={onGuest} className="px-10 py-4 bg-white/5 border border-white/10 rounded-full text-slate-500 hover:text-white font-black text-[10px] uppercase tracking-[0.4em] transition-all active:scale-95">
+                   Enter Sandbox Mode
+                 </button>
+              </div>
             </m.div>
           ) : (
             <m.div key="verify" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
               <div className="text-center space-y-4">
-                <button onClick={() => setStep('input')} className="text-[10px] font-black text-slate-500 uppercase flex items-center gap-2 mx-auto"><ChevronLeft size={14} /> Back</button>
-                <h2 className="text-xl font-black text-white uppercase italic">Verify Token</h2>
-                <p className="text-[10px] text-slate-500 font-bold uppercase italic">{email}</p>
+                <button onClick={() => setStep('input')} className="text-[10px] font-black text-rose-500 uppercase flex items-center gap-2 mx-auto hover:text-rose-400 transition-colors"><ChevronLeft size={14} /> Back to Identifier</button>
+                <h2 className="text-xl font-black text-white uppercase italic tracking-tight">Verify Neural Token</h2>
+                <p className="text-[10px] text-slate-500 font-bold uppercase italic tracking-widest">{email}</p>
               </div>
               <form onSubmit={handleVerifyOtp} className="space-y-10">
                 <div className="flex justify-between gap-2 px-4">
                   {otp.map((digit, idx) => (
-                    <input key={idx} ref={(el) => { otpRefs.current[idx] = el; }} type="text" inputMode="numeric" maxLength={1} value={digit} onChange={(e) => handleOtpInput(idx, e.target.value)} onKeyDown={(e) => { if (e.key === 'Backspace' && !otp[idx] && idx > 0) otpRefs.current[idx - 1]?.focus(); }} className="w-10 h-14 bg-slate-950 border border-white/10 rounded-2xl text-2xl text-center text-white font-mono font-black outline-none focus:border-indigo-500" />
+                    <input key={idx} ref={(el) => { otpRefs.current[idx] = el; }} type="text" inputMode="numeric" maxLength={1} value={digit} onChange={(e) => handleOtpInput(idx, e.target.value)} onKeyDown={(e) => { if (e.key === 'Backspace' && !otp[idx] && idx > 0) otpRefs.current[idx - 1]?.focus(); }} className="w-10 h-14 bg-slate-950 border border-white/10 rounded-2xl text-2xl text-center text-white font-mono font-black outline-none focus:border-indigo-500 transition-all" />
                   ))}
                 </div>
-                <button type="submit" disabled={isProcessing || otp.some(d => !d)} className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all shadow-2xl">
-                  {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
-                  <span>{isProcessing ? 'VERIFYING...' : 'CONFIRM IDENTITY'}</span>
-                </button>
+                <div className="space-y-4">
+                  <button type="submit" disabled={isProcessing || otp.some(d => !d)} className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-3 hover:bg-indigo-500 transition-all shadow-2xl">
+                    {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
+                    <span>{isProcessing ? 'CONFIRMING...' : 'VALIDATE IDENTITY'}</span>
+                  </button>
+                  <button 
+                    type="button"
+                    onClick={() => handleInitialAction()}
+                    disabled={cooldown > 0 || isProcessing}
+                    className="w-full text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-indigo-400 transition-colors"
+                  >
+                    {cooldown > 0 ? `RESEND TOKEN IN ${cooldown}S` : 'RESEND SECURITY TOKEN'}
+                  </button>
+                </div>
               </form>
             </m.div>
           )}
         </AnimatePresence>
 
         <AnimatePresence>
-          {error && (
-            <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-5 rounded-3xl border border-rose-500/20 bg-rose-500/10 text-rose-400">
+          {(error || success) && (
+            <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`p-6 rounded-[2rem] border ${error ? 'border-rose-500/20 bg-rose-500/10 text-rose-400' : 'border-emerald-500/20 bg-emerald-500/10 text-emerald-400'}`}>
               <div className="flex items-start gap-4">
-                <ShieldAlert size={18} className="shrink-0 mt-0.5" />
-                <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed italic">{error}</p>
+                {error ? <ShieldAlert size={18} className="shrink-0 mt-0.5" /> : <ShieldCheck size={18} className="shrink-0 mt-0.5" />}
+                <p className="text-[10px] font-black uppercase tracking-widest leading-relaxed italic">{error || success}</p>
               </div>
             </m.div>
           )}

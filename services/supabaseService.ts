@@ -1,11 +1,17 @@
 import { supabase } from '../lib/supabaseClient.ts';
+import { notifyAdmin } from './telegramService.ts';
 
 export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  // 42P01: undefined_table, 42703: undefined_column, 42P16: conflict with view/table
-  if (err.status === 400 || err.status === 500 || ['42P01', '42703', '42P16', 'PGRST204'].includes(err.code)) {
+  
+  // Critical error patterns that require admin attention
+  if (err.status === 400 || err.status === 500 || ['42P01', '42703', '42P16', 'PGRST204', 'PGRST116'].includes(err.code)) {
+    notifyAdmin({
+      type: 'DATABASE_EXCEPTION',
+      error: `Status: ${err.status} | Code: ${err.code} | Msg: ${err.message || 'Registry Calibration Required'}`
+    });
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
   return err;
@@ -70,9 +76,7 @@ export const userDataApi = {
 
       if (error) throw handleDatabaseError(error);
 
-      // If user exists in auth but not in profiles (trigger delay or failure)
       if (!profile) {
-        // We try a manual recovery insert once
         const { error: insertError } = await supabase.from('profiles').insert({
           id: user.id,
           email: user.email,
@@ -158,7 +162,13 @@ export const profileApi = {
 export const authApi = {
   signUp: (email: string, password: string) => supabase.auth.signUp({ email, password }),
   signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
-  sendOTP: (email: string) => supabase.auth.signInWithOtp({ email }),
+  sendOTP: (email: string) => supabase.auth.signInWithOtp({ 
+    email,
+    options: {
+      emailRedirectTo: window.location.origin,
+      shouldCreateUser: true
+    }
+  }),
   verifyOTP: (email: string, token: string, type: any = 'email') => supabase.auth.verifyOtp({ email, token, type }),
   signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
     provider: 'google', 
@@ -183,8 +193,16 @@ export const adminApi = {
     }
   },
   getUsers: () => supabase.from('profiles').select('*').order('created_at', { ascending: false }),
-  blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
-  unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
+  blockUser: async (id: string) => {
+    const res = await supabase.from('profiles').update({ is_blocked: true }).eq('id', id).select('email').single();
+    if (res.data) notifyAdmin(`🚫 USER BLOCKED\nEmail: ${res.data.email}\nID: ${id}`);
+    return res;
+  },
+  unblockUser: async (id: string) => {
+    const res = await supabase.from('profiles').update({ is_blocked: false }).eq('id', id).select('email').single();
+    if (res.data) notifyAdmin(`✅ USER UNBLOCKED\nEmail: ${res.data.email}`);
+    return res;
+  },
   getSleepRecords: () => supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100),
   getFeedback: () => supabase.from('feedback').select('*').order('created_at', { ascending: false }),
   getAuditLogs: () => supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100),
@@ -194,16 +212,27 @@ export const adminApi = {
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id || null;
+      
       const { error } = await supabase.from('feedback').insert({
-        user_id: user?.id || null,
+        user_id: userId,
         email: email.trim(),
         feedback_type: type,
         content: content.trim()
       });
-      if (error) throw handleDatabaseError(error);
+      
+      if (error) {
+        console.error("Feedback Registry Failure:", error);
+        return { success: false, error: error };
+      }
+
+      // Notify Admin Bot via Edge Function immediately
+      await notifyAdmin(`📝 NEW FEEDBACK\nType: ${type}\nFrom: ${email}\n\nContent: ${content}`);
+
       return { success: true };
     } catch (err: any) {
+      console.error("Feedback Logic Error:", err);
       return { success: false, error: err };
     }
   }
