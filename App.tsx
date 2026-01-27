@@ -129,6 +129,14 @@ const App: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (newSession) {
+        // Log the authentication event to Admin via Telegram
+        if (event === 'SIGNED_IN') {
+          notifyAdmin({
+            type: 'USER_LOGIN',
+            message: `Node established: ${newSession.user.email}\nID: ${newSession.user.id.slice(0,8)}\nMethod: ${newSession.user.app_metadata?.provider || 'identity-key'}`
+          });
+        }
+
         setSession(newSession);
         setIsSimulated(false);
         adminApi.checkAdminStatus(newSession.user.id).then(setIsAdmin);
