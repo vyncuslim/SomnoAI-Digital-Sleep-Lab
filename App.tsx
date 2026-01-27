@@ -228,7 +228,7 @@ const App: React.FC = () => {
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
-                  <p className="text-[11px] text-slate-500">Go to <span className="text-white">Supabase Dashboard -> SQL Editor</span>.</p>
+                  <p className="text-[11px] text-slate-500">Go to <span className="text-white">Supabase Dashboard {"->"} SQL Editor</span>.</p>
                 </div>
                 <div className="flex items-start gap-3">
                   <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</div>
