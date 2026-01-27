@@ -129,11 +129,16 @@ const App: React.FC = () => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (newSession) {
-        // Log the authentication event to Admin via Telegram
+        // Enriched Login Notification logic
         if (event === 'SIGNED_IN') {
+          const user = newSession.user;
+          const provider = user.app_metadata.provider || 'unknown';
+          const name = user.user_metadata.full_name || user.user_metadata.name || 'Anonymous Subject';
+          const avatar = user.user_metadata.avatar_url || 'No Image';
+          
           notifyAdmin({
-            type: 'USER_LOGIN',
-            message: `Node established: ${newSession.user.email}\nID: ${newSession.user.id.slice(0,8)}\nMethod: ${newSession.user.app_metadata?.provider || 'identity-key'}`
+            type: provider === 'google' ? 'GOOGLE_LINK_ESTABLISHED' : 'USER_LOGIN',
+            message: `🌟 NODE ACCESS GRANTED\n\nSubject: ${name}\nEmail: ${user.email}\nProvider: ${provider.toUpperCase()}\nID: ${user.id.slice(0,8)}\nAvatar: ${avatar}\nAgent: ${navigator.userAgent.slice(0,60)}...`
           });
         }
 

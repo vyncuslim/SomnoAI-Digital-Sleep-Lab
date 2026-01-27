@@ -1,6 +1,6 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
-  "short_name": "SomnoAI Lab",
+  "short_name": "SomnoAI Digital Sleep Lab",
   "description": "AI-powered digital sleep lab for physiological metrics monitoring and personalized health insights.",
   "start_url": "/",
   "display": "standalone",

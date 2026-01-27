@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React;
 import { motion } from 'framer-motion';
 
 interface LogoProps {
@@ -30,7 +29,7 @@ export const Logo: React.FC<LogoProps> = ({
       xmlns="http://www.w3.org/2000/svg"
       className={className}
       role="img"
-      aria-label="SomnoAI Neural Lab Logo"
+      aria-label="SomnoAI Digital Sleep Lab Logo"
     >
       <defs>
         <filter id="neuralGlow" x="-50%" y="-50%" width="200%" height="200%">

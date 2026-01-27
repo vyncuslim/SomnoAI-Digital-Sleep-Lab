@@ -7,8 +7,8 @@ const EDGE_FUNCTION_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1
 
 export const notifyAdmin = async (payload: string | { error?: string; message?: string; type?: string }) => {
   if (!EDGE_FUNCTION_URL) {
-    console.debug("[Telegram Proxy] Notification skipped: Edge URL missing.");
-    return;
+    console.warn("[Telegram Proxy] Notification skipped: EDGE_FUNCTION_URL is undefined.");
+    return false;
   }
 
   let finalMessage = '';
@@ -17,28 +17,27 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
   } else {
     const type = payload.type || 'SYSTEM_EVENT';
     const content = payload.error || payload.message || 'No additional data';
-    finalMessage = `🚨 SOMNO LAB ${type}\n\nLOG: ${content}`;
+    finalMessage = `🚨 SOMNO LAB ${type}\n\nLOG: ${content}\nTIME: ${new Date().toLocaleString()}`;
   }
 
   try {
-    // Calling the Supabase Edge Function as requested by the user
-    // This removes the need to store the BOT_TOKEN on the client side.
+    console.debug("[Telegram Proxy] Dispatching payload to Edge Function...");
     const response = await fetch(EDGE_FUNCTION_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ 
-        message: finalMessage,
-        // Optional: also include 'error' key for compatibility with multiple function versions
-        error: typeof payload === 'object' ? payload.error : undefined 
-      })
+      body: JSON.stringify({ message: finalMessage })
     });
 
     if (!response.ok) {
-      console.error("[Telegram Proxy] Error Response:", await response.text());
-    } else {
-      console.debug("[Telegram Proxy] Dispatch Successful");
+      const errorText = await response.text();
+      console.error("[Telegram Proxy] Edge Function Error:", response.status, errorText);
+      return false;
     }
+    
+    console.debug("[Telegram Proxy] Notification sent successfully.");
+    return true;
   } catch (err) {
-    console.error("[Telegram Proxy] Network Exception:", err);
+    console.error("[Telegram Proxy] Network exception when calling Edge Function:", err);
+    return false;
   }
 };

@@ -77,6 +77,7 @@ export const userDataApi = {
       if (error) throw handleDatabaseError(error);
 
       if (!profile) {
+        // Fallback profile creation if trigger missed it
         const { error: insertError } = await supabase.from('profiles').insert({
           id: user.id,
           email: user.email,
@@ -160,7 +161,11 @@ export const profileApi = {
 };
 
 export const authApi = {
-  signUp: (email: string, password: string) => supabase.auth.signUp({ email, password }),
+  signUp: (email: string, password: string, metadata?: any) => supabase.auth.signUp({ 
+    email, 
+    password, 
+    options: { data: metadata || {} } 
+  }),
   signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
   sendOTP: (email: string) => supabase.auth.signInWithOtp({ 
     email,

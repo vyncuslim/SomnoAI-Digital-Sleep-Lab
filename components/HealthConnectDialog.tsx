@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, SlidersHorizontal, History, Footprints, HeartPulse, Ruler, Activity, Moon, Scale, Mail, User, Info } from 'lucide-react';
@@ -24,7 +23,7 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
   isOpen, 
   onClose, 
   onAllow,
-  appName = "SomnoAI Lab"
+  appName = "SomnoAI Digital Sleep Lab"
 }) => {
   const [allowAll, setAllowAll] = useState(false);
   const [permissions, setPermissions] = useState<PermissionItem[]>([

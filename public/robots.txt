@@ -1,13 +1,10 @@
-# SomnoAI Digital Sleep Lab - Robots Configuration
 User-agent: *
+Allow: /
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /sitemap.xml
 Disallow: /admin/
 Disallow: /login
 Disallow: /api/
 
-# Allow root and public pages
-Allow: /
-Allow: /privacy
-Allow: /terms
-
-# Official Sitemap
 Sitemap: https://sleepsomno.com/sitemap.xml

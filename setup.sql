@@ -8,7 +8,6 @@ DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
 DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
 
 -- 2. RESOLVE 42P16 VIEW/TABLE CONFLICTS
--- Some Supabase templates create 'profiles' as a view. We need a physical table.
 DO $$ 
 BEGIN
     IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'profiles') THEN
@@ -18,12 +17,14 @@ BEGIN
     END IF;
 END $$;
 
--- 3. CORE IDENTITY REGISTRY
+-- 3. CORE IDENTITY REGISTRY (ENRICHED)
 CREATE TABLE public.profiles (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email text,
     role text NOT NULL DEFAULT 'user',
     full_name text DEFAULT '',
+    avatar_url text DEFAULT '',
+    provider text DEFAULT 'email',
     is_blocked boolean NOT NULL DEFAULT false,
     is_initialized boolean NOT NULL DEFAULT false,
     has_app_data boolean NOT NULL DEFAULT false,
@@ -62,7 +63,6 @@ CREATE TABLE IF NOT EXISTS public.feedback (
 );
 
 -- 7. RECURSION-SAFE ADMIN CHECK
--- SECURITY DEFINER allows the function to bypass RLS policies on the table it queries.
 CREATE OR REPLACE FUNCTION public.is_admin() 
 RETURNS boolean AS $$
 BEGIN
@@ -73,20 +73,32 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 8. RESILIENT AUTH TRIGGER
--- Ensures a profile is always created regardless of auth provider metadata.
+-- 8. ENRICHED AUTH TRIGGER
+-- This function automatically parses Google metadata and stores it in profiles
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (id, email, role, full_name)
+  INSERT INTO public.profiles (
+    id, 
+    email, 
+    role, 
+    full_name, 
+    avatar_url, 
+    provider
+  )
   VALUES (
     new.id, 
     new.email, 
     'user', 
-    COALESCE(new.raw_user_meta_data->>'full_name', '')
+    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''),
+    COALESCE(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture', ''),
+    new.app_metadata->>'provider'
   )
   ON CONFLICT (id) DO UPDATE SET 
-    email = EXCLUDED.email;
+    email = EXCLUDED.email,
+    full_name = EXCLUDED.full_name,
+    avatar_url = EXCLUDED.avatar_url,
+    provider = EXCLUDED.provider;
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -102,7 +114,7 @@ ALTER TABLE public.health_raw_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
 
 -- Profiles Policies
-DROP POLICY IF EXISTS "Profiles: user access" ON public.profiles;
+DROP POLICY IF EXISTS "Profiles: public select" ON public.profiles;
 CREATE POLICY "Profiles: user access" ON public.profiles 
 FOR SELECT USING (auth.uid() = id);
 
@@ -113,19 +125,6 @@ FOR ALL USING (public.is_admin());
 DROP POLICY IF EXISTS "Profiles: self update" ON public.profiles;
 CREATE POLICY "Profiles: self update" ON public.profiles 
 FOR UPDATE USING (auth.uid() = id);
-
--- Data Policies
-DROP POLICY IF EXISTS "UserData: self access" ON public.user_data;
-CREATE POLICY "UserData: self access" ON public.user_data 
-FOR ALL USING (auth.uid() = id);
-
-DROP POLICY IF EXISTS "HealthData: owner access" ON public.health_raw_data;
-CREATE POLICY "HealthData: owner access" ON public.health_raw_data 
-FOR ALL USING (auth.uid() = user_id);
-
-DROP POLICY IF EXISTS "Feedback: public insert" ON public.feedback;
-CREATE POLICY "Feedback: public insert" ON public.feedback 
-FOR INSERT WITH CHECK (true);
 
 -- 10. GLOBAL PERMISSIONS
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;

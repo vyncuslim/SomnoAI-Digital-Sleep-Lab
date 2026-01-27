@@ -1,10 +1,10 @@
 User-agent: *
+Allow: /
+Allow: /favicon.ico
+Allow: /favicon.png
+Allow: /sitemap.xml
 Disallow: /admin/
 Disallow: /login
 Disallow: /api/
 
-# Allow all public routes
-Allow: /
-
-# Canonical Sitemap
 Sitemap: https://sleepsomno.com/sitemap.xml

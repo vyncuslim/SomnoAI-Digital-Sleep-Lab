@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './components/GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Terminal, ExternalLink, Database, ChevronRight, Key, Info, MessageSquare, AlertTriangle, Lightbulb, Loader2, Mail, CheckCircle2, XCircle, Zap, Globe, BrainCircuit, Eye, EyeOff, Trash2
+  Terminal, ExternalLink, Database, ChevronRight, Key, Info, MessageSquare, AlertTriangle, Lightbulb, Loader2, Mail, CheckCircle2, XCircle, Zap, Globe, BrainCircuit, Eye, EyeOff, Trash2, Send
 } from 'lucide-react';
 import { Language, translations } from './services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { feedbackApi, supabase } from './services/supabaseService.ts';
+import { notifyAdmin } from './services/telegramService.ts';
 
 const m = motion as any;
 
@@ -34,6 +35,8 @@ export const Settings: React.FC<SettingsProps> = ({
   const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
   const [showKey, setShowKey] = useState(false);
   const [isAiActive, setIsAiActive] = useState(false);
+  const [isTestingTelegram, setIsTestingTelegram] = useState(false);
+  const [telegramTestStatus, setTelegramTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const t = translations[lang]?.settings || translations.en.settings;
 
@@ -58,6 +61,21 @@ export const Settings: React.FC<SettingsProps> = ({
     };
     fetchUser();
   }, [apiKey]);
+
+  const handleTestTelegram = async () => {
+    if (isTestingTelegram) return;
+    setIsTestingTelegram(true);
+    setTelegramTestStatus('idle');
+    try {
+      const ok = await notifyAdmin(`🧪 TELEGRAM LINK TEST\nStatus: Online\nInitiated by Subject Settings\nTime: ${new Date().toLocaleTimeString()}`);
+      setTelegramTestStatus(ok ? 'success' : 'error');
+    } catch (e) {
+      setTelegramTestStatus('error');
+    } finally {
+      setIsTestingTelegram(false);
+      setTimeout(() => setTelegramTestStatus('idle'), 3000);
+    }
+  };
 
   const handleSaveKey = (val: string) => {
     const cleanKey = val.trim();
@@ -113,14 +131,11 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const executeFullLogout = async () => {
     try {
-      // Direct call to propagate logout to parent
       await onLogout();
-      // Purge all laboratory persistence
       localStorage.removeItem('gemini_api_key');
       localStorage.removeItem('google_fit_token');
       localStorage.removeItem('health_connect_token');
       localStorage.removeItem('supabase.auth.token');
-      // Enforce hard reload to clear memory
       window.location.hash = '#/';
       window.location.reload();
     } catch (e) {
@@ -191,6 +206,33 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
             </div>
           </div>
+        </div>
+      </GlassCard>
+
+      {/* TELEGRAM TEST CARD */}
+      <GlassCard className="p-8 md:p-10 rounded-[3rem] border-white/10 bg-indigo-500/[0.02] relative z-20 pointer-events-auto">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6">
+           <div className="flex items-center gap-5">
+              <div className="p-4 bg-slate-900 border border-white/5 rounded-2xl text-slate-400">
+                <Send size={24} />
+              </div>
+              <div className="text-left">
+                <h3 className="text-[12px] font-black italic text-white uppercase tracking-widest">Admin Notification Channel</h3>
+                <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest mt-1">Verify Telegram Link Status</p>
+              </div>
+           </div>
+           <button 
+             onClick={handleTestTelegram}
+             disabled={isTestingTelegram}
+             className={`px-8 py-4 rounded-full font-black text-[10px] uppercase tracking-[0.2em] transition-all active:scale-95 flex items-center gap-3 ${
+               telegramTestStatus === 'success' ? 'bg-emerald-600 text-white' : 
+               telegramTestStatus === 'error' ? 'bg-rose-600 text-white' : 
+               'bg-white/5 border border-white/10 text-slate-400 hover:text-white'
+             }`}
+           >
+             {isTestingTelegram ? <Loader2 size={14} className="animate-spin" /> : <Terminal size={14} />}
+             {telegramTestStatus === 'success' ? 'LINK VERIFIED' : telegramTestStatus === 'error' ? 'LINK FAILED' : 'TEST TELEGRAM LINK'}
+           </button>
         </div>
       </GlassCard>
 
