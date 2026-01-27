@@ -159,7 +159,6 @@ export const authApi = {
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     try {
-      // 增强容错：如果 500 或 403，记录详细日志
       const { data, error } = await supabase
         .from('profiles')
         .select('role')
@@ -167,12 +166,12 @@ export const adminApi = {
         .maybeSingle();
       
       if (error) {
-        console.error("[Admin API] Failed to check status:", error.message);
+        console.warn("[Admin API] Failed to check status:", error.message);
         return false;
       }
       return data?.role === 'admin';
     } catch (e) {
-      console.error("[Admin API] Unexpected error during status check.");
+      console.error("[Admin API] Unexpected Error:", e);
       return false;
     }
   },
