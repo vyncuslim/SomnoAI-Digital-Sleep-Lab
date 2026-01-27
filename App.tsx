@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Activity, FlaskConical, History, Terminal, Smartphone, ShieldOff } from 'lucide-react';
+import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Activity, FlaskConical, History, Terminal, Smartphone, ShieldOff, AlertTriangle, Database } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
@@ -55,6 +55,7 @@ const App: React.FC = () => {
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [dbCalibrationRequired, setDbCalibrationRequired] = useState(false);
   const [setupRequired, setSetupRequired] = useState(false);
   const [hasAppData, setHasAppData] = useState(false);
   const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
@@ -87,11 +88,13 @@ const App: React.FC = () => {
       setSetupRequired(false);
       setHasAppData(true);
       setIsBlocked(false);
+      setDbCalibrationRequired(false);
       await fetchHistory(true);
       return;
     }
     try {
       const status = await userDataApi.getProfileStatus();
+      setDbCalibrationRequired(false);
       if (status) {
         setIsBlocked(status.is_blocked);
         setSetupRequired(!status.is_initialized);
@@ -102,6 +105,7 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       if (err.message === "BLOCK_ACTIVE") setIsBlocked(true);
+      if (err.message === "DB_CALIBRATION_REQUIRED") setDbCalibrationRequired(true);
     }
   }, [fetchHistory, isSimulated]);
 
@@ -133,6 +137,7 @@ const App: React.FC = () => {
         setIsSimulated(false);
         setHasAppData(false);
         setSetupRequired(false);
+        setDbCalibrationRequired(false);
       }
     });
     return () => subscription.unsubscribe();
@@ -196,6 +201,35 @@ const App: React.FC = () => {
         <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Access Revoked</h2>
         <p className="text-slate-500 text-sm max-w-sm mx-auto leading-relaxed uppercase tracking-widest font-bold">Your node has been suspended.</p>
         <button onClick={() => authApi.signOut()} className="px-10 py-5 bg-white/5 border border-white/10 text-slate-400 rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-all">TERMINATE SESSION</button>
+      </div>
+    );
+  }
+
+  if (dbCalibrationRequired) {
+    return (
+      <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-8 z-[9999]">
+        <div className="relative">
+          <Database size={80} className="text-amber-500 mb-4" />
+          <AlertTriangle size={32} className="absolute -bottom-2 -right-2 text-rose-500 animate-pulse" />
+        </div>
+        <div className="space-y-4">
+          <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Database Calibration Required</h2>
+          <div className="max-w-md mx-auto space-y-4">
+            <p className="text-slate-400 text-xs leading-relaxed font-bold italic">
+              Your Supabase instance is out of sync or experiencing an RLS recursion loop (Error 500/400).
+            </p>
+            <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5 text-left">
+              <p className="text-[10px] text-indigo-400 font-black uppercase mb-4 tracking-widest">Protocol Fix:</p>
+              <ol className="text-[10px] text-slate-500 space-y-3 font-mono">
+                <li>1. Copy the SQL from <span className="text-white underline">setup.sql</span>.</li>
+                <li>2. Open your <span className="text-white">Supabase SQL Editor</span>.</li>
+                <li>3. Paste and <span className="text-white">Run</span> the query.</li>
+                <li>4. Return here and refresh.</li>
+              </ol>
+            </div>
+          </div>
+        </div>
+        <button onClick={() => window.location.reload()} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20">RETRY HANDSHAKE</button>
       </div>
     );
   }

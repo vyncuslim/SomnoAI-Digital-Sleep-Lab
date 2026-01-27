@@ -114,23 +114,30 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         onLogin();
       } else if (authMode === 'register') {
         const { data: signUpData, error: signUpErr } = await authApi.signUp(email, password);
-        if (signUpErr) throw signUpErr;
+        
+        if (signUpErr) {
+          if (signUpErr.message.includes('already registered')) {
+            throw new Error(lang === 'zh' ? '该邮箱已注册，请直接登录。' : 'Email already registered. Please login directly.');
+          }
+          throw signUpErr;
+        }
         
         if (signUpData?.session) {
           onLogin();
         } else {
-          setSuccess(lang === 'zh' ? '账号已创建，请输入邮箱收到的 6 位验证码。' : 'Registry created! Please enter the 6-digit code from your email.');
+          setSuccess(lang === 'zh' ? '注册请求已提交，请输入邮箱中的 6 位验证码。' : 'Registry requested! Enter the 6-digit code from your email.');
           setStep('verify');
           setCooldown(60);
         }
       } else {
         const { error: otpErr } = await authApi.sendOTP(email);
         if (otpErr) throw otpErr;
-        setSuccess(lang === 'zh' ? '验证码已发送，请输入邮箱收到的 6 位验证码。' : 'Verification code sent! Please enter the 6-digit code from your email.');
+        setSuccess(lang === 'zh' ? '验证码已发送，请检查收件箱。' : 'Verification code sent! Please check your inbox.');
         setStep('verify');
         setCooldown(60);
       }
     } catch (err: any) {
+      console.error("[Auth] Initial Action Error:", err);
       setError(err.message || "AUTHENTICATION_STREAM_ERROR");
       if (window.turnstile && widgetIdRef.current) window.turnstile.reset(widgetIdRef.current);
       setTurnstileToken(null);
@@ -148,6 +155,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     setError(null);
 
     try {
+      // 在 Supabase 中，注册验证类型通常是 'signup' 或 'email'
       const type = authMode === 'register' ? 'signup' : 'email';
       const { error: verifyErr } = await authApi.verifyOTP(email, token, type);
       if (verifyErr) throw verifyErr;
@@ -207,7 +215,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 {(['otp', 'password', 'register'] as AuthMode[]).map((mode) => (
                   <button 
                     key={mode}
-                    onClick={() => setAuthMode(mode)} 
+                    onClick={() => {
+                      setAuthMode(mode);
+                      setError(null);
+                      setSuccess(null);
+                    }} 
                     className={`flex-1 py-4 rounded-full text-[10px] font-black uppercase tracking-widest z-10 transition-all ${authMode === mode ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                   >
                     {mode === 'otp' ? 'OTP' : mode === 'password' ? 'LOGIN' : 'JOIN'}
@@ -258,19 +270,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
                 <div className="flex flex-col items-center gap-3">
                    <div ref={turnstileRef} className="cf-turnstile min-h-[65px]"></div>
-                   {isTurnstileStuck && !turnstileToken && (
-                     <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center gap-3 w-full">
-                        <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-2xl flex items-start gap-3 text-left">
-                          <AlertTriangle size={16} className="text-amber-500 mt-0.5 shrink-0" />
-                          <p className="text-[10px] text-amber-500 font-bold uppercase tracking-widest leading-relaxed">
-                            Security validation slow? Reload if stuck.
-                          </p>
-                        </div>
-                        <button type="button" onClick={initTurnstile} className="flex items-center gap-2 text-[10px] font-black text-indigo-400 uppercase tracking-widest hover:text-white transition-all">
-                          <RefreshCw size={12} /> Reload Security Node
-                        </button>
-                     </m.div>
-                   )}
                 </div>
 
                 <button 

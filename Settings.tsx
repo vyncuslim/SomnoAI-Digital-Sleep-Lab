@@ -66,13 +66,14 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const handleSubmitFeedback = async () => {
-    if (!feedbackContent.trim() || !feedbackEmail.trim() || isSubmitting) return;
+    const emailToSubmit = feedbackEmail.trim();
+    if (!feedbackContent.trim() || !emailToSubmit || isSubmitting) return;
     
     setIsSubmitting(true);
     setFeedbackStatus('idle');
     
     try {
-      const result = await feedbackApi.submitFeedback(feedbackType, feedbackContent, feedbackEmail);
+      const result = await feedbackApi.submitFeedback(feedbackType, feedbackContent, emailToSubmit);
       
       if (result.success) {
         setFeedbackStatus('success');
@@ -171,8 +172,8 @@ export const Settings: React.FC<SettingsProps> = ({
                         <MessageSquare size={20} />
                      </div>
                      <div>
-                        <p className="text-xs font-black text-white uppercase tracking-wider">Lab Feedback</p>
-                        <p className="text-[10px] text-slate-500 italic">Submit reports or suggestions</p>
+                        <p className="text-xs font-black text-white uppercase tracking-wider">{t.feedback}</p>
+                        <p className="text-[10px] text-slate-500 italic">{t.feedbackSub}</p>
                      </div>
                   </div>
                   <ChevronRight size={18} className="text-slate-700" />
@@ -211,8 +212,8 @@ export const Settings: React.FC<SettingsProps> = ({
             >
               <GlassCard className="p-10 rounded-[3rem] border-white/10 space-y-8">
                 <div className="text-center space-y-2">
-                   <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">Laboratory Feedback</h2>
-                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Identify anomalies or propose improvements</p>
+                   <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter">{t.feedback}</h2>
+                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.feedbackSub}</p>
                 </div>
 
                 <div className="space-y-6">
@@ -224,7 +225,7 @@ export const Settings: React.FC<SettingsProps> = ({
                         className={`flex-1 py-3 rounded-xl text-[8px] font-black uppercase tracking-widest flex flex-col items-center gap-2 border transition-all ${feedbackType === type ? 'bg-indigo-600/20 border-indigo-500/50 text-white' : 'bg-transparent border-transparent text-slate-500 hover:text-slate-300'}`}
                       >
                         {type === 'report' ? <AlertTriangle size={14} /> : type === 'suggestion' ? <MessageSquare size={14} /> : <Lightbulb size={14} />}
-                        {type}
+                        {t[`feedback${type.charAt(0).toUpperCase() + type.slice(1)}` as keyof typeof t]}
                       </button>
                     ))}
                   </div>
@@ -232,20 +233,22 @@ export const Settings: React.FC<SettingsProps> = ({
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 px-4 italic flex items-center gap-2">
-                        <Mail size={12} /> Contact Node (Email)
+                        <Mail size={12} /> {t.feedbackEmail}
                       </label>
-                      <input 
-                        type="email"
-                        value={feedbackEmail}
-                        onChange={(e) => setFeedbackEmail(e.target.value)}
-                        placeholder="yourname@example.com"
-                        className={`w-full bg-[#050a1f] border rounded-[1.5rem] px-6 py-5 text-sm text-white placeholder:text-slate-800 outline-none transition-all font-bold italic ${feedbackEmail ? (isEmailValid ? 'border-emerald-500/30' : 'border-rose-500/30') : 'border-white/5'}`}
-                      />
+                      <div className="relative group">
+                        <input 
+                          type="email"
+                          value={feedbackEmail}
+                          onChange={(e) => setFeedbackEmail(e.target.value)}
+                          placeholder="yourname@example.com"
+                          className={`w-full bg-[#050a1f] border rounded-[1.5rem] px-6 py-5 text-sm text-white placeholder:text-slate-800 outline-none transition-all font-bold italic ${feedbackEmail ? (isEmailValid ? 'border-emerald-500/30' : 'border-rose-500/30') : 'border-white/5'}`}
+                        />
+                      </div>
                     </div>
 
                     <div className="space-y-2">
                       <label className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 px-4 italic flex items-center gap-2">
-                        <Terminal size={12} /> Description
+                        <Terminal size={12} /> {t.feedbackContent}
                       </label>
                       <textarea
                         value={feedbackContent}
@@ -274,9 +277,9 @@ export const Settings: React.FC<SettingsProps> = ({
                     
                     <span>
                       {isSubmitting ? 'Transmitting...' : 
-                       feedbackStatus === 'success' ? 'Log Committed' : 
-                       feedbackStatus === 'error' ? 'Registry Failure' :
-                       'Execute Submission'}
+                       feedbackStatus === 'success' ? t.feedbackSuccess : 
+                       feedbackStatus === 'error' ? t.feedbackError :
+                       t.feedbackSubmit}
                     </span>
                   </button>
                   
@@ -285,77 +288,6 @@ export const Settings: React.FC<SettingsProps> = ({
                   )}
                 </div>
               </GlassCard>
-            </m.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showDonation && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
-            <m.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-              className="w-full max-w-2xl text-center space-y-10"
-            >
-              <m.div 
-                initial={{ scale: 0 }} animate={{ scale: 1 }}
-                className="w-24 h-24 rounded-full bg-[#f43f5e] flex items-center justify-center text-white shadow-[0_0_50px_rgba(244,63,94,0.5)] mx-auto"
-              >
-                <Heart size={48} fill="white" strokeWidth={0} />
-              </m.div>
-              
-              <div className="space-y-4">
-                <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-none">
-                  CONTRIBUTION<br />ACKNOWLEDGED
-                </h2>
-                <p className="text-[13px] text-slate-400 italic max-w-md mx-auto leading-relaxed">
-                  Your support fuels lab processing.
-                </p>
-              </div>
-
-              <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
-                <div className="md:col-span-2 p-8 bg-slate-900/80 border border-white/5 rounded-[3rem] flex flex-col items-center gap-6">
-                   <div className="bg-white p-5 rounded-[2.5rem] shadow-2xl">
-                      <img 
-                        src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=020617&bgcolor=ffffff`}
-                        alt="QR" className="w-36 h-36 md:w-44 md:h-44"
-                      />
-                   </div>
-                   <p className="text-[10px] font-black text-[#f43f5e] uppercase tracking-[0.3em] flex items-center gap-2">
-                      <QrCode size={14} /> SCAN TO PAYPAL
-                   </p>
-                </div>
-
-                <div className="md:col-span-3 space-y-4">
-                  {[
-                    { id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' },
-                    { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' }
-                  ].map((item) => (
-                    <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all text-left">
-                      <div className="space-y-1">
-                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
-                        <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>
-                      </div>
-                      <button 
-                        onClick={() => handleCopy(item.id, item.value)}
-                        className={`p-4 rounded-2xl transition-all ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-600 hover:text-white bg-white/5'}`}
-                      >
-                        <Copy size={20} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <button 
-                onClick={() => window.open('https://paypal.me/vyncuslim', '_blank')}
-                className="w-full py-6 rounded-full bg-[#4f46e5] text-white font-black text-sm uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl active:scale-95 transition-transform"
-              >
-                <ArrowUpRight size={20} /> GO TO PAYPAL PAGE
-              </button>
             </m.div>
           </div>
         )}

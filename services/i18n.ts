@@ -51,7 +51,18 @@ const commonEn = {
     styleMinimal: 'Minimalist',
     paypalId: 'Vyncuslim vyncuslim',
     duitNowId: '+60 187807388',
-    paypalLink: 'https://paypal.me/vyncuslim'
+    paypalLink: 'https://paypal.me/vyncuslim',
+    feedback: 'Lab Feedback',
+    feedbackSub: 'Identify anomalies or propose improvements',
+    feedbackType: 'Log Type',
+    feedbackReport: 'Report',
+    feedbackSuggestion: 'Suggestion',
+    feedbackImprovement: 'Improvement',
+    feedbackEmail: 'Contact Node (Email)',
+    feedbackContent: 'Telemetry Log / Description',
+    feedbackSubmit: 'Execute Submission',
+    feedbackSuccess: 'Log Committed',
+    feedbackError: 'Registry Failure'
   },
   auth: {
     lab: 'SomnoAI Digital Sleep Lab',
@@ -175,7 +186,18 @@ const commonZh = {
     styleMinimal: '极简',
     paypalId: 'Vyncuslim vyncuslim',
     duitNowId: '+60 187807388',
-    paypalLink: 'https://paypal.me/vyncuslim'
+    paypalLink: 'https://paypal.me/vyncuslim',
+    feedback: '实验室反馈',
+    feedbackSub: '识别异常或提出改进建议',
+    feedbackType: '日志类型',
+    feedbackReport: '报告异常',
+    feedbackSuggestion: '功能建议',
+    feedbackImprovement: '改进方案',
+    feedbackEmail: '联系节点 (邮箱)',
+    feedbackContent: '遥测日志 / 详细说明',
+    feedbackSubmit: '执行提交',
+    feedbackSuccess: '日志已记录',
+    feedbackError: '注册失败'
   },
   auth: {
     lab: 'SomnoAI 数字睡眠实验室',
