@@ -2,6 +2,15 @@ import { supabase } from '../lib/supabaseClient.ts';
 
 export { supabase };
 
+const handleDatabaseError = (err: any) => {
+  console.error("[Database Layer Error]:", err);
+  // 42P01: undefined_table, 42703: undefined_column, 42P16: conflict with view/table
+  if (err.status === 400 || err.status === 500 || ['42P01', '42703', '42P16', 'PGRST204'].includes(err.code)) {
+    throw new Error("DB_CALIBRATION_REQUIRED");
+  }
+  return err;
+};
+
 export const healthDataApi = {
   uploadTelemetry: async (data: any) => {
     try {
@@ -16,18 +25,12 @@ export const healthDataApi = {
         value: data
       });
 
-      if (rawError) {
-        console.error("[Health API] Insert error:", rawError);
-        throw rawError;
-      }
+      if (rawError) throw handleDatabaseError(rawError);
       
       await supabase.from('profiles').update({ has_app_data: true }).eq('id', user.id);
       return { success: true };
     } catch (err: any) {
-      console.error("[Health API] Telemetry Upload Failed:", err);
-      if (err.status === 400 || err.status === 500 || err.code === '42P01') {
-        throw new Error("DB_CALIBRATION_REQUIRED");
-      }
+      if (err.message === "DB_CALIBRATION_REQUIRED") throw err;
       return { success: false, error: err.message };
     }
   },
@@ -40,17 +43,14 @@ export const healthDataApi = {
         .order('recorded_at', { ascending: false })
         .limit(limit);
       
-      if (error) throw error;
+      if (error) throw handleDatabaseError(error);
       return (data || []).map(d => ({
         id: d.id,
         recorded_at: d.recorded_at,
         ...d.value
       }));
     } catch (err: any) { 
-      console.error("[Health API] History Fetch Failed:", err);
-      if (err.status === 400 || err.status === 500 || err.code === '42P01') {
-        throw new Error("DB_CALIBRATION_REQUIRED");
-      }
+      if (err.message === "DB_CALIBRATION_REQUIRED") throw err;
       return []; 
     }
   }
@@ -68,16 +68,22 @@ export const userDataApi = {
         .eq('id', user.id)
         .maybeSingle();
 
-      if (error) {
-        console.error("[User Data API] Profile Status Error:", error);
-        // 42P01: Table not found, 42703: Column not found
-        if (error.status === 400 || error.status === 500 || error.code === '42P01' || error.code === '42703') {
-          throw new Error("DB_CALIBRATION_REQUIRED");
-        }
-        return null;
+      if (error) throw handleDatabaseError(error);
+
+      // If user exists in auth but not in profiles (trigger delay or failure)
+      if (!profile) {
+        // We try a manual recovery insert once
+        const { error: insertError } = await supabase.from('profiles').insert({
+          id: user.id,
+          email: user.email,
+          role: 'user'
+        }).select().maybeSingle();
+        
+        if (insertError) throw handleDatabaseError(insertError);
+        return { is_initialized: false, has_app_data: false, is_blocked: false };
       }
 
-      if (profile?.is_blocked) throw new Error("BLOCK_ACTIVE");
+      if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
       return profile;
     } catch (e: any) {
       throw e;
@@ -93,23 +99,13 @@ export const userDataApi = {
         id: user.id, 
         ...metrics 
       });
-      
-      if (dataError) {
-        console.error("[User Data API] metrics error:", dataError);
-        if (dataError.status === 400 || dataError.status === 500) throw new Error("DB_CALIBRATION_REQUIRED");
-        throw dataError;
-      }
+      if (dataError) throw handleDatabaseError(dataError);
 
       const { error: profileError } = await supabase.from('profiles').update({ 
         full_name: fullName.trim(),
         is_initialized: true 
       }).eq('id', user.id);
-      
-      if (profileError) {
-        console.error("[User Data API] profile update error:", profileError);
-        if (profileError.status === 400 || profileError.status === 500) throw new Error("DB_CALIBRATION_REQUIRED");
-        throw profileError;
-      }
+      if (profileError) throw handleDatabaseError(profileError);
       
       return { success: true };
     } catch (e: any) {
@@ -118,45 +114,50 @@ export const userDataApi = {
   },
 
   getUserData: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data, error } = await supabase.from('user_data').select('*').eq('id', user.id).maybeSingle();
-    if (error && (error.status === 400 || error.status === 500)) throw new Error("DB_CALIBRATION_REQUIRED");
-    return data;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data, error } = await supabase.from('user_data').select('*').eq('id', user.id).maybeSingle();
+      if (error) throw handleDatabaseError(error);
+      return data;
+    } catch (e) { throw e; }
   },
 
   updateUserData: async (metrics: any) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: new Error('UNAUTHORIZED') };
-    const { error } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
-    if (error && (error.status === 400 || error.status === 500)) throw new Error("DB_CALIBRATION_REQUIRED");
-    return { error };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { error: new Error('UNAUTHORIZED') };
+      const { error } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
+      if (error) throw handleDatabaseError(error);
+      return { error: null };
+    } catch (e) { throw e; }
   }
 };
 
 export const profileApi = {
   getMyProfile: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    if (error && (error.status === 400 || error.status === 500)) throw new Error("DB_CALIBRATION_REQUIRED");
-    return data;
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      if (error) throw handleDatabaseError(error);
+      return data;
+    } catch (e) { throw e; }
   },
   updateProfile: async (updates: any) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: new Error('UNAUTHORIZED') };
-    const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
-    if (error && (error.status === 400 || error.status === 500)) throw new Error("DB_CALIBRATION_REQUIRED");
-    return { error };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return { error: new Error('UNAUTHORIZED') };
+      const { error } = await supabase.from('profiles').update(updates).eq('id', user.id);
+      if (error) throw handleDatabaseError(error);
+      return { error: null };
+    } catch (e) { throw e; }
   }
 };
 
 export const authApi = {
   signUp: (email: string, password: string) => supabase.auth.signUp({ email, password }),
-  signIn: async (email: string, password: string) => {
-    const res = await supabase.auth.signInWithPassword({ email, password });
-    return res;
-  },
+  signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
   sendOTP: (email: string) => supabase.auth.signInWithOtp({ email }),
   verifyOTP: (email: string, token: string, type: any = 'email') => supabase.auth.verifyOtp({ email, token, type }),
   signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
@@ -175,13 +176,9 @@ export const adminApi = {
         .eq('id', userId)
         .maybeSingle();
       
-      if (error) {
-        console.warn("[Admin API] Failed to check status:", error.message);
-        return false;
-      }
+      if (error) return false;
       return data?.role === 'admin';
     } catch (e) {
-      console.error("[Admin API] Unexpected Error:", e);
       return false;
     }
   },
@@ -196,13 +193,18 @@ export const adminApi = {
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { error } = await supabase.from('feedback').insert({
-      user_id: user?.id || null,
-      email: email.trim(),
-      feedback_type: type,
-      content: content.trim()
-    });
-    return { success: !error, error };
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      const { error } = await supabase.from('feedback').insert({
+        user_id: user?.id || null,
+        email: email.trim(),
+        feedback_type: type,
+        content: content.trim()
+      });
+      if (error) throw handleDatabaseError(error);
+      return { success: true };
+    } catch (err: any) {
+      return { success: false, error: err };
+    }
   }
 };
