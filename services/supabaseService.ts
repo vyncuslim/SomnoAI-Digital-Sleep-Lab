@@ -16,11 +16,18 @@ export const healthDataApi = {
         value: data
       });
 
-      if (rawError) throw rawError;
+      if (rawError) {
+        console.error("[Health API] Insert error:", rawError);
+        throw rawError;
+      }
+      
       await supabase.from('profiles').update({ has_app_data: true }).eq('id', user.id);
       return { success: true };
     } catch (err: any) {
       console.error("[Health API] Telemetry Upload Failed:", err);
+      if (err.status === 400 || err.status === 500 || err.code === '42P01') {
+        throw new Error("DB_CALIBRATION_REQUIRED");
+      }
       return { success: false, error: err.message };
     }
   },
@@ -41,7 +48,7 @@ export const healthDataApi = {
       }));
     } catch (err: any) { 
       console.error("[Health API] History Fetch Failed:", err);
-      if (err.status === 400 || err.status === 500) {
+      if (err.status === 400 || err.status === 500 || err.code === '42P01') {
         throw new Error("DB_CALIBRATION_REQUIRED");
       }
       return []; 
@@ -63,7 +70,8 @@ export const userDataApi = {
 
       if (error) {
         console.error("[User Data API] Profile Status Error:", error);
-        if (error.status === 400 || error.status === 500 || error.code === 'PGRST204' || error.code === '42703') {
+        // 42P01: Table not found, 42703: Column not found
+        if (error.status === 400 || error.status === 500 || error.code === '42P01' || error.code === '42703') {
           throw new Error("DB_CALIBRATION_REQUIRED");
         }
         return null;
@@ -87,6 +95,7 @@ export const userDataApi = {
       });
       
       if (dataError) {
+        console.error("[User Data API] metrics error:", dataError);
         if (dataError.status === 400 || dataError.status === 500) throw new Error("DB_CALIBRATION_REQUIRED");
         throw dataError;
       }
@@ -97,6 +106,7 @@ export const userDataApi = {
       }).eq('id', user.id);
       
       if (profileError) {
+        console.error("[User Data API] profile update error:", profileError);
         if (profileError.status === 400 || profileError.status === 500) throw new Error("DB_CALIBRATION_REQUIRED");
         throw profileError;
       }

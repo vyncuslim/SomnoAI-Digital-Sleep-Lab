@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Activity, FlaskConical, History, Terminal, Smartphone, ShieldOff, AlertTriangle, Database } from 'lucide-react';
+import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Activity, FlaskConical, History, Terminal, Smartphone, ShieldOff, AlertTriangle, Database, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
@@ -189,6 +189,7 @@ const App: React.FC = () => {
     setHasAppData(true);
     setSetupRequired(false);
     setIsInitialAuthCheck(false);
+    setDbCalibrationRequired(false);
     checkLaboratoryRegistry(true);
   };
 
@@ -207,29 +208,40 @@ const App: React.FC = () => {
 
   if (dbCalibrationRequired) {
     return (
-      <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-8 z-[9999]">
+      <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-8 z-[9999] overflow-y-auto">
         <div className="relative">
           <Database size={80} className="text-amber-500 mb-4" />
           <AlertTriangle size={32} className="absolute -bottom-2 -right-2 text-rose-500 animate-pulse" />
         </div>
-        <div className="space-y-4">
+        <div className="space-y-4 max-w-2xl">
           <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Database Calibration Required</h2>
-          <div className="max-w-md mx-auto space-y-4">
+          <div className="max-w-md mx-auto space-y-6">
             <p className="text-slate-400 text-xs leading-relaxed font-bold italic">
-              Your Supabase instance is out of sync or experiencing an RLS recursion loop (Error 500/400).
+              Your database schema is incomplete or RLS policies are looping. This usually happens when the SQL commands in <span className="text-white">setup.sql</span> have not been executed in your Supabase project.
             </p>
-            <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5 text-left">
-              <p className="text-[10px] text-indigo-400 font-black uppercase mb-4 tracking-widest">Protocol Fix:</p>
-              <ol className="text-[10px] text-slate-500 space-y-3 font-mono">
-                <li>1. Copy the SQL from <span className="text-white underline">setup.sql</span>.</li>
-                <li>2. Open your <span className="text-white">Supabase SQL Editor</span>.</li>
-                <li>3. Paste and <span className="text-white">Run</span> the query.</li>
-                <li>4. Return here and refresh.</li>
-              </ol>
+            <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5 text-left space-y-4">
+              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Protocol Fix:</p>
+              <div className="space-y-3">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</div>
+                  <p className="text-[11px] text-slate-500">Copy the full content of <span className="text-white font-mono">setup.sql</span> from your project files.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
+                  <p className="text-[11px] text-slate-500">Go to <span className="text-white">Supabase Dashboard -> SQL Editor</span>.</p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</div>
+                  <p className="text-[11px] text-slate-500">Paste and click <span className="text-indigo-400 font-black">RUN</span>.</p>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-        <button onClick={() => window.location.reload()} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20">RETRY HANDSHAKE</button>
+        <div className="flex flex-col sm:flex-row gap-4">
+          <button onClick={() => window.location.reload()} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20">RETRY HANDSHAKE</button>
+          <button onClick={startSandbox} className="px-10 py-5 bg-white/5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-all">BYPASS TO SANDBOX</button>
+        </div>
       </div>
     );
   }
