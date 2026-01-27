@@ -1,7 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Loader2, User, BrainCircuit, Settings as SettingsIcon, Moon, Activity, FlaskConical, History, Terminal, Smartphone, ShieldOff, AlertTriangle, Database, Copy, Check } from 'lucide-react';
+import { Moon, User, BrainCircuit, Settings as SettingsIcon, History, Terminal, Smartphone, ShieldOff, AlertTriangle, Database, Shield, FlaskConical, Zap, CheckCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
@@ -43,15 +43,39 @@ const MOCK_RECORD: SleepRecord = {
 };
 
 const DecisionLoading = () => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center gap-6 text-center bg-[#020617] z-[9999]">
-    <Logo size={60} animated={true} />
-    <p className="text-white font-black uppercase text-[10px] tracking-[0.5em] italic animate-pulse">
-      CALIBRATING NEURAL LINK...
-    </p>
+  <div className="fixed inset-0 flex flex-col items-center justify-center gap-8 text-center bg-[#020617] z-[9999]">
+    <div className="relative">
+      <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full animate-pulse" />
+      <Logo size={100} animated={true} className="relative z-10" />
+    </div>
+    <div className="space-y-3 relative z-10">
+      <div className="flex items-center justify-center gap-3">
+        <Shield size={14} className="text-indigo-500 animate-pulse" />
+        <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.6em] italic">
+          Calibrating Neural Link
+        </p>
+      </div>
+      <div className="w-48 h-1 bg-white/5 rounded-full mx-auto overflow-hidden">
+        <m.div 
+          initial={{ x: '-100%' }}
+          animate={{ x: '100%' }}
+          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+          className="h-full w-1/2 bg-indigo-600"
+        />
+      </div>
+      <p className="text-slate-700 font-mono text-[9px] uppercase tracking-widest font-bold">Establishing Protocol Handshake...</p>
+    </div>
   </div>
 );
 
 const App: React.FC = () => {
+  // Sync URL Check: If we are in an OAuth flow, we MUST start in loading and STAY there.
+  const isAuthCallback = useMemo(() => {
+    return window.location.hash.includes('access_token=') || 
+           window.location.hash.includes('id_token=') ||
+           window.location.search.includes('code=');
+  }, []);
+
   const [lang, setLang] = useState<Language>('en'); 
   const [session, setSession] = useState<any>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -59,7 +83,7 @@ const App: React.FC = () => {
   const [dbCalibrationRequired, setDbCalibrationRequired] = useState(false);
   const [setupRequired, setSetupRequired] = useState(false);
   const [hasAppData, setHasAppData] = useState(false);
-  const [isInitialAuthCheck, setIsInitialAuthCheck] = useState(true);
+  const [authState, setAuthState] = useState<'loading' | 'unauthenticated' | 'authenticated'>('loading');
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
@@ -118,46 +142,42 @@ const App: React.FC = () => {
           setSession(initialSession);
           adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin);
           await checkLaboratoryRegistry();
+          setAuthState('authenticated');
+        } else {
+          // IF URL has auth info, WE DO NOT transition to unauthenticated yet.
+          // We let the listener below handle it when the session is ready.
+          if (!isAuthCallback) {
+            setAuthState('unauthenticated');
+          }
         }
-      } catch (err: any) {
-        notifyAdmin({ type: 'CRITICAL_BOOT_ERROR', error: err.message });
-      } finally {
-        setIsInitialAuthCheck(false);
+      } catch (err) {
+        if (!isAuthCallback) setAuthState('unauthenticated');
       }
     };
+
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
       if (newSession) {
-        // Enriched Login Notification logic
-        if (event === 'SIGNED_IN') {
-          const user = newSession.user;
-          const provider = user.app_metadata.provider || 'unknown';
-          const name = user.user_metadata.full_name || user.user_metadata.name || 'Anonymous Subject';
-          const avatar = user.user_metadata.avatar_url || 'No Image';
-          
-          notifyAdmin({
-            type: provider === 'google' ? 'GOOGLE_LINK_ESTABLISHED' : 'USER_LOGIN',
-            message: `🌟 NODE ACCESS GRANTED\n\nSubject: ${name}\nEmail: ${user.email}\nProvider: ${provider.toUpperCase()}\nID: ${user.id.slice(0,8)}\nAvatar: ${avatar}\nAgent: ${navigator.userAgent.slice(0,60)}...`
-          });
-        }
-
         setSession(newSession);
         setIsSimulated(false);
         adminApi.checkAdminStatus(newSession.user.id).then(setIsAdmin);
-        checkLaboratoryRegistry();
-      } else if (event === 'SIGNED_OUT') {
+        await checkLaboratoryRegistry();
+        
+        // Use a small timeout to ensure data is fetched before showing dashboard
+        setTimeout(() => setAuthState('authenticated'), 50);
+      } else {
         setSession(null);
         setIsAdmin(false);
-        setIsBlocked(false);
-        setIsSimulated(false);
-        setHasAppData(false);
-        setSetupRequired(false);
-        setDbCalibrationRequired(false);
+        // Only show login if no auth markers are in URL
+        if (!isAuthCallback) {
+          setAuthState('unauthenticated');
+        }
       }
     });
+
     return () => subscription.unsubscribe();
-  }, [checkLaboratoryRegistry]);
+  }, [checkLaboratoryRegistry, isAuthCallback]);
 
   useEffect(() => {
     const handleHash = () => {
@@ -205,12 +225,13 @@ const App: React.FC = () => {
     setIsSimulated(true);
     setHasAppData(true);
     setSetupRequired(false);
-    setIsInitialAuthCheck(false);
+    setAuthState('authenticated');
     setDbCalibrationRequired(false);
     checkLaboratoryRegistry(true);
   };
 
-  if (isInitialAuthCheck) return <DecisionLoading />;
+  // BLOCK: Priority Render loading if state is unknown or callback is active
+  if (authState === 'loading') return <DecisionLoading />;
 
   if (isBlocked) {
     return (
@@ -234,25 +255,8 @@ const App: React.FC = () => {
           <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Database Calibration Required</h2>
           <div className="max-w-md mx-auto space-y-6">
             <p className="text-slate-400 text-xs leading-relaxed font-bold italic">
-              Your database schema is incomplete or RLS policies are looping. This usually happens when the SQL commands in <span className="text-white">setup.sql</span> have not been executed in your Supabase project.
+              Your database schema is incomplete. Please run <span className="text-white">setup.sql</span> in your Supabase SQL Editor.
             </p>
-            <div className="bg-slate-900/50 p-6 rounded-3xl border border-white/5 text-left space-y-4">
-              <p className="text-[10px] text-indigo-400 font-black uppercase tracking-widest">Protocol Fix:</p>
-              <div className="space-y-3">
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">1</div>
-                  <p className="text-[11px] text-slate-500">Copy the full content of <span className="text-white font-mono">setup.sql</span> from your project files.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">2</div>
-                  <p className="text-[11px] text-slate-500">Go to <span className="text-white">Supabase Dashboard {"->"} SQL Editor</span>.</p>
-                </div>
-                <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">3</div>
-                  <p className="text-[11px] text-slate-500">Paste and click <span className="text-indigo-400 font-black">RUN</span>.</p>
-                </div>
-              </div>
-            </div>
           </div>
         </div>
         <div className="flex flex-col sm:flex-row gap-4">
@@ -269,7 +273,7 @@ const App: React.FC = () => {
     if (activeView === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => window.location.hash = '#/'} />;
     if (activeView === 'terms') return <LegalView type="terms" lang={lang} onBack={() => window.location.hash = '#/'} />;
 
-    if (!session && !isSimulated) {
+    if (authState === 'unauthenticated' && !isSimulated) {
       return <UserLoginPage onSuccess={() => {}} onSandbox={startSandbox} lang={lang} />;
     }
 
@@ -279,7 +283,6 @@ const App: React.FC = () => {
 
     return (
       <div className="w-full flex flex-col">
-        {/* Main Content Area */}
         <main className="flex-1 w-full max-w-4xl mx-auto p-4 pt-10 pb-48">
           <AnimatePresence mode="wait">
             <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
@@ -314,7 +317,6 @@ const App: React.FC = () => {
           </AnimatePresence>
         </main>
 
-        {/* Floating Navigation */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
           <m.nav initial={{ y: 100 }} animate={{ y: 0 }} className="bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl">
             {[
