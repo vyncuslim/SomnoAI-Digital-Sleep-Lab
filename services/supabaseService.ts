@@ -82,7 +82,7 @@ export const userDataApi = {
       
       const { data: profile, error } = await supabase
         .from('profiles')
-        .select('is_initialized, has_app_data, full_name, is_blocked')
+        .select('is_initialized, has_app_data, full_name, is_blocked, role')
         .eq('id', user.id)
         .maybeSingle();
       
@@ -169,7 +169,7 @@ export const diaryApi = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('UNAUTHORIZED');
-      const { data, error } = await supabase.from('diary_entries').insert({
+      const { data, error = null } = await supabase.from('diary_entries').insert({
         user_id: user.id,
         content,
         mood
@@ -204,9 +204,16 @@ export const authApi = {
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     try {
+      // Check JWT first as it's the source of truth for RLS
+      const { data: { session } } = await supabase.auth.getSession();
+      const role = session?.user?.app_metadata?.role || session?.user?.user_metadata?.role;
+      
+      if (role === 'admin' || role === 'owner') return true;
+
+      // Fallback to profile table check
       const { data, error } = await supabase.from('profiles').select('role').eq('id', userId).maybeSingle();
       if (error) return false;
-      return data?.role === 'admin';
+      return data?.role === 'admin' || data?.role === 'owner';
     } catch (e) { return false; }
   },
   getUsers: async () => {
@@ -268,7 +275,6 @@ export const feedbackApi = {
       });
 
       if (!response.ok) {
-        // Fallback to direct SDK insert if endpoint is unreachable or 404 in some environments
         const { error } = await supabase.from('feedback').insert({ 
           user_id: session?.user?.id || null, 
           email: email.trim(), 
