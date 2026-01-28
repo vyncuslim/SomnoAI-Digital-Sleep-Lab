@@ -45,7 +45,7 @@ export default function AdminDashboard() {
         setIsAuthorized(true);
       } catch (e: any) {
         if (isMounted) {
-          // 捕获服务层抛出的校准需求（通常是 500 递归错误）
+          // 捕获 500 递归错误或 403 拒绝
           if (e.message === "DB_CALIBRATION_REQUIRED") {
             setError("DB_RECURSION_DETECTED");
           } else {
@@ -61,8 +61,8 @@ export default function AdminDashboard() {
     return () => { isMounted = false; };
   }, []);
 
-  // 综合修复脚本：同时修复递归政策并提升用户权限
-  const promoteSql = email ? `-- 1. 修复递归政策陷阱 (SECURITY DEFINER)\nCREATE OR REPLACE FUNCTION public.check_is_lab_admin(user_id uuid) RETURNS boolean AS $$\nBEGIN RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = user_id AND (role IN ('admin', 'owner') OR is_super_owner = true)); END; $$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- 2. 重置 RLS 政策\nDROP POLICY IF EXISTS "admins_read_all_profiles" ON public.profiles;\nCREATE POLICY "admins_read_all_profiles" ON public.profiles FOR SELECT USING (public.check_is_lab_admin(auth.uid()));\n\n-- 3. 提升当前用户权限\nUPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '${email}';` : "";
+  // 终极修复脚本：通过触发器将权限同步到 JWT app_metadata，彻底消除 RLS 递归并提升权限
+  const promoteSql = email ? `-- 1. 部署 JWT 权限同步引擎 (解决 RLS 递归)\nCREATE OR REPLACE FUNCTION public.sync_user_privileges() RETURNS trigger AS $$\nBEGIN UPDATE auth.users SET raw_app_meta_data = raw_app_meta_data || jsonb_build_object('role', new.role, 'is_super_owner', new.is_super_owner, 'is_admin_node', (new.role IN ('admin', 'owner') OR new.is_super_owner = true)) WHERE id = new.id; RETURN new; END; $$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- 2. 绑定触发器\nDROP TRIGGER IF EXISTS on_profile_privilege_change ON public.profiles;\nCREATE TRIGGER on_profile_privilege_change AFTER INSERT OR UPDATE OF role, is_super_owner ON public.profiles FOR EACH ROW EXECUTE FUNCTION public.sync_user_privileges();\n\n-- 3. 重置 RLS 政策 (零查询，高性能)\nDROP POLICY IF EXISTS "admins_read_all_profiles" ON public.profiles;\nCREATE POLICY "admins_read_all_profiles" ON public.profiles FOR SELECT USING ((auth.jwt() -> 'app_metadata' ->> 'is_admin_node')::boolean = true);\n\n-- 4. 提升您的账户为 Owner (无需强制 super_owner 即可登录)\nUPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '${email}';` : "";
 
   const handleCopy = () => {
     if (!promoteSql) return;
@@ -82,7 +82,6 @@ export default function AdminDashboard() {
     );
   }
 
-  // 核心错误展示逻辑
   if (error === "INSUFFICIENT_CLEARANCE" || error === "DB_RECURSION_DETECTED") {
     const isRecursion = error === "DB_RECURSION_DETECTED";
     
@@ -92,48 +91,55 @@ export default function AdminDashboard() {
         
         <div className="space-y-4">
           <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">
-            {isRecursion ? "Neural Grid Desync" : "Access Denied"}
+            {isRecursion ? "Neural Grid Recursion" : "Access Denied"}
           </h2>
           <p className="text-slate-500 text-[11px] max-w-sm mx-auto leading-relaxed italic uppercase font-black tracking-widest">
-            {isRecursion ? "Internal loop detected in Sovereignty Protocol. Policy recalibration required." : "Identification failed: Standard node detected."}
+            {isRecursion ? "Internal loop detected in RLS Policy. The database is protecting itself from infinite recursion." : "Standard node detected. Administrative access restricted."}
           </p>
         </div>
 
         <m.div 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className={`w-full max-w-xl bg-slate-900/60 border ${isRecursion ? 'border-amber-500/20' : 'border-rose-500/20'} rounded-[2.5rem] p-8 space-y-6`}
+          className={`w-full max-w-2xl bg-slate-900/60 border ${isRecursion ? 'border-amber-500/20' : 'border-rose-500/20'} rounded-[3rem] p-8 md:p-12 space-y-6 shadow-2xl backdrop-blur-3xl`}
         >
            <div className={`flex items-center justify-between ${isRecursion ? 'text-amber-400' : 'text-rose-400'}`}>
              <div className="flex items-center gap-3">
                 <Terminal size={20} />
-                <span className="text-[10px] font-black uppercase tracking-widest">Recalibration Protocol</span>
+                <span className="text-[10px] font-black uppercase tracking-widest italic">V10 JWT_SYNC Protocol</span>
              </div>
              <Crown size={16} className="text-amber-500" />
            </div>
            
-           <p className="text-[11px] text-slate-400 text-left italic">
+           <p className="text-[11px] text-slate-400 text-left italic leading-relaxed">
              {isRecursion 
-               ? "Infinite recursion detected. Execute this patch in your Supabase SQL Editor to reset the neural bridge and authorize your node:"
-               : "If you are the laboratory owner, execute this command in your Supabase SQL Editor to bypass restrictions:"}
+               ? "Infinite recursion detected. Execute this unified patch in your Supabase SQL Editor. It will deploy a JWT-based authorization engine that bypasses table-recursion traps:"
+               : "Authorization failed. If you are the laboratory owner, run this command in the Supabase SQL Editor to elevate your node privileges:"}
            </p>
 
-           <div className="bg-black/40 p-5 rounded-2xl border border-white/5 relative group">
-              <code className={`text-[10px] font-mono ${isRecursion ? 'text-amber-300' : 'text-rose-300'} break-all block pr-8 leading-relaxed text-left whitespace-pre-wrap`}>
+           <div className="bg-black/60 p-6 rounded-2xl border border-white/5 relative group">
+              <code className={`text-[9px] md:text-[10px] font-mono ${isRecursion ? 'text-amber-300' : 'text-rose-300'} break-all block pr-8 leading-relaxed text-left whitespace-pre-wrap max-h-[300px] overflow-y-auto no-scrollbar`}>
                 {promoteSql}
               </code>
               <button 
                 onClick={handleCopy}
-                className="absolute right-4 top-6 p-2 bg-white/5 rounded-lg text-slate-500 hover:text-white transition-all"
+                className="absolute right-4 top-6 p-3 bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all shadow-lg"
               >
-                {copied ? <CheckCircle size={14} className="text-emerald-500" /> : <Copy size={14} />}
+                {copied ? <CheckCircle size={16} className="text-emerald-500" /> : <Copy size={16} />}
               </button>
+           </div>
+
+           <div className="flex items-center gap-3 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+              <AlertTriangle size={16} className="text-indigo-400 shrink-0" />
+              <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-widest text-left italic">
+                Note: After executing, log out and log back in to refresh your neural token.
+              </p>
            </div>
         </m.div>
 
         <div className="flex flex-col gap-4">
-          <button onClick={() => window.location.reload()} className={`px-12 py-5 ${isRecursion ? 'bg-amber-600' : 'bg-rose-600'} text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] shadow-xl active:scale-95 transition-all`}>RECHECK STATUS</button>
-          <button onClick={() => window.location.hash = '#/'} className="px-12 py-5 bg-white/5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-all flex items-center justify-center gap-2">
+          <button onClick={() => window.location.reload()} className={`px-12 py-5 ${isRecursion ? 'bg-amber-600' : 'bg-rose-600'} text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] shadow-xl active:scale-95 transition-all`}>RECHECK SYSTEM</button>
+          <button onClick={() => { supabase.auth.signOut(); window.location.hash = '#/'; }} className="px-12 py-5 bg-white/5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-all flex items-center justify-center gap-2">
             EXIT TERMINAL <ChevronRight size={14} />
           </button>
         </div>
@@ -163,7 +169,7 @@ export default function AdminDashboard() {
           onClick={async () => { await supabase.auth.signOut(); window.location.hash = '#/'; }}
           className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-full font-black text-[9px] uppercase tracking-widest border border-rose-500/20 transition-all active:scale-95"
         >
-          Expel Admin Session
+          Expel Session
         </button>
       </div>
     </div>

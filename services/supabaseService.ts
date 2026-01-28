@@ -6,7 +6,8 @@ export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  // 42P17 是 Postgres 的无限递归错误码
+  // 42P17: infinite recursion
+  // 42P01: undefined table (schema not ready)
   if (err.status === 403 || err.status === 401 || err.code === '42P01' || err.code === '42P17') {
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
@@ -143,8 +144,16 @@ export const authApi = {
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     try {
+      // 1. 尝试通过会话元数据快速判断（无数据库开销，无 RLS 递归风险）
+      const { data: { session } } = await supabase.auth.getSession();
+      const metadata = session?.user?.app_metadata;
+      if (metadata?.is_admin_node === true) return true;
+
+      // 2. 如果元数据未同步，回退到数据库查询（受 RLS 保护）
       const { data, error } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
       if (error) throw handleDatabaseError(error);
+      
+      // 只要是 admin 或 owner，或者拥有超级主权标志，均可登录
       return (data?.role === 'admin' || data?.role === 'owner' || data?.is_super_owner === true);
     } catch (e) {
       throw e;
