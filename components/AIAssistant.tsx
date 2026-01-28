@@ -46,8 +46,21 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const key = localStorage.getItem('gemini_api_key') || process.env.API_KEY;
-    setApiKeyMissing(!key);
+    const checkKeyAvailability = async () => {
+      // Prioritize the bridge check for AI Studio environment
+      if ((window as any).aistudio?.hasSelectedApiKey) {
+        try {
+          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+          setApiKeyMissing(!hasKey && !process.env.API_KEY);
+        } catch (e) {
+          setApiKeyMissing(!process.env.API_KEY);
+        }
+      } else {
+        setApiKeyMissing(!process.env.API_KEY);
+      }
+    };
+
+    checkKeyAvailability();
 
     if (messages.length === 0) {
       const welcome = data 
@@ -75,10 +88,10 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
         setMessages(prev => [...prev, { role: 'assistant', content: response.text, sources: response.sources, timestamp: new Date() }]);
       }
     } catch (err: any) {
-      if (err.message === "API_KEY_REQUIRED") {
+      if (err.message === "API_KEY_REQUIRED" || err.message?.includes("entity not found")) {
         setApiKeyMissing(true);
       }
-      setMessages(prev => [...prev, { role: 'assistant', content: "Connection timeout. Please ensure your neural link is valid.", timestamp: new Date() }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: "Neural handshake failed. Please ensure your AI bridge is authorized in Settings.", timestamp: new Date() }]);
     } finally {
       setIsTyping(false);
     }
@@ -196,13 +209,13 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
                 </div>
                 <div className="space-y-2">
                   <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Neural Link Required</h3>
-                  <p className="text-[11px] text-slate-500 font-medium italic leading-relaxed">AI synthesis engine is locked. Please provide your Gemini API Key in the Settings terminal to authorize access.</p>
+                  <p className="text-[11px] text-slate-500 font-medium italic leading-relaxed">Cognitive synthesis is restricted. Please initialize your Neural Bridge in the Settings terminal to authorize AI processing.</p>
                 </div>
                 <button 
                   onClick={() => window.location.hash = '#/settings'}
                   className="w-full py-4 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-3"
                 >
-                  <Key size={14} /> CONFIGURE API KEY
+                  <Key size={14} /> AUTHORIZE NEURAL BRIDGE
                 </button>
               </div>
             </m.div>
@@ -261,7 +274,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
             value={input} 
             onChange={(e) => setInput(e.target.value)} 
             onKeyDown={(e) => e.key === 'Enter' && handleSend()} 
-            placeholder={apiKeyMissing ? "AI Node Locked" : t.placeholder} 
+            placeholder={apiKeyMissing ? "Neural Link Offline" : t.placeholder} 
             disabled={apiKeyMissing}
             className="flex-1 bg-transparent outline-none px-6 py-3 text-sm text-slate-200 placeholder:text-slate-700 font-medium italic disabled:opacity-30" 
           />

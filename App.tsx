@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
@@ -23,7 +22,6 @@ import { UserProfile } from './components/UserProfile.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { LegalView } from './components/LegalView.tsx';
 import { FeedbackView } from './components/FeedbackView.tsx';
-import { AboutView } from './components/AboutView.tsx';
 
 const m = motion as any;
 
@@ -65,7 +63,6 @@ const DecisionLoading = ({ onBypass }: { onBypass: () => void }) => {
     <div className="fixed inset-0 flex flex-col items-center justify-center gap-8 text-center bg-[#020617] z-[9999] p-6">
       <div className="relative">
         <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full animate-pulse" />
-        {/* Fix: changed lowercase logo to capitalized Logo as imported */}
         <Logo size={100} animated={true} className="relative z-10" />
       </div>
       <div className="space-y-6 relative z-10 w-full max-w-xs">
@@ -159,6 +156,7 @@ const App: React.FC = () => {
       return;
     }
     try {
+      // Background process: should not block UI transition to 'authenticated'
       const status = await userDataApi.getProfileStatus();
       if (status) {
         setIsBlocked(status.is_blocked);
@@ -187,7 +185,9 @@ const App: React.FC = () => {
         
         if (initialSession) {
           setSession(initialSession);
+          // UI-FIRST: Release loading immediately
           setAuthState('authenticated');
+          // DATA-SECOND: Run background checks
           adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin);
           checkLaboratoryRegistry();
         } else {
@@ -215,8 +215,10 @@ const App: React.FC = () => {
       }
     });
 
+    // Safety Override: Force exit from loading screen after 6s regardless of callback status
     const loadingSafety = setTimeout(() => {
       if (authState === 'loading') {
+        console.warn("Handshake Timeout. Routing to login.");
         setAuthState('unauthenticated');
       }
     }, 6000);
@@ -231,8 +233,7 @@ const App: React.FC = () => {
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash || '#/';
-      if (hash.includes('about')) setActiveView('about');
-      else if (hash.includes('privacy')) setActiveView('privacy');
+      if (hash.includes('privacy')) setActiveView('privacy');
       else if (hash.includes('terms')) setActiveView('terms');
       else if (hash.includes('feedback')) setActiveView('feedback');
       else if (hash.includes('assistant')) setActiveView('assistant');
@@ -323,7 +324,6 @@ const App: React.FC = () => {
     if (activeView === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => window.location.hash = '#/'} />;
     if (activeView === 'terms') return <LegalView type="terms" lang={lang} onBack={() => window.location.hash = '#/'} />;
     if (activeView === 'feedback') return <FeedbackView lang={lang} onBack={() => window.location.hash = '#/settings'} />;
-    if (activeView === 'about') return <AboutView lang={lang} onBack={() => window.location.hash = '#/'} />;
 
     if (authState === 'unauthenticated' && !isSimulated) {
       return <UserLoginPage onSuccess={() => {}} onSandbox={startSandbox} lang={lang} />;

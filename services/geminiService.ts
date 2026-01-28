@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -9,24 +8,23 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
-// Fix: Obtained exclusively from process.env.API_KEY as per guidelines
-const getActiveApiKey = () => {
-  return process.env.API_KEY || '';
-};
-
 const handleGeminiError = (err: any) => {
   console.error("Gemini API Error Context:", err);
+  
+  // Per guidelines: if key is invalid/missing in this specific environment, re-trigger selector
+  if (err.message?.includes("Requested entity was not found")) {
+    (window as any).aistudio?.openSelectKey().catch(() => {});
+  }
+  
   throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
+// Model Constants - Following strictly the model naming guidelines
 const MODEL_FLASH = 'gemini-3-flash-preview'; 
 const MODEL_PRO = 'gemini-3-pro-preview'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
-  const apiKey = getActiveApiKey();
-  if (!apiKey) return ["Analysis stream paused.", "Recalibrating neural nodes.", "Link maintained."];
-
   const prompt = `You are a world-class digital sleep scientist and chief biohacker. Please perform deep neural analysis based on the following high-precision physiological telemetry.
     You MUST return a JSON array containing 3 professional strings. 
     1. Neural Architecture Analysis: Analyze brain clearing efficiency and memory consolidation based on Deep and REM ratios.
@@ -35,7 +33,8 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     Data: Score ${data.score}, Deep ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm.`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    // Instantiate per call to ensure we use the latest bridge key
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: prompt,
@@ -52,14 +51,11 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
 };
 
 export const chatWithCoach = async (history: { role: string; content: string }[], lang: Language = 'en', contextData?: SleepRecord | null) => {
-  const apiKey = getActiveApiKey();
-  if (!apiKey) throw new Error("API_KEY_REQUIRED");
-
   const bio = contextData ? `\nTELEMETRY: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, Efficiency: ${contextData.efficiency}%.` : "";
   const systemInstruction = `You are the Somno Chief Research Officer. Professional, futuristic, data-driven. Bio: ${bio}`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: history.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
@@ -76,11 +72,8 @@ export const chatWithCoach = async (history: { role: string; content: string }[]
 };
 
 export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
-  const apiKey = getActiveApiKey();
-  if (!apiKey) throw new Error("API_KEY_REQUIRED");
-
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: `Design a sleep experiment based on: score ${data.score}, RHR ${data.heartRate?.resting}.`,
@@ -102,11 +95,8 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
 };
 
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
-  const apiKey = getActiveApiKey();
-  if (!apiKey) return "API link offline.";
-
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: `Summarize trends for: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, use English only.`,
@@ -118,11 +108,8 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
 };
 
 export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 'en'): Promise<string | undefined> => {
-  const apiKey = getActiveApiKey();
-  if (!apiKey) return undefined;
-
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
       contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on score ${data.score}.` }] }],

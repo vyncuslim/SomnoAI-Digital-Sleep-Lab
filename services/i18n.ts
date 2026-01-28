@@ -102,30 +102,36 @@ const commonEn = {
     playing: 'Synthesizing...'
   },
   about: {
-    title: 'Knowledge Base',
-    manifesto: 'Complete, systematic, and direct digital laboratory manual for physiological monitoring and AI-driven health optimization.',
-    sections: {
-      intro: {
-        title: 'Manifesto',
-        content: 'SomnoAI Digital Sleep Lab integrates physiological indicator monitoring, AI deep insights, and health advice into a unified digital experience. Our mission is to transform raw biometric data into actionable health protocols using state-of-the-art neural synthesis.'
-      },
-      monitoring: {
-        title: 'Physiological Telemetry',
-        content: 'We utilize high-precision wearable bridges to monitor heart rate variability (HRV), sleep architecture (Deep, REM, Light), and circadian rhythms. This data forms the baseline for all neural experiments.'
-      },
-      aiInsights: {
-        title: 'Neural Synthesis Logic',
-        content: 'Our Gemini-powered core analyzes physiological patterns to identify clearing efficiency and memory consolidation states. The AI acts as a Chief Biohacker, identifying anomalies and proposing tactical optimizations.'
-      },
-      privacy: {
-        title: 'Security Protocol',
-        content: 'SomnoAI operates on an "Edge-First" philosophy. Your biometric telemetry is processed locally or via transient encrypted streams. We adhere to the strictest Google API data minimization policies.'
-      },
-      guide: {
-        title: 'Operational Guide',
-        content: '1. Establish Device Link via Health Connect.\n2. Execute Daily Sync to update telemetry logs.\n3. Consultation with Neural Core for insight synthesis.\n4. Implementation of Tactical Health Protocols.'
-      }
-    }
+    title: 'Specifications',
+    manifesto: 'Digital Sleep Laboratory.',
+    protocolTitle: 'Bridge Protocol',
+    waterAnalogyTitle: 'Biological Flow',
+    waterAnalogyDesc: 'Health Connect acts as the primary reservoir.',
+    toolboxTitle: 'Digital Toolbox',
+    toolboxDesc: 'Android Health Connect SDK.',
+    whsTitle: 'Warehouse Sync',
+    whsDesc: 'Data moves through atomic updates.',
+    tokenTitle: 'Token Lifecycle',
+    step1: 'Identify SDK.',
+    step2: 'Initiate client.',
+    step3: 'Validate Manifest.',
+    step4: 'Register launcher.',
+    step5: 'Launch dialog.',
+    step6: 'Verify hashes.',
+    step7: 'Read records.',
+    step8: 'Loop.',
+    tokenInitial: 'Token: Generated.',
+    tokenCycle: 'Token: Active.',
+    tokenStore: 'Token: Secured.',
+    tokenExpire: 'Token: Expired.',
+    guideTitle: 'Operation Guide',
+    guideIntro: 'Laboratory tools mastery.',
+    guideSection1: '1. Telemetry',
+    guideSection1Desc: 'Sync wearables.',
+    guideSection2: '2. Deep Insights',
+    guideSection2Desc: 'Synthesize metrics.',
+    guideSection3: '3. Strategic Advice',
+    guideSection3Desc: 'Evidence-based protocols.'
   }
 };
 
@@ -231,30 +237,36 @@ const commonZh = {
     playing: '正在合成...'
   },
   about: {
-    title: '知识库',
-    manifesto: '完整、系统化、可直接上线的数字化实验室手册，涵盖生理监控与 AI 健康优化。',
-    sections: {
-      intro: {
-        title: '核心宣言',
-        content: 'SomnoAI 数字睡眠实验室将生理指标监控、AI 深度洞察与健康建议融为一体。我们的使命是利用先进的神经合成技术，将原始生物遥测数据转化为可执行的健康协议。'
-      },
-      monitoring: {
-        title: '生理遥测',
-        content: '我们利用高精度穿戴设备桥接，监控心率变异性 (HRV)、睡眠结构 (深度、REM、浅睡) 以及昼夜节律。这些数据构成了所有神经实验的基础。'
-      },
-      aiInsights: {
-        title: '神经合成逻辑',
-        content: '我们的 Gemini 驱动核心分析生理模式，以识别大脑清理效率和记忆巩固状态。AI 担任首席生物客 (Chief Biohacker)，识别异常并提出战术优化。'
-      },
-      privacy: {
-        title: '安全协议',
-        content: 'SomnoAI 坚持“边缘优先”理念。您的生物指标在本地处理或通过加密流传输。我们遵守最严格的 Google API 数据最小化政策。'
-      },
-      guide: {
-        title: '操作指南',
-        content: '1. 通过 Health Connect 建立设备连接。\n2. 执行每日同步以更新遥测日志。\n3. 与神经核心互动进行洞察合成。\n4. 实施战术健康协议。'
-      }
-    }
+    title: '实验室规范',
+    manifesto: '数字睡眠实验室方案。',
+    protocolTitle: '桥接协议',
+    waterAnalogyTitle: '生物流体',
+    waterAnalogyDesc: 'Health Connect 充当主要的遥测存储库。',
+    toolboxTitle: '数字工具箱',
+    toolboxDesc: 'Android Health Connect SDK 接口。',
+    whsTitle: '仓库同步',
+    whsDesc: '数据通过原子记录进行更新。',
+    tokenTitle: '令牌生命周期',
+    step1: '识别 SDK。',
+    step2: '启动客户端。',
+    step3: '验证清单。',
+    step4: '注册启动器。',
+    step5: '启动对话框。',
+    step6: '验证哈希。',
+    step7: '读取记录。',
+    step8: '循环同步。',
+    tokenInitial: '令牌：已生成。',
+    tokenCycle: '令牌：活跃。',
+    tokenStore: '令牌：安全。',
+    tokenExpire: '令牌：已过期。',
+    guideTitle: '操作指南',
+    guideIntro: '掌控实验室工具。',
+    guideSection1: '1. 遥测',
+    guideSection1Desc: '同步穿戴设备。',
+    guideSection2: '2. 深度洞察',
+    guideSection2Desc: '合成脱敏指标。',
+    guideSection3: '3. 策略建议',
+    guideSection3Desc: '基于证据的恢复方案。'
   }
 };
 

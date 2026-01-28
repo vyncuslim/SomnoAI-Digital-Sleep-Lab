@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './components/GlassCard.tsx';
 import { 
@@ -26,10 +25,27 @@ export const Settings: React.FC<SettingsProps> = ({
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isAiActive, setIsAiActive] = useState(false);
   const [isTestingTelegram, setIsTestingTelegram] = useState(false);
   const [telegramTestStatus, setTelegramTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const t = translations[lang]?.settings || translations.en.settings;
+
+  useEffect(() => {
+    const checkAiStatus = async () => {
+      if ((window as any).aistudio?.hasSelectedApiKey) {
+        try {
+          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+          setIsAiActive(hasKey || !!process.env.API_KEY);
+        } catch (e) {
+          setIsAiActive(!!process.env.API_KEY);
+        }
+      } else {
+        setIsAiActive(!!process.env.API_KEY);
+      }
+    };
+    checkAiStatus();
+  }, []);
 
   const handleTestTelegram = async () => {
     if (isTestingTelegram) return;
@@ -46,6 +62,17 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   };
 
+  const handleOpenAiKeySelector = async () => {
+    if ((window as any).aistudio?.openSelectKey) {
+      try {
+        await (window as any).aistudio.openSelectKey();
+        setIsAiActive(true);
+      } catch (e) {
+        console.error("AI Key Bridge Error.");
+      }
+    }
+  };
+
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -55,8 +82,6 @@ export const Settings: React.FC<SettingsProps> = ({
   const executeFullLogout = async () => {
     try {
       await onLogout();
-      // Remove deprecated key management cleanups
-      localStorage.removeItem('gemini_api_key');
       localStorage.removeItem('google_fit_token');
       localStorage.removeItem('health_connect_token');
       localStorage.removeItem('supabase.auth.token');
@@ -73,34 +98,50 @@ export const Settings: React.FC<SettingsProps> = ({
         <Moon size={400} fill="currentColor" className="text-indigo-400" />
       </div>
 
-      {/* CORE STATUS CARD */}
+      {/* AI STATUS & SECURE BRIDGE */}
       <GlassCard className="p-8 md:p-10 rounded-[3.5rem] bg-gradient-to-br from-indigo-500/[0.05] to-purple-500/[0.05] border-indigo-500/20 shadow-2xl relative overflow-hidden group pointer-events-auto">
         <div className="absolute -right-10 -top-10 opacity-5 group-hover:opacity-10 transition-opacity duration-1000">
            <BrainCircuit size={200} />
         </div>
         
         <div className="space-y-8 relative z-10 pointer-events-auto">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8">
             <div className="flex items-center gap-5">
-              <div className="p-4 rounded-2xl border bg-indigo-500/10 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.2)]">
-                <Zap size={24} fill="currentColor" />
+              <div className={`p-5 rounded-[2rem] border transition-all duration-700 ${isAiActive ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.2)]' : 'bg-slate-900 border-white/10 text-slate-700'}`}>
+                <Zap size={28} fill={isAiActive ? "currentColor" : "none"} className={isAiActive ? 'animate-pulse' : ''} />
               </div>
               <div className="text-left">
-                 <h2 className="text-sm font-black italic text-white uppercase tracking-wider flex items-center gap-2">
-                   Neural Core Status
+                 <h2 className="text-lg font-black italic text-white uppercase tracking-tight flex items-center gap-2">
+                   Neural Engine Bridge
                  </h2>
-                 <div className="flex items-center gap-2">
-                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                      COGNITION ACTIVE
+                 <div className="flex items-center gap-2 mt-1">
+                    <div className={`w-2 h-2 rounded-full ${isAiActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
+                    <p className={`text-[10px] font-black uppercase tracking-[0.2em] ${isAiActive ? 'text-emerald-400' : 'text-rose-400'}`}>
+                      {isAiActive ? 'COGNITION LINK STABLE' : 'LINK CALIBRATION REQUIRED'}
                     </p>
                  </div>
               </div>
             </div>
+            <button 
+              onClick={handleOpenAiKeySelector}
+              className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.3em] shadow-xl shadow-indigo-600/30 hover:bg-indigo-500 transition-all active:scale-95 whitespace-nowrap cursor-pointer relative z-[100] pointer-events-auto flex items-center gap-3"
+            >
+              <Key size={16} /> INITIALIZE BRIDGE
+            </button>
           </div>
-          <p className="text-[10px] text-slate-500 italic leading-relaxed">
-            AI synthesis engine is operational via laboratory nodes. Telemetry is processed securely through centralized neural gateways.
-          </p>
+
+          <div className="p-6 bg-slate-900/40 border border-white/5 rounded-[2.2rem] space-y-3">
+            <div className="flex items-center gap-2 text-indigo-400">
+              <Info size={14} />
+              <span className="text-[10px] font-black uppercase tracking-widest">Security Protocol</span>
+            </div>
+            <p className="text-[11px] text-slate-500 italic leading-relaxed">
+              Paid Gemini API keys must be authorized via the secure bridge. This ensures zero persistent storage of sensitive credentials. 
+              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-white transition-colors underline ml-1">
+                GCP Billing Docs <ExternalLink size={10} className="inline ml-0.5" />
+              </a>
+            </p>
+          </div>
         </div>
       </GlassCard>
 
