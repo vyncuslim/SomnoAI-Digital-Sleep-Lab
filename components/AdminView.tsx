@@ -1,57 +1,54 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
-  Users, User, Database, ShieldAlert, 
+  Users, Database, ShieldAlert, 
   Trash2, Search, RefreshCw, 
   Loader2, AlertCircle, Terminal, Activity, 
   DatabaseZap, ChevronLeft, ShieldCheck, 
   Ban, Edit3, X, Save, Shield, MoreHorizontal,
   Bell, Lock, History, AlertTriangle, Fingerprint,
-  FileText, Clock, BarChart3, Globe, Cpu, Zap,
-  Crown, Server, HardDrive, Network, Radio, Key,
-  ShieldQuestion
+  FileText, Clock, Crown, ShieldQuestion,
+  User, UserCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { AreaChart, Area, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
 import { GlassCard } from './GlassCard.tsx';
-import { adminApi, profileApi, supabase } from '../services/supabaseService.ts';
+import { adminApi, supabase } from '../services/supabaseService.ts';
 import { SecurityEvent } from '../types.ts';
 
 const m = motion as any;
 
-type AdminTab = 'overview' | 'users' | 'records' | 'security' | 'infrastructure';
+type AdminTab = 'overview' | 'users' | 'records' | 'security' | 'logs';
+
+// 权限权重定义
+const ROLE_WEIGHTS: Record<string, number> = {
+  'user': 1,
+  'admin': 2,
+  'owner': 3,
+  'super_owner': 4 // 特殊逻辑：is_super_owner 标志
+};
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
-  const [role, setRole] = useState<'admin' | 'owner' | 'user'>('admin');
-  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
-  const [data, setData] = useState<{ 
-    users: any[], 
-    records: any[], 
-    feedback: any[], 
-    logs: any[], 
-    security: SecurityEvent[] 
-  }>({ 
+  const [currentAdmin, setCurrentAdmin] = useState<{ id: string, role: string, is_super_owner: boolean } | null>(null);
+  const [data, setData] = useState<{ users: any[], records: any[], feedback: any[], logs: any[], security: SecurityEvent[] }>({ 
     users: [], records: [], feedback: [], logs: [], security: []
   });
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-
-  const isOwner = role === 'owner';
-  const themeColor = isOwner ? 'amber-500' : 'rose-600';
-  const themeHex = isOwner ? '#f59e0b' : '#e11d48';
   
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        setRole(session.user.app_metadata?.role || session.user.user_metadata?.role || 'admin');
-        setCurrentUserId(session.user.id);
+      // 1. 获取当前管理员详细权限
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const clearance = await adminApi.getAdminClearance(user.id);
+        setCurrentAdmin({ id: user.id, ...clearance });
       }
 
+      // 2. 并行获取所有管理数据
       const [users, records, feedback, logs, security] = await Promise.all([
         adminApi.getUsers(),
         adminApi.getSleepRecords(),
@@ -59,11 +56,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         adminApi.getAuditLogs(),
         adminApi.getSecurityEvents()
       ]);
-      
       setData({ users, records, feedback, logs, security });
     } catch (err: any) {
-      console.error("[Admin Registry Error]:", err);
-      setError(err.message || "Registry unreachable.");
+      setError(err.message || "Sync Error: Laboratory Node unreachable.");
     } finally {
       setLoading(false);
     }
@@ -71,314 +66,221 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => {
     fetchAllData();
-    const interval = setInterval(fetchAllData, 60000);
+    const interval = setInterval(fetchAllData, 30000);
     return () => clearInterval(interval);
   }, [fetchAllData]);
 
-  const handleToggleBlock = async (targetUser: any) => {
-    // 权限检查逻辑：
-    // 1. 不能 Block 自己
-    // 2. Admin 不能 Block Owner
-    // 3. Admin 不能 Block 其他 Admin
-    if (targetUser.id === currentUserId) {
-      alert("COMMAND REJECTED: Self-suspension is prohibited.");
-      return;
-    }
-    
-    if (role === 'admin' && (targetUser.role === 'owner' || targetUser.role === 'admin')) {
-      alert("AUTHORITY VIOLATION: Insufficient clearance to modify this node.");
+  // 核心权限检查逻辑：当前操作者是否能控制目标
+  const canControlTarget = (target: any) => {
+    if (!currentAdmin) return false;
+    if (target.id === currentAdmin.id) return false; // 不能控制自己
+
+    const myWeight = currentAdmin.is_super_owner ? ROLE_WEIGHTS.super_owner : ROLE_WEIGHTS[currentAdmin.role] || 1;
+    const targetWeight = target.is_super_owner ? ROLE_WEIGHTS.super_owner : ROLE_WEIGHTS[target.role] || 1;
+
+    // 阶梯规则：权重必须严格大于目标
+    return myWeight > targetWeight;
+  };
+
+  const handleToggleBlock = async (user: any) => {
+    if (!canControlTarget(user)) {
+      alert("Clearance Violation: Insufficient privileges to manipulate this node.");
       return;
     }
 
-    const action = targetUser.is_blocked ? 'RESTORE' : 'SUSPEND';
-    if (!confirm(`[PROTOCOL OVERRIDE] ${action} NODE ${targetUser.email || targetUser.id}?`)) return;
+    const action = user.is_blocked ? 'Restore' : 'Suspend';
+    if (!confirm(`${action} subject ${user.email || user.id}? Suspended subjects are immediately expelled from the grid.`)) return;
     
     try {
-      if (targetUser.is_blocked) await adminApi.unblockUser(targetUser.id);
-      else await adminApi.blockUser(targetUser.id);
+      if (user.is_blocked) await adminApi.unblockUser(user.id);
+      else await adminApi.blockUser(user.id);
       fetchAllData();
     } catch (err) {
-      alert("SYNC ERROR: Node state update failed.");
+      alert("Command failure: Registry authority rejected the request.");
     }
   };
 
   const filteredItems = useMemo(() => {
     const q = searchQuery.toLowerCase();
-    const source = activeTab === 'users' ? data.users : 
-                   activeTab === 'records' ? data.records : 
-                   activeTab === 'security' ? data.security : [];
-    
-    if (!q) return source;
-    return source.filter((item: any) => {
-      const searchStr = `${item.email || ''} ${item.id || ''} ${item.role || ''} ${item.full_name || ''}`.toLowerCase();
-      return searchStr.includes(q);
-    });
+    if (!q) {
+      if (activeTab === 'users') return data.users;
+      if (activeTab === 'records') return data.records;
+      if (activeTab === 'security') return data.security;
+      if (activeTab === 'logs') return data.logs;
+      return [];
+    }
+    if (activeTab === 'users') return data.users.filter(u => (u.email || u.id).toLowerCase().includes(q));
+    if (activeTab === 'records') return data.records.filter(r => r.id?.toLowerCase().includes(q) || r.user_id?.toLowerCase().includes(q));
+    if (activeTab === 'security') return data.security.filter(s => (s.email || '').toLowerCase().includes(q) || (s.event_type || '').toLowerCase().includes(q));
+    if (activeTab === 'logs') return data.logs.filter((l: any) => (l.action || '').toLowerCase().includes(q) || (l.message || '').toLowerCase().includes(q) || (l.user_id || '').toLowerCase().includes(q));
+    return [];
   }, [searchQuery, activeTab, data]);
 
-  // 勋章渲染组件
-  const RoleBadge = ({ r }: { r: string }) => {
-    if (r === 'owner') return <span className="flex items-center gap-1.5 px-3 py-1 bg-amber-500/10 border border-amber-500/30 text-amber-500 text-[9px] font-black uppercase rounded-lg italic shadow-[0_0_15px_rgba(245,158,11,0.1)]"><Crown size={10}/> Master</span>;
-    if (r === 'admin') return <span className="flex items-center gap-1.5 px-3 py-1 bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 text-[9px] font-black uppercase rounded-lg italic"><Shield size={10}/> Staff</span>;
-    return <span className="px-3 py-1 bg-white/5 border border-white/10 text-slate-500 text-[9px] font-black uppercase rounded-lg">Subject</span>;
-  };
+  const unreadAlerts = data.security.filter(s => !s.notified).length;
 
   return (
-    <div className={`space-y-12 pb-40 max-w-7xl mx-auto animate-in fade-in duration-1000 font-sans ${isOwner ? 'selection:bg-amber-500/30' : 'selection:bg-rose-500/30'}`}>
-      
-      {/* 层级感知顶栏 */}
-      <header className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 px-6">
-        <div className="flex items-center gap-8">
-          <button onClick={onBack} className={`p-5 bg-${themeColor}/10 hover:bg-${themeColor}/20 rounded-[2rem] text-${themeColor} transition-all border border-${themeColor}/20 active:scale-90 shadow-2xl group`}>
-            <ChevronLeft size={28} className="group-hover:-translate-x-1 transition-transform" />
-          </button>
-          <div className="space-y-3">
-            <div className="flex items-center gap-4">
-               {isOwner ? <Crown className="text-amber-500 drop-shadow-[0_0_15px_rgba(245,158,11,0.5)]" size={36} /> : <ShieldCheck className="text-rose-500" size={36} />}
-               <h1 className="text-5xl font-black italic tracking-tighter text-white uppercase leading-none">
-                 {isOwner ? 'Master' : 'Command'} <span className={`text-${themeColor}`}>{isOwner ? 'Registry' : 'Center'}</span>
-               </h1>
-            </div>
-            <div className="flex items-center gap-4">
-               <div className={`flex items-center gap-2 px-3 py-1 rounded-full bg-${themeColor}/10 border border-${themeColor}/20`}>
-                  <div className={`w-1.5 h-1.5 rounded-full animate-pulse bg-${themeColor}`} />
-                  <span className={`text-[10px] font-black uppercase tracking-[0.2em] text-${themeColor}`}>Clearance: {role.toUpperCase()}</span>
-               </div>
-               <div className="h-px w-8 bg-white/10" />
-               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Encrypted Flux v4.2</span>
-            </div>
+    <div className="space-y-10 pb-32 max-w-6xl mx-auto animate-in fade-in duration-700 font-sans">
+      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 px-4">
+        <div className="flex items-center gap-6">
+          {onBack && (
+            <button onClick={onBack} className="p-4 bg-rose-500/10 hover:bg-rose-500/20 rounded-3xl text-rose-500 transition-all border border-rose-500/20 active:scale-95 shadow-lg">
+              <ChevronLeft size={24} />
+            </button>
+          )}
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-3">
+              Lab <span className="text-rose-500">Command</span>
+              {currentAdmin?.is_super_owner && <Crown size={28} className="text-amber-400" />}
+            </h1>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
+              Clearance: {currentAdmin?.is_super_owner ? 'ROOT / SUPER_OWNER' : currentAdmin?.role?.toUpperCase()} // Grid Status: Active
+            </p>
           </div>
         </div>
         
-        <nav className="flex gap-2 bg-slate-950/80 p-2 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
-          {(['overview', 'users', 'records', 'security', 'infrastructure'] as AdminTab[]).map((tab) => {
-            if (tab === 'infrastructure' && !isOwner) return null;
-            return (
-              <button 
-                key={tab}
-                onClick={() => { setActiveTab(tab); setSearchQuery(''); }}
-                className={`px-8 py-4 rounded-full text-[11px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-3 relative overflow-hidden ${activeTab === tab ? `bg-${themeColor} text-white shadow-lg` : 'text-slate-500 hover:text-slate-300'}`}
-              >
-                {activeTab === tab && <m.div layoutId="nav-active" className="absolute inset-0 bg-white/10" />}
-                <span className="relative z-10">{tab === 'security' ? 'Threats' : tab}</span>
-              </button>
-            );
-          })}
+        <nav className="flex gap-2 bg-slate-900/60 p-1.5 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
+          {(['overview', 'users', 'records', 'security', 'logs'] as AdminTab[]).map((tab) => (
+            <button 
+              key={tab}
+              onClick={() => { setActiveTab(tab); setSearchQuery(''); }}
+              className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab ? 'bg-rose-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+            >
+              {tab === 'security' && unreadAlerts > 0 && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
+              {tab === 'security' ? 'Security Pulse' : tab.replace('_', ' ')}
+            </button>
+          ))}
         </nav>
       </header>
 
-      <main className="px-6">
-        <AnimatePresence mode="wait">
-          {activeTab === 'overview' ? (
-            <m.div key="ov" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-               {/* 核心监控矩阵 */}
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                  {[
-                    { label: 'Registry Nodes', val: data.users.length, icon: Users, color: `text-${themeColor}` },
-                    { label: 'Neural Flux', val: '28.4 GB', icon: Activity, color: 'text-indigo-400' },
-                    { label: 'Active Signals', val: data.records.length, icon: Radio, color: 'text-emerald-400' },
-                    { label: 'Security Alerts', val: data.security.length, icon: ShieldAlert, color: 'text-rose-500' }
-                  ].map((stat, i) => (
-                    <GlassCard key={i} className={`p-8 rounded-[3.5rem] border-white/5 group hover:border-${themeColor}/30 transition-all duration-700`} intensity={1.5}>
-                       <div className="flex justify-between items-start mb-6">
-                          <div className={`p-4 bg-white/5 ${stat.color} rounded-2xl border border-white/5 group-hover:scale-110 transition-transform`}>
-                            <stat.icon size={24} />
-                          </div>
-                          {isOwner && <Fingerprint size={16} className="text-slate-800" />}
-                       </div>
-                       <p className="text-4xl font-black text-white italic tracking-tighter mb-1">{loading ? '...' : stat.val}</p>
-                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{stat.label}</p>
-                    </GlassCard>
-                  ))}
-               </div>
-
-               {/* 图表展示 */}
-               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                  <GlassCard className="lg:col-span-2 p-10 rounded-[4rem] border-white/5" intensity={1.2}>
-                    <div className="flex justify-between items-center mb-10 px-4">
-                       <div className="flex items-center gap-3">
-                         <BarChart3 size={20} className={`text-${themeColor}`} />
-                         <span className="text-[11px] font-black uppercase text-slate-400 tracking-widest">Network Pulse Ingress</span>
-                       </div>
-                       <div className="flex items-center gap-2">
-                         <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                         <span className="text-[10px] font-mono text-emerald-500 font-black">NODE_STABLE</span>
-                       </div>
-                    </div>
-                    <div className="h-[320px] w-full">
-                       <ResponsiveContainer width="100%" height="100%">
-                          <AreaChart data={[
-                            {t:'00:00', v:20}, {t:'04:00', v:55}, {t:'08:00', v:30}, {t:'12:00', v:90}, {t:'16:00', v:45}, {t:'20:00', v:25}, {t:'23:59', v:10}
-                          ]}>
-                             <defs>
-                                <linearGradient id="primaryGrad" x1="0" y1="0" x2="0" y2="1">
-                                   <stop offset="5%" stopColor={themeHex} stopOpacity={0.3}/>
-                                   <stop offset="95%" stopColor={themeHex} stopOpacity={0}/>
-                                </linearGradient>
-                             </defs>
-                             <XAxis dataKey="t" axisLine={false} tickLine={false} tick={{fill: '#475569', fontSize: 10, fontWeight: 800}} dy={10} />
-                             <YAxis hide domain={[0, 100]} />
-                             <Area type="monotone" dataKey="v" stroke={themeHex} strokeWidth={5} fillOpacity={1} fill="url(#primaryGrad)" animationDuration={2000} />
-                          </AreaChart>
-                       </ResponsiveContainer>
-                    </div>
-                  </GlassCard>
-
-                  <div className="space-y-8">
-                    <GlassCard className="p-10 rounded-[4rem] border-white/5 bg-indigo-500/[0.02] flex flex-col gap-8" intensity={1.5}>
-                       <div className="flex items-center gap-3">
-                          <Server size={18} className="text-indigo-400" />
-                          <span className="text-[11px] font-black uppercase text-slate-400 tracking-widest">Registry Health</span>
-                       </div>
-                       <div className="space-y-8">
-                          <div className="space-y-3">
-                             <div className="flex justify-between text-[10px] font-black uppercase italic text-slate-500">
-                                <span>Binary Capacity</span>
-                                <span className="text-indigo-400">42%</span>
-                             </div>
-                             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <m.div animate={{ width: '42%' }} className="h-full bg-indigo-500" />
-                             </div>
-                          </div>
-                          <div className="space-y-3">
-                             <div className="flex justify-between text-[10px] font-black uppercase italic text-slate-500">
-                                <span>Signal Integrity</span>
-                                <span className="text-emerald-400">99.8%</span>
-                             </div>
-                             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
-                                <m.div animate={{ width: '99.8%' }} className="h-full bg-emerald-500" />
-                             </div>
-                          </div>
-                       </div>
-                    </GlassCard>
-                    
-                    <GlassCard className={`p-10 rounded-[4rem] border-${themeColor}/20 bg-${themeColor}/5`} intensity={2}>
-                       <p className="text-sm font-bold text-white italic leading-relaxed mb-6">
-                         "Protocol {role.toUpperCase()} active. You are supervising the neural architecture of the laboratory."
-                       </p>
-                       <button className={`w-full py-5 bg-${themeColor} text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl shadow-${themeColor}/20 transition-all active:scale-95`}>Initialize Audit</button>
-                    </GlassCard>
+      <AnimatePresence mode="wait">
+        {activeTab === 'overview' ? (
+          <m.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-4 gap-8 px-2">
+             <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
+                <Users size={32} className="text-rose-400" />
+                <p className="text-3xl font-black text-white">{loading ? '...' : data.users.length}</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Registry Subjects</p>
+             </GlassCard>
+             <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
+                <ShieldAlert size={32} className={`transition-colors ${unreadAlerts > 0 ? 'text-rose-500 animate-pulse' : 'text-amber-400'}`} />
+                <p className="text-3xl font-black text-white">{loading ? '...' : data.security.length}</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Security Events</p>
+             </GlassCard>
+             <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
+                <FileText size={32} className="text-indigo-400" />
+                <p className="text-3xl font-black text-white">{loading ? '...' : data.logs.length}</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Audit Trails</p>
+             </GlassCard>
+             <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
+                <ShieldCheck size={32} className="text-emerald-400" />
+                <p className="text-3xl font-black text-white">{currentAdmin?.is_super_owner ? 'ROOT' : 'LVL 0'}</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Your Clearance</p>
+             </GlassCard>
+          </m.div>
+        ) : (
+          <m.div key={activeTab} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="mx-2">
+             <GlassCard className="p-12 rounded-[5rem] border-white/10 shadow-2xl">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-16 px-4">
+                  <div>
+                    <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">
+                      {activeTab === 'security' ? 'Security Monitoring Pulse' : activeTab === 'logs' ? 'System Audit Trails' : `${activeTab} Registry`}
+                    </h3>
+                    <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1">Live Endpoint Visualization</p>
                   </div>
-               </div>
-            </m.div>
-          ) : (
-            <m.div key="table" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="space-y-8">
-               <GlassCard className="p-12 rounded-[5rem] border-white/5 shadow-2xl relative overflow-hidden" intensity={1.5}>
-                  <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8 mb-16 relative z-10">
-                    <div className="space-y-2">
-                       <h3 className="text-3xl font-black italic text-white uppercase tracking-tighter">
-                         {activeTab.toUpperCase()} Registry
-                       </h3>
-                       <div className="flex items-center gap-3 text-slate-500">
-                          <Terminal size={14} className={`text-${themeColor}`} />
-                          <span className="text-[10px] font-black uppercase tracking-widest italic">Encrypted Surveillance Mode</span>
-                       </div>
+                  <div className="flex gap-4 w-full md:w-auto">
+                    <div className="relative w-full md:w-80">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700" size={16} />
+                      <input 
+                        type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)}
+                        placeholder="SCAN REGISTRY..."
+                        className="w-full bg-slate-950/60 border border-white/10 rounded-full pl-10 pr-12 py-4 text-[11px] font-black uppercase text-white outline-none focus:border-rose-500/50 transition-all placeholder:text-slate-800"
+                      />
                     </div>
-
-                    <div className="flex gap-4 w-full xl:w-auto">
-                      <div className="relative flex-1 xl:w-96 group">
-                        <Search className={`absolute left-6 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-${themeColor} transition-colors`} size={20} />
-                        <input 
-                          type="text" 
-                          value={searchQuery}
-                          onChange={(e) => setSearchQuery(e.target.value)}
-                          placeholder="SCAN NODE DATA..."
-                          className={`w-full bg-[#050a1f]/80 border border-white/5 rounded-full pl-16 pr-12 py-5 text-sm font-bold italic text-white outline-none focus:border-${themeColor}/40 transition-all shadow-inner`}
-                        />
-                      </div>
-                      <button onClick={fetchAllData} className="p-5 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all border border-white/5 shadow-lg active:scale-90">
-                        <RefreshCw size={24} className={loading ? 'animate-spin' : ''} />
-                      </button>
-                    </div>
+                    <button onClick={fetchAllData} className="p-4 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all border border-white/5">
+                      <RefreshCw size={18} className={loading ? 'animate-spin' : ''} />
+                    </button>
                   </div>
+                </div>
 
-                  <div className="overflow-x-auto scrollbar-hide relative z-10">
-                    <table className="w-full text-left border-separate border-spacing-y-4">
-                      <thead>
-                        <tr className="text-[11px] font-black uppercase text-slate-700 tracking-[0.4em]">
-                          <th className="pb-8 px-8">Identifier</th>
-                          <th className="pb-8 px-8">Authority Status</th>
-                          <th className="pb-8 px-8 text-right">Command</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-white/5">
-                        {filteredItems.map((item: any) => {
-                          const isSelf = item.id === currentUserId;
-                          // 权限判断：如果当前是 Admin，目标是 Owner 或 Admin，则不可操作
-                          const canManage = isOwner ? !isSelf : (item.role === 'user' && !isSelf);
-                          
-                          return (
-                            <tr key={item.id} className={`hover:bg-${themeColor}/5 transition-all group rounded-3xl`}>
-                              <td className="py-10 px-8">
-                                 <div className="flex items-center gap-6">
-                                   <div className={`w-16 h-16 rounded-[2.2rem] bg-gradient-to-br from-slate-900 to-black border border-white/5 flex items-center justify-center text-white text-xl font-black italic transition-colors group-hover:border-${themeColor}/30 shadow-inner`}>
-                                     {item.full_name?.[0]?.toUpperCase() || <User size={24} className="text-slate-700" />}
-                                   </div>
-                                   <div>
-                                     <span className="text-lg font-black italic text-white block leading-none mb-2">
-                                       {item.email || item.event_type || 'SYSTEM_NODE'}
-                                       {isSelf && <span className="ml-3 text-[10px] text-indigo-400 not-italic uppercase">(You)</span>}
+                <div className="overflow-x-auto scrollbar-hide">
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-[11px] font-black uppercase text-slate-500 tracking-[0.4em] border-b border-white/5">
+                        <th className="pb-8 px-8">Identifier</th>
+                        <th className="pb-8 px-8">Context & Logic</th>
+                        <th className="pb-8 px-8 text-right">Command</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {filteredItems.map((item: any) => (
+                        <tr key={item.id} className="hover:bg-white/[0.02] transition-colors group">
+                          <td className="py-8 px-8">
+                             <div className="flex items-center gap-4">
+                               {activeTab === 'users' && (
+                                 <div className={`w-10 h-10 rounded-xl flex items-center justify-center border ${item.is_super_owner ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-slate-800 border-white/5 text-slate-500'}`}>
+                                    {item.is_super_owner ? <Crown size={16}/> : <User size={16}/>}
+                                 </div>
+                               )}
+                               <div>
+                                 <span className="text-white font-bold italic block leading-none mb-1">
+                                   {activeTab === 'logs' ? (item.action || 'SYSTEM_EVENT') : (item.email || item.id?.slice(0, 16) || 'Unknown')}
+                                 </span>
+                                 <span className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">
+                                   {item.role ? item.role.toUpperCase() : 'SUBJECT'} {item.is_super_owner && '/ ROOT'}
+                                 </span>
+                               </div>
+                             </div>
+                          </td>
+                          <td className="py-8 px-8">
+                             <div className="flex flex-col gap-1">
+                               <div className="flex items-center gap-3">
+                                 {activeTab === 'security' ? (
+                                   <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border ${item.event_type === 'AUTO_BLOCK' ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' : 'bg-amber-500/10 border-amber-500/20 text-amber-500'}`}>
+                                      {item.event_type}
+                                   </span>
+                                 ) : activeTab === 'users' ? (
+                                   <>
+                                     <div className={`w-2 h-2 rounded-full ${item.is_blocked ? 'bg-rose-500' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'}`} />
+                                     <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase tracking-widest border transition-colors ${item.is_blocked ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-emerald-500/5 border-emerald-500/20 text-emerald-500'}`}>
+                                       {item.is_blocked ? 'Suspended' : 'Validated'}
                                      </span>
-                                     <span className="text-[10px] font-mono text-slate-700 uppercase tracking-tighter">HASH: {item.id?.slice(0, 16)}...</span>
+                                   </>
+                                 ) : (
+                                   <span className="text-[11px] font-medium text-slate-400 italic">{item.message || item.event_reason || 'Recorded Operation'}</span>
+                                 )}
+                               </div>
+                             </div>
+                          </td>
+                          <td className="py-8 px-8 text-right">
+                             <div className="flex justify-end gap-3">
+                               {activeTab === 'users' && (
+                                 canControlTarget(item) ? (
+                                   <button 
+                                      onClick={() => handleToggleBlock(item)}
+                                      className={`p-3 rounded-xl border transition-all ${item.is_blocked ? 'text-emerald-400 border-emerald-400/20 bg-emerald-500/5 hover:bg-emerald-500/10' : 'text-rose-400 border-rose-400/20 bg-rose-500/5 hover:bg-rose-500/10'}`}
+                                      title={item.is_blocked ? 'Restore Subject' : 'Suspend Subject'}
+                                   >
+                                      {item.is_blocked ? <ShieldCheck size={18}/> : <Ban size={18}/>}
+                                   </button>
+                                 ) : (
+                                   <div className="p-3 bg-slate-900 border border-white/5 rounded-xl text-slate-700" title="Clearance insufficient to modify this node">
+                                      {item.id === currentAdmin?.id ? <UserCircle className="text-indigo-500" size={18}/> : <Lock size={18}/>}
                                    </div>
-                                 </div>
-                              </td>
-                              <td className="py-10 px-8">
-                                 <div className="flex flex-col gap-3">
-                                    <div className="flex items-center gap-3">
-                                       <div className={`w-2 h-2 rounded-full ${item.is_blocked ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' : 'bg-emerald-500 shadow-[0_0_10px_#10b981]'}`} />
-                                       <RoleBadge r={item.role} />
-                                       {item.is_blocked && <span className="text-[9px] font-black text-rose-500 uppercase italic">Suspended</span>}
-                                    </div>
-                                    <div className="flex items-center gap-3 text-slate-700">
-                                       <Clock size={12} />
-                                       <span className="text-[10px] font-black uppercase tracking-widest">{new Date(item.created_at || item.attempt_at).toLocaleString()}</span>
-                                    </div>
-                                 </div>
-                              </td>
-                              <td className="py-10 px-8 text-right">
-                                 <div className="flex justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all translate-x-4 group-hover:translate-x-0">
-                                    {canManage ? (
-                                      <>
-                                        <button 
-                                          onClick={() => handleToggleBlock(item)}
-                                          className={`p-4 rounded-2xl border transition-all ${item.is_blocked ? 'text-emerald-400 border-emerald-400/20 bg-emerald-500/5 hover:bg-emerald-500/10' : 'text-rose-500 border-rose-500/20 bg-rose-500/5 hover:bg-rose-500/10'}`}
-                                          title={item.is_blocked ? 'Activate Node' : 'Suspend Node'}
-                                        >
-                                          {item.is_blocked ? <ShieldCheck size={22}/> : <Ban size={22}/>}
-                                        </button>
-                                        <button className="p-4 bg-white/5 border border-white/10 rounded-2xl text-slate-500 hover:text-white transition-all">
-                                          <Edit3 size={22} />
-                                        </button>
-                                      </>
-                                    ) : (
-                                      <div className="p-4 text-slate-800 flex items-center gap-2 cursor-not-allowed">
-                                         <Lock size={18} />
-                                         <span className="text-[9px] font-black uppercase tracking-widest">Protected</span>
-                                      </div>
-                                    )}
-                                    <button className="p-4 text-slate-700 hover:text-white transition-colors">
-                                      <MoreHorizontal size={22} />
-                                    </button>
-                                 </div>
-                              </td>
-                            </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
-               </GlassCard>
-            </m.div>
-          )}
-        </AnimatePresence>
-      </main>
-
-      <footer className="mt-20 flex flex-col items-center gap-6 opacity-30 text-center">
-         <div className="flex items-center gap-4">
-           <DatabaseZap size={14} className={`text-${themeColor}`} />
-           <span className="text-[9px] font-mono tracking-[0.5em] uppercase font-black text-white">Quantum Registry v4.6 // SECURITY_LEVEL_{role.toUpperCase()}</span>
-         </div>
-      </footer>
+                                 )
+                               )}
+                               <button className="p-3 text-slate-700 hover:text-white transition-colors">
+                                 <MoreHorizontal size={18} />
+                               </button>
+                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+             </GlassCard>
+          </m.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

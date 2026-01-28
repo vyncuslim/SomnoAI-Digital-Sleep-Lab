@@ -1,7 +1,6 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, User, Loader2, Trash2, Music, ExternalLink, Moon, Key, ShieldAlert, Square
+  Send, User, Loader2, Trash2, Music, ExternalLink, Moon, Key, ShieldAlert
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
@@ -45,20 +44,19 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
   const audioContextRef = useRef<AudioContext | null>(null);
   const audioSourceRef = useRef<AudioBufferSourceNode | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
-  const isMounted = useRef(true);
 
   useEffect(() => {
-    isMounted.current = true;
     const checkKeyAvailability = async () => {
+      // Prioritize the bridge check for AI Studio environment
       if ((window as any).aistudio?.hasSelectedApiKey) {
         try {
           const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-          if (isMounted.current) setApiKeyMissing(!hasKey && !process.env.API_KEY);
+          setApiKeyMissing(!hasKey && !process.env.API_KEY);
         } catch (e) {
-          if (isMounted.current) setApiKeyMissing(!process.env.API_KEY);
+          setApiKeyMissing(!process.env.API_KEY);
         }
       } else {
-        if (isMounted.current) setApiKeyMissing(!process.env.API_KEY);
+        setApiKeyMissing(!process.env.API_KEY);
       }
     };
 
@@ -70,14 +68,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
         : t.intro;
       setMessages([{ role: 'assistant', content: welcome, timestamp: new Date() }]);
     }
-
-    return () => {
-      isMounted.current = false;
-      stopAudio();
-      if (audioContextRef.current) {
-        audioContextRef.current.close().catch(() => {});
-      }
-    };
   }, [data, t.intro]);
 
   useEffect(() => {
@@ -94,18 +84,65 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
     setIsTyping(true);
     try {
       const response = await chatWithCoach(messages.concat(userMsg).map(m => ({ role: m.role, content: m.content })), lang, data);
-      if (response && isMounted.current) {
+      if (response) {
         setMessages(prev => [...prev, { role: 'assistant', content: response.text, sources: response.sources, timestamp: new Date() }]);
       }
     } catch (err: any) {
-      if (isMounted.current) {
-        if (err.message === "API_KEY_REQUIRED" || err.message?.includes("entity not found")) {
-          setApiKeyMissing(true);
-        }
-        setMessages(prev => [...prev, { role: 'assistant', content: "Neural handshake failed. Please ensure your AI bridge is authorized in Settings.", timestamp: new Date() }]);
+      if (err.message === "API_KEY_REQUIRED" || err.message?.includes("entity not found")) {
+        setApiKeyMissing(true);
       }
+      setMessages(prev => [...prev, { role: 'assistant', content: "Neural handshake failed. Please ensure your AI bridge is authorized in Settings.", timestamp: new Date() }]);
     } finally {
-      if (isMounted.current) setIsTyping(false);
+      setIsTyping(false);
+    }
+  };
+
+  const handleLullaby = async () => {
+    if (!data || isGeneratingAudio) return;
+    if (isPlayingAudio) { stopAudio(); return; }
+    
+    setIsGeneratingAudio(true);
+    try {
+      const base64 = await generateNeuralLullaby(data, lang);
+      if (base64) {
+        if (!audioContextRef.current) { 
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 }); 
+        }
+        const ctx = audioContextRef.current;
+        const decoded = decodeBase64Audio(base64);
+        const buffer = await decodeAudioData(decoded, ctx);
+        
+        if (audioSourceRef.current) {
+          try { audioSourceRef.current.stop(); } catch(e) {}
+        }
+
+        const source = ctx.createBufferSource();
+        source.buffer = buffer; 
+        source.connect(ctx.destination);
+        source.onended = () => {
+          if (audioSourceRef.current === source) {
+            setIsPlayingAudio(false);
+          }
+        };
+        
+        audioSourceRef.current = source;
+        
+        if (ctx.state === 'suspended') {
+          await ctx.resume().catch(console.error);
+        }
+        
+        try {
+          source.start(0);
+          setIsPlayingAudio(true);
+        } catch (playError) {
+          console.error("Audio playback start failed:", playError);
+          setIsPlayingAudio(false);
+        }
+      }
+    } catch (err) { 
+      console.error("Lullaby sequence failure:", err); 
+    } finally { 
+      setIsGeneratingAudio(false); 
     }
   };
 
@@ -116,61 +153,17 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
       } catch(e) {} 
       audioSourceRef.current = null; 
     }
-    if (isMounted.current) setIsPlayingAudio(false);
+    setIsPlayingAudio(false);
   };
 
-  const handleLullaby = async () => {
-    if (!data || isGeneratingAudio) return;
-    if (isPlayingAudio) { stopAudio(); return; }
-    
-    setIsGeneratingAudio(true);
-    try {
-      const base64 = await generateNeuralLullaby(data, lang);
-      if (base64 && isMounted.current) {
-        if (!audioContextRef.current) { 
-          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 }); 
-        }
-        const ctx = audioContextRef.current;
-        
-        // Always resume context before use as browsers often suspend it
-        if (ctx.state === 'suspended') {
-          await ctx.resume().catch(console.error);
-        }
-
-        const decoded = decodeBase64Audio(base64);
-        const buffer = await decodeAudioData(decoded, ctx);
-        
-        stopAudio(); // Ensure clean slate
-
-        const source = ctx.createBufferSource();
-        source.buffer = buffer; 
-        source.connect(ctx.destination);
-        
-        source.onended = () => {
-          if (audioSourceRef.current === source && isMounted.current) {
-            setIsPlayingAudio(false);
-          }
-        };
-        
-        audioSourceRef.current = source;
-        
-        try {
-          if (isMounted.current) {
-            source.start(0);
-            setIsPlayingAudio(true);
-          }
-        } catch (playError) {
-          // This catches the common "AbortError" if start is called while context is in a weird state
-          console.error("Audio playback start failed:", playError);
-          setIsPlayingAudio(false);
-        }
+  useEffect(() => {
+    return () => {
+      stopAudio();
+      if (audioContextRef.current) {
+        audioContextRef.current.close().catch(console.error);
       }
-    } catch (err) { 
-      console.error("Lullaby sequence failure:", err); 
-    } finally { 
-      if (isMounted.current) setIsGeneratingAudio(false); 
-    }
-  };
+    };
+  }, []);
 
   return (
     <div className="flex flex-col h-[calc(100vh-160px)] max-w-2xl mx-auto font-sans relative">
@@ -193,17 +186,11 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
           <button 
             onClick={handleLullaby} 
             disabled={isGeneratingAudio || apiKeyMissing}
-            className={`p-3 rounded-full transition-all flex items-center justify-center w-12 h-12 ${isPlayingAudio ? 'bg-rose-600 text-white shadow-[0_0_15px_rgba(225,29,72,0.5)]' : 'bg-white/5 text-indigo-400 disabled:opacity-30'}`}
+            className={`p-3 rounded-full transition-all ${isPlayingAudio ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'bg-white/5 text-indigo-400 disabled:opacity-30'}`}
           >
-            {isGeneratingAudio ? (
-              <Loader2 size={18} className="animate-spin" />
-            ) : isPlayingAudio ? (
-              <Square size={18} fill="currentColor" />
-            ) : (
-              <Music size={18} />
-            )}
+            {isGeneratingAudio ? <Loader2 size={18} className="animate-spin" /> : <Music size={18} />}
           </button>
-          <button onClick={() => setMessages([])} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-rose-400 transition-all flex items-center justify-center w-12 h-12"><Trash2 size={18} /></button>
+          <button onClick={() => setMessages([])} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-rose-400 transition-all"><Trash2 size={18} /></button>
         </div>
       </header>
 
