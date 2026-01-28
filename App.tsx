@@ -127,13 +127,9 @@ const App: React.FC = () => {
         setSetupRequired(!status.is_initialized); 
         setHasAppData(status.has_app_data); 
         
-        // 关键变更：登录后检查远程 API 数据
         if (status.is_initialized) {
-          const apiHasData = await healthDataApi.checkRemoteIngressStatus();
-          setIsRemoteApiValid(apiHasData);
-          if (!apiHasData) {
-            console.warn("Remote Ingress data missing for this node.");
-          }
+          // 异步检查远程 API，不再阻断 UI 主逻辑
+          healthDataApi.checkRemoteIngressStatus().then(setIsRemoteApiValid);
         }
 
         if (status.is_initialized && status.has_app_data) await fetchHistory(); 
@@ -207,7 +203,6 @@ const App: React.FC = () => {
       await healthDataApi.uploadTelemetry(fullRecord);
       setHasAppData(true); setCurrentRecord(fullRecord); setHistory(prev => [fullRecord, ...prev]); setSyncStatus('success');
       
-      // 同步成功后重新校验远程 API
       const apiHasData = await healthDataApi.checkRemoteIngressStatus();
       setIsRemoteApiValid(apiHasData);
       
@@ -230,7 +225,7 @@ const App: React.FC = () => {
   if (dbCalibrationRequired) return (
     <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-8 z-[9999] overflow-y-auto">
       <div className="relative"><Database size={80} className="text-amber-500 mb-4" /><AlertTriangle size={32} className="absolute -bottom-2 -right-2 text-rose-500 animate-pulse" /></div>
-      <div className="space-y-4 max-w-2xl"><h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Database Calibration Required</h2><p className="text-slate-400 text-xs leading-relaxed font-bold italic">Your database schema is incomplete. Please run <span className="text-white">setup.sql</span> in your Supabase SQL Editor.</p></div>
+      <div className="space-y-4 max-w-2xl"><h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Database Calibration Required</h2><p className="text-slate-400 text-xs leading-relaxed font-bold italic">Your database schema is incomplete or RLS is blocked. Please run the <span className="text-white">setup.sql</span> in your Supabase SQL Editor.</p></div>
       <div className="flex flex-col sm:flex-row gap-4"><button onClick={() => window.location.reload()} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20">RETRY HANDSHAKE</button><button onClick={startSandbox} className="px-10 py-5 bg-white/5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-all">BYPASS TO SANDBOX</button></div>
     </div>
   );
@@ -242,20 +237,26 @@ const App: React.FC = () => {
     if (activeView === 'terms') return <LegalView type="terms" lang={lang} onBack={() => window.location.hash = '#/'} />;
     if (activeView === 'feedback') return <FeedbackView lang={lang} onBack={() => window.location.hash = '#/settings'} />;
     if (authState === 'unauthenticated' && !isSimulated) return <UserLoginPage onSuccess={() => {}} onSandbox={startSandbox} lang={lang} />;
-    if (setupRequired && !isSimulated) return <FirstTimeSetup onComplete={() => { setSetupRequired(false); checkLaboratoryRegistry(); }} />;
+    
+    if (setupRequired && !isSimulated) return (
+      <FirstTimeSetup onComplete={() => { 
+        setSetupRequired(false); 
+        // 关键：给数据库一点索引更新的时间，防止重新检查读到旧值
+        setTimeout(() => checkLaboratoryRegistry(), 1200); 
+      }} />
+    );
 
     return (
       <div className="w-full flex flex-col">
-        {/* 顶部警告：如果 API 数据校验失败 */}
         <AnimatePresence>
           {isRemoteApiValid === false && activeView === 'dashboard' && (
-            <m.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="bg-rose-600/90 backdrop-blur-md overflow-hidden">
+            <m.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="bg-amber-600/90 backdrop-blur-md overflow-hidden">
                <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                      <AlertTriangle size={16} className="text-white animate-pulse" />
-                     <p className="text-[10px] font-black text-white uppercase tracking-widest">External Data Link Incomplete: Remote Node Empty</p>
+                     <p className="text-[10px] font-black text-white uppercase tracking-widest">External Data Link Missing: Please Sync with Laboratory</p>
                   </div>
-                  <button onClick={handleSyncHealth} className="px-4 py-1.5 bg-white text-rose-600 rounded-full text-[9px] font-black uppercase tracking-tighter hover:bg-rose-50 transition-all">FORCE SYNC</button>
+                  <button onClick={handleSyncHealth} className="px-4 py-1.5 bg-white text-amber-600 rounded-full text-[9px] font-black uppercase tracking-tighter hover:bg-rose-50 transition-all">RE-LINK</button>
                </div>
             </m.div>
           )}
@@ -269,7 +270,7 @@ const App: React.FC = () => {
               {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
               {activeView === 'diary' && <DiaryView lang={lang} />}
               {activeView === 'profile' && <UserProfile lang={lang} />}
-              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => authApi.signOut()} onNavigate={(v:any) => window.location.hash = `#/${v}`} threeDEnabled={true} onThreeDChange={() => {}} />}
+              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => authApi.signOut()} onNavigate={(v:any) => window.location.hash = `#/${v}`} />}
             </m.div>
           </AnimatePresence>
         </main>

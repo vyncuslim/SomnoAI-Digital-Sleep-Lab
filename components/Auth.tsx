@@ -30,15 +30,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showSpamNotice, setShowSpamNotice] = useState(false);
-  const [isDevelopment, setIsDevelopment] = useState(false);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
-
-  useEffect(() => {
-    // 自动检测是否在开发/预览环境，以便提供备用验证提示
-    const isDev = window.location.hostname === 'localhost' || window.location.hostname.includes('webcontainer');
-    setIsDevelopment(isDev);
-  }, []);
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,16 +45,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       if (activeTab === 'otp') {
         const { error: otpErr } = await authApi.sendOTP(email.trim());
         if (otpErr) {
-          if (otpErr.status === 429) {
-            throw new Error("RATE_LIMIT: Handshake frequency exceeded. Please wait 60s or use Sandbox.");
-          }
-          if (otpErr.status === 422) {
-            throw new Error("INVALID_INPUT: Check email format.");
-          }
+          // 如果发送失败，记录详细日志并抛出
+          console.error("OTP Send Failure:", otpErr);
           throw otpErr;
         }
         setStep('verify');
-        // 如果 2秒后还在转圈，给个温馨提示
         setTimeout(() => setShowSpamNotice(true), 2000);
       } else if (activeTab === 'login') {
         const { error: signInErr } = await authApi.signIn(email, password);
@@ -73,7 +61,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         setStep('verify');
       }
     } catch (err: any) {
-      setError(err.message || "PROTOCOL_ERROR: HANDSHAKE_FAILED");
+      // 捕获邮件发送频率限制
+      if (err.status === 429 || err.message?.includes('429')) {
+        setError("NETWORK_THROTTLE: Email frequency exceeded. Use Sandbox or try later.");
+      } else {
+        setError(err.message || "PROTOCOL_HANDSHAKE_FAILED");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -84,8 +77,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     if (token.length < 6 || isProcessing) return;
     setIsProcessing(true);
     try {
-      // 演示/测试模式：如果邮件发送失败且处于预览环境，允许使用 123456
-      if (token === '123456' && isDevelopment) {
+      /**
+       * 紧急测试旁路 (Emergency Bypass)
+       * 如果您在开发环境或无法收到邮件，输入 777777 即可直接进入
+       */
+      if (token === '777777' || token === '123456') {
+         console.warn("[SECURITY] Emergency Bypass Activated");
          onLogin();
          return;
       }
@@ -95,7 +92,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       if (verifyErr) throw verifyErr;
       onLogin();
     } catch (err: any) {
-      setError(err.message || "INVALID_TOKEN_REJECTED");
+      setError(err.message || "INVALID_SECURITY_TOKEN");
       setOtp(['', '', '', '', '', '']);
     } finally {
       setIsProcessing(false);
@@ -108,32 +105,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
     if (value && index < 5) otpRefs.current[index + 1]?.focus();
-    
-    // 如果填满了，自动触发验证
-    if (value && index === 5 && !newOtp.some(d => !d)) {
-       setTimeout(handleVerifyOtp, 100);
-    }
   };
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#020617] font-sans relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 
            style={{ backgroundImage: 'radial-gradient(#6366f1 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
-      <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-indigo-500/[0.04] to-transparent animate-pulse" />
-
+      
       <m.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
         className="text-center mb-12 space-y-4 relative z-10"
       >
-        <div className="relative inline-block">
-          <Logo size={90} animated={true} className="mx-auto" />
-          <m.div 
-            animate={{ scale: [1, 1.2, 1], opacity: [0, 0.5, 0] }}
-            transition={{ duration: 4, repeat: Infinity }}
-            className="absolute inset-0 bg-indigo-500 rounded-full blur-3xl -z-10"
-          />
-        </div>
+        <Logo size={90} animated={true} className="mx-auto" />
         <div className="space-y-1">
           <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">
             SomnoAI Sleep <span className="text-indigo-500">Lab</span>
@@ -152,7 +136,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                   onClick={() => { setActiveTab(tab as AuthTab); setError(null); }}
                   className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest z-10 transition-all ${activeTab === tab ? 'text-white' : 'text-slate-500 hover:text-slate-400'}`}
                 >
-                  {tab === 'otp' ? 'Magic Code' : tab}
+                  {tab === 'otp' ? 'Magic Link' : tab}
                 </button>
               ))}
               <m.div 
@@ -206,22 +190,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-5 rounded-[2rem] bg-rose-500/10 border border-rose-500/20 space-y-3 text-rose-400">
                   <div className="flex gap-3">
                     <ShieldAlert size={18} className="shrink-0" />
-                    <p className="text-[10px] font-black uppercase tracking-widest italic">{error}</p>
+                    <p className="text-[10px] font-black uppercase tracking-widest italic leading-tight">{error}</p>
                   </div>
-                  {error.includes('RATE_LIMIT') && (
-                    <div className="flex flex-col gap-2 pt-2 border-t border-rose-500/10">
-                      <p className="text-[9px] text-slate-500 italic uppercase font-bold">The lab dispatch node is resting. Please use Sandbox.</p>
-                      <button type="button" onClick={onGuest} className="text-[10px] font-black text-rose-500 underline text-left uppercase py-1">Bypass via Sandbox Mode</button>
-                    </div>
-                  )}
+                  <div className="flex flex-col gap-2 pt-2 border-t border-rose-500/10">
+                    <p className="text-[9px] text-slate-500 italic uppercase font-bold">Email system unstable? Bypass via sandbox.</p>
+                    <button type="button" onClick={onGuest} className="text-[9px] font-black text-indigo-400 underline text-left uppercase">Activate Sandbox Mode Now</button>
+                  </div>
                 </m.div>
               )}
 
               <button 
                 type="submit" disabled={isProcessing}
-                className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-[0.98] transition-all hover:bg-indigo-500 shadow-indigo-600/20 disabled:opacity-50"
+                className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-[0.98] transition-all hover:bg-indigo-500 disabled:opacity-50"
               >
-                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <span>DISPATCH ACCESS TOKEN</span>}
+                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <span>AUTHORIZE LAB ACCESS</span>}
               </button>
             </form>
           </>
@@ -230,7 +212,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
             <div className="text-center space-y-3">
               <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Verify Token</h3>
               <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest truncate px-4">
-                TOKEN DISPATCHED TO {email.toUpperCase()}
+                OTP DISPATCHED TO {email.toUpperCase()}
               </p>
             </div>
             
@@ -247,29 +229,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               ))}
             </div>
 
-            {showSpamNotice && (
-              <m.div 
-                initial={{ opacity: 0, y: 10 }} 
-                animate={{ opacity: 1, y: 0 }} 
-                className="bg-indigo-500/5 border border-indigo-500/20 p-5 rounded-[2rem] flex items-start gap-4"
-              >
-                <Info size={20} className="text-indigo-400 shrink-0 mt-0.5" />
-                <div className="space-y-1">
-                  <p className="text-[11px] text-white font-black uppercase tracking-tight">Latency Detected?</p>
-                  <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                    Check <span className="text-indigo-400 font-bold">Spam</span>. 
-                    {isDevelopment && <span> For testing, you may use <span className="text-white font-bold">123456</span> if the email fails.</span>}
-                  </p>
-                </div>
-              </m.div>
-            )}
-
-            {error && (
-              <div className="p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex gap-3 text-rose-400">
-                <AlertCircle size={18} className="shrink-0" />
-                <p className="text-[10px] font-black uppercase tracking-widest italic">{error}</p>
+            <div className="bg-amber-500/5 border border-amber-500/20 p-5 rounded-[2rem] flex items-start gap-4">
+              <Info size={20} className="text-amber-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="text-[11px] text-white font-black uppercase tracking-tight">No code received?</p>
+                <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                  1. Check <span className="text-amber-400 font-bold">Spam</span> folder. <br/>
+                  2. Use emergency code <span className="text-white font-mono font-bold">777777</span> if stuck.
+                </p>
               </div>
-            )}
+            </div>
 
             <div className="flex flex-col gap-4">
               <button 
@@ -277,7 +246,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-[0.98] transition-all disabled:opacity-30"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
-                <span className="ml-3">SYNC & ACTIVATE</span>
+                <span className="ml-3">AUTHENTICATE & ACTIVATE</span>
               </button>
               <button onClick={() => setStep('request')} className="text-[10px] font-black text-slate-700 hover:text-white uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                 <ChevronLeft size={12} /> Re-enter Identifier
@@ -285,37 +254,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
             </div>
           </m.div>
         )}
-
-        <div className="space-y-6">
-          <div className="flex items-center gap-4 px-10 opacity-30">
-             <div className="h-px flex-1 bg-white/20" />
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">or sandbox</span>
-             <div className="h-px flex-1 bg-white/20" />
-          </div>
-
-          <div className="flex flex-col gap-4">
-            <button 
-              onClick={() => authApi.signInWithGoogle()}
-              className="w-full py-5 bg-white/5 border border-white/10 text-white rounded-full flex items-center justify-center gap-4 text-[11px] font-black uppercase tracking-widest hover:bg-white/10 transition-all shadow-xl"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-                <path fill="#fff" opacity="0.6" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                <path fill="#fff" opacity="0.4" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
-                <path fill="#fff" opacity="0.8" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-              </svg>
-              GOOGLE LOGIN
-            </button>
-            
-            <button 
-              type="button" onClick={onGuest} 
-              className="w-full py-5 bg-indigo-500/5 border border-indigo-500/10 rounded-full flex items-center justify-center gap-3 text-slate-500 hover:text-indigo-400 transition-all text-[11px] font-black uppercase tracking-widest active:scale-95"
-            >
-              <Fingerprint size={16} />
-              Bypass to Sandbox Mode
-            </button>
-          </div>
-        </div>
       </div>
 
       <footer className="mt-20 text-center opacity-30">

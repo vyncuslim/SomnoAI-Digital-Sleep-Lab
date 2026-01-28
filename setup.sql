@@ -1,25 +1,14 @@
 
 -- ==========================================
--- SOMNOAI SYSTEM RECOVERY & CALIBRATION
+-- SOMNOAI SYSTEM RECOVERY & CALIBRATION (V3)
 -- ==========================================
 
--- 1. STALE TRIGGER CLEANUP
+-- 1. 彻底清除旧逻辑
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 DROP FUNCTION IF EXISTS public.handle_new_user() CASCADE;
-DROP FUNCTION IF EXISTS public.is_admin() CASCADE;
 
--- 2. RESOLVE 42P16 VIEW/TABLE CONFLICTS
-DO $$ 
-BEGIN
-    IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'profiles') THEN
-        DROP TABLE public.profiles CASCADE;
-    ELSIF EXISTS (SELECT 1 FROM information_schema.views WHERE table_schema = 'public' AND table_name = 'profiles') THEN
-        DROP VIEW public.profiles CASCADE;
-    END IF;
-END $$;
-
--- 3. CORE IDENTITY REGISTRY
-CREATE TABLE public.profiles (
+-- 2. 表结构校验与对齐
+CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email text,
     role text NOT NULL DEFAULT 'user',
@@ -32,82 +21,38 @@ CREATE TABLE public.profiles (
     created_at timestamptz NOT NULL DEFAULT now()
 );
 
--- 4. BIOMETRIC DATA STORE
+-- 确保 user_data 的字段类型为 numeric/float 以匹配前端的 parseFloat
 CREATE TABLE IF NOT EXISTS public.user_data (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-    age integer,
-    weight float,
-    height float,
-    gender text,
+    age integer DEFAULT 0,
+    weight numeric DEFAULT 0.0,
+    height numeric DEFAULT 0.0,
+    gender text DEFAULT 'prefer-not-to-say',
     created_at timestamptz DEFAULT now()
 );
 
--- 5. TELEMETRY INGRESS
-CREATE TABLE IF NOT EXISTS public.health_raw_data (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-    data_type text NOT NULL,
-    recorded_at timestamptz DEFAULT now(),
-    source text,
-    value jsonb,
-    created_at timestamptz DEFAULT now()
-);
-
--- 6. DIARY REGISTRY (NEW)
-CREATE TABLE IF NOT EXISTS public.diary_entries (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
-    content text NOT NULL,
-    mood text,
-    created_at timestamptz DEFAULT now()
-);
-
--- 7. FEEDBACK REGISTRY
-CREATE TABLE IF NOT EXISTS public.feedback (
-    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-    email text,
-    feedback_type text,
-    content text,
-    created_at timestamptz DEFAULT now()
-);
-
--- 8. RECURSION-SAFE ADMIN CHECK
-CREATE OR REPLACE FUNCTION public.is_admin() 
-RETURNS boolean AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM public.profiles 
-    WHERE id = auth.uid() AND role = 'admin'
-  );
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 9. ENRICHED AUTH TRIGGER
+-- 3. 增强版自动注册触发器
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-  INSERT INTO public.profiles (
-    id, 
-    email, 
-    role, 
-    full_name, 
-    avatar_url, 
-    provider
-  )
+  -- 创建 Profile
+  INSERT INTO public.profiles (id, email, role, full_name, provider)
   VALUES (
     new.id, 
     new.email, 
     'user', 
-    COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', ''),
-    COALESCE(new.raw_user_meta_data->>'avatar_url', new.raw_user_meta_data->>'picture', ''),
+    COALESCE(new.raw_user_meta_data->>'full_name', ''),
     new.app_metadata->>'provider'
   )
   ON CONFLICT (id) DO UPDATE SET 
     email = EXCLUDED.email,
-    full_name = EXCLUDED.full_name,
-    avatar_url = EXCLUDED.avatar_url,
     provider = EXCLUDED.provider;
+
+  -- 创建生物数据基础行
+  INSERT INTO public.user_data (id)
+  VALUES (new.id)
+  ON CONFLICT (id) DO NOTHING;
+
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -116,22 +61,30 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 10. ROW LEVEL SECURITY (RLS) POLICIES
+-- 4. 激进的 RLS 策略 (解决 403)
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.health_raw_data ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.diary_entries ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
 
--- Diary Policies
-CREATE POLICY "Diary: user access" ON public.diary_entries 
-FOR ALL USING (auth.uid() = user_id);
+-- Profiles: 允许认证用户对自己记录的完全控制
+DROP POLICY IF EXISTS "profiles_self_all" ON public.profiles;
+CREATE POLICY "profiles_self_all" ON public.profiles 
+FOR ALL USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
 
--- 11. GLOBAL PERMISSIONS
+-- User Data: 允许认证用户对自己记录的完全控制
+DROP POLICY IF EXISTS "user_data_self_all" ON public.user_data;
+CREATE POLICY "user_data_self_all" ON public.user_data 
+FOR ALL USING (auth.uid() = id) WITH CHECK (auth.uid() = id);
+
+-- 5. 权限分配 (关键：确保 PostgREST 有权访问)
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
-GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
+GRANT ALL ON public.profiles TO anon, authenticated, service_role;
+GRANT ALL ON public.user_data TO anon, authenticated, service_role;
 
--- 12. REFRESH
-NOTIFY pgrst, 'reload schema';
+-- 6. 修复已有账户的缺失记录
+INSERT INTO public.profiles (id, email)
+SELECT id, email FROM auth.users
+ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO public.user_data (id)
+SELECT id FROM auth.users
+ON CONFLICT (id) DO NOTHING;

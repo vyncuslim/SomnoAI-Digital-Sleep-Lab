@@ -8,33 +8,38 @@ const BRIGHT_RESPONDER_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  if (err.status === 400 || err.status === 500 || ['42P01', '42703', '42P16', 'PGRST204', 'PGRST116'].includes(err.code)) {
+  // 403 通常是 RLS 策略拒绝，400 是字段格式不对（例如 weight 是字符串却传给了 numeric 字段）
+  if (err.status === 403 || err.code === '42P01') {
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
   return err;
 };
 
 export const healthDataApi = {
-  // 检查远程 API 是否存有用户数据
   checkRemoteIngressStatus: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return false;
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
+
       const response = await fetch(BRIGHT_RESPONDER_URL, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'apikey': (supabase as any).supabaseKey
         },
-        body: JSON.stringify({ action: 'check_data_integrity' })
+        body: JSON.stringify({ action: 'check_integrity' }),
+        signal: controller.signal
       });
 
+      clearTimeout(timeoutId);
       if (!response.ok) return false;
       const result = await response.json();
-      return !!result.has_data;
+      return result.has_data === true;
     } catch (e) {
-      console.warn("[Remote API Check Failed]:", e);
       return false;
     }
   },
@@ -56,7 +61,6 @@ export const healthDataApi = {
       await supabase.from('profiles').update({ has_app_data: true }).eq('id', user.id);
       return { success: true };
     } catch (err: any) {
-      if (err.message === "DB_CALIBRATION_REQUIRED") throw err;
       return { success: false, error: err.message };
     }
   },
@@ -70,9 +74,102 @@ export const healthDataApi = {
       if (error) throw handleDatabaseError(error);
       return (data || []).map(d => ({ id: d.id, recorded_at: d.recorded_at, ...d.value }));
     } catch (err: any) { 
-      if (err.message === "DB_CALIBRATION_REQUIRED") throw err;
       return []; 
     }
+  }
+};
+
+export const userDataApi = {
+  getProfileStatus: async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return null;
+      
+      const { data: profile, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', user.id)
+        .maybeSingle();
+      
+      if (error) {
+        // 如果遇到 403 权限错误，我们假设数据库尚未完全校准，允许显示校准界面
+        if (error.status === 403) throw new Error("DB_CALIBRATION_REQUIRED");
+        throw handleDatabaseError(error);
+      }
+      
+      if (!profile) {
+        // 尝试即时修复（如果触发器未运行）
+        const { data: newProfile, error: fixError } = await supabase
+          .from('profiles')
+          .insert({ id: user.id, email: user.email, role: 'user' })
+          .select()
+          .single();
+        if (fixError) {
+           console.warn("Auto-profile fix failed, likely RLS blockade.");
+           return { is_initialized: false, has_app_data: false };
+        }
+        return newProfile;
+      }
+      
+      if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
+      return profile;
+    } catch (e: any) { 
+      if (e.message === "DB_CALIBRATION_REQUIRED") throw e;
+      console.error("Critical: Profile Resolution Failed", e);
+      // 回退方案：假设用户未初始化，触发注册流程
+      return { is_initialized: false, has_app_data: false };
+    }
+  },
+  completeSetup: async (fullName: string, metrics: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('UNAUTHORIZED');
+    
+    // 关键修正：确保所有数值字段都是 Number 类型，防止 400 Bad Request
+    const payload = {
+      id: user.id,
+      age: Number(metrics.age) || 0,
+      weight: Number(metrics.weight) || 0.0,
+      height: Number(metrics.height) || 0.0,
+      gender: metrics.gender || 'prefer-not-to-say'
+    };
+
+    // 1. 提交生物数据 (Upsert)
+    const { error: dataError } = await supabase.from('user_data').upsert(payload);
+    if (dataError) throw handleDatabaseError(dataError);
+
+    // 2. 更新个人状态 (Update)
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ 
+        full_name: fullName.trim(), 
+        is_initialized: true 
+      })
+      .eq('id', user.id);
+    
+    if (profileError) throw handleDatabaseError(profileError);
+
+    return { success: true };
+  },
+  getUserData: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data } = await supabase.from('user_data').select('*').eq('id', user.id).maybeSingle();
+    return data;
+  },
+  updateUserData: async (metrics: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return { error: new Error('UNAUTHORIZED') };
+    
+    const payload = {
+      id: user.id,
+      age: Number(metrics.age) || 0,
+      weight: Number(metrics.weight) || 0.0,
+      height: Number(metrics.height) || 0.0,
+      gender: metrics.gender
+    };
+
+    const { error } = await supabase.from('user_data').upsert(payload);
+    return { error };
   }
 };
 
@@ -106,46 +203,6 @@ export const diaryApi = {
   }
 };
 
-export const userDataApi = {
-  getProfileStatus: async () => {
-    try {
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) return null;
-      const { data: profile, error } = await supabase
-        .from('profiles')
-        .select('is_initialized, has_app_data, full_name, is_blocked')
-        .eq('id', user.id)
-        .maybeSingle();
-      if (error) throw handleDatabaseError(error);
-      if (!profile) {
-        await supabase.from('profiles').insert({ id: user.id, email: user.email, role: 'user' });
-        return { is_initialized: false, has_app_data: false, is_blocked: false };
-      }
-      if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
-      return profile;
-    } catch (e: any) { throw e; }
-  },
-  completeSetup: async (fullName: string, metrics: any) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('UNAUTHORIZED');
-    await supabase.from('user_data').upsert({ id: user.id, ...metrics });
-    await supabase.from('profiles').update({ full_name: fullName.trim(), is_initialized: true }).eq('id', user.id);
-    return { success: true };
-  },
-  getUserData: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase.from('user_data').select('*').eq('id', user.id).maybeSingle();
-    return data;
-  },
-  updateUserData: async (metrics: any) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return { error: new Error('UNAUTHORIZED') };
-    const { error } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
-    return { error };
-  }
-};
-
 export const profileApi = {
   getMyProfile: async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -164,13 +221,7 @@ export const profileApi = {
 export const authApi = {
   signUp: (email: string, password: string, metadata?: any) => supabase.auth.signUp({ email, password, options: { data: metadata || {} } }),
   signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
-  // 修改：移除 emailRedirectTo，强制触发 6 位验证码逻辑
-  sendOTP: (email: string) => supabase.auth.signInWithOtp({ 
-    email, 
-    options: { 
-      shouldCreateUser: true 
-    } 
-  }),
+  sendOTP: (email: string) => supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin, shouldCreateUser: true } }),
   verifyOTP: (email: string, token: string, type: any = 'email') => supabase.auth.verifyOtp({ email, token, type }),
   signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } }),
   signOut: () => supabase.auth.signOut()
@@ -184,10 +235,10 @@ export const adminApi = {
   getUsers: () => supabase.from('profiles').select('*').order('created_at', { ascending: false }),
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id).select('email').single(),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id).select('email').single(),
-  getSleepRecords: () => supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100),
   getFeedback: () => supabase.from('feedback').select('*').order('created_at', { ascending: false }),
   getAuditLogs: () => supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100),
-  getSecurityEvents: () => supabase.from('security_events').select('*').order('created_at', { ascending: false })
+  getSecurityEvents: () => supabase.from('security_events').select('*').order('created_at', { ascending: false }),
+  getSleepRecords: () => supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100)
 };
 
 export const feedbackApi = {
