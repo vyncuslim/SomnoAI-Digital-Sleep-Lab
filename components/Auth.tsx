@@ -62,13 +62,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       } else if (activeTab === 'join') {
         const { error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() });
         if (signUpErr) throw signUpErr;
-        setError("Success! Checking neural link...");
-        setTimeout(() => setActiveTab('login'), 1500);
+        
+        // [关键更改]: 注册成功后自动跳转至 OTP 验证
+        setError("Neural registry created. Redirecting to signature verify...");
+        setTimeout(() => {
+          setError(null);
+          setStep('verify');
+          setActiveTab('otp');
+          // 短暂延迟后聚焦
+          setTimeout(() => {
+            otpRefs.current[0]?.focus();
+          }, 500);
+        }, 1500);
       }
     } catch (err: any) {
       setError(err.message || "PROTOCOL_HANDSHAKE_FAILED");
     } finally {
-      setIsProcessing(false);
+      if (activeTab !== 'join') { // join 状态下延迟关闭 loading
+        setIsProcessing(false);
+      }
     }
   };
 
@@ -77,6 +89,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     if (token.length < 6 || isProcessing) return;
     setIsProcessing(true);
     try {
+      // 专用沙盒密钥
       if (token === '777777' || token === '123456') {
          onLogin();
          return;
@@ -119,7 +132,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
             <div className="flex items-center gap-4 py-2">
                <div className="h-px flex-1 bg-white/5" />
-               <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">or direct link</span>
+               <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">or lab identifier</span>
                <div className="h-px flex-1 bg-white/5" />
             </div>
 
@@ -164,8 +177,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               </div>
 
               {error && (
-                <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-4 rounded-3xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase italic flex gap-3">
-                  <ShieldAlert size={16} className="shrink-0" /> {error}
+                <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className={`p-4 rounded-3xl border text-[10px] font-black uppercase italic flex gap-3 ${error.includes('Success') || error.includes('created') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
+                  {error.includes('created') ? <ShieldCheck size={16} className="shrink-0" /> : <ShieldAlert size={16} className="shrink-0" />} {error}
                 </m.div>
               )}
 
@@ -185,7 +198,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
           <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-10" >
             <div className="text-center space-y-3">
               <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Verify Identity</h3>
-              <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest truncate">OTP SENT TO {email.toUpperCase()}</p>
+              <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest truncate px-4">OTP SENT TO {email.toUpperCase()}</p>
             </div>
             <div className="flex justify-between gap-3 px-2">
               {otp.map((digit, idx) => (
@@ -195,15 +208,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                   newOtp[idx] = e.target.value.slice(-1);
                   setOtp(newOtp);
                   if (e.target.value && idx < 5) otpRefs.current[idx + 1]?.focus();
-                }} onKeyDown={(e) => { if (e.key === 'Backspace' && !otp[idx] && idx > 0) otpRefs.current[idx - 1]?.focus(); }} className="w-12 h-16 bg-[#050a1f] border border-white/10 rounded-2xl text-2xl text-center text-white font-mono font-black focus:border-indigo-500 outline-none" />
+                }} onKeyDown={(e) => { if (e.key === 'Backspace' && !otp[idx] && idx > 0) otpRefs.current[idx - 1]?.focus(); }} className="w-12 h-16 bg-[#050a1f] border border-white/10 rounded-2xl text-2xl text-center text-white font-mono font-black focus:border-indigo-500 outline-none transition-all" />
               ))}
             </div>
+            
+            {error && (
+              <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="p-4 rounded-3xl bg-rose-500/10 border border-rose-500/20 text-rose-400 text-[10px] font-black uppercase italic flex gap-3">
+                <ShieldAlert size={16} className="shrink-0" /> {error}
+              </m.div>
+            )}
+
             <div className="space-y-4">
               <button onClick={handleVerifyOtp} disabled={isProcessing || otp.some(d => !d)} className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-[0.98] transition-all">
                 {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
                 <span className="ml-3">AUTHORIZE ACCESS</span>
               </button>
-              <button onClick={() => setStep('request')} className="w-full text-[10px] font-black text-slate-700 hover:text-white uppercase tracking-widest flex items-center justify-center gap-2">
+              <button onClick={() => { setStep('request'); setError(null); }} className="w-full text-[10px] font-black text-slate-700 hover:text-white uppercase tracking-widest flex items-center justify-center gap-2">
                 <ChevronLeft size={12} /> Back to Identifier
               </button>
             </div>

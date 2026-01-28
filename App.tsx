@@ -82,6 +82,7 @@ const App: React.FC = () => {
   const [isBlocked, setIsBlocked] = useState(false);
   const [isSimulated, setIsSimulated] = useState(false);
   const [forceSetupPassed, setForceSetupPassed] = useState(false);
+  const [dbError, setDbError] = useState(false);
 
   const fetchHistory = useCallback(async (sim?: boolean) => {
     if (sim || isSimulated) { setHistory([MOCK_RECORD]); setCurrentRecord(MOCK_RECORD); setHasAppData(true); return; }
@@ -111,6 +112,7 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       if (err.message === "BLOCK_ACTIVE") setIsBlocked(true);
+      else if (err.message === "DB_CALIBRATION_REQUIRED") setDbError(true);
       else setSetupRequired(true);
     }
   }, [fetchHistory, isSimulated, forceSetupPassed, history.length]);
@@ -178,6 +180,16 @@ const App: React.FC = () => {
   const startSandbox = () => { setIsSimulated(true); setHasAppData(true); setSetupRequired(false); setForceSetupPassed(true); setAuthState('authenticated'); };
 
   if (authState === 'loading') return <DecisionLoading onBypass={() => setAuthState('unauthenticated')} />;
+  
+  if (dbError) return (
+    <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6 z-[9999]">
+      <AlertTriangle size={80} className="text-amber-500 mb-4 animate-pulse" />
+      <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Database Loop Detected</h2>
+      <p className="text-slate-500 text-sm max-w-sm italic">Policy recursion is restricting node access. Administrative intervention is required.</p>
+      <button onClick={() => window.location.hash = '#/admin'} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95">PROCEED TO REPAIR TERMINAL</button>
+    </div>
+  );
+
   if (isBlocked) return (
     <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6 z-[9999]">
       <ShieldOff size={80} className="text-rose-600 mb-4 animate-pulse" /><h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Access Revoked</h2>

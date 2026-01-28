@@ -6,9 +6,9 @@ export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  // 42P17: infinite recursion
+  // 42P17: infinite recursion - 递归错误
   // 42P01: undefined table (schema not ready)
-  if (err.status === 403 || err.status === 401 || err.code === '42P01' || err.code === '42P17') {
+  if (err.status === 403 || err.status === 401 || err.code === '42P01' || err.code === '42P17' || err.message?.includes('infinite recursion')) {
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
   return err;
@@ -61,12 +61,18 @@ export const healthDataApi = {
 export const userDataApi = {
   getProfileStatus: async () => {
     try {
+      // 优先获取用户，以便从 app_metadata 判断基础状态
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
+
+      // 如果出现 42P17 递归，这里的 select 会崩溃。
+      // 我们将其包装在 handleDatabaseError 中以触发前端的“修复终端”UI
       const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
       if (error) throw handleDatabaseError(error);
+      
       if (!profile) return { is_initialized: false, has_app_data: false };
       if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
+      
       return profile;
     } catch (e: any) { throw e; }
   },
@@ -142,24 +148,49 @@ export const authApi = {
 };
 
 export const adminApi = {
+  /**
+   * 核心权限判定：不再使用 SELECT profiles，而是直接读取 JWT 中的 app_metadata
+   */
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     try {
-      // 1. 尝试通过会话元数据快速判断（无数据库开销，无 RLS 递归风险）
-      const { data: { session } } = await supabase.auth.getSession();
-      const metadata = session?.user?.app_metadata;
-      if (metadata?.is_admin_node === true) return true;
-
-      // 2. 如果元数据未同步，回退到数据库查询（受 RLS 保护）
-      const { data, error } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
-      if (error) throw handleDatabaseError(error);
+      // 获取当前用户及其元数据
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError) throw userError;
       
-      // 只要是 admin 或 owner，或者拥有超级主权标志，均可登录
+      const metadata = user?.app_metadata;
+      
+      // 1. 检查物理标记（V13 脚本注入）
+      if (metadata?.is_admin_node === true) return true;
+      
+      // 2. 备选检查
+      const role = metadata?.role;
+      if (role === 'admin' || role === 'owner' || metadata?.is_super_owner === true) return true;
+
+      // 3. 极度受限的最后尝试 (只有在 metadata 丢失且数据库未发生递归时才会执行)
+      // 在 V13 协议下，这部分应该被数据库政策 A 直接允许
+      const { data, error } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
+      if (error) {
+         // 如果数据库查询因为递归失败，我们仍然依赖 metadata
+         if (error.message?.includes('recursion')) return false;
+         throw handleDatabaseError(error);
+      }
+      
       return (data?.role === 'admin' || data?.role === 'owner' || data?.is_super_owner === true);
     } catch (e) {
       throw e;
     }
   },
   getAdminClearance: async (userId: string) => {
+    // 优先从内存/JWT 读取
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user?.id === userId && user.app_metadata) {
+      return { 
+        role: user.app_metadata.role || 'user', 
+        is_super_owner: user.app_metadata.is_super_owner || false 
+      };
+    }
+    
+    // 如果是查询其他用户，则走数据库 (受 RLS 政策 B 保护，V13 无递归)
     const { data } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
     return data || { role: 'user', is_super_owner: false };
   },
