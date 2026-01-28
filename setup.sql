@@ -1,33 +1,38 @@
 
 -- ==========================================
--- SOMNOAI SOVEREIGNTY SYSTEM (V11 - POLICY RESET)
+-- SOMNOAI SOVEREIGNTY SYSTEM (V12 - NUCLEAR RESET)
 -- ==========================================
 
--- 1. 清理所有已知的旧政策（防止递归残留）
-DROP POLICY IF EXISTS "allow_self_all_profiles" ON public.profiles;
-DROP POLICY IF EXISTS "admins_read_all_profiles" ON public.profiles;
-DROP POLICY IF EXISTS "allow_read_all" ON public.profiles;
-DROP POLICY IF EXISTS "profiles_admin_policy" ON public.profiles;
-DROP POLICY IF EXISTS "service_role_policy" ON public.profiles;
+-- 1. 动态清理：自动删除 profiles 表上的“所有”现有政策
+DO $$ 
+DECLARE 
+    pol RECORD;
+BEGIN 
+    FOR pol IN (SELECT policyname FROM pg_policies WHERE tablename = 'profiles' AND schemaname = 'public') 
+    LOOP
+        EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname);
+    END LOOP;
+END $$;
 
 -- 2. 核心：同步函数（SECURITY DEFINER 绕过 RLS）
 -- 将权限状态压入 auth.users 的 app_metadata 中，使 RLS 校验变为 0 次查询
 CREATE OR REPLACE FUNCTION public.sync_user_privileges()
 RETURNS trigger AS $$
 BEGIN
+  -- 更新 auth.users 表中的 app_metadata
+  -- 这样做可以让 RLS 政策直接从加密的 JWT 令牌中读取角色，而不需要查询数据库表
   UPDATE auth.users 
   SET raw_app_meta_data = 
-    raw_app_meta_data || 
+    COALESCE(raw_app_meta_data, '{}'::jsonb) || 
     jsonb_build_object(
       'role', new.role, 
       'is_super_owner', new.is_super_owner,
-      -- 准入逻辑：admin/owner 或 super_owner 均视为管理员节点
       'is_admin_node', (new.role IN ('admin', 'owner') OR new.is_super_owner = true)
     )
   WHERE id = new.id;
   RETURN new;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- 3. 重新绑定触发器
 DROP TRIGGER IF EXISTS on_profile_privilege_change ON public.profiles;
@@ -38,15 +43,15 @@ CREATE TRIGGER on_profile_privilege_change
 -- 4. 部署全新的 RLS 政策（基于 JWT 声明，物理隔离递归）
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 
--- 政策 A: 允许用户操作自己的档案
-CREATE POLICY "v11_self_access" ON public.profiles 
+-- 政策 A: 允许用户操作自己的档案 (UID 直接匹配)
+CREATE POLICY "v12_self_access" ON public.profiles 
 FOR ALL USING (auth.uid() = id);
 
--- 政策 B: 允许管理员读取所有档案 (依赖 JWT，不再查询 profiles 表)
-CREATE POLICY "v11_admin_read_all" ON public.profiles 
+-- 政策 B: 允许管理员读取所有档案 (依赖 JWT app_metadata，零查询，绝无递归)
+CREATE POLICY "v12_admin_read_all" ON public.profiles 
 FOR SELECT USING (
   (auth.jwt() -> 'app_metadata' ->> 'is_admin_node')::boolean = true
 );
 
--- 5. 初始权限校准（为存量账户刷入权限标记）
--- 注意：执行此脚本后，管理员需重新登录以刷新 JWT 令牌
+-- 5. 对现有管理员进行一次性手动权限刷入（替换下方 EMAIL）
+-- UPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '您的邮箱';

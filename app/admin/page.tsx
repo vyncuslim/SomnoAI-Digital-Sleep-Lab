@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { Loader2, ShieldAlert, Terminal, Copy, CheckCircle, Crown, ChevronRight, AlertTriangle, LogOut } from 'lucide-react';
+import { Loader2, ShieldAlert, Terminal, Copy, CheckCircle, Crown, ChevronRight, AlertTriangle, LogOut, RefreshCw } from 'lucide-react';
 import { supabase, adminApi } from '../../services/supabaseService.ts';
 import { AdminView } from '../../components/AdminView.tsx';
 import { motion } from 'framer-motion';
@@ -45,7 +45,7 @@ export default function AdminDashboard() {
         setIsAuthorized(true);
       } catch (e: any) {
         if (isMounted) {
-          // 捕获 500 递归错误或 403 拒绝
+          // 捕获 42P17 (递归错误) 或 403 拒绝
           if (e.message === "DB_CALIBRATION_REQUIRED") {
             setError("DB_RECURSION_DETECTED");
           } else {
@@ -61,8 +61,8 @@ export default function AdminDashboard() {
     return () => { isMounted = false; };
   }, []);
 
-  // V11 强化版修复脚本：清理所有旧政策名称，重设触发器，并提升当前用户为 owner
-  const promoteSql = email ? `-- 1. 清理所有旧版 RLS 政策 (预防递归残留)\nDROP POLICY IF EXISTS "allow_self_all_profiles" ON public.profiles;\nDROP POLICY IF EXISTS "admins_read_all_profiles" ON public.profiles;\nDROP POLICY IF EXISTS "allow_read_all" ON public.profiles;\nDROP POLICY IF EXISTS "profiles_admin_policy" ON public.profiles;\n\n-- 2. 部署权限同步引擎 (JWT 载荷化)\nCREATE OR REPLACE FUNCTION public.sync_user_privileges() RETURNS trigger AS $$\nBEGIN UPDATE auth.users SET raw_app_meta_data = raw_app_meta_data || jsonb_build_object('role', new.role, 'is_super_owner', new.is_super_owner, 'is_admin_node', (new.role IN ('admin', 'owner') OR new.is_super_owner = true)) WHERE id = new.id; RETURN new; END; $$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- 3. 部署零递归 RLS 政策\nCREATE POLICY "v11_admin_read_all" ON public.profiles FOR SELECT USING ((auth.jwt() -> 'app_metadata' ->> 'is_admin_node')::boolean = true);\n\n-- 4. 提升当前用户权限并刷入标记 (角色设置为 owner 即可登录)\nUPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '${email}';` : "";
+  // V12 核级修复脚本：自动删除所有政策，重建零递归政策，并提升当前账户
+  const promoteSql = email ? `-- 1. 强制清理 profiles 表上的所有残留政策 (解决 42P17 递归)\nDO $$ DECLARE pol RECORD; BEGIN FOR pol IN (SELECT policyname FROM pg_policies WHERE tablename = 'profiles') LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname); END LOOP; END $$;\n\n-- 2. 部署权限同步引擎 (JWT 载荷化)\nCREATE OR REPLACE FUNCTION public.sync_user_privileges() RETURNS trigger AS $$\nBEGIN UPDATE auth.users SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || jsonb_build_object('role', new.role, 'is_super_owner', new.is_super_owner, 'is_admin_node', (new.role IN ('admin', 'owner') OR new.is_super_owner = true)) WHERE id = new.id; RETURN new; END; $$ LANGUAGE plpgsql SECURITY DEFINER;\n\n-- 3. 部署零递归安全政策 (基于 JWT 令牌检查)\nCREATE POLICY "v12_self_access" ON public.profiles FOR ALL USING (auth.uid() = id);\nCREATE POLICY "v12_admin_read_all" ON public.profiles FOR SELECT USING ((auth.jwt() -> 'app_metadata' ->> 'is_admin_node')::boolean = true);\n\n-- 4. 提升您的账户为 Owner 并强制触发同步\nUPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '${email}';` : "";
 
   const handleCopy = () => {
     if (!promoteSql) return;
@@ -73,6 +73,7 @@ export default function AdminDashboard() {
 
   const handleLogoutAndRetry = async () => {
     await supabase.auth.signOut();
+    localStorage.clear(); // 强制清除可能的损坏会话缓存
     window.location.hash = '#/admin/login';
   };
 
@@ -96,10 +97,10 @@ export default function AdminDashboard() {
         
         <div className="space-y-4">
           <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">
-            {isRecursion ? "Neural Grid Recursion" : "Access Denied"}
+            {isRecursion ? "Policy Recursion Error" : "Access Denied"}
           </h2>
           <p className="text-slate-500 text-[11px] max-w-sm mx-auto leading-relaxed italic uppercase font-black tracking-widest">
-            {isRecursion ? "A circular policy loop was detected. The system has automatically restricted access to prevent database overload." : "Standard node detected. Administrative terminal requires 'Owner' level clearance."}
+            {isRecursion ? "Internal loop detected (Error 42P17). Your database policies are querying themselves. Execution stopped." : "Standard node detected. Administrative terminal requires 'Owner' level clearance."}
           </p>
         </div>
 
@@ -111,15 +112,15 @@ export default function AdminDashboard() {
            <div className={`flex items-center justify-between ${isRecursion ? 'text-amber-400' : 'text-rose-400'}`}>
              <div className="flex items-center gap-3">
                 <Terminal size={20} />
-                <span className="text-[10px] font-black uppercase tracking-widest italic">V11 SHIELD_SYNC Protocol</span>
+                <span className="text-[10px] font-black uppercase tracking-widest italic">V12 NUCLEAR_PATCH Protocol</span>
              </div>
              <Crown size={16} className="text-amber-500" />
            </div>
            
            <p className="text-[11px] text-slate-400 text-left italic leading-relaxed">
              {isRecursion 
-               ? "Recursion detected in RLS policies. Execute this V11 Emergency Patch in your Supabase SQL Editor to purge circular references and elevate your role:"
-               : "Authorization failed. To initialize as the Lab Owner, execute this command in your Supabase SQL Editor:"}
+               ? "The circular dependency must be broken. Execute this V12 script in your Supabase SQL Editor. It will wipe ALL policies on the profiles table and replace them with a recursive-free JWT engine:"
+               : "Authorization failed. To initialize as the Lab Owner and fix policy issues, execute this command in your Supabase SQL Editor:"}
            </p>
 
            <div className="bg-black/60 p-6 rounded-2xl border border-white/5 relative group">
@@ -134,17 +135,22 @@ export default function AdminDashboard() {
               </button>
            </div>
 
-           <div className="flex items-center gap-3 p-4 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
-              <AlertTriangle size={16} className="text-indigo-400 shrink-0" />
-              <p className="text-[9px] text-indigo-300 font-bold uppercase tracking-widest text-left italic">
-                CRITICAL: YOU MUST RE-LOGIN AFTER APPLYING THIS PATCH TO UPDATE YOUR NEURAL TOKEN.
-              </p>
+           <div className="flex items-center gap-3 p-5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
+              <LogOut size={20} className="text-indigo-400 shrink-0" />
+              <div className="text-left space-y-1">
+                 <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest italic">
+                   CRITICAL STEP
+                 </p>
+                 <p className="text-[10px] text-slate-400 leading-tight">
+                   After running the script, you <span className="text-white font-bold">MUST LOG OUT AND LOG BACK IN</span> to refresh your session metadata.
+                 </p>
+              </div>
            </div>
         </m.div>
 
         <div className="flex flex-col gap-4">
-          <button onClick={handleLogoutAndRetry} className="px-12 py-5 bg-white text-slate-950 rounded-full font-black text-[10px] uppercase tracking-[0.4em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
-             <LogOut size={14} /> EXPEL & RE-IDENTIFY
+          <button onClick={handleLogoutAndRetry} className="px-12 py-6 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
+             <RefreshCw size={14} /> PURGE SESSION & RELOGIN
           </button>
           <button onClick={() => { window.location.reload(); }} className="px-12 py-5 bg-white/5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-all">
             STAY & RECHECK
@@ -176,7 +182,7 @@ export default function AdminDashboard() {
           onClick={async () => { await supabase.auth.signOut(); window.location.hash = '#/'; }}
           className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-full font-black text-[9px] uppercase tracking-widest border border-rose-500/20 transition-all active:scale-95"
         >
-          Expel Admin Session
+          Expel Session
         </button>
       </div>
     </div>
