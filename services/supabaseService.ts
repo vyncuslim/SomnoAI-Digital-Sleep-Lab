@@ -6,8 +6,6 @@ export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  // 42P17: infinite recursion - 递归错误
-  // 42P01: undefined table (schema not ready)
   if (err.status === 403 || err.status === 401 || err.code === '42P01' || err.code === '42P17' || err.message?.includes('infinite recursion')) {
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
@@ -61,26 +59,19 @@ export const healthDataApi = {
 export const userDataApi = {
   getProfileStatus: async () => {
     try {
-      // 优先获取用户，以便从 app_metadata 判断基础状态
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-
-      // 如果出现 42P17 递归，这里的 select 会崩溃。
-      // 我们将其包装在 handleDatabaseError 中以触发前端的“修复终端”UI
       const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
       if (error) throw handleDatabaseError(error);
-      
       if (!profile) return { is_initialized: false, has_app_data: false };
       if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
-      
       return profile;
     } catch (e: any) { throw e; }
   },
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('UNAUTHORIZED');
-    const metricsPayload = { id: user.id, age: parseInt(metrics.age) || 0, weight: parseFloat(metrics.weight) || 0, height: parseFloat(metrics.height) || 0, gender: metrics.gender || 'prefer-not-to-say' };
-    const { error: dataError } = await supabase.from('user_data').upsert(metricsPayload);
+    const { error: dataError } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
     if (dataError) throw handleDatabaseError(dataError);
     const { error: profileError } = await supabase.from('profiles').update({ full_name: fullName.trim(), is_initialized: true }).eq('id', user.id);
     if (profileError) throw handleDatabaseError(profileError);
@@ -149,58 +140,48 @@ export const authApi = {
 
 export const adminApi = {
   /**
-   * 核心权限判定：不再使用 SELECT profiles，而是直接读取 JWT 中的 app_metadata
+   * [V14 KERNEL] 权限判定：彻底废弃 SELECT，改为 RPC 调用
    */
-  checkAdminStatus: async (userId: string): Promise<boolean> => {
+  checkAdminStatus: async (): Promise<boolean> => {
     try {
-      // 获取当前用户及其元数据
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError) throw userError;
-      
+      // 1. 尝试从当前 Session 获取 (最快)
+      const { data: { user } } = await supabase.auth.getUser();
       const metadata = user?.app_metadata;
-      
-      // 1. 检查物理标记（V13 脚本注入）
       if (metadata?.is_admin_node === true) return true;
-      
-      // 2. 备选检查
-      const role = metadata?.role;
-      if (role === 'admin' || role === 'owner' || metadata?.is_super_owner === true) return true;
 
-      // 3. 极度受限的最后尝试 (只有在 metadata 丢失且数据库未发生递归时才会执行)
-      // 在 V13 协议下，这部分应该被数据库政策 A 直接允许
-      const { data, error } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
-      if (error) {
-         // 如果数据库查询因为递归失败，我们仍然依赖 metadata
-         if (error.message?.includes('recursion')) return false;
-         throw handleDatabaseError(error);
-      }
+      // 2. 调用内核 RPC 函数 (最准)
+      const { data: role } = await supabase.rpc('get_my_role');
+      const { data: isSuper } = await supabase.rpc('is_super_owner');
       
-      return (data?.role === 'admin' || data?.role === 'owner' || data?.is_super_owner === true);
+      return (isSuper === true || role === 'admin' || role === 'owner');
     } catch (e) {
-      throw e;
+      console.error("Kernel Authenication Failure:", e);
+      return false;
     }
   },
+
   getAdminClearance: async (userId: string) => {
-    // 优先从内存/JWT 读取
-    const { data: { user } } = await supabase.auth.getUser();
-    if (user?.id === userId && user.app_metadata) {
-      return { 
-        role: user.app_metadata.role || 'user', 
-        is_super_owner: user.app_metadata.is_super_owner || false 
-      };
-    }
-    
-    // 如果是查询其他用户，则走数据库 (受 RLS 政策 B 保护，V13 无递归)
-    const { data } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
-    return data || { role: 'user', is_super_owner: false };
+    // 自身检查：优先 RPC
+    const { data: role } = await supabase.rpc('get_my_role');
+    const { data: isSuper } = await supabase.rpc('is_super_owner');
+    return { role: role || 'user', is_super_owner: isSuper || false };
   },
+
+  canManageTarget: async (targetId: string): Promise<boolean> => {
+    const { data, error } = await supabase.rpc('can_manage_user', { target_user_id: targetId });
+    if (error) return false;
+    return data === true;
+  },
+
   getUsers: async () => {
     const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
+
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
+  
   getFeedback: async () => {
     const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
     return data || [];

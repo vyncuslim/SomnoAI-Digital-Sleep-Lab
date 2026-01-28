@@ -19,20 +19,6 @@ const m = motion as any;
 
 type AdminTab = 'overview' | 'users' | 'records' | 'security' | 'logs';
 
-/**
- * 权限权重等级 (V8 Sovereignty Protocol)
- * 4: SUPER_OWNER (最高主权，不可被低等节点操作)
- * 3: OWNER (实验室所有人，可管理 Admin/User)
- * 2: ADMIN (管理员，仅可管理 User)
- * 1: USER (普通受试者)
- */
-const ROLE_WEIGHTS: Record<string, number> = {
-  'user': 1,
-  'admin': 2,
-  'owner': 3,
-  'super_owner': 4 
-};
-
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
@@ -43,6 +29,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // 缓存可管理的 ID 列表，避免 table 渲染时进行大量 RPC 调用
+  const [manageableIds, setManageableIds] = useState<Set<string>>(new Set());
+
   const fetchAllData = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -60,13 +49,23 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         adminApi.getAuditLogs(),
         adminApi.getSecurityEvents()
       ]);
+      
       setData({ users, records, feedback, logs, security });
+
+      // 预先批量检查主权阶梯
+      if (activeTab === 'users') {
+        const canManageList = await Promise.all(
+          users.map(async (u: any) => ({ id: u.id, can: await adminApi.canManageTarget(u.id) }))
+        );
+        setManageableIds(new Set(canManageList.filter(i => i.can).map(i => i.id)));
+      }
+
     } catch (err: any) {
       setError(err.message || "Sync Error: Neural Registry node unreachable.");
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [activeTab]);
 
   useEffect(() => {
     fetchAllData();
@@ -74,42 +73,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return () => clearInterval(interval);
   }, [fetchAllData]);
 
-  /**
-   * 阶梯主权判定
-   * 即使是 Owner，也不能 delete/block 超级 Owner。
-   * 操作者权重必须严格大于目标权重。
-   */
-  const canControlTarget = (target: any) => {
-    if (!currentAdmin) return false;
-    
-    // 自身保护逻辑
-    if (target.id === currentAdmin.id) return false; 
-
-    // 计算我的权重
-    const myWeight = currentAdmin.is_super_owner ? ROLE_WEIGHTS.super_owner : (ROLE_WEIGHTS[currentAdmin.role] || 1);
-    
-    // 计算目标权重
-    const targetWeight = target.is_super_owner ? ROLE_WEIGHTS.super_owner : (ROLE_WEIGHTS[target.role] || 1);
-
-    // 只有当我比对方“高级”时，才能执行破坏性操作
-    return myWeight > targetWeight;
-  };
-
   const handleToggleBlock = async (user: any) => {
-    if (!canControlTarget(user)) {
+    if (!manageableIds.has(user.id)) {
       alert("Clearance Denied: High-clearance nodes possess sovereignty immunity.");
       return;
     }
 
     const action = user.is_blocked ? 'Restore' : 'Suspend';
-    const safetyWarning = user.is_super_owner ? "IMMUTABLE NODE DETECTED." : "";
-    
-    if (user.is_super_owner) {
-      alert(`Critical Error: Target node [${user.email}] is flagged as SUPER_OWNER. Sovereignty protocol forbids external manipulation.`);
-      return;
-    }
-
-    if (!confirm(`${safetyWarning}\n\nProceed to ${action.toLowerCase()} node ${user.email || user.id}?`)) return;
+    if (!confirm(`Proceed to ${action.toLowerCase()} node ${user.email || user.id}?`)) return;
     
     try {
       if (user.is_blocked) await adminApi.unblockUser(user.id);
@@ -170,7 +141,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <button 
               key={tab}
               onClick={() => { setActiveTab(tab); setSearchQuery(''); }}
-              className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab ? 'bg-rose-600 text-white shadow-lg shadow-rose-900/20' : 'text-slate-500 hover:text-slate-300'}`}
+              className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 whitespace-nowrap ${activeTab === tab ? 'bg-rose-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
             >
               {tab === 'security' && data.security.some(s => !s.notified) && <span className="w-2 h-2 rounded-full bg-white animate-pulse" />}
               {tab === 'security' ? 'Security Pulse' : tab.replace('_', ' ')}
@@ -239,7 +210,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {filteredItems.map((item: any) => {
-                        const hasClearance = canControlTarget(item);
+                        const hasClearance = manageableIds.has(item.id);
                         const isSelf = item.id === currentAdmin?.id;
                         const isTargetSuper = item.is_super_owner === true;
 
@@ -303,9 +274,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                         className="p-4 bg-slate-900/80 border border-white/5 rounded-2xl text-slate-700 relative group/lock cursor-help" 
                                      >
                                         {isSelf ? <UserCircle className="text-indigo-600/50" size={20}/> : isTargetSuper ? <Shield size={20} className="text-amber-600/50" /> : <Lock size={20}/>}
-                                        {/* Hover Tooltip */}
                                         <div className="absolute bottom-full right-0 mb-4 px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-[8px] font-black text-white uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/lock:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl">
-                                          {isSelf ? "Self-Control Restricted" : isTargetSuper ? "IMMUTABLE: PROTECTED BY SOVEREIGNTY" : `Required Rank: > ${item.role?.toUpperCase() || 'USER'}`}
+                                          {isSelf ? "Self-Control Restricted" : "IMMUTABLE: SOVEREIGNTY PROTECTION"}
                                         </div>
                                      </div>
                                    )

@@ -1,21 +1,81 @@
 
 -- ==========================================
--- SOMNOAI SOVEREIGNTY SYSTEM (V13 - FINAL)
+-- SOMNOAI SOVEREIGNTY KERNEL (V14 - RPC BASED)
 -- ==========================================
 
--- 1. 深度清理：彻底清除 profiles 表上所有类型的 RLS 政策
-DO $$ 
-DECLARE 
-    pol RECORD;
-BEGIN 
-    FOR pol IN (SELECT policyname FROM pg_policies WHERE tablename = 'profiles' AND schemaname = 'public') 
-    LOOP
-        EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname);
-    END LOOP;
-END $$;
+-- 1. 获取当前用户角色的内核函数
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS text AS $$
+BEGIN
+  RETURN (SELECT role FROM public.profiles WHERE id = auth.uid());
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
--- 2. 权限物理同步引擎
--- 该函数将权限状态写入 auth.users 表，从而使其包含在 JWT 令牌中
+-- 2. 判断当前用户是否为超级所有者
+CREATE OR REPLACE FUNCTION public.is_super_owner()
+RETURNS boolean AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM public.profiles 
+    WHERE id = auth.uid() AND is_super_owner = true
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- 3. 主权阶梯判断函数 (决定 A 能否管理 B)
+-- 规则：caller_weight > target_weight
+CREATE OR REPLACE FUNCTION public.can_manage_user(target_user_id uuid)
+RETURNS boolean AS $$
+DECLARE
+    caller_role text;
+    caller_is_super boolean;
+    target_role text;
+    target_is_super boolean;
+    
+    caller_weight int;
+    target_weight int;
+BEGIN
+    -- 获取发起者信息
+    SELECT role, is_super_owner INTO caller_role, caller_is_super 
+    FROM public.profiles WHERE id = auth.uid();
+    
+    -- 获取目标信息
+    SELECT role, is_super_owner INTO target_role, target_is_super 
+    FROM public.profiles WHERE id = target_user_id;
+
+    -- 自身保护
+    IF auth.uid() = target_user_id THEN RETURN false; END IF;
+
+    -- 计算权重
+    caller_weight := CASE 
+        WHEN caller_is_super THEN 4
+        WHEN caller_role = 'owner' THEN 3
+        WHEN caller_role = 'admin' THEN 2
+        ELSE 1 END;
+        
+    target_weight := CASE 
+        WHEN target_is_super THEN 4
+        WHEN target_role = 'owner' THEN 3
+        WHEN target_role = 'admin' THEN 2
+        ELSE 1 END;
+
+    -- 主权判定
+    RETURN caller_weight > target_weight;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+
+-- 4. 优化 RLS 政策 (现在政策变轻了，只读 metadata)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "v13_self_access" ON public.profiles;
+CREATE POLICY "v14_self_access" ON public.profiles FOR ALL USING (auth.uid() = id);
+
+DROP POLICY IF EXISTS "v13_admin_read_all" ON public.profiles;
+CREATE POLICY "v14_admin_read_all" ON public.profiles FOR SELECT USING (
+  ((auth.jwt() -> 'app_metadata' ->> 'is_admin_node')::boolean = true)
+);
+
+-- 5. 权限物理同步触发器 (保持 JWT 同步)
 CREATE OR REPLACE FUNCTION public.sync_user_privileges()
 RETURNS trigger AS $$
 BEGIN
@@ -31,37 +91,3 @@ BEGIN
   RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
-
--- 3. 重新建立触发器
-DROP TRIGGER IF EXISTS on_profile_privilege_change ON public.profiles;
-CREATE TRIGGER on_profile_privilege_change
-  AFTER INSERT OR UPDATE OF role, is_super_owner ON public.profiles
-  FOR EACH ROW EXECUTE FUNCTION public.sync_user_privileges();
-
--- 4. 部署零递归 RLS 政策
--- 这里的关键是：政策逻辑只引用 JWT (auth.jwt())，而不查询 profiles 表本身
-ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
-
--- 政策 A: 允许用户读取和修改自己的档案 (使用 ID 直接比对，无递归)
-CREATE POLICY "v13_self_access" ON public.profiles 
-FOR ALL USING (auth.uid() = id);
-
--- 政策 B: 允许管理员读取所有受试者档案 (从 JWT 读取标记，无递归)
-CREATE POLICY "v13_admin_read_all" ON public.profiles 
-FOR SELECT USING (
-  ((auth.jwt() -> 'app_metadata' ->> 'is_admin_node')::boolean = true)
-);
-
--- 政策 C: 允许实验室所有人修改权限 (同样基于 JWT)
-CREATE POLICY "v13_owner_write" ON public.profiles
-FOR UPDATE USING (
-  (auth.jwt() -> 'app_metadata' ->> 'role') IN ('owner', 'super_owner') OR
-  ((auth.jwt() -> 'app_metadata' ->> 'is_super_owner')::boolean = true)
-);
-
--- 5. 初始同步：强制将当前所有用户的权限压入 JWT
--- 注意：执行此脚本后，必须重新登录
-UPDATE public.profiles SET role = role; 
-
--- 6. 提权示例（请在 SQL 编辑器中手动执行并替换邮箱）
--- UPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = 'YOUR_ADMIN_EMAIL';

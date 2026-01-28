@@ -100,8 +100,8 @@ export default function AdminLoginPage() {
       
       if (!data?.user) throw new Error("Sync Error: Neural identity not established.");
 
-      // Check admin status with robust logic
-      const isAdmin = await adminApi.checkAdminStatus(data.user.id);
+      // Fix: removed userId argument from checkAdminStatus call as it is not required by the signature
+      const isAdmin = await adminApi.checkAdminStatus();
       
       if (!isAdmin) {
         // Log out immediately if not an admin to prevent unauthorized access

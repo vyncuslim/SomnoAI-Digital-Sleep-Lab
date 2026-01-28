@@ -33,8 +33,8 @@ export default function AdminDashboard() {
 
         if (isMounted) setEmail(session.user.email || null);
 
-        // 使用前端 V13 逻辑进行校验：优先读取 metadata
-        const isAdmin = await adminApi.checkAdminStatus(session.user.id);
+        // [V14 KERNEL CHECK] 核心鉴权逻辑，走 RPC 避开 RLS 递归
+        const isAdmin = await adminApi.checkAdminStatus();
         
         if (!isMounted) return;
 
@@ -62,7 +62,7 @@ export default function AdminDashboard() {
     return () => { isMounted = false; };
   }, []);
 
-  const promoteSql = email ? `-- 1. 彻底清除递归政策\nDO $$ DECLARE pol RECORD; BEGIN FOR pol IN (SELECT policyname FROM pg_policies WHERE tablename = 'profiles') LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname); END LOOP; END $$;\n\n-- 2. 部署 V13 JWT 同步引擎\nCREATE OR REPLACE FUNCTION public.sync_user_privileges() RETURNS trigger AS $$ BEGIN UPDATE auth.users SET raw_app_meta_data = COALESCE(raw_app_meta_data, '{}'::jsonb) || jsonb_build_object('role', COALESCE(new.role, 'user'), 'is_super_owner', COALESCE(new.is_super_owner, false), 'is_admin_node', (new.role IN ('admin', 'owner') OR new.is_super_owner = true)) WHERE id = new.id; RETURN new; END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;\n\n-- 3. 建立解耦政策\nCREATE POLICY "v13_self_access" ON public.profiles FOR ALL USING (auth.uid() = id);\nCREATE POLICY "v13_admin_read_all" ON public.profiles FOR SELECT USING (((auth.jwt() -> 'app_metadata' ->> 'is_admin_node')::boolean = true));\n\n-- 4. 提权并触发同步\nUPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '${email}';` : "";
+  const promoteSql = email ? `-- 1. 强制部署 V14 RPC 核能函数\nCREATE OR REPLACE FUNCTION public.get_my_role() RETURNS text AS $$ BEGIN RETURN (SELECT role FROM public.profiles WHERE id = auth.uid()); END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;\n\nCREATE OR REPLACE FUNCTION public.is_super_owner() RETURNS boolean AS $$ BEGIN RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_super_owner = true); END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;\n\nCREATE OR REPLACE FUNCTION public.can_manage_user(target_user_id uuid) RETURNS boolean AS $$ DECLARE c_role text; c_super boolean; t_role text; t_super boolean; c_w int; t_w int; BEGIN SELECT role, is_super_owner INTO c_role, c_super FROM public.profiles WHERE id = auth.uid(); SELECT role, is_super_owner INTO t_role, t_super FROM public.profiles WHERE id = target_user_id; IF auth.uid() = target_user_id THEN RETURN false; END IF; c_w := CASE WHEN c_super THEN 4 WHEN c_role = 'owner' THEN 3 WHEN c_role = 'admin' THEN 2 ELSE 1 END; t_w := CASE WHEN t_super THEN 4 WHEN t_role = 'owner' THEN 3 WHEN t_role = 'admin' THEN 2 ELSE 1 END; RETURN c_w > t_w; END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;\n\n-- 2. 清理旧政策并应用同步\nDO $$ DECLARE pol RECORD; BEGIN FOR pol IN (SELECT policyname FROM pg_policies WHERE tablename = 'profiles') LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname); END LOOP; END $$;\nCREATE POLICY "v14_self_access" ON public.profiles FOR ALL USING (auth.uid() = id);\n\n-- 3. 提权并触发物理同步\nUPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '${email}';` : "";
 
   const handleCopy = () => {
     if (!promoteSql) return;
@@ -83,7 +83,7 @@ export default function AdminDashboard() {
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center space-y-8">
         <Logo size={100} animated={true} />
         <p className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] animate-pulse italic">
-          Scanning Neural Registry...
+          Syncing Kernel Node...
         </p>
       </div>
     );
@@ -98,10 +98,10 @@ export default function AdminDashboard() {
         
         <div className="space-y-4">
           <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">
-            {isRecursion ? "Policy Recursion Fault" : "Clearance Denied"}
+            {isRecursion ? "Kernel Recursion Fault" : "Access Forbidden"}
           </h2>
           <p className="text-slate-500 text-[11px] max-w-sm mx-auto leading-relaxed italic uppercase font-black tracking-widest">
-            {isRecursion ? "Internal circular dependency (Error 42P17) detected in RLS engine." : "Identifier recognized, but administrative clearance is absent."}
+            {isRecursion ? "The database is caught in an RLS cycle. Deploying V14 Kernal functions via SQL Editor will break the loop." : "Identifier recognized, but your current clearance level is locked."}
           </p>
         </div>
 
@@ -113,13 +113,13 @@ export default function AdminDashboard() {
            <div className={`flex items-center justify-between ${isRecursion ? 'text-amber-400' : 'text-rose-400'}`}>
              <div className="flex items-center gap-3">
                 <Terminal size={20} />
-                <span className="text-[10px] font-black uppercase tracking-widest italic">V13_PROTOCOL_PATCH</span>
+                <span className="text-[10px] font-black uppercase tracking-widest italic">V14_KERNEL_PATCH</span>
              </div>
              <Crown size={16} className="text-amber-500" />
            </div>
            
            <p className="text-[11px] text-slate-400 text-left italic leading-relaxed">
-             Execute this patch in Supabase SQL Editor. It decouples role checking from the profiles table:
+             Deploy this RPC kernel. It shifts permission logic to the database engine level, bypassing recursive RLS filters:
            </p>
 
            <div className="bg-black/60 p-6 rounded-2xl border border-white/5 relative group">
@@ -138,10 +138,10 @@ export default function AdminDashboard() {
               <LogOut size={24} className="text-indigo-400 shrink-0" />
               <div className="text-left space-y-1">
                  <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest italic">
-                   REQUIRED: TOKEN REFRESH
+                   KERNEL INITIALIZATION REQUIRED
                  </p>
                  <p className="text-[10px] text-slate-400 leading-tight">
-                   After applying SQL, you <span className="text-white font-bold">MUST LOG OUT AND RE-LOG</span> to update your local JWT session.
+                   Applying SQL functions creates the stable bridge. <span className="text-white font-bold">Logout & Re-log</span> is mandatory for your local node to sync.
                  </p>
               </div>
            </div>
@@ -149,7 +149,7 @@ export default function AdminDashboard() {
 
         <div className="flex flex-col gap-4">
           <button onClick={handleLogoutAndRetry} className="px-12 py-6 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
-             <RefreshCw size={14} /> PURGE SESSION & RE-LOG
+             <RefreshCw size={14} /> FLUSH NODE & RE-CONNECT
           </button>
         </div>
       </div>
@@ -160,9 +160,9 @@ export default function AdminDashboard() {
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6">
         <ShieldAlert size={64} className="text-rose-600 mb-4" />
-        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Node Desync Error</h2>
+        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">System Desync</h2>
         <p className="text-slate-500 text-sm max-w-md mx-auto italic leading-relaxed">{error}</p>
-        <button onClick={handleLogoutAndRetry} className="px-10 py-5 bg-rose-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest">RESET NODE</button>
+        <button onClick={handleLogoutAndRetry} className="px-10 py-5 bg-rose-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest">FORCE REBOOT</button>
       </div>
     );
   }
@@ -178,7 +178,7 @@ export default function AdminDashboard() {
           onClick={async () => { await supabase.auth.signOut(); window.location.hash = '#/'; }}
           className="px-6 py-3 bg-rose-500/10 hover:bg-rose-500/20 text-rose-500 rounded-full font-black text-[9px] uppercase tracking-widest border border-rose-500/20 transition-all active:scale-95"
         >
-          Terminate Session
+          Terminate Console
         </button>
       </div>
     </div>
