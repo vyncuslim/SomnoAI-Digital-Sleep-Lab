@@ -6,7 +6,8 @@ export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  if (err.status === 403 || err.status === 401 || err.code === '42P01') {
+  // 42P17 是 Postgres 的无限递归错误码
+  if (err.status === 403 || err.status === 401 || err.code === '42P01' || err.code === '42P17') {
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
   return err;
@@ -61,7 +62,6 @@ export const userDataApi = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-      // 强制不使用缓存获取最新权限状态
       const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
       if (error) throw handleDatabaseError(error);
       if (!profile) return { is_initialized: false, has_app_data: false };
@@ -142,16 +142,21 @@ export const authApi = {
 
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
-    const { data } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
-    // 显式检查 role 或 super_owner 标志
-    return (data?.role === 'admin' || data?.role === 'owner' || data?.is_super_owner === true);
+    try {
+      const { data, error } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
+      if (error) throw handleDatabaseError(error);
+      return (data?.role === 'admin' || data?.role === 'owner' || data?.is_super_owner === true);
+    } catch (e) {
+      throw e;
+    }
   },
   getAdminClearance: async (userId: string) => {
     const { data } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
     return data || { role: 'user', is_super_owner: false };
   },
   getUsers: async () => {
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    if (error) throw handleDatabaseError(error);
     return data || [];
   },
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),

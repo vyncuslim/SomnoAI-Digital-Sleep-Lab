@@ -19,7 +19,13 @@ const m = motion as any;
 
 type AdminTab = 'overview' | 'users' | 'records' | 'security' | 'logs';
 
-// 权限权重定义 (核心逻辑)
+/**
+ * 权限权重等级 (V8 Sovereignty Protocol)
+ * 4: SUPER_OWNER (最高主权，不可被低等节点操作)
+ * 3: OWNER (实验室所有人，可管理 Admin/User)
+ * 2: ADMIN (管理员，仅可管理 User)
+ * 1: USER (普通受试者)
+ */
 const ROLE_WEIGHTS: Record<string, number> = {
   'user': 1,
   'admin': 2,
@@ -69,35 +75,48 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [fetchAllData]);
 
   /**
-   * 阶梯权限判断
-   * 核心原则：操作者权重必须 严格大于 目标权重。
-   * 特殊条款：Super Owner (权重4) 对所有人（权重 1-3）拥有完全控制权，但没有任何人可以控制 Super Owner。
+   * 阶梯主权判定
+   * 即使是 Owner，也不能 delete/block 超级 Owner。
+   * 操作者权重必须严格大于目标权重。
    */
   const canControlTarget = (target: any) => {
     if (!currentAdmin) return false;
-    if (target.id === currentAdmin.id) return false; // 严禁自裁
+    
+    // 自身保护逻辑
+    if (target.id === currentAdmin.id) return false; 
 
+    // 计算我的权重
     const myWeight = currentAdmin.is_super_owner ? ROLE_WEIGHTS.super_owner : (ROLE_WEIGHTS[currentAdmin.role] || 1);
+    
+    // 计算目标权重
     const targetWeight = target.is_super_owner ? ROLE_WEIGHTS.super_owner : (ROLE_WEIGHTS[target.role] || 1);
 
+    // 只有当我比对方“高级”时，才能执行破坏性操作
     return myWeight > targetWeight;
   };
 
   const handleToggleBlock = async (user: any) => {
     if (!canControlTarget(user)) {
-      alert("Clearance Denied: Target node is protected by a higher sovereignty protocol.");
+      alert("Clearance Denied: High-clearance nodes possess sovereignty immunity.");
       return;
     }
 
     const action = user.is_blocked ? 'Restore' : 'Suspend';
-    if (!confirm(`${action} subject ${user.email || user.id}?\n\nHigh-level security nodes will require manual registry re-validation.`)) return;
+    const safetyWarning = user.is_super_owner ? "IMMUTABLE NODE DETECTED." : "";
+    
+    if (user.is_super_owner) {
+      alert(`Critical Error: Target node [${user.email}] is flagged as SUPER_OWNER. Sovereignty protocol forbids external manipulation.`);
+      return;
+    }
+
+    if (!confirm(`${safetyWarning}\n\nProceed to ${action.toLowerCase()} node ${user.email || user.id}?`)) return;
     
     try {
       if (user.is_blocked) await adminApi.unblockUser(user.id);
       else await adminApi.blockUser(user.id);
       fetchAllData();
     } catch (err) {
-      alert("Handshake Failure: Registry authority rejected the command.");
+      alert("Command Refused: Registry authority detected a violation.");
     }
   };
 
@@ -139,7 +158,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </h1>
             <div className="flex items-center gap-3">
                <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
-                 Clearance: {currentAdmin?.is_super_owner ? 'ROOT_AUTHORITY' : currentAdmin?.role?.toUpperCase() || 'UNKNOWN'}
+                 Level: {currentAdmin?.is_super_owner ? 'ROOT_AUTHORITY' : currentAdmin?.role?.toUpperCase() || 'IDENTIFYING'}
                </span>
                <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]" />
             </div>
@@ -181,7 +200,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
              <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
                 {currentAdmin?.is_super_owner ? <KeyRound size={32} className="text-amber-400" /> : <ShieldCheck size={32} className="text-emerald-400" />}
                 <p className="text-3xl font-black text-white">{currentAdmin?.is_super_owner ? 'ROOT' : currentAdmin?.role?.toUpperCase().slice(0, 3)}</p>
-                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Neural Clearance</p>
+                <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Your Clearance</p>
              </GlassCard>
           </m.div>
         ) : (
@@ -192,7 +211,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">
                       {activeTab === 'security' ? 'Security Monitoring Pulse' : activeTab === 'logs' ? 'System Audit Trails' : `${activeTab} Registry`}
                     </h3>
-                    <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1 italic">Real-time Data Stream: Encrypted</p>
+                    <p className="text-[9px] text-slate-600 font-black uppercase tracking-widest mt-1 italic">Live Endpoint Visualization</p>
                   </div>
                   <div className="flex gap-4 w-full md:w-auto">
                     <div className="relative w-full md:w-80">
@@ -215,25 +234,26 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       <tr className="text-[11px] font-black uppercase text-slate-600 tracking-[0.4em] border-b border-white/5">
                         <th className="pb-8 px-8">Identifier</th>
                         <th className="pb-8 px-8">Context & Log</th>
-                        <th className="pb-8 px-8 text-right">Direct Command</th>
+                        <th className="pb-8 px-8 text-right">Command</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-white/5">
                       {filteredItems.map((item: any) => {
                         const hasClearance = canControlTarget(item);
                         const isSelf = item.id === currentAdmin?.id;
+                        const isTargetSuper = item.is_super_owner === true;
 
                         return (
                           <tr key={item.id} className={`transition-colors group ${isSelf ? 'bg-indigo-500/[0.03]' : 'hover:bg-white/[0.01]'}`}>
                             <td className="py-8 px-8">
                                <div className="flex items-center gap-5">
                                  <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border transition-all ${
-                                   item.is_super_owner ? 'bg-amber-500/10 border-amber-500/40 text-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 
+                                   isTargetSuper ? 'bg-amber-500/10 border-amber-500/40 text-amber-500 shadow-[0_0_20px_rgba(251,191,36,0.2)]' : 
                                    item.role === 'owner' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' :
                                    item.role === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' :
                                    'bg-slate-800 border-white/5 text-slate-600'
                                  }`}>
-                                    {item.is_super_owner ? <Crown size={24}/> : item.role === 'owner' ? <ShieldCheck size={24}/> : <User size={24}/>}
+                                    {isTargetSuper ? <Crown size={24}/> : item.role === 'owner' ? <ShieldCheck size={24}/> : <User size={24}/>}
                                  </div>
                                  <div className="text-left">
                                    <div className="flex items-center gap-2 mb-1">
@@ -244,7 +264,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                    </div>
                                    <span className="text-[9px] font-mono text-slate-500 uppercase tracking-tighter flex items-center gap-2">
                                      {item.role?.toUpperCase() || 'SUBJECT'} 
-                                     {item.is_super_owner && <span className="text-amber-500 font-black animate-pulse">/ IMMUTABLE ROOT</span>}
+                                     {isTargetSuper && <span className="text-amber-500 font-black animate-pulse">/ SOVEREIGN NODE</span>}
                                    </span>
                                  </div>
                                </div>
@@ -282,10 +302,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                      <div 
                                         className="p-4 bg-slate-900/80 border border-white/5 rounded-2xl text-slate-700 relative group/lock cursor-help" 
                                      >
-                                        {isSelf ? <UserCircle className="text-indigo-600/50" size={20}/> : item.is_super_owner ? <Shield size={20} className="text-amber-600/50" /> : <Lock size={20}/>}
+                                        {isSelf ? <UserCircle className="text-indigo-600/50" size={20}/> : isTargetSuper ? <Shield size={20} className="text-amber-600/50" /> : <Lock size={20}/>}
                                         {/* Hover Tooltip */}
                                         <div className="absolute bottom-full right-0 mb-4 px-3 py-2 bg-slate-950 border border-white/10 rounded-xl text-[8px] font-black text-white uppercase tracking-widest whitespace-nowrap opacity-0 group-hover/lock:opacity-100 transition-opacity pointer-events-none z-50 shadow-2xl">
-                                          {isSelf ? "Self-Control Restricted" : item.is_super_owner ? "IMMUTABLE NODE: SUPER OWNER PROTECTED" : "Clearance Level Violation"}
+                                          {isSelf ? "Self-Control Restricted" : isTargetSuper ? "IMMUTABLE: PROTECTED BY SOVEREIGNTY" : `Required Rank: > ${item.role?.toUpperCase() || 'USER'}`}
                                         </div>
                                      </div>
                                    )
