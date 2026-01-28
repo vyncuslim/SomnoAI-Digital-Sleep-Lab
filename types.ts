@@ -1,3 +1,4 @@
+
 export interface SleepStage {
   name: 'Deep' | 'REM' | 'Light' | 'Awake';
   duration: number; // minutes
@@ -24,6 +25,13 @@ export interface SleepRecord {
   stages: SleepStage[];
   heartRate: HeartRateData;
   aiInsights: string[];
+}
+
+export interface DiaryEntry {
+  id: string;
+  content: string;
+  mood?: string;
+  created_at: string;
 }
 
 /**
@@ -54,6 +62,6 @@ export interface SecurityEvent {
   timestamp?: string;
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback';
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
 export type Language = 'en' | 'zh';

@@ -1,10 +1,11 @@
 /**
  * SomnoAI Admin Notification Service
  * Routes system alerts and feedback via Supabase Edge Functions to Telegram.
- * Re-engineered for ZERO UI impact.
+ * Updated with required Authorization headers for Edge Function security.
  */
 
 const EDGE_FUNCTION_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/notify_telegram';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qY3Z2dHlhZWJkb2RtZWd3cWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyODc2ODgsImV4cCI6MjA4Mzg2MzY4OH0.FJY9V6fdTFOFCXeqWNwv1cQnsnQfq4RZq-5WyLNzPCg';
 
 export const notifyAdmin = async (payload: string | { error?: string; message?: string; type?: string }) => {
   if (!EDGE_FUNCTION_URL) return false;
@@ -18,26 +19,26 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     finalMessage = `🚨 SOMNO LAB ${type}\n\nLOG: ${content}\nTIME: ${new Date().toLocaleString()}`;
   }
 
-  // FORCE ASYNC: Do not let the network request block the current execution frame
-  return new Promise((resolve) => {
-    setTimeout(async () => {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 4000);
+  // Use a standard async fetch without artificial timeout wrappers to ensure reliable delivery
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 6000);
 
-      try {
-        const response = await fetch(EDGE_FUNCTION_URL, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ message: finalMessage }),
-          signal: controller.signal
-        });
+  try {
+    const response = await fetch(EDGE_FUNCTION_URL, {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+        'apikey': SUPABASE_ANON_KEY
+      },
+      body: JSON.stringify({ message: finalMessage }),
+      signal: controller.signal
+    });
 
-        clearTimeout(timeoutId);
-        resolve(response.ok);
-      } catch (err) {
-        // Complete silence for the UI thread
-        resolve(false);
-      }
-    }, 0);
-  });
+    clearTimeout(timeoutId);
+    return response.ok;
+  } catch (err) {
+    console.error("[Telegram Service Failure]:", err);
+    return false;
+  }
 };

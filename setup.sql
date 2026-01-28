@@ -1,3 +1,4 @@
+
 -- ==========================================
 -- SOMNOAI SYSTEM RECOVERY & CALIBRATION
 -- ==========================================
@@ -17,7 +18,7 @@ BEGIN
     END IF;
 END $$;
 
--- 3. CORE IDENTITY REGISTRY (ENRICHED)
+-- 3. CORE IDENTITY REGISTRY
 CREATE TABLE public.profiles (
     id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
     email text,
@@ -52,7 +53,16 @@ CREATE TABLE IF NOT EXISTS public.health_raw_data (
     created_at timestamptz DEFAULT now()
 );
 
--- 6. FEEDBACK REGISTRY
+-- 6. DIARY REGISTRY (NEW)
+CREATE TABLE IF NOT EXISTS public.diary_entries (
+    id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+    content text NOT NULL,
+    mood text,
+    created_at timestamptz DEFAULT now()
+);
+
+-- 7. FEEDBACK REGISTRY
 CREATE TABLE IF NOT EXISTS public.feedback (
     id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -62,7 +72,7 @@ CREATE TABLE IF NOT EXISTS public.feedback (
     created_at timestamptz DEFAULT now()
 );
 
--- 7. RECURSION-SAFE ADMIN CHECK
+-- 8. RECURSION-SAFE ADMIN CHECK
 CREATE OR REPLACE FUNCTION public.is_admin() 
 RETURNS boolean AS $$
 BEGIN
@@ -73,8 +83,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 8. ENRICHED AUTH TRIGGER
--- This function automatically parses Google metadata and stores it in profiles
+-- 9. ENRICHED AUTH TRIGGER
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -107,30 +116,22 @@ CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
--- 9. ROW LEVEL SECURITY (RLS) POLICIES
+-- 10. ROW LEVEL SECURITY (RLS) POLICIES
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.health_raw_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.diary_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
 
--- Profiles Policies
-DROP POLICY IF EXISTS "Profiles: public select" ON public.profiles;
-CREATE POLICY "Profiles: user access" ON public.profiles 
-FOR SELECT USING (auth.uid() = id);
+-- Diary Policies
+CREATE POLICY "Diary: user access" ON public.diary_entries 
+FOR ALL USING (auth.uid() = user_id);
 
-DROP POLICY IF EXISTS "Profiles: admin access" ON public.profiles;
-CREATE POLICY "Profiles: admin access" ON public.profiles 
-FOR ALL USING (public.is_admin());
-
-DROP POLICY IF EXISTS "Profiles: self update" ON public.profiles;
-CREATE POLICY "Profiles: self update" ON public.profiles 
-FOR UPDATE USING (auth.uid() = id);
-
--- 10. GLOBAL PERMISSIONS
+-- 11. GLOBAL PERMISSIONS
 GRANT USAGE ON SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL TABLES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL SEQUENCES IN SCHEMA public TO anon, authenticated, service_role;
 GRANT ALL ON ALL FUNCTIONS IN SCHEMA public TO anon, authenticated, service_role;
 
--- 11. REFRESH
+-- 12. REFRESH
 NOTIFY pgrst, 'reload schema';

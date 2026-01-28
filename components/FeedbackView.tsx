@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, MessageSquare, AlertTriangle, Lightbulb, 
@@ -43,12 +44,13 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
     setErrorMessage(null);
 
     try {
+      // Fix: destructured 'error' property is now correctly returned from feedbackApi.submitFeedback
       const { success, error } = await feedbackApi.submitFeedback(type, content, email);
       if (success) {
         setStatus('success');
         setTimeout(() => onBack(), 2500);
       } else {
-        throw error;
+        throw error || new Error("TRANSMISSION_FAILED");
       }
     } catch (err: any) {
       setStatus('error');
