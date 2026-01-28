@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -8,8 +9,9 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
+// Fix: Obtained exclusively from process.env.API_KEY as per guidelines
 const getActiveApiKey = () => {
-  return localStorage.getItem('gemini_api_key') || process.env.API_KEY || '';
+  return process.env.API_KEY || '';
 };
 
 const handleGeminiError = (err: any) => {

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './components/GlassCard.tsx';
 import { 
@@ -25,29 +26,10 @@ export const Settings: React.FC<SettingsProps> = ({
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
-  const [showKey, setShowKey] = useState(false);
-  const [isAiActive, setIsAiActive] = useState(false);
   const [isTestingTelegram, setIsTestingTelegram] = useState(false);
   const [telegramTestStatus, setTelegramTestStatus] = useState<'idle' | 'success' | 'error'>('idle');
 
   const t = translations[lang]?.settings || translations.en.settings;
-
-  useEffect(() => {
-    const checkAiStatus = async () => {
-      const hasStoredKey = !!apiKey;
-      let hasAistudioKey = false;
-      if ((window as any).aistudio?.hasSelectedApiKey) {
-        try {
-          hasAistudioKey = await (window as any).aistudio.hasSelectedApiKey();
-        } catch (e) {
-          console.debug("Neural handshake bypass.");
-        }
-      }
-      setIsAiActive(hasStoredKey || hasAistudioKey);
-    };
-    checkAiStatus();
-  }, [apiKey]);
 
   const handleTestTelegram = async () => {
     if (isTestingTelegram) return;
@@ -64,27 +46,6 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   };
 
-  const handleSaveKey = (val: string) => {
-    const cleanKey = val.trim();
-    setApiKey(cleanKey);
-    if (cleanKey) {
-      localStorage.setItem('gemini_api_key', cleanKey);
-    } else {
-      localStorage.removeItem('gemini_api_key');
-    }
-  };
-
-  const handleOpenAiKeySelector = async () => {
-    if ((window as any).aistudio?.openSelectKey) {
-      try {
-        await (window as any).aistudio.openSelectKey();
-        setIsAiActive(true);
-      } catch (e) {
-        console.error("AI Key Bridge Error.");
-      }
-    }
-  };
-
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedId(id);
@@ -94,6 +55,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const executeFullLogout = async () => {
     try {
       await onLogout();
+      // Remove deprecated key management cleanups
       localStorage.removeItem('gemini_api_key');
       localStorage.removeItem('google_fit_token');
       localStorage.removeItem('health_connect_token');
@@ -111,7 +73,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <Moon size={400} fill="currentColor" className="text-indigo-400" />
       </div>
 
-      {/* AI STATUS & KEY MANAGEMENT */}
+      {/* CORE STATUS CARD */}
       <GlassCard className="p-8 md:p-10 rounded-[3.5rem] bg-gradient-to-br from-indigo-500/[0.05] to-purple-500/[0.05] border-indigo-500/20 shadow-2xl relative overflow-hidden group pointer-events-auto">
         <div className="absolute -right-10 -top-10 opacity-5 group-hover:opacity-10 transition-opacity duration-1000">
            <BrainCircuit size={200} />
@@ -120,54 +82,25 @@ export const Settings: React.FC<SettingsProps> = ({
         <div className="space-y-8 relative z-10 pointer-events-auto">
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
             <div className="flex items-center gap-5">
-              <div className={`p-4 rounded-2xl border transition-all ${isAiActive ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.2)]' : 'bg-slate-900 border-white/10 text-slate-700'}`}>
-                <Zap size={24} fill={isAiActive ? "currentColor" : "none"} />
+              <div className="p-4 rounded-2xl border bg-indigo-500/10 border-indigo-500/30 text-indigo-400 shadow-[0_0_20px_rgba(99,102,241,0.2)]">
+                <Zap size={24} fill="currentColor" />
               </div>
               <div className="text-left">
                  <h2 className="text-sm font-black italic text-white uppercase tracking-wider flex items-center gap-2">
                    Neural Core Status
                  </h2>
                  <div className="flex items-center gap-2">
-                    <div className={`w-1.5 h-1.5 rounded-full ${isAiActive ? 'bg-emerald-500 animate-pulse' : 'bg-rose-500'}`} />
-                    <p className={`text-[10px] font-black uppercase tracking-widest ${isAiActive ? 'text-emerald-400' : 'text-rose-400'}`}>
-                      {isAiActive ? 'COGNITION ACTIVE' : 'AI DISCONNECTED'}
+                    <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
+                      COGNITION ACTIVE
                     </p>
                  </div>
               </div>
             </div>
-            <button 
-              onClick={handleOpenAiKeySelector}
-              className="px-8 py-3 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/30 hover:bg-indigo-500 transition-all active:scale-95 whitespace-nowrap cursor-pointer relative z-[100] pointer-events-auto"
-            >
-              AUTH AI KEY
-            </button>
           </div>
-
-          <div className="space-y-4 pointer-events-auto">
-            <div className="flex justify-between items-center px-4">
-              <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Manual Key Input (Optional)</span>
-              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noopener noreferrer" className="text-[9px] font-black text-indigo-400 hover:text-white transition-colors uppercase tracking-widest flex items-center gap-1 relative z-[100]">
-                GCP Billing <ExternalLink size={10} />
-              </a>
-            </div>
-            <div className="relative pointer-events-auto">
-              <input 
-                type={showKey ? "text" : "password"}
-                value={apiKey}
-                onChange={(e) => handleSaveKey(e.target.value)}
-                placeholder="Paste Gemini API Key..."
-                className="w-full bg-slate-950/80 border border-white/5 rounded-[2rem] pl-8 pr-32 py-5 text-xs text-white outline-none focus:border-indigo-500/40 transition-all font-mono placeholder:italic relative z-10 pointer-events-auto"
-              />
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2 z-[100] pointer-events-auto">
-                <button onClick={() => setShowKey(!showKey)} className="p-2 text-slate-600 hover:text-white transition-colors cursor-pointer">
-                  {showKey ? <EyeOff size={16} /> : <Eye size={16} />}
-                </button>
-                <button onClick={() => handleSaveKey('')} className="p-2 text-slate-600 hover:text-rose-500 transition-colors cursor-pointer">
-                  <Trash2 size={16} />
-                </button>
-              </div>
-            </div>
-          </div>
+          <p className="text-[10px] text-slate-500 italic leading-relaxed">
+            AI synthesis engine is operational via laboratory nodes. Telemetry is processed securely through centralized neural gateways.
+          </p>
         </div>
       </GlassCard>
 

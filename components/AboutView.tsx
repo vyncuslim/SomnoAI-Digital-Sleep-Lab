@@ -1,18 +1,14 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
-  ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, Binary, 
-  Activity, Lock, Smartphone, Database, Terminal, CheckCircle2, 
-  Info, Code2, ListTree, Timer, Layers, Zap, Download, 
-  Upload, BookOpen, Warehouse, LayoutList, Fingerprint, 
-  Network, Bookmark, History, RotateCcw, Filter, Boxes, 
-  PackageSearch, Pipette, Droplets, Watch, Hammer, Eye, 
-  ChevronRight, FileCode, ShieldCheck, Sparkles, HelpCircle,
-  Clock, Map
+  ArrowLeft, BrainCircuit, ShieldCheck, Activity, 
+  Terminal, Zap, BookOpen, Database, Smartphone, 
+  ChevronRight, Sparkles, Binary, Cpu, Info
 } from 'lucide-react';
-import { Language, translations } from '../services/i18n.ts';
+import { motion } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
-import { motion, AnimatePresence } from 'framer-motion';
+import { Language, translations } from '../services/i18n.ts';
+// Fix: Import missing Logo component
 import { Logo } from './Logo.tsx';
 
 const m = motion as any;
@@ -24,181 +20,118 @@ interface AboutViewProps {
 
 export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
   const t = translations[lang].about;
-  const isZh = lang === 'zh';
-  const [activeProtocolStep, setActiveProtocolStep] = useState(0);
 
-  const handshakeDetails = [
-    { 
-      title: 'getSdkStatus', 
-      desc: t.step1, 
-      code: 'val status = HealthConnectClient.getSdkStatus(context)\nif (status == SDK_UNAVAILABLE) return',
-      icon: Smartphone 
-    },
-    { 
-      title: 'getOrCreate', 
-      desc: t.step2, 
-      code: 'val client = HealthConnectClient.getOrCreate(context)',
-      icon: Cpu 
-    },
-    { 
-      title: 'Manifest', 
-      desc: t.step3, 
-      code: '<uses-permission android:name="android.permission.health.READ_SLEEP"/>\n<uses-permission android:name="android.permission.health.READ_HEART_RATE"/>',
-      icon: FileCode 
-    },
-    { 
-      title: 'Launcher', 
-      desc: t.step4, 
-      code: 'val requestPermissionLauncher = \n  registerForActivityResult(PermissionController.createRequestPermissionResultContract())',
-      icon: Zap 
-    },
-    { 
-      title: 'launch', 
-      desc: t.step5, 
-      code: 'requestPermissionLauncher.launch(setOf(SleepSessionRecord::class, HeartRateRecord::class))',
-      icon: Terminal 
-    },
-    { 
-      title: 'Verification', 
-      desc: t.step6, 
-      code: 'val granted = client.permissionController.getGrantedPermissions()',
-      icon: ShieldCheck 
-    },
-    { 
-      title: 'readRecords', 
-      desc: t.step7, 
-      code: 'val response = client.readRecords(ReadRecordsRequest(SleepSessionRecord::class, TimeRangeFilter.between(start, end)))',
-      icon: Activity 
-    },
-    { 
-      title: 'Sync Loop', 
-      desc: t.step8, 
-      code: 'val token = client.getChangesToken(recordTypes = setOf(SleepSessionRecord::class))\nval response = client.getChanges(token)',
-      icon: RotateCcw 
-    }
-  ];
-
-  const roadmap = [
-    { stage: 'ALPHA', module: 'Telemetry Core', status: 'Active', icon: Zap, desc: 'Health Connect integration & Neural Lullaby v1.0' },
-    { stage: 'BETA', module: 'Wearable Mesh', status: 'Pending', icon: Watch, desc: 'Direct Oura, Whoop, and Garmin Cloud Bridge' },
-    { stage: 'GAMMA', module: 'Deep Neuro', status: 'Concept', icon: BrainCircuit, desc: 'EEG Raw Data analysis & Lucid Dreaming protocols' }
+  const sections = [
+    { id: 'intro', icon: BrainCircuit, color: 'text-indigo-400' },
+    { id: 'monitoring', icon: Activity, color: 'text-emerald-400' },
+    { id: 'aiInsights', icon: Binary, color: 'text-purple-400' },
+    { id: 'privacy', icon: ShieldCheck, color: 'text-rose-400' },
+    { id: 'guide', icon: Terminal, color: 'text-amber-400' }
   ];
 
   return (
-    <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500">
-      <header className="flex items-center gap-4 mb-10 px-2">
+    <div className="min-h-screen bg-[#020617] text-slate-200 font-sans p-6 md:p-12 pb-40">
+      <header className="max-w-4xl mx-auto flex items-center gap-8 mb-16 px-4">
         <button 
           onClick={onBack}
-          className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-lg"
+          className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-lg active:scale-95"
         >
-          <ArrowLeft size={20} />
+          <ArrowLeft size={24} />
         </button>
-        <div className="flex items-center gap-3">
-          <Logo size={48} animated={true} />
-          <div>
-            <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
-              {t.title}
-            </h1>
-            <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-1">
-              Biological Infrastructure v2.0
-            </p>
-          </div>
+        <div>
+          <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none">
+            Lab <span className="text-indigo-400">Knowledge Base</span>
+          </h1>
+          <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-2">Systematic Laboratory Manual v3.1</p>
         </div>
       </header>
 
-      <div className="space-y-8 max-w-2xl mx-auto px-2 text-slate-300">
-        
-        {/* Laboratory Roadmap */}
-        <GlassCard className="p-10 border-indigo-500/20 bg-indigo-500/[0.01] rounded-[4rem]">
-           <div className="flex items-center gap-4 mb-10">
-              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                <Map size={24} />
-              </div>
-              <div>
-                 <h2 className="text-xl font-black italic text-white uppercase tracking-tight leading-none">Laboratory Roadmap</h2>
-                 <p className="text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest mt-1">Strategic Evolution Protocol</p>
-              </div>
-           </div>
-
-           <div className="space-y-12 relative">
-              <div className="absolute left-[27px] top-4 bottom-4 w-px bg-white/5" />
-              {roadmap.map((item, idx) => (
-                <div key={idx} className="flex gap-8 group">
-                   <div className={`w-14 h-14 rounded-2xl shrink-0 flex items-center justify-center border transition-all duration-500 ${item.status === 'Active' ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_20px_rgba(79,70,229,0.3)]' : 'bg-slate-900 border-white/5 opacity-40'}`}>
-                      <item.icon size={22} className={item.status === 'Active' ? 'text-white' : 'text-slate-500'} />
-                   </div>
-                   <div className="space-y-2">
-                      <div className="flex items-center gap-3">
-                        <span className={`text-[9px] font-black uppercase tracking-widest px-2 py-0.5 rounded ${item.status === 'Active' ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30' : 'bg-slate-800 text-slate-500 border border-white/5'}`}>{item.stage}</span>
-                        <h3 className="text-sm font-black italic text-white uppercase tracking-wider">{item.module}</h3>
-                      </div>
-                      <p className="text-[11px] font-medium text-slate-500 leading-relaxed italic">{item.desc}</p>
-                   </div>
-                </div>
-              ))}
-           </div>
+      <main className="max-w-4xl mx-auto space-y-12">
+        {/* Main Manifesto */}
+        <GlassCard className="p-10 md:p-16 rounded-[4rem] border-indigo-500/20 bg-indigo-500/[0.02] relative overflow-hidden" intensity={1.2}>
+          <div className="absolute top-0 right-0 p-12 opacity-[0.05] pointer-events-none">
+            <Cpu size={240} />
+          </div>
+          <div className="relative z-10 space-y-6">
+            <div className="flex items-center gap-4 text-indigo-400">
+               <Sparkles size={24} />
+               <span className="text-[11px] font-black uppercase tracking-[0.3em]">Laboratory Manifesto</span>
+            </div>
+            <p className="text-2xl md:text-3xl font-black italic text-white leading-tight tracking-tight">
+              "{t.manifesto}"
+            </p>
+            <div className="flex items-center gap-6 pt-6">
+               <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Core Status</span>
+                  <span className="text-[11px] font-bold text-emerald-500 uppercase">Operational</span>
+               </div>
+               <div className="flex flex-col">
+                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Neural Link</span>
+                  <span className="text-[11px] font-bold text-indigo-500 uppercase">Encrypted</span>
+               </div>
+            </div>
+          </div>
         </GlassCard>
 
-        {/* Handshake Terminal Module */}
-        <GlassCard className="p-10 space-y-10 border-indigo-500/20 bg-indigo-500/[0.01] rounded-[4rem]">
-           <div className="flex items-center gap-4">
-              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 shadow-[0_0_20px_rgba(79,70,229,0.2)]">
-                <Terminal size={24} />
-              </div>
-              <div>
-                 <h2 className="text-xl font-black italic text-white uppercase tracking-tight leading-none">{t.protocolTitle}</h2>
-                 <p className="text-[9px] font-bold text-indigo-400/60 uppercase tracking-widest mt-1">Android SDK Implementation</p>
-              </div>
-           </div>
-
-           <div className="grid grid-cols-4 sm:grid-cols-8 gap-2">
-              {handshakeDetails.map((_, i) => (
-                <button 
-                  key={i}
-                  onClick={() => setActiveProtocolStep(i)}
-                  className={`relative flex flex-col items-center gap-1 group transition-all duration-500 ${activeProtocolStep === i ? 'scale-110' : 'opacity-40 hover:opacity-100'}`}
-                >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center border transition-all duration-500 ${activeProtocolStep === i ? 'bg-indigo-600 border-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'bg-slate-900 border-white/5'}`}>
-                    <span className="text-[10px] font-black text-white">0{i+1}</span>
-                  </div>
-                </button>
-              ))}
-           </div>
-
-           <AnimatePresence mode="wait">
-              <m.div 
-                key={activeProtocolStep}
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
-                className="space-y-6"
+        {/* Detailed Sections */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {sections.map((sec, idx) => {
+            const content = (t.sections as any)[sec.id];
+            return (
+              <m.div
+                key={sec.id}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.1 }}
               >
-                <div className="flex items-start gap-5">
-                   <div className="p-4 bg-white/5 rounded-3xl text-indigo-400 border border-white/5">
-                      {React.createElement(handshakeDetails[activeProtocolStep].icon, { size: 28 })}
-                   </div>
-                   <div className="space-y-1">
-                      <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Step 0{activeProtocolStep + 1}: {handshakeDetails[activeProtocolStep].title}</h3>
-                      <p className="text-[11px] font-medium text-slate-400 leading-relaxed italic">{handshakeDetails[activeProtocolStep].desc}</p>
-                   </div>
-                </div>
-
-                <div className="bg-black/60 rounded-3xl border border-white/5 overflow-hidden group">
-                   <pre className="p-6 text-[10px] font-mono text-indigo-300/80 leading-relaxed overflow-x-auto scrollbar-hide">
-                      {handshakeDetails[activeProtocolStep].code}
-                   </pre>
-                </div>
+                <GlassCard className="p-10 h-full rounded-[3.5rem] border-white/5 hover:bg-white/[0.03] transition-all group">
+                  <div className="space-y-6">
+                    <div className={`w-14 h-14 rounded-2xl bg-white/5 flex items-center justify-center border border-white/5 transition-all group-hover:scale-110 ${sec.color}`}>
+                      <sec.icon size={28} />
+                    </div>
+                    <div className="space-y-3">
+                      <h3 className="text-lg font-black italic text-white uppercase tracking-tight">{content.title}</h3>
+                      <p className="text-[13px] text-slate-400 leading-relaxed font-medium italic whitespace-pre-wrap">
+                        {content.content}
+                      </p>
+                    </div>
+                  </div>
+                </GlassCard>
               </m.div>
-           </AnimatePresence>
-        </GlassCard>
+            );
+          })}
+        </div>
 
-        <footer className="pt-12 flex flex-col items-center gap-6 opacity-40">
-           <div className="flex items-center gap-3">
-             <FlaskConical size={14} className="text-indigo-400" />
-             <span className="text-[9px] font-mono tracking-widest uppercase">SomnoAI Lab • Secure Infrastructure v2.5</span>
+        {/* Tactical Requirements */}
+        <div className="bg-slate-900/40 rounded-[4rem] border border-white/5 p-12 flex flex-col md:flex-row items-center gap-10">
+           <div className="w-24 h-24 rounded-[2rem] bg-indigo-600 flex items-center justify-center text-white shadow-2xl shrink-0">
+             <Smartphone size={40} />
+           </div>
+           <div className="space-y-4">
+              <h4 className="text-xl font-black italic text-white uppercase tracking-tight">Bridge Infrastructure</h4>
+              <p className="text-sm text-slate-400 leading-relaxed font-medium italic">
+                SomnoAI utilizes the Android Health Connect SDK as its primary biometric bridge. Ensure all permissions are granted within the system registry to enable seamless telemetric flow.
+              </p>
+              <div className="flex gap-4 pt-2">
+                 <button className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.2em] flex items-center gap-2 hover:text-white transition-all">
+                    View SDK Docs <ChevronRight size={12} />
+                 </button>
+              </div>
+           </div>
+        </div>
+
+        {/* Technical Footer */}
+        <footer className="pt-20 border-t border-white/5 flex flex-col items-center gap-6 opacity-40 text-center">
+           {/* Fix: Corrected component call from the imported Logo component */}
+           <Logo size={48} animated={false} />
+           <div className="space-y-2">
+              <p className="text-[9px] font-mono tracking-widest uppercase font-black">SomnoAI Digital Sleep Lab • Neural Core Engine</p>
+              <p className="text-[9px] font-medium text-slate-600 italic max-w-sm leading-relaxed">
+                All algorithms developed under Clinical Recovery Optimization (CRO) frameworks. Digital Sovereignty is maintained through edge execution.
+              </p>
            </div>
         </footer>
-      </div>
+      </main>
     </div>
   );
 };
