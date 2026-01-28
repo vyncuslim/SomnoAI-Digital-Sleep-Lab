@@ -15,26 +15,28 @@ const handleDatabaseError = (err: any) => {
 };
 
 export const healthDataApi = {
-  // 核心变更：校验远程 API 是否存有用户数据
   checkRemoteIngressStatus: async () => {
     try {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return false;
 
       const response = await fetch(BRIGHT_RESPONDER_URL, {
-        method: 'POST', // 或根据后端定义使用 GET
+        method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'apikey': (supabase as any).supabaseKey
         },
-        body: JSON.stringify({ action: 'check_data_integrity' })
+        body: JSON.stringify({ 
+          action: 'query_user_status',
+          user_id: session.user.id 
+        })
       });
 
       if (!response.ok) return false;
       const result = await response.json();
-      return !!result.has_data; // 假设后端返回 has_data 字段
+      return result.has_data === true || (Array.isArray(result.data) && result.data.length > 0);
     } catch (e) {
-      console.warn("[Remote API Check Failed]:", e);
       return false;
     }
   },
@@ -111,25 +113,52 @@ export const userDataApi = {
     try {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user) return null;
+      
+      // 使用 select().eq().maybeSingle() 确保精准查询
       const { data: profile, error } = await supabase
         .from('profiles')
         .select('is_initialized, has_app_data, full_name, is_blocked')
         .eq('id', user.id)
         .maybeSingle();
+      
       if (error) throw handleDatabaseError(error);
+      
       if (!profile) {
-        await supabase.from('profiles').insert({ id: user.id, email: user.email, role: 'user' });
-        return { is_initialized: false, has_app_data: false, is_blocked: false };
+        const { data: newProfile, error: insError } = await supabase
+          .from('profiles')
+          .insert({ id: user.id, email: user.email, role: 'user' })
+          .select()
+          .single();
+        if (insError) throw handleDatabaseError(insError);
+        return newProfile;
       }
+      
       if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
       return profile;
-    } catch (e: any) { throw e; }
+    } catch (e: any) { 
+      console.error("Profile Status Fetch Failed:", e);
+      throw e; 
+    }
   },
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('UNAUTHORIZED');
-    await supabase.from('user_data').upsert({ id: user.id, ...metrics });
-    await supabase.from('profiles').update({ full_name: fullName.trim(), is_initialized: true }).eq('id', user.id);
+    
+    // 1. 提交生理数据
+    const { error: dataError } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
+    if (dataError) throw dataError;
+
+    // 2. 更新个人资料并标记初始化完成
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({ 
+        full_name: fullName.trim(), 
+        is_initialized: true 
+      })
+      .eq('id', user.id);
+    
+    if (profileError) throw profileError;
+
     return { success: true };
   },
   getUserData: async () => {
@@ -178,10 +207,10 @@ export const adminApi = {
   getUsers: () => supabase.from('profiles').select('*').order('created_at', { ascending: false }),
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id).select('email').single(),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id).select('email').single(),
-  getSleepRecords: () => supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100),
   getFeedback: () => supabase.from('feedback').select('*').order('created_at', { ascending: false }),
   getAuditLogs: () => supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100),
-  getSecurityEvents: () => supabase.from('security_events').select('*').order('created_at', { ascending: false })
+  getSecurityEvents: () => supabase.from('security_events').select('*').order('created_at', { ascending: false }),
+  getSleepRecords: () => supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100)
 };
 
 export const feedbackApi = {

@@ -127,13 +127,9 @@ const App: React.FC = () => {
         setSetupRequired(!status.is_initialized); 
         setHasAppData(status.has_app_data); 
         
-        // 关键变更：登录后检查远程 API 数据
         if (status.is_initialized) {
-          const apiHasData = await healthDataApi.checkRemoteIngressStatus();
-          setIsRemoteApiValid(apiHasData);
-          if (!apiHasData) {
-            console.warn("Remote Ingress data missing for this node.");
-          }
+          // 异步检查远程 API，不阻塞核心 UI 逻辑
+          healthDataApi.checkRemoteIngressStatus().then(setIsRemoteApiValid);
         }
 
         if (status.is_initialized && status.has_app_data) await fetchHistory(); 
@@ -207,7 +203,6 @@ const App: React.FC = () => {
       await healthDataApi.uploadTelemetry(fullRecord);
       setHasAppData(true); setCurrentRecord(fullRecord); setHistory(prev => [fullRecord, ...prev]); setSyncStatus('success');
       
-      // 同步成功后重新校验远程 API
       const apiHasData = await healthDataApi.checkRemoteIngressStatus();
       setIsRemoteApiValid(apiHasData);
       
@@ -242,11 +237,18 @@ const App: React.FC = () => {
     if (activeView === 'terms') return <LegalView type="terms" lang={lang} onBack={() => window.location.hash = '#/'} />;
     if (activeView === 'feedback') return <FeedbackView lang={lang} onBack={() => window.location.hash = '#/settings'} />;
     if (authState === 'unauthenticated' && !isSimulated) return <UserLoginPage onSuccess={() => {}} onSandbox={startSandbox} lang={lang} />;
-    if (setupRequired && !isSimulated) return <FirstTimeSetup onComplete={() => { setSetupRequired(false); checkLaboratoryRegistry(); }} />;
+    
+    // 关键修正：FirstTimeSetup 完成后增加延迟重新检查
+    if (setupRequired && !isSimulated) return (
+      <FirstTimeSetup onComplete={() => { 
+        setSetupRequired(false); 
+        // 关键：给数据库 1 秒钟处理更新索引的时间，防止立即查询返回旧数据
+        setTimeout(() => checkLaboratoryRegistry(), 1000); 
+      }} />
+    );
 
     return (
       <div className="w-full flex flex-col">
-        {/* 顶部警告：如果 API 数据校验失败 */}
         <AnimatePresence>
           {isRemoteApiValid === false && activeView === 'dashboard' && (
             <m.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="bg-rose-600/90 backdrop-blur-md overflow-hidden">

@@ -1,3 +1,4 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, Mail, ShieldAlert, ShieldCheck, 
@@ -101,12 +102,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#020617] font-sans relative overflow-hidden">
-      {/* 增强背景动态效果 */}
       <div className="absolute inset-0 pointer-events-none opacity-[0.03]" 
            style={{ backgroundImage: 'radial-gradient(#6366f1 1px, transparent 1px)', backgroundSize: '30px 30px' }} />
       <div className="absolute inset-0 pointer-events-none bg-gradient-to-b from-transparent via-indigo-500/[0.04] to-transparent animate-pulse" />
 
-      {/* 头部区域 */}
       <m.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
@@ -131,7 +130,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       <div className="w-full max-w-[420px] space-y-8 relative z-10">
         {step === 'request' ? (
           <>
-            {/* 标签切换器 */}
             <div className="bg-slate-900/60 p-1.5 rounded-full border border-white/5 flex relative shadow-2xl">
               {['otp', 'login', 'join'].map((tab) => (
                 <button 
