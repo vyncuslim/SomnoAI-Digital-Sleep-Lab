@@ -1,15 +1,13 @@
 /**
  * SomnoAI Admin Notification Service
  * Routes system alerts and feedback via Supabase Edge Functions to Telegram.
+ * Re-engineered for ZERO UI impact.
  */
 
 const EDGE_FUNCTION_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/notify_telegram';
 
 export const notifyAdmin = async (payload: string | { error?: string; message?: string; type?: string }) => {
-  if (!EDGE_FUNCTION_URL) {
-    console.warn("[Telegram Proxy] Notification skipped: EDGE_FUNCTION_URL is undefined.");
-    return false;
-  }
+  if (!EDGE_FUNCTION_URL) return false;
 
   let finalMessage = '';
   if (typeof payload === 'string') {
@@ -20,24 +18,26 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     finalMessage = `🚨 SOMNO LAB ${type}\n\nLOG: ${content}\nTIME: ${new Date().toLocaleString()}`;
   }
 
-  try {
-    console.debug("[Telegram Proxy] Dispatching payload to Edge Function...");
-    const response = await fetch(EDGE_FUNCTION_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ message: finalMessage })
-    });
+  // FORCE ASYNC: Do not let the network request block the current execution frame
+  return new Promise((resolve) => {
+    setTimeout(async () => {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("[Telegram Proxy] Edge Function Error:", response.status, errorText);
-      return false;
-    }
-    
-    console.debug("[Telegram Proxy] Notification sent successfully.");
-    return true;
-  } catch (err) {
-    console.error("[Telegram Proxy] Network exception when calling Edge Function:", err);
-    return false;
-  }
+      try {
+        const response = await fetch(EDGE_FUNCTION_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: finalMessage }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+        resolve(response.ok);
+      } catch (err) {
+        // Complete silence for the UI thread
+        resolve(false);
+      }
+    }, 0);
+  });
 };

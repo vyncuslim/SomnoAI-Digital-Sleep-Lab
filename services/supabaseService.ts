@@ -217,27 +217,33 @@ export const adminApi = {
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData.session?.user?.id || null;
-      
-      const { error } = await supabase.from('feedback').insert({
-        user_id: userId,
-        email: email.trim(),
-        feedback_type: type,
-        content: content.trim()
+      // Per instructions: using /api/feedback which is proxied to Edge Function in vercel.json
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, content, email })
       });
-      
-      if (error) {
-        console.error("Feedback Registry Failure:", error);
-        return { success: false, error: error };
-      }
 
-      // Notify Admin Bot via Edge Function immediately
-      await notifyAdmin(`📝 NEW FEEDBACK\nType: ${type}\nFrom: ${email}\n\nContent: ${content}`);
+      if (!response.ok) {
+        // Fallback directly to Supabase SDK if API endpoint fails
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData.session?.user?.id || null;
+        
+        const { error } = await supabase.from('feedback').insert({
+          user_id: userId,
+          email: email.trim(),
+          feedback_type: type,
+          content: content.trim()
+        });
+        
+        if (error) throw error;
+        await notifyAdmin(`📝 NEW FEEDBACK (via SDK)\nType: ${type}\nFrom: ${email}\n\nContent: ${content}`);
+        return { success: true };
+      }
 
       return { success: true };
     } catch (err: any) {
-      console.error("Feedback Logic Error:", err);
+      console.error("Feedback Registry Failure:", err);
       return { success: false, error: err };
     }
   }

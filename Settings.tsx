@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Language, translations } from './services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { feedbackApi, supabase } from './services/supabaseService.ts';
+import { supabase } from './services/supabaseService.ts';
 import { notifyAdmin } from './services/telegramService.ts';
 
 const m = motion as any;
@@ -21,16 +21,9 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
-  lang, onLanguageChange, onLogout
+  lang, onLanguageChange, onLogout, onNavigate
 }) => {
   const [showDonation, setShowDonation] = useState(false);
-  const [showFeedback, setShowFeedback] = useState(false);
-  const [feedbackType, setFeedbackType] = useState<'report' | 'suggestion' | 'improvement'>('report');
-  const [feedbackContent, setFeedbackContent] = useState('');
-  const [feedbackEmail, setFeedbackEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [feedbackStatus, setFeedbackStatus] = useState<'idle' | 'success' | 'error'>('idle');
-  
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [apiKey, setApiKey] = useState(localStorage.getItem('gemini_api_key') || '');
   const [showKey, setShowKey] = useState(false);
@@ -54,12 +47,6 @@ export const Settings: React.FC<SettingsProps> = ({
       setIsAiActive(hasStoredKey || hasAistudioKey);
     };
     checkAiStatus();
-
-    const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) setFeedbackEmail(user.email);
-    };
-    fetchUser();
   }, [apiKey]);
 
   const handleTestTelegram = async () => {
@@ -102,31 +89,6 @@ export const Settings: React.FC<SettingsProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleSubmitFeedback = async () => {
-    const emailToSubmit = feedbackEmail.trim();
-    if (!feedbackContent.trim() || !emailToSubmit || isSubmitting) return;
-    
-    setIsSubmitting(true);
-    setFeedbackStatus('idle');
-    try {
-      const { success } = await feedbackApi.submitFeedback(feedbackType, feedbackContent, emailToSubmit);
-      if (success) {
-        setFeedbackStatus('success');
-        setFeedbackContent('');
-        setTimeout(() => {
-          setFeedbackStatus('idle');
-          setShowFeedback(false);
-        }, 2000);
-      } else {
-        setFeedbackStatus('error');
-      }
-    } catch (err) {
-      setFeedbackStatus('error');
-    } finally {
-      setIsSubmitting(false);
-    }
   };
 
   const executeFullLogout = async () => {
@@ -256,10 +218,10 @@ export const Settings: React.FC<SettingsProps> = ({
 
           <div className="space-y-4 pt-4 border-t border-white/5 relative z-40 pointer-events-auto">
              <button 
-                onClick={() => setShowFeedback(true)}
-                className="w-full py-6 rounded-full bg-indigo-500/5 border border-indigo-500/10 text-slate-300 font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all hover:bg-indigo-500/10 hover:border-indigo-500/20 cursor-pointer z-50 pointer-events-auto"
+                onClick={() => window.location.hash = '#/feedback'}
+                className="w-full py-6 rounded-full bg-indigo-600/10 border border-indigo-500/20 text-indigo-400 font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all hover:bg-indigo-500/20 cursor-pointer z-50 pointer-events-auto shadow-lg"
              >
-                <MessageSquare size={20} className="text-indigo-400" /> {t.feedback}
+                <MessageSquare size={20} /> {t.feedback}
              </button>
 
              <button 
@@ -278,81 +240,6 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </div>
       </GlassCard>
-
-      {/* FEEDBACK MODAL */}
-      <AnimatePresence>
-        {showFeedback && (
-          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl pointer-events-auto" onClick={() => setShowFeedback(false)}>
-            <m.div 
-              initial={{ scale: 0.9, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.9, opacity: 0 }}
-              onClick={(e: React.MouseEvent) => e.stopPropagation()}
-              className="w-full max-w-xl relative z-[2001] pointer-events-auto"
-            >
-              <GlassCard className="p-8 md:p-12 rounded-[3.5rem] border-indigo-500/30 relative overflow-hidden pointer-events-auto">
-                <div className="flex justify-between items-start mb-8 pointer-events-auto">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                      <MessageSquare size={24} />
-                    </div>
-                    <div className="text-left">
-                      <h2 className="text-xl font-black italic text-white uppercase tracking-tight leading-none">{t.feedback}</h2>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Registry Feedback Stream</p>
-                    </div>
-                  </div>
-                  <button onClick={() => setShowFeedback(false)} className="p-2 text-slate-500 hover:text-white transition-colors cursor-pointer z-50 pointer-events-auto">
-                    <XCircle size={24} />
-                  </button>
-                </div>
-
-                <div className="space-y-6 pointer-events-auto">
-                   <div className="grid grid-cols-3 gap-2 pointer-events-auto">
-                      {(['report', 'suggestion', 'improvement'] as const).map((type) => (
-                        <button 
-                          key={type}
-                          onClick={() => setFeedbackType(type)}
-                          className={`py-3 rounded-2xl text-[9px] font-black uppercase tracking-widest transition-all border cursor-pointer pointer-events-auto ${feedbackType === type ? 'bg-indigo-600 border-indigo-400 text-white' : 'bg-white/5 border-white/5 text-slate-500'}`}
-                        >
-                          {type === 'report' ? t.feedbackReport : type === 'suggestion' ? t.feedbackSuggestion : t.feedbackImprovement}
-                        </button>
-                      ))}
-                   </div>
-
-                   <div className="space-y-4 pointer-events-auto">
-                      <div className="relative pointer-events-auto">
-                        <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={16} />
-                        <input 
-                          type="email" 
-                          value={feedbackEmail}
-                          onChange={(e) => setFeedbackEmail(e.target.value)}
-                          placeholder={t.feedbackEmail}
-                          className="w-full bg-slate-950 border border-white/5 rounded-[1.5rem] pl-14 pr-6 py-4 text-sm text-white outline-none focus:border-indigo-500 font-bold italic pointer-events-auto"
-                        />
-                      </div>
-                      <textarea 
-                        value={feedbackContent}
-                        onChange={(e) => setFeedbackContent(e.target.value)}
-                        placeholder={t.feedbackContent}
-                        rows={5}
-                        className="w-full bg-slate-950 border border-white/5 rounded-[2rem] p-6 text-sm text-white outline-none focus:border-indigo-500 font-medium italic resize-none pointer-events-auto"
-                      />
-                   </div>
-
-                   <button 
-                    onClick={handleSubmitFeedback}
-                    disabled={isSubmitting || !feedbackContent.trim() || !feedbackEmail.trim()}
-                    className={`w-full py-5 rounded-full font-black text-xs uppercase tracking-[0.4em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl cursor-pointer pointer-events-auto ${feedbackStatus === 'success' ? 'bg-emerald-600' : feedbackStatus === 'error' ? 'bg-rose-600' : 'bg-indigo-600'}`}
-                   >
-                     {isSubmitting ? <Loader2 size={18} className="animate-spin" /> : feedbackStatus === 'success' ? <CheckCircle2 size={18} /> : feedbackStatus === 'error' ? <AlertTriangle size={18} /> : <Zap size={18} fill="currentColor" />}
-                     {isSubmitting ? 'TRANSMITTING...' : feedbackStatus === 'success' ? t.feedbackSuccess : feedbackStatus === 'error' ? t.feedbackError : t.feedbackSubmit}
-                   </button>
-                </div>
-              </GlassCard>
-            </m.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* DONATION MODAL */}
       <AnimatePresence>

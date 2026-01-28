@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Moon, User, BrainCircuit, Settings as SettingsIcon, History, Terminal, Smartphone, ShieldOff, AlertTriangle, Database, Shield, FlaskConical, Zap, CheckCircle } from 'lucide-react';
+import { Moon, User, BrainCircuit, Settings as SettingsIcon, History, Terminal, Smartphone, ShieldOff, AlertTriangle, Database, Shield, FlaskConical, Zap, CheckCircle, MessageSquare, RefreshCw, Power } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
@@ -21,6 +21,7 @@ import { Settings } from './Settings.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { LegalView } from './components/LegalView.tsx';
+import { FeedbackView } from './components/FeedbackView.tsx';
 
 const m = motion as any;
 
@@ -42,34 +43,69 @@ const MOCK_RECORD: SleepRecord = {
   aiInsights: ["Neural synthesis complete. Link stable.", "Fact: Simulation active."]
 };
 
-const DecisionLoading = () => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center gap-8 text-center bg-[#020617] z-[9999]">
-    <div className="relative">
-      <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full animate-pulse" />
-      <Logo size={100} animated={true} className="relative z-10" />
-    </div>
-    <div className="space-y-3 relative z-10">
-      <div className="flex items-center justify-center gap-3">
-        <Shield size={14} className="text-indigo-500 animate-pulse" />
-        <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.6em] italic">
-          Calibrating Neural Link
-        </p>
+const DecisionLoading = ({ onBypass }: { onBypass: () => void }) => {
+  const [showBypass, setShowBypass] = useState(false);
+  
+  useEffect(() => {
+    // Highly aggressive timeout for frustrated users
+    const timer = setTimeout(() => setShowBypass(true), 3500);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleHardReset = () => {
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.hash = '#/';
+    window.location.reload();
+  };
+
+  return (
+    <div className="fixed inset-0 flex flex-col items-center justify-center gap-8 text-center bg-[#020617] z-[9999] p-6">
+      <div className="relative">
+        <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full animate-pulse" />
+        <Logo size={100} animated={true} className="relative z-10" />
       </div>
-      <div className="w-48 h-1 bg-white/5 rounded-full mx-auto overflow-hidden">
-        <m.div 
-          initial={{ x: '-100%' }}
-          animate={{ x: '100%' }}
-          transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
-          className="h-full w-1/2 bg-indigo-600"
-        />
+      <div className="space-y-6 relative z-10 w-full max-w-xs">
+        <div className="space-y-3">
+          <div className="flex items-center justify-center gap-3">
+            <Shield size={14} className="text-indigo-500 animate-pulse" />
+            <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.6em] italic">
+              Calibrating Neural Link
+            </p>
+          </div>
+          <div className="w-48 h-1 bg-white/5 rounded-full mx-auto overflow-hidden">
+            <m.div 
+              initial={{ x: '-100%' }}
+              animate={{ x: '100%' }}
+              transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+              className="h-full w-1/2 bg-indigo-600"
+            />
+          </div>
+          <p className="text-slate-700 font-mono text-[9px] uppercase tracking-widest font-bold animate-pulse italic">Establishing Protocol Handshake...</p>
+        </div>
+
+        {showBypass && (
+          <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="pt-4 space-y-3">
+             <button 
+               onClick={onBypass}
+               className="w-full py-4 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20"
+             >
+               <RefreshCw size={12} /> Force Load Console
+             </button>
+             <button 
+               onClick={handleHardReset}
+               className="w-full py-3 bg-white/5 border border-white/10 text-slate-500 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 hover:text-rose-400 transition-all"
+             >
+               <Power size={10} /> Clear Cache & Reset
+             </button>
+          </m.div>
+        )}
       </div>
-      <p className="text-slate-700 font-mono text-[9px] uppercase tracking-widest font-bold">Establishing Protocol Handshake...</p>
     </div>
-  </div>
-);
+  );
+};
 
 const App: React.FC = () => {
-  // Sync URL Check: If we are in an OAuth flow, we MUST start in loading and STAY there.
   const isAuthCallback = useMemo(() => {
     return window.location.hash.includes('access_token=') || 
            window.location.hash.includes('id_token=') ||
@@ -105,7 +141,9 @@ const App: React.FC = () => {
         setCurrentRecord(records[0] as any);
         setHasAppData(true);
       }
-    } catch (err) {}
+    } catch (err) {
+      console.warn("Telemetry stream unreachable.");
+    }
   }, [isSimulated]);
 
   const checkLaboratoryRegistry = useCallback(async (sim?: boolean) => {
@@ -118,8 +156,8 @@ const App: React.FC = () => {
       return;
     }
     try {
+      // Background process: should not block UI transition to 'authenticated'
       const status = await userDataApi.getProfileStatus();
-      setDbCalibrationRequired(false);
       if (status) {
         setIsBlocked(status.is_blocked);
         setSetupRequired(!status.is_initialized);
@@ -130,60 +168,74 @@ const App: React.FC = () => {
       }
     } catch (err: any) {
       if (err.message === "BLOCK_ACTIVE") setIsBlocked(true);
-      if (err.message === "DB_CALIBRATION_REQUIRED") setDbCalibrationRequired(true);
+      else if (err.message === "DB_CALIBRATION_REQUIRED") setDbCalibrationRequired(true);
+      else {
+        setHasAppData(false);
+      }
     }
   }, [fetchHistory, isSimulated]);
 
   useEffect(() => {
+    let mountActive = true;
+    
     const initAuth = async () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
+        if (!mountActive) return;
+        
         if (initialSession) {
           setSession(initialSession);
-          adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin);
-          await checkLaboratoryRegistry();
+          // UI-FIRST: Release loading immediately
           setAuthState('authenticated');
+          // DATA-SECOND: Run background checks
+          adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin);
+          checkLaboratoryRegistry();
         } else {
-          // IF URL has auth info, WE DO NOT transition to unauthenticated yet.
-          // We let the listener below handle it when the session is ready.
-          if (!isAuthCallback) {
-            setAuthState('unauthenticated');
-          }
+          if (!isAuthCallback) setAuthState('unauthenticated');
         }
       } catch (err) {
-        if (!isAuthCallback) setAuthState('unauthenticated');
+        if (mountActive) setAuthState('unauthenticated');
       }
     };
 
     initAuth();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, newSession) => {
+      if (!mountActive) return;
       if (newSession) {
         setSession(newSession);
         setIsSimulated(false);
+        setAuthState('authenticated');
         adminApi.checkAdminStatus(newSession.user.id).then(setIsAdmin);
-        await checkLaboratoryRegistry();
-        
-        // Use a small timeout to ensure data is fetched before showing dashboard
-        setTimeout(() => setAuthState('authenticated'), 50);
+        checkLaboratoryRegistry();
       } else {
         setSession(null);
         setIsAdmin(false);
-        // Only show login if no auth markers are in URL
-        if (!isAuthCallback) {
-          setAuthState('unauthenticated');
-        }
+        if (!isAuthCallback) setAuthState('unauthenticated');
       }
     });
 
-    return () => subscription.unsubscribe();
-  }, [checkLaboratoryRegistry, isAuthCallback]);
+    // Safety Override: Force exit from loading screen after 6s regardless of callback status
+    const loadingSafety = setTimeout(() => {
+      if (authState === 'loading') {
+        console.warn("Handshake Timeout. Routing to login.");
+        setAuthState('unauthenticated');
+      }
+    }, 6000);
+
+    return () => {
+      mountActive = false;
+      subscription.unsubscribe();
+      clearTimeout(loadingSafety);
+    };
+  }, [checkLaboratoryRegistry, isAuthCallback, authState]);
 
   useEffect(() => {
     const handleHash = () => {
       const hash = window.location.hash || '#/';
       if (hash.includes('privacy')) setActiveView('privacy');
       else if (hash.includes('terms')) setActiveView('terms');
+      else if (hash.includes('feedback')) setActiveView('feedback');
       else if (hash.includes('assistant')) setActiveView('assistant');
       else if (hash.includes('admin/login')) setActiveView('admin-login');
       else if (hash.includes('admin')) setActiveView('admin');
@@ -230,8 +282,7 @@ const App: React.FC = () => {
     checkLaboratoryRegistry(true);
   };
 
-  // BLOCK: Priority Render loading if state is unknown or callback is active
-  if (authState === 'loading') return <DecisionLoading />;
+  if (authState === 'loading') return <DecisionLoading onBypass={() => setAuthState('unauthenticated')} />;
 
   if (isBlocked) {
     return (
@@ -272,6 +323,7 @@ const App: React.FC = () => {
     if (activeView === 'admin') return <AdminDashboard />;
     if (activeView === 'privacy') return <LegalView type="privacy" lang={lang} onBack={() => window.location.hash = '#/'} />;
     if (activeView === 'terms') return <LegalView type="terms" lang={lang} onBack={() => window.location.hash = '#/'} />;
+    if (activeView === 'feedback') return <FeedbackView lang={lang} onBack={() => window.location.hash = '#/settings'} />;
 
     if (authState === 'unauthenticated' && !isSimulated) {
       return <UserLoginPage onSuccess={() => {}} onSandbox={startSandbox} lang={lang} />;

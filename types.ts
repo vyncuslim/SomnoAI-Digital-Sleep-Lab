@@ -54,6 +54,6 @@ export interface SecurityEvent {
   timestamp?: string;
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'alarm' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback';
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
 export type Language = 'en' | 'zh';
