@@ -7,7 +7,6 @@
 export const notificationService = {
   requestPermission: async (): Promise<boolean> => {
     if (!("Notification" in window)) {
-      console.warn("This browser does not support desktop notification");
       return false;
     }
 
@@ -15,23 +14,32 @@ export const notificationService = {
       return true;
     }
 
-    const permission = await Notification.requestPermission();
-    return permission === "granted";
+    try {
+      const permission = await Notification.requestPermission();
+      return permission === "granted";
+    } catch (e) {
+      return false;
+    }
   },
 
   sendNotification: (title: string, body: string, icon: string = 'https://img.icons8.com/fluency/96/moon.png') => {
     if (!("Notification" in window) || Notification.permission !== "granted") {
-      console.warn("Notifications are not enabled or supported.");
+      // Quietly exit instead of warning to keep console clean
       return;
     }
 
     try {
-      new Notification(title, {
-        body,
-        icon,
-      });
+      // Use a brief timeout to avoid potential race conditions with other UI updates
+      setTimeout(() => {
+        new Notification(title, {
+          body,
+          icon,
+          silent: false,
+          tag: 'somno-alert'
+        });
+      }, 100);
     } catch (e) {
-      console.error("Error sending notification:", e);
+      // Fail silently for notification errors
     }
   }
 };

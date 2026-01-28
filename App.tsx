@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
 import { Moon, User, BrainCircuit, Settings as SettingsIcon, History, BookOpen, Smartphone, ShieldOff, AlertTriangle, Database, Shield, FlaskConical, Zap, CheckCircle, MessageSquare, RefreshCw, Power } from 'lucide-react';
@@ -98,19 +98,27 @@ const App: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [currentRecord, setCurrentRecord] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
+  const [syncStatus, setSyncStatus] = useState('idle');
   const [isSimulated, setIsSimulated] = useState(false);
   const [isRemoteApiValid, setIsRemoteApiValid] = useState<boolean | null>(null);
+  
+  const isRegistryCheckActive = useRef(false);
 
   const fetchHistory = useCallback(async (sim?: boolean) => {
     if (sim || isSimulated) { setHistory([MOCK_RECORD]); setCurrentRecord(MOCK_RECORD); setHasAppData(true); return; }
     try {
       const records = await healthDataApi.getTelemetryHistory(30);
       if (records && records.length > 0) { setHistory(records as any[]); setCurrentRecord(records[0] as any); setHasAppData(true); }
-    } catch (err) { console.warn("Telemetry stream unreachable."); }
+    } catch (err: any) { 
+      if (err.message === "DB_CALIBRATION_REQUIRED") setDbCalibrationRequired(true);
+      console.warn("Telemetry stream unreachable."); 
+    }
   }, [isSimulated]);
 
   const checkLaboratoryRegistry = useCallback(async (sim?: boolean) => {
+    if (isRegistryCheckActive.current && !sim) return;
+    isRegistryCheckActive.current = true;
+
     if (sim || isSimulated) { 
       setSetupRequired(false); 
       setHasAppData(true); 
@@ -118,6 +126,7 @@ const App: React.FC = () => {
       setDbCalibrationRequired(false); 
       setIsRemoteApiValid(true);
       await fetchHistory(true); 
+      isRegistryCheckActive.current = false;
       return; 
     }
     try {
@@ -128,8 +137,8 @@ const App: React.FC = () => {
         setHasAppData(status.has_app_data); 
         
         if (status.is_initialized) {
-          // 异步检查远程 API，不再阻断 UI 主逻辑
-          healthDataApi.checkRemoteIngressStatus().then(setIsRemoteApiValid);
+          const apiHasData = await healthDataApi.checkRemoteIngressStatus();
+          setIsRemoteApiValid(apiHasData);
         }
 
         if (status.is_initialized && status.has_app_data) await fetchHistory(); 
@@ -139,6 +148,8 @@ const App: React.FC = () => {
       if (err.message === "BLOCK_ACTIVE") setIsBlocked(true);
       else if (err.message === "DB_CALIBRATION_REQUIRED") setDbCalibrationRequired(true);
       else setHasAppData(false);
+    } finally {
+      isRegistryCheckActive.current = false;
     }
   }, [fetchHistory, isSimulated]);
 
@@ -148,7 +159,12 @@ const App: React.FC = () => {
       try {
         const { data: { session: initialSession } } = await supabase.auth.getSession();
         if (!mountActive) return;
-        if (initialSession) { setSession(initialSession); setAuthState('authenticated'); adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin); checkLaboratoryRegistry(); }
+        if (initialSession) { 
+          setSession(initialSession); 
+          setAuthState('authenticated'); 
+          adminApi.checkAdminStatus(initialSession.user.id).then(setIsAdmin); 
+          checkLaboratoryRegistry(); 
+        }
         else if (!isAuthCallback) setAuthState('unauthenticated');
       } catch (err) { if (mountActive) setAuthState('unauthenticated'); }
     };
@@ -163,7 +179,11 @@ const App: React.FC = () => {
         if (event === 'SIGNED_IN') {
           notificationService.sendNotification("SomnoAI Active", `Handshake verified: ${newSession.user.email}`);
         }
-      } else { setSession(null); setIsAdmin(false); if (!isAuthCallback) setAuthState('unauthenticated'); }
+      } else { 
+        setSession(null); 
+        setIsAdmin(false); 
+        if (!isAuthCallback) setAuthState('unauthenticated'); 
+      }
     });
 
     const loadingSafety = setTimeout(() => { if (authState === 'loading') setAuthState('unauthenticated'); }, 6000);
@@ -208,12 +228,25 @@ const App: React.FC = () => {
       
       notificationService.sendNotification("Sync Complete", `Telemetry updated. Score: ${fullRecord.score}%`);
       setTimeout(() => setSyncStatus('idle'), 1500);
-    } catch (err: any) { setSyncStatus('error'); setTimeout(() => setSyncStatus('idle'), 2000); }
+    } catch (err: any) { 
+      if (err.message === "DB_CALIBRATION_REQUIRED") setDbCalibrationRequired(true);
+      setSyncStatus('error'); 
+      setTimeout(() => setSyncStatus('idle'), 2000); 
+    }
   };
 
-  const startSandbox = () => { setIsSimulated(true); setHasAppData(true); setSetupRequired(false); setAuthState('authenticated'); setDbCalibrationRequired(false); checkLaboratoryRegistry(true); notificationService.sendNotification("Sandbox Mode", "Simulation active."); };
+  const startSandbox = () => { 
+    setIsSimulated(true); 
+    setHasAppData(true); 
+    setSetupRequired(false); 
+    setAuthState('authenticated'); 
+    setDbCalibrationRequired(false); 
+    checkLaboratoryRegistry(true); 
+    notificationService.sendNotification("Sandbox Mode", "Simulation active."); 
+  };
 
   if (authState === 'loading') return <DecisionLoading onBypass={() => setAuthState('unauthenticated')} />;
+  
   if (isBlocked) return (
     <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6 z-[9999]">
       <ShieldOff size={80} className="text-rose-600 mb-4 animate-pulse" /><h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Access Revoked</h2>
@@ -225,7 +258,7 @@ const App: React.FC = () => {
   if (dbCalibrationRequired) return (
     <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-8 z-[9999] overflow-y-auto">
       <div className="relative"><Database size={80} className="text-amber-500 mb-4" /><AlertTriangle size={32} className="absolute -bottom-2 -right-2 text-rose-500 animate-pulse" /></div>
-      <div className="space-y-4 max-w-2xl"><h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Database Calibration Required</h2><p className="text-slate-400 text-xs leading-relaxed font-bold italic">Your database schema is incomplete or RLS is blocked. Please run the <span className="text-white">setup.sql</span> in your Supabase SQL Editor.</p></div>
+      <div className="space-y-4 max-w-2xl"><h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">Database Calibration Required</h2><p className="text-slate-400 text-xs leading-relaxed font-bold italic">Your database schema is incomplete or RLS policies are missing. Please run the <span className="text-white">setup.sql</span> script in your Supabase SQL Editor.</p></div>
       <div className="flex flex-col sm:flex-row gap-4"><button onClick={() => window.location.reload()} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:bg-indigo-500 transition-all shadow-xl shadow-indigo-500/20">RETRY HANDSHAKE</button><button onClick={startSandbox} className="px-10 py-5 bg-white/5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-[0.4em] hover:text-white transition-all">BYPASS TO SANDBOX</button></div>
     </div>
   );
@@ -237,26 +270,19 @@ const App: React.FC = () => {
     if (activeView === 'terms') return <LegalView type="terms" lang={lang} onBack={() => window.location.hash = '#/'} />;
     if (activeView === 'feedback') return <FeedbackView lang={lang} onBack={() => window.location.hash = '#/settings'} />;
     if (authState === 'unauthenticated' && !isSimulated) return <UserLoginPage onSuccess={() => {}} onSandbox={startSandbox} lang={lang} />;
-    
-    if (setupRequired && !isSimulated) return (
-      <FirstTimeSetup onComplete={() => { 
-        setSetupRequired(false); 
-        // 关键：给数据库一点索引更新的时间，防止重新检查读到旧值
-        setTimeout(() => checkLaboratoryRegistry(), 1200); 
-      }} />
-    );
+    if (setupRequired && !isSimulated) return <FirstTimeSetup onComplete={() => { setSetupRequired(false); checkLaboratoryRegistry(); }} />;
 
     return (
       <div className="w-full flex flex-col">
         <AnimatePresence>
           {isRemoteApiValid === false && activeView === 'dashboard' && (
-            <m.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="bg-amber-600/90 backdrop-blur-md overflow-hidden">
+            <m.div initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} className="bg-rose-600/90 backdrop-blur-md overflow-hidden">
                <div className="max-w-4xl mx-auto px-6 py-3 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                      <AlertTriangle size={16} className="text-white animate-pulse" />
-                     <p className="text-[10px] font-black text-white uppercase tracking-widest">External Data Link Missing: Please Sync with Laboratory</p>
+                     <p className="text-[10px] font-black text-white uppercase tracking-widest">External Data Link Incomplete: Remote Node Empty</p>
                   </div>
-                  <button onClick={handleSyncHealth} className="px-4 py-1.5 bg-white text-amber-600 rounded-full text-[9px] font-black uppercase tracking-tighter hover:bg-rose-50 transition-all">RE-LINK</button>
+                  <button onClick={handleSyncHealth} className="px-4 py-1.5 bg-white text-rose-600 rounded-full text-[9px] font-black uppercase tracking-tighter hover:bg-rose-50 transition-all">FORCE SYNC</button>
                </div>
             </m.div>
           )}
@@ -270,7 +296,7 @@ const App: React.FC = () => {
               {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
               {activeView === 'diary' && <DiaryView lang={lang} />}
               {activeView === 'profile' && <UserProfile lang={lang} />}
-              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => authApi.signOut()} onNavigate={(v:any) => window.location.hash = `#/${v}`} />}
+              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => authApi.signOut()} onNavigate={(v:any) => window.location.hash = `#/${v}`} threeDEnabled={true} onThreeDChange={() => {}} />}
             </m.div>
           </AnimatePresence>
         </main>
