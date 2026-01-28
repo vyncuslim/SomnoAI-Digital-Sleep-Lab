@@ -123,13 +123,6 @@ ALTER TABLE public.health_raw_data ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.diary_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
 
--- Profiles Policies
-CREATE POLICY "Profiles: user read own" ON public.profiles FOR SELECT USING (auth.uid() = id);
-CREATE POLICY "Profiles: user update own" ON public.profiles FOR UPDATE USING (auth.uid() = id);
-
--- User Data Policies
-CREATE POLICY "User Data: access own" ON public.user_data FOR ALL USING (auth.uid() = id);
-
 -- Diary Policies
 CREATE POLICY "Diary: user access" ON public.diary_entries 
 FOR ALL USING (auth.uid() = user_id);

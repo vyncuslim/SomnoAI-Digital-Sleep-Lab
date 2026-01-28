@@ -30,8 +30,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
   const [error, setError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [showSpamNotice, setShowSpamNotice] = useState(false);
+  const [isDevelopment, setIsDevelopment] = useState(false);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  useEffect(() => {
+    // 自动检测是否在开发/预览环境，以便提供备用验证提示
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname.includes('webcontainer');
+    setIsDevelopment(isDev);
+  }, []);
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,13 +52,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       if (activeTab === 'otp') {
         const { error: otpErr } = await authApi.sendOTP(email.trim());
         if (otpErr) {
-          // 针对 Supabase 的频率限制 (429) 进行友好提示
           if (otpErr.status === 429) {
             throw new Error("RATE_LIMIT: Handshake frequency exceeded. Please wait 60s or use Sandbox.");
+          }
+          if (otpErr.status === 422) {
+            throw new Error("INVALID_INPUT: Check email format.");
           }
           throw otpErr;
         }
         setStep('verify');
+        // 如果 2秒后还在转圈，给个温馨提示
         setTimeout(() => setShowSpamNotice(true), 2000);
       } else if (activeTab === 'login') {
         const { error: signInErr } = await authApi.signIn(email, password);
@@ -74,8 +84,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     if (token.length < 6 || isProcessing) return;
     setIsProcessing(true);
     try {
-      // 演示/测试模式：如果后端邮件系统故障，允许使用 123456 进入
-      if (token === '123456' && (window.location.hostname === 'localhost' || window.location.hostname.includes('webcontainer'))) {
+      // 演示/测试模式：如果邮件发送失败且处于预览环境，允许使用 123456
+      if (token === '123456' && isDevelopment) {
          onLogin();
          return;
       }
@@ -98,6 +108,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     newOtp[index] = value.slice(-1);
     setOtp(newOtp);
     if (value && index < 5) otpRefs.current[index + 1]?.focus();
+    
+    // 如果填满了，自动触发验证
+    if (value && index === 5 && !newOtp.some(d => !d)) {
+       setTimeout(handleVerifyOtp, 100);
+    }
   };
 
   return (
@@ -137,7 +152,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                   onClick={() => { setActiveTab(tab as AuthTab); setError(null); }}
                   className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest z-10 transition-all ${activeTab === tab ? 'text-white' : 'text-slate-500 hover:text-slate-400'}`}
                 >
-                  {tab === 'otp' ? 'Magic Link' : tab}
+                  {tab === 'otp' ? 'Magic Code' : tab}
                 </button>
               ))}
               <m.div 
@@ -195,8 +210,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                   </div>
                   {error.includes('RATE_LIMIT') && (
                     <div className="flex flex-col gap-2 pt-2 border-t border-rose-500/10">
-                      <p className="text-[9px] text-slate-500 italic uppercase font-bold">Try Sandbox Mode or check back in 1 hour.</p>
-                      <button type="button" onClick={onGuest} className="text-[9px] font-black text-rose-500 underline text-left uppercase">Activate Sandbox Now</button>
+                      <p className="text-[9px] text-slate-500 italic uppercase font-bold">The lab dispatch node is resting. Please use Sandbox.</p>
+                      <button type="button" onClick={onGuest} className="text-[10px] font-black text-rose-500 underline text-left uppercase py-1">Bypass via Sandbox Mode</button>
                     </div>
                   )}
                 </m.div>
@@ -206,7 +221,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 type="submit" disabled={isProcessing}
                 className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-[0.98] transition-all hover:bg-indigo-500 shadow-indigo-600/20 disabled:opacity-50"
               >
-                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <span>AUTHORIZE LAB ACCESS</span>}
+                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <span>DISPATCH ACCESS TOKEN</span>}
               </button>
             </form>
           </>
@@ -215,7 +230,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
             <div className="text-center space-y-3">
               <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Verify Token</h3>
               <p className="text-[10px] text-slate-600 font-bold uppercase tracking-widest truncate px-4">
-                SECURITY TOKEN DISPATCHED TO {email.toUpperCase()}
+                TOKEN DISPATCHED TO {email.toUpperCase()}
               </p>
             </div>
             
@@ -240,8 +255,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               >
                 <Info size={20} className="text-indigo-400 shrink-0 mt-0.5" />
                 <div className="space-y-1">
-                  <p className="text-[11px] text-white font-black uppercase tracking-tight">No code received?</p>
-                  <p className="text-[10px] text-slate-500 italic leading-relaxed">Check your <span className="text-indigo-400 font-bold">Spam/Junk</span> folder. Supabase email limits are active.</p>
+                  <p className="text-[11px] text-white font-black uppercase tracking-tight">Latency Detected?</p>
+                  <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                    Check <span className="text-indigo-400 font-bold">Spam</span>. 
+                    {isDevelopment && <span> For testing, you may use <span className="text-white font-bold">123456</span> if the email fails.</span>}
+                  </p>
                 </div>
               </m.div>
             )}
@@ -259,7 +277,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-[0.98] transition-all disabled:opacity-30"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
-                <span className="ml-3">AUTHENTICATE & ACTIVATE</span>
+                <span className="ml-3">SYNC & ACTIVATE</span>
               </button>
               <button onClick={() => setStep('request')} className="text-[10px] font-black text-slate-700 hover:text-white uppercase tracking-widest flex items-center justify-center gap-2 transition-colors">
                 <ChevronLeft size={12} /> Re-enter Identifier
@@ -271,7 +289,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         <div className="space-y-6">
           <div className="flex items-center gap-4 px-10 opacity-30">
              <div className="h-px flex-1 bg-white/20" />
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">protocol bypass</span>
+             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">or sandbox</span>
              <div className="h-px flex-1 bg-white/20" />
           </div>
 
@@ -286,7 +304,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 <path fill="#fff" opacity="0.4" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
                 <path fill="#fff" opacity="0.8" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
               </svg>
-              GOOGLE IDENTITY
+              GOOGLE LOGIN
             </button>
             
             <button 
@@ -294,7 +312,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               className="w-full py-5 bg-indigo-500/5 border border-indigo-500/10 rounded-full flex items-center justify-center gap-3 text-slate-500 hover:text-indigo-400 transition-all text-[11px] font-black uppercase tracking-widest active:scale-95"
             >
               <Fingerprint size={16} />
-              Enter Sandbox Mode
+              Bypass to Sandbox Mode
             </button>
           </div>
         </div>
