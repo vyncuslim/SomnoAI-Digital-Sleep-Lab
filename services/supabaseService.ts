@@ -210,44 +210,77 @@ export const adminApi = {
     } catch (e) { return false; }
   },
   getUsers: async () => {
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
-    if (error) throw handleDatabaseError(error);
-    return data || [];
+    try {
+      const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+      if (error) throw handleDatabaseError(error);
+      return data || [];
+    } catch (e) { return []; }
   },
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id).select('email').single(),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id).select('email').single(),
   getSleepRecords: async () => {
-    const { data, error } = await supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100);
-    if (error) throw handleDatabaseError(error);
-    return data || [];
+    try {
+      const { data, error } = await supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100);
+      if (error) throw handleDatabaseError(error);
+      return data || [];
+    } catch (e) { return []; }
   },
   getFeedback: async () => {
-    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
-    if (error) throw handleDatabaseError(error);
-    return data || [];
+    try {
+      const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
+      if (error) throw handleDatabaseError(error);
+      return data || [];
+    } catch (e) { return []; }
   },
   getAuditLogs: async () => {
-    const { data, error } = await supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100);
-    if (error) throw handleDatabaseError(error);
-    return data || [];
+    try {
+      const { data, error } = await supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100);
+      if (error) throw handleDatabaseError(error);
+      return data || [];
+    } catch (e) { return []; }
   },
   getSecurityEvents: async () => {
-    const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
-    if (error) throw handleDatabaseError(error);
-    return data || [];
+    try {
+      const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
+      if (error) throw handleDatabaseError(error);
+      return data || [];
+    } catch (e) { return []; }
   }
 };
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user?.id || null;
-    const { error } = await supabase.from('feedback').insert({ 
-      user_id: userId, 
-      email: email.trim(), 
-      feedback_type: type, 
-      content: content.trim() 
-    });
-    return { success: !error, error };
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      const response = await fetch('/api/feedback', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token || ''}`
+        },
+        body: JSON.stringify({
+          feedback_type: type,
+          content: content.trim(),
+          email: email.trim(),
+          user_id: session?.user?.id || null
+        })
+      });
+
+      if (!response.ok) {
+        // Fallback to direct SDK insert if endpoint is unreachable or 404 in some environments
+        const { error } = await supabase.from('feedback').insert({ 
+          user_id: session?.user?.id || null, 
+          email: email.trim(), 
+          feedback_type: type, 
+          content: content.trim() 
+        });
+        return { success: !error, error };
+      }
+
+      return { success: true, error: null };
+    } catch (err: any) {
+      return { success: false, error: err };
+    }
   }
 };

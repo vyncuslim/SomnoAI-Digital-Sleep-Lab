@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { Loader2, ShieldAlert, Terminal, Copy, CheckCircle } from 'lucide-react';
 import { supabase, adminApi } from '../../services/supabaseService.ts';
@@ -38,10 +39,9 @@ export default function AdminDashboard() {
         if (!isAdmin) {
           setError("INSUFFICIENT_CLEARANCE");
           setIsAuthorized(false);
-          return;
+        } else {
+          setIsAuthorized(true);
         }
-
-        setIsAuthorized(true);
       } catch (e: any) {
         if (isMounted) setError(e.message || "Registry unreachable.");
       } finally {
@@ -111,18 +111,16 @@ export default function AdminDashboard() {
     );
   }
 
-  if (error) {
+  if (error || !isAuthorized) {
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6">
         <ShieldAlert size={64} className="text-rose-600 mb-4" />
-        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Security Block Active</h2>
-        <p className="text-slate-500 text-sm max-w-md mx-auto italic leading-relaxed">{error}</p>
-        <button onClick={() => window.location.reload()} className="px-10 py-5 bg-rose-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest">RETRY HANDSHAKE</button>
+        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Access Terminal Issue</h2>
+        <p className="text-slate-500 text-sm max-w-md mx-auto italic leading-relaxed">{error || "Failed to verify administrator status."}</p>
+        <button onClick={() => window.location.hash = '#/'} className="px-10 py-5 bg-rose-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest">RETURN TO BASE</button>
       </div>
     );
   }
-
-  if (!isAuthorized) return null;
 
   return (
     <div className="min-h-screen bg-[#020617] p-6 md:p-12 animate-in fade-in duration-1000 relative">
