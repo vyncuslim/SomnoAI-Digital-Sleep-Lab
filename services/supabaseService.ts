@@ -8,7 +8,6 @@ const BRIGHT_RESPONDER_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  // 403 (Forbidden) and 400 (Bad Request) on these tables usually mean RLS policies or schema are missing
   if (err.status === 403 || err.status === 400 || err.status === 500 || ['42P01', '42703', '42P16', 'PGRST204', 'PGRST116'].includes(err.code)) {
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
@@ -90,7 +89,6 @@ export const userDataApi = {
       if (error) throw handleDatabaseError(error);
       
       if (!profile) {
-        // If profile doesn't exist but user does, attempt to create it (though trigger should handle this)
         const { data: newProfile, error: insertError } = await supabase
           .from('profiles')
           .insert({ id: user.id, email: user.email, role: 'user' })
@@ -135,9 +133,6 @@ export const userDataApi = {
   }
 };
 
-/**
- * profileApi: Manages user profile metadata and callsigns.
- */
 export const profileApi = {
   getMyProfile: async () => {
     try {
@@ -159,9 +154,6 @@ export const profileApi = {
   }
 };
 
-/**
- * diaryApi: Manages chronological sleep recovery logs and mood telemetry.
- */
 export const diaryApi = {
   getEntries: async () => {
     try {
@@ -217,13 +209,33 @@ export const adminApi = {
       return data?.role === 'admin';
     } catch (e) { return false; }
   },
-  getUsers: () => supabase.from('profiles').select('*').order('created_at', { ascending: false }),
+  getUsers: async () => {
+    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    if (error) throw handleDatabaseError(error);
+    return data || [];
+  },
   blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id).select('email').single(),
   unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id).select('email').single(),
-  getSleepRecords: () => supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100),
-  getFeedback: () => supabase.from('feedback').select('*').order('created_at', { ascending: false }),
-  getAuditLogs: () => supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100),
-  getSecurityEvents: () => supabase.from('security_events').select('*').order('created_at', { ascending: false })
+  getSleepRecords: async () => {
+    const { data, error } = await supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100);
+    if (error) throw handleDatabaseError(error);
+    return data || [];
+  },
+  getFeedback: async () => {
+    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
+    if (error) throw handleDatabaseError(error);
+    return data || [];
+  },
+  getAuditLogs: async () => {
+    const { data, error } = await supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100);
+    if (error) throw handleDatabaseError(error);
+    return data || [];
+  },
+  getSecurityEvents: async () => {
+    const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
+    if (error) throw handleDatabaseError(error);
+    return data || [];
+  }
 };
 
 export const feedbackApi = {

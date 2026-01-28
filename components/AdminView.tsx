@@ -31,6 +31,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setLoading(true);
     setError(null);
     try {
+      // Return values are now arrays directly from supabaseService
       const [users, records, feedback, logs, security] = await Promise.all([
         adminApi.getUsers(),
         adminApi.getSleepRecords(),
@@ -40,6 +41,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       ]);
       setData({ users, records, feedback, logs, security });
     } catch (err: any) {
+      console.error("[Admin Registry Error]:", err);
       setError(err.message || "Sync Error: Laboratory Node unreachable.");
     } finally {
       setLoading(false);
@@ -67,18 +69,25 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const filteredItems = useMemo(() => {
     const q = searchQuery.toLowerCase();
+    
+    // Safety check: ensure each data source is an array before processing
+    const currentUsers = Array.isArray(data.users) ? data.users : [];
+    const currentRecords = Array.isArray(data.records) ? data.records : [];
+    const currentSecurity = Array.isArray(data.security) ? data.security : [];
+    const currentLogs = Array.isArray(data.logs) ? data.logs : [];
+
     if (!q) {
-      if (activeTab === 'users') return data.users;
-      if (activeTab === 'records') return data.records;
-      if (activeTab === 'security') return data.security;
-      if (activeTab === 'logs') return data.logs;
+      if (activeTab === 'users') return currentUsers;
+      if (activeTab === 'records') return currentRecords;
+      if (activeTab === 'security') return currentSecurity;
+      if (activeTab === 'logs') return currentLogs;
       return [];
     }
 
-    if (activeTab === 'users') return data.users.filter(u => (u.email || u.id).toLowerCase().includes(q));
-    if (activeTab === 'records') return data.records.filter(r => r.id?.toLowerCase().includes(q) || r.user_id?.toLowerCase().includes(q));
-    if (activeTab === 'security') return data.security.filter(s => (s.email || '').toLowerCase().includes(q) || (s.event_type || '').toLowerCase().includes(q));
-    if (activeTab === 'logs') return data.logs.filter((l: any) => 
+    if (activeTab === 'users') return currentUsers.filter(u => (u.email || u.id || '').toLowerCase().includes(q));
+    if (activeTab === 'records') return currentRecords.filter(r => (r.id || '').toLowerCase().includes(q) || (r.user_id || '').toLowerCase().includes(q));
+    if (activeTab === 'security') return currentSecurity.filter(s => (s.email || '').toLowerCase().includes(q) || (s.event_type || '').toLowerCase().includes(q));
+    if (activeTab === 'logs') return currentLogs.filter((l: any) => 
       (l.action || '').toLowerCase().includes(q) || 
       (l.message || '').toLowerCase().includes(q) || 
       (l.user_id || '').toLowerCase().includes(q)
@@ -86,7 +95,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return [];
   }, [searchQuery, activeTab, data]);
 
-  const unreadAlerts = data.security.filter(s => !s.notified).length;
+  const unreadAlerts = Array.isArray(data.security) ? data.security.filter(s => !s.notified).length : 0;
 
   return (
     <div className="space-y-10 pb-32 max-w-6xl mx-auto animate-in fade-in duration-700 font-sans">
@@ -121,22 +130,35 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </nav>
       </header>
 
+      {error && (
+        <div className="mx-4 p-8 bg-rose-500/10 border border-rose-500/20 rounded-[3rem] flex flex-col items-center gap-6 text-center">
+           <AlertTriangle size={48} className="text-rose-500 animate-bounce" />
+           <div className="space-y-2">
+             <h3 className="text-lg font-black text-white uppercase italic">Registry Synchronization Failure</h3>
+             <p className="text-sm text-slate-400 font-medium italic">{error}</p>
+           </div>
+           <button onClick={fetchAllData} className="px-8 py-3 bg-rose-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest flex items-center gap-2">
+             <RefreshCw size={14} /> RECONNECT GRID
+           </button>
+        </div>
+      )}
+
       <AnimatePresence mode="wait">
         {activeTab === 'overview' ? (
           <m.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-1 md:grid-cols-4 gap-8 px-2">
              <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
                 <Users size={32} className="text-rose-400" />
-                <p className="text-3xl font-black text-white">{loading ? '...' : data.users.length}</p>
+                <p className="text-3xl font-black text-white">{loading ? '...' : (Array.isArray(data.users) ? data.users.length : 0)}</p>
                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Registry Subjects</p>
              </GlassCard>
              <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
                 <ShieldAlert size={32} className={`transition-colors ${unreadAlerts > 0 ? 'text-rose-500 animate-pulse' : 'text-amber-400'}`} />
-                <p className="text-3xl font-black text-white">{loading ? '...' : data.security.length}</p>
+                <p className="text-3xl font-black text-white">{loading ? '...' : (Array.isArray(data.security) ? data.security.length : 0)}</p>
                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Security Events</p>
              </GlassCard>
              <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
                 <FileText size={32} className="text-indigo-400" />
-                <p className="text-3xl font-black text-white">{loading ? '...' : data.logs.length}</p>
+                <p className="text-3xl font-black text-white">{loading ? '...' : (Array.isArray(data.logs) ? data.logs.length : 0)}</p>
                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Audit Trails</p>
              </GlassCard>
              <GlassCard className="p-10 rounded-[3.5rem] border-white/5 flex flex-col items-center gap-4 text-center">
