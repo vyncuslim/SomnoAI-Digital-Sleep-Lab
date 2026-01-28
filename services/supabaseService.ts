@@ -61,6 +61,7 @@ export const userDataApi = {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
+      // 强制不使用缓存获取最新权限状态
       const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
       if (error) throw handleDatabaseError(error);
       if (!profile) return { is_initialized: false, has_app_data: false };
@@ -142,7 +143,8 @@ export const authApi = {
 export const adminApi = {
   checkAdminStatus: async (userId: string): Promise<boolean> => {
     const { data } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
-    return data?.role === 'admin' || data?.role === 'owner' || data?.is_super_owner === true;
+    // 显式检查 role 或 super_owner 标志
+    return (data?.role === 'admin' || data?.role === 'owner' || data?.is_super_owner === true);
   },
   getAdminClearance: async (userId: string) => {
     const { data } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).maybeSingle();
