@@ -76,7 +76,6 @@ const App: React.FC = () => {
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   
-  // 核心循环控制状态
   const [setupRequired, setSetupRequired] = useState(false);
   const [hasAppData, setHasAppData] = useState(false);
   const [isBlocked, setIsBlocked] = useState(false);
@@ -88,10 +87,15 @@ const App: React.FC = () => {
     if (sim || isSimulated) { setHistory([MOCK_RECORD]); setCurrentRecord(MOCK_RECORD); setHasAppData(true); return; }
     try {
       const records = await healthDataApi.getTelemetryHistory(30);
-      if (records && records.length > 0) { setHistory(records as any[]); setCurrentRecord(records[0] as any); setHasAppData(true); }
+      if (records && records.length > 0) { 
+        setHistory(records as any[]); 
+        setCurrentRecord(records[0] as any); 
+        setHasAppData(true); 
+      }
     } catch (err) { console.warn("Stream offline."); }
   }, [isSimulated]);
 
+  // [V15 净化检查] 仅调用 RPC 函数获取状态
   const checkLaboratoryRegistry = useCallback(async (sim?: boolean) => {
     if (sim || isSimulated || forceSetupPassed) { 
       setSetupRequired(false); 
@@ -120,8 +124,13 @@ const App: React.FC = () => {
   useEffect(() => {
     const initAuth = async () => {
       const { data: { session: s } } = await supabase.auth.getSession();
-      if (s) { setSession(s); setAuthState('authenticated'); checkLaboratoryRegistry(); }
-      else { setAuthState('unauthenticated'); }
+      if (s) { 
+        setSession(s); 
+        setAuthState('authenticated'); 
+        await checkLaboratoryRegistry(); 
+      } else { 
+        setAuthState('unauthenticated'); 
+      }
     };
     initAuth();
 
@@ -129,7 +138,7 @@ const App: React.FC = () => {
       if (newSession) {
         setSession(newSession);
         setAuthState('authenticated');
-        if (event === 'SIGNED_IN') checkLaboratoryRegistry();
+        if (event === 'SIGNED_IN') await checkLaboratoryRegistry();
       } else {
         setSession(null);
         setAuthState('unauthenticated');
@@ -185,7 +194,7 @@ const App: React.FC = () => {
     <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6 z-[9999]">
       <AlertTriangle size={80} className="text-amber-500 mb-4 animate-pulse" />
       <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Database Loop Detected</h2>
-      <p className="text-slate-500 text-sm max-w-sm italic">Policy recursion is restricting node access. Administrative intervention is required.</p>
+      <p className="text-slate-500 text-sm max-w-sm italic">The local node has encountered an RLS recursive fault. Manual calibration is required via Admin Terminal.</p>
       <button onClick={() => window.location.hash = '#/admin'} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95">PROCEED TO REPAIR TERMINAL</button>
     </div>
   );
@@ -206,7 +215,6 @@ const App: React.FC = () => {
     
     if (authState === 'unauthenticated' && !isSimulated) return <UserLoginPage onSuccess={() => {}} onSandbox={startSandbox} lang={lang} />;
     
-    // 强制状态锁，物理断开循环
     if (setupRequired && !isSimulated && !forceSetupPassed) return (
       <FirstTimeSetup onComplete={() => { 
         setForceSetupPassed(true); 

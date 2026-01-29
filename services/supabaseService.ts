@@ -6,31 +6,13 @@ export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  if (err.status === 403 || err.status === 401 || err.code === '42P01' || err.code === '42P17' || err.message?.includes('infinite recursion')) {
+  if (err.status === 500 || err.status === 403 || err.code === '42P17' || err.message?.includes('recursion')) {
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
   return err;
 };
 
 export const healthDataApi = {
-  checkRemoteIngressStatus: async () => {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return false;
-      const response = await fetch('https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-          'apikey': (supabase as any).supabaseKey
-        },
-        body: JSON.stringify({ action: 'check_integrity' })
-      });
-      if (!response.ok) return false;
-      const result = await response.json();
-      return result.has_data === true;
-    } catch (e) { return false; }
-  },
   uploadTelemetry: async (data: any) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -43,6 +25,7 @@ export const healthDataApi = {
         value: data
       });
       if (rawError) throw handleDatabaseError(rawError);
+      
       await supabase.from('profiles').update({ has_app_data: true }).eq('id', user.id);
       return { success: true };
     } catch (err: any) { return { success: false, error: err.message }; }
@@ -59,13 +42,11 @@ export const healthDataApi = {
 export const userDataApi = {
   getProfileStatus: async () => {
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return null;
-      const { data: profile, error } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
+      const { data: status, error } = await supabase.rpc('get_profile_status');
       if (error) throw handleDatabaseError(error);
-      if (!profile) return { is_initialized: false, has_app_data: false };
-      if (profile.is_blocked) throw new Error("BLOCK_ACTIVE");
-      return profile;
+      if (!status) return { is_initialized: false, has_app_data: false };
+      if (status.is_blocked) throw new Error("BLOCK_ACTIVE");
+      return status;
     } catch (e: any) { throw e; }
   },
   completeSetup: async (fullName: string, metrics: any) => {
@@ -116,10 +97,9 @@ export const diaryApi = {
 
 export const profileApi = {
   getMyProfile: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).maybeSingle();
-    return data;
+    const { data, error } = await supabase.rpc('get_my_profile');
+    if (error) throw handleDatabaseError(error);
+    return data?.[0] || null;
   },
   updateProfile: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -140,48 +120,37 @@ export const authApi = {
 
 export const adminApi = {
   /**
-   * [V14 KERNEL] 权限判定：彻底废弃 SELECT，改为 RPC 调用
+   * [V16 KERNEL] 鉴权判定
    */
   checkAdminStatus: async (): Promise<boolean> => {
     try {
-      // 1. 尝试从当前 Session 获取 (最快)
-      const { data: { user } } = await supabase.auth.getUser();
-      const metadata = user?.app_metadata;
-      if (metadata?.is_admin_node === true) return true;
-
-      // 2. 调用内核 RPC 函数 (最准)
-      const { data: role } = await supabase.rpc('get_my_role');
-      const { data: isSuper } = await supabase.rpc('is_super_owner');
-      
-      return (isSuper === true || role === 'admin' || role === 'owner');
-    } catch (e) {
-      console.error("Kernel Authenication Failure:", e);
-      return false;
-    }
-  },
-
-  getAdminClearance: async (userId: string) => {
-    // 自身检查：优先 RPC
-    const { data: role } = await supabase.rpc('get_my_role');
-    const { data: isSuper } = await supabase.rpc('is_super_owner');
-    return { role: role || 'user', is_super_owner: isSuper || false };
-  },
-
-  canManageTarget: async (targetId: string): Promise<boolean> => {
-    const { data, error } = await supabase.rpc('can_manage_user', { target_user_id: targetId });
-    if (error) return false;
-    return data === true;
+      const { data: status } = await supabase.rpc('get_profile_status');
+      return (status?.role === 'admin' || status?.role === 'owner');
+    } catch (e) { return false; }
   },
 
   getUsers: async () => {
-    const { data, error } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    // 调用 V16 隔离 RPC
+    const { data, error } = await supabase.rpc('admin_get_all_profiles');
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
 
-  blockUser: (id: string) => supabase.from('profiles').update({ is_blocked: true }).eq('id', id),
-  unblockUser: (id: string) => supabase.from('profiles').update({ is_blocked: false }).eq('id', id),
-  
+  toggleBlock: async (id: string) => {
+    const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
+    if (error) throw handleDatabaseError(error);
+  },
+
+  setRole: async (id: string, role: string) => {
+    const { error } = await supabase.rpc('admin_set_role', { target_user_id: id, new_role: role });
+    if (error) throw handleDatabaseError(error);
+  },
+
+  getAdminClearance: async (userId: string) => {
+    const { data: status } = await supabase.rpc('get_profile_status');
+    return { role: status?.role || 'user', is_super_owner: status?.role === 'owner' };
+  },
+
   getFeedback: async () => {
     const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
     return data || [];
