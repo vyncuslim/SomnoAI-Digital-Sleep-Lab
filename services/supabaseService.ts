@@ -45,27 +45,26 @@ export const userDataApi = {
     if (error && error.code !== 'PGRST116') throw handleDatabaseError(error);
     return data;
   },
-  updateUserData: async (metrics: any) => {
+  // Added updateUserData to fix Error in UserProfile.tsx
+  updateUserData: async (data: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('UNAUTHORIZED');
-    return supabase.from('user_data').upsert({ id: user.id, ...metrics });
+    const { error } = await supabase.from('user_data').upsert({ user_id: user.id, ...data });
+    // We return the error object so the component can handle it if it wishes
+    return { success: !error, error };
   },
+  // Added completeSetup to fix Error in FirstTimeSetup.tsx
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('UNAUTHORIZED');
     
-    const { error: pError } = await supabase.from('profiles').update({ 
-      full_name: fullName, 
-      is_initialized: true 
-    }).eq('id', user.id);
-    if (pError) throw handleDatabaseError(pError);
+    // Update profile full_name
+    const { error: profileError } = await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
+    if (profileError) throw handleDatabaseError(profileError);
     
-    const { error: dError } = await supabase.from('user_data').upsert({ 
-      id: user.id, 
-      ...metrics, 
-      is_initialized: true 
-    });
-    if (dError) throw handleDatabaseError(dError);
+    // Upsert biological metrics to user_data
+    const { error: metricsError } = await supabase.from('user_data').upsert({ user_id: user.id, ...metrics });
+    if (metricsError) throw handleDatabaseError(metricsError);
     
     return { success: true };
   }
@@ -91,6 +90,7 @@ export const adminApi = {
   getSecurityEvents: async () => {
     const { data, error } = await supabase.rpc('admin_get_security_logs');
     if (error) {
+       // Robust fallback if RPC isn't deployed yet
        const { data: oldData } = await supabase.from('security_events').select('*').order('timestamp', { ascending: false }).limit(50);
        return oldData || [];
     }
@@ -110,10 +110,6 @@ export const adminApi = {
   toggleBlock: async (id: string) => {
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
     if (error) throw new Error(error.message);
-  },
-  setRole: async (id: string, role: string) => {
-    const { error } = await supabase.rpc('admin_set_role', { target_user_id: id, new_role: role });
-    if (error) throw handleDatabaseError(error);
   }
 };
 
@@ -133,14 +129,8 @@ export const authApi = {
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert({ type, content, email });
-    if (error) {
-      console.error("Feedback Save Error:", error);
-      return { success: false, error: handleDatabaseError(error) };
-    }
-    
-    // Notify admin via Telegram for immediate visibility
-    await notifyAdmin(`📥 NEW FEEDBACK RECEIVED\nType: ${type.toUpperCase()}\nFrom: ${email}\n\nContent: ${content}`);
-    
+    if (error) return { success: false, error: handleDatabaseError(error) };
+    await notifyAdmin(`📥 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\n\nContent: ${content}`);
     return { success: true, error: null };
   }
 };
@@ -153,11 +143,7 @@ export const diaryApi = {
   },
   saveEntry: async (content: string, mood: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from('diary_entries').insert({ 
-      user_id: user?.id, 
-      content, 
-      mood 
-    }).select().single();
+    const { data, error } = await supabase.from('diary_entries').insert({ user_id: user?.id, content, mood }).select().single();
     if (error) throw handleDatabaseError(error);
     return data;
   },

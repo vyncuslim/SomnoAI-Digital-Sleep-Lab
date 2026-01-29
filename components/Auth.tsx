@@ -36,6 +36,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     try {
       const { error: googleErr } = await authApi.signInWithGoogle();
       if (googleErr) throw googleErr;
+      // Note: Redirect will happen, onLogin will be handled by App.tsx session listener
     } catch (err: any) {
       setError({ message: err.message || "GOOGLE_HANDSHAKE_ERROR" });
       setIsGoogleLoading(false);

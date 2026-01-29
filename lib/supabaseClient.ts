@@ -10,7 +10,7 @@ const getSafeStorage = () => {
     window.localStorage.removeItem(testKey);
     return window.localStorage;
   } catch (e) {
-    console.warn("SomnoAI Auth: LocalStorage blocked. Using in-memory fallback.");
+    console.warn("SomnoAI Auth: LocalStorage blocked or restricted. Using memory-based persistence.");
     const memoryStorage: Record<string, string> = {};
     return {
       getItem: (key: string) => memoryStorage[key] || null,
@@ -21,9 +21,9 @@ const getSafeStorage = () => {
 };
 
 /**
- * PRODUCTION ARCHITECTURE - LOCKLESS PROTOCOL
- * Providing a custom function for 'lock' bypasses navigator.locks.
- * This is the standard fix for 'AbortError' and 'this.lock is not a function'.
+ * PRODUCTION ARCHITECTURE - LOCKLESS AUTH PROTOCOL
+ * We explicitly override the 'lock' parameter to bypass navigator.locks.
+ * This fixes the 'this.lock is not a function' error seen in specific browser builds.
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -32,9 +32,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: 'implicit',
-    // Function signature required by GoTrue-js to bypass Web Locks API
-    lock: async (name: string, acquireTimeout: number, fn: () => Promise<any>) => {
-      return await fn();
+    // Robust Lock Bypass Function
+    lock: (name: string, acquireTimeout: number, fn: () => Promise<any>) => {
+      return fn();
     }
   }
 });
