@@ -1,10 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  RefreshCw, Share2, Activity, Sparkles, Binary, Waves, Gauge,
-  ShieldCheck, ArrowUpRight, Smartphone, Cloud, CheckCircle, Database, Terminal
+  RefreshCw, Share2, Activity, Binary, Gauge,
+  ShieldCheck, Smartphone, Database, CheckCircle, Terminal,
+  Zap, Brain, Heart, Waves, LayoutGrid, ChevronRight
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { Language, translations } from '../services/i18n.ts';
@@ -19,7 +21,6 @@ interface DashboardProps {
   lang: Language;
   onSyncHealth?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
   onNavigate?: (view: any) => void;
-  staticMode?: boolean;
   threeDEnabled?: boolean;
 }
 
@@ -32,8 +33,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [isNative, setIsNative] = useState(false);
-  const [showShareModal, setShowShareModal] = useState(false);
-  const [copied, setCopied] = useState(false);
   
   const t = translations[lang].dashboard;
 
@@ -43,15 +42,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const handleFullSync = async () => {
     if (!onSyncHealth || syncStatus !== 'idle') return;
-    
     try {
       await onSyncHealth((status) => setSyncStatus(status));
-      setTimeout(() => {
-        setSyncStatus('idle');
-      }, 1000);
-    } catch (err) {
-      setSyncStatus('error');
-    }
+      setTimeout(() => setSyncStatus('idle'), 1000);
+    } catch (err) { setSyncStatus('error'); }
   };
 
   const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
@@ -63,131 +57,69 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }));
 
   return (
-    <m.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="space-y-10 pb-32 max-w-5xl mx-auto"
-    >
-      {/* Visual Identity / Hidden SEO Title - Critical for Google Entity registration */}
-      <h1 className="sr-only">SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Health Insights</h1>
-
-      {/* Status Node Terminal */}
-      <div className="flex justify-between items-center bg-slate-950/60 px-8 py-5 rounded-[2.5rem] border border-white/5 backdrop-blur-3xl shadow-2xl">
-        <div className="flex items-center gap-5">
-          <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20">
-            <Logo size={32} animated={isProcessing} threeD={threeDEnabled} />
-          </div>
-          <div className="flex flex-col text-left">
-            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 italic">SomnoAI Digital Sleep Lab</span>
-            <div className="flex items-center gap-2">
-               <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-               <span className="text-[11px] font-black tracking-widest uppercase text-emerald-400">
-                 {isNative ? <span>HARDWARE LINK ACTIVE</span> : <span>EDGE CLIENT READY</span>}
-               </span>
-            </div>
-          </div>
-        </div>
+    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10 pb-40 max-w-7xl mx-auto px-4 font-sans">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <div className="hidden lg:flex items-center gap-8 px-8 border-x border-white/5">
-           <div className="flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Protocol Type</span>
-              <div className="flex items-center gap-2">
-                 {isNative ? <Smartphone size={16} className="text-emerald-400" /> : <Database size={16} className="text-indigo-400" />}
-                 <span className="text-[10px] font-black text-white">{isNative ? 'ANDROID NATIVE' : 'EDGE BRIDGE'}</span>
-              </div>
-           </div>
-           <div className="flex flex-col items-center">
-              <span className="text-[9px] font-black text-slate-600 uppercase mb-2 tracking-widest">Security Status</span>
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck size={16} className="text-emerald-400" />
-                <span className="text-[9px] font-black text-white uppercase">Encrypted Handshake</span>
-              </div>
-           </div>
-        </div>
-
-        <div className="flex gap-4">
-          <button 
-            onClick={handleFullSync} 
-            disabled={isProcessing} 
-            className="w-14 h-14 flex items-center justify-center rounded-full bg-white/5 border border-white/10 hover:bg-indigo-500/20 text-indigo-400 transition-all active:scale-90 group relative"
-          >
-            <RefreshCw key="sync-icon" size={20} className={`${isProcessing ? 'animate-spin text-emerald-400' : 'group-hover:rotate-180'} transition-transform duration-700`} />
-            <AnimatePresence>
-              {syncStatus === 'success' && (
-                <m.div 
-                  key="check-badge"
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  exit={{ scale: 0 }}
-                  className="absolute -top-1 -right-1 bg-emerald-500 rounded-full p-1 shadow-lg"
-                >
-                  <CheckCircle size={10} className="text-white" />
-                </m.div>
-              )}
-            </AnimatePresence>
-          </button>
-          <button 
-            onClick={() => setShowShareModal(true)} 
-            className="w-14 h-14 flex items-center justify-center rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-90"
-          >
-            <Share2 size={20} />
-          </button>
-        </div>
-      </div>
-
-      {/* Main Analysis Deck */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-        <div className="lg:col-span-7 space-y-10">
-          <GlassCard className="p-12 rounded-[5rem] overflow-hidden min-h-[520px] flex flex-col justify-between" intensity={threeDEnabled ? 1.5 : 0}>
+        {/* 左侧主要分析面板 (Efficiency Analysis) */}
+        <div className="lg:col-span-7 space-y-6">
+          <GlassCard className="p-10 md:p-14 rounded-[4rem] min-h-[680px] flex flex-col justify-between border-white/[0.05]" intensity={1.5}>
             <div className="flex justify-between items-start">
-              <div className="text-left">
-                <h2 className="text-sm font-black italic text-indigo-400 uppercase tracking-[0.4em] mb-2">Efficiency Analysis</h2>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-[10rem] md:text-[12rem] font-black italic tracking-tighter text-white drop-shadow-[0_0_100px_rgba(129,140,248,0.5)] leading-none select-none">
+              <div className="text-left space-y-1">
+                <h2 className="text-[11px] font-black italic text-indigo-400 uppercase tracking-[0.6em] mb-4">Efficiency Analysis</h2>
+                <div className="flex items-baseline relative">
+                  <span className="text-[12rem] md:text-[15rem] font-black italic tracking-tighter text-white leading-none select-none">
                     {data.score}
                   </span>
-                  <span className="text-2xl font-black text-slate-700 uppercase tracking-tighter">/100</span>
-                </div>
-              </div>
-              <div className="p-6 bg-indigo-500/10 rounded-[3rem] border border-indigo-500/20 flex flex-col items-center gap-1">
-                 <Gauge size={24} className="text-indigo-400 mb-1" />
-                 <span className="text-[9px] font-black text-indigo-300 uppercase tracking-widest">Precision</span>
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              {/* Specialized Manifesto Card - Core Positioning */}
-              <div className="flex flex-col gap-5 p-10 bg-gradient-to-br from-indigo-500/[0.08] to-transparent border border-indigo-500/20 rounded-[4rem] relative overflow-hidden group cursor-help transition-all hover:border-indigo-500/40" onClick={() => onNavigate?.('about')}>
-                <div className="absolute top-0 right-0 p-8 opacity-20 group-hover:opacity-100 transition-opacity">
-                   <Terminal size={24} className="text-indigo-400" />
-                </div>
-                <div className="flex items-center gap-3">
-                   <m.div 
-                     animate={{ scale: [1, 1.2, 1] }} 
-                     transition={{ duration: 3, repeat: Infinity }}
-                     className="w-2 h-2 rounded-full bg-indigo-400" 
-                   />
-                   <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Lab Manifesto</span>
-                </div>
-                <p className="text-[16px] font-bold text-white italic leading-relaxed text-left tracking-tight">
-                  "{t.manifesto}"
-                </p>
-                <div className="flex items-center gap-2 mt-2">
-                   <span className="text-[8px] font-black text-slate-600 uppercase tracking-[0.2em]">Neural Synthesis Engine v3.1</span>
+                  <span className="text-3xl font-black text-slate-700 uppercase tracking-tighter absolute -bottom-4 right-[-40px]">/100</span>
                 </div>
               </div>
               
+              <m.div 
+                whileHover={{ rotate: 180 }}
+                className="w-24 h-24 rounded-full border border-indigo-500/20 bg-indigo-500/5 flex flex-col items-center justify-center gap-1 backdrop-blur-3xl"
+              >
+                <Gauge size={20} className="text-indigo-400" />
+                <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Precision</span>
+              </m.div>
+            </div>
+
+            <div className="space-y-10">
+              {/* Lab Manifesto restored to screenshot specs */}
+              <m.div 
+                whileHover={{ scale: 1.01 }}
+                className="p-10 bg-[#0a0f25]/80 border border-indigo-500/20 rounded-[3rem] relative overflow-hidden group cursor-pointer"
+              >
+                <div className="flex items-center justify-between mb-8">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white italic">Lab Manifesto</span>
+                  </div>
+                  <ChevronRight size={20} className="text-slate-700 group-hover:text-indigo-400 transition-colors" />
+                </div>
+                
+                <p className="text-[18px] md:text-[20px] font-bold text-white italic leading-relaxed text-left tracking-tight mb-8">
+                  "{t.manifesto}"
+                </p>
+                
+                <div className="flex items-center gap-2">
+                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Neural Synthesis Engine V3.1</span>
+                </div>
+                
+                <div className="absolute top-8 right-10 opacity-20 group-hover:opacity-100 transition-opacity">
+                   <Terminal size={18} className="text-indigo-400" />
+                </div>
+              </m.div>
+              
+              {/* Bottom Insight Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  {(data.aiInsights || []).slice(0, 2).map((insight, i) => (
                     <m.div 
-                      key={i}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="p-6 bg-slate-900/60 rounded-[3rem] border border-white/5 border-l-2 border-l-indigo-500/50 text-left"
+                      key={i} 
+                      initial={{ opacity: 0, x: -10 }} 
+                      animate={{ opacity: 1, x: 0 }} 
+                      className="p-7 bg-slate-900/40 rounded-[2.5rem] border border-white/5 text-left flex flex-col justify-center"
                     >
-                      <p className="text-[13px] font-medium italic text-slate-300 leading-relaxed">
-                        <span>{String(insight)}</span>
-                      </p>
+                      <p className="text-[13px] font-bold italic text-slate-300 leading-snug">{String(insight)}</p>
                     </m.div>
                  ))}
               </div>
@@ -195,64 +127,98 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </GlassCard>
         </div>
 
-        <div className="lg:col-span-5 space-y-8">
-          <GlassCard className="p-10 rounded-[4rem] h-full flex flex-col gap-10" intensity={threeDEnabled ? 1 : 0}>
-            <div className="flex items-center justify-between">
-               <div className="flex items-center gap-3">
-                 <Binary size={20} className="text-indigo-400" />
-                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Neural Mapping</span>
+        {/* 右侧神经映射面板 (Neural Mapping) */}
+        <div className="lg:col-span-5 space-y-6">
+          <GlassCard className="p-12 rounded-[4.5rem] min-h-[680px] flex flex-col border-white/[0.05]" intensity={1}>
+            <div className="flex justify-between items-start mb-16">
+              <div className="flex items-center gap-4">
+                 <div className="flex flex-col items-center">
+                    <span className="text-[10px] font-black text-indigo-400 italic leading-none">01</span>
+                    <div className="w-4 h-[1px] bg-slate-800 my-1" />
+                    <span className="text-[10px] font-black text-slate-800 italic leading-none">10</span>
+                 </div>
+                 <h3 className="text-[12px] font-black uppercase tracking-[0.5em] text-white italic">Neural Mapping</h3>
+              </div>
+              <Activity size={18} className="text-slate-700" />
+            </div>
+
+            <div className="flex-1 w-full flex flex-col justify-center gap-12">
+               {/* 模拟截图中的大面积留白与核心图表区域 */}
+               <div className="h-[300px] w-full relative">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={hypnogramData}>
+                      <defs>
+                        <linearGradient id="neuralGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#6366f1" stopOpacity={0.2}/>
+                          <stop offset="100%" stopColor="#6366f1" stopOpacity={0}/>
+                        </linearGradient>
+                      </defs>
+                      <Area 
+                        type="stepAfter" 
+                        dataKey="level" 
+                        stroke="#6366f1" 
+                        strokeWidth={2} 
+                        fill="url(#neuralGrad)" 
+                        animationDuration={2500} 
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                  
+                  {/* 图表装饰元素 */}
+                  <div className="absolute top-0 left-0 w-full h-full pointer-events-none border-l border-b border-white/[0.03]" />
+               </div>
+
+               <div className="space-y-4">
+                  <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-[0.4em] text-slate-700">
+                     <span>Bio-link integrity</span>
+                     <span className="text-emerald-500">98.4%</span>
+                  </div>
+                  <div className="h-1 w-full bg-slate-900 rounded-full overflow-hidden">
+                     <m.div 
+                       initial={{ width: 0 }} 
+                       animate={{ width: '98.4%' }} 
+                       transition={{ duration: 2 }} 
+                       className="h-full bg-indigo-500" 
+                     />
+                  </div>
                </div>
             </div>
-            <div className="flex-1 min-h-[220px]">
-               <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={hypnogramData}>
-                    <Area type="stepAfter" dataKey="level" stroke={COLORS.deep} strokeWidth={3} fill="rgba(99, 102, 241, 0.2)" animationDuration={2000} />
-                  </AreaChart>
-               </ResponsiveContainer>
+
+            <div className="mt-auto pt-10 border-t border-white/[0.03] flex justify-between items-center">
+               <div className="flex gap-4">
+                  {[Brain, Heart, Waves].map((Icon, i) => (
+                    <div key={i} className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-slate-600">
+                      <Icon size={16} />
+                    </div>
+                  ))}
+               </div>
+               <button onClick={handleFullSync} disabled={isProcessing} className="flex items-center gap-3 px-6 py-3 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 transition-all active:scale-95">
+                  <RefreshCw size={14} className={isProcessing ? 'animate-spin text-indigo-400' : 'text-slate-400'} />
+                  <span className="text-[9px] font-black uppercase tracking-widest text-slate-400">{isProcessing ? 'Syncing' : 'Sync Telemetry'}</span>
+               </button>
             </div>
           </GlassCard>
         </div>
       </div>
-
-      <AnimatePresence>
-        {showShareModal && (
-          <m.div 
-            key="share-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-950/90 backdrop-blur-3xl" 
-            onClick={() => setShowShareModal(false)}
-          >
-            <m.div 
-              key="share-modal-card"
-              initial={{ scale: 0.8, opacity: 0 }} 
-              animate={{ scale: 1, opacity: 1 }} 
-              exit={{ scale: 0.8, opacity: 0 }} 
-              onClick={(e: any) => e.stopPropagation()}
-            >
-              <GlassCard className="p-16 rounded-[5rem] max-w-md border-white/20 text-center space-y-10" intensity={threeDEnabled ? 2 : 0}>
-                   <div className="w-24 h-24 rounded-full bg-indigo-600 flex items-center justify-center text-white shadow-2xl mx-auto">
-                     <Share2 size={36} />
-                   </div>
-                   <div className="space-y-4">
-                     <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">Archive Lab Metrics</h2>
-                     <p className="text-sm text-slate-500 italic max-w-xs mx-auto">Digitally signed experiment report from SomnoAI Digital Sleep Lab.</p>
-                   </div>
-                   <div className="space-y-4 pt-4">
-                     <button 
-                       onClick={() => { setCopied(true); setTimeout(() => setCopied(false), 2000); }}
-                       className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-xs uppercase tracking-[0.4em] shadow-2xl active:scale-95 transition-all"
-                     >
-                       <span>{copied ? 'SIGNAL COPIED' : 'COPY TELEMETRY STREAM'}</span>
-                     </button>
-                     <button onClick={() => setShowShareModal(false)} className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 hover:text-white transition-colors">Abort Archive</button>
-                   </div>
-              </GlassCard>
-            </m.div>
-          </m.div>
-        )}
-      </AnimatePresence>
+      
+      {/* 底部浮动导航 (Pill Dock) 样式微调，使其更紧凑、符合截图中的高保真感 */}
+      <style>{`
+        .pill-dock {
+          background: rgba(2, 6, 23, 0.8) !important;
+          backdrop-filter: blur(40px) !important;
+          border: 1px solid rgba(255, 255, 255, 0.05) !important;
+          padding: 8px !important;
+          border-radius: 999px !important;
+          box-shadow: 0 30px 60px rgba(0,0,0,0.5) !important;
+        }
+        .pill-item {
+          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .pill-item.active {
+          background: #4f46e5 !important;
+          color: white !important;
+        }
+      `}</style>
     </m.div>
   );
 };
