@@ -35,9 +35,9 @@ export const profileApi = {
 export const userDataApi = {
   getProfileStatus: async () => {
     try {
-      const { data: status, error } = await supabase.rpc('get_profile_status');
+      const { data: status, error } = await supabase.rpc('get_my_detailed_profile');
       if (error) throw handleDatabaseError(error);
-      return status;
+      return status?.[0];
     } catch (e: any) { throw e; }
   },
   getUserData: async () => {
@@ -73,14 +73,16 @@ export const adminApi = {
   },
   checkAdminStatus: async (): Promise<boolean> => {
     try {
-      const { data: status } = await supabase.rpc('get_profile_status');
-      return ['admin', 'owner', 'super_owner'].includes(status?.role || 'user');
+      const { data: status } = await supabase.rpc('get_my_detailed_profile');
+      if (!status || status.length === 0) return false;
+      const profile = status[0];
+      return ['admin', 'owner'].includes(profile.role) || profile.is_super_owner === true;
     } catch (e) { return false; }
   },
   getAdminClearance: async (userId: string) => {
-    const { data, error } = await supabase.from('profiles').select('role, is_super_owner').eq('id', userId).single();
+    const { data, error } = await supabase.rpc('get_my_detailed_profile');
     if (error) throw handleDatabaseError(error);
-    return data;
+    return data?.[0];
   },
   getUsers: async () => {
     const { data, error } = await supabase.rpc('admin_get_all_profiles');
@@ -88,19 +90,22 @@ export const adminApi = {
     return data || [];
   },
   getSecurityEvents: async () => {
-    // Attempting a direct select fallback for high reliability
-    const { data, error } = await supabase.from('security_events').select('*').order('timestamp', { ascending: false }).limit(20);
+    const { data, error } = await supabase.rpc('admin_get_security_events');
+    if (error) return [];
     return data || [];
   },
   toggleBlock: async (id: string) => {
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
+    if (error) throw new Error(error.message);
+  },
+  updateUserRole: async (id: string, role: string) => {
+    const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
     if (error) throw new Error(error.message);
   }
 };
 
 export const authApi = {
   sendOTP: async (email: string) => {
-    // Pre-flight check: If we already have a buffered session, don't spam the OTP service
     const { data: { session } } = await supabase.auth.getSession();
     if (session && session.user.email === email) {
       return { data: null, error: null };

@@ -49,12 +49,15 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
         setStatus('success');
         setTimeout(() => onBack(), 2500);
       } else {
-        throw error || new Error("TRANSMISSION_FAILED");
+        throw error || new Error("REGISTRY_DENIED");
       }
     } catch (err: any) {
+      console.error("[Feedback Transmission Error]:", err);
       setStatus('error');
       setErrorMessage(err.message || "Protocol transmission failure.");
-      setTimeout(() => setStatus('idle'), 4000);
+      setTimeout(() => {
+        if (status === 'error') setStatus('idle');
+      }, 5000);
     }
   };
 
@@ -108,7 +111,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
             </div>
 
             <div className="space-y-8">
-              <div className="space-y-4">
+              <div className="space-y-4 text-left">
                 <label className="text-[11px] font-black uppercase text-slate-500 px-6 tracking-widest italic flex items-center gap-2">
                   <Mail size={14} /> Subject Identifier (Email)
                 </label>
@@ -124,7 +127,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
                 </div>
               </div>
 
-              <div className="space-y-4">
+              <div className="space-y-4 text-left">
                 <label className="text-[11px] font-black uppercase text-slate-500 px-6 tracking-widest italic flex items-center gap-2">
                   <MessageSquare size={14} /> Telemetry Description
                 </label>
@@ -139,39 +142,47 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
               </div>
             </div>
 
-            <button 
-              type="submit"
-              disabled={status !== 'idle'}
-              className={`w-full py-8 rounded-full font-black text-sm uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 italic relative overflow-hidden shadow-2xl ${
-                status === 'success' ? 'bg-emerald-600 shadow-emerald-500/20' :
-                status === 'error' ? 'bg-rose-600 shadow-rose-500/20' :
-                'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30 active:scale-[0.98]'
-              }`}
-            >
-              <AnimatePresence mode="wait">
-                {status === 'transmitting' ? (
-                  <m.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
-                    <Loader2 size={24} className="animate-spin" />
-                    <span>Transmitting Signal...</span>
-                  </m.div>
-                ) : status === 'success' ? (
-                  <m.div key="success" initial={{ y: 20 }} animate={{ y: 0 }} className="flex items-center gap-3">
-                    <CheckCircle2 size={24} />
-                    <span>Log Committed</span>
-                  </m.div>
-                ) : status === 'error' ? (
-                  <m.div key="error" initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-3">
-                    <XCircle size={24} />
-                    <span>Handshake Failure</span>
-                  </m.div>
-                ) : (
-                  <m.div key="idle" initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-3">
-                    <Send size={20} />
-                    <span>Execute Submission</span>
-                  </m.div>
-                )}
-              </AnimatePresence>
-            </button>
+            <div className="space-y-6">
+              <button 
+                type="submit"
+                disabled={status === 'transmitting' || status === 'success'}
+                className={`w-full py-8 rounded-full font-black text-sm uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 italic relative overflow-hidden shadow-2xl ${
+                  status === 'success' ? 'bg-emerald-600 shadow-emerald-500/20' :
+                  status === 'error' ? 'bg-rose-600 shadow-rose-500/20' :
+                  'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30 active:scale-[0.98]'
+                }`}
+              >
+                <AnimatePresence mode="wait">
+                  {status === 'transmitting' ? (
+                    <m.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-3">
+                      <Loader2 size={24} className="animate-spin" />
+                      <span>Transmitting Signal...</span>
+                    </m.div>
+                  ) : status === 'success' ? (
+                    <m.div key="success" initial={{ y: 20 }} animate={{ y: 0 }} className="flex items-center gap-3">
+                      <CheckCircle2 size={24} />
+                      <span>Log Committed</span>
+                    </m.div>
+                  ) : status === 'error' ? (
+                    <m.div key="error" initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-3">
+                      <XCircle size={24} />
+                      <span>Sync Failed</span>
+                    </m.div>
+                  ) : (
+                    <m.div key="idle" initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-3">
+                      <Send size={20} />
+                      <span>Execute Submission</span>
+                    </m.div>
+                  )}
+                </AnimatePresence>
+              </button>
+              
+              {errorMessage && status === 'error' && (
+                <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-rose-400 font-bold uppercase tracking-widest text-center italic">
+                  Error: {errorMessage}
+                </m.p>
+              )}
+            </div>
           </form>
         </GlassCard>
 
@@ -180,22 +191,12 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
             <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-400">
                <ShieldCheck size={32} />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1 text-left">
                <p className="text-white font-black italic uppercase text-lg leading-tight">Registry Updated</p>
                <p className="text-[11px] text-slate-500 font-medium italic">Your telemetry has been archived. Returning to base terminal...</p>
             </div>
           </m.div>
         )}
-
-        <footer className="pt-10 flex flex-col items-center gap-4 opacity-30 text-center">
-           <div className="flex items-center gap-3">
-             <Terminal size={14} className="text-indigo-400" />
-             <span className="text-[9px] font-mono tracking-widest uppercase font-black">Secure Feedback Link • End-to-End Encrypted</span>
-           </div>
-           <p className="text-[9px] font-medium text-slate-600 italic max-w-xs leading-relaxed">
-             SomnoAI CRO reviews all incoming telemetry. Your contribution optimizes global neural architecture.
-           </p>
-        </footer>
       </div>
     </div>
   );
