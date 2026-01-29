@@ -36,7 +36,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const terminalInputRef = useRef<HTMLInputElement>(null);
 
   const isOwner = useMemo(() => {
-    return currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner === true;
+    return currentAdmin?.role?.toLowerCase() === 'owner' || currentAdmin?.is_super_owner === true;
   }, [currentAdmin]);
 
   const themeColor = isOwner ? 'amber' : 'indigo';
@@ -47,24 +47,42 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setActionError(null);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user) {
-        const profile = await adminApi.getAdminClearance(user.id);
-        if (profile) {
-          setCurrentAdmin(profile);
-        }
+      if (!user) throw new Error("AUTH_SESSION_MISSING");
+
+      const profile = await adminApi.getAdminClearance(user.id);
+      if (profile) {
+        setCurrentAdmin(profile);
+      } else {
+        throw new Error("CLEARANCE_RECORD_NOT_FOUND");
       }
 
       // If user is owner or admin, proceed to fetch statistics and registry
-      const [users, security, stats] = await Promise.all([
-        adminApi.getUsers().catch(() => []),
-        adminApi.getSecurityEvents().catch(() => []),
-        adminApi.getStats().catch(() => ({ total_subjects: 0, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 }))
-      ]);
+      // Wrapped in individual catches to prevent partial failures from crashing the whole view
+      const users = await adminApi.getUsers().catch(err => {
+        console.error("Failed to fetch users:", err);
+        return [];
+      });
+      
+      const security = await adminApi.getSecurityEvents().catch(err => {
+        console.error("Failed to fetch security events:", err);
+        return [];
+      });
+      
+      const stats = await adminApi.getStats().catch(err => {
+        console.error("Failed to fetch global stats:", err);
+        return { total_subjects: 0, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 };
+      });
       
       setData({ users, security, stats });
+      
+      // If we got here but users/stats are empty, it might be an RPC issue
+      if (users.length === 0 && stats.total_subjects === 0) {
+        console.warn("Registry returned null dataset. Check RPC permissions in database.");
+      }
+
     } catch (err: any) {
-      console.error("Registry sync failure:", err);
-      setActionError("REGISTRY_DENIED: Critical authentication failure or missing RPC permissions.");
+      console.error("Registry sync failure detail:", err);
+      setActionError(`REGISTRY_DENIED: ${err.message || "Critical authentication failure or missing RPC permissions."}`);
     } finally {
       setLoading(false);
     }
@@ -316,8 +334,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              <tr key={user.id} className="hover:bg-white/[0.03] transition-colors group relative overflow-visible">
                                 <td className="py-10 px-8">
                                    <div className="flex items-center gap-5">
-                                      <div className={`w-14 h-14 rounded-[1.5rem] bg-slate-900 border border-white/5 flex items-center justify-center transition-all group-hover:scale-105 ${user.is_super_owner ? 'text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.3)]' : user.role === 'owner' ? 'text-amber-400' : 'text-slate-600'}`}>
-                                         {user.is_super_owner || user.role === 'owner' ? <Crown size={28} /> : <UserCircle size={28} />}
+                                      <div className={`w-14 h-14 rounded-[1.5rem] bg-slate-900 border border-white/5 flex items-center justify-center transition-all group-hover:scale-105 ${user.is_super_owner ? 'text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.3)]' : user.role?.toLowerCase() === 'owner' ? 'text-amber-400' : 'text-slate-600'}`}>
+                                         {user.is_super_owner || user.role?.toLowerCase() === 'owner' ? <Crown size={28} /> : <UserCircle size={28} />}
                                       </div>
                                       <div className="min-w-0 space-y-1">
                                          <p className="text-base font-black text-white italic truncate max-w-[240px] leading-tight">{user.email || 'ANON_NODE'}</p>
@@ -327,8 +345,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 </td>
                                 <td className="py-10 px-8">
                                    <div className={`inline-flex items-center gap-2.5 px-5 py-2.5 rounded-2xl border ${
-                                     user.role === 'owner' || user.is_super_owner ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
-                                     user.role === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-500' :
+                                     user.role?.toLowerCase() === 'owner' || user.is_super_owner ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' :
+                                     user.role?.toLowerCase() === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-500' :
                                      'bg-slate-900 border-white/5 text-slate-600'
                                    }`}>
                                       {user.is_blocked ? <ShieldX size={16} className="text-rose-500" /> : <Shield size={16} />}

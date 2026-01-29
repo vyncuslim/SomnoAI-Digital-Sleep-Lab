@@ -34,11 +34,11 @@ DECLARE
     result JSON;
     is_authorized boolean;
 BEGIN
-    -- Explicit clearance check
+    -- Explicit clearance check with case-insensitivity
     SELECT EXISTS (
         SELECT 1 FROM public.profiles 
         WHERE id = auth.uid() 
-        AND (role IN ('admin', 'owner') OR is_super_owner = true)
+        AND (LOWER(role) IN ('admin', 'owner') OR is_super_owner = true)
     ) INTO is_authorized;
 
     IF NOT is_authorized THEN
@@ -47,7 +47,7 @@ BEGIN
 
     SELECT json_build_object(
         'total_subjects', (SELECT count(*) FROM public.profiles),
-        'admin_nodes', (SELECT count(*) FROM public.profiles WHERE role IN ('admin', 'owner') OR is_super_owner = true),
+        'admin_nodes', (SELECT count(*) FROM public.profiles WHERE LOWER(role) IN ('admin', 'owner') OR is_super_owner = true),
         'blocked_nodes', (SELECT count(*) FROM public.profiles WHERE is_blocked = true),
         'active_24h', (SELECT count(*) FROM public.profiles WHERE updated_at > now() - interval '24 hours'),
         'system_latency', 42
@@ -76,7 +76,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM public.profiles 
         WHERE id = auth.uid() 
-        AND (role IN ('admin', 'owner') OR is_super_owner = true)
+        AND (LOWER(role) IN ('admin', 'owner') OR is_super_owner = true)
     ) THEN
         RAISE EXCEPTION 'INSUFFICIENT_CLEARANCE_PROTOCOL';
     END IF;
@@ -94,7 +94,11 @@ BEGIN
     FROM public.profiles p
     ORDER BY 
         p.is_super_owner DESC,
-        CASE WHEN p.role = 'owner' THEN 1 WHEN p.role = 'admin' THEN 2 ELSE 3 END,
+        CASE 
+            WHEN LOWER(p.role) = 'owner' THEN 1 
+            WHEN LOWER(p.role) = 'admin' THEN 2 
+            ELSE 3 
+        END,
         p.created_at DESC;
 END;
 $$;
@@ -109,7 +113,7 @@ BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM public.profiles 
         WHERE id = auth.uid() 
-        AND (role IN ('admin', 'owner') OR is_super_owner = true)
+        AND (LOWER(role) IN ('admin', 'owner') OR is_super_owner = true)
     ) THEN
         RAISE EXCEPTION 'INSUFFICIENT_CLEARANCE_PROTOCOL';
     END IF;
@@ -122,8 +126,11 @@ BEGIN
     IF EXISTS (
         SELECT 1 FROM public.profiles 
         WHERE id = target_user_id 
-        AND (role = 'owner' OR is_super_owner = true)
-    ) AND (SELECT role FROM public.profiles WHERE id = auth.uid()) != 'owner' AND NOT (SELECT is_super_owner FROM public.profiles WHERE id = auth.uid()) THEN
+        AND (LOWER(role) = 'owner' OR is_super_owner = true)
+    ) AND NOT EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE id = auth.uid() AND (LOWER(role) = 'owner' OR is_super_owner = true)
+    ) THEN
         RAISE EXCEPTION 'TARGET_CLEARANCE_TOO_HIGH';
     END IF;
 
@@ -144,7 +151,7 @@ DECLARE
     requester_role text;
     requester_is_super boolean;
 BEGIN
-    SELECT p.role, p.is_super_owner INTO requester_role, requester_is_super 
+    SELECT LOWER(p.role), p.is_super_owner INTO requester_role, requester_is_super 
     FROM public.profiles p WHERE p.id = auth.uid();
     
     IF requester_role != 'owner' AND requester_is_super = false THEN
@@ -155,10 +162,41 @@ BEGIN
         RAISE EXCEPTION 'IMMUTABLE_NODE';
     END IF;
 
-    IF new_role NOT IN ('user', 'admin', 'owner') THEN
+    IF LOWER(new_role) NOT IN ('user', 'admin', 'owner') THEN
         RAISE EXCEPTION 'INVALID_CLEARANCE_STRING';
     END IF;
 
-    UPDATE public.profiles SET role = new_role WHERE id = target_user_id;
+    UPDATE public.profiles SET role = LOWER(new_role) WHERE id = target_user_id;
+END;
+$$;
+
+-- 6. Security Event Retrieval (Missing function added)
+CREATE OR REPLACE FUNCTION public.admin_get_security_events()
+RETURNS TABLE (
+    id uuid,
+    email text,
+    event_type text,
+    event_reason text,
+    notified boolean,
+    created_at timestamptz
+) 
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM public.profiles 
+        WHERE id = auth.uid() 
+        AND (LOWER(role) IN ('admin', 'owner') OR is_super_owner = true)
+    ) THEN
+        RAISE EXCEPTION 'INSUFFICIENT_CLEARANCE_PROTOCOL';
+    END IF;
+
+    -- Check if security_events table exists, if not return empty
+    IF EXISTS (SELECT FROM information_schema.tables WHERE table_name = 'security_events') THEN
+        RETURN QUERY SELECT * FROM public.security_events ORDER BY created_at DESC LIMIT 50;
+    ELSE
+        RETURN;
+    END IF;
 END;
 $$;
