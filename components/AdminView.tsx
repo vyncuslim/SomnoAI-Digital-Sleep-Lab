@@ -56,33 +56,22 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         throw new Error("CLEARANCE_RECORD_NOT_FOUND");
       }
 
-      // If user is owner or admin, proceed to fetch statistics and registry
-      // Wrapped in individual catches to prevent partial failures from crashing the whole view
-      const users = await adminApi.getUsers().catch(err => {
-        console.error("Failed to fetch users:", err);
-        return [];
-      });
-      
-      const security = await adminApi.getSecurityEvents().catch(err => {
-        console.error("Failed to fetch security events:", err);
-        return [];
-      });
-      
-      const stats = await adminApi.getStats().catch(err => {
-        console.error("Failed to fetch global stats:", err);
-        return { total_subjects: 0, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 };
-      });
+      // Parallel fetch with individual error handling to prevent total page crash
+      const [users, security, stats] = await Promise.all([
+        adminApi.getUsers().catch(e => { console.warn("Registry fetch delayed:", e); return []; }),
+        adminApi.getSecurityEvents().catch(e => { console.warn("Audit logs offline:", e); return []; }),
+        adminApi.getStats().catch(e => { console.warn("Stats aggregator offline:", e); return { total_subjects: 0, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 }; })
+      ]);
       
       setData({ users, security, stats });
-      
-      // If we got here but users/stats are empty, it might be an RPC issue
-      if (users.length === 0 && stats.total_subjects === 0) {
-        console.warn("Registry returned null dataset. Check RPC permissions in database.");
-      }
 
     } catch (err: any) {
       console.error("Registry sync failure detail:", err);
-      setActionError(`REGISTRY_DENIED: ${err.message || "Critical authentication failure or missing RPC permissions."}`);
+      if (err.message === "RPC_NOT_REGISTERED_IN_DB") {
+        setActionError("DATABASE_SCHEMA_ERROR: The required administrative functions are not registered in Supabase. Please run the setup.sql script in your Supabase SQL editor.");
+      } else {
+        setActionError(`REGISTRY_DENIED: ${err.message || "Critical authentication failure or missing RPC permissions."}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -92,7 +81,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => {
     if (terminalUser && terminalInputRef.current) {
-      setTimeout(() => terminalInputRef.current?.focus(), 250);
+      // Small delay to ensure the modal is mounted before focusing
+      const timer = setTimeout(() => terminalInputRef.current?.focus(), 300);
+      return () => clearTimeout(timer);
     }
   }, [terminalUser]);
 
@@ -115,6 +106,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     } finally { 
       setIsProcessingId(null); 
     }
+  };
+
+  const handleOpenTerminal = (e: React.MouseEvent, user: any) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setTerminalUser(user);
+    setCommandInput(`SET ROLE ${user.role || 'user'}`);
   };
 
   const handleExecuteCommand = async (e?: React.FormEvent) => {
@@ -162,19 +160,19 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     <div className={`space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans relative`}>
       <AnimatePresence>
         {actionError && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[999999] w-full max-w-md px-6">
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[10000000] w-full max-w-lg px-6">
             <m.div 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-rose-950 border border-rose-500/50 p-6 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,1)] flex items-center gap-4 backdrop-blur-3xl"
+              className="bg-rose-950/90 border border-rose-500/50 p-6 rounded-[2.5rem] shadow-[0_40px_100px_rgba(0,0,0,1)] flex items-start gap-5 backdrop-blur-3xl"
             >
-              <ShieldAlert className="text-rose-500 shrink-0" size={24} />
-              <div className="min-w-0">
-                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest leading-none mb-1">Administrative Alert</p>
-                <p className="text-sm font-bold text-white italic truncate">{actionError}</p>
+              <ShieldAlert className="text-rose-500 shrink-0 mt-1" size={24} />
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest leading-none mb-2">Protocol Access Violation</p>
+                <p className="text-sm font-bold text-white italic leading-relaxed">{actionError}</p>
               </div>
-              <button onClick={() => setActionError(null)} className="ml-auto p-2 hover:bg-white/10 rounded-lg transition-colors"><X size={16} /></button>
+              <button onClick={() => setActionError(null)} className="p-2 text-rose-400 hover:bg-white/10 rounded-xl transition-all"><X size={18} /></button>
             </m.div>
           </div>
         )}
@@ -371,10 +369,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                            {isProcessingId === user.id ? <Loader2 className="animate-spin" size={24} /> : (user.is_blocked ? <ShieldCheck size={24} /> : <Ban size={24} />)}
                                         </button>
                                       )}
-                                      {isOwner && !user.is_super_owner && (
+                                      {(isOwner || user.is_super_owner) && !user.is_super_owner && (
                                         <button 
                                           type="button"
-                                          onClick={(e) => { e.preventDefault(); e.stopPropagation(); setTerminalUser(user); setCommandInput(`SET ROLE ${user.role}`); }}
+                                          onClick={(e) => handleOpenTerminal(e, user)}
                                           disabled={!!isProcessingId}
                                           className="p-5 bg-white/5 border border-white/5 rounded-[1.2rem] text-slate-500 hover:text-white hover:bg-amber-600 transition-all active:scale-95 shadow-xl"
                                         >
@@ -420,7 +418,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       {/* Global Terminal Overlay - Fixed Stacking and Visibility */}
       <AnimatePresence>
         {terminalUser && (
-          <div className="fixed inset-0 z-[9999999] flex items-center justify-center p-6 bg-black/98 backdrop-blur-[40px]">
+          <div className="fixed inset-0 z-[20000000] flex items-center justify-center p-6 bg-black/98 backdrop-blur-[40px]">
             <m.div 
               initial={{ opacity: 0, scale: 0.9, y: 40 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -467,13 +465,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            type="button"
                            onClick={() => setCommandInput(`SET ROLE ${opt.role}`)}
                            className={`p-6 rounded-[2.5rem] border text-left space-y-3 transition-all group ${
-                             commandInput.includes(opt.role) 
+                             commandInput.toLowerCase().includes(opt.role) 
                              ? 'bg-amber-600/10 border-amber-500/40 shadow-xl' 
                              : 'bg-white/5 border-white/5 hover:bg-white/10'
                            }`}
                          >
-                            <opt.icon size={22} className={commandInput.includes(opt.role) ? 'text-amber-500' : 'text-slate-600 group-hover:text-amber-500'} />
-                            <p className={`text-[10px] font-black uppercase tracking-widest leading-tight ${commandInput.includes(opt.role) ? 'text-white' : 'text-slate-500 group-hover:text-white'}`}>{opt.label}</p>
+                            <opt.icon size={22} className={commandInput.toLowerCase().includes(opt.role) ? 'text-amber-500' : 'text-slate-600 group-hover:text-amber-500'} />
+                            <p className={`text-[10px] font-black uppercase tracking-widest leading-tight ${commandInput.toLowerCase().includes(opt.role) ? 'text-white' : 'text-slate-500 group-hover:text-white'}`}>{opt.label}</p>
                          </button>
                        ))}
                     </div>

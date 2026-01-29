@@ -6,8 +6,7 @@ export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  if (err.code === 'PGRST202' || err.message?.includes('not found')) throw new Error("RPC_MISSING_DEPLOY_SQL");
-  if (err.status === 500 || err.code === '42P17' || err.message?.includes('recursion')) throw new Error("DB_CALIBRATION_REQUIRED");
+  if (err.code === 'PGRST202' || err.message?.includes('not found')) return new Error("RPC_NOT_REGISTERED_IN_DB");
   return err;
 };
 
@@ -36,7 +35,15 @@ export const userDataApi = {
   getProfileStatus: async () => {
     try {
       const { data: status, error } = await supabase.rpc('get_my_detailed_profile');
-      if (error) throw handleDatabaseError(error);
+      if (error) {
+        // Failsafe: Direct table select if RPC fails
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: fallback } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+          return fallback;
+        }
+        throw error;
+      }
       return status && status.length > 0 ? status[0] : null;
     } catch (e: any) { throw e; }
   },
@@ -66,22 +73,33 @@ export const adminApi = {
   getStats: async () => {
     const { data, error } = await supabase.rpc('admin_get_global_stats');
     if (error) {
-       console.error("Stats RPC failed:", error);
-       throw error;
+       console.warn("Stats RPC failed, returning telemetry placeholder.");
+       return { total_subjects: 0, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 };
     }
-    return data || { total_subjects: 0, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 };
+    return data;
   },
   checkAdminStatus: async (): Promise<boolean> => {
     try {
       const { data: status } = await supabase.rpc('get_my_detailed_profile');
-      if (!status || status.length === 0) return false;
+      if (!status || status.length === 0) {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          const { data: fallback } = await supabase.from('profiles').select('role, is_super_owner').eq('id', user.id).single();
+          return ['admin', 'owner'].includes(fallback?.role?.toLowerCase()) || fallback?.is_super_owner === true;
+        }
+        return false;
+      }
       const profile = status[0];
-      return ['admin', 'owner'].includes(profile.role) || profile.is_super_owner === true;
+      return ['admin', 'owner'].includes(profile.role?.toLowerCase()) || profile.is_super_owner === true;
     } catch (e) { return false; }
   },
   getAdminClearance: async (userId: string) => {
     const { data, error } = await supabase.rpc('get_my_detailed_profile');
-    if (error) throw handleDatabaseError(error);
+    if (error) {
+      const { data: fallback, error: fbErr } = await supabase.from('profiles').select('*').eq('id', userId).single();
+      if (fbErr) throw handleDatabaseError(fbErr);
+      return fallback;
+    }
     return data && data.length > 0 ? data[0] : null;
   },
   getUsers: async () => {
@@ -133,10 +151,7 @@ export const feedbackApi = {
     try {
       const { error } = await supabase.from('feedback').insert({ type, content, email });
       if (error) throw handleDatabaseError(error);
-      
-      // Proactive notification but don't block the UI if Telegram is slow
       notifyAdmin(`📥 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\n\nContent: ${content}`).catch(e => console.warn("Telegram non-critical delay:", e));
-      
       return { success: true, error: null };
     } catch (err: any) {
       return { success: false, error: err };
