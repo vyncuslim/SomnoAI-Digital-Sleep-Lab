@@ -14,8 +14,9 @@ interface SettingsProps {
   onLanguageChange: (l: Language) => void;
   onLogout: () => void;
   onNavigate: (view: any) => void;
-  threeDEnabled: boolean;
-  onThreeDChange: (enabled: boolean) => void;
+  // Made threeDEnabled and onThreeDChange optional to fix compilation error in App.tsx
+  threeDEnabled?: boolean;
+  onThreeDChange?: (enabled: boolean) => void;
   theme?: string;
   onThemeChange?: (t: any) => void;
   accentColor?: string;
@@ -103,7 +104,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
       <AnimatePresence>
         {showDonation && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
             <m.div 
               initial={{ scale: 0.9, opacity: 0 }} 
               animate={{ scale: 1, opacity: 1 }} 

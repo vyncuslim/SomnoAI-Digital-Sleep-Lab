@@ -33,7 +33,7 @@ export default function AdminDashboard() {
 
         if (isMounted) setEmail(session.user.email || null);
 
-        // [V14 KERNEL CHECK] 核心鉴权逻辑，走 RPC 避开 RLS 递归
+        // 核心鉴权逻辑：检查角色是否为 admin, owner 或 super_owner
         const isAdmin = await adminApi.checkAdminStatus();
         
         if (!isMounted) return;
@@ -49,6 +49,8 @@ export default function AdminDashboard() {
         if (isMounted) {
           if (e.message?.includes('recursion') || e.message === "DB_CALIBRATION_REQUIRED") {
             setError("DB_RECURSION_DETECTED");
+          } else if (e.message === "RPC_MISSING_DEPLOY_SQL") {
+            setError("RPC_MISSING");
           } else {
             setError(e.message || "Neural Handshake Failure.");
           }
@@ -62,7 +64,7 @@ export default function AdminDashboard() {
     return () => { isMounted = false; };
   }, []);
 
-  const promoteSql = email ? `-- 1. 强制部署 V14 RPC 核能函数\nCREATE OR REPLACE FUNCTION public.get_my_role() RETURNS text AS $$ BEGIN RETURN (SELECT role FROM public.profiles WHERE id = auth.uid()); END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;\n\nCREATE OR REPLACE FUNCTION public.is_super_owner() RETURNS boolean AS $$ BEGIN RETURN EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND is_super_owner = true); END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;\n\nCREATE OR REPLACE FUNCTION public.can_manage_user(target_user_id uuid) RETURNS boolean AS $$ DECLARE c_role text; c_super boolean; t_role text; t_super boolean; c_w int; t_w int; BEGIN SELECT role, is_super_owner INTO c_role, c_super FROM public.profiles WHERE id = auth.uid(); SELECT role, is_super_owner INTO t_role, t_super FROM public.profiles WHERE id = target_user_id; IF auth.uid() = target_user_id THEN RETURN false; END IF; c_w := CASE WHEN c_super THEN 4 WHEN c_role = 'owner' THEN 3 WHEN c_role = 'admin' THEN 2 ELSE 1 END; t_w := CASE WHEN t_super THEN 4 WHEN t_role = 'owner' THEN 3 WHEN t_role = 'admin' THEN 2 ELSE 1 END; RETURN c_w > t_w; END; $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;\n\n-- 2. 清理旧政策并应用同步\nDO $$ DECLARE pol RECORD; BEGIN FOR pol IN (SELECT policyname FROM pg_policies WHERE tablename = 'profiles') LOOP EXECUTE format('DROP POLICY IF EXISTS %I ON public.profiles', pol.policyname); END LOOP; END $$;\nCREATE POLICY "v14_self_access" ON public.profiles FOR ALL USING (auth.uid() = id);\n\n-- 3. 提权并触发物理同步\nUPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '${email}';` : "";
+  const promoteSql = email ? `-- 提权脚本：将当前账号设为最高所有者\nUPDATE public.profiles SET role = 'owner' WHERE email = '${email}';` : "";
 
   const handleCopy = () => {
     if (!promoteSql) return;
@@ -89,80 +91,68 @@ export default function AdminDashboard() {
     );
   }
 
-  if (error === "INSUFFICIENT_CLEARANCE" || error === "DB_RECURSION_DETECTED") {
+  // 错误处理 UI
+  if (error) {
     const isRecursion = error === "DB_RECURSION_DETECTED";
+    const isRpcMissing = error === "RPC_MISSING";
+    const isClearanceIssue = error === "INSUFFICIENT_CLEARANCE";
     
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-8">
-        {isRecursion ? <AlertTriangle size={80} className="text-amber-500 mb-2 animate-pulse" /> : <ShieldAlert size={80} className="text-rose-600 mb-2" />}
+        {isRecursion ? <AlertTriangle size={80} className="text-amber-500 mb-2 animate-pulse" /> : 
+         isRpcMissing ? <RefreshCw size={80} className="text-indigo-500 mb-2 animate-spin" /> :
+         <ShieldAlert size={80} className="text-rose-600 mb-2" />}
         
         <div className="space-y-4">
           <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-tight">
-            {isRecursion ? "Kernel Recursion Fault" : "Access Forbidden"}
+            {isRecursion ? "Kernel Recursion Fault" : 
+             isRpcMissing ? "RPC Kernel Missing" : "Access Forbidden"}
           </h2>
           <p className="text-slate-500 text-[11px] max-w-sm mx-auto leading-relaxed italic uppercase font-black tracking-widest">
-            {isRecursion ? "The database is caught in an RLS cycle. Deploying V14 Kernal functions via SQL Editor will break the loop." : "Identifier recognized, but your current clearance level is locked."}
+            {isRecursion ? "The database is caught in an RLS cycle. Deploy V16.1 SQL Kernel." : 
+             isRpcMissing ? "The function 'get_profile_status' was not found. Please deploy SQL script." :
+             "Your account clearance level is insufficient for this terminal."}
           </p>
         </div>
 
-        <m.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className={`w-full max-w-2xl bg-slate-900/60 border ${isRecursion ? 'border-amber-500/20' : 'border-rose-500/20'} rounded-[3rem] p-8 md:p-12 space-y-6 shadow-2xl backdrop-blur-3xl`}
-        >
-           <div className={`flex items-center justify-between ${isRecursion ? 'text-amber-400' : 'text-rose-400'}`}>
-             <div className="flex items-center gap-3">
-                <Terminal size={20} />
-                <span className="text-[10px] font-black uppercase tracking-widest italic">V14_KERNEL_PATCH</span>
+        {isClearanceIssue && (
+          <m.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="w-full max-w-2xl bg-slate-900/60 border border-rose-500/20 rounded-[3rem] p-8 md:p-12 space-y-6 shadow-2xl backdrop-blur-3xl"
+          >
+             <div className="flex items-center justify-between text-rose-400">
+               <div className="flex items-center gap-3">
+                  <Terminal size={20} />
+                  <span className="text-[10px] font-black uppercase tracking-widest italic">SQL_ADMIN_PATCH</span>
+               </div>
+               <Crown size={16} className="text-amber-500" />
              </div>
-             <Crown size={16} className="text-amber-500" />
-           </div>
-           
-           <p className="text-[11px] text-slate-400 text-left italic leading-relaxed">
-             Deploy this RPC kernel. It shifts permission logic to the database engine level, bypassing recursive RLS filters:
-           </p>
+             
+             <p className="text-[11px] text-slate-400 text-left italic leading-relaxed">
+               If you are the laboratory architect, run this SQL command in Supabase Editor to promote your node:
+             </p>
 
-           <div className="bg-black/60 p-6 rounded-2xl border border-white/5 relative group">
-              <code className={`text-[9px] md:text-[10px] font-mono ${isRecursion ? 'text-amber-300' : 'text-rose-300'} break-all block pr-8 leading-relaxed text-left whitespace-pre-wrap max-h-[200px] overflow-y-auto no-scrollbar`}>
-                {promoteSql}
-              </code>
-              <button 
-                onClick={handleCopy}
-                className="absolute right-4 top-6 p-3 bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all shadow-lg"
-              >
-                {copied ? <CheckCircle size={16} className="text-emerald-500" /> : <Copy size={16} />}
-              </button>
-           </div>
-
-           <div className="flex items-center gap-4 p-5 bg-indigo-500/10 border border-indigo-500/20 rounded-2xl">
-              <LogOut size={24} className="text-indigo-400 shrink-0" />
-              <div className="text-left space-y-1">
-                 <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest italic">
-                   KERNEL INITIALIZATION REQUIRED
-                 </p>
-                 <p className="text-[10px] text-slate-400 leading-tight">
-                   Applying SQL functions creates the stable bridge. <span className="text-white font-bold">Logout & Re-log</span> is mandatory for your local node to sync.
-                 </p>
-              </div>
-           </div>
-        </m.div>
+             <div className="bg-black/60 p-6 rounded-2xl border border-white/5 relative group">
+                <code className="text-[10px] font-mono text-rose-300 break-all block pr-8 leading-relaxed text-left whitespace-pre-wrap">
+                  {promoteSql}
+                </code>
+                <button 
+                  onClick={handleCopy}
+                  className="absolute right-4 top-6 p-3 bg-white/5 rounded-xl text-slate-500 hover:text-white transition-all shadow-lg"
+                >
+                  {copied ? <CheckCircle size={16} className="text-emerald-500" /> : <Copy size={16} />}
+                </button>
+             </div>
+          </m.div>
+        )}
 
         <div className="flex flex-col gap-4">
           <button onClick={handleLogoutAndRetry} className="px-12 py-6 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-xl active:scale-95 transition-all flex items-center justify-center gap-3">
              <RefreshCw size={14} /> FLUSH NODE & RE-CONNECT
           </button>
+          <button onClick={() => window.location.hash = '#/'} className="text-[10px] font-black text-slate-600 uppercase tracking-widest hover:text-white transition-all">Back to Subject Terminal</button>
         </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6">
-        <ShieldAlert size={64} className="text-rose-600 mb-4" />
-        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">System Desync</h2>
-        <p className="text-slate-500 text-sm max-w-md mx-auto italic leading-relaxed">{error}</p>
-        <button onClick={handleLogoutAndRetry} className="px-10 py-5 bg-rose-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest">FORCE REBOOT</button>
       </div>
     );
   }
