@@ -1,19 +1,26 @@
 
 -- ==========================================
--- SOMNOAI V19 KERNEL - CRITICAL PERMISSION FIX
+-- SOMNOAI V21 KERNEL - ADVANCED AUTH SECURITY
 -- ==========================================
 
--- 1. 确保核心字段存在
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_super_owner boolean DEFAULT false;
-ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS role text DEFAULT 'user';
+-- 1. Helper function for RLS
+CREATE OR REPLACE FUNCTION public.is_super_owner()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE(is_super_owner, false) FROM public.profiles WHERE id = auth.uid()
+$$;
 
--- 2. 重写权限查询函数，确保返回所有鉴权维度
-CREATE OR REPLACE FUNCTION public.get_profile_status()
+-- 2. Enhanced Profile fetching for Auth Provider
+CREATE OR REPLACE FUNCTION public.get_my_detailed_profile()
 RETURNS TABLE (
+    id uuid,
     role text,
     is_super_owner boolean,
-    is_initialized boolean,
-    is_blocked boolean
+    is_blocked boolean,
+    full_name text
 ) 
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -21,14 +28,12 @@ AS $$
 BEGIN
     RETURN QUERY
     SELECT 
-        p.role,
-        p.is_super_owner,
-        p.is_initialized,
-        p.is_blocked
+        p.id,
+        COALESCE(p.role, 'user'),
+        COALESCE(p.is_super_owner, false),
+        COALESCE(p.is_blocked, false),
+        p.full_name
     FROM public.profiles p
     WHERE p.id = auth.uid();
 END;
 $$;
-
--- 3. 授权命令（备用）：如果您现在进不去，可以在 Supabase SQL Editor 执行：
--- UPDATE public.profiles SET role = 'owner', is_super_owner = true WHERE email = '您的邮箱';
