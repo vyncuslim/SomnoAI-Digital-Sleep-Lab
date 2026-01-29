@@ -2,7 +2,8 @@
 import React, { useState } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck
+  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
+  MessageSquare, ChevronRight
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -14,17 +15,6 @@ interface SettingsProps {
   onLanguageChange: (l: Language) => void;
   onLogout: () => void;
   onNavigate: (view: any) => void;
-  // Made threeDEnabled and onThreeDChange optional to fix compilation error in App.tsx
-  threeDEnabled?: boolean;
-  onThreeDChange?: (enabled: boolean) => void;
-  theme?: string;
-  onThemeChange?: (t: any) => void;
-  accentColor?: string;
-  onAccentChange?: (c: any) => void;
-  staticMode?: boolean;
-  onStaticModeChange?: (e: boolean) => void;
-  lastSyncTime?: string | null;
-  onManualSync?: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
@@ -65,7 +55,27 @@ export const Settings: React.FC<SettingsProps> = ({
              </div>
           </div>
         </div>
-      </div>
+      </div >
+
+      {/* Lab Feedback Trigger */}
+      <GlassCard 
+        onClick={() => window.location.hash = '#/feedback'}
+        className="p-8 rounded-[3rem] border-white/5 bg-indigo-600/5 cursor-pointer group hover:bg-indigo-600/10 transition-all"
+        hoverScale={true}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-5">
+            <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400">
+              <MessageSquare size={24} />
+            </div>
+            <div>
+              <h3 className="text-sm font-black italic text-white uppercase tracking-wider">{t.feedback}</h3>
+              <p className="text-[10px] font-medium text-slate-500 italic">{t.feedbackSub}</p>
+            </div>
+          </div>
+          <ChevronRight size={20} className="text-slate-700 group-hover:text-indigo-400 transition-all group-hover:translate-x-1" />
+        </div>
+      </GlassCard>
 
       <GlassCard className="p-8 md:p-10 rounded-[3rem] border-white/10 bg-white/[0.01]">
         <div className="space-y-10">

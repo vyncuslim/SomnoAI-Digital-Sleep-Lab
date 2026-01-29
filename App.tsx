@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
@@ -22,6 +21,7 @@ import { Settings } from './components/Settings.tsx';
 import { Trends } from './components/Trends.tsx';
 import { DiaryView } from './components/DiaryView.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
+import { FeedbackView } from './components/FeedbackView.tsx';
 
 const m = motion as any;
 
@@ -50,9 +50,24 @@ const MOCK_RECORD: SleepRecord = {
 };
 
 const DecisionLoading = () => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center gap-10 text-center bg-[#020617] z-[9999]">
-    <Logo size={140} animated={true} className="mx-auto" />
-    <p className="text-white font-mono font-black uppercase text-[12px] tracking-[0.8em] italic animate-pulse opacity-80">Initializing Neural Link</p>
+  <div className="fixed inset-0 flex flex-col items-center justify-center bg-[#020617] z-[9999] p-10 overflow-hidden">
+    <div className="relative mb-12">
+       <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
+       <Logo size={160} animated={true} className="mx-auto relative z-10" />
+    </div>
+    <div className="space-y-6 text-center max-w-xs">
+       <div className="space-y-1">
+          <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.8em] italic animate-pulse opacity-80">Initializing Neural Link</p>
+          <p className="text-slate-700 text-[8px] font-black uppercase tracking-widest">Protocol Handshake • Node v22.4</p>
+       </div>
+       <div className="w-48 h-[1px] bg-white/5 mx-auto relative overflow-hidden">
+          <m.div 
+            animate={{ x: ['-100%', '100%'] }} 
+            transition={{ duration: 2.5, repeat: Infinity, ease: "linear" }}
+            className="absolute inset-0 bg-indigo-500/40 w-1/2"
+          />
+       </div>
+    </div>
   </div>
 );
 
@@ -71,6 +86,7 @@ const AppContent: React.FC = () => {
       else if (h.includes('assistant')) setActiveView('assistant');
       else if (h.includes('diary')) setActiveView('diary');
       else if (h.includes('settings')) setActiveView('settings');
+      else if (h.includes('feedback')) setActiveView('feedback');
       else setActiveView('dashboard');
     };
     window.addEventListener('hashchange', handleHash);
@@ -81,10 +97,8 @@ const AppContent: React.FC = () => {
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    // 1. 特殊公开页面
     if (activeView === 'admin-login') return <AdminLoginPage />;
     
-    // 2. 纵深防御：管理员后台
     if (activeView === 'admin') {
       return (
         <ProtectedRoute level="admin">
@@ -93,7 +107,6 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 3. 登录拦截 (仅在非模拟模式下)
     if (!profile && !isSimulated) {
       return (
         <UserLoginPage 
@@ -104,12 +117,10 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 4. 初始化检查
     if (profile && profile.role === 'user' && !profile.full_name && !isSimulated) {
        return <FirstTimeSetup onComplete={() => window.location.reload()} />;
     }
 
-    // 5. 主应用内容
     return (
       <div className="w-full flex flex-col min-h-screen">
         <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 pb-48">
@@ -120,11 +131,11 @@ const AppContent: React.FC = () => {
               {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} />}
               {activeView === 'diary' && <DiaryView lang={lang} />}
               {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => {}} onNavigate={() => {}} />}
+              {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => window.location.hash = '#/settings'} />}
             </m.div>
           </AnimatePresence>
         </main>
         
-        {/* 底部 Pill Dock */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
           <m.nav 
             initial={{ y: 100 }} animate={{ y: 0 }} 
@@ -149,15 +160,12 @@ const AppContent: React.FC = () => {
               </button>
             ))}
             
-            {/* 管理员入口：仅显示给 Admin/Owner */}
             {isAdmin && (
               <button 
                 onClick={() => window.location.hash = '#/admin'} 
-                // Fix: Cast activeView to string because narrowing logic above prevents 'admin' value here
                 className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${(activeView as string) === 'admin' ? 'bg-rose-600 text-white' : 'text-rose-500/50 hover:text-rose-500'}`}
               >
                 <ShieldAlert size={18} />
-                {/* Fix: Cast activeView to string because narrowing logic above prevents 'admin' value here */}
                 {(activeView as string) === 'admin' && (
                   <span className="text-[9px] font-black uppercase tracking-widest">ADMIN</span>
                 )}

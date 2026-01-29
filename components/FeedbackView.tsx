@@ -44,7 +44,6 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
     setErrorMessage(null);
 
     try {
-      // Fix: destructured 'error' property is now correctly returned from feedbackApi.submitFeedback
       const { success, error } = await feedbackApi.submitFeedback(type, content, email);
       if (success) {
         setStatus('success');
@@ -102,7 +101,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
                       }`}
                     >
                       <item.icon className={type === item.id ? item.color : 'text-slate-600'} size={24} />
-                      <span className="text-[10px] font-black uppercase tracking-widest whitespace-nowrap">{item.label}</span>
+                      <span className="text-[10px] font-black uppercase tracking-widest">{item.label}</span>
                     </button>
                   ))}
                </div>

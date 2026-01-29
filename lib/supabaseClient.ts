@@ -10,7 +10,7 @@ const getSafeStorage = () => {
     window.localStorage.removeItem(testKey);
     return window.localStorage;
   } catch (e) {
-    console.warn("SomnoAI Auth: LocalStorage/Cookies blocked. Using in-memory fallback.");
+    console.warn("SomnoAI Auth: LocalStorage blocked. Using in-memory fallback.");
     const memoryStorage: Record<string, string> = {};
     return {
       getItem: (key: string) => memoryStorage[key] || null,
@@ -21,10 +21,9 @@ const getSafeStorage = () => {
 };
 
 /**
- * PRODUCTION ARCHITECTURE FIX
- * 1. flowType: 'implicit' - Bypasses navigator.locks which causes AbortError in sandboxed tabs.
- * 2. detectSessionInUrl: true - Critical for redirect-based logins.
- * 3. lockTerminatedContext: true - Ensures clean state on reload.
+ * PRODUCTION ARCHITECTURE - LOCKLESS PROTOCOL
+ * Providing a custom function for 'lock' bypasses navigator.locks.
+ * This is the standard fix for 'AbortError' and 'this.lock is not a function'.
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
@@ -33,6 +32,9 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     persistSession: true,
     detectSessionInUrl: true,
     flowType: 'implicit',
-    lockTerminatedContext: true 
+    // Function signature required by GoTrue-js to bypass Web Locks API
+    lock: async (name: string, acquireTimeout: number, fn: () => Promise<any>) => {
+      return await fn();
+    }
   }
 });

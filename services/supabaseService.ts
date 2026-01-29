@@ -11,7 +11,6 @@ const handleDatabaseError = (err: any) => {
   return err;
 };
 
-// Added healthDataApi to resolve import error in App.tsx
 export const healthDataApi = {
   getHealthHistory: async () => {
     const { data, error } = await supabase.from('health_data').select('*').order('recorded_at', { ascending: false });
@@ -51,7 +50,6 @@ export const userDataApi = {
     if (!user) throw new Error('UNAUTHORIZED');
     return supabase.from('user_data').upsert({ id: user.id, ...metrics });
   },
-  // Added completeSetup to resolve error in FirstTimeSetup.tsx
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('UNAUTHORIZED');
@@ -124,7 +122,6 @@ export const authApi = {
   verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),
   signOut: () => supabase.auth.signOut(),
   signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google' }),
-  // Added missing signIn and signUp methods for Auth.tsx
   signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
   signUp: (email: string, password: string, options: any) => supabase.auth.signUp({ 
     email, 
@@ -133,15 +130,21 @@ export const authApi = {
   })
 };
 
-// Added feedbackApi to resolve import error in FeedbackView.tsx
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert({ type, content, email });
-    return { success: !error, error };
+    if (error) {
+      console.error("Feedback Save Error:", error);
+      return { success: false, error: handleDatabaseError(error) };
+    }
+    
+    // Notify admin via Telegram for immediate visibility
+    await notifyAdmin(`📥 NEW FEEDBACK RECEIVED\nType: ${type.toUpperCase()}\nFrom: ${email}\n\nContent: ${content}`);
+    
+    return { success: true, error: null };
   }
 };
 
-// Updated diaryApi to use 'diary_entries' table
 export const diaryApi = {
   getEntries: async () => {
     const { data, error } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false });
