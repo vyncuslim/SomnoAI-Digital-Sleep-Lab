@@ -6,6 +6,12 @@ export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
+  
+  // PGRST202 means the RPC function is missing on the server
+  if (err.code === 'PGRST202') {
+    throw new Error("RPC_MISSING_DEPLOY_SQL");
+  }
+
   if (err.status === 500 || err.status === 403 || err.code === '42P17' || err.message?.includes('recursion')) {
     throw new Error("DB_CALIBRATION_REQUIRED");
   }
@@ -42,9 +48,10 @@ export const healthDataApi = {
 export const userDataApi = {
   getProfileStatus: async () => {
     try {
+      // Calling RPC without parameters as defined in setup.sql
       const { data: status, error } = await supabase.rpc('get_profile_status');
       if (error) throw handleDatabaseError(error);
-      if (!status) return { is_initialized: false, has_app_data: false };
+      if (!status) return { is_initialized: false, has_app_data: false, is_blocked: false, role: 'user' };
       if (status.is_blocked) throw new Error("BLOCK_ACTIVE");
       return status;
     } catch (e: any) { throw e; }
@@ -78,7 +85,7 @@ export const diaryApi = {
       const { data, error } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false });
       if (error) throw handleDatabaseError(error);
       return data || [];
-    } catch (e) { throw e; }
+    } catch (e) { throw handleDatabaseError(e); }
   },
   saveEntry: async (content: string, mood?: string) => {
     try {
@@ -87,7 +94,7 @@ export const diaryApi = {
       const { data, error = null } = await supabase.from('diary_entries').insert({ user_id: user.id, content, mood }).select().single();
       if (error) throw handleDatabaseError(error);
       return data;
-    } catch (e) { throw e; }
+    } catch (e) { throw handleDatabaseError(e); }
   },
   deleteEntry: async (id: string) => {
     const { error } = await supabase.from('diary_entries').delete().eq('id', id);
@@ -119,18 +126,15 @@ export const authApi = {
 };
 
 export const adminApi = {
-  /**
-   * [V16 KERNEL] 鉴权判定
-   */
   checkAdminStatus: async (): Promise<boolean> => {
     try {
-      const { data: status } = await supabase.rpc('get_profile_status');
+      const { data: status, error } = await supabase.rpc('get_profile_status');
+      if (error) return false;
       return (status?.role === 'admin' || status?.role === 'owner');
     } catch (e) { return false; }
   },
 
   getUsers: async () => {
-    // 调用 V16 隔离 RPC
     const { data, error } = await supabase.rpc('admin_get_all_profiles');
     if (error) throw handleDatabaseError(error);
     return data || [];
@@ -147,33 +151,45 @@ export const adminApi = {
   },
 
   getAdminClearance: async (userId: string) => {
-    const { data: status } = await supabase.rpc('get_profile_status');
-    return { role: status?.role || 'user', is_super_owner: status?.role === 'owner' };
+    try {
+      const { data: status } = await supabase.rpc('get_profile_status');
+      return { role: status?.role || 'user', is_super_owner: status?.role === 'owner' };
+    } catch (e) {
+      return { role: 'user', is_super_owner: false };
+    }
   },
 
   getFeedback: async () => {
-    const { data } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
+    if (error) throw handleDatabaseError(error);
     return data || [];
   },
   getAuditLogs: async () => {
-    const { data } = await supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100);
+    const { data, error } = await supabase.from('login_attempts').select('*').order('attempt_at', { ascending: false }).limit(100);
+    if (error) return [];
     return data || [];
   },
   getSecurityEvents: async () => {
-    const { data } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
+    if (error) return [];
     return data || [];
   },
   getSleepRecords: async () => {
-    const { data } = await supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100);
+    const { data, error } = await supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(100);
+    if (error) return [];
     return data || [];
   }
 };
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    const { data: sessionData } = await supabase.auth.getSession();
-    const userId = sessionData.session?.user?.id || null;
-    const { error } = await supabase.from('feedback').insert({ user_id: userId, email: email.trim(), feedback_type: type, content: content.trim() });
-    return { success: !error, error };
+    try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user?.id || null;
+      const { error } = await supabase.from('feedback').insert({ user_id: userId, email: email.trim(), feedback_type: type, content: content.trim() });
+      return { success: !error, error };
+    } catch (e) {
+      return { success: false, error: e };
+    }
   }
 };

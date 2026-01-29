@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, SyncStatus } from './types.ts';
-import { Moon, User, BrainCircuit, Settings as SettingsIcon, History, BookOpen, Smartphone, ShieldOff, AlertTriangle, Database, Shield, FlaskConical, Zap, CheckCircle, MessageSquare, RefreshCw, Power } from 'lucide-react';
+import { Moon, User, BrainCircuit, Settings as SettingsIcon, History, BookOpen, Smartphone, ShieldOff, AlertTriangle, Database, Shield, FlaskConical, Zap, CheckCircle, MessageSquare, RefreshCw, Power, DatabaseZap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { supabase, adminApi, authApi, userDataApi, healthDataApi } from './services/supabaseService.ts';
@@ -82,6 +82,7 @@ const App: React.FC = () => {
   const [isSimulated, setIsSimulated] = useState(false);
   const [forceSetupPassed, setForceSetupPassed] = useState(false);
   const [dbError, setDbError] = useState(false);
+  const [rpcMissing, setRpcMissing] = useState(false);
 
   const fetchHistory = useCallback(async (sim?: boolean) => {
     if (sim || isSimulated) { setHistory([MOCK_RECORD]); setCurrentRecord(MOCK_RECORD); setHasAppData(true); return; }
@@ -95,7 +96,6 @@ const App: React.FC = () => {
     } catch (err) { console.warn("Stream offline."); }
   }, [isSimulated]);
 
-  // [V15 净化检查] 仅调用 RPC 函数获取状态
   const checkLaboratoryRegistry = useCallback(async (sim?: boolean) => {
     if (sim || isSimulated || forceSetupPassed) { 
       setSetupRequired(false); 
@@ -117,6 +117,7 @@ const App: React.FC = () => {
     } catch (err: any) {
       if (err.message === "BLOCK_ACTIVE") setIsBlocked(true);
       else if (err.message === "DB_CALIBRATION_REQUIRED") setDbError(true);
+      else if (err.message === "RPC_MISSING_DEPLOY_SQL") setRpcMissing(true);
       else setSetupRequired(true);
     }
   }, [fetchHistory, isSimulated, forceSetupPassed, history.length]);
@@ -190,6 +191,15 @@ const App: React.FC = () => {
 
   if (authState === 'loading') return <DecisionLoading onBypass={() => setAuthState('unauthenticated')} />;
   
+  if (rpcMissing) return (
+    <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6 z-[9999]">
+      <DatabaseZap size={80} className="text-indigo-500 mb-4 animate-bounce" />
+      <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">SQL Kernel Missing</h2>
+      <p className="text-slate-500 text-sm max-w-sm italic">The mandatory SECURITY DEFINER functions have not been deployed to your Supabase node. Deployment of the V16.1 SQL Kernel is required to establish the neural link.</p>
+      <button onClick={() => window.location.reload()} className="px-10 py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest shadow-xl active:scale-95 flex items-center gap-2"><RefreshCw size={14} /> RE-INITIALIZE CONNECTION</button>
+    </div>
+  );
+
   if (dbError) return (
     <div className="fixed inset-0 bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-6 z-[9999]">
       <AlertTriangle size={80} className="text-amber-500 mb-4 animate-pulse" />
