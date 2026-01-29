@@ -1,4 +1,3 @@
-
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
@@ -11,21 +10,29 @@ const getSafeStorage = () => {
     window.localStorage.removeItem(testKey);
     return window.localStorage;
   } catch (e) {
-    console.warn("SomnoAI Auth: LocalStorage restricted.");
-    return undefined;
+    console.warn("SomnoAI Auth: LocalStorage/Cookies blocked. Using in-memory fallback.");
+    const memoryStorage: Record<string, string> = {};
+    return {
+      getItem: (key: string) => memoryStorage[key] || null,
+      setItem: (key: string, value: string) => { memoryStorage[key] = value; },
+      removeItem: (key: string) => { delete memoryStorage[key]; },
+    };
   }
 };
 
 /**
- * FIXED: Changed flowType to 'implicit' for better stability in sandboxed browser previews.
- * This resolves the "AbortError: signal is aborted without reason" commonly seen with PKCE in restricted iFrames.
+ * PRODUCTION ARCHITECTURE FIX
+ * 1. flowType: 'implicit' - Bypasses navigator.locks which causes AbortError in sandboxed tabs.
+ * 2. detectSessionInUrl: true - Critical for redirect-based logins.
+ * 3. lockTerminatedContext: true - Ensures clean state on reload.
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: getSafeStorage(),
-    persistSession: true,
     autoRefreshToken: true,
+    persistSession: true,
     detectSessionInUrl: true,
-    flowType: 'implicit' 
+    flowType: 'implicit',
+    lockTerminatedContext: true 
   }
 });

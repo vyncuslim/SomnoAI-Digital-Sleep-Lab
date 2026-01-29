@@ -141,16 +141,16 @@ export const feedbackApi = {
   }
 };
 
-// Added diaryApi to resolve import error in DiaryView.tsx
+// Updated diaryApi to use 'diary_entries' table
 export const diaryApi = {
   getEntries: async () => {
-    const { data, error } = await supabase.from('diary').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false });
     if (error) throw handleDatabaseError(error);
     return data;
   },
   saveEntry: async (content: string, mood: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from('diary').insert({ 
+    const { data, error } = await supabase.from('diary_entries').insert({ 
       user_id: user?.id, 
       content, 
       mood 
@@ -159,7 +159,7 @@ export const diaryApi = {
     return data;
   },
   deleteEntry: async (id: string) => {
-    const { error } = await supabase.from('diary').delete().eq('id', id);
+    const { error } = await supabase.from('diary_entries').delete().eq('id', id);
     if (error) throw handleDatabaseError(error);
   }
 };

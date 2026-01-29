@@ -4,7 +4,7 @@ import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
   Moon, BrainCircuit, Settings as SettingsIcon, History, 
-  BookOpen
+  BookOpen, ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
@@ -50,14 +50,14 @@ const MOCK_RECORD: SleepRecord = {
 };
 
 const DecisionLoading = () => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center gap-8 text-center bg-[#020617] z-[9999]">
-    <Logo size={120} animated={true} />
-    <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.6em] italic animate-pulse">Initializing Neural Link</p>
+  <div className="fixed inset-0 flex flex-col items-center justify-center gap-10 text-center bg-[#020617] z-[9999]">
+    <Logo size={140} animated={true} className="mx-auto" />
+    <p className="text-white font-mono font-black uppercase text-[12px] tracking-[0.8em] italic animate-pulse opacity-80">Initializing Neural Link</p>
   </div>
 );
 
 const AppContent: React.FC = () => {
-  const { profile, loading, isAdmin } = useAuth();
+  const { profile, loading, isOwner, isAdmin } = useAuth();
   const [lang, setLang] = useState<Language>('en'); 
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [isSimulated, setIsSimulated] = useState(false);
@@ -81,9 +81,10 @@ const AppContent: React.FC = () => {
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
+    // 1. 特殊公开页面
     if (activeView === 'admin-login') return <AdminLoginPage />;
     
-    // Protect the admin dashboard
+    // 2. 纵深防御：管理员后台
     if (activeView === 'admin') {
       return (
         <ProtectedRoute level="admin">
@@ -92,23 +93,23 @@ const AppContent: React.FC = () => {
       );
     }
 
+    // 3. 登录拦截 (仅在非模拟模式下)
     if (!profile && !isSimulated) {
       return (
         <UserLoginPage 
-          onSuccess={() => window.location.reload()} 
+          onSuccess={() => window.location.hash = '#/'} 
           onSandbox={() => setIsSimulated(true)} 
           lang={lang} 
         />
       );
     }
 
-    // Check if initialization is needed for real users
-    if (profile && !profile.is_blocked && profile.role === 'user' && !profile.full_name && !isSimulated) {
-       // Using full_name as proxy for is_initialized in this simplified logic
-       // Actual DB check is preferred
+    // 4. 初始化检查
+    if (profile && profile.role === 'user' && !profile.full_name && !isSimulated) {
        return <FirstTimeSetup onComplete={() => window.location.reload()} />;
     }
 
+    // 5. 主应用内容
     return (
       <div className="w-full flex flex-col min-h-screen">
         <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 pb-48">
@@ -123,6 +124,7 @@ const AppContent: React.FC = () => {
           </AnimatePresence>
         </main>
         
+        {/* 底部 Pill Dock */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
           <m.nav 
             initial={{ y: 100 }} animate={{ y: 0 }} 
@@ -138,7 +140,7 @@ const AppContent: React.FC = () => {
               <button 
                 key={nav.id} 
                 onClick={() => window.location.hash = `#/${nav.id}`} 
-                className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${activeView === nav.id ? 'bg-indigo-600 text-white' : 'text-slate-600 hover:text-slate-300'}`}
+                className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}
               >
                 <nav.icon size={18} />
                 {activeView === nav.id && (
@@ -146,7 +148,22 @@ const AppContent: React.FC = () => {
                 )}
               </button>
             ))}
-          </nav>
+            
+            {/* 管理员入口：仅显示给 Admin/Owner */}
+            {isAdmin && (
+              <button 
+                onClick={() => window.location.hash = '#/admin'} 
+                // Fix: Cast activeView to string because narrowing logic above prevents 'admin' value here
+                className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${(activeView as string) === 'admin' ? 'bg-rose-600 text-white' : 'text-rose-500/50 hover:text-rose-500'}`}
+              >
+                <ShieldAlert size={18} />
+                {/* Fix: Cast activeView to string because narrowing logic above prevents 'admin' value here */}
+                {(activeView as string) === 'admin' && (
+                  <span className="text-[9px] font-black uppercase tracking-widest">ADMIN</span>
+                )}
+              </button>
+            )}
+          </m.nav>
         </div>
       </div>
     );
