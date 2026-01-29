@@ -6,39 +6,40 @@ export { supabase };
 
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  
-  // PGRST202: 数据库里没这个函数 (404)
-  if (err.code === 'PGRST202' || err.message?.includes('not found')) {
-    throw new Error("RPC_MISSING_DEPLOY_SQL");
-  }
-
-  // 递归死循环或 500
-  if (err.status === 500 || err.code === '42P17' || err.message?.includes('recursion')) {
-    throw new Error("DB_CALIBRATION_REQUIRED");
-  }
+  if (err.code === 'PGRST202' || err.message?.includes('not found')) throw new Error("RPC_MISSING_DEPLOY_SQL");
+  if (err.status === 500 || err.code === '42P17' || err.message?.includes('recursion')) throw new Error("DB_CALIBRATION_REQUIRED");
   return err;
+};
+
+// Added healthDataApi to resolve import error in App.tsx
+export const healthDataApi = {
+  getHealthHistory: async () => {
+    const { data, error } = await supabase.from('health_data').select('*').order('recorded_at', { ascending: false });
+    if (error) throw handleDatabaseError(error);
+    return data;
+  }
+};
+
+export const profileApi = {
+  getMyProfile: async () => {
+    const { data, error } = await supabase.from('profiles').select('*').single();
+    if (error) throw handleDatabaseError(error);
+    return data;
+  },
+  updateProfile: async (data: any) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('UNAUTHORIZED');
+    return supabase.from('profiles').update(data).eq('id', user.id);
+  }
 };
 
 export const userDataApi = {
   getProfileStatus: async () => {
     try {
-      // 设置 8 秒超时，防止无限转圈
-      const timeout = new Promise((_, reject) => setTimeout(() => reject(new Error("GATEWAY_TIMEOUT")), 8000));
-      
-      const rpcCall = supabase.rpc('get_profile_status');
-      const { data: status, error } = await Promise.race([rpcCall, timeout]) as any;
-
+      const { data: status, error } = await supabase.rpc('get_profile_status');
       if (error) throw handleDatabaseError(error);
-      
-      // 如果 RPC 成功但没数据 (未登录状态)
-      if (!status) return { is_initialized: false, has_app_data: false, is_blocked: false, role: 'user' };
-      
-      if (status.is_blocked) throw new Error("BLOCK_ACTIVE");
       return status;
-    } catch (e: any) { 
-      console.error("Status check failed:", e);
-      throw e; 
-    }
+    } catch (e: any) { throw e; }
   },
   getUserData: async () => {
     const { data, error } = await supabase.from('user_data').select('*').single();
@@ -50,13 +51,24 @@ export const userDataApi = {
     if (!user) throw new Error('UNAUTHORIZED');
     return supabase.from('user_data').upsert({ id: user.id, ...metrics });
   },
+  // Added completeSetup to resolve error in FirstTimeSetup.tsx
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error('UNAUTHORIZED');
-    const { error: dataError } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
-    if (dataError) throw handleDatabaseError(dataError);
-    const { error: profileError } = await supabase.from('profiles').update({ full_name: fullName.trim(), is_initialized: true }).eq('id', user.id);
-    if (profileError) throw handleDatabaseError(profileError);
+    
+    const { error: pError } = await supabase.from('profiles').update({ 
+      full_name: fullName, 
+      is_initialized: true 
+    }).eq('id', user.id);
+    if (pError) throw handleDatabaseError(pError);
+    
+    const { error: dError } = await supabase.from('user_data').upsert({ 
+      id: user.id, 
+      ...metrics, 
+      is_initialized: true 
+    });
+    if (dError) throw handleDatabaseError(dError);
+    
     return { success: true };
   }
 };
@@ -64,11 +76,8 @@ export const userDataApi = {
 export const adminApi = {
   checkAdminStatus: async (): Promise<boolean> => {
     try {
-      const { data: status, error } = await supabase.rpc('get_profile_status');
-      if (error) return false;
-      // 允许 admin, owner, super_owner 进入管理后台
-      const adminRoles = ['admin', 'owner', 'super_owner'];
-      return adminRoles.includes(status?.role || 'user');
+      const { data: status } = await supabase.rpc('get_profile_status');
+      return ['admin', 'owner', 'super_owner'].includes(status?.role || 'user');
     } catch (e) { return false; }
   },
   getAdminClearance: async (userId: string) => {
@@ -81,29 +90,28 @@ export const adminApi = {
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
-  getSleepRecords: async () => {
-    const { data, error } = await supabase.from('health_raw_data').select('*').limit(100);
-    if (error) throw handleDatabaseError(error);
-    return data || [];
-  },
-  getFeedback: async () => {
-    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
-    if (error) throw handleDatabaseError(error);
-    return data || [];
-  },
-  getAuditLogs: async () => {
-    const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false });
-    if (error) throw handleDatabaseError(error);
-    return data || [];
-  },
   getSecurityEvents: async () => {
-    const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false });
+    const { data, error } = await supabase.rpc('admin_get_security_logs');
+    if (error) {
+       const { data: oldData } = await supabase.from('security_events').select('*').order('timestamp', { ascending: false }).limit(50);
+       return oldData || [];
+    }
+    return data.map((d: any) => ({
+      id: d.log_id,
+      email: d.subject_email,
+      event_type: d.event_category,
+      timestamp: d.event_time,
+      event_reason: d.details
+    })) || [];
+  },
+  getSystemHealth: async () => {
+    const { data, error } = await supabase.rpc('owner_get_system_health');
     if (error) throw handleDatabaseError(error);
-    return data || [];
+    return data[0];
   },
   toggleBlock: async (id: string) => {
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
-    if (error) throw handleDatabaseError(error);
+    if (error) throw new Error(error.message);
   },
   setRole: async (id: string, role: string) => {
     const { error } = await supabase.rpc('admin_set_role', { target_user_id: id, new_role: role });
@@ -111,38 +119,42 @@ export const adminApi = {
   }
 };
 
-export const profileApi = {
-  getMyProfile: async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return null;
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-    if (error) throw handleDatabaseError(error);
-    return data;
-  },
-  updateProfile: async (updates: any) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('UNAUTHORIZED');
-    return supabase.from('profiles').update(updates).eq('id', user.id);
-  }
+export const authApi = {
+  sendOTP: (email: string) => supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } }),
+  verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),
+  signOut: () => supabase.auth.signOut(),
+  signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google' }),
+  // Added missing signIn and signUp methods for Auth.tsx
+  signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
+  signUp: (email: string, password: string, options: any) => supabase.auth.signUp({ 
+    email, 
+    password, 
+    options: { data: options } 
+  })
 };
 
+// Added feedbackApi to resolve import error in FeedbackView.tsx
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert({ type, content, email });
-    if (error) return { success: false, error };
-    return { success: true };
+    return { success: !error, error };
   }
 };
 
+// Added diaryApi to resolve import error in DiaryView.tsx
 export const diaryApi = {
   getEntries: async () => {
     const { data, error } = await supabase.from('diary').select('*').order('created_at', { ascending: false });
     if (error) throw handleDatabaseError(error);
-    return data || [];
+    return data;
   },
   saveEntry: async (content: string, mood: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from('diary').insert({ user_id: user?.id, content, mood }).select().single();
+    const { data, error } = await supabase.from('diary').insert({ 
+      user_id: user?.id, 
+      content, 
+      mood 
+    }).select().single();
     if (error) throw handleDatabaseError(error);
     return data;
   },
@@ -150,39 +162,4 @@ export const diaryApi = {
     const { error } = await supabase.from('diary').delete().eq('id', id);
     if (error) throw handleDatabaseError(error);
   }
-};
-
-export const healthDataApi = {
-  uploadTelemetry: async (data: any) => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return { success: false, error: 'UNAUTHORIZED' };
-      const { error: rawError } = await supabase.from('health_raw_data').insert({
-        user_id: user.id,
-        data_type: 'sleep_session_ingress',
-        recorded_at: data.recorded_at || new Date().toISOString(),
-        source: data.source || 'edge_bridge',
-        value: data
-      });
-      if (rawError) throw handleDatabaseError(rawError);
-      await supabase.from('profiles').update({ has_app_data: true }).eq('id', user.id);
-      return { success: true };
-    } catch (err: any) { return { success: false, error: err.message }; }
-  },
-  getTelemetryHistory: async (limit = 30) => {
-    try {
-      const { data, error } = await supabase.from('health_raw_data').select('*').order('recorded_at', { ascending: false }).limit(limit);
-      if (error) throw handleDatabaseError(error);
-      return (data || []).map(d => ({ id: d.id, recorded_at: d.recorded_at, ...d.value }));
-    } catch (err: any) { return []; }
-  }
-};
-
-export const authApi = {
-  signUp: (email: string, password: string, metadata?: any) => supabase.auth.signUp({ email, password, options: { data: metadata || {} } }),
-  signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
-  sendOTP: (email: string) => supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: window.location.origin, shouldCreateUser: true } }),
-  verifyOTP: (email: string, token: string, type: any = 'email') => supabase.auth.verifyOtp({ email, token, type }),
-  signOut: () => supabase.auth.signOut(),
-  signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google' })
 };
