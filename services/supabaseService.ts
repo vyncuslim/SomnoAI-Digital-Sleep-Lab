@@ -37,7 +37,7 @@ export const userDataApi = {
     try {
       const { data: status, error } = await supabase.rpc('get_my_detailed_profile');
       if (error) throw handleDatabaseError(error);
-      return status?.[0];
+      return status && status.length > 0 ? status[0] : null;
     } catch (e: any) { throw e; }
   },
   getUserData: async () => {
@@ -66,10 +66,10 @@ export const adminApi = {
   getStats: async () => {
     const { data, error } = await supabase.rpc('admin_get_global_stats');
     if (error) {
-       console.warn("Stats RPC failure, using fallback counts.");
-       return { total_subjects: 42, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 }; 
+       console.error("Stats RPC failed:", error);
+       throw error;
     }
-    return data;
+    return data || { total_subjects: 0, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 };
   },
   checkAdminStatus: async (): Promise<boolean> => {
     try {
@@ -82,7 +82,7 @@ export const adminApi = {
   getAdminClearance: async (userId: string) => {
     const { data, error } = await supabase.rpc('get_my_detailed_profile');
     if (error) throw handleDatabaseError(error);
-    return data?.[0];
+    return data && data.length > 0 ? data[0] : null;
   },
   getUsers: async () => {
     const { data, error } = await supabase.rpc('admin_get_all_profiles');
@@ -130,10 +130,17 @@ export const authApi = {
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    const { error } = await supabase.from('feedback').insert({ type, content, email });
-    if (error) return { success: false, error: handleDatabaseError(error) };
-    await notifyAdmin(`📥 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\n\nContent: ${content}`);
-    return { success: true, error: null };
+    try {
+      const { error } = await supabase.from('feedback').insert({ type, content, email });
+      if (error) throw handleDatabaseError(error);
+      
+      // Proactive notification but don't block the UI if Telegram is slow
+      notifyAdmin(`📥 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\n\nContent: ${content}`).catch(e => console.warn("Telegram non-critical delay:", e));
+      
+      return { success: true, error: null };
+    } catch (err: any) {
+      return { success: false, error: err };
+    }
   }
 };
 
