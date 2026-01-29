@@ -33,7 +33,7 @@ export default function AdminDashboard() {
 
         if (isMounted) setEmail(session.user.email || null);
 
-        // 核心鉴权逻辑：检查角色是否为 admin, owner 或 super_owner
+        // 核心鉴权逻辑：从 profiles 表获取角色
         const isAdmin = await adminApi.checkAdminStatus();
         
         if (!isMounted) return;
@@ -64,7 +64,7 @@ export default function AdminDashboard() {
     return () => { isMounted = false; };
   }, []);
 
-  const promoteSql = email ? `-- 提权脚本：将当前账号设为最高所有者\nUPDATE public.profiles SET role = 'owner' WHERE email = '${email}';` : "";
+  const promoteSql = email ? `-- 提权脚本：将当前账号设为所有者\nUPDATE public.profiles SET role = 'owner' WHERE email = '${email}';` : "";
 
   const handleCopy = () => {
     if (!promoteSql) return;
@@ -157,6 +157,7 @@ export default function AdminDashboard() {
     );
   }
 
+  // 如果没有报错且通过验证，渲染 AdminView
   if (!isAuthorized) return null;
 
   return (

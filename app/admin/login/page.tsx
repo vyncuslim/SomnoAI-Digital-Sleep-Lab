@@ -2,7 +2,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, 
-  Shield, Lock
+  Shield, Lock, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../../../components/Logo.tsx';
@@ -60,7 +60,11 @@ export default function AdminLoginPage() {
         otpRefs.current[0]?.focus();
       }, 400);
     } catch (err: any) {
-      setError(err.message || "Laboratory Handshake failed. Please retry.");
+      if (err.message?.includes('rate limit')) {
+        setError("Rate limit exceeded. Please wait a few minutes before requesting another node token.");
+      } else {
+        setError(err.message || "Laboratory Handshake failed. Please retry.");
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -100,11 +104,10 @@ export default function AdminLoginPage() {
       
       if (!data?.user) throw new Error("Sync Error: Neural identity not established.");
 
-      // Fix: removed userId argument from checkAdminStatus call as it is not required by the signature
+      // 验证管理权限
       const isAdmin = await adminApi.checkAdminStatus();
       
       if (!isAdmin) {
-        // Log out immediately if not an admin to prevent unauthorized access
         await authApi.signOut();
         throw new Error("Clearance Denied: Your identity is valid but lacks 'admin' level privileges.");
       }
@@ -132,7 +135,7 @@ export default function AdminLoginPage() {
       </m.div>
 
       <div className="w-full max-w-[440px]">
-        <div className="bg-[#050a1f]/95 backdrop-blur-3xl border border-rose-600/10 rounded-[3rem] p-1 shadow-2xl">
+        <div className="bg-[#050a1f]/95 backdrop-blur-3xl border border-rose-600/10 rounded-[3rem] p-1 shadow-2xl overflow-hidden">
           <div className="p-8 md:p-10 space-y-10">
             <h2 className="text-xl font-black italic text-white uppercase text-center tracking-tighter">Command Authentication</h2>
 

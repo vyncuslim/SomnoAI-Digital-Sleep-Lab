@@ -97,8 +97,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }
     })();
     if (!q) return currentList;
-    return currentList.filter((item: any) => {
-      const searchStr = `${item.email} ${item.id} ${item.role}`.toLowerCase();
+    return (currentList || []).filter((item: any) => {
+      const searchStr = `${item.email || ''} ${item.id || ''} ${item.role || ''}`.toLowerCase();
       return searchStr.includes(q);
     });
   }, [searchQuery, activeTab, data]);
@@ -115,7 +115,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           <div className="space-y-2 text-left">
             <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-3">
               Lab <span className="text-rose-500">Command</span>
-              {currentAdmin?.is_super_owner && <Crown size={28} className="text-amber-400" />}
+              {currentAdmin?.role === 'owner' && <Crown size={28} className="text-amber-400" />}
             </h1>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em]">
               Clearance: {currentAdmin?.role?.toUpperCase() || 'IDENTIFYING'}
@@ -125,7 +125,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         
         <nav className="flex gap-2 bg-slate-900/60 p-1.5 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl">
           {(['overview', 'users', 'records', 'security', 'logs'] as AdminTab[]).map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-rose-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}>
+            <button 
+              key={tab} 
+              onClick={() => setActiveTab(tab)} 
+              className={`px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${activeTab === tab ? 'bg-rose-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+            >
               {tab}
             </button>
           ))}
@@ -140,7 +144,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       ) : (
         <AnimatePresence mode="wait">
           {activeTab === 'overview' ? (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 px-2">
+            <m.div 
+              key="overview"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="grid grid-cols-1 md:grid-cols-4 gap-6 px-2"
+            >
                <GlassCard className="p-10 rounded-[3.5rem] flex flex-col items-center gap-4 text-center">
                   <Users size={32} className="text-rose-400" />
                   <p className="text-3xl font-black text-white">{data.users.length}</p>
@@ -161,9 +171,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <p className="text-3xl font-black text-white">V16</p>
                   <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">RPC ISOLATION</p>
                </GlassCard>
-            </div>
+            </m.div>
           ) : (
-            <div className="mx-2">
+            <m.div 
+              key="table-view"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mx-2"
+            >
                <GlassCard className="p-10 rounded-[4rem] border-white/10 overflow-hidden">
                  <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-12">
                    <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">{activeTab} Registry</h3>
@@ -227,6 +243,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                         disabled={isProcessing === item.id}
                                         onClick={() => handleSetRole(item.id, item.role === 'admin' ? 'user' : 'admin')}
                                         className="p-3 bg-white/5 rounded-xl border border-white/10 hover:border-indigo-500/50 transition-all active:scale-95 disabled:opacity-30"
+                                        title={item.role === 'admin' ? "Revoke Admin" : "Promote to Admin"}
                                       >
                                         <Shield size={16} className="text-indigo-400" />
                                       </button>
@@ -241,7 +258,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     </table>
                  </div>
                </GlassCard>
-            </div>
+            </m.div>
           )}
         </AnimatePresence>
       )}
