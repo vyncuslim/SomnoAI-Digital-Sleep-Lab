@@ -26,7 +26,7 @@ export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<{ message: string; code?: string } | null>(null);
+  const [error, setError] = useState<{ message: string; code?: string; isRateLimit?: boolean } | null>(null);
   const [cooldown, setCooldown] = useState(0);
   
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -57,10 +57,12 @@ export default function AdminLoginPage() {
       setCooldown(60);
       setTimeout(() => { otpRefs.current[0]?.focus(); }, 400);
     } catch (err: any) {
-      if (err.message?.includes('rate limit') || err.status === 429) {
+      const isRateLimit = err.status === 429 || err.message?.toLowerCase().includes('rate limit');
+      if (isRateLimit) {
         setError({ 
           message: "EMAIL_THROTTLED: Global mail server is resting. Please retry in 60 seconds to avoid node lockout.", 
-          code: "RATE_LIMIT" 
+          code: "RATE_LIMIT",
+          isRateLimit: true
         });
         setCooldown(60);
       } else {
@@ -176,8 +178,19 @@ export default function AdminLoginPage() {
             </AnimatePresence>
 
             {error && (
-              <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`p-6 border rounded-[2.5rem] flex items-start gap-5 text-[11px] font-bold italic transition-all ${error.code === 'RATE_LIMIT' ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-rose-500/30 bg-rose-500/10 text-rose-400'}`}>
-                <AlertCircle size={22} className="shrink-0 mt-0.5" /><p className="leading-relaxed">{error.message}</p>
+              <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`p-6 border rounded-[2.5rem] flex flex-col items-start gap-4 text-[11px] font-bold italic transition-all ${error.code === 'RATE_LIMIT' ? 'border-amber-500/30 bg-amber-500/10 text-amber-400' : 'border-rose-500/30 bg-rose-500/10 text-rose-400'}`}>
+                <div className="flex gap-4 items-start">
+                  <AlertCircle size={22} className="shrink-0 mt-0.5" />
+                  <p className="leading-relaxed">{error.message}</p>
+                </div>
+                {error.isRateLimit && (
+                  <button 
+                    onClick={() => { setCooldown(0); setError(null); }}
+                    className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors self-end"
+                  >
+                    <RefreshCw size={10} /> Emergency Reset
+                  </button>
+                )}
               </m.div>
             )}
           </div>

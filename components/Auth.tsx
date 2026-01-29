@@ -1,8 +1,9 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, ShieldAlert, Zap, Lock, Eye, EyeOff, User, 
   ChevronLeft, Info, FlaskConical, AlertTriangle, ShieldCheck,
-  Chrome
+  Chrome, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
@@ -25,7 +26,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
-  const [error, setError] = useState<{message: string, isRateLimit?: boolean} | null>(null);
+  const [error, setError] = useState<{message: string, isRateLimit?: boolean, code?: string} | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -36,9 +37,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
     try {
       const { error: googleErr } = await authApi.signInWithGoogle();
       if (googleErr) throw googleErr;
-      // Note: Redirect will happen, onLogin will be handled by App.tsx session listener
     } catch (err: any) {
-      setError({ message: err.message || "GOOGLE_HANDSHAKE_ERROR" });
+      setError({ message: err.message || "GOOGLE_HANDSHAKE_ERROR", code: "G_FAIL" });
       setIsGoogleLoading(false);
     }
   };
@@ -67,12 +67,24 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         setActiveTab('otp');
       }
     } catch (err: any) {
-      const isRateLimit = err.message?.toLowerCase().includes('rate limit') || err.status === 429;
+      const isRateLimit = err.status === 429 || err.message?.toLowerCase().includes('rate limit');
+      const isProviderError = err.message?.toLowerCase().includes('provider');
+      
+      let msg = err.message || "PROTOCOL_SYNC_FAILED";
+      if (isRateLimit) {
+        msg = lang === 'zh' 
+          ? "节点频率限制：邮件服务器正在冷却。请等待 60 秒或使用 Google/沙盒模式。" 
+          : "NODE THROTTLED: Mail server is cooling down. Please wait 60s or use Google/Sandbox.";
+      } else if (isProviderError) {
+        msg = lang === 'zh'
+          ? "邮件网关不可用：请尝试使用 Google 登录。"
+          : "MAIL GATEWAY OFFLINE: Please attempt Google Authorization.";
+      }
+
       setError({ 
-        message: isRateLimit 
-          ? "NODE THROTTLED: Email limit reached. Please wait 60 seconds or use Google/Sandbox." 
-          : (err.message || "PROTOCOL_SYNC_FAILED"),
-        isRateLimit 
+        message: msg,
+        isRateLimit,
+        code: err.status?.toString()
       });
       setIsProcessing(false);
     } finally {
@@ -92,7 +104,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
       if (verifyErr) throw verifyErr;
       onLogin();
     } catch (err: any) {
-      setError({ message: err.message || "INVALID_SECURITY_TOKEN" });
+      setError({ message: err.message || "INVALID_SECURITY_TOKEN", code: "V_ERR" });
       setOtp(['', '', '', '', '', '']);
       otpRefs.current[0]?.focus();
       setIsProcessing(false);
@@ -121,10 +133,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
             <button 
               onClick={handleGoogleLogin}
               disabled={isGoogleLoading}
-              className="w-full py-5 rounded-full bg-white text-black font-black text-[11px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50 group"
+              className={`w-full py-5 rounded-full bg-white text-black font-black text-[11px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50 group ${error?.isRateLimit ? 'ring-2 ring-indigo-500 animate-pulse' : ''}`}
             >
               {isGoogleLoading ? <Loader2 className="animate-spin" size={18} /> : <Chrome size={18} className="group-hover:rotate-12 transition-transform" />}
-              Continue with Google
+              {error?.isRateLimit ? "BYPASS TO GOOGLE LOGIN" : "Continue with Google"}
             </button>
 
             <div className="flex items-center gap-4 py-2">
@@ -165,16 +177,29 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 )}
               </div>
 
-              {error && (
-                <m.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className={`p-5 rounded-[2rem] border flex gap-4 items-start ${error.isRateLimit ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
-                  <AlertTriangle size={18} className="shrink-0 mt-0.5" />
-                  <p className="text-[10px] font-black uppercase italic tracking-wide leading-relaxed">{error.message}</p>
-                </m.div>
-              )}
+              <AnimatePresence>
+                {error && (
+                  <m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`p-5 rounded-[2rem] border flex flex-col gap-3 ${error.isRateLimit ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
+                    <div className="flex gap-4 items-start">
+                      <AlertTriangle size={18} className="shrink-0 mt-0.5" />
+                      <p className="text-[10px] font-black uppercase italic tracking-wide leading-relaxed">{error.message}</p>
+                    </div>
+                    {error.isRateLimit && (
+                      <button 
+                        type="button" 
+                        onClick={() => setError(null)}
+                        className="flex items-center gap-2 text-[8px] font-black uppercase tracking-widest text-white/40 hover:text-white transition-colors self-end"
+                      >
+                        <RefreshCw size={10} /> Reset Connection
+                      </button>
+                    )}
+                  </m.div>
+                )}
+              </AnimatePresence>
 
-              <button type="submit" disabled={isProcessing} className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-[0_20px_40px_rgba(79,70,229,0.3)] flex items-center justify-center gap-4 active:scale-[0.98] transition-all hover:bg-indigo-500">
+              <button type="submit" disabled={isProcessing} className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-[0_20px_40px_rgba(79,70,229,0.3)] flex items-center justify-center gap-4 active:scale-[0.98] transition-all hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600">
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
-                <span>ESTABLISH LINK</span>
+                <span>{isProcessing ? "SYNCHRONIZING" : "ESTABLISH LINK"}</span>
               </button>
             </form>
 

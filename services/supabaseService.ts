@@ -99,10 +99,22 @@ export const adminApi = {
 };
 
 export const authApi = {
-  sendOTP: (email: string) => supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } }),
+  sendOTP: async (email: string) => {
+    // Pre-flight check: If we already have a buffered session, don't spam the OTP service
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session && session.user.email === email) {
+      return { data: null, error: null };
+    }
+    return supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
+  },
   verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),
   signOut: () => supabase.auth.signOut(),
-  signInWithGoogle: () => supabase.auth.signInWithOAuth({ provider: 'google' }),
+  signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
+    provider: 'google',
+    options: {
+      redirectTo: window.location.origin
+    }
+  }),
   signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
   signUp: (email: string, password: string, options: any) => supabase.auth.signUp({ 
     email, 
