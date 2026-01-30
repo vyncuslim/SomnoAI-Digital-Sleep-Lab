@@ -106,9 +106,10 @@ const AppContent: React.FC = () => {
     
     const title = viewTitles[activeView] || 'SomnoAI Node';
     
-    // Special handling for 404 tracking
+    // Enhanced tracking logic
     if (activeView === 'not-found') {
-      trackPageView(`not-found?path=${encodeURIComponent(attemptedPath.current)}`, `404: ${title}`);
+      const errorTitle = `404 Error: /${attemptedPath.current}`;
+      trackPageView(`not-found?path=${encodeURIComponent(attemptedPath.current)}`, errorTitle);
       trackEvent('page_not_found', { 
         invalid_path: attemptedPath.current,
         referrer: document.referrer || 'direct'

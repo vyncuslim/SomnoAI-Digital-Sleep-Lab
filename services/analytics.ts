@@ -1,8 +1,8 @@
 import { getSafeUrl } from './navigation.ts';
 
 /**
- * SOMNOAI GLOBAL TELEMETRY HUB (v3.1)
- * Handles analytics dispatch with cross-origin safety protocols and SPA routing support.
+ * SOMNOAI GLOBAL TELEMETRY HUB (v3.2)
+ * Handles analytics dispatch with cross-origin safety protocols and precise SPA routing support.
  */
 
 const GA_ID = 'G-3F9KVPNYLR';
@@ -15,7 +15,8 @@ export const trackEvent = (eventName: string, params: Record<string, any> = {}) 
         send_to: GA_ID,
         page_location: getSafeUrl(),
         client_timestamp: new Date().toISOString(),
-        environment: 'digital_sleep_lab'
+        environment: 'digital_sleep_lab',
+        transport_type: 'beacon'
       });
     }
   } catch (e) {
@@ -26,19 +27,26 @@ export const trackEvent = (eventName: string, params: Record<string, any> = {}) 
 export const trackPageView = (path: string, title: string) => {
   try {
     if (typeof (window as any).gtag === 'function') {
-      // Ensure we are using the hash-based path for tracking
       const currentFullUrl = getSafeUrl();
-      const baseUrl = currentFullUrl.split('#')[0];
-      const virtualLocation = `${baseUrl}#/${path.replace(/^#\/?/, '')}`;
+      const baseUrl = currentFullUrl.split('#')[0].replace(/\/$/, '');
+      
+      // Sanitize the virtual path: ensure leading slash, remove trailing
+      let cleanVirtualPath = path.startsWith('/') ? path : `/${path}`;
+      if (cleanVirtualPath !== '/' && cleanVirtualPath.endsWith('/')) {
+        cleanVirtualPath = cleanVirtualPath.slice(0, -1);
+      }
+
+      // Reconstruct the virtual location for GA4 'page_location' override
+      const virtualLocation = `${baseUrl}/#${cleanVirtualPath}`;
       
       (window as any).gtag('event', 'page_view', {
-        page_path: `/${path.replace(/^#\/?/, '')}`,
+        page_path: cleanVirtualPath,
         page_title: title,
         page_location: virtualLocation,
         send_to: GA_ID
       });
       
-      console.debug(`[Telemetry Pulse] V-PATH: /${path} [${title}]`);
+      console.debug(`[Telemetry Pulse] V-PATH: ${cleanVirtualPath} [${title}]`);
     }
   } catch (e) {
     /* Silent fail to prevent UI disruption */
