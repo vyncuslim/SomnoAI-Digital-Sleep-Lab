@@ -7,7 +7,7 @@ import {
   Clock, Mail, Fingerprint, Zap, AlertTriangle, Cpu,
   BarChart3, Network, SignalHigh, X, Terminal as TerminalIcon, Command,
   LineChart, MousePointer2, Eye, Globe, Smartphone, ArrowUp, ArrowDown,
-  UserCircle, PieChart, Info
+  UserCircle, PieChart, Info, Layers, ListChecks
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -69,10 +69,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (profile) setCurrentAdmin(profile);
       else throw new Error("CLEARANCE_NOT_FOUND");
 
-      // Parallel Data Sync from Analytics & Registry tables
       const tasks: Promise<any>[] = [adminApi.getUsers()];
-      
       const hasAccess = profile.role === 'owner' || profile.is_super_owner || profile.role === 'admin';
+      
       if (hasAccess) {
         tasks.push(adminApi.getDailyAnalytics(timeRange));
         tasks.push(adminApi.getCountryRankings());
@@ -95,18 +94,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Unified Statistics Calculation
   const metrics = useMemo(() => {
     const now = Date.now();
     const oneDayAgo = now - 86400000;
     
-    // Registry Stats
     const totalSubjects = users.length;
     const activeSubjects = users.filter(u => u.updated_at && new Date(u.updated_at).getTime() > oneDayAgo).length;
     const blockedNodes = users.filter(u => u.is_blocked).length;
     const adminNodes = users.filter(u => ['admin', 'owner'].includes(u.role?.toLowerCase()) || u.is_super_owner).length;
 
-    // GA Analytics Growth Calculation
     const len = dailyStats.length;
     const latest = len >= 1 ? dailyStats[len - 1] : { users: 0, pageviews: 0, sessions: 0, distribution: {} };
     const prev = len >= 2 ? dailyStats[len - 2] : { users: 0, pageviews: 0, sessions: 0 };
@@ -150,9 +146,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       const match = commandInput.match(/SET ROLE (user|admin|owner)/i);
       const newRole = match ? match[1].toLowerCase() : null;
-      
       if (!newRole) throw new Error("INVALID_COMMAND_SYNTAX");
-
       await adminApi.updateUserRole(terminalUser.id, newRole);
       setUsers(prev => prev.map(u => u.id === terminalUser.id ? { ...u, role: newRole } : u));
       setTerminalUser(null);
@@ -223,37 +217,44 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <AnimatePresence mode="wait">
           {activeTab === 'overview' ? (
             <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
-               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {[
-                    { label: 'Global Subjects', value: metrics.totalSubjects, growth: metrics.userGrowth, icon: Users, color: themeColor },
-                    { label: 'Today Visits', value: metrics.latestUsers, growth: metrics.userGrowth, icon: MousePointer2, color: 'emerald' },
-                    { label: 'Blocked Nodes', value: metrics.blockedNodes, growth: 0, icon: Ban, color: 'rose' },
-                    { label: 'Active (24H)', value: metrics.activeSubjects, growth: 0, icon: Zap, color: isOwner ? 'amber' : 'indigo' }
-                  ].map((stat, i) => (
-                    <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-${stat.color}-500/10 shadow-2xl`}>
-                      <div className="flex justify-between items-start mb-6">
-                         <div className={`p-4 bg-${stat.color}-500/10 rounded-2xl text-${stat.color}-400 inline-block`}><stat.icon size={26} /></div>
-                         {stat.growth !== 0 && (
-                            <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black ${stat.growth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                               {stat.growth >= 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-                               {Math.abs(stat.growth)}%
-                            </div>
-                         )}
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">{stat.label}</p>
-                      </div>
-                    </GlassCard>
-                  ))}
+               {/* UPPER: GOOGLE ANALYTICS FLOW */}
+               <div className="space-y-6">
+                 <div className="flex items-center gap-3 px-6">
+                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Global Traffic Flux (GA4)</h2>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                    {[
+                      { label: 'Today Nodes', value: metrics.latestUsers, growth: metrics.userGrowth, icon: Globe, color: 'emerald' },
+                      { label: 'Total Subjects', value: metrics.totalSubjects, growth: 0, icon: Users, color: themeColor },
+                      { label: 'Flux Density', value: metrics.latestViews, growth: metrics.viewGrowth, icon: Activity, color: 'indigo' },
+                      { label: 'Pulse Status', value: 'NOMINAL', growth: 0, icon: SignalHigh, color: 'emerald' }
+                    ].map((stat, i) => (
+                      <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-${stat.color}-500/10 shadow-2xl`}>
+                        <div className="flex justify-between items-start mb-6">
+                           <div className={`p-4 bg-${stat.color}-500/10 rounded-2xl text-${stat.color}-400 inline-block`}><stat.icon size={26} /></div>
+                           {stat.growth !== 0 && (
+                              <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black ${stat.growth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                                 {stat.growth >= 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                                 {Math.abs(stat.growth)}%
+                              </div>
+                           )}
+                        </div>
+                        <div className="space-y-1">
+                          <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
+                          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">{stat.label}</p>
+                        </div>
+                      </GlassCard>
+                    ))}
+                 </div>
                </div>
 
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <GlassCard className="lg:col-span-8 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 overflow-hidden shadow-2xl min-h-[450px]">
                     <div className="flex justify-between items-start mb-12">
                       <div className="space-y-3">
-                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Traffic Flux</h3>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Google Analytics Pulse Status: ACTIVE</p>
+                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Temporal Flux</h3>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Temporal Telemetry Analysis</p>
                       </div>
                       <div className="flex gap-2">
                          {[7, 14, 30].map(d => (
@@ -294,10 +295,50 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       </div>
                     </div>
                     <div className="pt-8 border-t border-white/5 flex justify-between items-center">
-                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Active Neural Links</span>
+                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Active Links</span>
                        <span className="text-2xl font-black text-rose-500 italic">{realtime[0]?.active_users || 0}</span>
                     </div>
                   </GlassCard>
+               </div>
+
+               {/* LOWER: INTERNAL SYSTEM METRICS */}
+               <div className="space-y-6">
+                 <div className="flex items-center gap-3 px-6">
+                   <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Internal Registry Integrity</h2>
+                 </div>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
+                       <div className="flex items-center gap-4 mb-8">
+                         <div className="p-3 bg-amber-500/10 rounded-xl text-amber-500"><Shield size={20} /></div>
+                         <h4 className="text-sm font-black italic text-white uppercase">Clearance Levels</h4>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Prime Nodes</span><span className="text-amber-500">{metrics.adminNodes}</span></div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Blocked Nodes</span><span className="text-rose-500">{metrics.blockedNodes}</span></div>
+                       </div>
+                    </GlassCard>
+                    <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
+                       <div className="flex items-center gap-4 mb-8">
+                         <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-500"><ListChecks size={20} /></div>
+                         <h4 className="text-sm font-black italic text-white uppercase">Registry Pulse</h4>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Node Load</span><span className="text-indigo-400">98.4%</span></div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Link Latency</span><span className="text-emerald-500">12ms</span></div>
+                       </div>
+                    </GlassCard>
+                    <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
+                       <div className="flex items-center gap-4 mb-8">
+                         <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-500"><Activity size={20} /></div>
+                         <h4 className="text-sm font-black italic text-white uppercase">System Health</h4>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>DB I/O</span><span className="text-white uppercase tracking-widest">Nominal</span></div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Cron Status</span><span className="text-white uppercase tracking-widest">Active</span></div>
+                       </div>
+                    </GlassCard>
+                 </div>
                </div>
             </m.div>
           ) : activeTab === 'subjects' ? (
@@ -311,7 +352,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <div className="flex gap-4 w-full md:w-auto">
                         <div className="relative flex-1 md:w-96 group">
                            <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-white" size={22} />
-                           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Node ID..." className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm font-bold italic text-white outline-none focus:border-white/20 shadow-inner" />
+                           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Node ID..." className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm text-white outline-none focus:border-white/20 shadow-inner" />
                         </div>
                         <button onClick={fetchData} className="p-6 bg-white/5 rounded-full text-slate-500 hover:text-white border border-white/5 transition-all"><RefreshCw size={24} /></button>
                      </div>

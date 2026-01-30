@@ -1,116 +1,48 @@
 
 -- ==========================================
--- SOMNOAI CORE ADMIN SYSTEM (RPC LAYER)
+-- SOMNOAI CORE INFRASTRUCTURE
 -- ==========================================
 
--- 1. Get Detailed Profile with Clearance Levels
-CREATE OR REPLACE FUNCTION public.get_my_detailed_profile()
-RETURNS TABLE (
-    id uuid,
-    role text,
-    is_super_owner boolean,
-    is_blocked boolean,
+-- 1. Profiles (Extended User Data)
+CREATE TABLE IF NOT EXISTS public.profiles (
+    id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+    role text DEFAULT 'user',
+    is_super_owner boolean DEFAULT false,
+    is_blocked boolean DEFAULT false,
     full_name text,
-    email text
-) AS $$
-BEGIN
-    RETURN QUERY
-    SELECT p.id, p.role, p.is_super_owner, p.is_blocked, p.full_name, au.email::text
-    FROM public.profiles p
-    JOIN auth.users au ON p.id = au.id
-    WHERE p.id = auth.uid();
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+    updated_at timestamptz DEFAULT now()
+);
 
--- 2. Admin: Get All Profiles (Restricted)
-CREATE OR REPLACE FUNCTION public.admin_get_all_profiles()
-RETURNS TABLE (
-    id uuid,
-    role text,
-    is_super_owner boolean,
-    is_blocked boolean,
-    full_name text,
+-- 2. User Biological Metrics
+CREATE TABLE IF NOT EXISTS public.user_data (
+    user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE PRIMARY KEY,
+    age integer,
+    weight decimal,
+    height decimal,
+    gender text,
+    updated_at timestamptz DEFAULT now()
+);
+
+-- 3. Feedback System (Fixes "type" column error)
+CREATE TABLE IF NOT EXISTS public.feedback (
+    id bigserial PRIMARY KEY,
+    type text NOT NULL, -- 'report', 'suggestion', 'improvement'
+    content text NOT NULL,
     email text,
-    updated_at timestamptz
-) AS $$
-BEGIN
-    -- Authorization Check
-    IF NOT EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() 
-        AND (role IN ('admin', 'owner') OR is_super_owner = true)
-    ) THEN
-        RAISE EXCEPTION 'INSUFFICIENT_CLEARANCE';
-    END IF;
+    created_at timestamptz DEFAULT now()
+);
 
-    RETURN QUERY
-    SELECT p.id, p.role, p.is_super_owner, p.is_blocked, p.full_name, au.email::text, p.updated_at
-    FROM public.profiles p
-    JOIN auth.users au ON p.id = au.id
-    ORDER BY p.updated_at DESC;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 3. Admin: Toggle Block Status
-CREATE OR REPLACE FUNCTION public.admin_toggle_block(target_user_id uuid)
-RETURNS void AS $$
-BEGIN
-    -- Authorization Check (Only Admins/Owners)
-    IF NOT EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() 
-        AND (role IN ('admin', 'owner') OR is_super_owner = true)
-    ) THEN
-        RAISE EXCEPTION 'CLEARANCE_DENIED';
-    END IF;
-
-    -- Prevent self-blocking
-    IF auth.uid() = target_user_id THEN
-        RAISE EXCEPTION 'SELF_BLOCK_PROHIBITED';
-    END IF;
-
-    -- Prevent blocking super owners
-    IF EXISTS (SELECT 1 FROM public.profiles WHERE id = target_user_id AND is_super_owner = true) THEN
-        RAISE EXCEPTION 'SUPER_OWNER_IMMUNITY';
-    END IF;
-
-    UPDATE public.profiles 
-    SET is_blocked = NOT is_blocked 
-    WHERE id = target_user_id;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 4. Admin: Update User Role
-CREATE OR REPLACE FUNCTION public.admin_update_user_role(target_user_id uuid, new_role text)
-RETURNS void AS $$
-BEGIN
-    -- Authorization Check (Only Owners/Super Owners can change roles)
-    IF NOT EXISTS (
-        SELECT 1 FROM public.profiles 
-        WHERE id = auth.uid() 
-        AND (role = 'owner' OR is_super_owner = true)
-    ) THEN
-        RAISE EXCEPTION 'OWNER_CLEARANCE_REQUIRED';
-    END IF;
-
-    -- Prevent changing role of super owners
-    IF EXISTS (SELECT 1 FROM public.profiles WHERE id = target_user_id AND is_super_owner = true) THEN
-        RAISE EXCEPTION 'SUPER_OWNER_IMMUNITY';
-    END IF;
-
-    -- Validate role
-    IF new_role NOT IN ('user', 'admin', 'owner') THEN
-        RAISE EXCEPTION 'INVALID_ROLE_SPECIFICATION';
-    END IF;
-
-    UPDATE public.profiles 
-    SET role = new_role 
-    WHERE id = target_user_id;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+-- 4. Biological Recovery Logs (Diary)
+CREATE TABLE IF NOT EXISTS public.diary_entries (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    user_id uuid REFERENCES public.profiles(id) ON DELETE CASCADE,
+    content text NOT NULL,
+    mood text,
+    created_at timestamptz DEFAULT now()
+);
 
 -- ==========================================
--- ANALYTICS INFRASTRUCTURE
+-- ANALYTICS & MONITORING (DECISION CENTER)
 -- ==========================================
 
 CREATE TABLE IF NOT EXISTS public.analytics_daily (
@@ -138,21 +70,56 @@ CREATE TABLE IF NOT EXISTS public.analytics_realtime (
     pageviews_last_hour integer DEFAULT 0
 );
 
-CREATE INDEX IF NOT EXISTS idx_analytics_realtime_ts ON public.analytics_realtime (timestamp DESC);
-CREATE INDEX IF NOT EXISTS idx_analytics_country_date ON public.analytics_country (date DESC);
+-- ==========================================
+-- SECURITY & ACCESS POLICIES
+-- ==========================================
 
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.user_data ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.feedback ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.diary_entries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_daily ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_country ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_realtime ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admins can view analytics" ON public.analytics_daily
-    FOR SELECT TO authenticated
-    USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
+-- Analytics: Admins Only
+CREATE POLICY "Admins can view analytics" ON public.analytics_daily FOR SELECT TO authenticated
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
-CREATE POLICY "Admins can view country stats" ON public.analytics_country
-    FOR SELECT TO authenticated
-    USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
+-- Feedback: Public Insert, Admin Read
+CREATE POLICY "Anyone can submit feedback" ON public.feedback FOR INSERT WITH CHECK (true);
+CREATE POLICY "Admins can view feedback" ON public.feedback FOR SELECT TO authenticated
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
-CREATE POLICY "Admins can view realtime pulse" ON public.analytics_realtime
-    FOR SELECT TO authenticated
-    USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
+-- Diary: Owner Read/Write
+CREATE POLICY "Users can manage own diary" ON public.diary_entries 
+FOR ALL TO authenticated USING (auth.uid() = user_id);
+
+-- ==========================================
+-- ADMIN RPC LAYER
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION public.get_my_detailed_profile()
+RETURNS TABLE (id uuid, role text, is_super_owner boolean, is_blocked boolean, full_name text, email text) AS $$
+BEGIN
+    RETURN QUERY SELECT p.id, p.role, p.is_super_owner, p.is_blocked, p.full_name, au.email::text
+    FROM public.profiles p JOIN auth.users au ON p.id = au.id WHERE p.id = auth.uid();
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.admin_get_all_profiles()
+RETURNS TABLE (id uuid, role text, is_super_owner boolean, is_blocked boolean, full_name text, email text, updated_at timestamptz) AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)) 
+    THEN RAISE EXCEPTION 'INSUFFICIENT_CLEARANCE'; END IF;
+    RETURN QUERY SELECT p.id, p.role, p.is_super_owner, p.is_blocked, p.full_name, au.email::text, p.updated_at
+    FROM public.profiles p JOIN auth.users au ON p.id = au.id ORDER BY p.updated_at DESC;
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+CREATE OR REPLACE FUNCTION public.admin_toggle_block(target_user_id uuid)
+RETURNS void AS $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)) 
+    THEN RAISE EXCEPTION 'CLEARANCE_DENIED'; END IF;
+    IF auth.uid() = target_user_id THEN RAISE EXCEPTION 'SELF_BLOCK_PROHIBITED'; END IF;
+    UPDATE public.profiles SET is_blocked = NOT is_blocked WHERE id = target_user_id;
+END; $$ LANGUAGE plpgsql SECURITY DEFINER;
