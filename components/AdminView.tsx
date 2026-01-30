@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, Database, ShieldAlert, Search, RefreshCw, 
   Loader2, Activity, ChevronLeft, ShieldCheck, 
@@ -69,9 +69,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (profile) setCurrentAdmin(profile);
       else throw new Error("CLEARANCE_NOT_FOUND");
 
+      // Parallel Data Sync from Analytics & Registry tables
       const tasks: Promise<any>[] = [adminApi.getUsers()];
       
-      if (profile.role === 'owner' || profile.is_super_owner || profile.role === 'admin') {
+      const hasAccess = profile.role === 'owner' || profile.is_super_owner || profile.role === 'admin';
+      if (hasAccess) {
         tasks.push(adminApi.getDailyAnalytics(timeRange));
         tasks.push(adminApi.getCountryRankings());
         tasks.push(adminApi.getRealtimePulse());
@@ -93,16 +95,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Unified Analytics Logic
+  // Unified Statistics Calculation
   const metrics = useMemo(() => {
     const now = Date.now();
     const oneDayAgo = now - 86400000;
     
+    // Registry Stats
     const totalSubjects = users.length;
     const activeSubjects = users.filter(u => u.updated_at && new Date(u.updated_at).getTime() > oneDayAgo).length;
     const blockedNodes = users.filter(u => u.is_blocked).length;
     const adminNodes = users.filter(u => ['admin', 'owner'].includes(u.role?.toLowerCase()) || u.is_super_owner).length;
 
+    // GA Analytics Growth Calculation
     const len = dailyStats.length;
     const latest = len >= 1 ? dailyStats[len - 1] : { users: 0, pageviews: 0, sessions: 0, distribution: {} };
     const prev = len >= 2 ? dailyStats[len - 2] : { users: 0, pageviews: 0, sessions: 0 };
@@ -160,7 +164,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const deviceData = useMemo(() => {
-    const dist = metrics.distribution.device || { mobile: 70, desktop: 30 };
+    const dist = metrics.distribution.device || { mobile: 0, desktop: 0 };
     return Object.entries(dist).map(([name, value]) => ({ name: name.toUpperCase(), value: value as number }));
   }, [metrics]);
 
@@ -209,7 +213,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-48 gap-10">
-          <Loader2 className={`animate-spin text-${themeColor}-500`} size={64} />
+          <div className="relative">
+             <div className={`absolute inset-0 blur-3xl opacity-20 bg-${themeColor}-500 animate-pulse`} />
+             <Loader2 className={`animate-spin text-${themeColor}-500 relative z-10`} size={64} />
+          </div>
           <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Accessing Neural Decision Matrix...</p>
         </div>
       ) : (
@@ -219,7 +226,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
                     { label: 'Global Subjects', value: metrics.totalSubjects, growth: metrics.userGrowth, icon: Users, color: themeColor },
-                    { label: 'Admin Nodes', value: metrics.adminNodes, growth: 0, icon: ShieldCheck, color: 'emerald' },
+                    { label: 'Today Visits', value: metrics.latestUsers, growth: metrics.userGrowth, icon: MousePointer2, color: 'emerald' },
                     { label: 'Blocked Nodes', value: metrics.blockedNodes, growth: 0, icon: Ban, color: 'rose' },
                     { label: 'Active (24H)', value: metrics.activeSubjects, growth: 0, icon: Zap, color: isOwner ? 'amber' : 'indigo' }
                   ].map((stat, i) => (
@@ -246,7 +253,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <div className="flex justify-between items-start mb-12">
                       <div className="space-y-3">
                         <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Traffic Flux</h3>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Temporal Telemetry Analysis</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Google Analytics Pulse Status: ACTIVE</p>
                       </div>
                       <div className="flex gap-2">
                          {[7, 14, 30].map(d => (
@@ -287,7 +294,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       </div>
                     </div>
                     <div className="pt-8 border-t border-white/5 flex justify-between items-center">
-                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Active Nodes</span>
+                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Active Neural Links</span>
                        <span className="text-2xl font-black text-rose-500 italic">{realtime[0]?.active_users || 0}</span>
                     </div>
                   </GlassCard>
@@ -299,12 +306,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16">
                      <div className="space-y-3">
                         <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Identity <span className={`text-${themeColor}-500`}>Registry</span></h3>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Laboratory Node Registry</p>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Authorized Laboratory Node Access</p>
                      </div>
                      <div className="flex gap-4 w-full md:w-auto">
                         <div className="relative flex-1 md:w-96 group">
                            <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-white" size={22} />
-                           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Node Identifier..." className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm font-bold italic text-white outline-none focus:border-white/20 shadow-inner" />
+                           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Node ID..." className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm font-bold italic text-white outline-none focus:border-white/20 shadow-inner" />
                         </div>
                         <button onClick={fetchData} className="p-6 bg-white/5 rounded-full text-slate-500 hover:text-white border border-white/5 transition-all"><RefreshCw size={24} /></button>
                      </div>
@@ -347,7 +354,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                         </button>
                                       )}
                                       {isOwner && !user.is_super_owner && (
-                                        <button onClick={() => { setTerminalUser(user); setCommandInput(`SET ROLE ${user.role}`); }} className="p-5 bg-white/5 border border-white/5 rounded-[1.2rem] text-slate-500 hover:text-indigo-400 transition-all shadow-xl">
+                                        <button onClick={() => { setTerminalUser(user); setCommandInput(`SET ROLE ${user.role}`); }} className="p-5 bg-white/5 border border-white/5 rounded-[1.2rem] text-slate-500 hover:text-amber-500 transition-all shadow-xl">
                                           <KeyRound size={24} />
                                         </button>
                                       )}
@@ -382,8 +389,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
                      <div className="flex items-center gap-4 mb-12">
-                        <Smartphone size={24} className="text-indigo-500" />
-                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Device Proportions</h3>
+                        <Network size={24} className="text-indigo-500" />
+                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Device Matrix</h3>
                      </div>
                      <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -408,7 +415,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                    </div>
                    <div className="space-y-6 text-center">
                       <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Prime Diagnostics</h3>
-                      <p className="text-base text-slate-500 italic max-w-md mx-auto leading-relaxed">System links verified. Vercel Cron status: NOMINAL. Database I/O throughput operating at 100% capacity.</p>
+                      <p className="text-base text-slate-500 italic max-w-md mx-auto leading-relaxed">Registry links verified. Vercel Cron status: NOMINAL. Database I/O throughput operating at peak capacity.</p>
                    </div>
                 </GlassCard>
              </m.div>

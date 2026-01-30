@@ -118,7 +118,7 @@ CREATE TABLE IF NOT EXISTS public.analytics_daily (
     users integer DEFAULT 0,
     sessions integer DEFAULT 0,
     pageviews integer DEFAULT 0,
-    distribution jsonb DEFAULT '{}'::jsonb,
+    distribution jsonb DEFAULT '{"device": {"mobile": 0, "desktop": 0}, "source": {"direct": 0, "google": 0}}'::jsonb,
     created_at timestamptz DEFAULT now()
 );
 
@@ -141,12 +141,10 @@ CREATE TABLE IF NOT EXISTS public.analytics_realtime (
 CREATE INDEX IF NOT EXISTS idx_analytics_realtime_ts ON public.analytics_realtime (timestamp DESC);
 CREATE INDEX IF NOT EXISTS idx_analytics_country_date ON public.analytics_country (date DESC);
 
--- Enable RLS
 ALTER TABLE public.analytics_daily ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_country ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_realtime ENABLE ROW LEVEL SECURITY;
 
--- Analytics Policies
 CREATE POLICY "Admins can view analytics" ON public.analytics_daily
     FOR SELECT TO authenticated
     USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
