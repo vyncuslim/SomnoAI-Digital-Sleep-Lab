@@ -8,7 +8,7 @@ import {
   CloudLightning, Cloud, CloudOff, Radio, Server,
   History, BarChart as BarChartIcon,
   ArrowUp, ArrowDown, UserCircle, Code2, AlertCircle, CheckCircle2,
-  PieChart as PieIcon, MapPin
+  PieChart as PieIcon, MapPin, Gauge, Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -22,7 +22,7 @@ import { trackConversion } from '../services/analytics.ts';
 
 const m = motion as any;
 
-type AdminTab = 'overview' | 'traffic' | 'registry' | 'logs' | 'system';
+type AdminTab = 'overview' | 'traffic' | 'registry' | 'system';
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -38,10 +38,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [diaries, setDiaries] = useState<any[]>([]);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [terminalUser, setTerminalUser] = useState<any | null>(null);
-  const [commandInput, setCommandInput] = useState('');
 
   const isOwner = useMemo(() => {
     const role = currentAdmin?.role?.toLowerCase();
@@ -58,17 +55,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const profile = await adminApi.getAdminClearance(user.id);
       setCurrentAdmin(profile);
       
-      // Track successful admin ingress
+      // Log authorized entry
       trackConversion('admin_access');
 
+      // Simultaneous ingestion from GA4-synced tables and core system tables
       const [u, d, c, ds, r, fb, dr] = await Promise.all([
         adminApi.getUsers(),
         adminApi.getDailyAnalytics(30),
         adminApi.getCountryRankings(),
         adminApi.getDeviceSegmentation(),
         adminApi.getRealtimePulse(),
-        supabase.from('feedback').select('*').order('created_at', { ascending: false }).limit(20),
-        supabase.from('diary_entries').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(20)
+        supabase.from('feedback').select('*').order('created_at', { ascending: false }).limit(10),
+        supabase.from('diary_entries').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(10)
       ]);
 
       setUsers(u || []);
@@ -100,7 +98,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       userGrowth: calcGrowth(latest.users, prev.users),
       viewGrowth: calcGrowth(latest.pageviews, prev.pageviews),
       realtimePulse: realtime[0]?.active_users || 0,
-      isGaSynced: dailyStats.length > 0,
       lastSyncDate: latest.date || null
     };
   }, [users, dailyStats, realtime]);
@@ -109,19 +106,19 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <div className="space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left relative">
-      {/* Header Section */}
+      {/* Strategic Header */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 pt-8">
         <div className="flex items-center gap-6">
           {onBack && (
             <button onClick={onBack} className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-lg active:scale-95"><ChevronLeft size={24} /></button>
           )}
-          <div className="space-y-1">
+          <div className="space-y-2">
             <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-4">
               Intelligence <span style={{ color: themeColor }}>Command</span>
             </h1>
             <div className="flex items-center gap-3">
                <div className="w-2 h-2 rounded-full animate-pulse bg-emerald-500" />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Telemetry Active: GA4 + SUPABASE BRIDGE</p>
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Telemetry Hub: GA4 + SUPABASE Integrated</p>
             </div>
           </div>
         </div>
@@ -129,15 +126,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <nav className="flex p-1.5 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
           {[
             { id: 'overview', label: 'HUB', icon: Activity },
-            { id: 'traffic', label: 'TRAFFIC', icon: Globe },
-            { id: 'registry', label: 'REGISTRY', icon: Users },
-            { id: 'logs', label: 'RECOVERY LOGS', icon: BookOpen },
-            { id: 'system', label: 'SYSTEM', icon: Cpu }
+            { id: 'traffic', label: 'TRAFFIC (GA4)', icon: Globe },
+            { id: 'registry', label: 'SYSTEM (DB)', icon: Users },
+            { id: 'system', label: 'DIAG', icon: Cpu }
           ].map((tab) => (
             <button 
               key={tab.id} 
               onClick={() => setActiveTab(tab.id as AdminTab)} 
-              className={`flex items-center gap-3 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? (isOwner ? 'bg-amber-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg') : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex items-center gap-3 px-6 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? (isOwner ? 'bg-amber-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg') : 'text-slate-500 hover:text-slate-300'}`}
             >
               <tab.icon size={14} />
               {tab.label}
@@ -152,27 +148,27 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
              <div className="absolute inset-0 bg-indigo-500/20 blur-[80px] rounded-full animate-pulse" />
              <Loader2 className="animate-spin text-indigo-500 relative z-10" size={64} />
           </div>
-          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Synchronizing Neural Data Streams...</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Synthesizing Biological & Traffic Data...</p>
         </div>
       ) : (
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
-            <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
-               {/* Top Stats Mesh */}
+            <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
+               {/* KPI Mesh */}
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                    { label: 'Neural Flux (GA4 Users)', value: metrics.activeUsers, growth: metrics.userGrowth, icon: Globe, color: 'text-emerald-400', bg: 'bg-emerald-400/5', source: 'GA4' },
-                    { label: 'Identified Nodes (DB)', value: metrics.totalSubjects, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-400/5', source: 'SUPABASE' },
-                    { label: 'Input Signal (Feedback)', value: feedback.length, icon: MessageSquare, color: 'text-amber-400', bg: 'bg-amber-400/5', source: 'SUPABASE' },
-                    { label: 'Live Connections', value: metrics.realtimePulse, icon: Zap, color: 'text-rose-400', bg: 'bg-rose-400/5', source: 'GA4 PULSE' }
+                    { label: 'Neural Flux', value: metrics.activeUsers, icon: Globe, color: 'text-emerald-400', source: 'GA4' },
+                    { label: 'Identified Nodes', value: metrics.totalSubjects, icon: Users, color: 'text-indigo-400', source: 'SUPABASE' },
+                    { label: 'Input Signals', value: feedback.length, icon: MessageSquare, color: 'text-amber-400', source: 'SUPABASE' },
+                    { label: 'Live Pulse', value: metrics.realtimePulse, icon: Zap, color: 'text-rose-400', source: 'GA4 LIVE' }
                   ].map((stat, i) => (
-                    <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5 relative overflow-hidden group">
-                      <div className={`absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity`}><stat.icon size={120} /></div>
-                      <div className="flex justify-between items-start mb-6">
-                         <div className={`p-4 ${stat.bg} ${stat.color} rounded-2xl`}><stat.icon size={24} /></div>
-                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{stat.source}</span>
+                    <GlassCard key={i} className="p-10 rounded-[3.5rem] border-white/5 relative overflow-hidden group">
+                      <div className={`absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.08] transition-opacity`}><stat.icon size={120} /></div>
+                      <div className="flex justify-between items-start mb-8 relative z-10">
+                         <div className={`p-4 bg-slate-900 rounded-2xl ${stat.color}`}><stat.icon size={26} /></div>
+                         <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest">{stat.source}</span>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1 relative z-10">
                         <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2">{stat.label}</p>
                       </div>
@@ -180,23 +176,20 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                </div>
 
-               {/* Integrated Activity Chart */}
-               <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl relative">
-                  <div className="absolute top-8 right-12 flex items-center gap-4">
-                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">GA4 Traffic</span>
-                     </div>
+               {/* Unified Flux Chart */}
+               <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl min-h-[450px]">
+                  <div className="flex justify-between items-start mb-12">
+                    <div className="space-y-2">
+                      <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Activity Temporal Flux</h3>
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Source: Cloud-Synced Analytics Bridge</p>
+                    </div>
+                    <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500"><TrendingUp size={20} /></div>
                   </div>
-                  <div className="space-y-2 mb-12">
-                     <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Activity Temporal Flux</h3>
-                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Source: Unified Analytics Bridge</p>
-                  </div>
-                  <div className="h-[350px] w-full">
+                  <div className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={dailyStats}>
                         <defs>
-                          <linearGradient id="colorFlux" x1="0" y1="0" x2="0" y2="1">
+                          <linearGradient id="colorTraffic" x1="0" y1="0" x2="0" y2="1">
                             <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
                             <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                           </linearGradient>
@@ -204,7 +197,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
                         <XAxis dataKey="date" hide />
                         <Tooltip contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem' }} />
-                        <Area type="monotone" dataKey="pageviews" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorFlux)" />
+                        <Area type="monotone" dataKey="pageviews" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorTraffic)" />
                       </AreaChart>
                     </ResponsiveContainer>
                   </div>
@@ -213,9 +206,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
 
           {activeTab === 'traffic' && (
-            <m.div key="traffic" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+            <m.div key="traffic" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  {/* Geo Chart */}
+                  {/* Geo Matrix (GA4 Data) */}
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5">
                      <div className="flex items-center gap-4 mb-12">
                         <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-400"><MapPin size={24} /></div>
@@ -233,20 +226,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      </div>
                   </GlassCard>
 
-                  {/* Device Pie Chart */}
+                  {/* Access Segments (GA4 Data) */}
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5">
                      <div className="flex items-center gap-4 mb-12">
                         <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Monitor size={24} /></div>
-                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Access Segmentation</h3>
+                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Device Segmentation</h3>
                      </div>
                      <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                            <RePieChart>
-                              <Pie 
-                                data={deviceStats.map(d => ({ name: (d.device || 'Unknown').toUpperCase(), value: d.users }))} 
-                                dataKey="value" nameKey="name" cx="50%" cy="50%" 
-                                innerRadius={80} outerRadius={120} paddingAngle={5} stroke="none"
-                              >
+                              <Pie data={deviceStats.map(d => ({ name: (d.device || 'Unknown').toUpperCase(), value: d.users }))} dataKey="value" nameKey="name" cx="50%" cy="50%" innerRadius={80} outerRadius={120} paddingAngle={5} stroke="none">
                                  {deviceStats.map((_, i) => <Cell key={i} fill={[COLORS.deep, COLORS.rem, COLORS.light, COLORS.success][i % 4]} />)}
                               </Pie>
                               <Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
@@ -259,20 +248,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
 
           {activeTab === 'registry' && (
-            <m.div key="registry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+            <m.div key="registry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
+               {/* Internal System Data (Supabase Data) */}
                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl overflow-visible">
                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16">
                      <div className="space-y-3">
                         <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Identified <span style={{ color: themeColor }}>Nodes</span></h3>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Direct Database Sovereignty Registry</p>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Direct Supabase Sovereignty Registry</p>
                      </div>
                      <div className="relative w-full md:w-96 group">
                         <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-white" size={22} />
-                        <input 
-                           type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} 
-                           placeholder="Query Subject ID..." 
-                           className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm text-white outline-none focus:border-white/20 font-bold italic" 
-                        />
+                        <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Query Subject ID..." className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm text-white outline-none focus:border-white/20 font-bold italic" />
                      </div>
                   </div>
 
@@ -280,7 +266,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <table className="w-full text-left border-separate border-spacing-y-4">
                         <thead>
                            <tr className="text-[11px] font-black uppercase text-slate-700 tracking-[0.4em] italic px-8">
-                              <th className="px-8 pb-4">Subject identifier</th><th className="px-8 pb-4">Clearance</th><th className="px-8 pb-4 text-right">Protocol Override</th>
+                              <th className="px-8 pb-4">Subject identifier</th><th className="px-8 pb-4">Clearance</th><th className="px-8 pb-4 text-right">Intervention</th>
                            </tr>
                         </thead>
                         <tbody>
@@ -306,7 +292,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 <td className="py-8 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right">
                                    <div className="flex justify-end gap-3 opacity-20 group-hover:opacity-100 transition-opacity">
                                       {!user.is_super_owner && (
-                                        <button onClick={() => fetchData()} className={`p-5 rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all border border-rose-500/20`}><Ban size={24} /></button>
+                                        <button onClick={() => adminApi.toggleBlock(user.id).then(fetchData)} className="p-5 rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all border border-rose-500/20"><Ban size={24} /></button>
                                       )}
                                       {isOwner && (
                                         <button className="p-5 bg-white/5 border border-white/5 rounded-2xl text-slate-500 hover:text-amber-500 transition-all"><KeyRound size={24} /></button>
@@ -322,54 +308,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </m.div>
           )}
 
-          {activeTab === 'logs' && (
-            <m.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-               {/* Feedback Logs */}
-               <GlassCard className="p-12 rounded-[4.5rem] border-white/5">
-                  <div className="flex items-center gap-4 mb-12">
-                     <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-400"><MessageSquare size={24} /></div>
-                     <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Feedback Registry</h3>
-                  </div>
-                  <div className="space-y-4 max-h-[600px] overflow-y-auto no-scrollbar pr-2">
-                     {feedback.map((f, i) => (
-                        <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-3">
-                           <div className="flex justify-between items-center">
-                              <span className="text-[10px] font-black uppercase text-indigo-400 italic px-3 py-1 bg-indigo-500/10 rounded-full">{f.type}</span>
-                              <span className="text-[9px] font-mono text-slate-600">{new Date(f.created_at).toLocaleString()}</span>
-                           </div>
-                           <p className="text-sm font-medium italic text-slate-300">"{f.content}"</p>
-                           <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">— {f.email}</p>
-                        </div>
-                     ))}
-                  </div>
-               </GlassCard>
-
-               {/* Recovery Logs */}
-               <GlassCard className="p-12 rounded-[4.5rem] border-white/5">
-                  <div className="flex items-center gap-4 mb-12">
-                     <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><BookOpen size={24} /></div>
-                     <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Recent Diaries</h3>
-                  </div>
-                  <div className="space-y-4 max-h-[600px] overflow-y-auto no-scrollbar pr-2">
-                     {diaries.map((d, i) => (
-                        <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-3">
-                           <div className="flex justify-between items-center">
-                              <div className="flex items-center gap-2">
-                                 <span className="text-[9px] font-black uppercase text-rose-400 italic">{d.mood || 'Neutral'}</span>
-                              </div>
-                              <span className="text-[9px] font-mono text-slate-600">{new Date(d.created_at).toLocaleString()}</span>
-                           </div>
-                           <p className="text-sm font-medium italic text-slate-300">"{d.content.slice(0, 100)}..."</p>
-                           <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">— {d.profiles?.full_name || 'Subject Node'}</p>
-                        </div>
-                     ))}
-                  </div>
-               </GlassCard>
-            </m.div>
-          )}
-
           {activeTab === 'system' && (
-            <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+            <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <GlassCard className="p-12 rounded-[4rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-8">
                      <div className="relative">
@@ -377,10 +317,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <CheckCircle2 size={64} className="text-emerald-500 relative z-10" />
                      </div>
                      <div className="space-y-3">
-                        <h4 className="text-lg font-black italic text-white uppercase tracking-tight">Sync Handshake</h4>
-                        <p className="text-[10px] text-slate-500 italic leading-relaxed max-w-xs">
-                           The laboratory bridge is currently synchronized with Google Analytics 4. Last data pulse verified on {metrics.lastSyncDate || 'Standby'}.
-                        </p>
+                        <h4 className="text-lg font-black italic text-white uppercase tracking-tight">Sync Handshake Status</h4>
+                        <p className="text-[10px] text-slate-500 italic leading-relaxed max-w-xs">Laboratory bridge synchronized with Google Analytics 4. Last pulse identified on {metrics.lastSyncDate || 'STANDBY'}.</p>
                      </div>
                      <button onClick={() => window.location.reload()} className="w-full py-5 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-3 italic"><RefreshCw size={14} /> System Resync</button>
                   </GlassCard>
@@ -393,8 +331,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <div className="pt-4 space-y-2">
                            {[
                               { k: 'GA_PROPERTY_ID', v: '13388354150' },
-                              { k: 'DB_ENDPOINT', v: ' ojcvvtyaebdodmegwqan' },
-                              { k: 'AUTH_PROTOCOL', v: 'LOCKLESS_Implicit' }
+                              { k: 'DB_ENDPOINT', v: 'ojcvvtyaebdodmegwqan' },
+                              { k: 'AUTH_PROTOCOL', v: 'Implicit Gateway' }
                            ].map((item) => (
                              <div key={item.k} className="flex justify-between items-center gap-10 text-[9px] border-b border-white/5 pb-2">
                                 <span className="font-black text-slate-600 uppercase">{item.k}</span>
@@ -410,11 +348,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </AnimatePresence>
       )}
 
-      {/* Action Error Toast */}
+      {/* Intervention Error Toast */}
       <AnimatePresence>
         {actionError && (
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-lg px-6">
-            <div className="bg-rose-950/90 border border-rose-500/50 p-6 rounded-[2.5rem] shadow-2xl flex items-start gap-5 backdrop-blur-3xl">
+            <div className="bg-rose-950/90 border border-rose-500/50 p-6 rounded-[2.5rem] shadow-2xl flex items-start gap-5 backdrop-blur-3xl text-left">
               <ShieldAlert className="text-rose-500 shrink-0 mt-1" size={24} />
               <div className="flex-1">
                 <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Neural Exception</p>
