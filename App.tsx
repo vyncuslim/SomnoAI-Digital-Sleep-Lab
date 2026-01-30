@@ -10,6 +10,7 @@ import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
+import { trackPageView } from './services/analytics.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
@@ -79,6 +80,28 @@ const AppContent: React.FC = () => {
   const [lang, setLang] = useState<Language>('en'); 
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [isSimulated, setIsSimulated] = useState(false);
+
+  // Global Telemetry Bridge
+  useEffect(() => {
+    const viewTitles: Record<ViewType, string> = {
+      'dashboard': 'Laboratory Hub',
+      'calendar': 'Trend Atlas',
+      'assistant': 'Neural Core Assistant',
+      'experiment': 'Sleep Optimization Lab',
+      'diary': 'Biological Recovery Log',
+      'settings': 'System Configuration',
+      'admin': 'Intelligence Command Center',
+      'admin-login': 'Restricted Access Terminal',
+      'feedback': 'Registry Feedback Hub',
+      'privacy': 'Neural Privacy Protocol',
+      'terms': 'Service Infrastructure Terms',
+      'profile': 'Subject Identity Registry',
+      'about': 'Laboratory Specifications',
+      'not-found': 'Neural Link Severed'
+    };
+    
+    trackPageView(activeView, viewTitles[activeView] || 'SomnoAI Node');
+  }, [activeView]);
 
   const safeNavigate = useCallback((viewId: string) => {
     setActiveView(viewId as ViewType);

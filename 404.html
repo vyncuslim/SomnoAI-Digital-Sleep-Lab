@@ -25,32 +25,28 @@
             transform: translate(-50%, -50%);
             width: 80vw;
             height: 80vw;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.1) 0%, transparent 70%);
-            filter: blur(80px);
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
+            filter: blur(100px);
             z-index: -1;
             animation: breathe 8s ease-in-out infinite;
         }
         @keyframes breathe {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.8; }
+            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
+            50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.7; }
         }
         .glitch-text {
-            text-shadow: 0 0 20px rgba(99, 102, 241, 0.5);
+            text-shadow: 0 0 40px rgba(99, 102, 241, 0.4);
         }
         .scanline {
             width: 100%;
-            height: 2px;
-            background: rgba(99, 102, 241, 0.1);
+            height: 100vh;
+            background: linear-gradient(to bottom, transparent 50%, rgba(255,255,255,0.02) 50%);
+            background-size: 100% 4px;
             position: fixed;
             top: 0;
             left: 0;
             z-index: 100;
             pointer-events: none;
-            animation: scan 4s linear infinite;
-        }
-        @keyframes scan {
-            0% { top: 0; }
-            100% { top: 100%; }
         }
     </style>
 </head>
@@ -58,42 +54,41 @@
     <div class="nebula"></div>
     <div class="scanline"></div>
     
-    <div class="mb-12 relative">
-        <div class="absolute inset-0 blur-3xl bg-indigo-500/20 rounded-full animate-pulse"></div>
-        <!-- SomnoAI Logo Symbol -->
-        <svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="relative z-10">
+    <div class="mb-16 relative">
+        <div class="absolute inset-0 blur-[60px] bg-indigo-500/20 rounded-full animate-pulse"></div>
+        <svg width="140" height="140" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="relative z-10 drop-shadow-2xl">
             <path d="M65 20 C45 20, 25 40, 25 65 C25 78, 30 88, 38 94 C25 86, 18 71, 18 56 C18 31, 38 11, 63 11 C71 11, 78 13, 84 16 C80 19, 75 20, 70 20" fill="white" />
             <circle cx="78" cy="32" r="4" fill="#818CF8" />
         </svg>
     </div>
 
-    <div class="space-y-8 max-w-lg relative z-10">
-        <div class="space-y-2">
-            <h1 class="text-[100px] md:text-[140px] font-black italic tracking-tighter leading-none text-white glitch-text">404</h1>
-            <div class="flex items-center justify-center gap-3">
-                <div class="w-2 h-2 rounded-full bg-rose-500 animate-pulse"></div>
-                <p class="text-rose-500 font-black uppercase tracking-[0.6em] text-[10px] italic">Neural Link: SEVERED</p>
+    <div class="space-y-10 max-w-lg relative z-10">
+        <div class="space-y-3">
+            <h1 class="text-[110px] md:text-[160px] font-black italic tracking-tighter leading-none text-white glitch-text">404</h1>
+            <div class="flex items-center justify-center gap-4">
+                <div class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping"></div>
+                <p class="text-rose-500 font-black uppercase tracking-[0.7em] text-[11px] italic">Virtual Node: OFFLINE</p>
             </div>
         </div>
 
-        <div class="space-y-4">
-            <h2 class="text-2xl font-bold italic text-white uppercase tracking-tight">Virtual Node Offline</h2>
-            <p class="text-slate-500 text-sm leading-relaxed italic max-w-xs mx-auto">
-                The requested physiological sector does not exist or has been archived by the laboratory core.
+        <div class="space-y-6 bg-white/[0.02] border border-white/5 p-8 rounded-[3rem] backdrop-blur-xl">
+            <h2 class="text-xl font-bold italic text-white uppercase tracking-tight leading-snug">Neural handshake failed: Biological sector could not be resolved.</h2>
+            <p class="text-slate-500 text-[10px] leading-relaxed italic max-w-xs mx-auto uppercase tracking-[0.2em] opacity-80">
+                The requested terminal address is missing or has been restricted by system policy.
             </p>
         </div>
         
         <div class="pt-8 flex flex-col items-center gap-6">
-            <a href="/" class="group relative px-12 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] transition-all shadow-2xl shadow-indigo-900/40 active:scale-95 flex items-center gap-3 italic">
+            <a href="/" class="group relative px-14 py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[11px] uppercase tracking-[0.5em] transition-all shadow-2xl shadow-indigo-950/60 active:scale-95 flex items-center gap-4 italic">
                 <span>Restore Neural Link</span>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-1 transition-transform"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
             </a>
-            <p class="text-[9px] font-bold text-slate-700 uppercase tracking-[0.5em] mt-4">Node ID: SOMNO-ERR-0404</p>
+            <p class="text-[9px] font-black text-slate-800 uppercase tracking-[0.6em] mt-6">Node Status Identifier: SOMNO-ERR-0404</p>
         </div>
     </div>
 
-    <footer class="fixed bottom-10 opacity-20 pointer-events-none">
-        <p class="text-[8px] font-black uppercase tracking-[0.8em] text-white">SomnoAI Laboratory • Secure Edge Environment</p>
+    <footer class="fixed bottom-12 opacity-30 pointer-events-none">
+        <p class="text-[8px] font-mono font-black uppercase tracking-[0.8em] text-slate-600 italic">SomnoAI Digital Sleep Lab • Neural Infrastructure • @2026</p>
     </footer>
 </body>
 </html>

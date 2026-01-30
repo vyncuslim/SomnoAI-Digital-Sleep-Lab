@@ -7,7 +7,8 @@ import {
   TrendingUp, MessageSquare, BookOpen,
   CloudLightning, Cloud, CloudOff, Radio, Server,
   History, BarChart as BarChartIcon,
-  ArrowUp, ArrowDown, UserCircle, Code2, AlertCircle, CheckCircle2
+  ArrowUp, ArrowDown, UserCircle, Code2, AlertCircle, CheckCircle2,
+  PieChart as PieIcon, MapPin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -16,10 +17,12 @@ import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, 
   CartesianGrid, Cell, PieChart as RePieChart, Pie, BarChart, Bar
 } from 'recharts';
+import { COLORS } from '../constants.tsx';
+import { trackConversion } from '../services/analytics.ts';
 
 const m = motion as any;
 
-type AdminTab = 'overview' | 'subjects' | 'traffic' | 'system';
+type AdminTab = 'overview' | 'traffic' | 'registry' | 'logs' | 'system';
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -31,8 +34,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [deviceStats, setDeviceStats] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [realtime, setRealtime] = useState<any[]>([]);
-  const [feedbackCount, setFeedbackCount] = useState(0);
-  const [diaryCount, setDiaryCount] = useState(0);
+  const [feedback, setFeedback] = useState<any[]>([]);
+  const [diaries, setDiaries] = useState<any[]>([]);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
@@ -54,6 +57,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       const profile = await adminApi.getAdminClearance(user.id);
       setCurrentAdmin(profile);
+      
+      // Track successful admin ingress
+      trackConversion('admin_access');
 
       const [u, d, c, ds, r, fb, dr] = await Promise.all([
         adminApi.getUsers(),
@@ -61,8 +67,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         adminApi.getCountryRankings(),
         adminApi.getDeviceSegmentation(),
         adminApi.getRealtimePulse(),
-        supabase.from('feedback').select('*', { count: 'exact', head: true }),
-        supabase.from('diary_entries').select('*', { count: 'exact', head: true })
+        supabase.from('feedback').select('*').order('created_at', { ascending: false }).limit(20),
+        supabase.from('diary_entries').select('*, profiles(full_name, email)').order('created_at', { ascending: false }).limit(20)
       ]);
 
       setUsers(u || []);
@@ -70,8 +76,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setCountryRanking(c || []);
       setDeviceStats(ds || []);
       setRealtime(r || []);
-      setFeedbackCount(fb.count || 0);
-      setDiaryCount(dr.count || 0);
+      setFeedback(fb.data || []);
+      setDiaries(dr.data || []);
     } catch (err: any) {
       console.error("Intelligence Bridge Failure:", err);
       setActionError(err.message);
@@ -93,245 +99,188 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       pageViews: latest.pageviews,
       userGrowth: calcGrowth(latest.users, prev.users),
       viewGrowth: calcGrowth(latest.pageviews, prev.pageviews),
-      blockedCount: users.filter(u => u.is_blocked).length,
       realtimePulse: realtime[0]?.active_users || 0,
-      adminCount: users.filter(u => ['admin', 'owner'].includes(u.role?.toLowerCase()) || u.is_super_owner).length,
       isGaSynced: dailyStats.length > 0,
-      lastSyncDate: latest.date || null,
-      totalFeedback: feedbackCount,
-      totalLogs: diaryCount
+      lastSyncDate: latest.date || null
     };
-  }, [users, dailyStats, realtime, feedbackCount, diaryCount]);
-
-  const syncStatus = useMemo(() => {
-    if (actionError) return 'Error';
-    if (loading) return 'Syncing';
-    if (dailyStats.length > 0) return 'Synced';
-    return 'Idle';
-  }, [loading, actionError, dailyStats]);
-
-  const handleToggleBlock = async (user: any) => {
-    if (isProcessingId) return;
-    setIsProcessingId(user.id);
-    try {
-      await adminApi.toggleBlock(user.id);
-      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_blocked: !u.is_blocked } : u));
-    } catch (err: any) {
-      setActionError(err.message);
-    } finally {
-      setIsProcessingId(null);
-    }
-  };
-
-  const handleClearanceOverride = async () => {
-    if (!terminalUser || isProcessingId) return;
-    setIsProcessingId(terminalUser.id);
-    try {
-      const match = commandInput.match(/SET ROLE (user|admin|owner)/i);
-      const newRole = match ? match[1].toLowerCase() : null;
-      if (!newRole) throw new Error("INVALID_SYNTAX: EXPECTED 'SET ROLE [target]'");
-      await adminApi.updateUserRole(terminalUser.id, newRole);
-      setUsers(prev => prev.map(u => u.id === terminalUser.id ? { ...u, role: newRole } : u));
-      setTerminalUser(null);
-    } catch (err: any) {
-      setActionError(err.message);
-    } finally {
-      setIsProcessingId(null);
-    }
-  };
+  }, [users, dailyStats, realtime]);
 
   const themeColor = isOwner ? '#f59e0b' : '#6366f1';
 
-  if (actionError === "RPC_NOT_REGISTERED_IN_DB") {
-    return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-left max-w-2xl mx-auto font-sans">
-        <GlassCard className="p-12 md:p-16 rounded-[4rem] border-rose-500/20 bg-slate-950/40 shadow-2xl relative overflow-hidden" intensity={2}>
-          <div className="absolute top-0 right-0 p-10 opacity-[0.05] pointer-events-none text-rose-500"><Database size={200} /></div>
-          <div className="space-y-10 relative z-10">
-            <div className="flex items-center gap-5">
-              <div className="p-4 bg-rose-500/10 rounded-3xl text-rose-500 border border-rose-500/20"><ShieldAlert size={32} /></div>
-              <div>
-                <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Database Protocol Failure</h1>
-                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-2">LINK_FAILURE: RPC_NOT_REGISTERED</p>
-              </div>
-            </div>
-            <p className="text-sm text-slate-400 leading-relaxed italic font-medium">The management core requires specific Postgres RPC functions. Please execute the provided setup.sql in your Supabase SQL Editor.</p>
-            <button onClick={() => window.location.reload()} className="w-full py-5 bg-white text-black rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl hover:bg-slate-200 transition-all italic flex items-center justify-center gap-3"><RefreshCw size={14} /> Retry Handshake</button>
-          </div>
-        </GlassCard>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left relative">
-      <AnimatePresence>
-        {actionError && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-lg px-6">
-            <m.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-rose-950/90 border border-rose-500/50 p-6 rounded-[2.5rem] shadow-2xl flex items-start gap-5 backdrop-blur-3xl">
-              <ShieldAlert className="text-rose-500 shrink-0 mt-1" size={24} />
-              <div className="flex-1">
-                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Neural Exception</p>
-                <p className="text-sm font-bold text-white italic">{actionError}</p>
-              </div>
-              <button onClick={() => setActionError(null)} className="p-2 text-rose-400 hover:bg-white/10 rounded-xl transition-all"><X size={18} /></button>
-            </m.div>
-          </div>
-        )}
-      </AnimatePresence>
-
+      {/* Header Section */}
       <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 pt-8">
         <div className="flex items-center gap-6">
           {onBack && (
             <button onClick={onBack} className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-lg active:scale-95"><ChevronLeft size={24} /></button>
           )}
-          <div className="space-y-2">
-            <h1 className="text-5xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-4">
-              {isOwner ? <span className="text-amber-500">PRIME</span> : <span className="text-indigo-500">CORE</span>} INTELLIGENCE
+          <div className="space-y-1">
+            <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-4">
+              Intelligence <span style={{ color: themeColor }}>Command</span>
             </h1>
             <div className="flex items-center gap-3">
-               <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeColor }} />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">DUAL STREAM MONITORING: DB + GA4</p>
+               <div className="w-2 h-2 rounded-full animate-pulse bg-emerald-500" />
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Telemetry Active: GA4 + SUPABASE BRIDGE</p>
             </div>
           </div>
         </div>
         
         <nav className="flex p-1.5 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
           {[
-            { id: 'overview', label: 'INTELLIGENCE HUB' },
-            { id: 'subjects', label: 'REGISTRY (DB)' },
-            { id: 'traffic', label: 'TRAFFIC (GA4)' },
-            { id: 'system', label: 'SYSTEM DIAG' }
+            { id: 'overview', label: 'HUB', icon: Activity },
+            { id: 'traffic', label: 'TRAFFIC', icon: Globe },
+            { id: 'registry', label: 'REGISTRY', icon: Users },
+            { id: 'logs', label: 'RECOVERY LOGS', icon: BookOpen },
+            { id: 'system', label: 'SYSTEM', icon: Cpu }
           ].map((tab) => (
             <button 
               key={tab.id} 
               onClick={() => setActiveTab(tab.id as AdminTab)} 
-              className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? (isOwner ? 'bg-amber-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg') : 'text-slate-500 hover:text-slate-300'}`}
+              className={`flex items-center gap-3 px-6 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? (isOwner ? 'bg-amber-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg') : 'text-slate-500 hover:text-slate-300'}`}
             >
+              <tab.icon size={14} />
               {tab.label}
             </button>
           ))}
         </nav>
       </header>
 
-      {loading && activeTab !== 'traffic' ? (
-        <div className="flex flex-col items-center justify-center py-48 gap-10">
-          <Loader2 className="animate-spin text-indigo-500" size={64} />
-          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Synthesizing Dual Data Streams...</p>
+      {loading ? (
+        <div className="flex flex-col items-center justify-center py-48 gap-8">
+          <div className="relative">
+             <div className="absolute inset-0 bg-indigo-500/20 blur-[80px] rounded-full animate-pulse" />
+             <Loader2 className="animate-spin text-indigo-500 relative z-10" size={64} />
+          </div>
+          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Synchronizing Neural Data Streams...</p>
         </div>
       ) : (
         <AnimatePresence mode="wait">
-          {activeTab === 'overview' ? (
-            <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
+          {activeTab === 'overview' && (
+            <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-10">
+               {/* Top Stats Mesh */}
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
-                    { label: 'Neural Flux (GA4 Users)', value: metrics.activeUsers, growth: metrics.userGrowth, icon: Globe, color: 'emerald', source: 'GA4' },
-                    { label: 'Identified Nodes (DB Users)', value: metrics.totalSubjects, growth: 0, icon: Users, color: 'amber', source: 'Supabase' },
-                    { label: 'Input Signal (Feedback)', value: metrics.totalFeedback, growth: 0, icon: MessageSquare, color: 'indigo', source: 'Supabase' },
-                    { label: 'Recovery Logs (Diaries)', value: metrics.totalLogs, growth: 0, icon: BookOpen, color: 'rose', source: 'Supabase' }
+                    { label: 'Neural Flux (GA4 Users)', value: metrics.activeUsers, growth: metrics.userGrowth, icon: Globe, color: 'text-emerald-400', bg: 'bg-emerald-400/5', source: 'GA4' },
+                    { label: 'Identified Nodes (DB)', value: metrics.totalSubjects, icon: Users, color: 'text-indigo-400', bg: 'bg-indigo-400/5', source: 'SUPABASE' },
+                    { label: 'Input Signal (Feedback)', value: feedback.length, icon: MessageSquare, color: 'text-amber-400', bg: 'bg-amber-400/5', source: 'SUPABASE' },
+                    { label: 'Live Connections', value: metrics.realtimePulse, icon: Zap, color: 'text-rose-400', bg: 'bg-rose-400/5', source: 'GA4 PULSE' }
                   ].map((stat, i) => (
-                    <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-white/5 shadow-2xl`}>
+                    <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5 relative overflow-hidden group">
+                      <div className={`absolute top-0 right-0 p-8 opacity-[0.03] group-hover:opacity-[0.07] transition-opacity`}><stat.icon size={120} /></div>
                       <div className="flex justify-between items-start mb-6">
-                         <div className={`p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 inline-block`}><stat.icon size={26} /></div>
-                         <div className="flex flex-col items-end">
-                            <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1">{stat.source}</span>
-                            {stat.growth !== 0 && (
-                              <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black ${stat.growth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                 {stat.growth >= 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-                                 {Math.abs(stat.growth)}%
-                              </div>
-                            )}
-                         </div>
+                         <div className={`p-4 ${stat.bg} ${stat.color} rounded-2xl`}><stat.icon size={24} /></div>
+                         <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{stat.source}</span>
                       </div>
                       <div className="space-y-1">
                         <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">{stat.label}</p>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2">{stat.label}</p>
                       </div>
                     </GlassCard>
                   ))}
                </div>
 
-               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <GlassCard className="lg:col-span-8 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl min-h-[450px]">
-                    <div className="flex justify-between items-start mb-12">
-                      <div className="space-y-3">
-                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Traffic Temporal Flux</h3>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Source: Google Analytics 4 (Daily Pulse)</p>
-                      </div>
-                      <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-500"><TrendingUp size={20} /></div>
-                    </div>
-                    
-                    {metrics.isGaSynced ? (
-                      <div className="h-[280px] w-full">
-                         <ResponsiveContainer width="100%" height="100%">
-                           <AreaChart data={dailyStats}>
-                              <defs>
-                                <linearGradient id="fluxGrad" x1="0" x2="0" y2="1">
-                                  <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                                  <stop offset="100%" stopColor="#10b981" stopOpacity={0}/>
-                                </linearGradient>
-                              </defs>
-                              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
-                              <XAxis dataKey="date" hide />
-                              <Tooltip contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem' }} />
-                              <Area type="monotone" dataKey="pageviews" stroke="#10b981" strokeWidth={3} fill="url(#fluxGrad)" />
-                           </AreaChart>
-                         </ResponsiveContainer>
-                      </div>
-                    ) : (
-                      <div className="h-[280px] flex flex-col items-center justify-center border border-dashed border-white/5 rounded-[3rem] gap-4">
-                         <Activity className="text-slate-800 animate-pulse" size={48} />
-                         <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.4em] italic">Waiting for GA4 telemetry sync...</p>
-                      </div>
-                    )}
+               {/* Integrated Activity Chart */}
+               <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl relative">
+                  <div className="absolute top-8 right-12 flex items-center gap-4">
+                     <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                        <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest">GA4 Traffic</span>
+                     </div>
+                  </div>
+                  <div className="space-y-2 mb-12">
+                     <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Activity Temporal Flux</h3>
+                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Source: Unified Analytics Bridge</p>
+                  </div>
+                  <div className="h-[350px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={dailyStats}>
+                        <defs>
+                          <linearGradient id="colorFlux" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
+                        <XAxis dataKey="date" hide />
+                        <Tooltip contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem' }} />
+                        <Area type="monotone" dataKey="pageviews" stroke="#10b981" strokeWidth={4} fillOpacity={1} fill="url(#colorFlux)" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
+               </GlassCard>
+            </m.div>
+          )}
+
+          {activeTab === 'traffic' && (
+            <m.div key="traffic" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  {/* Geo Chart */}
+                  <GlassCard className="p-12 rounded-[4.5rem] border-white/5">
+                     <div className="flex items-center gap-4 mb-12">
+                        <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-400"><MapPin size={24} /></div>
+                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Geographic Mesh</h3>
+                     </div>
+                     <div className="h-[350px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                           <BarChart data={countryRanking} layout="vertical" margin={{ left: 40, right: 40 }}>
+                              <XAxis type="number" hide />
+                              <YAxis dataKey="country" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 800, fontSize: 10 }} />
+                              <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
+                              <Bar dataKey="users" fill="#f59e0b" radius={[0, 20, 20, 0]} barSize={24} />
+                           </BarChart>
+                        </ResponsiveContainer>
+                     </div>
                   </GlassCard>
 
-                  <GlassCard className="lg:col-span-4 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col justify-between">
-                    <div>
-                      <div className="flex items-center gap-4 mb-10">
+                  {/* Device Pie Chart */}
+                  <GlassCard className="p-12 rounded-[4.5rem] border-white/5">
+                     <div className="flex items-center gap-4 mb-12">
                         <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Monitor size={24} /></div>
-                        <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Device Proportions</h3>
-                      </div>
-                      <div className="h-[200px] w-full">
+                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Access Segmentation</h3>
+                     </div>
+                     <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                            <RePieChart>
-                              <Pie data={deviceStats.map(d => ({ name: (d.device || 'Unknown').toUpperCase(), value: d.users }))} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} stroke="none">
-                                 {deviceStats.map((_, i) => <Cell key={i} fill={['#6366f1', '#10b981', '#f59e0b', '#ec4899'][i % 4]} />)}
+                              <Pie 
+                                data={deviceStats.map(d => ({ name: (d.device || 'Unknown').toUpperCase(), value: d.users }))} 
+                                dataKey="value" nameKey="name" cx="50%" cy="50%" 
+                                innerRadius={80} outerRadius={120} paddingAngle={5} stroke="none"
+                              >
+                                 {deviceStats.map((_, i) => <Cell key={i} fill={[COLORS.deep, COLORS.rem, COLORS.light, COLORS.success][i % 4]} />)}
                               </Pie>
                               <Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
                            </RePieChart>
                         </ResponsiveContainer>
-                      </div>
-                    </div>
-                    <div className="pt-8 border-t border-white/5 flex justify-between items-center text-[10px] font-black text-slate-500 uppercase tracking-widest italic">
-                       <span>Primary Access</span>
-                       <span className="text-white">{deviceStats[0]?.device || 'N/A'}</span>
-                    </div>
+                     </div>
                   </GlassCard>
                </div>
             </m.div>
-          ) : activeTab === 'subjects' ? (
-            <m.div key="subjects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+          )}
+
+          {activeTab === 'registry' && (
+            <m.div key="registry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl overflow-visible">
                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16">
                      <div className="space-y-3">
-                        <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span style={{ color: themeColor }}>Registry</span></h3>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Direct Supabase Identity Log</p>
+                        <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Identified <span style={{ color: themeColor }}>Nodes</span></h3>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Direct Database Sovereignty Registry</p>
                      </div>
-                     <div className="flex gap-4 w-full md:w-auto">
-                        <div className="relative flex-1 md:w-96 group">
-                           <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-white" size={22} />
-                           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Query Subject..." className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm text-white outline-none focus:border-white/20 font-bold italic" />
-                        </div>
-                        <button onClick={fetchData} className="p-6 bg-white/5 rounded-full text-slate-500 hover:text-white border border-white/5 transition-all"><RefreshCw size={24} /></button>
+                     <div className="relative w-full md:w-96 group">
+                        <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-white" size={22} />
+                        <input 
+                           type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} 
+                           placeholder="Query Subject ID..." 
+                           className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm text-white outline-none focus:border-white/20 font-bold italic" 
+                        />
                      </div>
                   </div>
 
                   <div className="overflow-x-auto no-scrollbar">
                      <table className="w-full text-left border-separate border-spacing-y-4">
                         <thead>
-                           <tr className="text-[11px] font-black uppercase text-slate-600 tracking-[0.4em] italic">
-                              <th className="px-8 pb-4">Subject identifier</th><th className="px-8 pb-4">Clearance</th><th className="px-8 pb-4 text-right">Intervention</th>
+                           <tr className="text-[11px] font-black uppercase text-slate-700 tracking-[0.4em] italic px-8">
+                              <th className="px-8 pb-4">Subject identifier</th><th className="px-8 pb-4">Clearance</th><th className="px-8 pb-4 text-right">Protocol Override</th>
                            </tr>
                         </thead>
                         <tbody>
@@ -355,14 +304,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                    </div>
                                 </td>
                                 <td className="py-8 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right">
-                                   <div className="flex justify-end gap-3">
+                                   <div className="flex justify-end gap-3 opacity-20 group-hover:opacity-100 transition-opacity">
                                       {!user.is_super_owner && (
-                                        <button onClick={() => handleToggleBlock(user)} className={`p-5 rounded-2xl border transition-all ${user.is_blocked ? 'bg-emerald-600 border-emerald-400 text-white shadow-xl' : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20'}`}>
-                                           {isProcessingId === user.id ? <Loader2 className="animate-spin" size={24} /> : (user.is_blocked ? <ShieldCheck size={24} /> : <Ban size={24} />)}
-                                        </button>
+                                        <button onClick={() => fetchData()} className={`p-5 rounded-2xl bg-rose-500/10 text-rose-500 hover:bg-rose-500/20 transition-all border border-rose-500/20`}><Ban size={24} /></button>
                                       )}
-                                      {isOwner && !user.is_super_owner && (
-                                        <button onClick={() => { setTerminalUser(user); setCommandInput(`SET ROLE ${user.role}`); }} className="p-5 bg-white/5 border border-white/5 rounded-2xl text-slate-500 hover:text-amber-500 transition-all shadow-xl"><KeyRound size={24} /></button>
+                                      {isOwner && (
+                                        <button className="p-5 bg-white/5 border border-white/5 rounded-2xl text-slate-500 hover:text-amber-500 transition-all"><KeyRound size={24} /></button>
                                       )}
                                    </div>
                                 </td>
@@ -373,200 +320,109 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   </div>
                </GlassCard>
             </m.div>
-          ) : activeTab === 'traffic' ? (
-            <m.div key="traffic" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-               <GlassCard className="p-10 rounded-[4rem] border-white/10 bg-slate-950/40 shadow-2xl relative overflow-hidden" intensity={1.1}>
-                 <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none text-indigo-500"><Server size={220} /></div>
-                 
-                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 relative z-10">
-                   <div className="flex items-center gap-8 text-left">
-                      <div className="relative">
-                        <div className={`p-6 rounded-3xl border transition-all duration-1000 ${syncStatus === 'Error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.1)]' : syncStatus === 'Syncing' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.1)]' : syncStatus === 'Synced' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.1)]' : 'bg-slate-500/10 border-slate-500/20 text-slate-500'}`}>
-                          {syncStatus === 'Error' ? <CloudOff size={48} /> : syncStatus === 'Syncing' ? <Radio size={48} className="animate-pulse" /> : <Cloud size={48} />}
+          )}
+
+          {activeTab === 'logs' && (
+            <m.div key="logs" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               {/* Feedback Logs */}
+               <GlassCard className="p-12 rounded-[4.5rem] border-white/5">
+                  <div className="flex items-center gap-4 mb-12">
+                     <div className="p-3 bg-amber-500/10 rounded-2xl text-amber-400"><MessageSquare size={24} /></div>
+                     <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Feedback Registry</h3>
+                  </div>
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto no-scrollbar pr-2">
+                     {feedback.map((f, i) => (
+                        <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-3">
+                           <div className="flex justify-between items-center">
+                              <span className="text-[10px] font-black uppercase text-indigo-400 italic px-3 py-1 bg-indigo-500/10 rounded-full">{f.type}</span>
+                              <span className="text-[9px] font-mono text-slate-600">{new Date(f.created_at).toLocaleString()}</span>
+                           </div>
+                           <p className="text-sm font-medium italic text-slate-300">"{f.content}"</p>
+                           <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">— {f.email}</p>
                         </div>
-                        {syncStatus === 'Synced' && (
-                          <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-4 border-[#020617] shadow-lg shadow-emerald-500/40" />
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Telemetry <span className="text-indigo-400">Ingress Hub</span></h2>
-                        <div className="flex items-center gap-3">
-                           <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Google Analytics 4 • Real-time Data Stream</span>
-                           <div className="h-px w-8 bg-slate-800" />
-                           <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">MEASUREMENT: <span className="text-indigo-500">G-3F9KVPNYLR</span></span>
-                        </div>
-                      </div>
-                   </div>
-                   
-                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
-                     <div className="flex flex-col items-end gap-2.5 min-w-[200px]">
-                        <AnimatePresence mode="wait">
-                          {syncStatus === 'Error' ? (
-                            <m.div key="err" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(244,63,94,0.15)] italic">
-                              <AlertCircle size={16} /> <span>ERROR</span>
-                            </m.div>
-                          ) : syncStatus === 'Syncing' ? (
-                            <m.div key="syncing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(99,102,241,0.15)] italic">
-                              <Loader2 size={16} className="animate-spin" /> <span>SYNCING</span>
-                            </m.div>
-                          ) : syncStatus === 'Synced' ? (
-                            <m.div key="synced" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(16,185,129,0.15)] italic">
-                              <CheckCircle2 size={16} /> <span>SYNCED</span>
-                            </m.div>
-                          ) : (
-                            <m.div key="standby" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-slate-500/10 border border-slate-500/30 text-slate-500 font-black text-[11px] uppercase tracking-[0.2em] italic">
-                              <CloudLightning size={16} /> <span>IDLE</span>
-                            </m.div>
-                          )}
-                        </AnimatePresence>
-                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest pr-2">
-                           {syncStatus === 'Error' ? 'LINK_SEVERED: CHECK REGISTRY' : syncStatus === 'Syncing' ? 'NEGOTIATING FLOW' : metrics.lastSyncDate ? `Last Pulse: ${metrics.lastSyncDate}` : 'STANDBY: NO RECORDS'}
-                        </span>
-                     </div>
-                     <button 
-                        onClick={fetchData} 
-                        disabled={loading}
-                        className="p-7 bg-white/5 rounded-[2rem] text-slate-500 hover:text-white border border-white/5 transition-all shadow-xl active:scale-90 disabled:opacity-20 group"
-                     >
-                        <RefreshCw size={26} className={`${loading ? 'animate-spin text-indigo-400' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
-                     </button>
-                   </div>
-                 </div>
+                     ))}
+                  </div>
                </GlassCard>
 
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
-                     <div className="flex items-center gap-4 mb-12"><Globe size={24} className="text-amber-500" /><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Geographic Mesh (GA4)</h3></div>
-                     <div className="h-[350px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                           <BarChart data={countryRanking} layout="vertical" margin={{ left: 40, right: 40 }}>
-                              <XAxis type="number" hide />
-                              <YAxis dataKey="country" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 800, fontSize: 10 }} />
-                              <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
-                              <Bar dataKey="users" fill="#f59e0b" radius={[0, 20, 20, 0]} barSize={20} />
-                           </BarChart>
-                        </ResponsiveContainer>
-                     </div>
-                  </GlassCard>
-                  <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
-                     <div className="flex items-center gap-4 mb-12"><BarChartIcon size={24} className="text-indigo-500" /><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Daily Impact (GA4)</h3></div>
-                     <div className="h-[350px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                           <BarChart data={dailyStats.slice(-7)}>
-                              <XAxis dataKey="date" hide />
-                              <Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
-                              <Bar dataKey="pageviews" fill="#6366f1" radius={[20, 20, 0, 0]} barSize={40} />
-                           </BarChart>
-                        </ResponsiveContainer>
-                     </div>
-                  </GlassCard>
-               </div>
-            </m.div>
-          ) : (
-             <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <GlassCard className="lg:col-span-7 p-12 rounded-[4rem] border-white/5 bg-slate-950/40 shadow-2xl space-y-10">
-                     <div className="flex items-center gap-4 border-b border-white/5 pb-8">
-                        <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400"><Code2 size={28} /></div>
-                        <div>
-                           <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Diagnostic Interface</h3>
-                           <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1">Telemetry Ingress Requirements</p>
+               {/* Recovery Logs */}
+               <GlassCard className="p-12 rounded-[4.5rem] border-white/5">
+                  <div className="flex items-center gap-4 mb-12">
+                     <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><BookOpen size={24} /></div>
+                     <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Recent Diaries</h3>
+                  </div>
+                  <div className="space-y-4 max-h-[600px] overflow-y-auto no-scrollbar pr-2">
+                     {diaries.map((d, i) => (
+                        <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-3xl space-y-3">
+                           <div className="flex justify-between items-center">
+                              <div className="flex items-center gap-2">
+                                 <span className="text-[9px] font-black uppercase text-rose-400 italic">{d.mood || 'Neutral'}</span>
+                              </div>
+                              <span className="text-[9px] font-mono text-slate-600">{new Date(d.created_at).toLocaleString()}</span>
+                           </div>
+                           <p className="text-sm font-medium italic text-slate-300">"{d.content.slice(0, 100)}..."</p>
+                           <p className="text-[10px] font-black text-slate-700 uppercase tracking-widest">— {d.profiles?.full_name || 'Subject Node'}</p>
                         </div>
+                     ))}
+                  </div>
+               </GlassCard>
+            </m.div>
+          )}
+
+          {activeTab === 'system' && (
+            <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                  <GlassCard className="p-12 rounded-[4rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-8">
+                     <div className="relative">
+                        <div className="absolute inset-0 blur-[40px] opacity-10 bg-emerald-500 animate-pulse" />
+                        <CheckCircle2 size={64} className="text-emerald-500 relative z-10" />
                      </div>
-                     
-                     <div className="space-y-6">
-                        <p className="text-sm text-slate-400 italic font-medium leading-relaxed">The Intelligence Hub synchronizes Google Analytics 4 data with Supabase daily. If you see the "UNAUTHORIZED_CRON_ACCESS" error, verify the following in Vercel:</p>
-                        <div className="space-y-4">
+                     <div className="space-y-3">
+                        <h4 className="text-lg font-black italic text-white uppercase tracking-tight">Sync Handshake</h4>
+                        <p className="text-[10px] text-slate-500 italic leading-relaxed max-w-xs">
+                           The laboratory bridge is currently synchronized with Google Analytics 4. Last data pulse verified on {metrics.lastSyncDate || 'Standby'}.
+                        </p>
+                     </div>
+                     <button onClick={() => window.location.reload()} className="w-full py-5 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-3 italic"><RefreshCw size={14} /> System Resync</button>
+                  </GlassCard>
+
+                  <GlassCard className="p-12 rounded-[4rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-8">
+                     <Cpu size={64} className="text-indigo-500" />
+                     <div className="space-y-3">
+                        <h3 className="text-xl font-black italic text-white uppercase tracking-tighter leading-none">Diagnostic Interface</h3>
+                        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-widest mt-1">TELEMETRY INGRESS V2.1</p>
+                        <div className="pt-4 space-y-2">
                            {[
-                             { k: 'GA_PROPERTY_ID', v: 'Current: 13388354150' },
-                             { k: 'GA_SERVICE_ACCOUNT_KEY', v: 'Google Cloud JSON Key (Full)' },
-                             { k: 'CRON_SECRET', v: 'Vercel Cron security token (Must match Bearer header)' }
+                              { k: 'GA_PROPERTY_ID', v: '13388354150' },
+                              { k: 'DB_ENDPOINT', v: ' ojcvvtyaebdodmegwqan' },
+                              { k: 'AUTH_PROTOCOL', v: 'LOCKLESS_Implicit' }
                            ].map((item) => (
-                             <div key={item.k} className="p-6 bg-black/40 border border-white/5 rounded-3xl group hover:border-indigo-500/30 transition-all">
-                                <div className="flex justify-between items-center mb-2">
-                                   <code className="text-indigo-400 font-black text-xs uppercase tracking-wider">{item.k}</code>
-                                   <span className="text-[8px] font-black text-slate-700 uppercase">Status: Required</span>
-                                </div>
-                                <p className="text-[10px] text-slate-500 italic">{item.v}</p>
+                             <div key={item.k} className="flex justify-between items-center gap-10 text-[9px] border-b border-white/5 pb-2">
+                                <span className="font-black text-slate-600 uppercase">{item.k}</span>
+                                <span className="font-mono text-indigo-400">{item.v}</span>
                              </div>
                            ))}
                         </div>
                      </div>
                   </GlassCard>
-
-                  <div className="lg:col-span-5 space-y-8">
-                    <GlassCard className="p-10 rounded-[4rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-8">
-                       <div className="relative">
-                          <div className="absolute inset-0 blur-[40px] opacity-10 bg-emerald-500 animate-pulse" />
-                          <History size={64} className="text-emerald-500 relative z-10" />
-                       </div>
-                       <div className="space-y-3">
-                          <h4 className="text-lg font-black italic text-white uppercase tracking-tight">Last Data Pulse</h4>
-                          <div className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                             {dailyStats.length > 0 ? `Target: ${dailyStats[dailyStats.length-1].date}` : 'Status: No Ingress Detected'}
-                          </div>
-                       </div>
-                    </GlassCard>
-
-                    <GlassCard className="p-10 rounded-[4rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-8">
-                       <Cpu size={64} className="text-indigo-500" />
-                       <div className="space-y-3 text-center">
-                          <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Handshake Status</h3>
-                          <p className="text-[10px] text-slate-500 italic leading-relaxed">Vercel Cron active. Supabase RPC mapping confirmed. GA4 Data Lake accessible via Synced Tables.</p>
-                       </div>
-                       <button onClick={() => window.location.reload()} className="w-full py-5 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center justify-center gap-3 italic"><RefreshCw size={14} /> System Resync</button>
-                    </GlassCard>
-                  </div>
-                </div>
-             </m.div>
+               </div>
+            </m.div>
           )}
         </AnimatePresence>
       )}
 
-      {/* Terminal Override Modal */}
+      {/* Action Error Toast */}
       <AnimatePresence>
-        {terminalUser && isOwner && (
-          <div className="fixed inset-0 z-[20000000] flex items-center justify-center p-6 bg-black/98 backdrop-blur-[40px]">
-            <m.div initial={{ opacity: 0, scale: 0.9, y: 40 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.9, y: 40 }} className="w-full max-w-2xl">
-              <GlassCard className="p-12 rounded-[4rem] border-amber-500/30 bg-slate-950/90 shadow-[0_0_200px_rgba(0,0,0,1)]">
-                 <div className="flex justify-between items-start mb-12 text-left">
-                    <div className="flex items-center gap-5">
-                       <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500"><TerminalIcon size={28} /></div>
-                       <div>
-                          <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Clearance Override</h3>
-                          <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest mt-1">Target Node: {terminalUser.email}</p>
-                       </div>
-                    </div>
-                    <button onClick={() => setTerminalUser(null)} className="p-3 text-slate-500 hover:text-white hover:bg-white/10 rounded-xl transition-all"><X size={24} /></button>
-                 </div>
-                 <div className="bg-black/60 rounded-[2.5rem] border border-white/5 p-10 space-y-10 shadow-inner text-left">
-                    <div className="space-y-4">
-                       <div className="flex items-center gap-3 text-amber-500/60 font-mono text-[10px] uppercase px-2"><Command size={12} /> Instructions Buffer</div>
-                       <input type="text" value={commandInput} onChange={(e) => setCommandInput(e.target.value)} placeholder="SET ROLE [admin | owner | user]" className="w-full bg-[#050a1f] border border-amber-500/30 rounded-full pl-8 pr-8 py-7 text-base font-mono text-amber-500 outline-none shadow-2xl" />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       {[
-                         { role: 'user', label: 'DEMOTE SUBJECT', icon: Users },
-                         { role: 'admin', label: 'ELEVATE ADMIN', icon: ShieldCheck },
-                         { role: 'owner', label: 'GRANT PRIME', icon: Crown }
-                       ].map((opt) => (
-                         <button key={opt.role} type="button" onClick={() => setCommandInput(`SET ROLE ${opt.role}`)} className={`p-6 rounded-[2.5rem] border text-left space-y-3 transition-all group ${commandInput.toLowerCase().includes(opt.role) ? 'bg-amber-600/10 border-amber-500/40 shadow-xl' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
-                            <div className={commandInput.toLowerCase().includes(opt.role) ? 'text-amber-500' : 'text-slate-600 group-hover:text-amber-500'}>{opt.role === 'user' ? <Users size={22} /> : opt.role === 'admin' ? <ShieldCheck size={22} /> : <Crown size={22} />}</div>
-                            <p className={`text-[10px] font-black uppercase tracking-widest leading-tight ${commandInput.toLowerCase().includes(opt.role) ? 'text-white' : 'text-slate-500 group-hover:text-white'}`}>{opt.label}</p>
-                         </button>
-                       ))}
-                    </div>
-                 </div>
-                 <div className="mt-12 flex justify-end gap-6">
-                    <button onClick={() => setTerminalUser(null)} className="px-10 py-5 text-[11px] font-black uppercase text-slate-600 hover:text-white transition-all tracking-widest">Abort</button>
-                    <button onClick={handleClearanceOverride} disabled={isProcessingId === terminalUser?.id} className="px-14 py-6 bg-amber-600 text-black rounded-full font-black text-[11px] uppercase tracking-[0.5em] shadow-2xl hover:bg-amber-500 active:scale-95 transition-all flex items-center justify-center gap-3 italic">
-                      {isProcessingId === terminalUser?.id ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
-                      COMMIT CLEARANCE
-                    </button>
-                 </div>
-              </GlassCard>
-            </m.div>
-          </div>
+        {actionError && (
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 20 }} className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-lg px-6">
+            <div className="bg-rose-950/90 border border-rose-500/50 p-6 rounded-[2.5rem] shadow-2xl flex items-start gap-5 backdrop-blur-3xl">
+              <ShieldAlert className="text-rose-500 shrink-0 mt-1" size={24} />
+              <div className="flex-1">
+                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Neural Exception</p>
+                <p className="text-sm font-bold text-white italic">{actionError}</p>
+              </div>
+              <button onClick={() => setActionError(null)} className="p-2 text-rose-400 hover:bg-white/10 rounded-xl transition-all"><X size={18} /></button>
+            </div>
+          </m.div>
         )}
       </AnimatePresence>
     </div>
