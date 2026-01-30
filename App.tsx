@@ -113,14 +113,24 @@ const AppContent: React.FC = () => {
       const hash = getSafeHash();
       const path = hash.replace(/^#\/?/, '');
       
+      // Precise exact routing for primary views
       if (path === '' || path === 'dashboard') {
         setActiveView('dashboard');
         return;
       }
 
+      // Prefix-based specialized routing to prevent path collision
+      if (path.startsWith('admin/login')) {
+        setActiveView('admin-login');
+        return;
+      }
+      
+      if (path.startsWith('admin')) {
+        setActiveView('admin');
+        return;
+      }
+
       const mappings: Record<string, ViewType> = {
-        'admin/login': 'admin-login',
-        'admin': 'admin',
         'calendar': 'calendar',
         'assistant': 'assistant',
         'experiment': 'experiment',
