@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
@@ -10,7 +10,7 @@ import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
-import { trackPageView } from './services/analytics.ts';
+import { trackPageView, trackEvent } from './services/analytics.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
@@ -80,9 +80,13 @@ const AppContent: React.FC = () => {
   const [lang, setLang] = useState<Language>('en'); 
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [isSimulated, setIsSimulated] = useState(false);
+  const lastTrackedView = useRef<string | null>(null);
+  const attemptedPath = useRef<string>('');
 
   // Global Telemetry Bridge
   useEffect(() => {
+    if (lastTrackedView.current === activeView) return;
+    
     const viewTitles: Record<ViewType, string> = {
       'dashboard': 'Laboratory Hub',
       'calendar': 'Trend Atlas',
@@ -100,7 +104,20 @@ const AppContent: React.FC = () => {
       'not-found': 'Neural Link Severed'
     };
     
-    trackPageView(activeView, viewTitles[activeView] || 'SomnoAI Node');
+    const title = viewTitles[activeView] || 'SomnoAI Node';
+    
+    // Special handling for 404 tracking
+    if (activeView === 'not-found') {
+      trackPageView(`not-found?path=${encodeURIComponent(attemptedPath.current)}`, `404: ${title}`);
+      trackEvent('page_not_found', { 
+        invalid_path: attemptedPath.current,
+        referrer: document.referrer || 'direct'
+      });
+    } else {
+      trackPageView(activeView, title);
+    }
+    
+    lastTrackedView.current = activeView;
   }, [activeView]);
 
   const safeNavigate = useCallback((viewId: string) => {
@@ -111,21 +128,24 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const handleHash = () => {
       const hash = getSafeHash();
-      const path = hash.replace(/^#\/?/, '');
+      // Sanitize: remove leading #, collapse multiple leading/trailing slashes
+      const path = hash.replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      attemptedPath.current = path;
       
-      // Precise exact routing for primary views
+      // Precise exact routing for primary views - empty sanitized path is dashboard
       if (path === '' || path === 'dashboard') {
         setActiveView('dashboard');
         return;
       }
 
-      // Prefix-based specialized routing to prevent path collision
+      // Priority 1: Public Gateway Terminals
       if (path.startsWith('admin/login')) {
         setActiveView('admin-login');
         return;
       }
       
-      if (path.startsWith('admin')) {
+      // Priority 2: Protected Admin Sector
+      if (path === 'admin') {
         setActiveView('admin');
         return;
       }
@@ -144,7 +164,7 @@ const AppContent: React.FC = () => {
       };
 
       for (const [key, val] of Object.entries(mappings)) {
-        if (path.includes(key)) {
+        if (path === key) {
           setActiveView(val);
           return;
         }

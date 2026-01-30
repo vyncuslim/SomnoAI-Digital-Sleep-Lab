@@ -1,5 +1,5 @@
 /**
- * SomnoAI Safe Navigation Utility (v2.9)
+ * SomnoAI Safe Navigation Utility (v3.0)
  * Strictly isolates current frame and prevents cross-origin Location probes.
  */
 
@@ -46,9 +46,15 @@ export const getSafeHostname = (): string => {
 
 /**
  * Updates local frame hash safely.
+ * Logic: Ensures path starts with #/ and removes redundant slashes.
  */
 export const safeNavigateHash = (hash: string) => {
-  const target = hash.startsWith('#') ? hash : `#/${hash}`;
+  // Normalize: remove leading # and leading/trailing slashes
+  let cleanPath = hash.replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
+  
+  // Reconstruct correctly
+  const target = cleanPath === '' ? '#/' : `#/${cleanPath}`;
+  
   try {
     if (typeof window !== 'undefined' && window.location) {
       window.location.hash = target;

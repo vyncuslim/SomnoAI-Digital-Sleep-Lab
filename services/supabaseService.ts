@@ -1,4 +1,3 @@
-
 import { supabase } from '../lib/supabaseClient.ts';
 import { notifyAdmin } from './telegramService.ts';
 
@@ -18,7 +17,17 @@ const handleDatabaseError = (err: any) => {
  */
 export const authApi = {
   signInWithGoogle: async () => {
-    return await supabase.get('/auth/v1/authorize?provider=google');
+    // CORRECTED: Using signInWithOAuth for Google provider
+    return await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin,
+        queryParams: {
+          access_type: 'offline',
+          prompt: 'consent',
+        }
+      }
+    });
   },
   signIn: async (email: string, password: string, captchaToken?: string) => {
     return await supabase.auth.signInWithPassword({ 
@@ -44,7 +53,7 @@ export const authApi = {
     });
   },
   verifyOTP: async (email: string, token: string) => {
-    return await supabase.auth.verifyOtp({ email, token, type: 'email' });
+    return await supabase.verifyOtp({ email, token, type: 'email' });
   },
   signOut: async () => {
     return await supabase.auth.signOut();

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
-import { ShieldX, RefreshCw, AlertCircle, Home } from 'lucide-react';
+import { ShieldX, RefreshCw, AlertCircle, Home, Radio } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Logo } from './Logo.tsx';
 import { safeNavigateHash, safeReload } from '../services/navigation.ts';
@@ -76,25 +76,34 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center space-y-12">
         <div className="relative">
-          <div className="w-40 h-40 bg-rose-600/10 border-2 border-rose-600/30 rounded-full flex items-center justify-center text-rose-600 shadow-[0_0_50px_rgba(225,29,72,0.2)]">
+          <div className="absolute inset-0 bg-rose-500/5 blur-[80px] rounded-full animate-pulse" />
+          <div className="w-40 h-40 bg-rose-600/10 border-2 border-rose-600/30 rounded-full flex items-center justify-center text-rose-600 shadow-[0_0_50px_rgba(225,29,72,0.2)] relative z-10">
             <ShieldX size={80} strokeWidth={1.5} />
           </div>
-          <div className="absolute -top-4 -right-4 bg-amber-500 text-black w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-2xl">
+          <div className="absolute -top-4 -right-4 bg-amber-500 text-black w-14 h-14 rounded-2xl flex items-center justify-center font-black text-2xl shadow-2xl z-20">
             ⚠️
           </div>
         </div>
         
-        <div className="space-y-4">
-          <h2 className="text-6xl font-black italic text-white uppercase tracking-tighter leading-none">Access<br/>Denied</h2>
-          <p className="text-slate-500 text-[11px] uppercase tracking-[0.4em] font-black italic">Insufficient Clearance</p>
+        <div className="space-y-6 relative z-10">
+          <div className="flex items-center justify-center gap-4 mb-2">
+             <div className="h-px w-8 bg-rose-500/20" />
+             <Radio size={18} className="text-rose-500 animate-pulse" />
+             <div className="h-px w-8 bg-rose-500/20" />
+          </div>
+          <h2 className="text-6xl font-black italic text-white uppercase tracking-tighter leading-none">Access<br/><span className="text-rose-600">Denied</span></h2>
+          <div className="space-y-2">
+            <p className="text-slate-500 text-[11px] uppercase tracking-[0.4em] font-black italic">Insufficient Clearance Protocol</p>
+            <p className="text-[9px] font-mono text-slate-700 uppercase tracking-widest">ID: {level.toUpperCase()}_GATE_RESTRICTED</p>
+          </div>
         </div>
 
-        <div className="flex flex-col gap-4 w-full max-w-xs pt-8">
-          <button onClick={() => safeReload()} className="py-5 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl">
+        <div className="flex flex-col gap-4 w-full max-w-xs pt-8 relative z-10">
+          <button onClick={() => safeReload()} className="py-5 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl active:scale-95 transition-all italic">
              <RefreshCw size={16} /> Retry Handshake
           </button>
-          <button onClick={() => safeNavigateHash('/')} className="py-5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3">
-            <Home size={16} /> Return to Base
+          <button onClick={() => safeNavigateHash('dashboard')} className="py-5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3 hover:text-white hover:border-white/20 transition-all italic">
+            <Home size={16} /> Return to Base Hub
           </button>
         </div>
       </div>

@@ -1,8 +1,8 @@
 import { getSafeUrl } from './navigation.ts';
 
 /**
- * SOMNOAI GLOBAL TELEMETRY HUB (v3.0)
- * Handles analytics dispatch with cross-origin safety protocols.
+ * SOMNOAI GLOBAL TELEMETRY HUB (v3.1)
+ * Handles analytics dispatch with cross-origin safety protocols and SPA routing support.
  */
 
 const GA_ID = 'G-3F9KVPNYLR';
@@ -26,13 +26,16 @@ export const trackEvent = (eventName: string, params: Record<string, any> = {}) 
 export const trackPageView = (path: string, title: string) => {
   try {
     if (typeof (window as any).gtag === 'function') {
-      const virtualLocation = `${getSafeUrl().split('#')[0]}#/${path}`;
+      // Ensure we are using the hash-based path for tracking
+      const currentFullUrl = getSafeUrl();
+      const baseUrl = currentFullUrl.split('#')[0];
+      const virtualLocation = `${baseUrl}#/${path.replace(/^#\/?/, '')}`;
       
-      (window as any).gtag('config', GA_ID, {
-        page_path: `/${path}`,
+      (window as any).gtag('event', 'page_view', {
+        page_path: `/${path.replace(/^#\/?/, '')}`,
         page_title: title,
         page_location: virtualLocation,
-        send_page_view: true
+        send_to: GA_ID
       });
       
       console.debug(`[Telemetry Pulse] V-PATH: /${path} [${title}]`);

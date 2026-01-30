@@ -63,9 +63,9 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       
-      // GA4 Grounding with virtualized location to bypass cross-origin restrictions
+      // GA4 Grounding with manual page_view control for SPA/Hash routing
       gtag('config', 'G-3F9KVPNYLR', { 
-        send_page_view: true,
+        send_page_view: false, // Disable auto tracking to prevent duplicates in SPA
         page_location: 'https://sleepsomno.com/virtual-node',
         anonymize_ip: true,
         client_storage: 'none'
