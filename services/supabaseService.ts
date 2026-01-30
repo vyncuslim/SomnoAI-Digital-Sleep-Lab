@@ -18,10 +18,7 @@ const handleDatabaseError = (err: any) => {
  */
 export const authApi = {
   signInWithGoogle: async () => {
-    return await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.origin }
-    });
+    return await supabase.get('/auth/v1/authorize?provider=google');
   },
   signIn: async (email: string, password: string) => {
     return await supabase.auth.signInWithPassword({ email, password });
@@ -141,24 +138,40 @@ export const adminApi = {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
     if (error) throw new Error(error.message);
   },
-  // GA4 Sync Accessors
+  // GA4 Synced Accessors
   getDailyAnalytics: async (days: number = 30) => {
-    const { data, error } = await supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(days);
+    const { data, error } = await supabase
+      .from('analytics_daily')
+      .select('*')
+      .order('date', { ascending: true })
+      .limit(days);
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
   getCountryRankings: async () => {
-    const { data, error } = await supabase.from('analytics_country').select('country, users').order('users', { ascending: false }).limit(10);
+    const { data, error } = await supabase
+      .from('analytics_country')
+      .select('country, users')
+      .order('users', { ascending: false })
+      .limit(10);
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
   getDeviceSegmentation: async () => {
-    const { data, error } = await supabase.from('analytics_device').select('device, users').order('users', { ascending: false }).limit(5);
+    const { data, error } = await supabase
+      .from('analytics_device')
+      .select('device, users')
+      .order('users', { ascending: false })
+      .limit(5);
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
   getRealtimePulse: async () => {
-    const { data, error } = await supabase.from('analytics_realtime').select('*').order('timestamp', { ascending: false }).limit(5);
+    const { data, error } = await supabase
+      .from('analytics_realtime')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(5);
     if (error) throw handleDatabaseError(error);
     return data || [];
   }
