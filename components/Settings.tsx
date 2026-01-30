@@ -1,12 +1,13 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  MessageSquare, ChevronRight
+  Terminal, Key, Info, Bell, RefreshCw, Smartphone, Zap, MessageSquare, Send
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { notificationService } from '../services/notificationService.ts';
+import { notifyAdmin } from '../services/telegramService.ts';
 
 const m = motion as any;
 
@@ -22,8 +23,49 @@ export const Settings: React.FC<SettingsProps> = ({
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isAiActive, setIsAiActive] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
 
   const t = translations[lang]?.settings || translations.en.settings;
+
+  useEffect(() => {
+    const checkAiStatus = async () => {
+      if ((window as any).aistudio?.hasSelectedApiKey) {
+        try {
+          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+          setIsAiActive(hasKey || !!process.env.API_KEY);
+        } catch (e) {
+          setIsAiActive(!!process.env.API_KEY);
+        }
+      } else {
+        setIsAiActive(!!process.env.API_KEY);
+      }
+    };
+    checkAiStatus();
+  }, []);
+
+  const handleTestTelegram = async () => {
+    setTestStatus('sending');
+    let hostname = 'unknown-node';
+    try {
+      // hostname access can be restricted in some cross-origin frames
+      hostname = window.location.hostname;
+    } catch (e) {
+      hostname = 'sandboxed-node';
+    }
+    const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${hostname}\nSubject: Admin Console Test\nStatus: Operational`);
+    setTestStatus(success ? 'success' : 'error');
+    setTimeout(() => setTestStatus('idle'), 3000);
+  };
+
+  const handleRequestNotif = async () => {
+    const granted = await notificationService.requestPermission();
+    setNotifPermission(Notification.permission);
+    if (granted) {
+      notificationService.sendNotification("SomnoAI Connected", "Neural bridge active. System notifications enabled.");
+    }
+  };
 
   const handleCopy = (id: string, text: string) => {
     navigator.clipboard.writeText(text);
@@ -32,85 +74,124 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   return (
-    <div className="space-y-8 pb-32 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
+    <div className="space-y-8 pb-48 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
       <div className="absolute top-0 right-[-100px] opacity-[0.05] pointer-events-none -z-10 rotate-12">
         <Moon size={400} fill="currentColor" className="text-indigo-400" />
       </div>
 
-      <div className="bg-[#0a0f25] border border-white/5 rounded-[2.5rem] p-6 flex items-center justify-between shadow-2xl relative overflow-hidden group">
-        <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none" />
-        <div className="flex items-center gap-5 relative z-10">
-          <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.2)]">
-            <ShieldCheck size={24} />
-          </div>
-          <div>
-             <h2 className="text-sm font-black italic text-white uppercase tracking-wider flex items-center gap-2">
-               <Moon size={14} className="text-indigo-400" /> Neural Engine Core
-             </h2>
-             <div className="flex items-center gap-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <p className="text-[10px] font-black uppercase tracking-widest text-emerald-400">
-                  LINK ESTABLISHED
-                </p>
-             </div>
-          </div>
-        </div>
-      </div >
-
-      {/* Lab Feedback Trigger */}
-      <GlassCard 
-        onClick={() => window.location.hash = '#/feedback'}
-        className="p-8 rounded-[3rem] border-white/5 bg-indigo-600/5 cursor-pointer group hover:bg-indigo-600/10 transition-all"
-        hoverScale={true}
-      >
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-5">
-            <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400">
-              <MessageSquare size={24} />
+      <div className="flex flex-col gap-6">
+        {/* AI & Notification Status Panel */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <GlassCard className="p-6 rounded-[2.5rem] border-indigo-500/20 bg-indigo-500/5">
+            <div className="flex items-center gap-4">
+              <div className={`p-3 rounded-2xl ${isAiActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                <Zap size={20} className={isAiActive ? 'animate-pulse' : ''} />
+              </div>
+              <div>
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Neural Bridge</p>
+                <p className="text-sm font-black text-white italic">{isAiActive ? 'ACTIVE' : 'OFFLINE'}</p>
+              </div>
             </div>
-            <div>
-              <h3 className="text-sm font-black italic text-white uppercase tracking-wider">{t.feedback}</h3>
-              <p className="text-[10px] font-medium text-slate-500 italic">{t.feedbackSub}</p>
-            </div>
-          </div>
-          <ChevronRight size={20} className="text-slate-700 group-hover:text-indigo-400 transition-all group-hover:translate-x-1" />
-        </div>
-      </GlassCard>
+          </GlassCard>
 
-      <GlassCard className="p-8 md:p-10 rounded-[3rem] border-white/10 bg-white/[0.01]">
-        <div className="space-y-10">
-          <div className="space-y-4">
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
-             <div className="flex bg-black/40 p-1 rounded-full border border-white/5">
-                {['en', 'zh'].map((l) => (
-                  <button 
-                    key={l}
-                    onClick={() => onLanguageChange(l as Language)}
-                    className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
-                  >
-                    {l === 'en' ? 'ENGLISH' : '中文简体'}
+          <GlassCard className="p-6 rounded-[2.5rem] border-white/5">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-2xl ${notifPermission === 'granted' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-900 text-slate-600'}`}>
+                    <Bell size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Notifications</p>
+                    <p className="text-sm font-black text-white italic">{notifPermission.toUpperCase()}</p>
+                  </div>
+                </div>
+                {notifPermission !== 'granted' && (
+                  <button onClick={handleRequestNotif} className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
+                    <RefreshCw size={16} />
                   </button>
-                ))}
+                )}
              </div>
-          </div>
-
-          <div className="space-y-4">
-             <button 
-                onClick={() => setShowDonation(true)}
-                className="w-full py-6 rounded-full bg-[#f43f5e]/10 border border-[#f43f5e]/30 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/10"
-             >
-                <Heart size={20} fill="currentColor" /> {t.coffee}
-             </button>
-
-             <button 
-                onClick={onLogout}
-                className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all"
-             >
-                <DisconnectIcon size={18} /> {t.logout}
-             </button>
-          </div>
+          </GlassCard>
         </div>
-      </GlassCard>
+
+        {/* Telegram Diagnostic Tool */}
+        <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Send size={18} className="text-rose-500" />
+              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms Diagnostic</h3>
+            </div>
+            <p className="text-[10px] text-slate-500 italic">Verify the link between your node and the Telegram administrative gateway.</p>
+            <button 
+              onClick={handleTestTelegram}
+              disabled={testStatus === 'sending'}
+              className={`w-full py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all ${
+                testStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                testStatus === 'error' ? 'bg-rose-600 text-white' : 'bg-white/5 text-rose-500 border border-rose-500/30'
+              }`}
+            >
+              {testStatus === 'sending' ? <RefreshCw size={14} className="animate-spin" /> : <Terminal size={14} />}
+              {testStatus === 'success' ? 'SIGNAL CONFIRMED' : testStatus === 'error' ? 'LINK FAILED' : 'SEND TEST SIGNAL'}
+            </button>
+          </div>
+        </GlassCard>
+
+        {/* Lab Feedback Trigger */}
+        <GlassCard 
+          onClick={() => window.location.hash = '#/feedback'}
+          className="p-8 rounded-[3rem] border-white/5 bg-indigo-600/5 cursor-pointer group hover:bg-indigo-600/10 transition-all"
+          hoverScale={true}
+        >
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-5">
+              <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                <MessageSquare size={24} />
+              </div>
+              <div>
+                <h3 className="text-sm font-black italic text-white uppercase tracking-wider">{t.feedback}</h3>
+                <p className="text-[10px] font-medium text-slate-500 italic">{t.feedbackSub}</p>
+              </div>
+            </div>
+            <RefreshCw size={20} className="text-slate-700 group-hover:text-indigo-400 transition-all group-hover:rotate-180" />
+          </div>
+        </GlassCard>
+
+        {/* Core Settings */}
+        <GlassCard className="p-8 md:p-10 rounded-[3rem] border-white/10 bg-white/[0.01]">
+          <div className="space-y-10">
+            <div className="space-y-4">
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
+               <div className="flex bg-black/40 p-1 rounded-full border border-white/5">
+                  {['en', 'zh'].map((l) => (
+                    <button 
+                      key={l}
+                      onClick={() => onLanguageChange(l as Language)}
+                      className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      {l === 'en' ? 'ENGLISH' : '中文简体'}
+                    </button>
+                  ))}
+               </div>
+            </div>
+
+            <div className="space-y-4">
+               <button 
+                  onClick={() => setShowDonation(true)}
+                  className="w-full py-6 rounded-full bg-[#f43f5e]/10 border border-[#f43f5e]/30 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/10"
+               >
+                  <Heart size={20} fill="currentColor" /> {t.coffee}
+               </button>
+
+               <button 
+                  onClick={onLogout}
+                  className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all"
+               >
+                  <DisconnectIcon size={18} /> {t.logout}
+               </button>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
 
       <AnimatePresence>
         {showDonation && (

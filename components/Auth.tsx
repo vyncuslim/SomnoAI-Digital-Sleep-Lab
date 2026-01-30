@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, ShieldAlert, Zap, Lock, Eye, EyeOff, User, 
   ChevronLeft, Info, FlaskConical, AlertTriangle, ShieldCheck,
-  Chrome, RefreshCw
+  Chrome, RefreshCw, Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
@@ -28,8 +28,32 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState<{message: string, isRateLimit?: boolean, code?: string} | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Turnstile 状态
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = useRef<HTMLDivElement>(null);
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // 初始化 Turnstile
+  useEffect(() => {
+    if (step === 'request' && turnstileRef.current && (window as any).turnstile) {
+      (window as any).turnstile.render(turnstileRef.current, {
+        sitekey: (process.env as any).CLOUDFLARE_TURNSTILE_SITE_KEY,
+        theme: 'dark',
+        callback: (token: string) => {
+          setTurnstileToken(token);
+        },
+        'expired-callback': () => {
+          setTurnstileToken(null);
+        },
+        'error-callback': () => {
+          setTurnstileToken(null);
+          setError({ message: "人机验证服务异常，请刷新重试 (Turnstile Error)", code: "T_ERR" });
+        }
+      });
+    }
+  }, [step, activeTab]);
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
@@ -45,23 +69,23 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isProcessing) return;
+    if (isProcessing || !turnstileToken) return;
     
     setError(null);
     setIsProcessing(true);
 
     try {
       if (activeTab === 'otp') {
-        const { error: otpErr } = await authApi.sendOTP(email.trim());
+        const { error: otpErr } = await authApi.sendOTP(email.trim(), turnstileToken);
         if (otpErr) throw otpErr;
         setStep('verify');
         setTimeout(() => otpRefs.current[0]?.focus(), 200);
       } else if (activeTab === 'login') {
-        const { error: signInErr } = await authApi.signIn(email.trim(), password);
+        const { error: signInErr } = await authApi.signIn(email.trim(), password, turnstileToken);
         if (signInErr) throw signInErr;
         onLogin();
       } else if (activeTab === 'join') {
-        const { error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() });
+        const { error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, turnstileToken);
         if (signUpErr) throw signUpErr;
         setStep('verify');
         setActiveTab('otp');
@@ -87,6 +111,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         code: err.status?.toString()
       });
       setIsProcessing(false);
+      
+      // 出错时重置 Turnstile
+      if ((window as any).turnstile) (window as any).turnstile.reset();
+      setTurnstileToken(null);
     } finally {
       if (step === 'request' && activeTab !== 'otp' && activeTab !== 'join') {
         setIsProcessing(false);
@@ -149,7 +177,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
               {['login', 'join', 'otp'].map((tab) => (
                 <button 
                   key={tab} 
-                  onClick={() => { setActiveTab(tab as any); setError(null); }}
+                  onClick={() => { setActiveTab(tab as any); setError(null); setTurnstileToken(null); }}
                   className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest z-10 transition-all ${activeTab === tab ? 'text-white' : 'text-slate-500 hover:text-slate-300'}`}
                 >
                   {tab === 'otp' ? 'Magic' : tab}
@@ -177,6 +205,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 )}
               </div>
 
+              {/* Turnstile Widget */}
+              <div className="flex justify-center py-2 min-h-[65px]">
+                <div ref={turnstileRef} className="cf-turnstile"></div>
+              </div>
+
               <AnimatePresence>
                 {error && (
                   <m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className={`p-5 rounded-[2rem] border flex flex-col gap-3 ${error.isRateLimit ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
@@ -197,9 +230,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 )}
               </AnimatePresence>
 
-              <button type="submit" disabled={isProcessing} className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-[0_20px_40px_rgba(79,70,229,0.3)] flex items-center justify-center gap-4 active:scale-[0.98] transition-all hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600">
-                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
-                <span>{isProcessing ? "SYNCHRONIZING" : "ESTABLISH LINK"}</span>
+              <button 
+                type="submit" 
+                disabled={isProcessing || !turnstileToken} 
+                className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-[0_20px_40px_rgba(79,70,229,0.3)] flex items-center justify-center gap-4 active:scale-[0.98] transition-all hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:opacity-40"
+              >
+                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : (turnstileToken ? <Zap size={18} fill="currentColor" /> : <Shield size={18} />)}
+                <span>{isProcessing ? "SYNCHRONIZING" : (turnstileToken ? "ESTABLISH LINK" : "PENDING VERIFICATION")}</span>
               </button>
             </form>
 
@@ -232,7 +269,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
                 {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} />}
                 <span>AUTHORIZE ACCESS</span>
               </button>
-              <button onClick={() => { setStep('request'); setError(null); setIsProcessing(false); }} className="w-full text-[9px] font-black text-slate-600 hover:text-white uppercase tracking-widest flex items-center justify-center gap-3 transition-colors">
+              <button onClick={() => { setStep('request'); setError(null); setIsProcessing(false); setTurnstileToken(null); }} className="w-full text-[9px] font-black text-slate-600 hover:text-white uppercase tracking-widest flex items-center justify-center gap-3 transition-colors">
                 <ChevronLeft size={14} /> Back to Terminal
               </button>
             </div>

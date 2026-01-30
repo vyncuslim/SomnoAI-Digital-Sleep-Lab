@@ -1,17 +1,25 @@
-
 /**
  * Global Analytics Hub for SomnoAI Lab.
  * Enhanced safety wrapper for sandboxed environments.
  */
 
 const getSafeLocation = (): string => {
+  // Try sequence for restricted environments
   try {
-    // window.location access can be blocked in cross-origin iframes
-    return window.location.href;
-  } catch (e) {
-    // document.URL is a safer fallback in most browser environments
-    return typeof document !== 'undefined' ? document.URL : 'restricted-origin';
-  }
+    // 1. window.location conversion to string is usually allowed
+    if (typeof window !== 'undefined' && window.location) {
+      return String(window.location);
+    }
+  } catch (e) { /* ignore */ }
+
+  try {
+    // 2. document.URL is a standard property often available in sandboxes
+    if (typeof document !== 'undefined' && document.URL) {
+      return document.URL;
+    }
+  } catch (e) { /* ignore */ }
+
+  return 'https://sleepsomno.com/restricted-origin';
 };
 
 export const trackEvent = (eventName: string, params: Record<string, any> = {}) => {

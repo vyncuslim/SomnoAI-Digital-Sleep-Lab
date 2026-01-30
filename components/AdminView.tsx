@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, Database, ShieldAlert, Search, RefreshCw, 
@@ -161,7 +160,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }
 
   return (
-    <div className="space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans relative text-left">
+    <div className="space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left relative">
       <AnimatePresence>
         {actionError && (
           <div className="fixed top-24 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-lg px-6">
@@ -387,23 +386,23 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      {actionError ? (
                        <m.div key="err" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-rose-950/20">
                          <CloudOff size={16} className="shrink-0" />
-                         <span>SYNC_FAILURE_NODE</span>
+                         <span>SYNC_ERROR</span>
                        </m.div>
                      ) : loading ? (
                        <m.div key="syncing" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-indigo-950/20">
                          <Loader2 size={16} className="animate-spin shrink-0" />
-                         <span>HANDSHAKE_IN_PROGRESS</span>
+                         <span>SYNCING...</span>
                        </m.div>
                      ) : metrics.isGaSynced ? (
                        <m.div key="synced" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-950/20">
                          <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
                          <Cloud size={16} className="shrink-0" />
-                         <span>GA4_DATA_SYNCED</span>
+                         <span>SYNCED</span>
                        </m.div>
                      ) : (
                        <m.div key="idle" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[10px] font-black uppercase tracking-widest italic">
                          <CloudLightning size={16} className="shrink-0 opacity-50" />
-                         <span>PIPELINE_IDLE</span>
+                         <span>STANDBY</span>
                        </m.div>
                      )}
                    </AnimatePresence>

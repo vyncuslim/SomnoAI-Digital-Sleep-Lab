@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
@@ -80,30 +79,52 @@ const AppContent: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [isSimulated, setIsSimulated] = useState(false);
 
+  const safeNavigate = useCallback((viewId: string) => {
+    setActiveView(viewId as ViewType);
+    try {
+      if (typeof window !== 'undefined' && window.location) {
+        window.location.hash = `#/${viewId}`;
+      }
+    } catch (e) {
+      console.warn("Security: Navigation hash update blocked. Using internal state only.");
+    }
+  }, []);
+
   useEffect(() => {
     const handleHash = () => {
-      const h = window.location.hash || '#/';
+      let h = '';
+      try {
+        h = window.location.hash || '';
+      } catch (e) {
+        return;
+      }
       
-      if (h === '#/' || h === '') {
+      const path = h.replace(/^#\/?/, '');
+      
+      // Default view logic
+      if (path === '' || path === 'dashboard') {
         setActiveView('dashboard');
         return;
       }
 
-      if (h.includes('admin/login')) { setActiveView('admin-login'); return; }
-      if (h.includes('admin')) { setActiveView('admin'); return; }
-      if (h.includes('calendar')) { setActiveView('calendar'); return; }
-      if (h.includes('assistant')) { setActiveView('assistant'); return; }
-      if (h.includes('experiment')) { setActiveView('experiment'); return; }
-      if (h.includes('diary')) { setActiveView('diary'); return; }
-      if (h.includes('settings')) { setActiveView('settings'); return; }
-      if (h.includes('feedback')) { setActiveView('feedback'); return; }
-      if (h.includes('privacy')) { setActiveView('privacy'); return; }
-      if (h.includes('terms')) { setActiveView('terms'); return; }
-      if (h.includes('profile')) { setActiveView('profile'); return; }
-      if (h.includes('about')) { setActiveView('about'); return; }
+      // Route mapping
+      if (path.includes('admin/login')) { setActiveView('admin-login'); return; }
+      if (path.includes('admin')) { setActiveView('admin'); return; }
+      if (path.includes('calendar')) { setActiveView('calendar'); return; }
+      if (path.includes('assistant')) { setActiveView('assistant'); return; }
+      if (path.includes('experiment')) { setActiveView('experiment'); return; }
+      if (path.includes('diary')) { setActiveView('diary'); return; }
+      if (path.includes('settings')) { setActiveView('settings'); return; }
+      if (path.includes('feedback')) { setActiveView('feedback'); return; }
+      if (path.includes('privacy')) { setActiveView('privacy'); return; }
+      if (path.includes('terms')) { setActiveView('terms'); return; }
+      if (path.includes('profile')) { setActiveView('profile'); return; }
+      if (path.includes('about')) { setActiveView('about'); return; }
 
+      // If no paths match, only then show Not Found
       setActiveView('not-found');
     };
+    
     window.addEventListener('hashchange', handleHash);
     handleHash();
     return () => window.removeEventListener('hashchange', handleHash);
@@ -126,7 +147,7 @@ const AppContent: React.FC = () => {
     if (!profile && !isSimulated) {
       return (
         <UserLoginPage 
-          onSuccess={() => window.location.hash = '#/'} 
+          onSuccess={() => safeNavigate('dashboard')} 
           onSandbox={() => setIsSimulated(true)} 
           lang={lang} 
         />
@@ -148,7 +169,7 @@ const AppContent: React.FC = () => {
               {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
               {activeView === 'diary' && <DiaryView lang={lang} />}
               {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => {}} onNavigate={() => {}} />}
-              {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => window.location.hash = '#/settings'} />}
+              {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('settings')} />}
             </m.div>
           </AnimatePresence>
         </main>
@@ -168,7 +189,7 @@ const AppContent: React.FC = () => {
             ].map((nav) => (
               <button 
                 key={nav.id} 
-                onClick={() => window.location.hash = `#/${nav.id}`} 
+                onClick={() => safeNavigate(nav.id)} 
                 className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}
               >
                 <nav.icon size={18} />
@@ -180,7 +201,7 @@ const AppContent: React.FC = () => {
             
             {isAdmin && (
               <button 
-                onClick={() => window.location.hash = '#/admin'} 
+                onClick={() => safeNavigate('admin')} 
                 className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${(activeView as string) === 'admin' ? 'bg-rose-600 text-white' : 'text-rose-500/50 hover:text-rose-500'}`}
               >
                 <ShieldAlert size={18} />

@@ -20,14 +20,28 @@ export const authApi = {
   signInWithGoogle: async () => {
     return await supabase.get('/auth/v1/authorize?provider=google');
   },
-  signIn: async (email: string, password: string) => {
-    return await supabase.auth.signInWithPassword({ email, password });
+  signIn: async (email: string, password: string, captchaToken?: string) => {
+    return await supabase.auth.signInWithPassword({ 
+      email, 
+      password,
+      options: { captchaToken }
+    });
   },
-  signUp: async (email: string, password: string, options: any) => {
-    return await supabase.auth.signUp({ email, password, options });
+  signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
+    return await supabase.auth.signUp({ 
+      email, 
+      password, 
+      options: { 
+        ...options,
+        captchaToken 
+      } 
+    });
   },
-  sendOTP: async (email: string) => {
-    return await supabase.auth.signInWithOtp({ email });
+  sendOTP: async (email: string, captchaToken?: string) => {
+    return await supabase.auth.signInWithOtp({ 
+      email,
+      options: { captchaToken }
+    });
   },
   verifyOTP: async (email: string, token: string) => {
     return await supabase.auth.verifyOtp({ email, token, type: 'email' });

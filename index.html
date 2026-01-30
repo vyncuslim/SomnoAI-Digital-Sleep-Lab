@@ -14,8 +14,32 @@
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-1WM4RE66ER', { send_page_view: false });
-      gtag('config', 'G-3F9KVNYLR', { send_page_view: false });
+      
+      // Ultra-defensive location sniffing to prevent SecurityError in sandboxed cross-origin previews
+      var safeLocation = 'https://sleepsomno.com/restricted-environment';
+      try {
+        // Accessing window.location.toString() is usually permitted even when .href is blocked
+        safeLocation = String(window.location);
+      } catch (e) {
+        try {
+          safeLocation = document.URL;
+        } catch (e2) {
+          // Fallback to static URL if DOM access is completely severed
+        }
+      }
+
+      // Explicitly define page_location and page_referrer to prevent gtag from 
+      // attempting cross-origin property reads that trigger SecurityErrors.
+      gtag('config', 'G-1WM4RE66ER', { 
+        send_page_view: false,
+        page_location: safeLocation,
+        page_referrer: ''
+      });
+      gtag('config', 'G-3F9KVNYLR', { 
+        send_page_view: false,
+        page_location: safeLocation,
+        page_referrer: ''
+      });
     </script>
 
     <!-- Cloudflare Turnstile -->
@@ -52,41 +76,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0, viewport-fit=cover">
     
     <!-- Primary SEO Tags -->
-    <title>SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Health Insights</title>
-    <meta name="title" content="SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis & Health Insights">
-    <meta name="description" content="SomnoAI Digital Sleep Lab integrates physiological metric monitoring, AI-driven sleep insights, and personalized health guidance to deliver a complete digital sleep laboratory experience.">
-    <meta name="keywords" content="Sleep Lab, AI Health, Biometric Telemetry, Health Connect API, Sleep Score, Neural Analysis, SomnoAI, AI-Powered Sleep Analysis, Health Insights">
+    <title>SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis</title>
+    <meta name="title" content="SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis">
+    <meta name="description" content="SomnoAI Digital Sleep Lab integrates physiological metric monitoring, AI-driven sleep insights, and personalized health guidance.">
+    <meta name="keywords" content="Sleep Lab, AI Health, Biometric Telemetry, Sleep Score, SomnoAI">
     <meta name="robots" content="index, follow">
     <link rel="canonical" href="https://sleepsomno.com">
-
-    <!-- JSON-LD Structured Data for Rich Snippets -->
-    <script type="application/ld+json">
-    {
-      "@context": "https://schema.org",
-      "@type": "Organization",
-      "name": "SomnoAI Digital Sleep Lab",
-      "url": "https://sleepsomno.com",
-      "logo": "https://sleepsomno.com/favicon.png",
-      "sameAs": [
-        "https://www.linkedin.com/in/vyncuslim-lim-761300375",
-        "https://www.instagram.com/vyncuslim/"
-      ]
-    }
-    </script>
-
-    <!-- Open Graph / Facebook -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sleepsomno.com">
-    <meta property="og:title" content="SomnoAI Digital Sleep Lab | AI-Powered Health Protocol">
-    <meta property="og:description" content="Professional-grade sleep diagnostic platform leveraging Gemini AI for biometric synthesis and circadian optimization.">
-    <meta property="og:image" content="https://img.icons8.com/fluency/512/moon.png">
-
-    <!-- Twitter -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://sleepsomno.com">
-    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab">
-    <meta property="twitter:description" content="Advanced digital sleep laboratory providing high-fidelity recovery mappings.">
-    <meta property="twitter:image" content="https://img.icons8.com/fluency/512/moon.png">
 
     <!-- Google Favicon -->
     <link rel="icon" type="image/png" sizes="32x32" href="https://img.icons8.com/fluency/32/moon.png">

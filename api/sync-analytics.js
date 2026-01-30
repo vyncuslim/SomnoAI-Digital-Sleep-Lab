@@ -3,8 +3,9 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNOAI ANALYTICS SYNC ENGINE v2.0
+ * SOMNOAI ANALYTICS SYNC ENGINE v2.1
  * Triggered by Vercel Cron
+ * Secured by CRON_SECRET token verification
  */
 
 const analyticsDataClient = new BetaAnalyticsDataClient({
@@ -20,15 +21,16 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  // Security Handshake
-  if (req.headers.authorization !== `Bearer ${process.env.CRON_SECRET}` && process.env.NODE_ENV === 'production') {
-    return res.status(401).json({ error: "UNAUTHORIZED_CRON_ACCESS" });
+  // 1. 安全握手 (Vercel Cron 密钥验证)
+  const authHeader = req.headers.authorization;
+  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
 
   try {
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-    // 1. Fetch Daily Core Metrics
+    // 2. 从 GA4 获取核心每日指标
     const [dailyResponse] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
@@ -45,7 +47,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 2. Fetch Geographic Ranking
+    // 3. 获取地理位置排名
     const [geoResponse] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
@@ -63,7 +65,7 @@ export default async function handler(req, res) {
       await supabase.from("analytics_country").upsert(geoData, { onConflict: "date, country" });
     }
 
-    // 3. Fetch Device Proportions
+    // 4. 获取设备分布比例
     const [deviceResponse] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
@@ -81,9 +83,15 @@ export default async function handler(req, res) {
       await supabase.from("analytics_device").upsert(deviceData, { onConflict: "date, device" });
     }
 
-    return res.status(200).json({ status: "SYNC_COMPLETE", target: yesterday });
+    // 返回成功状态
+    return res.status(200).json({ 
+      success: true, 
+      status: "SYNC_COMPLETE", 
+      target: yesterday 
+    });
+    
   } catch (err) {
     console.error("TELEMETRY_SYNC_CRITICAL_FAILURE:", err);
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ success: false, error: err.message });
   }
 }
