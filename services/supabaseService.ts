@@ -4,70 +4,145 @@ import { notifyAdmin } from './telegramService.ts';
 
 export { supabase };
 
+// Helper to handle database errors and map them to application-level exceptions
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
   if (err.code === 'PGRST202' || err.message?.includes('not found')) return new Error("RPC_NOT_REGISTERED_IN_DB");
   return err;
 };
 
-export const healthDataApi = {
-  getHealthHistory: async () => {
-    const { data, error } = await supabase.from('health_data').select('*').order('recorded_at', { ascending: false });
-    if (error) throw handleDatabaseError(error);
-    return data;
+/**
+ * Auth API Layer
+ * Encapsulates Supabase Auth operations with consistency
+ */
+export const authApi = {
+  signInWithGoogle: async () => {
+    return await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: window.location.origin
+      }
+    });
+  },
+  signIn: async (email: string, password: string) => {
+    return await supabase.auth.signInWithPassword({ email, password });
+  },
+  signUp: async (email: string, password: string, options: any) => {
+    return await supabase.auth.signUp({ email, password, options });
+  },
+  sendOTP: async (email: string) => {
+    return await supabase.auth.signInWithOtp({ email });
+  },
+  verifyOTP: async (email: string, token: string) => {
+    // For 6-digit numerical codes, Supabase uses type 'email'
+    return await supabase.auth.verifyOtp({ email, token, type: 'email' });
+  },
+  signOut: async () => {
+    return await supabase.auth.signOut();
   }
 };
 
+/**
+ * Profile API Layer
+ * Manages user profile data
+ */
 export const profileApi = {
   getMyProfile: async () => {
-    const { data, error } = await supabase.from('profiles').select('*').single();
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data, error } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     if (error) throw handleDatabaseError(error);
     return data;
   },
-  updateProfile: async (data: any) => {
+  updateProfile: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('UNAUTHORIZED');
-    return supabase.from('profiles').update(data).eq('id', user.id);
+    if (!user) throw new Error("USER_NOT_FOUND");
+    const { data, error } = await supabase.from('profiles').update(updates).eq('id', user.id);
+    return { data, error };
   }
 };
 
+/**
+ * User Data API Layer
+ * Handles biological metrics and setup status
+ */
 export const userDataApi = {
-  getProfileStatus: async () => {
-    try {
-      const { data: status, error } = await supabase.rpc('get_my_detailed_profile');
-      if (error) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: fallback } = await supabase.from('profiles').select('*').eq('id', user.id).single();
-          return fallback;
-        }
-        throw error;
-      }
-      return status && status.length > 0 ? status[0] : null;
-    } catch (e: any) { throw e; }
-  },
   getUserData: async () => {
-    const { data, error } = await supabase.from('user_data').select('*').single();
-    if (error && error.code !== 'PGRST116') throw handleDatabaseError(error);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+    const { data, error } = await supabase.from('user_data').select('*').eq('id', user.id).single();
+    if (error) throw handleDatabaseError(error);
     return data;
   },
-  updateUserData: async (data: any) => {
+  updateUserData: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('UNAUTHORIZED');
-    const { error } = await supabase.from('user_data').upsert({ user_id: user.id, ...data });
-    return { success: !error, error };
+    if (!user) throw new Error("USER_NOT_FOUND");
+    const { data, error } = await supabase.from('user_data').upsert({ id: user.id, ...updates });
+    return { data, error };
   },
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error('UNAUTHORIZED');
-    const { error: profileError } = await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
-    if (profileError) throw handleDatabaseError(profileError);
-    const { error: metricsError } = await supabase.from('user_data').upsert({ user_id: user.id, ...metrics });
-    if (metricsError) throw handleDatabaseError(metricsError);
+    if (!user) throw new Error("USER_NOT_FOUND");
+    
+    // Atomically update profile name and biological metrics
+    const { error: pError } = await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
+    if (pError) throw pError;
+
+    const { error: uError } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
+    if (uError) throw uError;
+
     return { success: true };
   }
 };
 
+/**
+ * Feedback API Layer
+ * Submits user feedback and notifies admins via Telegram
+ */
+export const feedbackApi = {
+  submitFeedback: async (type: string, content: string, email: string) => {
+    const { data, error } = await supabase.from('feedback').insert([{ type, content, email }]);
+    // Fix: Return error instead of throwing to match the destructuring expectation in components/FeedbackView.tsx
+    if (error) return { success: false, error, data: null };
+    
+    await notifyAdmin(`📩 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\nContent: ${content}`);
+    return { success: true, data, error: null };
+  }
+};
+
+/**
+ * Diary API Layer
+ * Secure storage for psychological and biological sleep logs
+ */
+export const diaryApi = {
+  getEntries: async () => {
+    const { data, error } = await supabase
+      .from('diary')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw handleDatabaseError(error);
+    return data;
+  },
+  saveEntry: async (content: string, mood: string) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    const { data, error } = await supabase
+      .from('diary')
+      .insert([{ content, mood, user_id: user?.id }])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+  deleteEntry: async (id: string) => {
+    const { error } = await supabase.from('diary').delete().eq('id', id);
+    if (error) throw error;
+  }
+};
+
+/**
+ * Admin API Layer
+ * Elevated operations for system managers and project owners
+ */
 export const adminApi = {
   checkAdminStatus: async (): Promise<boolean> => {
     try {
@@ -95,7 +170,6 @@ export const adminApi = {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
     if (error) throw new Error(error.message);
   },
-  // --- Analytics Decision Center Methods ---
   getDailyAnalytics: async (days: number = 30) => {
     const { data, error } = await supabase
       .from('analytics_daily')
@@ -114,6 +188,15 @@ export const adminApi = {
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
+  getDeviceSegmentation: async () => {
+    const { data, error } = await supabase
+      .from('analytics_device')
+      .select('device, users')
+      .order('users', { ascending: false })
+      .limit(5);
+    if (error) throw handleDatabaseError(error);
+    return data || [];
+  },
   getRealtimePulse: async () => {
     const { data, error } = await supabase
       .from('analytics_realtime')
@@ -122,58 +205,5 @@ export const adminApi = {
       .limit(20);
     if (error) throw handleDatabaseError(error);
     return data || [];
-  }
-};
-
-export const authApi = {
-  sendOTP: async (email: string) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    if (session && session.user.email === email) return { data: null, error: null };
-    return supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
-  },
-  verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),
-  signOut: () => supabase.auth.signOut(),
-  signInWithGoogle: () => supabase.auth.signInWithOAuth({ 
-    provider: 'google',
-    options: {
-      redirectTo: window.location.origin
-    }
-  }),
-  signIn: (email: string, password: string) => supabase.auth.signInWithPassword({ email, password }),
-  signUp: (email: string, password: string, options: any) => supabase.auth.signUp({ 
-    email, 
-    password, 
-    options: { data: options } 
-  })
-};
-
-export const feedbackApi = {
-  submitFeedback: async (type: string, content: string, email: string) => {
-    try {
-      const { error } = await supabase.from('feedback').insert({ type, content, email });
-      if (error) throw handleDatabaseError(error);
-      notifyAdmin(`📥 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\n\nContent: ${content}`).catch(e => console.warn("Telegram non-critical delay:", e));
-      return { success: true, error: null };
-    } catch (err: any) {
-      return { success: false, error: err };
-    }
-  }
-};
-
-export const diaryApi = {
-  getEntries: async () => {
-    const { data, error } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false });
-    if (error) throw handleDatabaseError(error);
-    return data;
-  },
-  saveEntry: async (content: string, mood: string) => {
-    const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase.from('diary_entries').insert({ user_id: user?.id, content, mood }).select().single();
-    if (error) throw handleDatabaseError(error);
-    return data;
-  },
-  deleteEntry: async (id: string) => {
-    const { error } = await supabase.from('diary_entries').delete().eq('id', id);
-    if (error) throw handleDatabaseError(error);
   }
 };

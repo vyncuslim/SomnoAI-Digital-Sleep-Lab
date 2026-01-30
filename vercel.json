@@ -92,7 +92,7 @@
       "destination": "/index.html"
     }
   ],
-  "cron": [
+  "crons": [
     {
       "path": "/api/sync-analytics",
       "schedule": "0 3 * * *"

@@ -91,8 +91,9 @@ export default function AdminLoginPage() {
     setError(null);
     try {
       const { data, error: verifyErr } = await authApi.verifyOTP(email.trim().toLowerCase(), token);
-      if (verifyErr) throw new Error("Security token incorrect or has expired.");
+      if (verifyErr) throw new Error(verifyErr.message || "Security token incorrect or has expired.");
       if (!data?.user) throw new Error("Neural identity not established.");
+      
       const isAdmin = await adminApi.checkAdminStatus();
       if (!isAdmin) {
         await authApi.signOut();
@@ -102,6 +103,7 @@ export default function AdminLoginPage() {
     } catch (err: any) {
       setError({ message: err.message || "Critical Access Violation." });
       setOtp(['', '', '', '', '', '']);
+      otpRefs.current[0]?.focus();
     } finally {
       setIsProcessing(false);
       verificationLock.current = false;
