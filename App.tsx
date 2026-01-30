@@ -104,20 +104,18 @@ const AppContent: React.FC = () => {
       'not-found': 'Neural Link Severed'
     };
     
-    const title = viewTitles[activeView] || 'SomnoAI Node';
-    
-    // Enhanced tracking logic
+    // Explicit title resolution
+    let title = viewTitles[activeView] || 'SomnoAI Node';
+    let path = activeView as string;
+
+    // Special case: 404 path tracking
     if (activeView === 'not-found') {
-      const errorTitle = `404 Error: /${attemptedPath.current}`;
-      trackPageView(`not-found?path=${encodeURIComponent(attemptedPath.current)}`, errorTitle);
-      trackEvent('page_not_found', { 
-        invalid_path: attemptedPath.current,
-        referrer: document.referrer || 'direct'
-      });
-    } else {
-      trackPageView(activeView, title);
+      path = `/404/${attemptedPath.current || 'unknown'}`;
+      title = `404: ${attemptedPath.current || 'Sector Missing'}`;
+      trackEvent('error_not_found', { attempted_path: attemptedPath.current });
     }
     
+    trackPageView(path, title);
     lastTrackedView.current = activeView;
   }, [activeView]);
 

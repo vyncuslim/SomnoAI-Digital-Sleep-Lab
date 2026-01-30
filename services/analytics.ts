@@ -1,8 +1,8 @@
 import { getSafeUrl } from './navigation.ts';
 
 /**
- * SOMNOAI GLOBAL TELEMETRY HUB (v3.2)
- * Handles analytics dispatch with cross-origin safety protocols and precise SPA routing support.
+ * SOMNOAI GLOBAL TELEMETRY HUB (v3.5)
+ * Handles analytics dispatch with cross-origin safety protocols and precise SPA hash-routing support.
  */
 
 const GA_ID = 'G-3F9KVPNYLR';
@@ -24,29 +24,33 @@ export const trackEvent = (eventName: string, params: Record<string, any> = {}) 
   }
 };
 
+/**
+ * Captures SPA page views including hash-based routes.
+ * Overrides default location to ensure GA4 registers the virtual path correctly.
+ */
 export const trackPageView = (path: string, title: string) => {
   try {
     if (typeof (window as any).gtag === 'function') {
       const currentFullUrl = getSafeUrl();
       const baseUrl = currentFullUrl.split('#')[0].replace(/\/$/, '');
       
-      // Sanitize the virtual path: ensure leading slash, remove trailing
+      // Sanitize the virtual path: ensure it starts with /
       let cleanVirtualPath = path.startsWith('/') ? path : `/${path}`;
       if (cleanVirtualPath !== '/' && cleanVirtualPath.endsWith('/')) {
         cleanVirtualPath = cleanVirtualPath.slice(0, -1);
       }
 
       // Reconstruct the virtual location for GA4 'page_location' override
-      const virtualLocation = `${baseUrl}/#${cleanVirtualPath}`;
+      // This maps /#/admin to a trackable URL structure
+      const virtualLocation = `${baseUrl}/#${cleanVirtualPath.startsWith('/') ? cleanVirtualPath.slice(1) : cleanVirtualPath}`;
       
-      // Update global gtag state to persist these parameters for any events sent until the next page view
+      // Update global gtag state and trigger event
       (window as any).gtag('set', {
         'page_path': cleanVirtualPath,
         'page_title': title,
         'page_location': virtualLocation
       });
 
-      // Send the explicit page_view event with manual overrides
       (window as any).gtag('event', 'page_view', {
         page_path: cleanVirtualPath,
         page_title: title,
@@ -54,10 +58,10 @@ export const trackPageView = (path: string, title: string) => {
         send_to: GA_ID
       });
       
-      console.debug(`[Telemetry Pulse] V-PATH: ${cleanVirtualPath} [${title}]`);
+      console.debug(`[Telemetry Ingress] V-PATH: ${cleanVirtualPath} | TITLE: ${title}`);
     }
   } catch (e) {
-    /* Silent fail to prevent UI disruption */
+    /* Silent fail to preserve UI stability */
   }
 };
 

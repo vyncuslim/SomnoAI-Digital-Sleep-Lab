@@ -1,10 +1,14 @@
+
 import { supabase } from '../lib/supabaseClient.ts';
 import { notifyAdmin } from './telegramService.ts';
 
 export { supabase };
 
 const handleDatabaseError = (err: any) => {
-  if (import.meta.env.DEV) console.error("[Database Layer Error]:", err);
+  // Use process.env.NODE_ENV instead of import.meta.env.DEV to resolve "Property 'env' does not exist on type 'ImportMeta'"
+  if (typeof process !== 'undefined' && process.env.NODE_ENV !== 'production') {
+    console.error("[Database Layer Error]:", err);
+  }
   // Specifically detect missing RPC functions
   if (err.code === 'PGRST202' || err.message?.includes('not found') || err.message?.includes('function')) {
     return new Error("RPC_NOT_REGISTERED_IN_DB");
