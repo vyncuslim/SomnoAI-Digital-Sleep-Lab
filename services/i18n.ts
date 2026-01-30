@@ -26,7 +26,7 @@ const commonEn = {
     cmdSync: 'Sync Lab Data',
     cmdExport: 'Archive Metrics',
     lullaby: 'Neural Lullaby',
-    manifesto: 'It integrates physiological indicator monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep experiment experience.'
+    manifesto: 'SomnoAI Sleep Lab integrates physiological indicator monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep experiment experience.'
   },
   experiment: {
     title: 'Neural Lab',
@@ -78,9 +78,9 @@ const commonEn = {
     feedbackError: 'Registry Failure'
   },
   auth: {
-    lab: 'SomnoAI Digital Sleep Lab',
+    lab: 'SomnoAI Sleep Lab',
     tagline: 'NEURAL INFRASTRUCTURE • DIGITAL TELEMETRY',
-    manifesto: 'It integrates physiological indicator monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep experiment experience.',
+    manifesto: 'SomnoAI Sleep Lab integrates physiological indicator monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep experiment experience.',
     sendCode: 'REQUEST LAB TOKEN',
     emailLabel: 'Email Identifier',
     passwordLabel: 'Access Password',
@@ -91,7 +91,7 @@ const commonEn = {
     help: 'CANNOT ACTIVATE ACCOUNT?',
     verifyCode: 'Verify Token',
     back: 'Back to Terminal',
-    handshake: '神经握手',
+    handshake: 'Neural Handshake',
     dispatched: 'Token dispatched',
     initialize: 'INITIALIZE OVERRIDE',
     resend: 'RESEND TOKEN',
@@ -116,7 +116,7 @@ const commonEn = {
   },
   about: {
     title: 'Specifications',
-    manifesto: 'Digital Sleep Laboratory.',
+    manifesto: 'SomnoAI Sleep Lab protocol.',
     protocolTitle: 'Bridge Protocol',
     waterAnalogyTitle: 'Biological Flow',
     waterAnalogyDesc: 'Health Connect acts as the primary reservoir.',
@@ -124,7 +124,7 @@ const commonEn = {
     toolboxDesc: 'Android Health Connect SDK.',
     whsTitle: 'Warehouse Sync',
     whsDesc: 'Data moves through atomic updates.',
-    tokenTitle: '令牌生命周期',
+    tokenTitle: 'Token Lifecycle',
     step1: 'Identify SDK.',
     step2: 'Initiate client.',
     step3: 'Validate Manifest.',
@@ -173,7 +173,7 @@ const commonZh = {
     cmdSync: '同步实验室数据',
     cmdExport: '归档指标',
     lullaby: '神经催眠曲',
-    manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。'
+    manifesto: 'SomnoAI Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。'
   },
   experiment: {
     title: '神经实验室',
@@ -225,9 +225,9 @@ const commonZh = {
     feedbackError: '注册失败'
   },
   auth: {
-    lab: 'SomnoAI 数字睡眠实验室',
+    lab: 'SomnoAI Sleep Lab',
     tagline: '神经基础设施 • 数字遥测',
-    manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。',
+    manifesto: 'SomnoAI Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。',
     sendCode: '请求实验室令牌',
     emailLabel: '邮箱标识符',
     passwordLabel: '访问密码',
@@ -263,7 +263,7 @@ const commonZh = {
   },
   about: {
     title: '实验室规范',
-    manifesto: '数字睡眠实验室方案。',
+    manifesto: 'SomnoAI Sleep Lab 方案。',
     protocolTitle: '桥接协议',
     waterAnalogyTitle: '生物流体',
     waterAnalogyDesc: 'Health Connect 充当主要的遥测存储库。',

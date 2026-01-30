@@ -24,6 +24,7 @@ import { DiaryView } from './components/DiaryView.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { FeedbackView } from './components/FeedbackView.tsx';
 import { ExperimentView } from './components/ExperimentView.tsx';
+import { NotFoundView } from './components/NotFoundView.tsx';
 
 const m = motion as any;
 
@@ -82,15 +83,26 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const handleHash = () => {
       const h = window.location.hash || '#/';
-      if (h.includes('admin/login')) setActiveView('admin-login');
-      else if (h.includes('admin')) setActiveView('admin');
-      else if (h.includes('calendar')) setActiveView('calendar');
-      else if (h.includes('assistant')) setActiveView('assistant');
-      else if (h.includes('experiment')) setActiveView('experiment');
-      else if (h.includes('diary')) setActiveView('diary');
-      else if (h.includes('settings')) setActiveView('settings');
-      else if (h.includes('feedback')) setActiveView('feedback');
-      else setActiveView('dashboard');
+      
+      if (h === '#/' || h === '') {
+        setActiveView('dashboard');
+        return;
+      }
+
+      if (h.includes('admin/login')) { setActiveView('admin-login'); return; }
+      if (h.includes('admin')) { setActiveView('admin'); return; }
+      if (h.includes('calendar')) { setActiveView('calendar'); return; }
+      if (h.includes('assistant')) { setActiveView('assistant'); return; }
+      if (h.includes('experiment')) { setActiveView('experiment'); return; }
+      if (h.includes('diary')) { setActiveView('diary'); return; }
+      if (h.includes('settings')) { setActiveView('settings'); return; }
+      if (h.includes('feedback')) { setActiveView('feedback'); return; }
+      if (h.includes('privacy')) { setActiveView('privacy'); return; }
+      if (h.includes('terms')) { setActiveView('terms'); return; }
+      if (h.includes('profile')) { setActiveView('profile'); return; }
+      if (h.includes('about')) { setActiveView('about'); return; }
+
+      setActiveView('not-found');
     };
     window.addEventListener('hashchange', handleHash);
     handleHash();
@@ -101,6 +113,7 @@ const AppContent: React.FC = () => {
 
   const renderContent = () => {
     if (activeView === 'admin-login') return <AdminLoginPage />;
+    if (activeView === 'not-found') return <NotFoundView />;
     
     if (activeView === 'admin') {
       return (

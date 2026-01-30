@@ -62,6 +62,6 @@ export interface SecurityEvent {
   timestamp?: string;
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'not-found';
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
 export type Language = 'en' | 'zh';

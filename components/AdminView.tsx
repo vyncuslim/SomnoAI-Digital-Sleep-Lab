@@ -8,7 +8,7 @@ import {
   UserCircle, Terminal as TerminalIcon, Command, X, Cpu,
   BarChart3, Network, SignalHigh, Monitor, Code2, ExternalLink,
   Layers, Lock, Eye, Copy, Check, BarChart as BarChartIcon,
-  AlertCircle, History, TrendingUp
+  AlertCircle, History, TrendingUp, MessageSquare, BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -33,6 +33,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [deviceStats, setDeviceStats] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
   const [realtime, setRealtime] = useState<any[]>([]);
+  const [feedbackCount, setFeedbackCount] = useState(0);
+  const [diaryCount, setDiaryCount] = useState(0);
   
   const [searchQuery, setSearchQuery] = useState('');
   const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
@@ -57,12 +59,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setCurrentAdmin(profile);
 
       // 2. Parallel Fetch: Business Data (DB) + Traffic Data (GA4 Synced)
-      const [u, d, c, ds, r] = await Promise.all([
+      const [u, d, c, ds, r, fb, dr] = await Promise.all([
         adminApi.getUsers(),
         adminApi.getDailyAnalytics(30),
         adminApi.getCountryRankings(),
         adminApi.getDeviceSegmentation(),
-        adminApi.getRealtimePulse()
+        adminApi.getRealtimePulse(),
+        supabase.from('feedback').select('*', { count: 'exact', head: true }),
+        supabase.from('diary_entries').select('*', { count: 'exact', head: true })
       ]);
 
       setUsers(u || []);
@@ -70,6 +74,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setCountryRanking(c || []);
       setDeviceStats(ds || []);
       setRealtime(r || []);
+      setFeedbackCount(fb.count || 0);
+      setDiaryCount(dr.count || 0);
     } catch (err: any) {
       console.error("Intelligence Bridge Failure:", err);
       setActionError(err.message);
@@ -94,9 +100,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       blockedCount: users.filter(u => u.is_blocked).length,
       realtimePulse: realtime[0]?.active_users || 0,
       adminCount: users.filter(u => ['admin', 'owner'].includes(u.role?.toLowerCase()) || u.is_super_owner).length,
-      isGaSynced: dailyStats.length > 0
+      isGaSynced: dailyStats.length > 0,
+      totalFeedback: feedbackCount,
+      totalLogs: diaryCount
     };
-  }, [users, dailyStats, realtime]);
+  }, [users, dailyStats, realtime, feedbackCount, diaryCount]);
 
   const handleToggleBlock = async (user: any) => {
     if (isProcessingId) return;
@@ -187,8 +195,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <nav className="flex p-1.5 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
           {[
             { id: 'overview', label: 'INTELLIGENCE HUB' },
-            { id: 'subjects', label: 'SUBJECT REGISTRY (DB)' },
-            { id: 'traffic', label: 'TRAFFIC MESH (GA4)' },
+            { id: 'subjects', label: 'REGISTRY (DB)' },
+            { id: 'traffic', label: 'TRAFFIC (GA4)' },
             { id: 'system', label: 'SYSTEM DIAG' }
           ].map((tab) => (
             <button 
@@ -212,13 +220,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {activeTab === 'overview' ? (
             <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                
-               {/* 📊 Intelligence Perception: Mixed GA4 & DB Data */}
+               {/* 🌍 Combined Perception Layer */}
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
                     { label: 'Neural Flux (GA4 Users)', value: metrics.activeUsers, growth: metrics.userGrowth, icon: Globe, color: 'emerald', source: 'GA4' },
-                    { label: 'Event Density (GA4 Views)', value: metrics.pageViews, growth: metrics.viewGrowth, icon: Zap, color: 'indigo', source: 'GA4' },
-                    { label: 'Identified Nodes (DB)', value: metrics.totalSubjects, growth: 0, icon: Users, color: 'amber', source: 'Supabase' },
-                    { label: 'Active Pulse (Realtime)', value: metrics.realtimePulse, growth: 0, icon: SignalHigh, color: 'rose', source: 'GA4' }
+                    { label: 'Identified Nodes (DB Users)', value: metrics.totalSubjects, growth: 0, icon: Users, color: 'amber', source: 'Supabase' },
+                    { label: 'Input Signal (Feedback)', value: metrics.totalFeedback, growth: 0, icon: MessageSquare, color: 'indigo', source: 'Supabase' },
+                    { label: 'Recovery Logs (Diaries)', value: metrics.totalLogs, growth: 0, icon: BookOpen, color: 'rose', source: 'Supabase' }
                   ].map((stat, i) => (
                     <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-${stat.color}-500/10 shadow-2xl`}>
                       <div className="flex justify-between items-start mb-6">
@@ -241,7 +249,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                </div>
 
-               {/* Integrated Telemetry Visualization */}
+               {/* GA4 Integrated Chart */}
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <GlassCard className="lg:col-span-8 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl min-h-[450px]">
                     <div className="flex justify-between items-start mb-12">
@@ -281,7 +289,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <div>
                       <div className="flex items-center gap-4 mb-10">
                         <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500"><Monitor size={24} /></div>
-                        <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Device Segmentation</h3>
+                        <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Device Proportions</h3>
                       </div>
                       <div className="h-[200px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -299,37 +307,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                        <span className="text-white">{deviceStats[0]?.device || 'N/A'}</span>
                     </div>
                   </GlassCard>
-               </div>
-
-               {/* Registry Backbone (Supabase DB Focus) */}
-               <div className="space-y-6">
-                  <div className="flex items-center gap-3 px-6">
-                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                    <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-600 italic">Neural Registry Status (Supabase)</h2>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    <div className="p-8 bg-slate-900/40 border border-white/5 rounded-[2.5rem] flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase text-slate-500">Integrity Check</p>
-                        <p className="text-2xl font-black italic text-white uppercase">Nominal</p>
-                      </div>
-                      <ShieldCheck className="text-emerald-500" size={28} />
-                    </div>
-                    <div className="p-8 bg-slate-900/40 border border-white/5 rounded-[2.5rem] flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase text-slate-500">Security Exceptions</p>
-                        <p className="text-2xl font-black italic text-white uppercase">{metrics.blockedCount} Nodes</p>
-                      </div>
-                      <Ban className="text-rose-500" size={28} />
-                    </div>
-                    <div className="p-8 bg-slate-900/40 border border-white/5 rounded-[2.5rem] flex items-center justify-between">
-                      <div className="space-y-1">
-                        <p className="text-[10px] font-black uppercase text-slate-500">Supervisory Nodes</p>
-                        <p className="text-2xl font-black italic text-white uppercase">{metrics.adminCount} Prime</p>
-                      </div>
-                      <Crown className="text-amber-500" size={28} />
-                    </div>
-                  </div>
                </div>
             </m.div>
           ) : activeTab === 'subjects' ? (
@@ -411,7 +388,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      </div>
                   </GlassCard>
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
-                     <div className="flex items-center gap-4 mb-12"><BarChartIcon size={24} className="text-indigo-500" /><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Recent Impact (GA4)</h3></div>
+                     <div className="flex items-center gap-4 mb-12"><BarChartIcon size={24} className="text-indigo-500" /><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Daily Impact (GA4)</h3></div>
                      <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                            <BarChart data={dailyStats.slice(-7)}>
@@ -436,12 +413,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      </div>
                      
                      <div className="space-y-6">
-                        <p className="text-sm text-slate-400 italic font-medium leading-relaxed">The Intelligence Hub synchronizes Google Analytics 4 data with Supabase daily. Ensure the following Vercel Environment Variables are active:</p>
+                        <p className="text-sm text-slate-400 italic font-medium leading-relaxed">The Intelligence Hub synchronizes Google Analytics 4 data with Supabase daily. If you see the "UNAUTHORIZED_CRON_ACCESS" error, verify the following in Vercel:</p>
                         <div className="space-y-4">
                            {[
                              { k: 'GA_PROPERTY_ID', v: 'Found in GA4 Admin settings' },
                              { k: 'GA_SERVICE_ACCOUNT_KEY', v: 'Google Cloud JSON Key (Full)' },
-                             { k: 'CRON_SECRET', v: 'Vercel Cron security token' }
+                             { k: 'CRON_SECRET', v: 'Vercel Cron security token (Must match Bearer header)' }
                            ].map((item) => (
                              <div key={item.k} className="p-6 bg-black/40 border border-white/5 rounded-3xl group hover:border-indigo-500/30 transition-all">
                                 <div className="flex justify-between items-center mb-2">
@@ -451,6 +428,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 <p className="text-[10px] text-slate-500 italic">{item.v}</p>
                              </div>
                            ))}
+                        </div>
+                        <div className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-3xl space-y-3">
+                           <div className="flex items-center gap-2 text-rose-500">
+                             <ShieldAlert size={16} />
+                             <span className="text-[10px] font-black uppercase tracking-widest">Auth Note</span>
+                           </div>
+                           <p className="text-[10px] text-slate-500 leading-relaxed italic">
+                             Direct access to /api/sync-analytics is restricted. Use the configured Vercel Cron or a tool like Insomnia with <code className="text-slate-300">Authorization: Bearer [CRON_SECRET]</code>.
+                           </p>
                         </div>
                      </div>
                   </GlassCard>
