@@ -6,7 +6,7 @@ import {
   Ban, Shield, FileText, Crown, ShieldX, KeyRound, 
   Zap, Globe, Smartphone, ArrowUp, ArrowDown,
   UserCircle, Terminal as TerminalIcon, Command, X, Cpu,
-  BarChart3, Network, SignalHigh, Monitor, Code2, ExternalLink, AlertTriangle
+  BarChart3, Network, SignalHigh, Monitor, Code2, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -23,17 +23,16 @@ type AdminTab = 'overview' | 'subjects' | 'traffic' | 'system';
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
-  const [currentAdmin, setCurrentAdmin] = useState<{ id: string, role: string, is_super_owner: boolean } | null>(null);
+  const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
   
-  // Intelligence Streams
+  // Dual Stream Data
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [countryRanking, setCountryRanking] = useState<any[]>([]);
   const [deviceStats, setDeviceStats] = useState<any[]>([]);
-  const [realtime, setRealtime] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [realtime, setRealtime] = useState<any[]>([]);
   
   const [searchQuery, setSearchQuery] = useState('');
-  const [timeRange, setTimeRange] = useState(30);
   const [isProcessingId, setIsProcessingId] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
   const [terminalUser, setTerminalUser] = useState<any | null>(null);
@@ -44,87 +43,65 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return role === 'owner' || currentAdmin?.is_super_owner === true;
   }, [currentAdmin]);
 
-  const tabs = useMemo(() => {
-    const base: { id: AdminTab; label: string }[] = [
-      { id: 'overview', label: 'INTELLIGENCE HUB' },
-      { id: 'subjects', label: 'REGISTRY' }
-    ];
-    if (isOwner) {
-      base.push({ id: 'traffic', label: 'TRAFFIC MESH' });
-      base.push({ id: 'system', label: 'SYSTEM DIAGNOSTIC' });
-    }
-    return base;
-  }, [isOwner]);
-
-  const themeColor = isOwner ? '#f59e0b' : '#6366f1'; // amber or indigo
-  const themeClass = isOwner ? 'amber' : 'indigo';
-
   const fetchData = useCallback(async () => {
     setLoading(true);
     setActionError(null);
     try {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("AUTH_SESSION_MISSING");
+      if (!user) return;
 
       const profile = await adminApi.getAdminClearance(user.id);
-      if (profile) setCurrentAdmin(profile);
-      else throw new Error("CLEARANCE_NOT_FOUND");
+      setCurrentAdmin(profile);
 
-      const tasks: Promise<any>[] = [
+      const [u, d, c, ds, r] = await Promise.all([
         adminApi.getUsers(),
-        adminApi.getDailyAnalytics(timeRange),
+        adminApi.getDailyAnalytics(14),
         adminApi.getCountryRankings(),
-        adminApi.getRealtimePulse(),
-        adminApi.getDeviceSegmentation()
-      ];
+        adminApi.getDeviceSegmentation(),
+        adminApi.getRealtimePulse()
+      ]);
 
-      const [u, d, c, r, ds] = await Promise.all(tasks);
-      setUsers(u || []);
-      setDailyStats(d || []);
-      setCountryRanking(c || []);
-      setRealtime(r || []);
-      setDeviceStats(ds || []);
-      
+      setUsers(u);
+      setDailyStats(d);
+      setCountryRanking(c);
+      setDeviceStats(ds);
+      setRealtime(r);
     } catch (err: any) {
-      console.error("Intelligence Hub Failure:", err);
-      setActionError(err.message || "Node handshake refused.");
+      console.error("Intelligence Link Failure:", err);
+      setActionError(err.message);
     } finally {
       setLoading(false);
     }
-  }, [timeRange]);
+  }, []);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const metrics = useMemo(() => {
-    const len = dailyStats.length;
-    const latest = len >= 1 ? dailyStats[len - 1] : { users: 0, pageviews: 0 };
-    const prev = len >= 2 ? dailyStats[len - 2] : { users: 0, pageviews: 0 };
-    
-    const calcGrowth = (curr: number, old: number) => 
-      old === 0 ? 0 : Math.round(((curr - old) / old) * 100);
+    const latest = dailyStats[dailyStats.length - 1] || { users: 0, pageviews: 0 };
+    const prev = dailyStats[dailyStats.length - 2] || { users: 0, pageviews: 0 };
+    const calcGrowth = (c: number, p: number) => p === 0 ? 0 : Math.round(((c - p) / p) * 100);
 
     return {
       totalSubjects: users.length,
-      blockedNodes: users.filter(u => u.is_blocked).length,
-      adminNodes: users.filter(u => ['admin', 'owner'].includes(u.role?.toLowerCase()) || u.is_super_owner).length,
-      latestUsers: latest.users,
-      latestViews: latest.pageviews,
+      activeUsers: latest.users,
+      pageViews: latest.pageviews,
       userGrowth: calcGrowth(latest.users, prev.users),
       viewGrowth: calcGrowth(latest.pageviews, prev.pageviews),
+      blockedCount: users.filter(u => u.is_blocked).length,
+      realtimeActive: realtime[0]?.active_users || 0
     };
-  }, [users, dailyStats]);
+  }, [users, dailyStats, realtime]);
 
-  const handleToggleBlock = async (e: React.MouseEvent, targetUser: any) => {
-    e.preventDefault(); e.stopPropagation();
+  const handleToggleBlock = async (user: any) => {
     if (isProcessingId) return;
-    setIsProcessingId(targetUser.id);
+    setIsProcessingId(user.id);
     try {
-      await adminApi.toggleBlock(targetUser.id);
-      setUsers(prev => prev.map(u => u.id === targetUser.id ? { ...u, is_blocked: !u.is_blocked } : u));
-    } catch (err: any) { 
-      setActionError(`PROTOCOL_REJECTED: ${err.message}`); 
-    } finally { 
-      setIsProcessingId(null); 
+      await adminApi.toggleBlock(user.id);
+      setUsers(prev => prev.map(u => u.id === user.id ? { ...u, is_blocked: !u.is_blocked } : u));
+    } catch (err: any) {
+      setActionError(err.message);
+    } finally {
+      setIsProcessingId(null);
     }
   };
 
@@ -134,90 +111,54 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       const match = commandInput.match(/SET ROLE (user|admin|owner)/i);
       const newRole = match ? match[1].toLowerCase() : null;
-      if (!newRole) throw new Error("SYNTAX_ERROR: EXPECTED 'SET ROLE [role]'");
+      if (!newRole) throw new Error("INVALID_COMMAND: EXPECTED 'SET ROLE [role]'");
       await adminApi.updateUserRole(terminalUser.id, newRole);
       setUsers(prev => prev.map(u => u.id === terminalUser.id ? { ...u, role: newRole } : u));
       setTerminalUser(null);
     } catch (err: any) {
-      setActionError(`ELEVATION_FAILED: ${err.message}`);
+      setActionError(err.message);
     } finally {
       setIsProcessingId(null);
     }
   };
 
-  const deviceChartData = useMemo(() => {
-    return deviceStats.map(d => ({ name: d.device.toUpperCase(), value: d.users }));
-  }, [deviceStats]);
-
-  // Special Database Setup Guard UI
+  // Protocol Guard: Show setup guide if RPCs are missing
   if (actionError === "RPC_NOT_REGISTERED_IN_DB") {
     return (
-      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-left">
-        <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-2xl space-y-8">
-           <GlassCard className="p-12 md:p-16 rounded-[4rem] border-rose-500/20 bg-slate-950/40 shadow-2xl relative overflow-hidden">
-              <div className="absolute top-0 right-0 p-10 opacity-[0.05] pointer-events-none">
-                <Database size={200} className="text-rose-500" />
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-left max-w-2xl mx-auto">
+        <GlassCard className="p-12 md:p-16 rounded-[4rem] border-rose-500/20 bg-slate-950/40 shadow-2xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-10 opacity-[0.05] pointer-events-none text-rose-500"><Database size={200} /></div>
+          <div className="space-y-10 relative z-10">
+            <div className="flex items-center gap-5">
+              <div className="p-4 bg-rose-500/10 rounded-3xl text-rose-500 border border-rose-500/20"><ShieldAlert size={32} /></div>
+              <div>
+                <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Database Protocol Missing</h1>
+                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-2">LINK_FAILURE: RPC_NOT_REGISTERED</p>
               </div>
-              <div className="space-y-10 relative z-10">
-                 <div className="flex items-center gap-5">
-                    <div className="p-4 bg-rose-500/10 rounded-3xl text-rose-500 border border-rose-500/20">
-                       <ShieldAlert size={32} />
-                    </div>
-                    <div>
-                       <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Database Schema Required</h1>
-                       <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-2">LINK_FAILURE: RPC_NOT_REGISTERED</p>
-                    </div>
-                 </div>
-
-                 <p className="text-sm text-slate-400 leading-relaxed italic font-medium">
-                   The administrative core requires specialized Postgres functions (RPCs) to verify clearance levels and manage the subject registry. These protocols are currently missing from your Supabase instance.
-                 </p>
-
-                 <div className="space-y-4">
-                    <div className="flex items-center gap-3 px-4">
-                       <Code2 size={16} className="text-indigo-400" />
-                       <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Initialization Protocol</span>
-                    </div>
-                    <div className="bg-black/60 rounded-3xl border border-white/5 p-8 space-y-6">
-                       <div className="flex gap-4 items-start">
-                          <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 text-[10px] font-black">1</div>
-                          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Navigate to your Supabase Project Dashboard</p>
-                       </div>
-                       <div className="flex gap-4 items-start">
-                          <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 text-[10px] font-black">2</div>
-                          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Open the "SQL Editor" and create a "New Query"</p>
-                       </div>
-                       <div className="flex gap-4 items-start">
-                          <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 text-[10px] font-black">3</div>
-                          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Paste the contents of "setup.sql" and execute</p>
-                       </div>
-                    </div>
-                 </div>
-
-                 <div className="flex flex-col sm:flex-row gap-4 pt-6">
-                    <button 
-                      onClick={() => window.location.reload()}
-                      className="flex-1 py-5 bg-white text-black rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 italic"
-                    >
-                      <RefreshCw size={14} /> Retry Handshake
-                    </button>
-                    <button 
-                      onClick={onBack}
-                      className="flex-1 py-5 bg-slate-900 border border-white/5 text-slate-500 rounded-full font-black text-[11px] uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-3 italic"
-                    >
-                      <ChevronLeft size={14} /> Return to Base
-                    </button>
-                 </div>
+            </div>
+            <p className="text-sm text-slate-400 leading-relaxed italic font-medium">The administrative hub requires specialized Postgres functions to manage clearance levels. These are not registered in your Supabase instance.</p>
+            <div className="space-y-6">
+              <div className="flex items-center gap-3 px-4 text-indigo-400"><Code2 size={16} /><span className="text-[10px] font-black uppercase tracking-widest">Initialization Protocol</span></div>
+              <div className="bg-black/60 rounded-3xl border border-white/5 p-8 space-y-4">
+                {[
+                  "1. Open your Supabase Project Dashboard",
+                  "2. Navigate to the 'SQL Editor' module",
+                  "3. Create a 'New Query' and paste 'setup.sql' contents",
+                  "4. Click 'Run' to establish core administrative nodes"
+                ].map((step, i) => <p key={i} className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">{step}</p>)}
               </div>
-           </GlassCard>
-           
-           <div className="text-center opacity-30">
-              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">SomnoAI Digital Sleep Lab • Neural Core Sync V3.5</p>
-           </div>
-        </m.div>
+            </div>
+            <div className="flex gap-4 pt-4">
+              <button onClick={() => window.location.reload()} className="flex-1 py-5 bg-white text-black rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl hover:bg-slate-200 transition-all italic flex items-center justify-center gap-3"><RefreshCw size={14} /> Retry Handshake</button>
+              <button onClick={onBack} className="flex-1 py-5 bg-slate-900 border border-white/5 text-slate-500 rounded-full font-black text-[11px] uppercase tracking-widest hover:text-white transition-all italic">Return to Base</button>
+            </div>
+          </div>
+        </GlassCard>
       </div>
     );
   }
+
+  const themeColor = isOwner ? '#f59e0b' : '#6366f1';
 
   return (
     <div className="space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans relative text-left">
@@ -236,7 +177,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         )}
       </AnimatePresence>
 
-      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8">
+      <header className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-8 pt-8">
         <div className="flex items-center gap-6">
           {onBack && (
             <button onClick={onBack} className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-lg active:scale-95"><ChevronLeft size={24} /></button>
@@ -254,12 +195,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </div>
         
         <nav className="flex p-1.5 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
-          {tabs.map((tab) => (
-            <button 
-              key={tab.id} 
-              onClick={() => setActiveTab(tab.id)} 
-              className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? (isOwner ? 'bg-amber-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg') : 'text-slate-500 hover:text-slate-300'}`}
-            >
+          {[
+            { id: 'overview', label: 'INTELLIGENCE HUB' },
+            { id: 'subjects', label: 'REGISTRY' },
+            { id: 'traffic', label: 'TRAFFIC MESH' },
+            { id: 'system', label: 'DIAGNOSTIC' }
+          ].map((tab) => (
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as AdminTab)} className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? (isOwner ? 'bg-amber-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg') : 'text-slate-500 hover:text-slate-300'}`}>
               {tab.label}
             </button>
           ))}
@@ -276,49 +218,38 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {activeTab === 'overview' ? (
             <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
                
-               {/* 🌍 Perception: External GA4 Traffic */}
-               <div className="space-y-6">
-                 <div className="flex items-center gap-3 px-6">
-                   <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Traffic Perception (External GA4)</h2>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                    {[
-                      { label: 'Neural Flux (Users)', value: metrics.latestUsers, growth: metrics.userGrowth, icon: Globe, color: 'emerald' },
-                      { label: 'Event Density (Views)', value: metrics.latestViews, growth: metrics.viewGrowth, icon: Zap, color: 'indigo' },
-                      { label: 'Real-time Pulse', value: realtime[0]?.active_users || 0, growth: 0, icon: SignalHigh, color: 'rose' },
-                      { label: 'Active Mesh Nodes', value: countryRanking.length, growth: 0, icon: Network, color: 'amber' }
-                    ].map((stat, i) => (
-                      <GlassCard key={i} className={`p-10 rounded-[3.5rem] shadow-2xl ${stat.color === 'emerald' ? 'border-emerald-500/10' : stat.color === 'indigo' ? 'border-indigo-500/10' : stat.color === 'rose' ? 'border-rose-500/10' : 'border-amber-500/10'}`}>
-                        <div className="flex justify-between items-start mb-6">
-                           <div className={`p-4 rounded-2xl inline-block ${stat.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400' : stat.color === 'indigo' ? 'bg-indigo-500/10 text-indigo-400' : stat.color === 'rose' ? 'bg-rose-500/10 text-rose-400' : 'bg-amber-500/10 text-amber-500'}`}><stat.icon size={26} /></div>
-                           {stat.growth !== 0 && (
-                              <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black ${stat.growth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                                 {stat.growth >= 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
-                                 {Math.abs(stat.growth)}%
-                              </div>
-                           )}
-                        </div>
-                        <div className="space-y-1">
-                          <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
-                          <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">{stat.label}</p>
-                        </div>
-                      </GlassCard>
-                    ))}
-                 </div>
+               {/* 🌍 Perception: Combined Metrics */}
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  {[
+                    { label: 'Neural Flux (GA4 Users)', value: metrics.activeUsers, growth: metrics.userGrowth, icon: Globe, color: 'emerald' },
+                    { label: 'Event Density (GA4 Views)', value: metrics.pageViews, growth: metrics.viewGrowth, icon: Zap, color: 'indigo' },
+                    { label: 'Real-time Pulse', value: metrics.realtimeActive, growth: 0, icon: SignalHigh, color: 'rose' },
+                    { label: 'Internal Nodes (DB)', value: metrics.totalSubjects, growth: 0, icon: Users, color: 'amber' }
+                  ].map((stat, i) => (
+                    <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-${stat.color}-500/10 shadow-2xl`}>
+                      <div className="flex justify-between items-start mb-6">
+                         <div className={`p-4 bg-${stat.color}-500/10 rounded-2xl text-${stat.color}-400 inline-block`}><stat.icon size={26} /></div>
+                         {stat.growth !== 0 && (
+                            <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black ${stat.growth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                               {stat.growth >= 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
+                               {Math.abs(stat.growth)}%
+                            </div>
+                         )}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest mt-2">{stat.label}</p>
+                      </div>
+                    </GlassCard>
+                  ))}
                </div>
 
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                  <GlassCard className="lg:col-span-8 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 overflow-hidden shadow-2xl min-h-[450px]">
+                  <GlassCard className="lg:col-span-8 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl min-h-[450px]">
                     <div className="flex justify-between items-start mb-12">
                       <div className="space-y-3">
                         <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Traffic Temporal Flux</h3>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Temporal Telemetry Stream</p>
-                      </div>
-                      <div className="flex gap-2">
-                         {[7, 14, 30].map(d => (
-                           <button key={d} onClick={() => setTimeRange(d)} className={`px-4 py-2 rounded-xl text-[10px] font-black transition-all ${timeRange === d ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-500 hover:text-white'}`}>{d}D</button>
-                         ))}
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Syncing GA4 Screen Views</p>
                       </div>
                     </div>
                     <div className="h-[280px] w-full">
@@ -326,14 +257,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <AreaChart data={dailyStats}>
                             <defs>
                               <linearGradient id="fluxGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/><stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                               </linearGradient>
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
-                            <XAxis dataKey="date" hide />
-                            <Tooltip contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem' }} />
-                            <Area type="monotone" dataKey="users" stroke="#10b981" strokeWidth={3} fill="url(#fluxGrad)" />
+                            <XAxis dataKey="date" hide /><Tooltip contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem' }} />
+                            <Area type="monotone" dataKey="pageviews" stroke="#10b981" strokeWidth={3} fill="url(#fluxGrad)" />
                          </AreaChart>
                        </ResponsiveContainer>
                     </div>
@@ -348,64 +277,23 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       <div className="h-[200px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                            <RePieChart>
-                              <Pie data={deviceChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} stroke="none">
-                                 {deviceChartData.map((_, i) => <Cell key={i} fill={['#6366f1', '#10b981', '#f59e0b'][i % 3]} />)}
+                              <Pie data={deviceStats.map(d => ({ name: d.device.toUpperCase(), value: d.users }))} dataKey="value" cx="50%" cy="50%" outerRadius={80} stroke="none">
+                                 {deviceStats.map((_, i) => <Cell key={i} fill={['#6366f1', '#10b981', '#f59e0b'][i % 3]} />)}
                               </Pie>
                               <Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
                            </RePieChart>
                         </ResponsiveContainer>
                       </div>
                     </div>
-                    <div className="pt-8 border-t border-white/5 flex justify-between items-center">
-                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Core Device</span>
-                       <span className="text-sm font-black text-white italic">{deviceChartData[0]?.name || 'N/A'}</span>
+                    <div className="pt-8 border-t border-white/5 flex justify-between items-center text-[10px] font-black uppercase tracking-widest italic text-slate-500">
+                       <span>Primary Device</span><span className="text-white">{deviceStats[0]?.device || 'N/A'}</span>
                     </div>
                   </GlassCard>
-               </div>
-
-               {/* 🧬 Consciousness: Internal Lab Registry */}
-               <div className="space-y-6">
-                 <div className="flex items-center gap-3 px-6">
-                   <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Registry Consciousness (Internal DB)</h2>
-                 </div>
-                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                    <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
-                       <div className="flex items-center gap-4 mb-8">
-                         <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-500"><Users size={20} /></div>
-                         <h4 className="text-sm font-black italic text-white uppercase">Subject Density</h4>
-                       </div>
-                       <div className="space-y-4">
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Total Subjects</span><span className="text-white">{metrics.totalSubjects}</span></div>
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Prime Nodes</span><span className="text-amber-500">{metrics.adminNodes}</span></div>
-                       </div>
-                    </GlassCard>
-                    <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
-                       <div className="flex items-center gap-4 mb-8">
-                         <div className="p-3 bg-rose-500/10 rounded-xl text-rose-500"><Ban size={20} /></div>
-                         <h4 className="text-sm font-black italic text-white uppercase">Registry Integrity</h4>
-                       </div>
-                       <div className="space-y-4">
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Expunged Nodes</span><span className="text-rose-500">{metrics.blockedNodes}</span></div>
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Neural Shield</span><span className="text-emerald-500">ACTIVE</span></div>
-                       </div>
-                    </GlassCard>
-                    <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
-                       <div className="flex items-center gap-4 mb-8">
-                         <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><Activity size={20} /></div>
-                         <h4 className="text-sm font-black italic text-white uppercase">Registry Pulse</h4>
-                       </div>
-                       <div className="space-y-4">
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Inbound Rate</span><span className="text-white">NOMINAL</span></div>
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Sync Latency</span><span className="text-white">12ms</span></div>
-                       </div>
-                    </GlassCard>
-                 </div>
                </div>
             </m.div>
           ) : activeTab === 'subjects' ? (
             <m.div key="subjects" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-               <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl overflow-visible">
+               <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl">
                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16">
                      <div className="space-y-3">
                         <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span style={{ color: themeColor }}>Registry</span></h3>
@@ -424,9 +312,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <table className="w-full text-left border-separate border-spacing-y-4">
                         <thead>
                            <tr className="text-[11px] font-black uppercase text-slate-600 tracking-[0.4em] italic">
-                              <th className="px-8 pb-4">Subject Node</th>
-                              <th className="px-8 pb-4">Clearance Level</th>
-                              <th className="px-8 pb-4 text-right">Intervention</th>
+                              <th className="px-8 pb-4">Subject Node</th><th className="px-8 pb-4">Clearance Level</th><th className="px-8 pb-4 text-right">Intervention</th>
                            </tr>
                         </thead>
                         <tbody>
@@ -452,14 +338,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 <td className="py-8 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right">
                                    <div className="flex justify-end gap-3">
                                       {!user.is_super_owner && (
-                                        <button onClick={(e) => handleToggleBlock(e, user)} className={`p-5 rounded-[1.2rem] border transition-all ${user.is_blocked ? 'bg-emerald-600 border-emerald-400 text-white shadow-xl' : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20'}`}>
+                                        <button onClick={() => handleToggleBlock(user)} className={`p-5 rounded-[1.2rem] border transition-all ${user.is_blocked ? 'bg-emerald-600 border-emerald-400 text-white shadow-xl' : 'bg-rose-500/10 border-rose-500/20 text-rose-500 hover:bg-rose-500/20'}`}>
                                            {isProcessingId === user.id ? <Loader2 className="animate-spin" size={24} /> : (user.is_blocked ? <ShieldCheck size={24} /> : <Ban size={24} />)}
                                         </button>
                                       )}
                                       {isOwner && !user.is_super_owner && (
-                                        <button onClick={() => { setTerminalUser(user); setCommandInput(`SET ROLE ${user.role}`); }} className="p-5 bg-white/5 border border-white/5 rounded-[1.2rem] text-slate-500 hover:text-amber-500 transition-all shadow-xl">
-                                          <KeyRound size={24} />
-                                        </button>
+                                        <button onClick={() => { setTerminalUser(user); setCommandInput(`SET ROLE ${user.role}`); }} className="p-5 bg-white/5 border border-white/5 rounded-[1.2rem] text-slate-500 hover:text-amber-500 transition-all shadow-xl"><KeyRound size={24} /></button>
                                       )}
                                    </div>
                                 </td>
@@ -470,60 +354,43 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   </div>
                </GlassCard>
             </m.div>
-          ) : activeTab === 'traffic' && isOwner ? (
+          ) : activeTab === 'traffic' ? (
             <m.div key="traffic" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
-                     <div className="flex items-center gap-4 mb-12">
-                        <Globe size={24} className="text-amber-500" />
-                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Geographic Proximity</h3>
-                     </div>
+                     <div className="flex items-center gap-4 mb-12"><Globe size={24} className="text-amber-500" /><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Geographic Proximity</h3></div>
                      <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                            <BarChart data={countryRanking} layout="vertical" margin={{ left: 40, right: 40 }}>
-                              <XAxis type="number" hide />
-                              <YAxis dataKey="country" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 800, fontSize: 10 }} />
+                              <XAxis type="number" hide /><YAxis dataKey="country" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 800, fontSize: 10 }} />
                               <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
                               <Bar dataKey="users" fill="#f59e0b" radius={[0, 20, 20, 0]} barSize={20} />
                            </BarChart>
                         </ResponsiveContainer>
                      </div>
                   </GlassCard>
-
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
-                     <div className="flex items-center gap-4 mb-12">
-                        <Smartphone size={24} className="text-indigo-500" />
-                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Device Segmentation</h3>
-                     </div>
+                     <div className="flex items-center gap-4 mb-12"><Smartphone size={24} className="text-indigo-500" /><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Event Intensity</h3></div>
                      <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
-                           <RePieChart>
-                              <Pie data={deviceChartData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={120} stroke="none">
-                                 {deviceChartData.map((_, i) => <Cell key={i} fill={['#6366f1', '#10b981', '#f59e0b'][i % 3]} />)}
-                              </Pie>
-                              <Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
-                              <Legend verticalAlign="bottom" height={36}/>
-                           </RePieChart>
+                           <BarChart data={dailyStats.slice(-7)}>
+                              <XAxis dataKey="date" hide /><Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
+                              <Bar dataKey="pageviews" fill="#6366f1" radius={[20, 20, 0, 0]} barSize={40} />
+                           </BarChart>
                         </ResponsiveContainer>
                      </div>
                   </GlassCard>
                </div>
             </m.div>
-          ) : isOwner ? (
+          ) : (
              <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 max-w-4xl mx-auto">
                 <GlassCard className="p-20 rounded-[5rem] text-center space-y-12 bg-slate-950/40 relative shadow-2xl">
-                   <div className="relative">
-                      <div className="absolute inset-0 blur-[60px] opacity-10 bg-amber-500 animate-pulse" />
-                      <Cpu size={100} className="mx-auto text-amber-500 relative z-10" />
-                   </div>
-                   <div className="space-y-6 text-center">
-                      <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Prime Control Handshake</h3>
-                      <p className="text-base text-slate-500 italic max-w-md mx-auto leading-relaxed">Intelligence bridge established. Vercel Cron status: NOMINAL. DB Throughput: 1.2GB/s. GA4 Ingestion Pipe: OPEN.</p>
-                   </div>
+                   <div className="relative"><div className="absolute inset-0 blur-[60px] opacity-10 bg-amber-500 animate-pulse" /><Cpu size={100} className="mx-auto text-amber-500 relative z-10" /></div>
+                   <div className="space-y-6 text-center"><h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Prime Control Handshake</h3><p className="text-base text-slate-500 italic max-w-md mx-auto leading-relaxed">Intelligence bridge established. Vercel Cron status: NOMINAL. DB Throughput: 1.2GB/s. GA4 Ingestion Pipe: OPEN.</p></div>
                    <button onClick={() => window.location.reload()} className="px-12 py-5 bg-white text-black rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-3 mx-auto shadow-2xl italic"><RefreshCw size={14} /> FULL SYSTEM RESYNC</button>
                 </GlassCard>
              </m.div>
-          ) : null}
+          )}
         </AnimatePresence>
       )}
 
@@ -555,9 +422,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          { role: 'owner', label: 'GRANT PRIME', icon: Crown }
                        ].map((opt) => (
                          <button key={opt.role} type="button" onClick={() => setCommandInput(`SET ROLE ${opt.role}`)} className={`p-6 rounded-[2.5rem] border text-left space-y-3 transition-all group ${commandInput.toLowerCase().includes(opt.role) ? 'bg-amber-600/10 border-amber-500/40 shadow-xl' : 'bg-white/5 border-white/5 hover:bg-white/10'}`}>
-                            <div className={commandInput.toLowerCase().includes(opt.role) ? 'text-amber-500' : 'text-slate-600 group-hover:text-amber-500'}>
-                               {opt.role === 'user' ? <Users size={22} /> : opt.role === 'admin' ? <ShieldCheck size={22} /> : <Crown size={22} />}
-                            </div>
+                            <div className={commandInput.toLowerCase().includes(opt.role) ? 'text-amber-500' : 'text-slate-600 group-hover:text-amber-500'}>{opt.role === 'user' ? <Users size={22} /> : opt.role === 'admin' ? <ShieldCheck size={22} /> : <Crown size={22} />}</div>
                             <p className={`text-[10px] font-black uppercase tracking-widest leading-tight ${commandInput.toLowerCase().includes(opt.role) ? 'text-white' : 'text-slate-500 group-hover:text-white'}`}>{opt.label}</p>
                          </button>
                        ))}

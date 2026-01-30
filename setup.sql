@@ -42,33 +42,6 @@ CREATE TABLE IF NOT EXISTS public.diary_entries (
 );
 
 -- ==========================================
--- AUTOMATIC PROFILE SYNC (CRITICAL)
--- This ensures every Auth user has a corresponding row in public.profiles
--- ==========================================
-
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-BEGIN
-  INSERT INTO public.profiles (id, full_name, role)
-  VALUES (
-    new.id, 
-    COALESCE(new.raw_user_meta_data->>'full_name', ''),
-    CASE 
-      WHEN (SELECT count(*) FROM public.profiles) = 0 THEN 'owner' -- First user is always Owner
-      ELSE 'user' 
-    END
-  );
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger execution
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
-
--- ==========================================
 -- ANALYTICS TABLES (GA4 SYNC TARGETS)
 -- ==========================================
 
@@ -154,11 +127,12 @@ ALTER TABLE public.analytics_daily ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_country ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_device ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Admins can view daily analytics" ON public.analytics_daily FOR SELECT TO authenticated
+-- Shared Admin View Policy
+CREATE POLICY "Admins can view telemetry" ON public.analytics_daily FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
-CREATE POLICY "Admins can view geo analytics" ON public.analytics_country FOR SELECT TO authenticated
+CREATE POLICY "Admins can view geo" ON public.analytics_country FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
-CREATE POLICY "Admins can view device analytics" ON public.analytics_device FOR SELECT TO authenticated
+CREATE POLICY "Admins can view devices" ON public.analytics_device FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));

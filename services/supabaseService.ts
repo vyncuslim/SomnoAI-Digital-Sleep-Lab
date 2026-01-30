@@ -4,10 +4,12 @@ import { notifyAdmin } from './telegramService.ts';
 
 export { supabase };
 
-// Helper to handle database errors and map them to application-level exceptions
 const handleDatabaseError = (err: any) => {
   console.error("[Database Layer Error]:", err);
-  if (err.code === 'PGRST202' || err.message?.includes('not found')) return new Error("RPC_NOT_REGISTERED_IN_DB");
+  // Specifically detect missing RPC functions
+  if (err.code === 'PGRST202' || err.message?.includes('not found') || err.message?.includes('function')) {
+    return new Error("RPC_NOT_REGISTERED_IN_DB");
+  }
   return err;
 };
 
@@ -18,9 +20,7 @@ export const authApi = {
   signInWithGoogle: async () => {
     return await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin
-      }
+      options: { redirectTo: window.location.origin }
     });
   },
   signIn: async (email: string, password: string) => {
@@ -41,7 +41,7 @@ export const authApi = {
 };
 
 /**
- * Profile API Layer
+ * Profile & User Data
  */
 export const profileApi = {
   getMyProfile: async () => {
@@ -54,14 +54,10 @@ export const profileApi = {
   updateProfile: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("USER_NOT_FOUND");
-    const { data, error } = await supabase.from('profiles').update(updates).eq('id', user.id);
-    return { data, error };
+    return await supabase.from('profiles').update(updates).eq('id', user.id);
   }
 };
 
-/**
- * User Data API Layer
- */
 export const userDataApi = {
   getUserData: async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -73,55 +69,39 @@ export const userDataApi = {
   updateUserData: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("USER_NOT_FOUND");
-    const { data, error } = await supabase.from('user_data').upsert({ user_id: user.id, ...updates });
-    return { data, error };
+    return await supabase.from('user_data').upsert({ user_id: user.id, ...updates });
   },
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("USER_NOT_FOUND");
     
-    const { error: pError } = await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
-    if (pError) throw pError;
-
-    const { error: uError } = await supabase.from('user_data').upsert({ user_id: user.id, ...metrics });
-    if (uError) throw uError;
-
+    await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
+    await supabase.from('user_data').upsert({ user_id: user.id, ...metrics });
     return { success: true };
   }
 };
 
 /**
- * Feedback API Layer
+ * Feedback & Diary
  */
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { data, error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error, data: null };
-    
     await notifyAdmin(`📩 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\nContent: ${content}`);
     return { success: true, data, error: null };
   }
 };
 
-/**
- * Diary API Layer
- */
 export const diaryApi = {
   getEntries: async () => {
-    const { data, error } = await supabase
-      .from('diary_entries')
-      .select('*')
-      .order('created_at', { ascending: false });
+    const { data, error } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false });
     if (error) throw handleDatabaseError(error);
     return data;
   },
   saveEntry: async (content: string, mood: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    const { data, error } = await supabase
-      .from('diary_entries')
-      .insert([{ content, mood, user_id: user?.id }])
-      .select()
-      .single();
+    const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user?.id }]).select().single();
     if (error) throw error;
     return data;
   },
@@ -132,21 +112,21 @@ export const diaryApi = {
 };
 
 /**
- * Admin API Layer
+ * Unified Admin API (Combining DB + GA4 Logic)
  */
 export const adminApi = {
-  checkAdminStatus: async (): Promise<boolean> => {
-    try {
-      const { data: status } = await supabase.rpc('get_my_detailed_profile');
-      if (!status || status.length === 0) return false;
-      const profile = status[0];
-      return ['admin', 'owner'].includes(profile.role?.toLowerCase()) || profile.is_super_owner === true;
-    } catch (e) { return false; }
-  },
   getAdminClearance: async (userId: string) => {
     const { data, error } = await supabase.rpc('get_my_detailed_profile');
     if (error) throw handleDatabaseError(error);
-    return data && data.length > 0 ? data[0] : null;
+    return data?.[0] || null;
+  },
+  checkAdminStatus: async (): Promise<boolean> => {
+    try {
+      const { data } = await supabase.rpc('get_my_detailed_profile');
+      if (!data || data.length === 0) return false;
+      const p = data[0];
+      return ['admin', 'owner'].includes(p.role?.toLowerCase()) || p.is_super_owner === true;
+    } catch { return false; }
   },
   getUsers: async () => {
     const { data, error } = await supabase.rpc('admin_get_all_profiles');
@@ -161,39 +141,24 @@ export const adminApi = {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
     if (error) throw new Error(error.message);
   },
+  // GA4 Sync Accessors
   getDailyAnalytics: async (days: number = 30) => {
-    const { data, error } = await supabase
-      .from('analytics_daily')
-      .select('*')
-      .order('date', { ascending: true })
-      .limit(days);
+    const { data, error } = await supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(days);
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
   getCountryRankings: async () => {
-    const { data, error } = await supabase
-      .from('analytics_country')
-      .select('country, users')
-      .order('users', { ascending: false })
-      .limit(10);
+    const { data, error } = await supabase.from('analytics_country').select('country, users').order('users', { ascending: false }).limit(10);
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
   getDeviceSegmentation: async () => {
-    const { data, error } = await supabase
-      .from('analytics_device')
-      .select('device, users')
-      .order('users', { ascending: false })
-      .limit(5);
+    const { data, error } = await supabase.from('analytics_device').select('device, users').order('users', { ascending: false }).limit(5);
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
   getRealtimePulse: async () => {
-    const { data, error } = await supabase
-      .from('analytics_realtime')
-      .select('*')
-      .order('timestamp', { ascending: false })
-      .limit(20);
+    const { data, error } = await supabase.from('analytics_realtime').select('*').order('timestamp', { ascending: false }).limit(5);
     if (error) throw handleDatabaseError(error);
     return data || [];
   }
