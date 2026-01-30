@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -57,7 +56,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }));
 
   return (
-    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10 pb-40 max-w-7xl mx-auto px-4 font-sans">
+    <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-10 pb-40 max-w-7xl mx-auto px-4 font-sans text-left">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
         {/* 左侧主要分析面板 (Efficiency Analysis) */}
@@ -84,7 +83,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="space-y-10">
-              {/* Lab Manifesto restored to screenshot specs - NOW LINKED TO EXPERIMENTS */}
+              {/* Lab Manifesto - HIGH FIDELITY CHINESE COPY */}
               <m.div 
                 whileHover={{ scale: 1.01 }}
                 onClick={() => window.location.hash = '#/experiment'}
@@ -106,7 +105,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </p>
                 
                 <div className="flex items-center gap-2">
-                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Neural Synthesis Engine V3.1</span>
+                  <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Neural Synthesis Engine V4.5</span>
                 </div>
                 
                 <div className="absolute top-8 right-12 opacity-20 group-hover:opacity-100 transition-opacity">
@@ -147,7 +146,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="flex-1 w-full flex flex-col justify-center gap-12">
-               {/* 模拟截图中的大面积留白与核心图表区域 */}
                <div className="h-[300px] w-full relative">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart data={hypnogramData}>
@@ -168,7 +166,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     </AreaChart>
                   </ResponsiveContainer>
                   
-                  {/* 图表装饰元素 */}
                   <div className="absolute top-0 left-0 w-full h-full pointer-events-none border-l border-b border-white/[0.03]" />
                </div>
 

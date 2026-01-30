@@ -8,6 +8,7 @@ import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
 import { notifyAdmin } from '../services/telegramService.ts';
+import { getSafeHostname } from '../services/navigation.ts';
 
 const m = motion as any;
 
@@ -47,14 +48,8 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const handleTestTelegram = async () => {
     setTestStatus('sending');
-    let hostname = 'unknown-node';
-    try {
-      // hostname access can be restricted in some cross-origin frames
-      hostname = window.location.hostname;
-    } catch (e) {
-      hostname = 'sandboxed-node';
-    }
-    const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${hostname}\nSubject: Admin Console Test\nStatus: Operational`);
+    const nodeIdentity = getSafeHostname();
+    const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nSubject: Admin Console Test\nStatus: Operational`);
     setTestStatus(success ? 'success' : 'error');
     setTimeout(() => setTestStatus('idle'), 3000);
   };
@@ -136,26 +131,6 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </GlassCard>
 
-        {/* Lab Feedback Trigger */}
-        <GlassCard 
-          onClick={() => window.location.hash = '#/feedback'}
-          className="p-8 rounded-[3rem] border-white/5 bg-indigo-600/5 cursor-pointer group hover:bg-indigo-600/10 transition-all"
-          hoverScale={true}
-        >
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-5">
-              <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400">
-                <MessageSquare size={24} />
-              </div>
-              <div>
-                <h3 className="text-sm font-black italic text-white uppercase tracking-wider">{t.feedback}</h3>
-                <p className="text-[10px] font-medium text-slate-500 italic">{t.feedbackSub}</p>
-              </div>
-            </div>
-            <RefreshCw size={20} className="text-slate-700 group-hover:text-indigo-400 transition-all group-hover:rotate-180" />
-          </div>
-        </GlassCard>
-
         {/* Core Settings */}
         <GlassCard className="p-8 md:p-10 rounded-[3rem] border-white/10 bg-white/[0.01]">
           <div className="space-y-10">
@@ -232,12 +207,12 @@ export const Settings: React.FC<SettingsProps> = ({
                    </p>
                 </div>
 
-                <div className="md:col-span-3 space-y-4">
+                <div className="md:col-span-3 space-y-4 text-left">
                   {[
                     { id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' },
                     { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' }
                   ].map((item) => (
-                    <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all text-left">
+                    <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                       <div className="space-y-1">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
                         <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>

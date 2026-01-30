@@ -9,6 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
+import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
@@ -74,54 +75,48 @@ const DecisionLoading = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { profile, loading, isOwner, isAdmin } = useAuth();
+  const { profile, loading, isAdmin } = useAuth();
   const [lang, setLang] = useState<Language>('en'); 
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [isSimulated, setIsSimulated] = useState(false);
 
   const safeNavigate = useCallback((viewId: string) => {
     setActiveView(viewId as ViewType);
-    try {
-      if (typeof window !== 'undefined' && window.location) {
-        window.location.hash = `#/${viewId}`;
-      }
-    } catch (e) {
-      console.warn("Security: Navigation hash update blocked. Using internal state only.");
-    }
+    safeNavigateHash(viewId);
   }, []);
 
   useEffect(() => {
     const handleHash = () => {
-      let h = '';
-      try {
-        h = window.location.hash || '';
-      } catch (e) {
-        return;
-      }
+      const hash = getSafeHash();
+      const path = hash.replace(/^#\/?/, '');
       
-      const path = h.replace(/^#\/?/, '');
-      
-      // Default view logic
       if (path === '' || path === 'dashboard') {
         setActiveView('dashboard');
         return;
       }
 
-      // Route mapping
-      if (path.includes('admin/login')) { setActiveView('admin-login'); return; }
-      if (path.includes('admin')) { setActiveView('admin'); return; }
-      if (path.includes('calendar')) { setActiveView('calendar'); return; }
-      if (path.includes('assistant')) { setActiveView('assistant'); return; }
-      if (path.includes('experiment')) { setActiveView('experiment'); return; }
-      if (path.includes('diary')) { setActiveView('diary'); return; }
-      if (path.includes('settings')) { setActiveView('settings'); return; }
-      if (path.includes('feedback')) { setActiveView('feedback'); return; }
-      if (path.includes('privacy')) { setActiveView('privacy'); return; }
-      if (path.includes('terms')) { setActiveView('terms'); return; }
-      if (path.includes('profile')) { setActiveView('profile'); return; }
-      if (path.includes('about')) { setActiveView('about'); return; }
+      const mappings: Record<string, ViewType> = {
+        'admin/login': 'admin-login',
+        'admin': 'admin',
+        'calendar': 'calendar',
+        'assistant': 'assistant',
+        'experiment': 'experiment',
+        'diary': 'diary',
+        'settings': 'settings',
+        'feedback': 'feedback',
+        'privacy': 'privacy',
+        'terms': 'terms',
+        'profile': 'profile',
+        'about': 'about'
+      };
 
-      // If no paths match, only then show Not Found
+      for (const [key, val] of Object.entries(mappings)) {
+        if (path.includes(key)) {
+          setActiveView(val);
+          return;
+        }
+      }
+
       setActiveView('not-found');
     };
     
@@ -155,7 +150,7 @@ const AppContent: React.FC = () => {
     }
 
     if (profile && profile.role === 'user' && !profile.full_name && !isSimulated) {
-       return <FirstTimeSetup onComplete={() => window.location.reload()} />;
+       return <FirstTimeSetup onComplete={() => safeReload()} />;
     }
 
     return (

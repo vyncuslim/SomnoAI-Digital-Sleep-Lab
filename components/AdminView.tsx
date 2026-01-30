@@ -8,7 +8,7 @@ import {
   BarChart3, Network, SignalHigh, Monitor, Code2, ExternalLink,
   Layers, Lock, Eye, Copy, Check, BarChart as BarChartIcon,
   AlertCircle, History, TrendingUp, MessageSquare, BookOpen,
-  CloudLightning, Cloud, CloudOff
+  CloudLightning, Cloud, CloudOff, Radio, Server
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -54,11 +54,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
-      // 1. Identify Clearance
       const profile = await adminApi.getAdminClearance(user.id);
       setCurrentAdmin(profile);
 
-      // 2. Parallel Fetch: Business Data (DB) + Traffic Data (GA4 Synced)
       const [u, d, c, ds, r, fb, dr] = await Promise.all([
         adminApi.getUsers(),
         adminApi.getDailyAnalytics(30),
@@ -101,6 +99,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       realtimePulse: realtime[0]?.active_users || 0,
       adminCount: users.filter(u => ['admin', 'owner'].includes(u.role?.toLowerCase()) || u.is_super_owner).length,
       isGaSynced: dailyStats.length > 0,
+      lastSyncDate: latest.date || null,
       totalFeedback: feedbackCount,
       totalLogs: diaryCount
     };
@@ -219,8 +218,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <AnimatePresence mode="wait">
           {activeTab === 'overview' ? (
             <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-12">
-               
-               {/* 🌍 Combined Perception Layer */}
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   {[
                     { label: 'Neural Flux (GA4 Users)', value: metrics.activeUsers, growth: metrics.userGrowth, icon: Globe, color: 'emerald', source: 'GA4' },
@@ -228,9 +225,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     { label: 'Input Signal (Feedback)', value: metrics.totalFeedback, growth: 0, icon: MessageSquare, color: 'indigo', source: 'Supabase' },
                     { label: 'Recovery Logs (Diaries)', value: metrics.totalLogs, growth: 0, icon: BookOpen, color: 'rose', source: 'Supabase' }
                   ].map((stat, i) => (
-                    <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-${stat.color}-500/10 shadow-2xl`}>
+                    <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-white/5 shadow-2xl`}>
                       <div className="flex justify-between items-start mb-6">
-                         <div className={`p-4 bg-${stat.color}-500/10 rounded-2xl text-${stat.color}-400 inline-block`}><stat.icon size={26} /></div>
+                         <div className={`p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 inline-block`}><stat.icon size={26} /></div>
                          <div className="flex flex-col items-end">
                             <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest mb-1">{stat.source}</span>
                             {stat.growth !== 0 && (
@@ -249,7 +246,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                </div>
 
-               {/* GA4 Integrated Chart */}
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <GlassCard className="lg:col-span-8 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl min-h-[450px]">
                     <div className="flex justify-between items-start mb-12">
@@ -374,41 +370,68 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </m.div>
           ) : activeTab === 'traffic' ? (
             <m.div key="traffic" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-               {/* 📡 GA4 Sync Status Indicator Header */}
-               <div className="flex flex-col md:flex-row md:items-center justify-between px-6 gap-6">
-                 <div className="space-y-1">
-                   <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Telemetry <span className="text-indigo-500">Flux</span></h2>
-                   <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Google Analytics 4 Data Pipeline</p>
-                 </div>
+               {/* 📡 GA4 SYNC PIPELINE MONITOR - HIGH VISIBILITY COMPONENT */}
+               <GlassCard className="p-10 rounded-[4rem] border-white/10 bg-slate-950/40 shadow-2xl relative overflow-hidden" intensity={1.1}>
+                 <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none text-indigo-500"><Server size={220} /></div>
                  
-                 <div className="flex items-center gap-4">
-                   <AnimatePresence mode="wait">
-                     {actionError ? (
-                       <m.div key="err" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-rose-950/20">
-                         <CloudOff size={16} className="shrink-0" />
-                         <span>SYNC_ERROR</span>
-                       </m.div>
-                     ) : loading ? (
-                       <m.div key="syncing" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-indigo-950/20">
-                         <Loader2 size={16} className="animate-spin shrink-0" />
-                         <span>SYNCING...</span>
-                       </m.div>
-                     ) : metrics.isGaSynced ? (
-                       <m.div key="synced" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-950/20">
-                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                         <Cloud size={16} className="shrink-0" />
-                         <span>SYNCED</span>
-                       </m.div>
-                     ) : (
-                       <m.div key="idle" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[10px] font-black uppercase tracking-widest italic">
-                         <CloudLightning size={16} className="shrink-0 opacity-50" />
-                         <span>STANDBY</span>
-                       </m.div>
-                     )}
-                   </AnimatePresence>
-                   <button onClick={fetchData} disabled={loading} className="p-4 bg-white/5 rounded-full text-slate-500 hover:text-white border border-white/5 transition-all active:scale-95 disabled:opacity-20 shadow-lg"><RefreshCw size={20} className={loading ? 'animate-spin' : ''} /></button>
+                 <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 relative z-10">
+                   <div className="flex items-center gap-8 text-left">
+                      <div className="relative">
+                        <div className={`p-6 rounded-3xl border transition-all duration-1000 ${actionError ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.1)]' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.1)]'}`}>
+                          <Radio size={48} className={loading ? 'animate-pulse' : ''} />
+                        </div>
+                        {metrics.isGaSynced && !actionError && (
+                          <m.div 
+                            initial={{ scale: 0 }} animate={{ scale: 1 }}
+                            className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-4 border-[#020617] shadow-lg shadow-emerald-500/40"
+                          />
+                        )}
+                      </div>
+                      <div className="space-y-2">
+                        <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Telemetry <span className="text-indigo-400">Ingress Hub</span></h2>
+                        <div className="flex items-center gap-3">
+                           <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Google Analytics 4 • API Gateway</span>
+                           <div className="h-px w-8 bg-slate-800" />
+                           <span className="text-[9px] font-mono text-slate-500 uppercase">Status: <span className={actionError ? 'text-rose-500' : metrics.isGaSynced ? 'text-emerald-500' : 'text-amber-500'}>{actionError ? 'Link Severed' : metrics.isGaSynced ? 'Handshake Stable' : 'Awaiting Data'}</span></span>
+                        </div>
+                      </div>
+                   </div>
+                   
+                   <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
+                     <div className="flex flex-col items-end gap-2.5 min-w-[200px]">
+                        <AnimatePresence mode="wait">
+                          {actionError ? (
+                            <m.div key="err" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(244,63,94,0.15)] italic">
+                              <CloudOff size={16} /> <span>SYNC_ERROR</span>
+                            </m.div>
+                          ) : loading ? (
+                            <m.div key="syncing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(99,102,241,0.15)] italic">
+                              <Loader2 size={16} className="animate-spin" /> <span>SYNCING...</span>
+                            </m.div>
+                          ) : metrics.isGaSynced ? (
+                            <m.div key="synced" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(16,185,129,0.15)] italic">
+                              <Cloud size={16} /> <span>SYNCED</span>
+                            </m.div>
+                          ) : (
+                            <m.div key="standby" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-slate-500/10 border border-slate-500/30 text-slate-500 font-black text-[11px] uppercase tracking-[0.2em] italic">
+                              <CloudLightning size={16} /> <span>STANDBY</span>
+                            </m.div>
+                          )}
+                        </AnimatePresence>
+                        <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest pr-2">
+                           {actionError ? 'Access Denied: Check Keys' : loading ? 'Negotiating Data Flow' : metrics.lastSyncDate ? `Last Pulse: ${metrics.lastSyncDate}` : 'Node: No Active Records'}
+                        </span>
+                     </div>
+                     <button 
+                        onClick={fetchData} 
+                        disabled={loading}
+                        className="p-7 bg-white/5 rounded-[2rem] text-slate-500 hover:text-white border border-white/5 transition-all shadow-xl active:scale-90 disabled:opacity-20 group"
+                     >
+                        <RefreshCw size={26} className={`${loading ? 'animate-spin text-indigo-400' : 'group-hover:rotate-180 transition-transform duration-700'}`} />
+                     </button>
+                   </div>
                  </div>
-               </div>
+               </GlassCard>
 
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
@@ -433,7 +456,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            </BarChart>
                         </ResponsiveContainer>
                      </div>
-                  </GlassCard>
+                  </BarChart>
                </div>
             </m.div>
           ) : (
@@ -464,15 +487,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 <p className="text-[10px] text-slate-500 italic">{item.v}</p>
                              </div>
                            ))}
-                        </div>
-                        <div className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-3xl space-y-3">
-                           <div className="flex items-center gap-2 text-rose-500">
-                             <ShieldAlert size={16} />
-                             <span className="text-[10px] font-black uppercase tracking-widest">Auth Note</span>
-                           </div>
-                           <p className="text-[10px] text-slate-500 leading-relaxed italic">
-                             Direct access to /api/sync-analytics is restricted. Use the configured Vercel Cron or a tool like Insomnia with <code className="text-slate-300">Authorization: Bearer [CRON_SECRET]</code>.
-                           </p>
                         </div>
                      </div>
                   </GlassCard>

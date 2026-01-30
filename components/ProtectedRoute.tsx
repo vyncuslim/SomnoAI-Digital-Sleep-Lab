@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { ShieldX, RefreshCw, AlertCircle, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Logo } from './Logo.tsx';
+import { safeNavigateHash, safeReload } from '../services/navigation.ts';
 
 const m = motion as any;
 
@@ -47,13 +48,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
               </div>
               <div className="flex flex-col gap-4">
                 <button 
-                  onClick={() => window.location.reload()}
+                  onClick={() => safeReload()}
                   className="px-8 py-5 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-widest active:scale-95 shadow-2xl flex items-center justify-center gap-3"
                 >
                   <RefreshCw size={14} /> Force Protocol Resync
                 </button>
                 <button 
-                  onClick={() => window.location.hash = '#/'}
+                  onClick={() => safeNavigateHash('/')}
                   className="px-8 py-4 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-widest"
                 >
                   Return to Base
@@ -89,10 +90,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
         </div>
 
         <div className="flex flex-col gap-4 w-full max-w-xs pt-8">
-          <button onClick={() => window.location.reload()} className="py-5 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl">
+          <button onClick={() => safeReload()} className="py-5 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl">
              <RefreshCw size={16} /> Retry Handshake
           </button>
-          <button onClick={() => window.location.hash = '#/'} className="py-5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3">
+          <button onClick={() => safeNavigateHash('/')} className="py-5 border border-white/10 text-slate-500 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-3">
             <Home size={16} /> Return to Base
           </button>
         </div>

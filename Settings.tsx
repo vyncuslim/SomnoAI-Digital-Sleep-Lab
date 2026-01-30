@@ -8,6 +8,7 @@ import { Language, translations } from './services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from './services/notificationService.ts';
 import { notifyAdmin } from './services/telegramService.ts';
+import { getSafeHostname } from './services/navigation.ts';
 
 const m = motion as any;
 
@@ -32,8 +33,12 @@ export const Settings: React.FC<SettingsProps> = ({
   useEffect(() => {
     const checkAiStatus = async () => {
       if ((window as any).aistudio?.hasSelectedApiKey) {
-        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-        setIsAiActive(hasKey || !!process.env.API_KEY);
+        try {
+          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+          setIsAiActive(hasKey || !!process.env.API_KEY);
+        } catch (e) {
+          setIsAiActive(!!process.env.API_KEY);
+        }
       } else {
         setIsAiActive(!!process.env.API_KEY);
       }
@@ -43,7 +48,8 @@ export const Settings: React.FC<SettingsProps> = ({
 
   const handleTestTelegram = async () => {
     setTestStatus('sending');
-    const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${window.location.hostname}\nSubject: Admin Console Test\nStatus: Operational`);
+    const nodeIdentity = getSafeHostname();
+    const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nSubject: Admin Console Test\nStatus: Operational`);
     setTestStatus(success ? 'success' : 'error');
     setTimeout(() => setTestStatus('idle'), 3000);
   };

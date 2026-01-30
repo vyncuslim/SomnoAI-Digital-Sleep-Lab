@@ -8,7 +8,17 @@
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
 
-      gtag('config', 'G-1WM4RE66ER');
+      var safeLocation = 'https://sleepsomno.com/privacy';
+      try {
+        safeLocation = String(window.location);
+      } catch (e) {
+        try { safeLocation = document.URL || 'https://sleepsomno.com/opaque-privacy-v2'; } catch (e2) {}
+      }
+
+      gtag('config', 'G-1WM4RE66ER', {
+        page_location: safeLocation,
+        page_referrer: ''
+      });
     </script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">

@@ -22,18 +22,18 @@ const getSafeStorage = () => {
 
 /**
  * PRODUCTION ARCHITECTURE - LOCKLESS AUTH PROTOCOL
- * We explicitly override the 'lock' parameter to bypass navigator.locks.
- * This fixes the 'this.lock is not a function' error seen in specific browser builds.
+ * 1. detectSessionInUrl: false (Prevents illegal Location access)
+ * 2. lock: null (Disables Navigator.locks which is forbidden in some sandboxes)
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: getSafeStorage(),
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
+    detectSessionInUrl: false, 
     flowType: 'implicit',
-    // Robust Lock Bypass Function
     lock: (name: string, acquireTimeout: number, fn: () => Promise<any>) => {
+      // Execute the function immediately without using the locking API
       return fn();
     }
   }

@@ -8,6 +8,7 @@ import { chatWithCoach, generateNeuralLullaby, decodeBase64Audio, decodeAudioDat
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
+import { safeNavigateHash } from '../services/navigation.ts';
 
 const m = motion as any;
 
@@ -212,7 +213,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
                   <p className="text-[11px] text-slate-500 font-medium italic leading-relaxed">Cognitive synthesis is restricted. Please initialize your Neural Bridge in the Settings terminal to authorize AI processing.</p>
                 </div>
                 <button 
-                  onClick={() => window.location.hash = '#/settings'}
+                  onClick={() => safeNavigateHash('settings')}
                   className="w-full py-4 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-3"
                 >
                   <Key size={14} /> AUTHORIZE NEURAL BRIDGE

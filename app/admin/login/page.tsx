@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, 
@@ -7,6 +6,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from '../../../components/Logo.tsx';
 import { adminApi, authApi } from '../../../services/supabaseService.ts';
+import { safeNavigateHash } from '../../../services/navigation.ts';
 
 const m = motion as any;
 
@@ -99,7 +99,7 @@ export default function AdminLoginPage() {
         await authApi.signOut();
         throw new Error("Access Denied: Node authorized but clearance level is INSUFFICIENT.");
       }
-      window.location.hash = '#/admin';
+      safeNavigateHash('admin');
     } catch (err: any) {
       setError({ message: err.message || "Critical Access Violation." });
       setOtp(['', '', '', '', '', '']);
