@@ -80,12 +80,16 @@
       "destination": "/terms.html"
     },
     {
+      "source": "/api/sync-analytics",
+      "destination": "/api/sync-analytics.js"
+    },
+    {
       "source": "/api/health-upload",
       "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder"
     },
     {
-      "source": "/api/:path*",
-      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/:path*"
+      "source": "/api/((?!sync-analytics).*)",
+      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/$1"
     },
     {
       "source": "/((?!assets/|fonts/|favicon.*|manifest.json|sw.js|sitemap.xml|robots.txt|api/|.*\\.[a-zA-Z0-9]+$).*)",

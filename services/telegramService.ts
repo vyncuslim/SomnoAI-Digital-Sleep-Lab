@@ -1,7 +1,7 @@
 /**
  * SomnoAI Admin Notification Service
  * Routes system alerts and feedback via Supabase Edge Functions to Telegram.
- * Updated with required Authorization headers for Edge Function security.
+ * Updated with robust handling for missing deployments (404 NOT_FOUND).
  */
 
 const EDGE_FUNCTION_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/notify_telegram';
@@ -19,7 +19,6 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     finalMessage = `🚨 SOMNO LAB ${type}\n\nLOG: ${content}\nTIME: ${new Date().toLocaleString()}`;
   }
 
-  // Use a standard async fetch without artificial timeout wrappers to ensure reliable delivery
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), 6000);
 
@@ -34,6 +33,14 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
       body: JSON.stringify({ message: finalMessage }),
       signal: controller.signal
     });
+
+    if (response.status === 404) {
+      const data = await response.json().catch(() => ({}));
+      if (data.code === 'NOT_FOUND' || data.message?.includes('not found')) {
+        console.error("[Telegram Service]: CRITICAL_DEPLOYMENT_ERROR. The edge function 'notify_telegram' is not deployed in this Supabase project.");
+        return false;
+      }
+    }
 
     clearTimeout(timeoutId);
     return response.ok;

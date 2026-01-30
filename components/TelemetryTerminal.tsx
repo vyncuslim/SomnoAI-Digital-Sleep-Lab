@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Terminal, Zap, Upload, Copy, Check, ShieldCheck, 
   Activity, ArrowLeft, Network, FileCode, Server,
   ChevronRight, Database, Code2, Globe, Lock, Cpu,
-  ExternalLink, Command, RefreshCw, Info
+  ExternalLink, Command, RefreshCw, Info, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from '../services/i18n.ts';
@@ -21,25 +20,23 @@ interface TelemetryTerminalProps {
 export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBack }) => {
   const [copied, setCopied] = useState(false);
   const [status, setStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
-  const [logs, setLogs] = useState<string[]>([]);
+  const [logs, setLogs] = useState<{msg: string, type: 'info' | 'success' | 'error'}[]>([]);
   const [activeTab, setActiveTab] = useState<'info' | 'curl' | 'js'>('info');
 
   const PUBLIC_API = "https://sleepsomno.com/api/health-upload";
-  const LOCAL_PROXY = "/api/health-upload"; // Use relative path to test Vercel rewrite
+  const LOCAL_PROXY = "/api/health-upload"; 
 
-  const addLog = (msg: string) => {
-    setLogs(prev => [`[${new Date().toLocaleTimeString()}] ${msg}`, ...prev].slice(0, 5));
+  const addLog = (msg: string, type: 'info' | 'success' | 'error' = 'info') => {
+    setLogs(prev => [{ msg: `[${new Date().toLocaleTimeString()}] ${msg}`, type }, ...prev].slice(0, 5));
   };
 
   const handlePulseTest = async () => {
     setStatus('testing');
-    addLog(`Gateway: Testing proxy link ${PUBLIC_API}...`);
+    addLog(`Gateway: Dispatching pulse to proxy ${PUBLIC_API}...`);
     
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const apiKey = (supabase as any).supabaseKey; // The anon key
+      const apiKey = (supabase as any).supabaseKey;
 
-      // DIRECT FETCH TO PROXY URL
       const response = await fetch(LOCAL_PROXY, {
         method: 'POST',
         headers: {
@@ -56,17 +53,21 @@ export const TelemetryTerminal: React.FC<TelemetryTerminalProps> = ({ lang, onBa
 
       if (response.ok) {
         setStatus('success');
-        addLog("Gateway: 200 OK. Public route fully operational.");
+        addLog("Gateway: 200 OK. Signal confirmed by Edge Function.", 'success');
       } else {
-        const errData = await response.text();
-        addLog(`Gateway: Error ${response.status}. ${errData.slice(0, 20)}...`);
-        throw new Error();
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 404 && (data.code === 'NOT_FOUND' || data.message?.includes('not found'))) {
+          addLog("Gateway: Error 404. Edge function 'bright-responder' is not deployed.", 'error');
+        } else {
+          addLog(`Gateway: Error ${response.status}. ${data.message || 'Unknown protocol violation'}.`, 'error');
+        }
+        setStatus('error');
       }
     } catch (e) {
       setStatus('error');
-      addLog("Gateway: Handshake failed. Check Vercel rewrites.");
+      addLog("Gateway: Handshake timed out or proxy link severed.", 'error');
     }
-    setTimeout(() => setStatus('idle'), 3000);
+    setTimeout(() => setStatus('idle'), 4000);
   };
 
   const copyToClipboard = (text: string) => {
@@ -131,7 +132,7 @@ const uploadData = async (metrics) => {
             </div>
 
             <div className="space-y-6">
-              <div className="bg-black/40 rounded-[2rem] border border-white/5 p-6 space-y-3 relative group">
+              <div className="bg-black/40 rounded-[2rem] border border-white/5 p-6 space-y-3 relative group text-left">
                 <div className="flex justify-between items-center text-[9px] font-black text-slate-600 uppercase tracking-widest px-2">
                   <span>URL PATH</span>
                   <div className="flex items-center gap-2">
@@ -164,7 +165,7 @@ const uploadData = async (metrics) => {
               <div className="bg-black/60 rounded-[2rem] border border-white/5 overflow-hidden">
                 <AnimatePresence mode="wait">
                   {activeTab === 'info' ? (
-                    <m.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 space-y-4">
+                    <m.div key="info" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-8 space-y-4 text-left">
                        <div className="grid grid-cols-2 gap-4">
                          <div className="space-y-1">
                             <p className="text-[9px] font-black text-slate-600 uppercase">Method</p>
@@ -180,7 +181,7 @@ const uploadData = async (metrics) => {
                        </p>
                     </m.div>
                   ) : (
-                    <m.div key="code" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative group">
+                    <m.div key="code" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative group text-left">
                        <pre className="p-6 text-[10px] font-mono text-indigo-300/80 leading-relaxed overflow-x-auto scrollbar-hide max-h-[300px]">
                           {activeTab === 'curl' ? curlCode : jsCode}
                        </pre>
@@ -226,7 +227,7 @@ const uploadData = async (metrics) => {
               )}
             </button>
 
-            <div className="mt-10 space-y-4">
+            <div className="mt-10 space-y-4 text-left">
               <div className="flex items-center gap-2 text-[9px] font-black uppercase text-slate-600 tracking-widest border-b border-white/5 pb-2">
                 <Terminal size={12} /> Gateway logs
               </div>
@@ -234,12 +235,12 @@ const uploadData = async (metrics) => {
                 <AnimatePresence>
                   {logs.length > 0 ? logs.map((log, i) => (
                     <m.div 
-                      key={log} 
+                      key={i} 
                       initial={{ opacity: 0, x: -10 }} 
                       animate={{ opacity: 1, x: 0 }} 
-                      className={`italic ${log.includes('operational') || log.includes('confirmed') ? 'text-emerald-400' : log.includes('failed') || log.includes('Error') ? 'text-rose-400' : 'text-slate-500'}`}
+                      className={`italic ${log.type === 'success' ? 'text-emerald-400' : log.type === 'error' ? 'text-rose-400' : 'text-slate-500'}`}
                     >
-                      {log}
+                      {log.msg}
                     </m.div>
                   )) : (
                     <div className="text-slate-800 italic">Ready for integrated diagnostic...</div>
@@ -249,17 +250,19 @@ const uploadData = async (metrics) => {
             </div>
           </GlassCard>
 
-          <div className="p-8 bg-slate-900/40 border border-white/5 rounded-[3rem] space-y-4 group">
-             <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Lock size={18} className="text-indigo-400" />
-                  <span className="text-[11px] font-black uppercase text-white italic">CORS Authorization</span>
-                </div>
-             </div>
-             <p className="text-[10px] text-slate-500 italic leading-relaxed">
-               The gateway is configured to accept requests from any origin, provided a valid <span className="text-white">Authorization</span> header is present.
-             </p>
-          </div>
+          <AnimatePresence>
+             {status === 'error' && (
+               <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="p-8 bg-rose-500/10 border border-rose-500/20 rounded-[3rem] space-y-4 text-left">
+                  <div className="flex items-center gap-3 text-rose-500">
+                    <AlertTriangle size={18} />
+                    <span className="text-[11px] font-black uppercase italic">Deployment Required</span>
+                  </div>
+                  <p className="text-[10px] text-slate-400 italic leading-relaxed">
+                    The error <span className="text-white">Requested function was not found</span> indicates that your Supabase Edge Function 'bright-responder' has not been deployed to your project.
+                  </p>
+               </m.div>
+             )}
+          </AnimatePresence>
         </div>
       </div>
     </div>

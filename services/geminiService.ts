@@ -9,10 +9,12 @@ export interface SleepExperiment {
 }
 
 const handleGeminiError = (err: any) => {
+  const errMsg = err.message || "";
   console.error("Gemini API Error Context:", err);
   
-  // Per guidelines: if key is invalid/missing in this specific environment, re-trigger selector
-  if (err.message?.includes("Requested entity was not found")) {
+  // Per guidelines: if key is invalid/missing or entity not found, re-trigger selector
+  if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID")) {
+    console.warn("[Neural Bridge] Identity reset required. Re-triggering key selector.");
     (window as any).aistudio?.openSelectKey().catch(() => {});
   }
   
@@ -33,7 +35,6 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     Data: Score ${data.score}, Deep ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm.`;
 
   try {
-    // Instantiate per call to ensure we use the latest bridge key
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
@@ -45,7 +46,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     });
     return JSON.parse(response.text?.trim() || "[]");
   } catch (err) {
-    console.warn("Insight failed:", err);
+    handleGeminiError(err);
     return ["Analysis stream paused.", "Recalibrating neural nodes.", "Link maintained."];
   }
 };
@@ -103,6 +104,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
     });
     return response.text || "Summary failed.";
   } catch (err) { 
+    handleGeminiError(err);
     return "Synthesis error occurred."; 
   }
 };
