@@ -1,6 +1,6 @@
 
 -- ==========================================
--- SOMNOAI CORE TABLES
+-- SOMNOAI CORE INFRASTRUCTURE
 -- ==========================================
 
 -- 1. Profiles (Extended User Data)
@@ -40,6 +40,33 @@ CREATE TABLE IF NOT EXISTS public.diary_entries (
     mood text,
     created_at timestamptz DEFAULT now()
 );
+
+-- ==========================================
+-- AUTOMATIC PROFILE SYNC (CRITICAL)
+-- This ensures every Auth user has a corresponding row in public.profiles
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, role)
+  VALUES (
+    new.id, 
+    COALESCE(new.raw_user_meta_data->>'full_name', ''),
+    CASE 
+      WHEN (SELECT count(*) FROM public.profiles) = 0 THEN 'owner' -- First user is always Owner
+      ELSE 'user' 
+    END
+  );
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger execution
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
 
 -- ==========================================
 -- ANALYTICS TABLES (GA4 SYNC TARGETS)

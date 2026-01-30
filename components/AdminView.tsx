@@ -6,7 +6,7 @@ import {
   Ban, Shield, FileText, Crown, ShieldX, KeyRound, 
   Zap, Globe, Smartphone, ArrowUp, ArrowDown,
   UserCircle, Terminal as TerminalIcon, Command, X, Cpu,
-  BarChart3, Network, SignalHigh, Monitor
+  BarChart3, Network, SignalHigh, Monitor, Code2, ExternalLink, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -56,7 +56,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return base;
   }, [isOwner]);
 
-  const themeColor = isOwner ? 'amber' : 'indigo';
+  const themeColor = isOwner ? '#f59e0b' : '#6366f1'; // amber or indigo
+  const themeClass = isOwner ? 'amber' : 'indigo';
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -86,7 +87,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       
     } catch (err: any) {
       console.error("Intelligence Hub Failure:", err);
-      setActionError(`LINK_FAILURE: ${err.message || "Node handshake refused."}`);
+      setActionError(err.message || "Node handshake refused.");
     } finally {
       setLoading(false);
     }
@@ -148,6 +149,76 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return deviceStats.map(d => ({ name: d.device.toUpperCase(), value: d.users }));
   }, [deviceStats]);
 
+  // Special Database Setup Guard UI
+  if (actionError === "RPC_NOT_REGISTERED_IN_DB") {
+    return (
+      <div className="min-h-[80vh] flex flex-col items-center justify-center p-6 text-left">
+        <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-2xl space-y-8">
+           <GlassCard className="p-12 md:p-16 rounded-[4rem] border-rose-500/20 bg-slate-950/40 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 p-10 opacity-[0.05] pointer-events-none">
+                <Database size={200} className="text-rose-500" />
+              </div>
+              <div className="space-y-10 relative z-10">
+                 <div className="flex items-center gap-5">
+                    <div className="p-4 bg-rose-500/10 rounded-3xl text-rose-500 border border-rose-500/20">
+                       <ShieldAlert size={32} />
+                    </div>
+                    <div>
+                       <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Database Schema Required</h1>
+                       <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-2">LINK_FAILURE: RPC_NOT_REGISTERED</p>
+                    </div>
+                 </div>
+
+                 <p className="text-sm text-slate-400 leading-relaxed italic font-medium">
+                   The administrative core requires specialized Postgres functions (RPCs) to verify clearance levels and manage the subject registry. These protocols are currently missing from your Supabase instance.
+                 </p>
+
+                 <div className="space-y-4">
+                    <div className="flex items-center gap-3 px-4">
+                       <Code2 size={16} className="text-indigo-400" />
+                       <span className="text-[10px] font-black uppercase text-indigo-400 tracking-widest">Initialization Protocol</span>
+                    </div>
+                    <div className="bg-black/60 rounded-3xl border border-white/5 p-8 space-y-6">
+                       <div className="flex gap-4 items-start">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 text-[10px] font-black">1</div>
+                          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Navigate to your Supabase Project Dashboard</p>
+                       </div>
+                       <div className="flex gap-4 items-start">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 text-[10px] font-black">2</div>
+                          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Open the "SQL Editor" and create a "New Query"</p>
+                       </div>
+                       <div className="flex gap-4 items-start">
+                          <div className="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0 text-[10px] font-black">3</div>
+                          <p className="text-[11px] text-slate-500 font-bold uppercase tracking-wider">Paste the contents of "setup.sql" and execute</p>
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="flex flex-col sm:flex-row gap-4 pt-6">
+                    <button 
+                      onClick={() => window.location.reload()}
+                      className="flex-1 py-5 bg-white text-black rounded-full font-black text-[11px] uppercase tracking-widest shadow-2xl hover:bg-slate-200 transition-all flex items-center justify-center gap-3 italic"
+                    >
+                      <RefreshCw size={14} /> Retry Handshake
+                    </button>
+                    <button 
+                      onClick={onBack}
+                      className="flex-1 py-5 bg-slate-900 border border-white/5 text-slate-500 rounded-full font-black text-[11px] uppercase tracking-widest hover:text-white transition-all flex items-center justify-center gap-3 italic"
+                    >
+                      <ChevronLeft size={14} /> Return to Base
+                    </button>
+                 </div>
+              </div>
+           </GlassCard>
+           
+           <div className="text-center opacity-30">
+              <p className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">SomnoAI Digital Sleep Lab • Neural Core Sync V3.5</p>
+           </div>
+        </m.div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans relative text-left">
       <AnimatePresence>
@@ -176,7 +247,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               {isOwner && <Crown size={32} className="text-amber-500 animate-pulse" />}
             </h1>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic flex items-center gap-3">
-              <div className={`w-2 h-2 rounded-full animate-pulse bg-${themeColor}-500`} />
+              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeColor }} />
               SYSTEM NODE CLEARANCE: {currentAdmin?.role?.toUpperCase() || 'CALIBRATING...'}
             </p>
           </div>
@@ -184,7 +255,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         
         <nav className="flex p-1.5 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
           {tabs.map((tab) => (
-            <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? (isOwner ? 'bg-amber-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg') : 'text-slate-500 hover:text-slate-300'}`}>
+            <button 
+              key={tab.id} 
+              onClick={() => setActiveTab(tab.id)} 
+              className={`px-8 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? (isOwner ? 'bg-amber-600 text-white shadow-lg' : 'bg-indigo-600 text-white shadow-lg') : 'text-slate-500 hover:text-slate-300'}`}
+            >
               {tab.label}
             </button>
           ))}
@@ -193,7 +268,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       {loading ? (
         <div className="flex flex-col items-center justify-center py-48 gap-10">
-          <Loader2 className={`animate-spin text-${themeColor}-500`} size={64} />
+          <Loader2 className="animate-spin" style={{ color: themeColor }} size={64} />
           <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Syncing Dual Intelligence Streams...</p>
         </div>
       ) : (
@@ -214,9 +289,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       { label: 'Real-time Pulse', value: realtime[0]?.active_users || 0, growth: 0, icon: SignalHigh, color: 'rose' },
                       { label: 'Active Mesh Nodes', value: countryRanking.length, growth: 0, icon: Network, color: 'amber' }
                     ].map((stat, i) => (
-                      <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-${stat.color}-500/10 shadow-2xl`}>
+                      <GlassCard key={i} className={`p-10 rounded-[3.5rem] shadow-2xl ${stat.color === 'emerald' ? 'border-emerald-500/10' : stat.color === 'indigo' ? 'border-indigo-500/10' : stat.color === 'rose' ? 'border-rose-500/10' : 'border-amber-500/10'}`}>
                         <div className="flex justify-between items-start mb-6">
-                           <div className={`p-4 bg-${stat.color}-500/10 rounded-2xl text-${stat.color}-400 inline-block`}><stat.icon size={26} /></div>
+                           <div className={`p-4 rounded-2xl inline-block ${stat.color === 'emerald' ? 'bg-emerald-500/10 text-emerald-400' : stat.color === 'indigo' ? 'bg-indigo-500/10 text-indigo-400' : stat.color === 'rose' ? 'bg-rose-500/10 text-rose-400' : 'bg-amber-500/10 text-amber-500'}`}><stat.icon size={26} /></div>
                            {stat.growth !== 0 && (
                               <div className={`flex items-center gap-1 px-3 py-1.5 rounded-full text-[10px] font-black ${stat.growth >= 0 ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
                                  {stat.growth >= 0 ? <ArrowUp size={12} /> : <ArrowDown size={12} />}
@@ -333,7 +408,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl overflow-visible">
                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16">
                      <div className="space-y-3">
-                        <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span className={`text-${themeColor}-500`}>Registry</span></h3>
+                        <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span style={{ color: themeColor }}>Registry</span></h3>
                         <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Identity Log of Current Laboratory Subjects</p>
                      </div>
                      <div className="flex gap-4 w-full md:w-auto">
