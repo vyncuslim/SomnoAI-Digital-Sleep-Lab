@@ -56,14 +56,17 @@
     <script src="https://plugin-code.salesmartly.com/js/project_445539_520520_1761223371.js"></script>
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-0L90RZV30P"></script>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3F9KVPNYLR"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
       function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
-      gtag('config', 'G-0L90RZV30P', { 
-        send_page_view: false,
-        page_location: 'https://sleepsomno.com/virtual',
+      
+      // GA4 Grounding with virtualized location to bypass cross-origin restrictions
+      gtag('config', 'G-3F9KVPNYLR', { 
+        send_page_view: true,
+        page_location: 'https://sleepsomno.com/virtual-node',
         anonymize_ip: true,
         client_storage: 'none'
       });

@@ -7,7 +7,7 @@ import {
   TrendingUp, MessageSquare, BookOpen,
   CloudLightning, Cloud, CloudOff, Radio, Server,
   History, BarChart as BarChartIcon,
-  ArrowUp, ArrowDown, UserCircle, Code2
+  ArrowUp, ArrowDown, UserCircle, Code2, AlertCircle, CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -102,6 +102,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       totalLogs: diaryCount
     };
   }, [users, dailyStats, realtime, feedbackCount, diaryCount]);
+
+  const syncStatus = useMemo(() => {
+    if (actionError) return 'Error';
+    if (loading) return 'Syncing';
+    if (dailyStats.length > 0) return 'Synced';
+    return 'Idle';
+  }, [loading, actionError, dailyStats]);
 
   const handleToggleBlock = async (user: any) => {
     if (isProcessingId) return;
@@ -374,10 +381,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 relative z-10">
                    <div className="flex items-center gap-8 text-left">
                       <div className="relative">
-                        <div className={`p-6 rounded-3xl border transition-all duration-1000 ${actionError ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.1)]' : loading ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.1)]' : metrics.isGaSynced ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.1)]' : 'bg-slate-500/10 border-slate-500/20 text-slate-500'}`}>
-                          {actionError ? <CloudOff size={48} /> : loading ? <Radio size={48} className="animate-pulse" /> : <Cloud size={48} />}
+                        <div className={`p-6 rounded-3xl border transition-all duration-1000 ${syncStatus === 'Error' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.1)]' : syncStatus === 'Syncing' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.1)]' : syncStatus === 'Synced' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.1)]' : 'bg-slate-500/10 border-slate-500/20 text-slate-500'}`}>
+                          {syncStatus === 'Error' ? <CloudOff size={48} /> : syncStatus === 'Syncing' ? <Radio size={48} className="animate-pulse" /> : <Cloud size={48} />}
                         </div>
-                        {metrics.isGaSynced && !actionError && !loading && (
+                        {syncStatus === 'Synced' && (
                           <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-4 border-[#020617] shadow-lg shadow-emerald-500/40" />
                         )}
                       </div>
@@ -386,7 +393,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <div className="flex items-center gap-3">
                            <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Google Analytics 4 • Real-time Data Stream</span>
                            <div className="h-px w-8 bg-slate-800" />
-                           <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">MEASUREMENT: <span className="text-indigo-500">G-0L90RZV30P</span></span>
+                           <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">MEASUREMENT: <span className="text-indigo-500">G-3F9KVPNYLR</span></span>
                         </div>
                       </div>
                    </div>
@@ -394,17 +401,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-6">
                      <div className="flex flex-col items-end gap-2.5 min-w-[200px]">
                         <AnimatePresence mode="wait">
-                          {actionError ? (
+                          {syncStatus === 'Error' ? (
                             <m.div key="err" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(244,63,94,0.15)] italic">
-                              <CloudOff size={16} /> <span>ERROR</span>
+                              <AlertCircle size={16} /> <span>ERROR</span>
                             </m.div>
-                          ) : loading ? (
+                          ) : syncStatus === 'Syncing' ? (
                             <m.div key="syncing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(99,102,241,0.15)] italic">
                               <Loader2 size={16} className="animate-spin" /> <span>SYNCING</span>
                             </m.div>
-                          ) : metrics.isGaSynced ? (
+                          ) : syncStatus === 'Synced' ? (
                             <m.div key="synced" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(16,185,129,0.15)] italic">
-                              <Cloud size={16} /> <span>SYNCED</span>
+                              <CheckCircle2 size={16} /> <span>SYNCED</span>
                             </m.div>
                           ) : (
                             <m.div key="standby" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-slate-500/10 border border-slate-500/30 text-slate-500 font-black text-[11px] uppercase tracking-[0.2em] italic">
@@ -413,7 +420,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           )}
                         </AnimatePresence>
                         <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest pr-2">
-                           {actionError ? 'LINK_SEVERED: CHECK REGISTRY' : loading ? 'NEGOTIATING FLOW' : metrics.lastSyncDate ? `Last Pulse: ${metrics.lastSyncDate}` : 'STANDBY: NO RECORDS'}
+                           {syncStatus === 'Error' ? 'LINK_SEVERED: CHECK REGISTRY' : syncStatus === 'Syncing' ? 'NEGOTIATING FLOW' : metrics.lastSyncDate ? `Last Pulse: ${metrics.lastSyncDate}` : 'STANDBY: NO RECORDS'}
                         </span>
                      </div>
                      <button 

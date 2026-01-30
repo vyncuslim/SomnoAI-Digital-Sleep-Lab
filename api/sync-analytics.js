@@ -1,9 +1,8 @@
-
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNOAI ANALYTICS SYNC ENGINE v2.1
+ * SOMNOAI ANALYTICS SYNC ENGINE v2.2
  * Triggered by Vercel Cron
  * Secured by CRON_SECRET token verification
  */
@@ -21,16 +20,17 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  // 1. 安全握手 (Vercel Cron 密钥验证)
+  // 1. SECURITY HANDSHAKE (Vercel Cron Secret Validation)
   const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: "Unauthorized" });
+  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    console.error("UNAUTHORIZED_SYNC_ATTEMPT: Invalid or missing CRON_SECRET");
+    return res.status(401).json({ error: "Unauthorized Access Detected" });
   }
 
   try {
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-    // 2. 从 GA4 获取核心每日指标
+    // 2. Fetch Daily Metrics from GA4
     const [dailyResponse] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
@@ -47,7 +47,7 @@ export default async function handler(req, res) {
       });
     }
 
-    // 3. 获取地理位置排名
+    // 3. Fetch Geo Rankings
     const [geoResponse] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
@@ -65,7 +65,7 @@ export default async function handler(req, res) {
       await supabase.from("analytics_country").upsert(geoData, { onConflict: "date, country" });
     }
 
-    // 4. 获取设备分布比例
+    // 4. Fetch Device Segments
     const [deviceResponse] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
@@ -83,7 +83,6 @@ export default async function handler(req, res) {
       await supabase.from("analytics_device").upsert(deviceData, { onConflict: "date, device" });
     }
 
-    // 返回成功状态
     return res.status(200).json({ 
       success: true, 
       status: "SYNC_COMPLETE", 
