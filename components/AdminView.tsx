@@ -8,7 +8,8 @@ import {
   UserCircle, Terminal as TerminalIcon, Command, X, Cpu,
   BarChart3, Network, SignalHigh, Monitor, Code2, ExternalLink,
   Layers, Lock, Eye, Copy, Check, BarChart as BarChartIcon,
-  AlertCircle, History, TrendingUp, MessageSquare, BookOpen
+  AlertCircle, History, TrendingUp, MessageSquare, BookOpen,
+  CloudLightning, Cloud, CloudOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -267,7 +268,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                               <defs>
                                 <linearGradient id="fluxGrad" x1="0" y1="0" x2="0" y2="1">
                                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
-                                  <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                                  <stop offset="100%" stopColor="#10b981" stopOpacity={0}/>
                                 </linearGradient>
                               </defs>
                               <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
@@ -288,7 +289,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <GlassCard className="lg:col-span-4 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col justify-between">
                     <div>
                       <div className="flex items-center gap-4 mb-10">
-                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500"><Monitor size={24} /></div>
+                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Monitor size={24} /></div>
                         <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Device Proportions</h3>
                       </div>
                       <div className="h-[200px] w-full">
@@ -374,6 +375,42 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </m.div>
           ) : activeTab === 'traffic' ? (
             <m.div key="traffic" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
+               {/* 📡 GA4 Sync Status Indicator Header */}
+               <div className="flex flex-col md:flex-row md:items-center justify-between px-6 gap-6">
+                 <div className="space-y-1">
+                   <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Telemetry <span className="text-indigo-500">Flux</span></h2>
+                   <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Google Analytics 4 Data Pipeline</p>
+                 </div>
+                 
+                 <div className="flex items-center gap-4">
+                   <AnimatePresence mode="wait">
+                     {actionError ? (
+                       <m.div key="err" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-rose-500/10 border border-rose-500/20 text-rose-500 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-rose-950/20">
+                         <CloudOff size={16} className="shrink-0" />
+                         <span>SYNC_FAILURE_NODE</span>
+                       </m.div>
+                     ) : loading ? (
+                       <m.div key="syncing" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-indigo-950/20">
+                         <Loader2 size={16} className="animate-spin shrink-0" />
+                         <span>HANDSHAKE_IN_PROGRESS</span>
+                       </m.div>
+                     ) : metrics.isGaSynced ? (
+                       <m.div key="synced" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[10px] font-black uppercase tracking-widest italic shadow-xl shadow-emerald-950/20">
+                         <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                         <Cloud size={16} className="shrink-0" />
+                         <span>GA4_DATA_SYNCED</span>
+                       </m.div>
+                     ) : (
+                       <m.div key="idle" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="flex items-center gap-3 px-6 py-3 rounded-full bg-slate-500/10 border border-slate-500/20 text-slate-500 text-[10px] font-black uppercase tracking-widest italic">
+                         <CloudLightning size={16} className="shrink-0 opacity-50" />
+                         <span>PIPELINE_IDLE</span>
+                       </m.div>
+                     )}
+                   </AnimatePresence>
+                   <button onClick={fetchData} disabled={loading} className="p-4 bg-white/5 rounded-full text-slate-500 hover:text-white border border-white/5 transition-all active:scale-95 disabled:opacity-20 shadow-lg"><RefreshCw size={20} className={loading ? 'animate-spin' : ''} /></button>
+                 </div>
+               </div>
+
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
                      <div className="flex items-center gap-4 mb-12"><Globe size={24} className="text-amber-500" /><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Geographic Mesh (GA4)</h3></div>
