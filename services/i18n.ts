@@ -2,7 +2,7 @@
 export type Language = 'en' | 'zh';
 
 const commonEn = {
-  nav: { lab: 'LAB', trends: 'TRENDS', insights: 'CORE', settings: 'CFG' },
+  nav: { lab: 'LAB', trends: 'TRENDS', insights: 'CORE', settings: 'CFG', experiment: 'EXP' },
   errors: {
     healthApiDenied: 'Access Denied: Permissions required in system settings.',
     syncFailed: 'Telemetry Sync Failed. Node unreachable.',
@@ -27,6 +27,18 @@ const commonEn = {
     cmdExport: 'Archive Metrics',
     lullaby: 'Neural Lullaby',
     manifesto: 'It integrates physiological indicator monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep experiment experience.'
+  },
+  experiment: {
+    title: 'Neural Lab',
+    subtitle: 'Sleep Optimization Experiments',
+    generate: 'Synthesize New Protocol',
+    synthesizing: 'Neural Synthesis in Progress...',
+    activeHeader: 'Active Protocol',
+    hypothesis: 'Neural Hypothesis',
+    protocol: 'Laboratory Protocol',
+    impact: 'Predicted Outcome',
+    commit: 'Activate Protocol',
+    noExperiment: 'No active experiment protocol identified. Initialize synthesis to optimize biological recovery.'
   },
   settings: {
     title: 'Configuration',
@@ -79,7 +91,7 @@ const commonEn = {
     help: 'CANNOT ACTIVATE ACCOUNT?',
     verifyCode: 'Verify Token',
     back: 'Back to Terminal',
-    handshake: 'Neural Handshake',
+    handshake: '神经握手',
     dispatched: 'Token dispatched',
     initialize: 'INITIALIZE OVERRIDE',
     resend: 'RESEND TOKEN',
@@ -112,7 +124,7 @@ const commonEn = {
     toolboxDesc: 'Android Health Connect SDK.',
     whsTitle: 'Warehouse Sync',
     whsDesc: 'Data moves through atomic updates.',
-    tokenTitle: 'Token Lifecycle',
+    tokenTitle: '令牌生命周期',
     step1: 'Identify SDK.',
     step2: 'Initiate client.',
     step3: 'Validate Manifest.',
@@ -137,7 +149,7 @@ const commonEn = {
 };
 
 const commonZh = {
-  nav: { lab: '实验室', trends: '趋势', insights: '核心', settings: '配置' },
+  nav: { lab: '实验室', trends: '趋势', insights: '核心', settings: '配置', experiment: '实验' },
   errors: {
     healthApiDenied: '拒绝访问：系统设置中未获得权限。',
     syncFailed: '遥测同步失败。节点无法连接。',
@@ -162,6 +174,18 @@ const commonZh = {
     cmdExport: '归档指标',
     lullaby: '神经催眠曲',
     manifesto: '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。'
+  },
+  experiment: {
+    title: '神经实验室',
+    subtitle: '睡眠优化实验',
+    generate: '合成新实验方案',
+    synthesizing: '神经合成进行中...',
+    activeHeader: '当前实验方案',
+    hypothesis: '神经假设',
+    protocol: '实验室方案',
+    impact: '预期成果',
+    commit: '启动方案',
+    noExperiment: '未识别到活跃的实验方案。初始化合成以优化生物恢复。'
   },
   settings: {
     title: '系统配置',

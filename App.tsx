@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
   Moon, BrainCircuit, Settings as SettingsIcon, History, 
-  BookOpen, ShieldAlert
+  BookOpen, ShieldAlert, FlaskConical
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
@@ -22,6 +23,7 @@ import { Trends } from './components/Trends.tsx';
 import { DiaryView } from './components/DiaryView.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { FeedbackView } from './components/FeedbackView.tsx';
+import { ExperimentView } from './components/ExperimentView.tsx';
 
 const m = motion as any;
 
@@ -84,6 +86,7 @@ const AppContent: React.FC = () => {
       else if (h.includes('admin')) setActiveView('admin');
       else if (h.includes('calendar')) setActiveView('calendar');
       else if (h.includes('assistant')) setActiveView('assistant');
+      else if (h.includes('experiment')) setActiveView('experiment');
       else if (h.includes('diary')) setActiveView('diary');
       else if (h.includes('settings')) setActiveView('settings');
       else if (h.includes('feedback')) setActiveView('feedback');
@@ -126,9 +129,10 @@ const AppContent: React.FC = () => {
         <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 pb-48">
           <AnimatePresence mode="wait">
             <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} />}
+              {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={setActiveView} />}
               {activeView === 'calendar' && <Trends history={[MOCK_RECORD]} lang={lang} />}
               {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} />}
+              {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
               {activeView === 'diary' && <DiaryView lang={lang} />}
               {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => {}} onNavigate={() => {}} />}
               {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => window.location.hash = '#/settings'} />}
@@ -145,6 +149,7 @@ const AppContent: React.FC = () => {
               { id: 'dashboard', icon: Moon, label: 'LAB' },
               { id: 'calendar', icon: History, label: 'HIST' },
               { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
+              { id: 'experiment', icon: FlaskConical, label: 'EXP' },
               { id: 'diary', icon: BookOpen, label: 'LOG' },
               { id: 'settings', icon: SettingsIcon, label: 'CFG' }
             ].map((nav) => (

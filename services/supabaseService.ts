@@ -36,7 +36,6 @@ export const userDataApi = {
     try {
       const { data: status, error } = await supabase.rpc('get_my_detailed_profile');
       if (error) {
-        // Failsafe: Direct table select if RPC fails
         const { data: { user } } = await supabase.auth.getUser();
         if (user) {
           const { data: fallback } = await supabase.from('profiles').select('*').eq('id', user.id).single();
@@ -70,46 +69,22 @@ export const userDataApi = {
 };
 
 export const adminApi = {
-  getStats: async () => {
-    const { data, error } = await supabase.rpc('admin_get_global_stats');
-    if (error) {
-       console.warn("Stats RPC failed, returning telemetry placeholder.");
-       return { total_subjects: 0, admin_nodes: 0, blocked_nodes: 0, active_24h: 0 };
-    }
-    return data;
-  },
   checkAdminStatus: async (): Promise<boolean> => {
     try {
       const { data: status } = await supabase.rpc('get_my_detailed_profile');
-      if (!status || status.length === 0) {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (user) {
-          const { data: fallback } = await supabase.from('profiles').select('role, is_super_owner').eq('id', user.id).single();
-          return ['admin', 'owner'].includes(fallback?.role?.toLowerCase()) || fallback?.is_super_owner === true;
-        }
-        return false;
-      }
+      if (!status || status.length === 0) return false;
       const profile = status[0];
       return ['admin', 'owner'].includes(profile.role?.toLowerCase()) || profile.is_super_owner === true;
     } catch (e) { return false; }
   },
   getAdminClearance: async (userId: string) => {
     const { data, error } = await supabase.rpc('get_my_detailed_profile');
-    if (error) {
-      const { data: fallback, error: fbErr } = await supabase.from('profiles').select('*').eq('id', userId).single();
-      if (fbErr) throw handleDatabaseError(fbErr);
-      return fallback;
-    }
+    if (error) throw handleDatabaseError(error);
     return data && data.length > 0 ? data[0] : null;
   },
   getUsers: async () => {
     const { data, error } = await supabase.rpc('admin_get_all_profiles');
     if (error) throw handleDatabaseError(error);
-    return data || [];
-  },
-  getSecurityEvents: async () => {
-    const { data, error } = await supabase.rpc('admin_get_security_events');
-    if (error) return [];
     return data || [];
   },
   toggleBlock: async (id: string) => {
@@ -119,15 +94,31 @@ export const adminApi = {
   updateUserRole: async (id: string, role: string) => {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
     if (error) throw new Error(error.message);
+  },
+  getAnalytics: async (days: number = 30) => {
+    const { data, error } = await supabase
+      .from('analytics_daily')
+      .select('*')
+      .order('date', { ascending: true })
+      .limit(days);
+    if (error) throw handleDatabaseError(error);
+    return data || [];
+  },
+  getRealtimeAnalytics: async () => {
+    const { data, error } = await supabase
+      .from('analytics_realtime')
+      .select('*')
+      .order('timestamp', { ascending: false })
+      .limit(10);
+    if (error) throw handleDatabaseError(error);
+    return data || [];
   }
 };
 
 export const authApi = {
   sendOTP: async (email: string) => {
     const { data: { session } } = await supabase.auth.getSession();
-    if (session && session.user.email === email) {
-      return { data: null, error: null };
-    }
+    if (session && session.user.email === email) return { data: null, error: null };
     return supabase.auth.signInWithOtp({ email, options: { shouldCreateUser: true } });
   },
   verifyOTP: (email: string, token: string) => supabase.auth.verifyOtp({ email, token, type: 'email' }),

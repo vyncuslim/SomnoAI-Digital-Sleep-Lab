@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, Share2, Activity, Binary, Gauge,
   ShieldCheck, Smartphone, Database, CheckCircle, Terminal,
-  Zap, Brain, Heart, Waves, LayoutGrid, ChevronRight
+  Zap, Brain, Heart, Waves, LayoutGrid, ChevronRight, FlaskConical
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { Language, translations } from '../services/i18n.ts';
@@ -84,9 +84,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="space-y-10">
-              {/* Lab Manifesto restored to screenshot specs */}
+              {/* Lab Manifesto restored to screenshot specs - NOW LINKED TO EXPERIMENTS */}
               <m.div 
                 whileHover={{ scale: 1.01 }}
+                onClick={() => window.location.hash = '#/experiment'}
                 className="p-10 bg-[#0a0f25]/80 border border-indigo-500/20 rounded-[3rem] relative overflow-hidden group cursor-pointer"
               >
                 <div className="flex items-center justify-between mb-8">
@@ -94,7 +95,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <div className="w-2.5 h-2.5 rounded-full bg-indigo-500 animate-pulse" />
                     <span className="text-[10px] font-black uppercase tracking-[0.4em] text-white italic">Lab Manifesto</span>
                   </div>
-                  <ChevronRight size={20} className="text-slate-700 group-hover:text-indigo-400 transition-colors" />
+                  <div className="flex items-center gap-3">
+                     <span className="text-[9px] font-black uppercase text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity">Launch Neural Lab</span>
+                     <ChevronRight size={20} className="text-slate-700 group-hover:text-indigo-400 transition-colors" />
+                  </div>
                 </div>
                 
                 <p className="text-[18px] md:text-[20px] font-bold text-white italic leading-relaxed text-left tracking-tight mb-8">
@@ -105,8 +109,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <span className="text-[9px] font-black text-slate-600 uppercase tracking-[0.3em]">Neural Synthesis Engine V3.1</span>
                 </div>
                 
-                <div className="absolute top-8 right-10 opacity-20 group-hover:opacity-100 transition-opacity">
-                   <Terminal size={18} className="text-indigo-400" />
+                <div className="absolute top-8 right-12 opacity-20 group-hover:opacity-100 transition-opacity">
+                   <FlaskConical size={20} className="text-indigo-400" />
                 </div>
               </m.div>
               
@@ -200,25 +204,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </GlassCard>
         </div>
       </div>
-      
-      {/* 底部浮动导航 (Pill Dock) 样式微调，使其更紧凑、符合截图中的高保真感 */}
-      <style>{`
-        .pill-dock {
-          background: rgba(2, 6, 23, 0.8) !important;
-          backdrop-filter: blur(40px) !important;
-          border: 1px solid rgba(255, 255, 255, 0.05) !important;
-          padding: 8px !important;
-          border-radius: 999px !important;
-          box-shadow: 0 30px 60px rgba(0,0,0,0.5) !important;
-        }
-        .pill-item {
-          transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .pill-item.active {
-          background: #4f46e5 !important;
-          color: white !important;
-        }
-      `}</style>
     </m.div>
   );
 };

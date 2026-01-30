@@ -1,3 +1,4 @@
+
 {
   "cleanUrls": true,
   "trailingSlash": false,
@@ -89,6 +90,12 @@
     {
       "source": "/((?!assets/|fonts/|favicon.*|manifest.json|sw.js|sitemap.xml|robots.txt|api/|.*\\.[a-zA-Z0-9]+$).*)",
       "destination": "/index.html"
+    }
+  ],
+  "cron": [
+    {
+      "path": "/api/sync-analytics",
+      "schedule": "0 3 * * *"
     }
   ]
 }
