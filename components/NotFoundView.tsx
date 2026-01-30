@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { Home, RefreshCw, ShieldX, Radio, ArrowLeft } from 'lucide-react';
 import { Logo } from './Logo.tsx';
@@ -8,6 +8,10 @@ import { safeNavigateHash, safeReload } from '../services/navigation.ts';
 const m = motion as any;
 
 export const NotFoundView: React.FC = () => {
+  useEffect(() => {
+    document.title = '404: Node Unreachable | SomnoAI Digital Sleep Lab';
+  }, []);
+
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto font-sans relative overflow-hidden bg-[#020617]">
       {/* Immersive Background Decor */}
