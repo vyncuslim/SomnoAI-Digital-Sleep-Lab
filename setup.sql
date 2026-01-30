@@ -42,6 +42,33 @@ CREATE TABLE IF NOT EXISTS public.diary_entries (
 );
 
 -- ==========================================
+-- AUTOMATIC PROFILE SYNC (CRITICAL)
+-- ==========================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, role)
+  VALUES (
+    new.id, 
+    COALESCE(new.raw_user_meta_data->>'full_name', ''),
+    CASE 
+      WHEN (SELECT count(*) FROM public.profiles) = 0 THEN 'owner'
+      ELSE 'user' 
+    END
+  )
+  ON CONFLICT (id) DO NOTHING;
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger execution
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- ==========================================
 -- ANALYTICS TABLES (GA4 SYNC TARGETS)
 -- ==========================================
 
@@ -80,7 +107,7 @@ CREATE TABLE IF NOT EXISTS public.analytics_realtime (
 -- RPC FUNCTIONS (CRITICAL FOR ADMIN PANEL)
 -- ==========================================
 
--- 1. Get Detailed Profile (Auth check)
+-- 1. Get Detailed Profile
 CREATE OR REPLACE FUNCTION public.get_my_detailed_profile()
 RETURNS TABLE (id uuid, role text, is_super_owner boolean, is_blocked boolean, full_name text, email text) AS $$
 BEGIN
@@ -88,12 +115,13 @@ BEGIN
     FROM public.profiles p JOIN auth.users au ON p.id = au.id WHERE p.id = auth.uid();
 END; $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 2. Get All Profiles (Admin Registry)
+-- 2. Get All Profiles
 CREATE OR REPLACE FUNCTION public.admin_get_all_profiles()
 RETURNS TABLE (id uuid, role text, is_super_owner boolean, is_blocked boolean, full_name text, email text, updated_at timestamptz) AS $$
 BEGIN
     IF NOT EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)) 
     THEN RAISE EXCEPTION 'INSUFFICIENT_CLEARANCE'; END IF;
+    
     RETURN QUERY SELECT p.id, p.role, p.is_super_owner, p.is_blocked, p.full_name, au.email::text, p.updated_at
     FROM public.profiles p JOIN auth.users au ON p.id = au.id ORDER BY p.updated_at DESC;
 END; $$ LANGUAGE plpgsql SECURITY DEFINER;
@@ -108,7 +136,7 @@ BEGIN
     UPDATE public.profiles SET is_blocked = NOT is_blocked WHERE id = target_user_id;
 END; $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 4. Update User Role (Clearance Override)
+-- 4. Update User Role
 CREATE OR REPLACE FUNCTION public.admin_update_user_role(target_user_id uuid, new_role text)
 RETURNS void AS $$
 BEGIN
@@ -127,7 +155,6 @@ ALTER TABLE public.analytics_daily ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_country ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_device ENABLE ROW LEVEL SECURITY;
 
--- Shared Admin View Policy
 CREATE POLICY "Admins can view telemetry" ON public.analytics_daily FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
