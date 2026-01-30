@@ -2,20 +2,19 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, Database, ShieldAlert, Search, RefreshCw, 
   Loader2, Activity, ChevronLeft, ShieldCheck, 
-  Ban, Shield, FileText, Crown, ShieldX, KeyRound, 
-  Zap, Globe, Smartphone, ArrowUp, ArrowDown,
-  UserCircle, Terminal as TerminalIcon, Command, X, Cpu,
-  BarChart3, Network, SignalHigh, Monitor, Code2, ExternalLink,
-  Layers, Lock, Eye, Copy, Check, BarChart as BarChartIcon,
-  AlertCircle, History, TrendingUp, MessageSquare, BookOpen,
-  CloudLightning, Cloud, CloudOff, Radio, Server
+  Ban, Shield, Crown, ShieldX, KeyRound, 
+  Zap, Globe, Monitor, Terminal as TerminalIcon, Command, X, Cpu,
+  TrendingUp, MessageSquare, BookOpen,
+  CloudLightning, Cloud, CloudOff, Radio, Server,
+  History, BarChart as BarChartIcon,
+  ArrowUp, ArrowDown, UserCircle, Code2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase } from '../services/supabaseService.ts';
 import { 
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, 
-  CartesianGrid, Cell, PieChart as RePieChart, Pie, Legend, BarChart, Bar
+  CartesianGrid, Cell, PieChart as RePieChart, Pie, BarChart, Bar
 } from 'recharts';
 
 const m = motion as any;
@@ -27,7 +26,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
   
-  // Intelligence Data Streams
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [countryRanking, setCountryRanking] = useState<any[]>([]);
   const [deviceStats, setDeviceStats] = useState<any[]>([]);
@@ -184,10 +182,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <h1 className="text-5xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-4">
               {isOwner ? <span className="text-amber-500">PRIME</span> : <span className="text-indigo-500">CORE</span>} INTELLIGENCE
             </h1>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic flex items-center gap-3">
-              <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeColor }} />
-              DUAL STREAM MONITORING: DB + GA4
-            </p>
+            <div className="flex items-center gap-3">
+               <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: themeColor }} />
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">DUAL STREAM MONITORING: DB + GA4</p>
+            </div>
           </div>
         </div>
         
@@ -209,7 +207,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </nav>
       </header>
 
-      {loading ? (
+      {loading && activeTab !== 'traffic' ? (
         <div className="flex flex-col items-center justify-center py-48 gap-10">
           <Loader2 className="animate-spin text-indigo-500" size={64} />
           <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Synthesizing Dual Data Streams...</p>
@@ -261,7 +259,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <ResponsiveContainer width="100%" height="100%">
                            <AreaChart data={dailyStats}>
                               <defs>
-                                <linearGradient id="fluxGrad" x1="0" y1="0" x2="0" y2="1">
+                                <linearGradient id="fluxGrad" x1="0" x2="0" y2="1">
                                   <stop offset="5%" stopColor="#10b981" stopOpacity={0.3}/>
                                   <stop offset="100%" stopColor="#10b981" stopOpacity={0}/>
                                 </linearGradient>
@@ -290,7 +288,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       <div className="h-[200px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                            <RePieChart>
-                              <Pie data={deviceStats.map(d => ({ name: d.device.toUpperCase(), value: d.users }))} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} stroke="none">
+                              <Pie data={deviceStats.map(d => ({ name: (d.device || 'Unknown').toUpperCase(), value: d.users }))} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} stroke="none">
                                  {deviceStats.map((_, i) => <Cell key={i} fill={['#6366f1', '#10b981', '#f59e0b', '#ec4899'][i % 4]} />)}
                               </Pie>
                               <Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
@@ -370,29 +368,25 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </m.div>
           ) : activeTab === 'traffic' ? (
             <m.div key="traffic" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-12">
-               {/* 📡 GA4 SYNC PIPELINE MONITOR - HIGH VISIBILITY COMPONENT */}
                <GlassCard className="p-10 rounded-[4rem] border-white/10 bg-slate-950/40 shadow-2xl relative overflow-hidden" intensity={1.1}>
                  <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none text-indigo-500"><Server size={220} /></div>
                  
                  <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-12 relative z-10">
                    <div className="flex items-center gap-8 text-left">
                       <div className="relative">
-                        <div className={`p-6 rounded-3xl border transition-all duration-1000 ${actionError ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.1)]' : 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.1)]'}`}>
-                          <Radio size={48} className={loading ? 'animate-pulse' : ''} />
+                        <div className={`p-6 rounded-3xl border transition-all duration-1000 ${actionError ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 shadow-[0_0_30px_rgba(244,63,94,0.1)]' : loading ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400 shadow-[0_0_30px_rgba(99,102,241,0.1)]' : metrics.isGaSynced ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_30px_rgba(16,185,129,0.1)]' : 'bg-slate-500/10 border-slate-500/20 text-slate-500'}`}>
+                          {actionError ? <CloudOff size={48} /> : loading ? <Radio size={48} className="animate-pulse" /> : <Cloud size={48} />}
                         </div>
-                        {metrics.isGaSynced && !actionError && (
-                          <m.div 
-                            initial={{ scale: 0 }} animate={{ scale: 1 }}
-                            className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-4 border-[#020617] shadow-lg shadow-emerald-500/40"
-                          />
+                        {metrics.isGaSynced && !actionError && !loading && (
+                          <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="absolute -top-2 -right-2 w-6 h-6 bg-emerald-500 rounded-full border-4 border-[#020617] shadow-lg shadow-emerald-500/40" />
                         )}
                       </div>
                       <div className="space-y-2">
                         <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Telemetry <span className="text-indigo-400">Ingress Hub</span></h2>
                         <div className="flex items-center gap-3">
-                           <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Google Analytics 4 • API Gateway</span>
+                           <span className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Google Analytics 4 • Real-time Data Stream</span>
                            <div className="h-px w-8 bg-slate-800" />
-                           <span className="text-[9px] font-mono text-slate-500 uppercase">Status: <span className={actionError ? 'text-rose-500' : metrics.isGaSynced ? 'text-emerald-500' : 'text-amber-500'}>{actionError ? 'Link Severed' : metrics.isGaSynced ? 'Handshake Stable' : 'Awaiting Data'}</span></span>
+                           <span className="text-[9px] font-mono text-slate-500 uppercase tracking-widest">MEASUREMENT: <span className="text-indigo-500">G-0L90RZV30P</span></span>
                         </div>
                       </div>
                    </div>
@@ -402,11 +396,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <AnimatePresence mode="wait">
                           {actionError ? (
                             <m.div key="err" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-rose-500/10 border border-rose-500/30 text-rose-500 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(244,63,94,0.15)] italic">
-                              <CloudOff size={16} /> <span>SYNC_ERROR</span>
+                              <CloudOff size={16} /> <span>ERROR</span>
                             </m.div>
                           ) : loading ? (
                             <m.div key="syncing" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-indigo-500/10 border border-indigo-500/30 text-indigo-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(99,102,241,0.15)] italic">
-                              <Loader2 size={16} className="animate-spin" /> <span>SYNCING...</span>
+                              <Loader2 size={16} className="animate-spin" /> <span>SYNCING</span>
                             </m.div>
                           ) : metrics.isGaSynced ? (
                             <m.div key="synced" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-black text-[11px] uppercase tracking-[0.2em] shadow-[0_0_40px_rgba(16,185,129,0.15)] italic">
@@ -414,12 +408,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                             </m.div>
                           ) : (
                             <m.div key="standby" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="flex items-center gap-3 px-8 py-4 rounded-2xl bg-slate-500/10 border border-slate-500/30 text-slate-500 font-black text-[11px] uppercase tracking-[0.2em] italic">
-                              <CloudLightning size={16} /> <span>STANDBY</span>
+                              <CloudLightning size={16} /> <span>IDLE</span>
                             </m.div>
                           )}
                         </AnimatePresence>
                         <span className="text-[9px] font-bold text-slate-600 uppercase tracking-widest pr-2">
-                           {actionError ? 'Access Denied: Check Keys' : loading ? 'Negotiating Data Flow' : metrics.lastSyncDate ? `Last Pulse: ${metrics.lastSyncDate}` : 'Node: No Active Records'}
+                           {actionError ? 'LINK_SEVERED: CHECK REGISTRY' : loading ? 'NEGOTIATING FLOW' : metrics.lastSyncDate ? `Last Pulse: ${metrics.lastSyncDate}` : 'STANDBY: NO RECORDS'}
                         </span>
                      </div>
                      <button 
@@ -439,7 +433,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                            <BarChart data={countryRanking} layout="vertical" margin={{ left: 40, right: 40 }}>
-                              <XAxis type="number" hide /><YAxis dataKey="country" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 800, fontSize: 10 }} />
+                              <XAxis type="number" hide />
+                              <YAxis dataKey="country" type="category" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontWeight: 800, fontSize: 10 }} />
                               <Tooltip cursor={{ fill: 'rgba(255,255,255,0.02)' }} contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
                               <Bar dataKey="users" fill="#f59e0b" radius={[0, 20, 20, 0]} barSize={20} />
                            </BarChart>
@@ -451,12 +446,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                            <BarChart data={dailyStats.slice(-7)}>
-                              <XAxis dataKey="date" hide /><Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
+                              <XAxis dataKey="date" hide />
+                              <Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
                               <Bar dataKey="pageviews" fill="#6366f1" radius={[20, 20, 0, 0]} barSize={40} />
                            </BarChart>
                         </ResponsiveContainer>
                      </div>
-                  </BarChart>
+                  </GlassCard>
                </div>
             </m.div>
           ) : (
@@ -475,7 +471,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <p className="text-sm text-slate-400 italic font-medium leading-relaxed">The Intelligence Hub synchronizes Google Analytics 4 data with Supabase daily. If you see the "UNAUTHORIZED_CRON_ACCESS" error, verify the following in Vercel:</p>
                         <div className="space-y-4">
                            {[
-                             { k: 'GA_PROPERTY_ID', v: 'Found in GA4 Admin settings' },
+                             { k: 'GA_PROPERTY_ID', v: 'Current: 13388354150' },
                              { k: 'GA_SERVICE_ACCOUNT_KEY', v: 'Google Cloud JSON Key (Full)' },
                              { k: 'CRON_SECRET', v: 'Vercel Cron security token (Must match Bearer header)' }
                            ].map((item) => (
@@ -556,8 +552,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                  </div>
                  <div className="mt-12 flex justify-end gap-6">
                     <button onClick={() => setTerminalUser(null)} className="px-10 py-5 text-[11px] font-black uppercase text-slate-600 hover:text-white transition-all tracking-widest">Abort</button>
-                    <button onClick={handleClearanceOverride} disabled={isProcessingId === terminalUser.id} className="px-14 py-6 bg-amber-600 text-black rounded-full font-black text-[11px] uppercase tracking-[0.5em] shadow-2xl hover:bg-amber-500 active:scale-95 transition-all flex items-center justify-center gap-3 italic">
-                      {isProcessingId === terminalUser.id ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
+                    <button onClick={handleClearanceOverride} disabled={isProcessingId === terminalUser?.id} className="px-14 py-6 bg-amber-600 text-black rounded-full font-black text-[11px] uppercase tracking-[0.5em] shadow-2xl hover:bg-amber-500 active:scale-95 transition-all flex items-center justify-center gap-3 italic">
+                      {isProcessingId === terminalUser?.id ? <Loader2 size={16} className="animate-spin" /> : <ShieldCheck size={16} />}
                       COMMIT CLEARANCE
                     </button>
                  </div>

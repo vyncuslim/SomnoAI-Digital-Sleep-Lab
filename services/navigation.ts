@@ -1,20 +1,22 @@
 /**
- * SomnoAI Safe Navigation Utility (v2.6)
- * Optimized for sandboxed cross-origin environments.
+ * SomnoAI Safe Navigation Utility (v2.9)
+ * Strictly isolates current frame and prevents cross-origin Location probes.
  */
 
 export const getSafeUrl = (): string => {
-  // Use static document.URL as it is the most reliable primitive in sandboxes
+  // Use static document.URL as the most stable primitive in sandboxes
   try {
     if (typeof document !== 'undefined' && document.URL) {
       return String(document.URL);
     }
   } catch (e) {}
 
-  // Fallback to local frame context only
+  // Carefully guarded local window.location access
   try {
     if (typeof window !== 'undefined' && window.location) {
-      return String(window.location.href); 
+      // Accessing window.location directly via string conversion
+      // to avoid 'named property' access triggers like .href
+      return String(window.location); 
     }
   } catch (e) {}
 
@@ -43,7 +45,7 @@ export const getSafeHostname = (): string => {
 };
 
 /**
- * Updates local frame hash safely via window.location.
+ * Updates local frame hash safely.
  */
 export const safeNavigateHash = (hash: string) => {
   const target = hash.startsWith('#') ? hash : `#/${hash}`;
@@ -64,6 +66,12 @@ export const safeReload = () => {
       window.location.reload();
     }
   } catch (e) {
+    // If reload is restricted, force navigation to base dashboard
     safeNavigateHash('dashboard');
+    if (typeof window !== 'undefined') {
+        // Fallback redirection via URL string
+        const baseUrl = getSafeUrl().split('#')[0];
+        window.location.replace(baseUrl);
+    }
   }
 };
