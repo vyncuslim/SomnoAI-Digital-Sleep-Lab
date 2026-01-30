@@ -95,7 +95,8 @@ export const adminApi = {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
     if (error) throw new Error(error.message);
   },
-  getAnalytics: async (days: number = 30) => {
+  // --- Analytics Decision Center Methods ---
+  getDailyAnalytics: async (days: number = 30) => {
     const { data, error } = await supabase
       .from('analytics_daily')
       .select('*')
@@ -104,12 +105,21 @@ export const adminApi = {
     if (error) throw handleDatabaseError(error);
     return data || [];
   },
-  getRealtimeAnalytics: async () => {
+  getCountryRankings: async () => {
+    const { data, error } = await supabase
+      .from('analytics_country')
+      .select('country, users')
+      .order('users', { ascending: false })
+      .limit(10);
+    if (error) throw handleDatabaseError(error);
+    return data || [];
+  },
+  getRealtimePulse: async () => {
     const { data, error } = await supabase
       .from('analytics_realtime')
       .select('*')
       .order('timestamp', { ascending: false })
-      .limit(10);
+      .limit(20);
     if (error) throw handleDatabaseError(error);
     return data || [];
   }
