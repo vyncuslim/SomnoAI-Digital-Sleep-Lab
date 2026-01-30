@@ -4,7 +4,7 @@ import { notifyAdmin } from './telegramService.ts';
 export { supabase };
 
 const handleDatabaseError = (err: any) => {
-  console.error("[Database Layer Error]:", err);
+  if (import.meta.env.DEV) console.error("[Database Layer Error]:", err);
   // Specifically detect missing RPC functions
   if (err.code === 'PGRST202' || err.message?.includes('not found') || err.message?.includes('function')) {
     return new Error("RPC_NOT_REGISTERED_IN_DB");
@@ -17,7 +17,6 @@ const handleDatabaseError = (err: any) => {
  */
 export const authApi = {
   signInWithGoogle: async () => {
-    // CORRECTED: Using signInWithOAuth for Google provider
     return await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
@@ -115,7 +114,12 @@ export const feedbackApi = {
 
 export const diaryApi = {
   getEntries: async () => {
-    const { data, error } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false });
+    // Fixed join syntax to prevent 400 errors
+    const { data, error } = await supabase
+      .from('diary_entries')
+      .select('*, profiles(full_name, email)')
+      .order('created_at', { ascending: false });
+    
     if (error) throw handleDatabaseError(error);
     return data;
   },
@@ -132,7 +136,7 @@ export const diaryApi = {
 };
 
 /**
- * Unified Admin API (Combining DB + GA4 Logic)
+ * Unified Admin API
  */
 export const adminApi = {
   getAdminClearance: async (userId: string) => {
@@ -161,7 +165,6 @@ export const adminApi = {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
     if (error) throw new Error(error.message);
   },
-  // GA4 Synced Accessors
   getDailyAnalytics: async (days: number = 30) => {
     const { data, error } = await supabase
       .from('analytics_daily')

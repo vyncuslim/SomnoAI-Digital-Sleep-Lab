@@ -1,4 +1,3 @@
-
 -- ==========================================
 -- SOMNOAI CORE INFRASTRUCTURE
 -- ==========================================
@@ -154,7 +153,9 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_daily ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_country ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.analytics_device ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.diary_entries ENABLE ROW LEVEL SECURITY;
 
+-- Analytics Policies
 CREATE POLICY "Admins can view telemetry" ON public.analytics_daily FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
@@ -163,3 +164,13 @@ USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN 
 
 CREATE POLICY "Admins can view devices" ON public.analytics_device FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
+
+-- Diary Policies
+CREATE POLICY "Users can view own diary" ON public.diary_entries FOR SELECT TO authenticated
+USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can insert own diary" ON public.diary_entries FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete own diary" ON public.diary_entries FOR DELETE TO authenticated
+USING (auth.uid() = user_id);
