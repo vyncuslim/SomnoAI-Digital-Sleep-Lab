@@ -13,7 +13,6 @@ const handleDatabaseError = (err: any) => {
 
 /**
  * Auth API Layer
- * Encapsulates Supabase Auth operations with consistency
  */
 export const authApi = {
   signInWithGoogle: async () => {
@@ -34,7 +33,6 @@ export const authApi = {
     return await supabase.auth.signInWithOtp({ email });
   },
   verifyOTP: async (email: string, token: string) => {
-    // For 6-digit numerical codes, Supabase uses type 'email'
     return await supabase.auth.verifyOtp({ email, token, type: 'email' });
   },
   signOut: async () => {
@@ -44,7 +42,6 @@ export const authApi = {
 
 /**
  * Profile API Layer
- * Manages user profile data
  */
 export const profileApi = {
   getMyProfile: async () => {
@@ -64,7 +61,6 @@ export const profileApi = {
 
 /**
  * User Data API Layer
- * Handles biological metrics and setup status
  */
 export const userDataApi = {
   getUserData: async () => {
@@ -77,18 +73,17 @@ export const userDataApi = {
   updateUserData: async (updates: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("USER_NOT_FOUND");
-    const { data, error } = await supabase.from('user_data').upsert({ id: user.id, ...updates });
+    const { data, error } = await supabase.from('user_data').upsert({ user_id: user.id, ...updates });
     return { data, error };
   },
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("USER_NOT_FOUND");
     
-    // Atomically update profile name and biological metrics
     const { error: pError } = await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
     if (pError) throw pError;
 
-    const { error: uError } = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
+    const { error: uError } = await supabase.from('user_data').upsert({ user_id: user.id, ...metrics });
     if (uError) throw uError;
 
     return { success: true };
@@ -97,12 +92,10 @@ export const userDataApi = {
 
 /**
  * Feedback API Layer
- * Submits user feedback and notifies admins via Telegram
  */
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { data, error } = await supabase.from('feedback').insert([{ type, content, email }]);
-    // Fix: Return error instead of throwing to match the destructuring expectation in components/FeedbackView.tsx
     if (error) return { success: false, error, data: null };
     
     await notifyAdmin(`📩 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\nContent: ${content}`);
@@ -112,12 +105,11 @@ export const feedbackApi = {
 
 /**
  * Diary API Layer
- * Secure storage for psychological and biological sleep logs
  */
 export const diaryApi = {
   getEntries: async () => {
     const { data, error } = await supabase
-      .from('diary')
+      .from('diary_entries')
       .select('*')
       .order('created_at', { ascending: false });
     if (error) throw handleDatabaseError(error);
@@ -126,7 +118,7 @@ export const diaryApi = {
   saveEntry: async (content: string, mood: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     const { data, error } = await supabase
-      .from('diary')
+      .from('diary_entries')
       .insert([{ content, mood, user_id: user?.id }])
       .select()
       .single();
@@ -134,14 +126,13 @@ export const diaryApi = {
     return data;
   },
   deleteEntry: async (id: string) => {
-    const { error } = await supabase.from('diary').delete().eq('id', id);
+    const { error } = await supabase.from('diary_entries').delete().eq('id', id);
     if (error) throw error;
   }
 };
 
 /**
  * Admin API Layer
- * Elevated operations for system managers and project owners
  */
 export const adminApi = {
   checkAdminStatus: async (): Promise<boolean> => {

@@ -3,11 +3,10 @@ import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, Database, ShieldAlert, Search, RefreshCw, 
   Loader2, Activity, ChevronLeft, ShieldCheck, 
-  Ban, Shield, FileText, Crown, ShieldX, KeyRound, ArrowUpRight,
-  Clock, Mail, Fingerprint, Zap, AlertTriangle, Cpu,
-  BarChart3, Network, SignalHigh, X, Terminal as TerminalIcon, Command,
-  LineChart, MousePointer2, Eye, Globe, Smartphone, ArrowUp, ArrowDown,
-  UserCircle, PieChart, Info, Layers, ListChecks, Monitor
+  Ban, Shield, FileText, Crown, ShieldX, KeyRound, 
+  Zap, Globe, Smartphone, ArrowUp, ArrowDown,
+  UserCircle, Terminal as TerminalIcon, Command, X, Cpu,
+  BarChart3, Network, SignalHigh, Monitor
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -19,20 +18,18 @@ import {
 
 const m = motion as any;
 
-type AdminTab = 'overview' | 'subjects' | 'traffic' | 'diagnostics';
+type AdminTab = 'overview' | 'subjects' | 'traffic' | 'system';
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
   const [currentAdmin, setCurrentAdmin] = useState<{ id: string, role: string, is_super_owner: boolean } | null>(null);
   
-  // Traffic States (GA4 sourced from Supabase)
+  // Intelligence Streams
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [countryRanking, setCountryRanking] = useState<any[]>([]);
   const [deviceStats, setDeviceStats] = useState<any[]>([]);
   const [realtime, setRealtime] = useState<any[]>([]);
-
-  // Internal States (DB direct)
   const [users, setUsers] = useState<any[]>([]);
   
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,7 +51,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     ];
     if (isOwner) {
       base.push({ id: 'traffic', label: 'TRAFFIC MESH' });
-      base.push({ id: 'diagnostics', label: 'SYSTEM' });
+      base.push({ id: 'system', label: 'SYSTEM DIAGNOSTIC' });
     }
     return base;
   }, [isOwner]);
@@ -72,22 +69,20 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (profile) setCurrentAdmin(profile);
       else throw new Error("CLEARANCE_NOT_FOUND");
 
-      const tasks: Promise<any>[] = [adminApi.getUsers()];
-      
-      const hasAccess = profile.role === 'owner' || profile.is_super_owner || profile.role === 'admin';
-      if (hasAccess) {
-        tasks.push(adminApi.getDailyAnalytics(timeRange));
-        tasks.push(adminApi.getCountryRankings());
-        tasks.push(adminApi.getRealtimePulse());
-        tasks.push(adminApi.getDeviceSegmentation());
-      }
+      const tasks: Promise<any>[] = [
+        adminApi.getUsers(),
+        adminApi.getDailyAnalytics(timeRange),
+        adminApi.getCountryRankings(),
+        adminApi.getRealtimePulse(),
+        adminApi.getDeviceSegmentation()
+      ];
 
-      const results = await Promise.all(tasks);
-      setUsers(results[0] || []);
-      setDailyStats(results[1] || []);
-      setCountryRanking(results[2] || []);
-      setRealtime(results[3] || []);
-      setDeviceStats(results[4] || []);
+      const [u, d, c, r, ds] = await Promise.all(tasks);
+      setUsers(u || []);
+      setDailyStats(d || []);
+      setCountryRanking(c || []);
+      setRealtime(r || []);
+      setDeviceStats(ds || []);
       
     } catch (err: any) {
       console.error("Intelligence Hub Failure:", err);
@@ -100,21 +95,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const metrics = useMemo(() => {
-    const totalSubjects = users.length;
-    const blockedNodes = users.filter(u => u.is_blocked).length;
-    const adminNodes = users.filter(u => ['admin', 'owner'].includes(u.role?.toLowerCase()) || u.is_super_owner).length;
-
     const len = dailyStats.length;
-    const latest = len >= 1 ? dailyStats[len - 1] : { users: 0, pageviews: 0, sessions: 0 };
-    const prev = len >= 2 ? dailyStats[len - 2] : { users: 0, pageviews: 0, sessions: 0 };
+    const latest = len >= 1 ? dailyStats[len - 1] : { users: 0, pageviews: 0 };
+    const prev = len >= 2 ? dailyStats[len - 2] : { users: 0, pageviews: 0 };
     
     const calcGrowth = (curr: number, old: number) => 
       old === 0 ? 0 : Math.round(((curr - old) / old) * 100);
 
     return {
-      totalSubjects,
-      blockedNodes,
-      adminNodes,
+      totalSubjects: users.length,
+      blockedNodes: users.filter(u => u.is_blocked).length,
+      adminNodes: users.filter(u => ['admin', 'owner'].includes(u.role?.toLowerCase()) || u.is_super_owner).length,
       latestUsers: latest.users,
       latestViews: latest.pageviews,
       userGrowth: calcGrowth(latest.users, prev.users),
@@ -126,7 +117,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     e.preventDefault(); e.stopPropagation();
     if (isProcessingId) return;
     setIsProcessingId(targetUser.id);
-    setActionError(null);
     try {
       await adminApi.toggleBlock(targetUser.id);
       setUsers(prev => prev.map(u => u.id === targetUser.id ? { ...u, is_blocked: !u.is_blocked } : u));
@@ -140,11 +130,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleCommitClearance = async () => {
     if (!terminalUser || isProcessingId) return;
     setIsProcessingId(terminalUser.id);
-    setActionError(null);
     try {
       const match = commandInput.match(/SET ROLE (user|admin|owner)/i);
       const newRole = match ? match[1].toLowerCase() : null;
-      if (!newRole) throw new Error("SYNTAX_ERROR");
+      if (!newRole) throw new Error("SYNTAX_ERROR: EXPECTED 'SET ROLE [role]'");
       await adminApi.updateUserRole(terminalUser.id, newRole);
       setUsers(prev => prev.map(u => u.id === terminalUser.id ? { ...u, role: newRole } : u));
       setTerminalUser(null);
@@ -167,7 +156,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <m.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="bg-rose-950/90 border border-rose-500/50 p-6 rounded-[2.5rem] shadow-2xl flex items-start gap-5 backdrop-blur-3xl">
               <ShieldAlert className="text-rose-500 shrink-0 mt-1" size={24} />
               <div className="flex-1">
-                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">System Violation</p>
+                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mb-1">Neural Exception</p>
                 <p className="text-sm font-bold text-white italic">{actionError}</p>
               </div>
               <button onClick={() => setActionError(null)} className="p-2 text-rose-400 hover:bg-white/10 rounded-xl transition-all"><X size={18} /></button>
@@ -183,12 +172,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
           <div className="space-y-2">
             <h1 className="text-5xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-4">
-              {isOwner ? <span className="text-amber-500">PRIME</span> : <span className="text-indigo-500">CORE</span>} DECISION
+              {isOwner ? <span className="text-amber-500">PRIME</span> : <span className="text-indigo-500">CORE</span>} INTELLIGENCE
               {isOwner && <Crown size={32} className="text-amber-500 animate-pulse" />}
             </h1>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic flex items-center gap-3">
               <div className={`w-2 h-2 rounded-full animate-pulse bg-${themeColor}-500`} />
-              SYSTEM CLEARANCE: {currentAdmin?.role?.toUpperCase() || 'OFFLINE'}
+              SYSTEM NODE CLEARANCE: {currentAdmin?.role?.toUpperCase() || 'CALIBRATING...'}
             </p>
           </div>
         </div>
@@ -205,7 +194,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       {loading ? (
         <div className="flex flex-col items-center justify-center py-48 gap-10">
           <Loader2 className={`animate-spin text-${themeColor}-500`} size={64} />
-          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Syncing Dual Telemetry Streams...</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Syncing Dual Intelligence Streams...</p>
         </div>
       ) : (
         <AnimatePresence mode="wait">
@@ -216,14 +205,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <div className="space-y-6">
                  <div className="flex items-center gap-3 px-6">
                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Traffic Perception (GA4)</h2>
+                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Traffic Perception (External GA4)</h2>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                     {[
-                      { label: 'External Visits', value: metrics.latestUsers, growth: metrics.userGrowth, icon: Globe, color: 'emerald' },
-                      { label: 'Flux Density', value: metrics.latestViews, growth: metrics.viewGrowth, icon: Zap, color: 'indigo' },
+                      { label: 'Neural Flux (Users)', value: metrics.latestUsers, growth: metrics.userGrowth, icon: Globe, color: 'emerald' },
+                      { label: 'Event Density (Views)', value: metrics.latestViews, growth: metrics.viewGrowth, icon: Zap, color: 'indigo' },
                       { label: 'Real-time Pulse', value: realtime[0]?.active_users || 0, growth: 0, icon: SignalHigh, color: 'rose' },
-                      { label: 'GA Bridge Status', value: 'NOMINAL', growth: 0, icon: Network, color: 'emerald' }
+                      { label: 'Active Mesh Nodes', value: countryRanking.length, growth: 0, icon: Network, color: 'amber' }
                     ].map((stat, i) => (
                       <GlassCard key={i} className={`p-10 rounded-[3.5rem] border-${stat.color}-500/10 shadow-2xl`}>
                         <div className="flex justify-between items-start mb-6">
@@ -248,8 +237,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <GlassCard className="lg:col-span-8 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 overflow-hidden shadow-2xl min-h-[450px]">
                     <div className="flex justify-between items-start mb-12">
                       <div className="space-y-3">
-                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Traffic Flux</h3>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">GA4 Temporal Telemetry</p>
+                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Traffic Temporal Flux</h3>
+                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Temporal Telemetry Stream</p>
                       </div>
                       <div className="flex gap-2">
                          {[7, 14, 30].map(d => (
@@ -278,7 +267,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <GlassCard className="lg:col-span-4 p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col justify-between">
                     <div>
                       <div className="flex items-center gap-4 mb-10">
-                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500"><Smartphone size={24} /></div>
+                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500"><Monitor size={24} /></div>
                         <h3 className="text-xl font-black italic text-white uppercase tracking-tighter">Device Proportions</h3>
                       </div>
                       <div className="h-[200px] w-full">
@@ -303,17 +292,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <div className="space-y-6">
                  <div className="flex items-center gap-3 px-6">
                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Internal Registry Consciousness (DB)</h2>
+                   <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-slate-500 italic">Registry Consciousness (Internal DB)</h2>
                  </div>
                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                     <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
                        <div className="flex items-center gap-4 mb-8">
                          <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-500"><Users size={20} /></div>
-                         <h4 className="text-sm font-black italic text-white uppercase">Growth Monitor</h4>
+                         <h4 className="text-sm font-black italic text-white uppercase">Subject Density</h4>
                        </div>
                        <div className="space-y-4">
                           <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Total Subjects</span><span className="text-white">{metrics.totalSubjects}</span></div>
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Admin Density</span><span className="text-amber-500">{metrics.adminNodes}</span></div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Prime Nodes</span><span className="text-amber-500">{metrics.adminNodes}</span></div>
                        </div>
                     </GlassCard>
                     <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
@@ -322,18 +311,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <h4 className="text-sm font-black italic text-white uppercase">Registry Integrity</h4>
                        </div>
                        <div className="space-y-4">
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Blocked Nodes</span><span className="text-rose-500">{metrics.blockedNodes}</span></div>
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Health Check</span><span className="text-emerald-500">PASS</span></div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Expunged Nodes</span><span className="text-rose-500">{metrics.blockedNodes}</span></div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Neural Shield</span><span className="text-emerald-500">ACTIVE</span></div>
                        </div>
                     </GlassCard>
                     <GlassCard className="p-10 border-white/5 bg-white/[0.01]">
                        <div className="flex items-center gap-4 mb-8">
                          <div className="p-3 bg-emerald-500/10 rounded-xl text-emerald-400"><Activity size={20} /></div>
-                         <h4 className="text-sm font-black italic text-white uppercase">System Consciousness</h4>
+                         <h4 className="text-sm font-black italic text-white uppercase">Registry Pulse</h4>
                        </div>
                        <div className="space-y-4">
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>DB Throughput</span><span className="text-white tracking-widest uppercase">Nominal</span></div>
-                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Sync Latency</span><span className="text-white tracking-widest uppercase">12ms</span></div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Inbound Rate</span><span className="text-white">NOMINAL</span></div>
+                          <div className="flex justify-between text-[11px] font-bold text-slate-500 italic"><span>Sync Latency</span><span className="text-white">12ms</span></div>
                        </div>
                     </GlassCard>
                  </div>
@@ -344,13 +333,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl overflow-visible">
                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16">
                      <div className="space-y-3">
-                        <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Identity <span className={`text-${themeColor}-500`}>Registry</span></h3>
-                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Authorized Laboratory Node Access</p>
+                        <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span className={`text-${themeColor}-500`}>Registry</span></h3>
+                        <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.5em] italic">Identity Log of Current Laboratory Subjects</p>
                      </div>
                      <div className="flex gap-4 w-full md:w-auto">
                         <div className="relative flex-1 md:w-96 group">
                            <Search className="absolute left-7 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-white" size={22} />
-                           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Search Node ID..." className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm text-white outline-none focus:border-white/20 shadow-inner" />
+                           <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Query Node Identifier..." className="w-full bg-black/60 border border-white/5 rounded-full pl-16 pr-8 py-6 text-sm text-white outline-none focus:border-white/20 shadow-inner italic font-bold" />
                         </div>
                         <button onClick={fetchData} className="p-6 bg-white/5 rounded-full text-slate-500 hover:text-white border border-white/5 transition-all"><RefreshCw size={24} /></button>
                      </div>
@@ -360,9 +349,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <table className="w-full text-left border-separate border-spacing-y-4">
                         <thead>
                            <tr className="text-[11px] font-black uppercase text-slate-600 tracking-[0.4em] italic">
-                              <th className="px-8 pb-4">Identity Node</th>
-                              <th className="px-8 pb-4">Clearance</th>
-                              <th className="px-8 pb-4 text-right">Actions</th>
+                              <th className="px-8 pb-4">Subject Node</th>
+                              <th className="px-8 pb-4">Clearance Level</th>
+                              <th className="px-8 pb-4 text-right">Intervention</th>
                            </tr>
                         </thead>
                         <tbody>
@@ -374,7 +363,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                          {user.is_super_owner || user.role === 'owner' ? <Crown size={28} /> : <UserCircle size={28} />}
                                       </div>
                                       <div className="min-w-0 space-y-1">
-                                         <p className="text-base font-black text-white italic truncate max-w-[240px] leading-tight">{user.email || 'ANONYMOUS'}</p>
+                                         <p className="text-base font-black text-white italic truncate max-w-[240px] leading-tight">{user.email || 'ANONYMOUS_NODE'}</p>
                                          <p className="text-[10px] font-mono text-slate-700 uppercase tracking-tighter">{user.id}</p>
                                       </div>
                                    </div>
@@ -412,7 +401,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
                      <div className="flex items-center gap-4 mb-12">
                         <Globe size={24} className="text-amber-500" />
-                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Global Footprint</h3>
+                        <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Geographic Proximity</h3>
                      </div>
                      <div className="h-[350px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -428,7 +417,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/10 bg-slate-950/60 shadow-2xl">
                      <div className="flex items-center gap-4 mb-12">
-                        <Monitor size={24} className="text-indigo-500" />
+                        <Smartphone size={24} className="text-indigo-500" />
                         <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">Device Segmentation</h3>
                      </div>
                      <div className="h-[350px] w-full">
@@ -438,7 +427,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                  {deviceChartData.map((_, i) => <Cell key={i} fill={['#6366f1', '#10b981', '#f59e0b'][i % 3]} />)}
                               </Pie>
                               <Tooltip contentStyle={{ backgroundColor: '#020617', border: 'none', borderRadius: '1rem' }} />
-                              <Legend />
+                              <Legend verticalAlign="bottom" height={36}/>
                            </RePieChart>
                         </ResponsiveContainer>
                      </div>
@@ -446,23 +435,24 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                </div>
             </m.div>
           ) : isOwner ? (
-             <m.div key="diagnostics" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 max-w-4xl mx-auto">
+             <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="py-20 max-w-4xl mx-auto">
                 <GlassCard className="p-20 rounded-[5rem] text-center space-y-12 bg-slate-950/40 relative shadow-2xl">
                    <div className="relative">
                       <div className="absolute inset-0 blur-[60px] opacity-10 bg-amber-500 animate-pulse" />
                       <Cpu size={100} className="mx-auto text-amber-500 relative z-10" />
                    </div>
                    <div className="space-y-6 text-center">
-                      <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Prime Control</h3>
-                      <p className="text-base text-slate-500 italic max-w-md mx-auto leading-relaxed">Intelligence bridge verified. Vercel Cron status: NOMINAL. Analytics ingestion pipe: OPEN.</p>
+                      <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Prime Control Handshake</h3>
+                      <p className="text-base text-slate-500 italic max-w-md mx-auto leading-relaxed">Intelligence bridge established. Vercel Cron status: NOMINAL. DB Throughput: 1.2GB/s. GA4 Ingestion Pipe: OPEN.</p>
                    </div>
+                   <button onClick={() => window.location.reload()} className="px-12 py-5 bg-white text-black rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all flex items-center gap-3 mx-auto shadow-2xl italic"><RefreshCw size={14} /> FULL SYSTEM RESYNC</button>
                 </GlassCard>
              </m.div>
           ) : null}
         </AnimatePresence>
       )}
 
-      {/* Clearance Override Interface */}
+      {/* Command Interface Modal */}
       <AnimatePresence>
         {terminalUser && isOwner && (
           <div className="fixed inset-0 z-[20000000] flex items-center justify-center p-6 bg-black/98 backdrop-blur-[40px]">
