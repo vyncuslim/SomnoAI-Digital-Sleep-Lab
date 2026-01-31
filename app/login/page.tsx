@@ -22,9 +22,8 @@ export default function UserLoginPage({
       <Auth 
         lang={lang} 
         onLogin={() => {
-            // 设置 Hash 以强制触发 SPA 视图切换，同时更新物理路径
-            window.location.hash = '#/dashboard';
-            window.history.replaceState(null, '', '/dashboard');
+            // 强力跳转方案：清除所有状态并强制进入 Hash 主视图
+            window.location.replace('/#dashboard');
             onSuccess();
         }} 
         onGuest={onSandbox}

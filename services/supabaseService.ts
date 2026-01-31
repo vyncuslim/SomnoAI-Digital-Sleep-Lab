@@ -5,18 +5,16 @@ import { notifyAdmin } from './telegramService.ts';
 export { supabase };
 
 /**
- * 核心系统审计日志 - 增强版（并行通知机制）
+ * Enhanced Audit Protocol
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   const sensitiveActions = ['ADMIN_ROLE_CHANGE', 'SECURITY_BREACH_ATTEMPT', 'SYSTEM_EXCEPTION', 'ROOT_NODE_PROTECTION_TRIGGER'];
   const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(action);
 
-  // 1. 并行尝试发送通知，不等待数据库结果，防止数据库策略限制导致告警丢失
   if (shouldNotify) {
-    notifyAdmin(`🚨 [${level}] ${action}\nLOG: ${details}\nNODE_TIME: ${new Date().toLocaleString()}`);
+    notifyAdmin(`🚨 [${level}] ${action}\nNODE_ID: ${window.location.hostname}\nLOG: ${details}\nTIMESTAMP: ${new Date().toISOString()}`);
   }
 
-  // 2. 写入数据库存档
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
     await supabase.from('audit_logs').insert([{
@@ -27,41 +25,38 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       timestamp: new Date().toISOString()
     }]);
   } catch (e) {
-    console.warn("Database audit sync failed, but Telegram alert dispatched.");
+    console.debug("Audit registry detached.");
   }
 };
 
 /**
- * 全域错误报告协议
+ * High-Precision Error Reporting
  */
 export const reportError = async (message: string, stack?: string, source: string = 'FRONTEND_RUNTIME') => {
-  const isNoise = 
-    message.includes('Location.href') || 
-    message.includes('named property \'href\'') ||
-    message.includes('cross-origin frame') || 
-    message.includes('AbortError') ||
-    message.includes('Extensions') ||
-    message.includes('Salesmartly');
-    
-  if (isNoise) return;
+  const noise = [
+    'Location.href', 'named property', 'SecurityError', 'cross-origin', 
+    'AbortError', 'Extensions', 'Salesmartly', 'Google is not defined'
+  ];
+  
+  if (noise.some(n => message.includes(n))) return;
 
-  const context = `[${source}] ${message}${stack ? `\n\nStack Trace:\n${stack.slice(0, 500)}` : ''}`;
-  await logAuditLog('SYSTEM_EXCEPTION', context, 'CRITICAL');
+  const context = `SOURCE: ${source}\nMSG: ${message}\nUA: ${navigator.userAgent}\nLOC: ${window.location.href}${stack ? `\n\nSTACK:\n${stack.slice(0, 400)}` : ''}`;
+  await logAuditLog('RUNTIME_EXCEPTION', context, 'CRITICAL');
 };
 
 const logSecurityEvent = async (email: string, type: string, details: string) => {
   try {
     await supabase.rpc('log_security_event', { email, event_type: type, details });
-    if (type === 'LOGIN_FAIL' || type === 'SECURITY_BREACH') {
-      notifyAdmin(`⚠️ SECURITY ALERT: ${type} for ${email}\nReason: ${details}`);
+    if (['LOGIN_FAIL', 'SECURITY_BREACH', 'OTP_FAIL'].includes(type)) {
+      notifyAdmin(`⚠️ SECURITY_SIGNAL: ${type}\nSUBJECT: ${email}\nINFO: ${details}`);
     }
   } catch (e) {
-    console.warn("Security logger unreachable");
+    console.debug("Security pulse offline.");
   }
 };
 
 /**
- * Auth API Layer
+ * Auth API
  */
 export const authApi = {
   signInWithGoogle: async () => {
@@ -79,12 +74,8 @@ export const authApi = {
       password,
       options: { captchaToken }
     });
-    if (res.error) {
-      logSecurityEvent(email, 'LOGIN_FAIL', res.error.message);
-    } else {
-      logSecurityEvent(email, 'LOGIN_SUCCESS', 'Identity verified');
-      logAuditLog('USER_LOGIN', `Login successful for ${email}`);
-    }
+    if (res.error) logSecurityEvent(email, 'LOGIN_FAIL', res.error.message);
+    else logAuditLog('USER_LOGIN', `Identity established: ${email}`);
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
@@ -93,10 +84,7 @@ export const authApi = {
       password, 
       options: { ...options, captchaToken } 
     });
-    if (!res.error) {
-      logSecurityEvent(email, 'REGISTRATION', 'New subject initialized');
-      logAuditLog('USER_SIGNUP', `Account created: ${email}`);
-    }
+    if (!res.error) logAuditLog('USER_SIGNUP', `New subject node registered: ${email}`);
     return res;
   },
   sendOTP: async (email: string, captchaToken?: string) => {
@@ -105,27 +93,24 @@ export const authApi = {
       options: { captchaToken }
     });
     if (res.error) logSecurityEvent(email, 'OTP_FAIL', res.error.message);
-    else logSecurityEvent(email, 'OTP_SENT', 'Handshake token dispatched');
+    else logSecurityEvent(email, 'OTP_SENT', 'Protocol token dispatched');
     return res;
   },
   verifyOTP: async (email: string, token: string) => {
     const res = await (supabase.auth as any).verifyOtp({ email, token, type: 'email' });
     if (res.error) await logSecurityEvent(email, 'OTP_VERIFY_FAIL', res.error.message);
-    else {
-      await logSecurityEvent(email, 'OTP_VERIFY_SUCCESS', 'Node authorized');
-      logAuditLog('OTP_VERIFY', `OTP verification successful: ${email}`);
-    }
+    else logAuditLog('OTP_VERIFY_SUCCESS', `Auth handshake confirmed: ${email}`);
     return res;
   },
   signOut: async () => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    if (user) logAuditLog('USER_LOGOUT', `Session terminated: ${user.email}`);
+    if (user) logAuditLog('USER_LOGOUT', `Manual session severance: ${user.email}`);
     return await (supabase.auth as any).signOut();
   }
 };
 
 /**
- * Unified Admin API
+ * Unified Admin Registry
  */
 export const adminApi = {
   getAdminClearance: async (userId: string) => {
@@ -151,11 +136,10 @@ export const adminApi = {
       .order('created_at', { ascending: false, nullsFirst: false })
       .limit(limit);
     if (error) {
-      const { data: fallbackData, error: fallbackError } = await supabase.from(tableName).select('*').limit(limit);
-      if (fallbackError) throw fallbackError;
-      return fallbackData;
+      const { data: fallbackData } = await supabase.from(tableName).select('*').limit(limit);
+      return fallbackData || [];
     }
-    return data;
+    return data || [];
   },
   getTableCount: async (tableName: string) => {
     const { count, error } = await supabase.from(tableName).select('*', { count: 'exact', head: true });
@@ -169,28 +153,16 @@ export const adminApi = {
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
     const newState = !currentlyBlocked;
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
-    if (!error) {
-      logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node ${email}`, newState ? 'WARNING' : 'INFO');
-    }
+    if (!error) logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node ${email}`, newState ? 'WARNING' : 'INFO');
     return { error };
   },
   updateUserRole: async (id: string, email: string, newRole: string) => {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
-    if (!error) {
-      logAuditLog('ADMIN_ROLE_CHANGE', `Node ${email} clearance shifted to ${newRole.toUpperCase()}`, 'CRITICAL');
-    }
+    if (!error) logAuditLog('ADMIN_ROLE_CHANGE', `Clearance shift: ${email} -> ${newRole.toUpperCase()}`, 'CRITICAL');
     return { error };
   },
   getDailyAnalytics: async (days: number = 30) => {
     const { data } = await supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(days);
-    return data || [];
-  },
-  getCountryRankings: async () => {
-    const { data } = await supabase.from('analytics_country').select('country, users').order('users', { ascending: false }).limit(10);
-    return data || [];
-  },
-  getRealtimePulse: async () => {
-    const { data } = await supabase.from('analytics_realtime').select('*').order('timestamp', { ascending: false }).limit(1);
     return data || [];
   }
 };
@@ -229,20 +201,16 @@ export const userDataApi = {
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    const { data, error } = await supabase.from('feedback').insert([{ type, content, email }]);
+    const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error };
-    notifyAdmin(`📩 NEW FEEDBACK\nTYPE: ${type.toUpperCase()}\nFROM: ${email}\nCONTENT: ${content}`);
+    notifyAdmin(`📩 FEEDBACK_SIGNAL\nTYPE: ${type.toUpperCase()}\nFROM: ${email}\nDATA: ${content}`);
     return { success: true };
   }
 };
 
 export const diaryApi = {
   getEntries: async () => {
-    const { data, error } = await supabase
-      .from('diary_entries')
-      .select('*, profiles(full_name, email)') 
-      .order('created_at', { ascending: false })
-      .limit(10);
+    const { data, error } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false }).limit(10);
     if (error) throw error;
     return data;
   },

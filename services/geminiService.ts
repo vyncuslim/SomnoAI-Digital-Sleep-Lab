@@ -13,26 +13,28 @@ const handleGeminiError = (err: any) => {
   const errMsg = err.message || "";
   console.error("Gemini API Error Context:", err);
   
+  // Specific catch for AI Studio key selector
   if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID")) {
     console.warn("[Neural Bridge] Identity reset required. Re-triggering key selector.");
     (window as any).aistudio?.openSelectKey().catch(() => {});
+    throw new Error("API_KEY_REQUIRED");
   }
   
-  throw new Error(errMsg.includes("API_KEY") ? "API_KEY_REQUIRED" : "CORE_PROCESSING_EXCEPTION");
+  if (errMsg.includes("API_KEY")) throw new Error("API_KEY_REQUIRED");
+  throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
-// Model Constants - Upgraded to Gemini 3 Series as per requirements
+// Model Constants
 const MODEL_FLASH = 'gemini-3-flash-preview'; 
 const MODEL_PRO = 'gemini-3-pro-preview'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
-const MODEL_VISION = 'gemini-3-pro-preview'; // Using 3 Pro for high-fidelity facial analysis
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
-  const prompt = `You are a world-class digital sleep scientist and chief biohacker. Please perform deep neural analysis based on the following high-precision physiological telemetry.
-    You MUST return a JSON array containing 3 professional strings. 
-    1. Neural Architecture Analysis: Analyze brain clearing efficiency and memory consolidation based on Deep and REM ratios.
-    2. Circadian Diagnosis: Assess the correlation between Resting Heart Rate (RHR) and Sleep Score to predict today's cognitive load.
-    3. Tactical Biohacking Suggestion: Provide one physiological optimization protocol that can be executed today.
+  const prompt = `You are a digital sleep scientist. Perform deep neural analysis based on physiological telemetry.
+    Return a JSON array containing 3 professional strings:
+    1. Neural Architecture Analysis (Deep/REM ratio)
+    2. Circadian Diagnosis
+    3. Tactical Biohacking Suggestion
     Data: Score ${data.score}, Deep ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm.`;
 
   try {
@@ -43,7 +45,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
       config: { 
         responseMimeType: "application/json",
         responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } },
-        thinkingConfig: { thinkingBudget: 12000 } // Enabling thinking for Flash 3
+        thinkingConfig: { thinkingBudget: 12000 }
       }
     });
     return JSON.parse(response.text?.trim() || "[]");
@@ -59,14 +61,11 @@ export const chatWithCoach = async (
   contextData?: SleepRecord | null
 ) => {
   const bio = contextData ? `\nTELEMETRY_CONTEXT: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, RHR: ${contextData.heartRate.resting}bpm.` : "";
-  const systemInstruction = `You are the Somno Chief Research Officer (CRO). Professional, futuristic, data-driven. 
-    Bio: ${bio}
-    When analyzing facial scans: Look for indicators of fatigue (dark circles, eye puffiness, skin hydration) and correlate with sleep telemetry.
-    Format your response in a structured, analytical manner.`;
+  const systemInstruction = `You are the Somno Chief Research Officer (CRO). Data-driven and professional. Bio: ${bio}
+    Analyze facial scans for fatigue indicators and correlate with sleep telemetry.`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-    
     const contents = history.map(m => {
       const parts: any[] = [{ text: m.content }];
       if (m.image) {
@@ -103,7 +102,7 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
-      contents: `Design a high-precision sleep experiment based on current telemetry: score ${data.score}, RHR ${data.heartRate?.resting}. Ensure the hypothesis is scientifically rigorous.`,
+      contents: `Design a sleep experiment based on telemetry: score ${data.score}, RHR ${data.heartRate?.resting}.`,
       config: { 
         responseMimeType: "application/json",
         responseSchema: {
@@ -130,7 +129,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
-      contents: `Synthesize a weekly biometric trend report for the following telemetry sequence: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, use English only. Focus on long-term recovery patterns.`,
+      contents: `Synthesize a weekly biometric trend report: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, English only.`,
       config: {
         thinkingConfig: { thinkingBudget: 8000 }
       }
@@ -147,7 +146,7 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
-      contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on your recovery score of ${data.score}. Relax your neural pathways and enter deep hibernation.` }] }],
+      contents: [{ parts: [{ text: `Say cheerfully: Guided meditation for recovery score ${data.score}. Relax your neural pathways.` }] }],
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
