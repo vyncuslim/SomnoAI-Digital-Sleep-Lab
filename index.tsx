@@ -15,7 +15,8 @@ const isNoise = (msg: string) => {
     'ERR_BLOCKED_BY_CLIENT', 'Extension', 'Salesmartly', 
     'Google is not defined', 'Permissions-Policy', 'browsing-topics',
     'reading \'query\'', 'content.js', 'chrome-extension', 'Object.defineProperty',
-    'reading \'postMessage\'', 'chrome.tabs.query'
+    'reading \'postMessage\'', 'chrome.tabs.query', 'signal is aborted',
+    'AbortError', 'user_app_status'
   ];
   return noise.some(n => msg.includes(n));
 };

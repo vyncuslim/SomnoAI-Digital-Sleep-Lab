@@ -79,7 +79,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const checkSyncStatus = async () => {
     try {
-      // 容错查询：先检查 audit_logs 是否可按 created_at 排序
+      // 容错查询：尝试获取最新的同步日志
       const { data: logs, error } = await supabase
         .from('audit_logs')
         .select('action, created_at')
@@ -267,7 +267,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </h1>
             <div className="flex items-center gap-3">
                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • v22.4.8</p>
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • v22.5.0</p>
             </div>
           </div>
         </div>

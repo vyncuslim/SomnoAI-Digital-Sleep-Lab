@@ -1,6 +1,6 @@
 
 /**
- * SOMNO LAB - TELEGRAM GATEWAY SERVICE v4.2
+ * SOMNO LAB - TELEGRAM GATEWAY SERVICE v4.3
  * Routes system alerts and audit logs via encrypted Supabase Edge Functions.
  */
 
@@ -22,9 +22,13 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     finalMessage = `🚨 SOMNO LAB [${type}]\n\nLOG: ${content}\nTIME: ${new Date().toISOString()}`;
   }
 
-  // Prevent UI blocking with background transmission and local timeout
+  // Increased timeout for edge cold starts and high latency connections
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000); 
+  const timeoutId = setTimeout(() => {
+    try {
+      controller.abort();
+    } catch (e) {}
+  }, 15000); 
 
   try {
     const response = await fetch(EDGE_FUNCTION_URL, {
@@ -32,7 +36,7 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY // Essential for Supabase Edge Functions
+        'apikey': SUPABASE_ANON_KEY 
       },
       body: JSON.stringify({ message: finalMessage }),
       signal: controller.signal
@@ -48,7 +52,10 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     return true;
   } catch (err: any) {
     clearTimeout(timeoutId);
-    console.debug(`TELEGRAM_GATEWAY_HANDSHAKE_VOID: ${err.message || 'ABORTED'}`);
+    // Only debug log meaningful errors, ignore intentional aborts from navigation/timeout
+    if (err.name !== 'AbortError') {
+      console.debug(`TELEGRAM_GATEWAY_HANDSHAKE_VOID: ${err.message}`);
+    }
     return false;
   }
 };

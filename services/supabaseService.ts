@@ -155,22 +155,30 @@ export const adminApi = {
     return data || [];
   },
   getTableData: async (tableName: string, limit = 100) => {
-    // 方案：自适应排序。如果不成功，则降级为普通查询。
-    // 解决错误：400 (Bad Request) - column "created_at" does not exist
+    // 智能排序探针：按照优先级尝试不同的时间列
+    const timeColumns = ['created_at', 'date', 'timestamp', 'recorded_at'];
+    
+    // 如果是分析表，优先尝试 'date'
+    if (tableName.startsWith('analytics_')) {
+      timeColumns.unshift('date');
+    }
+
     const tryQuery = async (column: string) => {
-      return await supabase.from(tableName).select('*').order(column, { ascending: false }).limit(limit);
+      try {
+        const { data, error } = await supabase.from(tableName).select('*').order(column, { ascending: false }).limit(limit);
+        return { data, error };
+      } catch (e) {
+        return { data: null, error: e };
+      }
     };
 
+    for (const col of Array.from(new Set(timeColumns))) {
+      const { data, error } = await tryQuery(col);
+      if (!error && data) return data;
+    }
+
+    // 最终保底：无序读取
     try {
-      // 1. 尝试使用常规 created_at
-      let result = await tryQuery('created_at');
-      if (!result.error) return result.data;
-
-      // 2. 如果失败，尝试分析表专用的 date 字段
-      result = await tryQuery('date');
-      if (!result.error) return result.data;
-
-      // 3. 最终保底：无序读取
       const { data } = await supabase.from(tableName).select('*').limit(limit);
       return data || [];
     } catch {
@@ -243,10 +251,13 @@ export const userDataApi = {
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
+    const { error } = await feedbackApi.submitFeedbackToDB(type, content, email);
     if (error) return { success: false, error };
     notifyAdmin(`📩 FEEDBACK_SIGNAL\nTYPE: ${type.toUpperCase()}\nFROM: ${email}\nDATA: ${content}`);
     return { success: true };
+  },
+  submitFeedbackToDB: async (type: string, content: string, email: string) => {
+     return await supabase.from('feedback').insert([{ type, content, email }]);
   }
 };
 
