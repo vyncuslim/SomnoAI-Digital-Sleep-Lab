@@ -46,7 +46,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [syncState, setSyncState] = useState<SyncState>('IDLE');
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   
-  // Registry State
   const [users, setUsers] = useState<any[]>([]);
   const [registrySearch, setRegistrySearch] = useState('');
   const [processingUserId, setProcessingUserId] = useState<string | null>(null);
@@ -54,11 +53,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   
   const popoverRef = useRef<HTMLDivElement>(null);
   
-  // Stats
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [signals, setSignals] = useState<any[]>([]);
   
-  // Table Editor State
   const [selectedTable, setSelectedTable] = useState<string>('profiles');
   const [tableData, setTableData] = useState<any[]>([]);
   const [tableLoading, setTableLoading] = useState(false);
@@ -84,8 +81,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const checkSyncStatus = async () => {
     try {
-      // 1. Check explicit sync logs
-      const { data: logs, error: logErr } = await supabase
+      const { data: logs } = await supabase
         .from('audit_logs')
         .select('action, timestamp')
         .in('action', ['GA4_SYNC_SUCCESS', 'GA4_SYNC_ERROR'])
@@ -107,7 +103,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         }
       }
 
-      // 2. Fallback: check resident data count
       const count = await adminApi.getTableCount('analytics_daily');
       setSyncState(count > 0 ? 'DATA_RESIDENT' : 'IDLE');
     } catch (e) {
@@ -142,14 +137,36 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setTableCounts(counts);
       await checkSyncStatus();
     } catch (err: any) {
-      setActionError(err.message || "Registry synchronization failure.");
-      setSyncState('ERROR');
+      setActionError(err.message || "Mesh synchronization failure.");
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => { fetchData(); }, []);
+  
+  // 实时订阅安全事件，解决“日志不更新”问题
+  useEffect(() => {
+    // Fix: Added required 'schema' parameter to the filter objects for 'postgres_changes' to match the Supabase SDK overload signature.
+    const channel = supabase
+      .channel('security_pulse')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'security_events' }, (payload) => {
+        setSignals(prev => [payload.new as any, ...prev].slice(0, 40));
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_logs' }, () => {
+        // 当审计日志更新时，刷新计数
+        DATABASE_SCHEMA.forEach(async (t) => {
+          if (t.id === 'audit_logs') {
+            const count = await adminApi.getTableCount('audit_logs');
+            setTableCounts(prev => ({ ...prev, audit_logs: count }));
+          }
+        });
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []);
+
   useEffect(() => {
     if (activeTab === 'explorer') fetchSelectedTableData(selectedTable);
   }, [activeTab, selectedTable]);
@@ -169,8 +186,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleManualSync = async () => {
     setSyncState('SYNCING');
     try {
-      // CLEARANCE HINT: SOMNO_SYNC_RECOVERY_2026
-      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET (Hint: Recovery Key):");
+      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET (Server side CRON_SECRET):");
       if (!secret) {
         setSyncState('IDLE');
         await checkSyncStatus();
@@ -184,17 +200,19 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         alert("SYNC_SIGNAL_CONFIRMED: Telemetry grid refreshed.");
         fetchData();
       } else {
-        throw new Error("GATEWAY_DENIED: Handshake verification failed.");
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || "GATEWAY_DENIED: Handshake verification failed.");
       }
     } catch (e: any) {
       setActionError(e.message);
       setSyncState('ERROR');
+      await logAuditLog('ADMIN_SYNC_FAIL', `Manual sync failed: ${e.message}`, 'WARNING');
     }
   };
 
   const handleToggleBlock = async (user: any) => {
     if (user.is_super_owner) {
-      await logAuditLog('ROOT_NODE_PROTECTION_TRIGGER', `Attempted restriction of ROOT node: ${user.email} by ${currentAdmin?.email}`, 'CRITICAL');
+      await logAuditLog('ROOT_NODE_PROTECTION_TRIGGER', `Attempted restriction of ROOT node: ${user.email}`, 'CRITICAL');
       setActionError("SECURITY_VIOLATION: Root node is write-protected.");
       return;
     }
@@ -214,7 +232,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleSetRole = async (user: any, newRole: string) => {
     if (user.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH_ATTEMPT', `CRITICAL: Attempted role modification of ROOT node: ${user.email} (Target: ${newRole}) by ${currentAdmin?.email}`, 'CRITICAL');
+      await logAuditLog('SECURITY_BREACH_ATTEMPT', `CRITICAL: Attempted role modification of ROOT node: ${user.email}`, 'CRITICAL');
       setActionError("RESTRICTED_PROTOCOL: Root node clearance cannot be shifted.");
       setRoleSelectUserId(null);
       return;
@@ -285,7 +303,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
              <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
              <Loader2 className="animate-spin text-indigo-500 relative z-10" size={80} />
           </div>
-          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic animate-pulse">Querying Database Mesh...</p>
+          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic animate-pulse">Interrogating Node Registry...</p>
         </div>
       ) : (
         <AnimatePresence mode="wait">
@@ -293,10 +311,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-16">
                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                   {[
-                    { label: 'Active Users (GA4)', value: dailyStats[dailyStats.length - 1]?.users || 0, icon: Globe, source: 'GA4' },
-                    { label: 'Audit Logs (All)', value: tableCounts['audit_logs'] || 0, icon: List, source: 'DB' },
-                    { label: 'Core Profiles', value: tableCounts['profiles'] || 0, icon: Users, source: 'DB' },
-                    { label: 'Security Events', value: tableCounts['security_events'] || 0, icon: ShieldAlert, source: 'DB' }
+                    { label: 'Daily Users (GA4)', value: dailyStats[dailyStats.length - 1]?.users || 0, icon: Globe, source: 'GA4' },
+                    { label: 'Audit Records', value: tableCounts['audit_logs'] || 0, icon: List, source: 'DB' },
+                    { label: 'Subject Profiles', value: tableCounts['profiles'] || 0, icon: Users, source: 'DB' },
+                    { label: 'Security Pulses', value: tableCounts['security_events'] || 0, icon: ShieldAlert, source: 'DB' }
                   ].map((stat, i) => (
                     <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5 group hover:border-indigo-500/20 transition-all">
                       <div className="flex justify-between items-start mb-6">
@@ -315,7 +333,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <div className="lg:col-span-8 space-y-6 text-left">
                      <div className="flex items-center justify-between px-6">
                         <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic flex items-center gap-2">
-                           <TrendingUp size={14} /> Traffic Reach (30D)
+                           <TrendingUp size={14} /> Traffic Velocity (30D)
                         </h3>
                         <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic transition-all group/sync relative overflow-hidden ${
                           syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
@@ -324,7 +342,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           'bg-slate-900/60 border-white/5 text-slate-500'
                         }`}>
                           <div className={`w-1.5 h-1.5 rounded-full ${syncState === 'SYNCED' || syncState === 'DATA_RESIDENT' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-slate-700 animate-pulse'}`} />
-                          GA4 SYNC: {syncState.replace('_', ' ')}
+                          BRIDGE: {syncState.replace('_', ' ')}
                           {lastSyncTime && <span className="opacity-40 lowercase font-bold tracking-normal">[{lastSyncTime}]</span>}
                         </div>
                      </div>
@@ -352,8 +370,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            <div className="text-center space-y-6 opacity-30">
                               <WifiOff size={48} className="mx-auto" />
                               <div className="space-y-1">
-                                 <p className="text-[10px] font-black uppercase tracking-[0.4em]">Telemetry bridge void identified.</p>
-                                 <p className="text-[8px] font-bold text-slate-500 uppercase">Initialize GA4 Sync from System Tab</p>
+                                 <p className="text-[10px] font-black uppercase tracking-[0.4em]">Telemetry bridge void.</p>
+                                 <p className="text-[8px] font-bold text-slate-500 uppercase">Awaiting Protocol Initialization</p>
                               </div>
                            </div>
                         )}
@@ -362,12 +380,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <div className="lg:col-span-4 space-y-6 text-left">
                      <div className="flex items-center justify-between px-6">
                         <h3 className="text-[11px] font-black uppercase text-rose-400 tracking-[0.4em] italic flex items-center gap-2">
-                           <Activity size={14} /> Security Pulse
+                           <Activity size={14} /> Global Pulse
                         </h3>
                      </div>
-                     <div className="space-y-4">
-                        {signals.length > 0 ? signals.slice(0, 5).map((sig, i) => (
-                           <div key={i} className="p-5 bg-white/[0.02] border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+                     <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar">
+                        {signals.length > 0 ? signals.slice(0, 8).map((sig, i) => (
+                           <div key={i} className="p-5 bg-white/[0.02] border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all animate-in slide-in-from-right-4 duration-500">
                               <div className="flex items-center gap-4">
                                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
                                     {sig.event_type.includes('SUCCESS') ? <ShieldCheck size={20} /> : <ShieldX size={20} />}
@@ -396,7 +414,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                    <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16 relative z-10 text-left">
                       <div className="space-y-2 text-left w-full">
                          <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span className="text-indigo-400">Registry</span></h2>
-                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Manage laboratory subjects and node clearances.</p>
+                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Manage subject node clearances.</p>
                       </div>
                       <div className="relative w-full md:w-96 group">
                          <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
@@ -478,7 +496,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                                    </div>
                                                    
                                                    <button onClick={() => handleSetRole(user, 'owner')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'hover:bg-amber-500/10 border-transparent text-slate-400 hover:text-amber-500'}`}><div className="flex items-center gap-3"><Crown size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Owner</span></div>{user.role === 'owner' && <CheckCircle2 size={12} />}</button>
-                                                   <button onClick={() => handleSetRole(user, 'admin')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}><div className="flex items-center gap-3"><Shield size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div>{user.role === 'admin' && <CheckCircle2 size={12} />}</button>
+                                                   <button onClick={() => handleSetRole(user, 'admin')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}><div className="flex items-center gap-3"><Shield size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div>{user.role === 'admin' && <CheckCircle2 size={12} />}</button>
                                                    <button onClick={() => handleSetRole(user, 'user')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'user' ? 'bg-slate-500/10 border-white/10 text-white' : 'hover:bg-white/5 border-transparent text-slate-400 hover:text-white'}`}><div className="flex items-center gap-3"><UserCircle size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">User</span></div>{user.role === 'user' && <CheckCircle2 size={12} />}</button>
                                                  </div>
                                                </m.div>
@@ -515,7 +533,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <div className="lg:col-span-1 space-y-6 overflow-y-auto no-scrollbar pr-2 flex flex-col">
                      <div className="space-y-2 mb-4 px-4 text-left">
                         <div className="flex items-center justify-between mb-4">
-                           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Public Schema</h4>
+                           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Public Mesh</h4>
                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                         </div>
                         <div className="relative group">
@@ -575,10 +593,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <div className="text-left space-y-1"><h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Security <span className="text-indigo-400">Pulse</span></h3><p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] italic">DB_TABLE: public.security_events</p></div>
                   </div>
                   <div className="space-y-4">
-                     {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} className="text-slate-800" /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void identified.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+                     {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} className="text-slate-800" /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all animate-in slide-in-from-bottom-4 duration-500">
                         <div className="flex items-center gap-8 text-left">
-                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' : sig.event_type.includes('FAIL') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>
-                              {sig.event_type.includes('FAIL') ? <ShieldX size={26} /> : <Zap size={26} />}
+                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-400' : sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>
+                              {sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? <ShieldX size={26} /> : <Zap size={26} />}
                            </div>
                            <div className="space-y-1 text-left">
                               <div className="flex items-center gap-3"><p className="text-xl font-black text-white italic tracking-tight uppercase leading-none">{sig.event_type}</p></div>

@@ -2,7 +2,8 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
-import { reportError } from './services/supabaseService.ts';
+// Fix: Import logAuditLog as reportError is not exported from supabaseService
+import { logAuditLog } from './services/supabaseService.ts';
 
 /**
  * SOMNO LAB NEURAL TELEMETRY GUARD
@@ -22,7 +23,8 @@ const isNoise = (msg: string) => {
 window.onerror = (message, source, lineno, colno, error) => {
   const msgStr = String(message);
   if (!isNoise(msgStr)) {
-    reportError(msgStr, error?.stack, `RUNTIME_ERROR: ${source}:${lineno}:${colno}`);
+    // Fix: Use logAuditLog instead of non-existent reportError. Signature: (action, details, level)
+    logAuditLog(`RUNTIME_ERROR: ${source}:${lineno}:${colno}`, `${msgStr}\nStack: ${error?.stack}`, 'CRITICAL');
   }
   return false;
 };
@@ -31,10 +33,11 @@ window.onerror = (message, source, lineno, colno, error) => {
 window.onunhandledrejection = (event) => {
   const reason = event.reason?.message || event.reason;
   if (!isNoise(String(reason))) {
-    reportError(
-      `Unhandled Promise Rejection: ${reason}`,
-      event.reason?.stack,
-      'ASYNC_HANDSHAKE_VOID'
+    // Fix: Use logAuditLog instead of non-existent reportError. Signature: (action, details, level)
+    logAuditLog(
+      'ASYNC_HANDSHAKE_VOID',
+      `Unhandled Promise Rejection: ${reason}\nStack: ${event.reason?.stack}`,
+      'CRITICAL'
     );
   }
 };
@@ -47,7 +50,8 @@ console.error = (...args) => {
     .join(' ');
     
   if (!isNoise(message)) {
-    reportError(message, new Error().stack, 'CONSOLE_ERROR_PROXIED');
+    // Fix: Use logAuditLog instead of non-existent reportError. Signature: (action, details, level)
+    logAuditLog('CONSOLE_ERROR_PROXIED', `${message}\nStack: ${new Error().stack}`, 'WARNING');
   }
   
   originalConsoleError.apply(console, args);

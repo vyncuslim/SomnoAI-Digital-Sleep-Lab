@@ -5,21 +5,19 @@ import { notifyAdmin } from './telegramService.ts';
 export { supabase };
 
 /**
- * Enhanced Audit Protocol
- * Uses RPC with SECURITY DEFINER to ensure logs are committed even during 
- * sensitive auth transitions where RLS might block direct inserts.
+ * 核心审计协议 - 强制服务器端记录
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
-  const sensitiveActions = ['ADMIN_ROLE_CHANGE', 'SECURITY_BREACH_ATTEMPT', 'SYSTEM_EXCEPTION', 'ROOT_NODE_PROTECTION_TRIGGER'];
+  const sensitiveActions = ['ADMIN_ROLE_CHANGE', 'SECURITY_BREACH_ATTEMPT', 'SYSTEM_EXCEPTION', 'ROOT_NODE_PROTECTION_TRIGGER', 'ADMIN_MANUAL_SYNC'];
   const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(action);
 
   if (shouldNotify) {
-    notifyAdmin(`🚨 [${level}] ${action}\nNODE_ID: ${window.location.hostname}\nLOG: ${details}\nTIMESTAMP: ${new Date().toISOString()}`);
+    notifyAdmin(`🚨 [${level}] ${action}\nNODE: ${window.location.hostname}\nDATA: ${details}\nTIME: ${new Date().toISOString()}`);
   }
 
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    // Use RPC instead of direct insert to avoid RLS write permission issues
+    // 使用 p_ 前缀匹配 SQL 参数定义
     await supabase.rpc('log_audit_entry', {
       p_action: action,
       p_details: details,
@@ -32,25 +30,19 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 };
 
 /**
- * High-Precision Error Reporting
+ * 安全事件脉冲记录
  */
-export const reportError = async (message: string, stack?: string, source: string = 'FRONTEND_RUNTIME') => {
-  const noise = [
-    'Location.href', 'named property', 'SecurityError', 'cross-origin', 
-    'AbortError', 'Extensions', 'Salesmartly', 'Google is not defined'
-  ];
-  
-  if (noise.some(n => message.includes(n))) return;
-
-  const context = `SOURCE: ${source}\nMSG: ${message}\nUA: ${navigator.userAgent}\nLOC: ${window.location.href}${stack ? `\n\nSTACK:\n${stack.slice(0, 400)}` : ''}`;
-  await logAuditLog('RUNTIME_EXCEPTION', context, 'CRITICAL');
-};
-
 const logSecurityEvent = async (email: string, type: string, details: string) => {
   try {
-    await supabase.rpc('log_security_event', { email, event_type: type, details });
+    const targetEmail = email.trim().toLowerCase();
+    await supabase.rpc('log_security_event', { 
+      email: targetEmail, 
+      event_type: type, 
+      details: details 
+    });
+    
     if (['LOGIN_FAIL', 'SECURITY_BREACH', 'OTP_FAIL', 'RATE_LIMIT'].includes(type)) {
-      notifyAdmin(`⚠️ SECURITY_SIGNAL: ${type}\nSUBJECT: ${email}\nINFO: ${details}`);
+      notifyAdmin(`⚠️ SECURITY_SIGNAL: ${type}\nSUBJECT: ${targetEmail}\nINFO: ${details}`);
     }
   } catch (e) {
     console.debug("Security pulse offline.");
@@ -58,10 +50,11 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
 };
 
 /**
- * Auth API
+ * Auth 增强 API - 增加全生命周期日志
  */
 export const authApi = {
   signInWithGoogle: async () => {
+    await logAuditLog('OAUTH_START', 'Redirecting to Google Auth provider');
     return await (supabase.auth as any).signInWithOAuth({
       provider: 'google',
       options: {
@@ -72,25 +65,33 @@ export const authApi = {
   },
   signIn: async (email: string, password: string, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
+    
+    // 1. 记录尝试（Attempt）
+    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Protocol sequence initiated via Password');
+    
     const res = await (supabase.auth as any).signInWithPassword({ 
-      email, 
+      email: targetEmail, 
       password,
       options: { captchaToken }
     });
     
     if (res.error) {
+      // 2. 记录失败（Fail）
       await logSecurityEvent(targetEmail, 'LOGIN_FAIL', res.error.message);
       await logAuditLog('LOGIN_ATTEMPT_FAIL', `Node: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
     } else {
-      await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session established via Password');
+      // 3. 记录成功（Success）
+      await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session established successfully');
       await logAuditLog('USER_LOGIN', `Identity established: ${targetEmail}`);
     }
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
+    await logSecurityEvent(targetEmail, 'SIGNUP_ATTEMPT', 'Registration protocol triggered');
+    
     const res = await (supabase.auth as any).signUp({ 
-      email, 
+      email: targetEmail, 
       password, 
       options: { ...options, captchaToken } 
     });
@@ -106,25 +107,25 @@ export const authApi = {
   sendOTP: async (email: string, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
     const res = await (supabase.auth as any).signInWithOtp({ 
-      email,
+      email: targetEmail,
       options: { captchaToken }
     });
     
     if (res.error) {
       await logSecurityEvent(targetEmail, 'OTP_FAIL', res.error.message);
     } else {
-      await logSecurityEvent(targetEmail, 'OTP_SENT', 'Protocol token dispatched');
+      await logSecurityEvent(targetEmail, 'OTP_SENT', 'Protocol token dispatched to mailbox');
     }
     return res;
   },
   verifyOTP: async (email: string, token: string) => {
     const targetEmail = email.trim().toLowerCase();
-    const res = await (supabase.auth as any).verifyOtp({ email, token, type: 'email' });
+    const res = await (supabase.auth as any).verifyOtp({ email: targetEmail, token, type: 'email' });
     
     if (res.error) {
       await logSecurityEvent(targetEmail, 'OTP_VERIFY_FAIL', res.error.message);
     } else {
-      await logSecurityEvent(targetEmail, 'OTP_VERIFY_SUCCESS', 'Auth handshake confirmed via OTP');
+      await logSecurityEvent(targetEmail, 'OTP_VERIFY_SUCCESS', 'Handshake confirmed via OTP');
       await logAuditLog('OTP_VERIFY_SUCCESS', `Auth handshake confirmed: ${targetEmail}`);
     }
     return res;
@@ -134,8 +135,7 @@ export const authApi = {
       redirectTo: `${window.location.origin}/#settings`
     });
     if (!res.error) {
-      await logSecurityEvent(email, 'PW_RESET_REQUEST', 'Password recovery protocol initiated');
-      await logAuditLog('AUTH_RESET_REQUEST', `Password recovery protocol initiated for: ${email}`);
+      await logSecurityEvent(email, 'PW_RESET_REQUEST', 'Recovery protocol initiated');
     }
     return res;
   },
@@ -150,7 +150,7 @@ export const authApi = {
 };
 
 /**
- * Unified Admin Registry
+ * 管理端 API
  */
 export const adminApi = {
   getAdminClearance: async (userId: string) => {
