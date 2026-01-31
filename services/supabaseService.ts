@@ -17,6 +17,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
+    // 强制使用 p_ 前缀匹配数据库函数定义
     await supabase.rpc('log_audit_entry', {
       p_action: action,
       p_details: details,
@@ -155,35 +156,29 @@ export const adminApi = {
     return data || [];
   },
   getTableData: async (tableName: string, limit = 100) => {
-    // 智能排序探针：按照优先级尝试不同的时间列
-    const timeColumns = ['created_at', 'date', 'timestamp', 'recorded_at'];
+    // 智能探针协议：自动尝试可能存在的时间列，防止 400 错误
+    const probes = ['created_at', 'date', 'timestamp', 'recorded_at'];
     
-    // 如果是分析表，优先尝试 'date'
-    if (tableName.startsWith('analytics_')) {
-      timeColumns.unshift('date');
-    }
+    // 如果是分析相关的表，优先尝试 'date'
+    if (tableName.includes('analytics')) probes.unshift('date');
 
-    const tryQuery = async (column: string) => {
+    for (const col of Array.from(new Set(probes))) {
       try {
-        const { data, error } = await supabase.from(tableName).select('*').order(column, { ascending: false }).limit(limit);
-        return { data, error };
-      } catch (e) {
-        return { data: null, error: e };
-      }
-    };
-
-    for (const col of Array.from(new Set(timeColumns))) {
-      const { data, error } = await tryQuery(col);
-      if (!error && data) return data;
+        const { data, error } = await supabase
+          .from(tableName)
+          .select('*')
+          .order(col, { ascending: false })
+          .limit(limit);
+        
+        if (!error) return data || [];
+      } catch (e) { /* 继续探测下一个 */ }
     }
 
-    // 最终保底：无序读取
+    // 最终兜底：无序查询
     try {
       const { data } = await supabase.from(tableName).select('*').limit(limit);
       return data || [];
-    } catch {
-      return [];
-    }
+    } catch { return []; }
   },
   getTableCount: async (tableName: string) => {
     try {
@@ -251,13 +246,10 @@ export const userDataApi = {
 
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
-    const { error } = await feedbackApi.submitFeedbackToDB(type, content, email);
+    const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error };
     notifyAdmin(`📩 FEEDBACK_SIGNAL\nTYPE: ${type.toUpperCase()}\nFROM: ${email}\nDATA: ${content}`);
     return { success: true };
-  },
-  submitFeedbackToDB: async (type: string, content: string, email: string) => {
-     return await supabase.from('feedback').insert([{ type, content, email }]);
   }
 };
 

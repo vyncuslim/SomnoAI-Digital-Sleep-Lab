@@ -79,7 +79,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const checkSyncStatus = async () => {
     try {
-      // 容错查询：尝试获取最新的同步日志
+      // 容错查询：先探测 created_at 字段，绝对禁止 timestamp 字段以防止缓存导致的 400 报错
       const { data: logs, error } = await supabase
         .from('audit_logs')
         .select('action, created_at')
@@ -151,7 +151,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   
   useEffect(() => {
     const channel = supabase
-      .channel('security_pulse_v3')
+      .channel('security_pulse_v4')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'security_events' }, (payload) => {
         setSignals(prev => [payload.new as any, ...prev].slice(0, 40));
       })
@@ -267,7 +267,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </h1>
             <div className="flex items-center gap-3">
                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • v22.5.0</p>
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • v22.5.1</p>
             </div>
           </div>
         </div>

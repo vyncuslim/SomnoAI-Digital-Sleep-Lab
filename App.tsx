@@ -58,7 +58,7 @@ const DecisionLoading = () => (
     <div className="space-y-6 text-center max-w-xs">
        <div className="space-y-1">
           <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.8em] italic animate-pulse opacity-80">Synchronizing Identity</p>
-          <p className="text-slate-700 text-[8px] font-black uppercase tracking-widest">Protocol Handshake • Node v22.4.8</p>
+          <p className="text-slate-700 text-[8px] font-black uppercase tracking-widest">Protocol Handshake • Node v22.5.1</p>
        </div>
     </div>
   </div>
@@ -121,6 +121,7 @@ const AppContent: React.FC = () => {
       if (mappings[target]) {
         setActiveView(mappings[target]);
       } else if (profile || isSimulated) {
+        // 沙盒模式兜底：确保至少留在仪表盘
         setActiveView('dashboard');
       }
     };
