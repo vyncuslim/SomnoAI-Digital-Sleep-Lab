@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
@@ -11,7 +12,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { getSafeHash, safeNavigateHash, safeReload, getSafeUrl } from './services/navigation.ts';
 import { trackPageView, trackEvent } from './services/analytics.ts';
-import { authApi } from './services/supabaseService.ts';
+import { authApi, logAuditLog } from './services/supabaseService.ts';
 import { notifyAdmin } from './services/telegramService.ts';
 
 // Components
@@ -82,6 +83,7 @@ const AppContent: React.FC = () => {
   const { profile, loading, isAdmin } = useAuth();
   const [lang, setLang] = useState<Language>('en'); 
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
+  const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
   const [isSimulated, setIsSimulated] = useState(false);
   const lastTrackedView = useRef<string | null>(null);
   const attemptedPath = useRef<string>('');
@@ -114,6 +116,7 @@ const AppContent: React.FC = () => {
       path = `/404/${attemptedPath.current || 'unknown'}`;
       title = `404: ${attemptedPath.current || 'Sector Missing'}`;
       trackEvent('error_not_found', { attempted_path: attemptedPath.current });
+      logAuditLog('404_DETECTION', `Unresolved path requested: ${attemptedPath.current}`, 'WARNING');
     }
     
     trackPageView(path, title);
@@ -125,23 +128,33 @@ const AppContent: React.FC = () => {
     safeNavigateHash(viewId);
   }, []);
 
-  // Neural Routing Bridge: Detect clean paths and force transition to internal hash-routes
+  // Neural Routing Bridge
   useEffect(() => {
     const bridgeRouting = () => {
       const currentUrl = getSafeUrl();
       const origin = window.location.origin;
-      const pathOnly = currentUrl.split('#')[0].replace(origin, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      
+      // 解析当前物理路径和 Hash
+      const urlObj = new URL(currentUrl);
+      const pathOnly = urlObj.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
       const hashOnly = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       
-      // CRITICAL FIX: If user landed on sleepsomno.com/admin, force hash bridge
-      if (pathOnly === 'admin' && hashOnly !== 'admin') {
-        safeNavigateHash('admin');
+      // 处理物理路径 /login, /signin, /signup
+      if (pathOnly === 'signup' && hashOnly === '') {
+        setAuthMode('join');
+        setActiveView('dashboard'); // profile 为空时会自动展示登录页
+        return;
+      }
+
+      if ((pathOnly === 'login' || pathOnly === 'signin') && hashOnly === '') {
+        setAuthMode('login');
+        setActiveView('dashboard');
         return;
       }
       
-      // Handle legacy /about route
-      if (pathOnly === 'about' && hashOnly !== 'about') {
-        safeNavigateHash('about');
+      // 处理 Admin
+      if (pathOnly === 'admin' && hashOnly !== 'admin') {
+        safeNavigateHash('admin');
         return;
       }
 
@@ -168,7 +181,10 @@ const AppContent: React.FC = () => {
       if (mappings[target]) {
         setActiveView(mappings[target]);
       } else {
-        setActiveView('not-found');
+        // 如果物理路径是 /signup /login 已经处理，其余未识别 hash 转 404
+        if (target !== '' && !mappings[target]) {
+           setActiveView('not-found');
+        }
       }
     };
     
@@ -179,8 +195,9 @@ const AppContent: React.FC = () => {
 
   const handleLogout = async () => {
     try {
+      const userEmail = profile?.email || 'unknown';
       await authApi.signOut();
-      notifyAdmin(`🚪 DISCONNECT: User session ${profile?.email} terminated manually.`);
+      notifyAdmin(`🚪 DISCONNECT: User session ${userEmail} terminated manually.`);
       safeReload();
     } catch (e) {
       window.location.href = '/';
@@ -206,7 +223,8 @@ const AppContent: React.FC = () => {
         <UserLoginPage 
           onSuccess={() => safeNavigate('dashboard')} 
           onSandbox={() => setIsSimulated(true)} 
-          lang={lang} 
+          lang={lang}
+          mode={authMode} 
         />
       );
     }

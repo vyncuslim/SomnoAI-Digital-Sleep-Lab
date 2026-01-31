@@ -5,9 +5,18 @@ import { notifyAdmin } from './telegramService.ts';
 export { supabase };
 
 /**
- * 核心系统审计日志 - 自动分发高优先级通知
+ * 核心系统审计日志 - 增强版（并行通知机制）
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
+  const sensitiveActions = ['ADMIN_ROLE_CHANGE', 'SECURITY_BREACH_ATTEMPT', 'SYSTEM_EXCEPTION', 'ROOT_NODE_PROTECTION_TRIGGER'];
+  const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(action);
+
+  // 1. 并行尝试发送通知，不等待数据库结果，防止数据库策略限制导致告警丢失
+  if (shouldNotify) {
+    notifyAdmin(`🚨 [${level}] ${action}\nLOG: ${details}\nNODE_TIME: ${new Date().toLocaleString()}`);
+  }
+
+  // 2. 写入数据库存档
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
     await supabase.from('audit_logs').insert([{
@@ -17,37 +26,32 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       user_id: user?.id,
       timestamp: new Date().toISOString()
     }]);
-    
-    // 自动将警告和严重错误路由至 Admin Telegram
-    if (level === 'CRITICAL' || level === 'WARNING') {
-      notifyAdmin(`🚨 [${level}] ${action}\nSUBJECT: ${user?.email || 'ANONYMOUS'}\nINFO: ${details}`);
-    }
   } catch (e) {
-    console.warn("Audit log synchronization failed:", e);
+    console.warn("Database audit sync failed, but Telegram alert dispatched.");
   }
 };
 
 /**
- * 全域错误报告协议 - 捕获控制台及运行时异常
+ * 全域错误报告协议
  */
 export const reportError = async (message: string, stack?: string, source: string = 'FRONTEND_RUNTIME') => {
   const isNoise = 
     message.includes('Location.href') || 
+    message.includes('named property \'href\'') ||
     message.includes('cross-origin frame') || 
-    message.includes('AbortError');
+    message.includes('AbortError') ||
+    message.includes('Extensions') ||
+    message.includes('Salesmartly');
     
   if (isNoise) return;
 
-  const { data: { user } } = await (supabase.auth as any).getUser();
-  const context = `[${source}] ${message}${stack ? `\n\nStack Trace:\n${stack.slice(0, 1000)}` : ''}`;
-  
+  const context = `[${source}] ${message}${stack ? `\n\nStack Trace:\n${stack.slice(0, 500)}` : ''}`;
   await logAuditLog('SYSTEM_EXCEPTION', context, 'CRITICAL');
 };
 
 const logSecurityEvent = async (email: string, type: string, details: string) => {
   try {
     await supabase.rpc('log_security_event', { email, event_type: type, details });
-    
     if (type === 'LOGIN_FAIL' || type === 'SECURITY_BREACH') {
       notifyAdmin(`⚠️ SECURITY ALERT: ${type} for ${email}\nReason: ${details}`);
     }

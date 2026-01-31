@@ -16,10 +16,11 @@ interface AuthProps {
   lang: 'en' | 'zh';
   onLogin: () => void;
   onGuest: () => void; 
+  initialTab?: 'login' | 'join' | 'otp';
 }
 
-export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
-  const [activeTab, setActiveTab] = useState<'login' | 'join' | 'otp'>('login');
+export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab = 'login' }) => {
+  const [activeTab, setActiveTab] = useState<'login' | 'join' | 'otp'>(initialTab);
   const [step, setStep] = useState<'request' | 'verify'>('request');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -36,6 +37,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
   
   const turnstileRef = useRef<HTMLDivElement>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // 关键修复：当 URL 路径变化导致 initialTab 改变时，同步内部 activeTab
+  useEffect(() => {
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+      // 清空错误信息
+      setError(null);
+    }
+  }, [initialTab]);
 
   useEffect(() => {
     let bypassTimer = setTimeout(() => {
@@ -80,17 +90,17 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         const { error: otpErr } = await authApi.sendOTP(email.trim(), turnstileToken || undefined);
         if (otpErr) throw otpErr;
         setStep('verify');
-        notifyAdmin(`✉️ OTP: ${email}`);
+        notifyAdmin(`✉️ OTP REQUESTed from ${email}`);
         setTimeout(() => otpRefs.current[0]?.focus(), 200);
       } else if (activeTab === 'login') {
         const { error: signInErr } = await authApi.signIn(email.trim(), password, turnstileToken || undefined);
         if (signInErr) throw signInErr;
-        notifyAdmin(`🔑 LOGIN: ${email}`);
+        notifyAdmin(`🔑 SUCCESSFUL LOGIN: ${email}`);
         onLogin();
       } else if (activeTab === 'join') {
         const { error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, turnstileToken || undefined);
         if (signUpErr) throw signUpErr;
-        notifyAdmin(`🆕 JOIN: ${email}`);
+        notifyAdmin(`🆕 NEW SIGNUP INITIATED: ${email} (${fullName})`);
         setStep('verify');
         setActiveTab('otp');
       }
@@ -101,7 +111,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
         isRateLimit
       });
       setIsProcessing(false);
-      notifyAdmin(`⚠️ AUTH_FAIL: ${email}\nError: ${err.message}`);
+      notifyAdmin(`⚠️ AUTH_EXCEPTION: ${email}\nError: ${err.message}`);
     }
   };
 
@@ -141,7 +151,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest }) => {
 
             <div className="bg-slate-900/60 p-1 rounded-full border border-white/5 flex relative shadow-inner">
               {['login', 'join', 'otp'].map((tab) => (
-                <button key={tab} onClick={() => { setActiveTab(tab as any); setTurnstileToken(null); }} className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest z-10 transition-all ${activeTab === tab ? 'text-white' : 'text-slate-500'}`}>{tab}</button>
+                <button key={tab} onClick={() => { setActiveTab(tab as any); setTurnstileToken(null); }} className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest z-10 transition-all ${activeTab === tab ? 'text-white' : 'text-slate-500'}`}>{tab === 'join' ? 'SIGNUP' : tab.toUpperCase()}</button>
               ))}
               <m.div className="absolute top-1 left-1 bottom-1 w-[calc(33.33%-2px)] bg-indigo-600 rounded-full shadow-lg" animate={{ x: activeTab === 'login' ? '0%' : activeTab === 'join' ? '100%' : '200%' }} />
             </div>
