@@ -1,7 +1,7 @@
 import { getSafeUrl } from './navigation.ts';
 
 /**
- * SOMNOAI GLOBAL TELEMETRY HUB (v3.5)
+ * SOMNOAI GLOBAL TELEMETRY HUB (v3.8)
  * Handles analytics dispatch with cross-origin safety protocols and precise SPA hash-routing support.
  */
 
@@ -41,16 +41,17 @@ export const trackPageView = (path: string, title: string) => {
       }
 
       // Reconstruct the virtual location for GA4 'page_location' override
-      // This maps /#/admin to a trackable URL structure
+      // This maps /#/admin to a trackable URL structure for GA4
       const virtualLocation = `${baseUrl}/#${cleanVirtualPath.startsWith('/') ? cleanVirtualPath.slice(1) : cleanVirtualPath}`;
       
-      // Update global gtag state and trigger event
+      // Update global gtag state to persist parameters for subsequent events
       (window as any).gtag('set', {
         'page_path': cleanVirtualPath,
         'page_title': title,
         'page_location': virtualLocation
       });
 
+      // Send the explicit page_view event with manual overrides
       (window as any).gtag('event', 'page_view', {
         page_path: cleanVirtualPath,
         page_title: title,
@@ -58,10 +59,10 @@ export const trackPageView = (path: string, title: string) => {
         send_to: GA_ID
       });
       
-      console.debug(`[Telemetry Ingress] V-PATH: ${cleanVirtualPath} | TITLE: ${title}`);
+      console.debug(`[Telemetry Pulse] PATH: ${cleanVirtualPath} [${title}]`);
     }
   } catch (e) {
-    /* Silent fail to preserve UI stability */
+    /* Silent fail to prevent UI disruption */
   }
 };
 

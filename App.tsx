@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
@@ -9,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
-import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
+import { getSafeHash, safeNavigateHash, safeReload, getSafeUrl } from './services/navigation.ts';
 import { trackPageView, trackEvent } from './services/analytics.ts';
 
 // Components
@@ -104,11 +105,9 @@ const AppContent: React.FC = () => {
       'not-found': 'Neural Link Severed'
     };
     
-    // Explicit title resolution
     let title = viewTitles[activeView] || 'SomnoAI Node';
     let path = activeView as string;
 
-    // Special case: 404 path tracking
     if (activeView === 'not-found') {
       path = `/404/${attemptedPath.current || 'unknown'}`;
       title = `404: ${attemptedPath.current || 'Sector Missing'}`;
@@ -124,30 +123,25 @@ const AppContent: React.FC = () => {
     safeNavigateHash(viewId);
   }, []);
 
+  // Neural Routing Bridge: Detect clean paths and force transition to internal hash-routes
   useEffect(() => {
-    const handleHash = () => {
-      const hash = getSafeHash();
-      // Sanitize: remove leading #, collapse multiple leading/trailing slashes
-      const path = hash.replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
-      attemptedPath.current = path;
+    const bridgeRouting = () => {
+      const currentUrl = getSafeUrl();
+      const pathOnly = currentUrl.split('#')[0].replace(window.location.origin, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      const hashOnly = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       
-      // Precise exact routing for primary views - empty sanitized path is dashboard
-      if (path === '' || path === 'dashboard') {
-        setActiveView('dashboard');
+      // If landed on sleepsomno.com/admin, force hash bridge to #/admin
+      if (pathOnly === 'admin' && hashOnly !== 'admin') {
+        safeNavigateHash('admin');
         return;
       }
 
-      // Priority 1: Public Gateway Terminals
-      if (path.startsWith('admin/login')) {
-        setActiveView('admin-login');
-        return;
-      }
-      
-      // Priority 2: Protected Admin Sector
-      if (path === 'admin') {
-        setActiveView('admin');
-        return;
-      }
+      attemptedPath.current = hashOnly || pathOnly;
+      const target = hashOnly || 'dashboard';
+
+      if (target === 'dashboard' || target === '') { setActiveView('dashboard'); return; }
+      if (target.startsWith('admin/login')) { setActiveView('admin-login'); return; }
+      if (target === 'admin') { setActiveView('admin'); return; }
 
       const mappings: Record<string, ViewType> = {
         'calendar': 'calendar',
@@ -162,19 +156,16 @@ const AppContent: React.FC = () => {
         'about': 'about'
       };
 
-      for (const [key, val] of Object.entries(mappings)) {
-        if (path === key) {
-          setActiveView(val);
-          return;
-        }
+      if (mappings[target]) {
+        setActiveView(mappings[target]);
+      } else {
+        setActiveView('not-found');
       }
-
-      setActiveView('not-found');
     };
     
-    window.addEventListener('hashchange', handleHash);
-    handleHash();
-    return () => window.removeEventListener('hashchange', handleHash);
+    window.addEventListener('hashchange', bridgeRouting);
+    bridgeRouting();
+    return () => window.removeEventListener('hashchange', bridgeRouting);
   }, []);
 
   if (loading) return <DecisionLoading />;

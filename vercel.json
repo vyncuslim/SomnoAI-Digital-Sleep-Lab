@@ -4,102 +4,20 @@
   "trailingSlash": false,
   "headers": [
     {
-      "source": "/sitemap.xml",
+      "source": "/(.*)",
       "headers": [
-        {
-          "key": "Content-Type",
-          "value": "application/xml"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "X-Frame-Options", "value": "DENY" }
       ]
-    },
-    {
-      "source": "/robots.txt",
-      "headers": [
-        {
-          "key": "Content-Type",
-          "value": "text/plain"
-        },
-        {
-          "key": "Cache-Control",
-          "value": "public, max-age=0, must-revalidate"
-        }
-      ]
-    }
-  ],
-  "redirects": [
-    {
-      "source": "/index.html",
-      "destination": "/",
-      "permanent": true
-    },
-    {
-      "source": "/favicon.png",
-      "destination": "https://img.icons8.com/fluency/512/moon.png",
-      "permanent": true
     }
   ],
   "rewrites": [
-    {
-      "source": "/sitemap.xml",
-      "destination": "/sitemap.xml"
-    },
-    {
-      "source": "/robots.txt",
-      "destination": "/robots.txt"
-    },
-    {
-      "source": "/assistant",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/about",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/calendar",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/profile",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/settings",
-      "destination": "/index.html"
-    },
-    {
-      "source": "/privacy",
-      "destination": "/privacy.html"
-    },
-    {
-      "source": "/terms",
-      "destination": "/terms.html"
-    },
-    {
-      "source": "/api/sync-analytics",
-      "destination": "/api/sync-analytics.js"
-    },
-    {
-      "source": "/api/health-upload",
-      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder"
-    },
-    {
-      "source": "/api/((?!sync-analytics).*)",
-      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/$1"
-    },
-    {
-      "source": "/((?!assets/|fonts/|favicon.*|manifest.json|sw.js|sitemap.xml|robots.txt|api/|.*\\.[a-zA-Z0-9]+$).*)",
-      "destination": "/index.html"
-    }
+    { "source": "/api/sync-analytics", "destination": "/api/sync-analytics.js" },
+    { "source": "/api/health-upload", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" },
+    { "source": "/api/((?!sync-analytics).*)", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "crons": [
-    {
-      "path": "/api/sync-analytics",
-      "schedule": "0 3 * * *"
-    }
+    { "path": "/api/sync-analytics", "schedule": "0 3 * * *" }
   ]
 }

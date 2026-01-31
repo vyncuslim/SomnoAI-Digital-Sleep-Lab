@@ -3,13 +3,22 @@ import { motion } from 'framer-motion';
 import { Home, RefreshCw, ShieldX, Radio, ArrowLeft } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { GlassCard } from './GlassCard.tsx';
-import { safeNavigateHash, safeReload } from '../services/navigation.ts';
+import { safeNavigateHash, safeReload, getSafeHash } from '../services/navigation.ts';
+import { trackPageView, trackEvent } from '../services/analytics.ts';
 
 const m = motion as any;
 
 export const NotFoundView: React.FC = () => {
   useEffect(() => {
+    const invalidPath = getSafeHash() || 'unknown-sector';
     document.title = '404: Node Unreachable | SomnoAI Digital Sleep Lab';
+    
+    // Telemetry dispatch for internal analytics
+    trackPageView(`/404/${invalidPath}`, `404 Error: /${invalidPath}`);
+    trackEvent('sector_unreachable', { 
+      attempted_path: invalidPath,
+      timestamp: new Date().toISOString()
+    });
   }, []);
 
   return (
@@ -19,8 +28,6 @@ export const NotFoundView: React.FC = () => {
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-indigo-600/5 blur-[120px] rounded-full animate-pulse" />
         <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.1]" />
       </div>
-
-      <div className="absolute inset-0 pointer-events-none z-50 opacity-[0.02] bg-gradient-to-b from-transparent via-white to-transparent h-10 animate-scan" style={{ animation: 'scan 4s linear infinite' }} />
 
       {/* Branded Identity Header */}
       <m.div 
@@ -100,10 +107,6 @@ export const NotFoundView: React.FC = () => {
       </div>
 
       <style>{`
-        @keyframes scan {
-          from { transform: translateY(-100vh); }
-          to { transform: translateY(100vh); }
-        }
         .glitch-shadow {
           text-shadow: 0 0 40px rgba(99, 102, 241, 0.5), 0 0 10px rgba(244, 63, 94, 0.2);
         }
