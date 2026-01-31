@@ -1,10 +1,11 @@
+
 <!DOCTYPE html>
 <html lang="en-US">
 <head>
     <script>
       /**
-       * SHIELD-CORE v5.6 "WRAITH"
-       * Advanced interception of cross-origin Location violations and Runtime Harmonization.
+       * SOMNO LAB - SHIELD-CORE v6.0
+       * 针对生产环境优化：屏蔽广告拦截插件导致的非业务报错
        */
       (function() {
         try {
@@ -14,73 +15,34 @@
           Object.defineProperty(window, 'top', t);
         } catch (e) {}
 
-        var patterns = [
-          'Location.href', 
-          'named property \'href\'', 
-          'SecurityError', 
-          'cross-origin frame', 
-          'usercontent.goog',
-          'DOMException'
+        var noisePatterns = [
+          'SecurityError', 'browsing-topics', 'rum-ad-auction', 
+          'ERR_BLOCKED_BY_CLIENT', 'salesmartly', 'google-analytics',
+          'Extension', 'Cloudflare'
         ];
-
-        var shouldSilence = function(arg) {
-          if (!arg) return false;
-          try {
-            var msg = (arg.message || (arg.error && arg.error.message) || arg.toString() || "").toLowerCase();
-            var name = (arg.name || "").toLowerCase();
-            return patterns.some(function(p) { 
-              var lowP = p.toLowerCase();
-              return msg.indexOf(lowP) !== -1 || name.indexOf(lowP) !== -1;
-            });
-          } catch (e) { return false; }
-        };
 
         var wrap = function(m) {
           var orig = console[m];
           console[m] = function() {
-            for (var i = 0; i < arguments.length; i++) { if (shouldSilence(arguments[i])) return; }
-            if (orig) return orig.apply(console, arguments);
+            var args = Array.prototype.slice.call(arguments);
+            var msg = args.join(' ').toLowerCase();
+            var shouldSilence = noisePatterns.some(function(p) { 
+              return msg.indexOf(p.toLowerCase()) !== -1;
+            });
+            if (!shouldSilence && orig) orig.apply(console, arguments);
           };
         };
-        ['error', 'warn', 'info', 'log'].forEach(wrap);
-
-        window.addEventListener('error', function(e) { 
-          if (shouldSilence(e)) { e.stopImmediatePropagation(); e.preventDefault(); } 
-        }, true);
-        window.addEventListener('unhandledrejection', function(e) { 
-          if (shouldSilence(e)) { e.stopImmediatePropagation(); e.preventDefault(); } 
-        }, true);
+        ['error', 'warn', 'info'].forEach(wrap);
       })();
     </script>
 
-    <script src="https://plugin-code.salesmartly.com/js/project_445539_520520_1761223371.js"></script>
+    <!-- Google GSI SDK remains for Auth -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
-    <!-- Google tag (gtag.js) -->
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3F9KVPNYLR"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      
-      // GA4 Grounding with manual page_view control for SPA/Hash routing
-      gtag('config', 'G-3F9KVPNYLR', { 
-        send_page_view: false, // Disable auto tracking to prevent duplicates in SPA
-        page_location: 'https://sleepsomno.com/virtual-node',
-        anonymize_ip: true,
-        client_storage: 'none'
-      });
-    </script>
-
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0, viewport-fit=cover">
     <title>SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis</title>
-    
-    <!-- Favicon Configuration -->
     <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/moon.png" sizes="48x48">
-    <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/96/moon.png" sizes="96x96">
-    <link rel="apple-touch-icon" href="https://img.icons8.com/fluency/192/moon.png">
-    <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#020617">
 
     <script type="importmap">
@@ -95,11 +57,11 @@
     "lucide-react": "https://esm.sh/lucide-react@0.470.0?deps=react@18.3.1",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
     "@google/genai": "https://esm.sh/@google/genai@1.37.0",
+    "@google-analytics/data": "https://esm.sh/@google-analytics/data@^5.2.1",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
     "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2",
-    "@google-analytics/data": "https://esm.sh/@google-analytics/data@^5.2.1"
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.2"
   }
 }
 </script>

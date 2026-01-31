@@ -1,3 +1,4 @@
+
 import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co';
@@ -21,19 +22,18 @@ const getSafeStorage = () => {
 };
 
 /**
- * PRODUCTION ARCHITECTURE - LOCKLESS AUTH PROTOCOL
- * 1. detectSessionInUrl: false (Prevents illegal Location access)
- * 2. lock: null (Disables Navigator.locks which is forbidden in some sandboxes)
+ * PRODUCTION ARCHITECTURE - STABLE AUTH PROTOCOL
+ * 1. detectSessionInUrl: true (必选项：允许 Supabase 解析 OAuth 回跳令牌)
+ * 2. flowType: 'pkce' (推荐用于更安全的现代验证)
  */
 export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
     storage: getSafeStorage(),
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false, 
-    flowType: 'implicit',
+    detectSessionInUrl: true, 
+    flowType: 'pkce',
     lock: (name: string, acquireTimeout: number, fn: () => Promise<any>) => {
-      // Execute the function immediately without using the locking API
       return fn();
     }
   }

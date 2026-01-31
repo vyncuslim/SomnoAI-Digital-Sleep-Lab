@@ -9,23 +9,34 @@ import { reportError } from './services/supabaseService.ts';
  * 监控全域异常并执行异地备份及告警
  */
 
+// 错误过滤逻辑：屏蔽插件/扩展引起的无效错误
+const isNoise = (msg: string) => {
+  const noise = [
+    'ERR_BLOCKED_BY_CLIENT', 'Extension', 'Salesmartly', 
+    'Google is not defined', 'Permissions-Policy', 'browsing-topics'
+  ];
+  return noise.some(n => msg.includes(n));
+};
+
 // 1. 拦截未捕获的运行时错误
 window.onerror = (message, source, lineno, colno, error) => {
-  reportError(
-    String(message), 
-    error?.stack, 
-    `RUNTIME_ERROR: ${source}:${lineno}:${colno}`
-  );
-  return false; // 继续在本地控制台显示
+  const msgStr = String(message);
+  if (!isNoise(msgStr)) {
+    reportError(msgStr, error?.stack, `RUNTIME_ERROR: ${source}:${lineno}:${colno}`);
+  }
+  return false;
 };
 
 // 2. 拦截未处理的 Promise 拒绝
 window.onunhandledrejection = (event) => {
-  reportError(
-    `Unhandled Promise Rejection: ${event.reason?.message || event.reason}`,
-    event.reason?.stack,
-    'ASYNC_HANDSHAKE_VOID'
-  );
+  const reason = event.reason?.message || event.reason;
+  if (!isNoise(String(reason))) {
+    reportError(
+      `Unhandled Promise Rejection: ${reason}`,
+      event.reason?.stack,
+      'ASYNC_HANDSHAKE_VOID'
+    );
+  }
 };
 
 // 3. 拦截 console.error 调用 (Monkeypatch)
@@ -35,8 +46,9 @@ console.error = (...args) => {
     .map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg))
     .join(' ');
     
-  // 执行异步上报，不阻塞控制台输出
-  reportError(message, new Error().stack, 'CONSOLE_ERROR_PROXIED');
+  if (!isNoise(message)) {
+    reportError(message, new Error().stack, 'CONSOLE_ERROR_PROXIED');
+  }
   
   originalConsoleError.apply(console, args);
 };
