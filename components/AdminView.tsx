@@ -8,23 +8,21 @@ import {
   MessageSquare, LayoutDashboard, Radio, MapPin, Layers, 
   CheckCircle, UserCircle, CheckCircle2, WifiOff, Info, Key, AlertCircle, Clock, TrendingUp, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint, PieChart,
-  Lock, Table, List, Filter, Database as DbIcon, Code2, ExternalLink
+  Lock, Table, List, Filter, Database as DbIcon, Code2, ExternalLink,
+  ShieldQuestion, UserMinus, UserPlus, Unlock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
-import { adminApi, supabase } from '../services/supabaseService.ts';
+import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { trackConversion } from '../services/analytics.ts';
 import { notifyAdmin } from '../services/telegramService.ts';
 
 const m = motion as any;
 
-type AdminTab = 'overview' | 'explorer' | 'signals' | 'system';
+type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system';
 type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
 
-/**
- * 严格同步要求的数据库 Schema
- */
 const DATABASE_SCHEMA = [
   { id: 'analytics_country', group: 'Traffic (GA4)', icon: Globe },
   { id: 'analytics_daily', group: 'Traffic (GA4)', icon: Activity },
@@ -46,6 +44,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
   const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
+  
+  // Registry State
+  const [users, setUsers] = useState<any[]>([]);
+  const [registrySearch, setRegistrySearch] = useState('');
+  const [processingUserId, setProcessingUserId] = useState<string | null>(null);
   
   // Stats
   const [dailyStats, setDailyStats] = useState<any[]>([]);
@@ -77,15 +80,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setCurrentAdmin(profile);
       trackConversion('admin_access');
 
-      const [d, s] = await Promise.all([
+      const [d, s, u] = await Promise.all([
         adminApi.getDailyAnalytics(30),
-        adminApi.getSecurityEvents(20)
+        adminApi.getSecurityEvents(20),
+        adminApi.getUsers()
       ]);
 
       setDailyStats(d || []);
       setSignals(s || []);
+      setUsers(u || []);
       
-      // 并行获取所有表的行数
       const counts: Record<string, number> = {};
       await Promise.all(DATABASE_SCHEMA.map(async (t) => {
         try { counts[t.id] = await adminApi.getTableCount(t.id); } catch { counts[t.id] = 0; }
@@ -120,6 +124,41 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (activeTab === 'explorer') fetchSelectedTableData(selectedTable);
   }, [activeTab, selectedTable]);
 
+  // 管理员动作：封禁切换
+  const handleToggleBlock = async (user: any) => {
+    if (user.is_super_owner) return;
+    if (!confirm(`Are you sure you want to ${user.is_blocked ? 'UNBLOCK' : 'BLOCK'} user ${user.email}?`)) return;
+    
+    setProcessingUserId(user.id);
+    try {
+      const { error } = await adminApi.toggleBlock(user.id, user.email, user.is_blocked);
+      if (error) throw error;
+      await fetchData();
+    } catch (e: any) {
+      setActionError(e.message);
+    } finally {
+      setProcessingUserId(null);
+    }
+  };
+
+  // 管理员动作：角色修改
+  const handleUpdateRole = async (user: any) => {
+    if (!isOwner || user.is_super_owner) return;
+    const newRole = user.role === 'admin' ? 'user' : 'admin';
+    if (!confirm(`Confirm change: Set ${user.email} role to ${newRole.toUpperCase()}?`)) return;
+
+    setProcessingUserId(user.id);
+    try {
+      const { error } = await adminApi.updateUserRole(user.id, user.email, newRole);
+      if (error) throw error;
+      await fetchData();
+    } catch (e: any) {
+      setActionError(e.message);
+    } finally {
+      setProcessingUserId(null);
+    }
+  };
+
   const themeColor = isOwner ? '#f59e0b' : '#6366f1';
 
   return (
@@ -143,6 +182,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <nav className="flex p-1.5 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
           {[
             { id: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
+            { id: 'registry', label: 'REGISTRY', icon: Users },
             { id: 'explorer', label: 'TABLE EDITOR', icon: Table },
             { id: 'signals', label: 'SIGNALS', icon: Radio },
             { id: 'system', label: 'SYSTEM', icon: Cpu }
@@ -244,6 +284,107 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   </div>
                </div>
             </m.div>
+          )}
+
+          {activeTab === 'registry' && (
+             <m.div key="registry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
+                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] border-white/5 bg-slate-950/60 shadow-2xl relative overflow-hidden">
+                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16 relative z-10">
+                      <div className="space-y-2 text-left w-full">
+                         <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span className="text-indigo-400">Registry</span></h2>
+                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Manage laboratory subjects and node clearances.</p>
+                      </div>
+                      <div className="relative w-full md:w-96 group">
+                         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
+                         <input 
+                            type="text" value={registrySearch} onChange={(e) => setRegistrySearch(e.target.value)}
+                            placeholder="Filter node identifiers..."
+                            className="w-full bg-black/60 border border-white/5 rounded-full pl-14 pr-6 py-5 text-[11px] font-bold italic text-white outline-none focus:border-indigo-500/50 transition-all"
+                         />
+                      </div>
+                   </div>
+
+                   <div className="overflow-x-auto no-scrollbar relative z-10">
+                      <table className="w-full text-left border-separate border-spacing-y-4">
+                         <thead>
+                            <tr className="text-[11px] font-black uppercase text-slate-700 tracking-widest italic px-8">
+                               <th className="px-8 pb-4">Identity</th>
+                               <th className="px-8 pb-4">Clearance</th>
+                               <th className="px-8 pb-4">Status</th>
+                               <th className="px-8 pb-4 text-right">Actions</th>
+                            </tr>
+                         </thead>
+                         <tbody>
+                            {users.filter(u => (u.email || '').toLowerCase().includes(registrySearch.toLowerCase())).map((user) => (
+                               <tr key={user.id} className="group">
+                                  <td className="py-6 px-8 bg-white/[0.02] rounded-l-[2rem] border-y border-l border-white/5">
+                                     <div className="flex items-center gap-4">
+                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${user.is_super_owner ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-slate-900 border-white/5 text-slate-500'}`}>
+                                           {user.is_super_owner ? <Crown size={22} /> : <UserCircle size={22} />}
+                                        </div>
+                                        <div className="space-y-0.5">
+                                           <p className="text-sm font-black italic text-white leading-none uppercase tracking-tight">{user.email || 'Anonymized'}</p>
+                                           <p className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">{user.id.slice(0, 12)}</p>
+                                        </div>
+                                     </div>
+                                  </td>
+                                  <td className="py-6 px-8 bg-white/[0.02] border-y border-white/5">
+                                     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${
+                                        user.role === 'owner' ? 'bg-amber-600/10 border-amber-500/30 text-amber-500' : 
+                                        user.role === 'admin' ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' : 
+                                        'bg-slate-900 border-white/5 text-slate-600'
+                                     }`}>
+                                        <Shield size={10} /> {user.role}
+                                     </div>
+                                  </td>
+                                  <td className="py-6 px-8 bg-white/[0.02] border-y border-white/5">
+                                     {user.is_blocked ? (
+                                        <span className="flex items-center gap-2 text-rose-500 text-[10px] font-black uppercase italic animate-pulse">
+                                           <Lock size={12} /> Restricted
+                                        </span>
+                                     ) : (
+                                        <span className="flex items-center gap-2 text-emerald-500 text-[10px] font-black uppercase italic">
+                                           <CheckCircle2 size={12} /> Authorized
+                                        </span>
+                                     )}
+                                  </td>
+                                  <td className="py-6 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right">
+                                     <div className="flex justify-end gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                                        {/* 修改角色：只有 Owner 可以升级/降级 Admin */}
+                                        {isOwner && !user.is_super_owner && (
+                                           <button 
+                                              onClick={() => handleUpdateRole(user)}
+                                              disabled={processingUserId === user.id}
+                                              className="p-3 bg-white/5 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-400 rounded-xl transition-all border border-white/5"
+                                              title={user.role === 'admin' ? "Demote to User" : "Promote to Admin"}
+                                           >
+                                              {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : (user.role === 'admin' ? <UserMinus size={16} /> : <UserPlus size={16} />)}
+                                           </button>
+                                        )}
+                                        {/* 封禁控制：禁止自封或封禁超级管理员 */}
+                                        {!user.is_super_owner && (
+                                           <button 
+                                              onClick={() => handleToggleBlock(user)}
+                                              disabled={processingUserId === user.id}
+                                              className={`p-3 rounded-xl transition-all border shadow-lg ${
+                                                 user.is_blocked 
+                                                 ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-600/20' 
+                                                 : 'bg-rose-600/10 text-rose-500 border-rose-500/20 hover:bg-rose-600/20'
+                                              }`}
+                                              title={user.is_blocked ? "Unblock Node" : "Restrict Node"}
+                                           >
+                                              {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : (user.is_blocked ? <Unlock size={16} /> : <Ban size={16} />)}
+                                           </button>
+                                        )}
+                                     </div>
+                                  </td>
+                               </tr>
+                            ))}
+                         </tbody>
+                      </table>
+                   </div>
+                </GlassCard>
+             </m.div>
           )}
 
           {activeTab === 'explorer' && (
@@ -421,7 +562,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div>
                         <div className="text-left space-y-1">
                            <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3>
-                           <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-widest italic">Infrastructure Diagnostics</p>
+                           <p className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest italic">Infrastructure Diagnostics</p>
                         </div>
                      </div>
                      <div className="space-y-6">

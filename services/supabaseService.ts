@@ -19,7 +19,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
     }]);
     
     if (level === 'CRITICAL' || level === 'WARNING') {
-      await notifyAdmin(`🚨 SYSTEM_AUDIT [${level}]\nACTION: ${action}\nDETAILS: ${details}\nUSER: ${user?.email || 'SYSTEM'}`);
+      await notifyAdmin(`🚨 SYSTEM_AUDIT [${level}]\nACTION: ${action}\nDETAILS: ${details}\nOP: ${user?.email || 'SYSTEM'}`);
     }
   } catch (e) {
     console.error("Audit log failed:", e);
@@ -30,7 +30,6 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
   try {
     await supabase.rpc('log_security_event', { email, event_type: type, details });
     
-    // 如果是高频失败或特定安全事件，触发即时预警
     if (type === 'LOGIN_FAIL') {
       await notifyAdmin(`⚠️ SECURITY_ALERT: Login Failure detected for node ${email}.\nReason: ${details}`);
     }
@@ -127,32 +126,40 @@ export const adminApi = {
     const { data, error } = await supabase
       .from(tableName)
       .select('*')
+      .order('created_at', { ascending: false, nullsFirst: false })
       .limit(limit);
-    if (error) throw error;
+    if (error) {
+      const { data: fallbackData, error: fallbackError } = await supabase.from(tableName).select('*').limit(limit);
+      if (fallbackError) throw fallbackError;
+      return fallbackData;
+    }
     return data;
   },
   getTableCount: async (tableName: string) => {
-    const { count, error } = await supabase
-      .from(tableName)
-      .select('*', { count: 'exact', head: true });
+    const { count, error } = await supabase.from(tableName).select('*', { count: 'exact', head: true });
     if (error) throw error;
     return count || 0;
   },
   getSecurityEvents: async (limit = 50) => {
-    const { data } = await supabase
-      .from('security_events')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const { data } = await supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(limit);
     return data || [];
   },
-  toggleBlock: async (id: string) => {
-    await logAuditLog('ADMIN_TOGGLE_BLOCK', `User ${id} block status toggled`, 'WARNING');
-    return await supabase.rpc('admin_toggle_block', { target_user_id: id });
+  // 管理员核心动作：切换封禁
+  toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
+    const newState = !currentlyBlocked;
+    const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
+    if (!error) {
+      await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} user ${email}`, newState ? 'WARNING' : 'INFO');
+    }
+    return { error };
   },
-  updateUserRole: async (id: string, role: string) => {
-    await logAuditLog('ADMIN_UPDATE_ROLE', `User ${id} role updated to ${role}`, 'WARNING');
-    return await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
+  // 管理员核心动作：修改角色
+  updateUserRole: async (id: string, email: string, newRole: string) => {
+    const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
+    if (!error) {
+      await logAuditLog('ADMIN_ROLE_CHANGE', `User ${email} promoted/demoted to ${newRole.toUpperCase()}`, 'CRITICAL');
+    }
+    return { error };
   },
   getDailyAnalytics: async (days: number = 30) => {
     const { data } = await supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(days);
@@ -211,7 +218,12 @@ export const feedbackApi = {
 
 export const diaryApi = {
   getEntries: async () => {
-    const { data } = await supabase.from('diary_entries').select('*, profiles(full_name, email)').order('created_at', { ascending: false });
+    // Explicitly handle relationship to avoid 400 errors from ambiguous joins or RLS policy gaps
+    const { data, error } = await supabase
+      .from('diary_entries')
+      .select('id, content, mood, created_at, profiles(full_name, email)')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
     return data;
   },
   saveEntry: async (content: string, mood: string) => {
@@ -219,6 +231,9 @@ export const diaryApi = {
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user?.id }]).select().single();
     if (error) throw error;
     return data;
+  },
+  handleDelete: async (id: string) => {
+    await supabase.from('diary_entries').delete().eq('id', id);
   },
   deleteEntry: async (id: string) => {
     await supabase.from('diary_entries').delete().eq('id', id);
