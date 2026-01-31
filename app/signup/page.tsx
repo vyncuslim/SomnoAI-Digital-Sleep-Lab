@@ -4,31 +4,28 @@ import { Auth } from '../../components/Auth.tsx';
 import { Language } from '../../services/i18n.ts';
 
 /**
- * Access terminal for standard laboratory subjects.
- * Provides the neural handshake interface for existing nodes.
+ * Access terminal for new laboratory subjects.
+ * Initializes the registration protocol for new neural links.
  */
-export default function UserLoginPage({ 
+export default function UserSignupPage({ 
   onSuccess, 
   onSandbox, 
-  lang = 'en',
-  mode = 'login' 
+  lang = 'en'
 }: { 
   onSuccess: () => void, 
   onSandbox: () => void, 
-  lang?: Language,
-  mode?: 'login' | 'join' 
+  lang?: Language
 }) {
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center">
       <Auth 
         lang={lang} 
         onLogin={() => {
-            // Standardize path to dashboard
             window.history.replaceState(null, '', '/dashboard');
             onSuccess();
         }} 
         onGuest={onSandbox}
-        initialTab={mode}
+        initialTab="join"
       />
     </div>
   );

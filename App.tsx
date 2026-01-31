@@ -10,15 +10,15 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
-import { getSafeHash, safeNavigateHash, safeReload, getSafeUrl } from './services/navigation.ts';
+import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
 import { trackPageView, trackEvent } from './services/analytics.ts';
-import { authApi, logAuditLog } from './services/supabaseService.ts';
-import { notifyAdmin } from './services/telegramService.ts';
+import { logAuditLog } from './services/supabaseService.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
 import AdminLoginPage from './app/admin/login/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
+import UserSignupPage from './app/signup/page.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
@@ -80,7 +80,7 @@ const DecisionLoading = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { profile, loading, isAdmin } = useAuth();
+  const { profile, loading, isAdmin, refresh } = useAuth();
   const [lang, setLang] = useState<Language>('en'); 
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
@@ -88,7 +88,6 @@ const AppContent: React.FC = () => {
   const lastTrackedView = useRef<string | null>(null);
   const attemptedPath = useRef<string>('');
 
-  // Global Telemetry Bridge
   useEffect(() => {
     if (lastTrackedView.current === activeView) return;
     
@@ -110,16 +109,7 @@ const AppContent: React.FC = () => {
     };
     
     let title = viewTitles[activeView] || 'SomnoAI Node';
-    let path = activeView as string;
-
-    if (activeView === 'not-found') {
-      path = `/404/${attemptedPath.current || 'unknown'}`;
-      title = `404: ${attemptedPath.current || 'Sector Missing'}`;
-      trackEvent('error_not_found', { attempted_path: attemptedPath.current });
-      logAuditLog('404_DETECTION', `Unresolved path requested: ${attemptedPath.current}`, 'WARNING');
-    }
-    
-    trackPageView(path, title);
+    trackPageView(activeView as string, title);
     lastTrackedView.current = activeView;
   }, [activeView]);
 
@@ -128,31 +118,25 @@ const AppContent: React.FC = () => {
     safeNavigateHash(viewId);
   }, []);
 
-  // Neural Routing Bridge
   useEffect(() => {
     const bridgeRouting = () => {
-      const currentUrl = getSafeUrl();
-      const origin = window.location.origin;
-      
-      // 解析当前物理路径和 Hash
-      const urlObj = new URL(currentUrl);
-      const pathOnly = urlObj.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+      const pathOnly = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
       const hashOnly = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       
-      // 处理物理路径 /login, /signin, /signup
+      // 1. Handle physical path routing
       if (pathOnly === 'signup' && hashOnly === '') {
         setAuthMode('join');
-        setActiveView('dashboard'); // profile 为空时会自动展示登录页
         return;
       }
-
       if ((pathOnly === 'login' || pathOnly === 'signin') && hashOnly === '') {
         setAuthMode('login');
+        return;
+      }
+      if (pathOnly === 'dashboard' && hashOnly === '') {
         setActiveView('dashboard');
         return;
       }
       
-      // 处理 Admin
       if (pathOnly === 'admin' && hashOnly !== 'admin') {
         safeNavigateHash('admin');
         return;
@@ -166,6 +150,7 @@ const AppContent: React.FC = () => {
       if (target === 'admin') { setActiveView('admin'); return; }
 
       const mappings: Record<string, ViewType> = {
+        'dashboard': 'dashboard',
         'calendar': 'calendar',
         'assistant': 'assistant',
         'experiment': 'experiment',
@@ -180,29 +165,19 @@ const AppContent: React.FC = () => {
 
       if (mappings[target]) {
         setActiveView(mappings[target]);
-      } else {
-        // 如果物理路径是 /signup /login 已经处理，其余未识别 hash 转 404
-        if (target !== '' && !mappings[target]) {
-           setActiveView('not-found');
-        }
+      } else if (target !== '') {
+        setActiveView('not-found');
       }
     };
     
     window.addEventListener('hashchange', bridgeRouting);
+    window.addEventListener('popstate', bridgeRouting);
     bridgeRouting();
-    return () => window.removeEventListener('hashchange', bridgeRouting);
+    return () => {
+      window.removeEventListener('hashchange', bridgeRouting);
+      window.removeEventListener('popstate', bridgeRouting);
+    };
   }, []);
-
-  const handleLogout = async () => {
-    try {
-      const userEmail = profile?.email || 'unknown';
-      await authApi.signOut();
-      notifyAdmin(`🚪 DISCONNECT: User session ${userEmail} terminated manually.`);
-      safeReload();
-    } catch (e) {
-      window.location.href = '/';
-    }
-  };
 
   if (loading) return <DecisionLoading />;
 
@@ -219,9 +194,19 @@ const AppContent: React.FC = () => {
     }
 
     if (!profile && !isSimulated) {
+      const pathOnly = window.location.pathname.replace(/^\/+/, '');
+      if (pathOnly === 'signup' || authMode === 'join') {
+        return (
+          <UserSignupPage 
+            onSuccess={() => { setActiveView('dashboard'); refresh(); }} 
+            onSandbox={() => setIsSimulated(true)} 
+            lang={lang} 
+          />
+        );
+      }
       return (
         <UserLoginPage 
-          onSuccess={() => safeNavigate('dashboard')} 
+          onSuccess={() => { setActiveView('dashboard'); refresh(); }} 
           onSandbox={() => setIsSimulated(true)} 
           lang={lang}
           mode={authMode} 
@@ -230,7 +215,7 @@ const AppContent: React.FC = () => {
     }
 
     if (profile && profile.role === 'user' && !profile.full_name && !isSimulated) {
-       return <FirstTimeSetup onComplete={() => safeReload()} />;
+       return <FirstTimeSetup onComplete={() => refresh()} />;
     }
 
     return (
@@ -238,12 +223,12 @@ const AppContent: React.FC = () => {
         <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 pb-48">
           <AnimatePresence mode="wait">
             <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-              {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={setActiveView} />}
+              {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={safeNavigate} />}
               {activeView === 'calendar' && <Trends history={[MOCK_RECORD]} lang={lang} />}
               {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} />}
               {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
               {activeView === 'diary' && <DiaryView lang={lang} />}
-              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={safeNavigate} />}
+              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={safeReload} onNavigate={safeNavigate} />}
               {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('settings')} />}
               {activeView === 'about' && <AboutView lang={lang} onBack={() => safeNavigate('settings')} />}
             </m.div>

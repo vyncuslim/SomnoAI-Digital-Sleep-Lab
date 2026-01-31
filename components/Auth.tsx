@@ -38,11 +38,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const turnstileRef = useRef<HTMLDivElement>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-  // 关键修复：当 URL 路径变化导致 initialTab 改变时，同步内部 activeTab
   useEffect(() => {
     if (initialTab && initialTab !== activeTab) {
       setActiveTab(initialTab);
-      // 清空错误信息
       setError(null);
     }
   }, [initialTab]);
@@ -192,9 +190,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
               </button>
             </form>
 
-            <button onClick={onGuest} className="w-full py-4 border border-white/5 text-slate-500 rounded-full font-black text-[9px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-white/5 transition-all">
-              <FlaskConical size={14} /> Sandbox Mode
-            </button>
+            {/* 底部导航链接 - 对应用户要求的 "/login" "/signup" 跳转逻辑 */}
+            <div className="flex flex-col items-center gap-4 pt-4">
+              {activeTab === 'login' ? (
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  No account? <button onClick={() => { setActiveTab('join'); window.history.pushState(null, '', '/signup'); }} className="text-indigo-400 hover:text-white underline underline-offset-4">Create one</button>
+                </p>
+              ) : (
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                  Already registered? <button onClick={() => { setActiveTab('login'); window.history.pushState(null, '', '/login'); }} className="text-indigo-400 hover:text-white underline underline-offset-4">Sign in</button>
+                </p>
+              )}
+              
+              <button onClick={onGuest} className="w-full py-4 border border-white/5 text-slate-500 rounded-full font-black text-[9px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-white/5 transition-all mt-2">
+                <FlaskConical size={14} /> Sandbox Mode
+              </button>
+            </div>
           </>
         ) : (
           <m.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-10" >

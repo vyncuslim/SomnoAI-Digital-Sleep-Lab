@@ -13,20 +13,19 @@ const handleGeminiError = (err: any) => {
   const errMsg = err.message || "";
   console.error("Gemini API Error Context:", err);
   
-  // Per guidelines: if key is invalid/missing or entity not found, re-trigger selector
   if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID")) {
     console.warn("[Neural Bridge] Identity reset required. Re-triggering key selector.");
     (window as any).aistudio?.openSelectKey().catch(() => {});
   }
   
-  throw new Error("CORE_PROCESSING_EXCEPTION");
+  throw new Error(errMsg.includes("API_KEY") ? "API_KEY_REQUIRED" : "CORE_PROCESSING_EXCEPTION");
 };
 
-// Model Constants - Optimized for production as per project guidelines
-// Preferring Gemini 2.5 series for system logic and complex reasoning tasks
-const MODEL_FLASH = 'gemini-2.5-flash'; 
-const MODEL_PRO = 'gemini-2.5-pro'; 
+// Model Constants - Upgraded to Gemini 3 Series as per requirements
+const MODEL_FLASH = 'gemini-3-flash-preview'; 
+const MODEL_PRO = 'gemini-3-pro-preview'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
+const MODEL_VISION = 'gemini-3-pro-preview'; // Using 3 Pro for high-fidelity facial analysis
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const prompt = `You are a world-class digital sleep scientist and chief biohacker. Please perform deep neural analysis based on the following high-precision physiological telemetry.
@@ -43,7 +42,8 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
       contents: prompt,
       config: { 
         responseMimeType: "application/json",
-        responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
+        responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } },
+        thinkingConfig: { thinkingBudget: 12000 } // Enabling thinking for Flash 3
       }
     });
     return JSON.parse(response.text?.trim() || "[]");
@@ -53,22 +53,46 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
   }
 };
 
-export const chatWithCoach = async (history: { role: string; content: string }[], lang: Language = 'en', contextData?: SleepRecord | null) => {
-  const bio = contextData ? `\nTELEMETRY: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, Efficiency: ${contextData.efficiency}%.` : "";
-  const systemInstruction = `You are the Somno Chief Research Officer. Professional, futuristic, data-driven. Bio: ${bio}`;
+export const chatWithCoach = async (
+  history: { role: string; content: string; image?: string }[], 
+  lang: Language = 'en', 
+  contextData?: SleepRecord | null
+) => {
+  const bio = contextData ? `\nTELEMETRY_CONTEXT: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, RHR: ${contextData.heartRate.resting}bpm.` : "";
+  const systemInstruction = `You are the Somno Chief Research Officer (CRO). Professional, futuristic, data-driven. 
+    Bio: ${bio}
+    When analyzing facial scans: Look for indicators of fatigue (dark circles, eye puffiness, skin hydration) and correlate with sleep telemetry.
+    Format your response in a structured, analytical manner.`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    
+    const contents = history.map(m => {
+      const parts: any[] = [{ text: m.content }];
+      if (m.image) {
+        parts.push({
+          inlineData: {
+            mimeType: 'image/jpeg',
+            data: m.image.split(',')[1],
+          },
+        });
+      }
+      return { role: m.role === 'user' ? 'user' : 'model', parts };
+    });
+
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
-      contents: history.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
+      contents: contents,
       config: { 
         systemInstruction, 
         tools: [{ googleSearch: {} }],
         thinkingConfig: { thinkingBudget: 32768 } 
       }
     });
-    return { text: response.text, sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] };
+    return { 
+      text: response.text, 
+      sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] 
+    };
   } catch (err) { 
     handleGeminiError(err); 
   }
@@ -79,12 +103,16 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
-      contents: `Design a sleep experiment based on: score ${data.score}, RHR ${data.heartRate?.resting}.`,
+      contents: `Design a high-precision sleep experiment based on current telemetry: score ${data.score}, RHR ${data.heartRate?.resting}. Ensure the hypothesis is scientifically rigorous.`,
       config: { 
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
-          properties: { hypothesis: { type: Type.STRING }, protocol: { type: Type.ARRAY, items: { type: Type.STRING } }, expectedImpact: { type: Type.STRING } },
+          properties: { 
+            hypothesis: { type: Type.STRING }, 
+            protocol: { type: Type.ARRAY, items: { type: Type.STRING } }, 
+            expectedImpact: { type: Type.STRING } 
+          },
           required: ["hypothesis", "protocol", "expectedImpact"]
         },
         thinkingConfig: { thinkingBudget: 16384 }
@@ -102,7 +130,10 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
-      contents: `Summarize trends for: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, use English only.`,
+      contents: `Synthesize a weekly biometric trend report for the following telemetry sequence: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, use English only. Focus on long-term recovery patterns.`,
+      config: {
+        thinkingConfig: { thinkingBudget: 8000 }
+      }
     });
     return response.text || "Summary failed.";
   } catch (err) { 
@@ -116,7 +147,7 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
-      contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on score ${data.score}.` }] }],
+      contents: [{ parts: [{ text: `Say cheerfully: Sleep guided meditation based on your recovery score of ${data.score}. Relax your neural pathways and enter deep hibernation.` }] }],
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
