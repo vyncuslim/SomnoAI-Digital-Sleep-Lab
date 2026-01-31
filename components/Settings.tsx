@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
@@ -23,7 +22,7 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
-  lang, onLanguageChange, onNavigate
+  lang, onLanguageChange, onLogout, onNavigate
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
