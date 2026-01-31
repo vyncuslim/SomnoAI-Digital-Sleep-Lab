@@ -1,4 +1,3 @@
-
 /**
  * SomnoAI Admin Notification Service
  * Routes system alerts and feedback via Supabase Edge Functions to Telegram.
@@ -21,7 +20,7 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
   }
 
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000);
+  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
 
   try {
     const response = await fetch(EDGE_FUNCTION_URL, {
@@ -48,10 +47,10 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
   } catch (err: any) {
     clearTimeout(timeoutId);
     if (err.name === 'AbortError') {
-      console.warn('[Telegram Service]: Request timed out or aborted (expected behavior during lifecycle cleanup).');
+      console.warn('[Telegram Service]: Operation timed out or was aborted by user/system.');
       return false;
     }
-    console.debug("[Telegram Service Throttled]:", err.message);
+    console.debug("[Telegram Service Alert]:", err.message);
     return false;
   }
 };

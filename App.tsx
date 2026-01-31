@@ -29,6 +29,7 @@ import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { FeedbackView } from './components/FeedbackView.tsx';
 import { ExperimentView } from './components/ExperimentView.tsx';
 import { NotFoundView } from './components/NotFoundView.tsx';
+import { AboutView } from './components/AboutView.tsx';
 
 const m = motion as any;
 
@@ -138,6 +139,12 @@ const AppContent: React.FC = () => {
         safeNavigateHash('admin');
         return;
       }
+      
+      // Handle legacy /about route
+      if (pathOnly === 'about' && hashOnly !== 'about') {
+        safeNavigateHash('about');
+        return;
+      }
 
       attemptedPath.current = hashOnly || pathOnly;
       const target = hashOnly || 'dashboard';
@@ -219,8 +226,9 @@ const AppContent: React.FC = () => {
               {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} />}
               {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
               {activeView === 'diary' && <DiaryView lang={lang} />}
-              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} />}
+              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={safeNavigate} />}
               {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('settings')} />}
+              {activeView === 'about' && <AboutView lang={lang} onBack={() => safeNavigate('settings')} />}
             </m.div>
           </AnimatePresence>
         </main>

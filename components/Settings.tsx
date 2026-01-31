@@ -4,7 +4,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
   Terminal, Key, Info, Bell, RefreshCw, Smartphone, Zap, MessageSquare, Send, KeyRound,
-  Loader2
+  Loader2, Info as AboutIcon, ChevronRight
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,7 +23,7 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
-  lang, onLanguageChange
+  lang, onLanguageChange, onNavigate
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -142,6 +142,45 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
+        {/* Action Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <GlassCard 
+            onClick={() => onNavigate('about')}
+            className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02] cursor-pointer group" 
+            hoverScale={true}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <AboutIcon size={18} className="text-indigo-400" />
+                <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">About Lab</h3>
+              </div>
+              <p className="text-[10px] text-slate-500 italic leading-relaxed">View project specifications, mission, and technical architecture.</p>
+              <div className="flex items-center gap-2 text-indigo-400 group-hover:translate-x-1 transition-transform">
+                 <span className="text-[9px] font-black uppercase">Open Specification</span>
+                 <ChevronRight size={14} />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard 
+            onClick={() => onNavigate('feedback')}
+            className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02] cursor-pointer group" 
+            hoverScale={true}
+          >
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <MessageSquare size={18} className="text-emerald-400" />
+                <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Submit Log</h3>
+              </div>
+              <p className="text-[10px] text-slate-500 italic leading-relaxed">Identify anomalies or propose improvements to the neural grid.</p>
+              <div className="flex items-center gap-2 text-emerald-400 group-hover:translate-x-1 transition-transform">
+                 <span className="text-[9px] font-black uppercase">Dispatch Feedback</span>
+                 <ChevronRight size={14} />
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+
         <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -177,7 +216,6 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="space-y-4 pt-4 border-t border-white/5">
                <button onClick={() => setShowDonation(true)} className="w-full py-6 rounded-full bg-[#f43f5e]/5 border border-[#f43f5e]/20 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/10 hover:bg-[#f43f5e]/10"><Heart size={20} fill="currentColor" /> {t.coffee}</button>
                <button onClick={handleLogout} disabled={isDisconnecting} className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 shadow-2xl">
-                 {/* Fixed: Use imported Loader2 from lucide-react */}
                  {isDisconnecting ? <Loader2 size={18} className="animate-spin" /> : <DisconnectIcon size={18} />} 
                  {isDisconnecting ? 'DISCONNECTING...' : t.logout}
                </button>

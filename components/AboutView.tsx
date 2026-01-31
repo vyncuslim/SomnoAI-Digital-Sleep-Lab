@@ -3,7 +3,7 @@ import React from 'react';
 import { 
   ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, Binary, 
   ShieldCheck, Zap, Globe, Smartphone, Database, ChevronRight, 
-  UserCheck, Moon, Lock, Mail, Server
+  UserCheck, Moon, Lock, Mail, Server, Github
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -148,13 +148,13 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center px-8 py-4 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"
               >
-                View Source on GitHub →
+                <Github size={16} className="mr-2" /> View Source
               </a>
               <a
                 href="mailto:ongyuze1401@gmail.com"
                 className="inline-flex items-center px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-xl"
               >
-                Contact Developer
+                <Mail size={16} className="mr-2" /> Contact Developer
               </a>
             </div>
           </div>
@@ -171,7 +171,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
                 onClick={onBack}
                 className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 rounded-full text-[12px] font-black uppercase tracking-widest transition-all text-white italic shadow-2xl active:scale-95"
               >
-                Back to Home
+                Back to Terminal
               </button>
            </div>
         </footer>

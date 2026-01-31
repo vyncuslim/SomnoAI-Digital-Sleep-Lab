@@ -1,4 +1,3 @@
-
 import { supabase } from '../lib/supabaseClient.ts';
 import { notifyAdmin } from './telegramService.ts';
 
@@ -30,8 +29,8 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
   try {
     await supabase.rpc('log_security_event', { email, event_type: type, details });
     
-    if (type === 'LOGIN_FAIL') {
-      await notifyAdmin(`⚠️ SECURITY_ALERT: Login Failure detected for node ${email}.\nReason: ${details}`);
+    if (type === 'LOGIN_FAIL' || type === 'SECURITY_BREACH') {
+      await notifyAdmin(`⚠️ SECURITY_ALERT: [${type}] detected for ${email}.\nReason: ${details}`);
     }
   } catch (e) {
     console.warn("Security logger unreachable");
@@ -144,7 +143,6 @@ export const adminApi = {
     const { data } = await supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(limit);
     return data || [];
   },
-  // 管理员核心动作：切换封禁
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
     const newState = !currentlyBlocked;
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
@@ -153,11 +151,10 @@ export const adminApi = {
     }
     return { error };
   },
-  // 管理员核心动作：修改角色
   updateUserRole: async (id: string, email: string, newRole: string) => {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
     if (!error) {
-      await logAuditLog('ADMIN_ROLE_CHANGE', `User ${email} promoted/demoted to ${newRole.toUpperCase()}`, 'CRITICAL');
+      await logAuditLog('ADMIN_ROLE_CHANGE', `User ${email} clearance updated to ${newRole.toUpperCase()}`, 'CRITICAL');
     }
     return { error };
   },
@@ -218,11 +215,11 @@ export const feedbackApi = {
 
 export const diaryApi = {
   getEntries: async () => {
-    // Explicitly handle relationship to avoid 400 errors from ambiguous joins or RLS policy gaps
     const { data, error } = await supabase
       .from('diary_entries')
-      .select('id, content, mood, created_at, profiles(full_name, email)')
-      .order('created_at', { ascending: false });
+      .select('*, profiles(full_name, email)') 
+      .order('created_at', { ascending: false })
+      .limit(10);
     if (error) throw error;
     return data;
   },
@@ -231,9 +228,6 @@ export const diaryApi = {
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user?.id }]).select().single();
     if (error) throw error;
     return data;
-  },
-  handleDelete: async (id: string) => {
-    await supabase.from('diary_entries').delete().eq('id', id);
   },
   deleteEntry: async (id: string) => {
     await supabase.from('diary_entries').delete().eq('id', id);

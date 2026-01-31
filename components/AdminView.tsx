@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, Database, ShieldAlert, Search, RefreshCw, 
@@ -97,10 +96,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setTableCounts(counts);
       
       setSyncStatus('synced');
-      if (isManual) notifyAdmin(`📊 ADMIN_RELOAD: Full Table Handshake by ${profile?.email}`);
+      if (isManual) {
+        await logAuditLog('GA4_MANUAL_SYNC', `Node registry refresh triggered by ${profile?.email}`, 'INFO');
+      }
     } catch (err: any) {
       setActionError(err.message || "Unified data synchronization failure.");
       setSyncStatus('error');
+      await logAuditLog('ADMIN_SYNC_ERROR', err.message || 'Unknown sync error', 'CRITICAL');
     } finally {
       setLoading(false);
       setTimeout(() => setSyncStatus('idle'), 3000);
@@ -145,7 +147,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleUpdateRole = async (user: any) => {
     if (!isOwner || user.is_super_owner) return;
     const newRole = user.role === 'admin' ? 'user' : 'admin';
-    if (!confirm(`Confirm change: Set ${user.email} role to ${newRole.toUpperCase()}?`)) return;
+    if (!confirm(`Confirm promotion/demotion: Set ${user.email} role to ${newRole.toUpperCase()}?`)) return;
 
     setProcessingUserId(user.id);
     try {
@@ -173,7 +175,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               Command <span style={{ color: themeColor }}>Bridge</span>
             </h1>
             <div className="flex items-center gap-3">
-               <div className={`w-2 h-2 rounded-full ${syncStatus === 'synced' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : 'bg-slate-700'} animate-pulse`} />
+               <div className={`w-2 h-2 rounded-full ${syncStatus === 'synced' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : syncStatus === 'error' ? 'bg-rose-500' : 'bg-slate-700'} animate-pulse`} />
                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Pulse: {syncStatus.toUpperCase()}</p>
             </div>
           </div>
@@ -237,6 +239,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic flex items-center gap-2">
                            <TrendingUp size={14} /> Traffic Reach (30D)
                         </h3>
+                        {/* GA4 Sync Status Indicator */}
+                        <div className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${
+                          syncStatus === 'synced' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
+                          syncStatus === 'syncing' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' :
+                          syncStatus === 'error' ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' :
+                          'bg-white/5 border-white/10 text-slate-500'
+                        }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full ${syncStatus === 'synced' ? 'bg-emerald-500' : syncStatus === 'error' ? 'bg-rose-500' : 'bg-indigo-500'} animate-pulse`} />
+                          GA4 Status: {syncStatus}
+                        </div>
                      </div>
                      <GlassCard className="p-10 rounded-[4rem] border-white/5 h-[400px]">
                         <ResponsiveContainer width="100%" height="100%">
