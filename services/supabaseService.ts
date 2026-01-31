@@ -4,9 +4,36 @@ import { notifyAdmin } from './telegramService.ts';
 
 export { supabase };
 
+/**
+ * 核心系统审计日志
+ */
+export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from('audit_logs').insert([{
+      action,
+      details,
+      level,
+      user_id: user?.id,
+      timestamp: new Date().toISOString()
+    }]);
+    
+    if (level === 'CRITICAL' || level === 'WARNING') {
+      await notifyAdmin(`🚨 SYSTEM_AUDIT [${level}]\nACTION: ${action}\nDETAILS: ${details}\nUSER: ${user?.email || 'SYSTEM'}`);
+    }
+  } catch (e) {
+    console.error("Audit log failed:", e);
+  }
+};
+
 const logSecurityEvent = async (email: string, type: string, details: string) => {
   try {
     await supabase.rpc('log_security_event', { email, event_type: type, details });
+    
+    // 如果是高频失败或特定安全事件，触发即时预警
+    if (type === 'LOGIN_FAIL') {
+      await notifyAdmin(`⚠️ SECURITY_ALERT: Login Failure detected for node ${email}.\nReason: ${details}`);
+    }
   } catch (e) {
     console.warn("Security logger unreachable");
   }
@@ -35,6 +62,7 @@ export const authApi = {
       await logSecurityEvent(email, 'LOGIN_FAIL', res.error.message);
     } else {
       await logSecurityEvent(email, 'LOGIN_SUCCESS', 'Node verified');
+      await logAuditLog('USER_LOGIN', `Successful login for ${email}`);
     }
     return res;
   },
@@ -44,7 +72,10 @@ export const authApi = {
       password, 
       options: { ...options, captchaToken } 
     });
-    if (!res.error) await logSecurityEvent(email, 'REGISTRATION', 'New node request');
+    if (!res.error) {
+      await logSecurityEvent(email, 'REGISTRATION', 'New node request');
+      await logAuditLog('USER_SIGNUP', `New account created: ${email}`);
+    }
     return res;
   },
   sendOTP: async (email: string, captchaToken?: string) => {
@@ -59,10 +90,15 @@ export const authApi = {
   verifyOTP: async (email: string, token: string) => {
     const res = await supabase.auth.verifyOtp({ email, token, type: 'email' });
     if (res.error) await logSecurityEvent(email, 'OTP_VERIFY_FAIL', res.error.message);
-    else await logSecurityEvent(email, 'OTP_VERIFY_SUCCESS', 'Identity confirmed');
+    else {
+      await logSecurityEvent(email, 'OTP_VERIFY_SUCCESS', 'Identity confirmed');
+      await logAuditLog('OTP_VERIFY', `Identity verified via OTP: ${email}`);
+    }
     return res;
   },
   signOut: async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) await logAuditLog('USER_LOGOUT', `Session terminated: ${user.email}`);
     return await supabase.auth.signOut();
   }
 };
@@ -87,6 +123,21 @@ export const adminApi = {
     const { data } = await supabase.rpc('admin_get_all_profiles');
     return data || [];
   },
+  getTableData: async (tableName: string, limit = 100) => {
+    const { data, error } = await supabase
+      .from(tableName)
+      .select('*')
+      .limit(limit);
+    if (error) throw error;
+    return data;
+  },
+  getTableCount: async (tableName: string) => {
+    const { count, error } = await supabase
+      .from(tableName)
+      .select('*', { count: 'exact', head: true });
+    if (error) throw error;
+    return count || 0;
+  },
   getSecurityEvents: async (limit = 50) => {
     const { data } = await supabase
       .from('security_events')
@@ -96,9 +147,11 @@ export const adminApi = {
     return data || [];
   },
   toggleBlock: async (id: string) => {
+    await logAuditLog('ADMIN_TOGGLE_BLOCK', `User ${id} block status toggled`, 'WARNING');
     return await supabase.rpc('admin_toggle_block', { target_user_id: id });
   },
   updateUserRole: async (id: string, role: string) => {
+    await logAuditLog('ADMIN_UPDATE_ROLE', `User ${id} role updated to ${role}`, 'WARNING');
     return await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: role });
   },
   getDailyAnalytics: async (days: number = 30) => {
