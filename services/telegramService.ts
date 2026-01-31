@@ -1,3 +1,4 @@
+
 /**
  * SomnoAI Admin Notification Service
  * Routes system alerts and feedback via Supabase Edge Functions to Telegram.
@@ -8,7 +9,10 @@ const EDGE_FUNCTION_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qY3Z2dHlhZWJkb2RtZWd3cWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyODc2ODgsImV4cCI6MjA4Mzg2MzY4OH0.FJY9V6fdTFOFCXeqWNwv1cQnsnQfq4RZq-5WyLNzPCg';
 
 export const notifyAdmin = async (payload: string | { error?: string; message?: string; type?: string }) => {
-  if (!EDGE_FUNCTION_URL) return false;
+  if (!EDGE_FUNCTION_URL || !SUPABASE_ANON_KEY) {
+    console.warn("TELEGRAM_UPLINK_OFFLINE: Gateway configuration missing.");
+    return false;
+  }
 
   let finalMessage = '';
   if (typeof payload === 'string') {
@@ -19,9 +23,8 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     finalMessage = `🚨 SOMNO LAB ${type}\n\nLOG: ${content}\nTIME: ${new Date().toLocaleString()}`;
   }
 
-  // Use a shorter timeout for non-critical background notifications
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 5000); 
+  const timeoutId = setTimeout(() => controller.abort(), 6000); 
 
   try {
     const response = await fetch(EDGE_FUNCTION_URL, {
@@ -36,10 +39,16 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     });
 
     clearTimeout(timeoutId);
-    return response.ok;
+    
+    if (!response.ok) {
+        console.error(`TELEGRAM_UPLINK_FAILURE: HTTP_${response.status}`);
+        return false;
+    }
+    
+    return true;
   } catch (err: any) {
     clearTimeout(timeoutId);
-    // Silent fail for background telemetry
+    console.debug(`TELEGRAM_PULSE_ERROR: ${err.message || 'GATEWAY_TIMEOUT'}`);
     return false;
   }
 };

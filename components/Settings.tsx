@@ -1,16 +1,17 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
   Terminal, Key, Info, Bell, RefreshCw, Smartphone, Zap, MessageSquare, Send, KeyRound,
-  Loader2, Info as AboutIcon, ChevronRight
+  Loader2, Info as AboutIcon, ChevronRight, Lock, ShieldAlert, CheckCircle2
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
 import { notifyAdmin } from '../services/telegramService.ts';
 import { getSafeHostname, safeReload } from '../services/navigation.ts';
-import { authApi } from '../services/supabaseService.ts';
+import { authApi, supabase } from '../services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -28,6 +29,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isAiActive, setIsAiActive] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [resetStatus, setResetStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
@@ -49,17 +51,26 @@ export const Settings: React.FC<SettingsProps> = ({
     checkAiStatus();
   }, []);
 
-  const handleOpenKeySelector = async () => {
+  const handleOpenAiKey = async () => {
     if ((window as any).aistudio?.openSelectKey) {
-      try {
-        await (window as any).aistudio.openSelectKey();
-        setIsAiActive(true);
-      } catch (e) {
-        console.error("Selector Error:", e);
-      }
-    } else {
-      alert("Neural Bridge Selector is restricted to AI Studio laboratory environments.");
+      await (window as any).aistudio.openSelectKey();
+      // Guidance says selection is successful after triggering
+      setIsAiActive(true);
     }
+  };
+
+  const handleResetPassword = async () => {
+    setResetStatus('sending');
+    try {
+      const { data: { user } } = await (supabase.auth as any).getUser();
+      if (!user?.email) throw new Error("IDENT_VOID");
+      const { error } = await authApi.resetPassword(user.email);
+      if (error) throw error;
+      setResetStatus('success');
+    } catch (e) {
+      setResetStatus('error');
+    }
+    setTimeout(() => setResetStatus('idle'), 5000);
   };
 
   const handleLogout = async () => {
@@ -115,9 +126,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   <p className="text-sm font-black text-white italic">{isAiActive ? 'ACTIVE' : 'OFFLINE'}</p>
                 </div>
               </div>
-              <button onClick={handleOpenKeySelector} className="p-3 bg-white/5 border border-white/10 rounded-xl text-indigo-400 hover:bg-white/10 transition-all">
-                <KeyRound size={18} />
-              </button>
+              <ShieldCheck size={18} className={isAiActive ? 'text-emerald-500' : 'text-slate-700'} />
             </div>
           </GlassCard>
 
@@ -141,49 +150,60 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
-        {/* Action Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <GlassCard 
-            onClick={() => onNavigate('about')}
-            className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02] cursor-pointer group" 
-            hoverScale={true}
-          >
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <AboutIcon size={18} className="text-indigo-400" />
-                <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">About Lab</h3>
-              </div>
-              <p className="text-[10px] text-slate-500 italic leading-relaxed">View project specifications, mission, and technical architecture.</p>
-              <div className="flex items-center gap-2 text-indigo-400 group-hover:translate-x-1 transition-transform">
-                 <span className="text-[9px] font-black uppercase">Open Specification</span>
-                 <ChevronRight size={14} />
-              </div>
-            </div>
-          </GlassCard>
+        {/* API Selection Section */}
+        <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02]">
+          <div className="flex items-center justify-between">
+             <div className="space-y-1">
+                <div className="flex items-center gap-3">
+                   <Key size={18} className="text-indigo-400" />
+                   <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.apiKey}</h3>
+                </div>
+                <p className="text-[10px] text-slate-500 italic">Configure Gemini API protocol from AI Studio</p>
+             </div>
+             <button 
+               onClick={handleOpenAiKey}
+               className="px-8 py-4 bg-indigo-600 text-white rounded-full font-black text-[9px] uppercase tracking-widest hover:bg-indigo-500 transition-all active:scale-95 shadow-xl"
+             >
+               {t.apiSave}
+             </button>
+          </div>
+        </GlassCard>
 
-          <GlassCard 
-            onClick={() => onNavigate('feedback')}
-            className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02] cursor-pointer group" 
-            hoverScale={true}
-          >
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <MessageSquare size={18} className="text-emerald-400" />
-                <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Submit Log</h3>
-              </div>
-              <p className="text-[10px] text-slate-500 italic leading-relaxed">Identify anomalies or propose improvements to the neural grid.</p>
-              <div className="flex items-center gap-2 text-emerald-400 group-hover:translate-x-1 transition-transform">
-                 <span className="text-[9px] font-black uppercase">Dispatch Feedback</span>
-                 <ChevronRight size={14} />
-              </div>
-            </div>
-          </GlassCard>
-        </div>
-
+        {/* Reset Password Section */}
         <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
+           <div className="flex items-center justify-between">
+              <div className="space-y-1">
+                 <div className="flex items-center gap-3">
+                    <Lock size={18} className="text-rose-500" />
+                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.resetPassword}</h3>
+                 </div>
+                 <p className="text-[10px] text-slate-500 italic">{t.resetPasswordSub}</p>
+              </div>
+              <button 
+                onClick={handleResetPassword}
+                disabled={resetStatus === 'sending'}
+                className={`px-8 py-4 rounded-full font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 ${
+                  resetStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                  resetStatus === 'error' ? 'bg-rose-600 text-white' : 
+                  'bg-white/5 text-rose-500 border border-rose-500/30 hover:bg-rose-500/10'
+                }`}
+              >
+                {resetStatus === 'sending' ? <Loader2 size={14} className="animate-spin" /> : 'INITIATE RESET'}
+              </button>
+           </div>
+           <AnimatePresence>
+             {resetStatus === 'success' && (
+               <m.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] text-emerald-400 font-bold mt-4 px-2">
+                 {t.resetSent}
+               </m.p>
+             )}
+           </AnimatePresence>
+        </GlassCard>
+
+        <GlassCard className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02]">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <Send size={18} className="text-rose-500" />
+              <Send size={18} className="text-emerald-500" />
               <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms Diagnostic</h3>
             </div>
             <p className="text-[10px] text-slate-500 italic leading-relaxed">Verify the secure uplink between this node and your administrative Telegram bot.</p>
@@ -192,7 +212,8 @@ export const Settings: React.FC<SettingsProps> = ({
               disabled={testStatus === 'sending'}
               className={`w-full py-5 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${
                 testStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                testStatus === 'error' ? 'bg-rose-600 text-white' : 'bg-white/5 text-rose-500 border border-rose-500/30 hover:bg-rose-500/5 shadow-xl'
+                testStatus === 'error' ? 'bg-rose-600 text-white' : 
+                'bg-white/5 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/5 shadow-xl'
               }`}
             >
               {testStatus === 'sending' ? <RefreshCw size={16} className="animate-spin" /> : <Terminal size={16} />}

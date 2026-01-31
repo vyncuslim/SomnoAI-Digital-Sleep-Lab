@@ -102,6 +102,13 @@ export const authApi = {
     else logAuditLog('OTP_VERIFY_SUCCESS', `Auth handshake confirmed: ${email}`);
     return res;
   },
+  resetPassword: async (email: string) => {
+    const res = await (supabase.auth as any).resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/#settings`
+    });
+    if (!res.error) logAuditLog('AUTH_RESET_REQUEST', `Password recovery protocol initiated for: ${email}`);
+    return res;
+  },
   signOut: async () => {
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (user) logAuditLog('USER_LOGOUT', `Manual session severance: ${user.email}`);

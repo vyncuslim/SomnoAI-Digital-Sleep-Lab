@@ -71,7 +71,6 @@ const AppContent: React.FC = () => {
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
   const [isSimulated, setIsSimulated] = useState(false);
 
-  // 检测 URL 是否处于令牌交换状态
   const isExchangingTokens = useMemo(() => {
     const hash = window.location.hash || '';
     return hash.includes('access_token=') || hash.includes('id_token=') || hash.includes('code=');
@@ -83,7 +82,6 @@ const AppContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    // 如果正在交换令牌且 profile 尚未就绪，保持静默状态
     if (isExchangingTokens && !profile && loading) return;
 
     const bridgeRouting = () => {
@@ -98,16 +96,13 @@ const AppContent: React.FC = () => {
         'admin/login': 'admin-login'
       };
 
-      // 核心重定向逻辑
       if (profile && !loading) {
-        // 1. 如果带有 OAuth 令牌，强制清洗为 dashboard
         if (hashRaw.includes('access_token=') || hashRaw.includes('id_token=')) {
           window.history.replaceState(null, '', '/#dashboard');
           setActiveView('dashboard');
           return;
         }
 
-        // 2. 如果处于登录/注册路径，强制回 dashboard
         const isAuthRelated = ['login', 'signup', 'signin', 'otp'].some(p => pathOnly === p || hashOnly === p);
         if (isAuthRelated || !hashOnly) {
            window.history.replaceState(null, '', '/#dashboard');
@@ -116,10 +111,11 @@ const AppContent: React.FC = () => {
         }
       }
 
-      // 未登录态处理
       if (!profile && !loading) {
         if (pathOnly === 'signup' || hashOnly === 'signup') { setAuthMode('join'); return; }
         if (['login', 'signin'].includes(pathOnly) || ['login', 'signin'].includes(hashOnly)) { setAuthMode('login'); return; }
+        // 关键逻辑：如果未登录但试图进 admin 路径，强制显示管理员登录页
+        if (hashOnly.startsWith('admin')) { setActiveView('admin-login'); return; }
       }
       
       const target = hashOnly || 'dashboard';
@@ -147,12 +143,8 @@ const AppContent: React.FC = () => {
         return <FirstTimeSetup onComplete={() => refresh()} />;
       }
       
-      if (activeView === 'admin-login') {
-        if (isAdmin) return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
-        return <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={safeNavigate} />;
-      }
-      
-      if (activeView === 'admin') {
+      // 管理员路由拦截
+      if (activeView === 'admin-login' || activeView === 'admin') {
         return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
       }
 

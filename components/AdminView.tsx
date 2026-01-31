@@ -83,7 +83,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, []);
 
   const checkSyncStatus = async () => {
-    // 1. 检查审计日志
+    // 1. Check Audit Logs
     const { data: logs } = await supabase
       .from('audit_logs')
       .select('action, timestamp')
@@ -103,18 +103,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setSyncState('ERROR');
       }
     } else {
-      // 2. 深度检测：即便没有同步日志，也检查数据表是否有近期数据
-      const { data: latestData } = await supabase
-        .from('analytics_daily')
-        .select('date')
-        .order('date', { ascending: false })
-        .limit(1);
-
-      if (latestData?.[0]) {
-        setSyncState('DEGRADED'); // 有数据但同步链路状态未知
-      } else {
-        setSyncState('IDLE');
-      }
+      setSyncState('IDLE');
     }
   };
 
@@ -169,9 +158,26 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
+  const handleManualSync = async () => {
+    setSyncState('SYNCING');
+    try {
+      const response = await fetch('/api/sync-analytics', {
+        headers: { 'Authorization': `Bearer ${prompt("Enter CRON_SECRET for manual trigger:")}` }
+      });
+      if (response.ok) {
+        alert("Sync triggered successfully. Refreshing dashboard...");
+        fetchData();
+      } else {
+        throw new Error("Handshake denied by remote endpoint.");
+      }
+    } catch (e: any) {
+      setActionError(e.message);
+      setSyncState('ERROR');
+    }
+  };
+
   const handleToggleBlock = async (user: any) => {
     if (user.is_super_owner) {
-      // 根节点保护：立即发送 Telegram 告警
       logAuditLog('ROOT_NODE_PROTECTION_TRIGGER', `Attempted restriction of ROOT node: ${user.email} by ${currentAdmin?.email}`, 'CRITICAL');
       setActionError("SECURITY_VIOLATION: Root node is write-protected.");
       return;
@@ -192,7 +198,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleSetRole = async (user: any, newRole: string) => {
     if (user.is_super_owner) {
-      // 根节点保护：尝试修改 Super Owner 权限时发送 CRITICAL 告警
       logAuditLog('SECURITY_BREACH_ATTEMPT', `CRITICAL: Attempted role modification of ROOT node: ${user.email} (Target: ${newRole}) by ${currentAdmin?.email}`, 'CRITICAL');
       setActionError("RESTRICTED_PROTOCOL: Root node clearance cannot be shifted.");
       setRoleSelectUserId(null);
@@ -296,52 +301,42 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic flex items-center gap-2">
                            <TrendingUp size={14} /> Traffic Reach (30D)
                         </h3>
-                        <div className={`flex items-center gap-4 px-5 py-2.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic transition-all group/sync relative overflow-hidden ${
-                          syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]' :
-                          syncState === 'SYNCING' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
-                          syncState === 'DEGRADED' || syncState === 'STALE' ? 'bg-amber-500/10 border-amber-500/20 text-amber-400' :
+                        <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic ${
+                          syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                           syncState === 'ERROR' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' :
                           'bg-slate-900/60 border-white/5 text-slate-500'
                         }`}>
-                          <div className="relative flex items-center justify-center">
-                            {syncState === 'SYNCING' ? (
-                              <RefreshCw size={12} className="animate-spin" />
-                            ) : syncState === 'ERROR' ? (
-                              <AlertTriangle size={12} className="text-rose-500" />
-                            ) : (
-                              <div className={`w-1.5 h-1.5 rounded-full ${
-                                syncState === 'SYNCED' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 
-                                (syncState === 'DEGRADED' || syncState === 'STALE') ? 'bg-amber-500' : 'bg-slate-700 animate-pulse'
-                              }`} />
-                            )}
-                          </div>
-                          <div className="flex flex-col">
-                             <span>GA4 SYNC: {syncState}</span>
-                             {lastSyncTime && syncState !== 'SYNCING' && (
-                               <span className="text-[7px] opacity-40 lowercase font-bold tracking-normal">Last: {lastSyncTime}</span>
-                             )}
-                          </div>
+                          <div className={`w-1.5 h-1.5 rounded-full ${syncState === 'SYNCED' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-slate-700 animate-pulse'}`} />
+                          GA4 SYNC: {syncState}
+                          {lastSyncTime && <span className="opacity-40 lowercase font-bold tracking-normal">[{lastSyncTime}]</span>}
                         </div>
                      </div>
-                     <GlassCard className="p-10 rounded-[4rem] border-white/5 h-[400px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                           <AreaChart data={dailyStats}>
-                              <defs>
-                                 <linearGradient id="fluxGrad" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                                 </linearGradient>
-                              </defs>
-                              <XAxis dataKey="date" hide />
-                              <YAxis hide domain={['auto', 'auto']} />
-                              <Tooltip 
-                                 contentStyle={{ background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', color: '#fff' }}
-                                 itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
-                                 labelStyle={{ fontSize: '10px', color: '#475569', marginBottom: '8px' }}
-                              />
-                              <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={5} fillOpacity={1} fill="url(#fluxGrad)" animationDuration={2000} />
-                           </AreaChart>
-                        </ResponsiveContainer>
+                     <GlassCard className="p-10 rounded-[4rem] border-white/5 h-[400px] flex items-center justify-center">
+                        {dailyStats.length > 0 ? (
+                           <ResponsiveContainer width="100%" height="100%">
+                              <AreaChart data={dailyStats}>
+                                 <defs>
+                                    <linearGradient id="fluxGrad" x1="0" y1="0" x2="0" y2="1">
+                                       <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
+                                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                                    </linearGradient>
+                                 </defs>
+                                 <XAxis dataKey="date" hide />
+                                 <YAxis hide domain={['auto', 'auto']} />
+                                 <Tooltip 
+                                    contentStyle={{ background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', color: '#fff' }}
+                                    itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
+                                    labelStyle={{ fontSize: '10px', color: '#475569', marginBottom: '8px' }}
+                                 />
+                                 <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={5} fillOpacity={1} fill="url(#fluxGrad)" animationDuration={2000} />
+                              </AreaChart>
+                           </ResponsiveContainer>
+                        ) : (
+                           <div className="text-center space-y-4 opacity-30">
+                              <WifiOff size={48} className="mx-auto" />
+                              <p className="text-[10px] font-black uppercase tracking-[0.4em]">Telemetry bridge void identified.</p>
+                           </div>
+                        )}
                      </GlassCard>
                   </div>
                   <div className="lg:col-span-4 space-y-6 text-left">
@@ -435,7 +430,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                   </td>
                                   <td className="py-6 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right relative">
                                      <div className="flex justify-end gap-2">
-                                        {/* Neural Key: Protocols Hub */}
                                         <div className="relative" ref={popoverRef}>
                                            <button 
                                               onClick={() => setRoleSelectUserId(roleSelectUserId === user.id ? null : user.id)}
@@ -459,38 +453,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Assign clearance</p>
                                                    </div>
                                                    
-                                                   <button 
-                                                     onClick={() => handleSetRole(user, 'owner')}
-                                                     className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'hover:bg-amber-500/10 border-transparent text-slate-400 hover:text-amber-500'}`}
-                                                   >
-                                                     <div className="flex items-center gap-3">
-                                                        <Crown size={16} className="group-hover/opt:scale-110 transition-transform" />
-                                                        <span className="text-[11px] font-black uppercase tracking-widest">Owner</span>
-                                                     </div>
-                                                     {user.role === 'owner' && <CheckCircle2 size={12} />}
-                                                   </button>
-
-                                                   <button 
-                                                     onClick={() => handleSetRole(user, 'admin')}
-                                                     className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}
-                                                   >
-                                                     <div className="flex items-center gap-3">
-                                                        <Shield size={16} className="group-hover/opt:scale-110 transition-transform" />
-                                                        <span className="text-[11px] font-black uppercase tracking-widest">Admin</span>
-                                                     </div>
-                                                     {user.role === 'admin' && <CheckCircle2 size={12} />}
-                                                   </button>
-
-                                                   <button 
-                                                     onClick={() => handleSetRole(user, 'user')}
-                                                     className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'user' ? 'bg-slate-500/10 border-white/10 text-white' : 'hover:bg-white/5 border-transparent text-slate-400 hover:text-white'}`}
-                                                   >
-                                                     <div className="flex items-center gap-3">
-                                                        <UserCircle size={16} className="group-hover/opt:scale-110 transition-transform" />
-                                                        <span className="text-[11px] font-black uppercase tracking-widest">User</span>
-                                                     </div>
-                                                     {user.role === 'user' && <CheckCircle2 size={12} />}
-                                                   </button>
+                                                   <button onClick={() => handleSetRole(user, 'owner')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'hover:bg-amber-500/10 border-transparent text-slate-400 hover:text-amber-500'}`}><div className="flex items-center gap-3"><Crown size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Owner</span></div>{user.role === 'owner' && <CheckCircle2 size={12} />}</button>
+                                                   <button onClick={() => handleSetRole(user, 'admin')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-amber-500'}`}><div className="flex items-center gap-3"><Shield size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div>{user.role === 'admin' && <CheckCircle2 size={12} />}</button>
+                                                   <button onClick={() => handleSetRole(user, 'user')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'user' ? 'bg-slate-500/10 border-white/10 text-white' : 'hover:bg-white/5 border-transparent text-slate-400 hover:text-white'}`}><div className="flex items-center gap-3"><UserCircle size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">User</span></div>{user.role === 'user' && <CheckCircle2 size={12} />}</button>
                                                  </div>
                                                </m.div>
                                              )}
@@ -531,31 +496,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         </div>
                         <div className="relative group">
                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
-                           <input 
-                              type="text" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)}
-                              placeholder="Filter mesh tables..."
-                              className="w-full bg-slate-950/60 border border-white/5 rounded-full pl-14 pr-6 py-5 text-[11px] font-bold italic text-white outline-none focus:border-indigo-500/50 transition-all"
-                           />
+                           <input type="text" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Filter mesh tables..." className="w-full bg-slate-950/60 border border-white/5 rounded-full pl-14 pr-6 py-5 text-[11px] font-bold italic text-white outline-none focus:border-indigo-500/50 transition-all" />
                         </div>
                      </div>
                      <div className="space-y-2 flex-1 overflow-y-auto no-scrollbar pb-10">
                         {DATABASE_SCHEMA.filter(t => t.id.toLowerCase().includes(tableSearch.toLowerCase())).map((t) => (
-                           <button 
-                              key={t.id} 
-                              onClick={() => setSelectedTable(t.id)}
-                              className={`w-full p-6 rounded-[2.5rem] border flex items-center justify-between transition-all group ${selectedTable === t.id ? 'bg-indigo-600 border-indigo-400 shadow-xl' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}
-                           >
-                              <div className="flex items-center gap-4 text-left">
-                                 <div className={`p-2.5 rounded-xl ${selectedTable === t.id ? 'bg-white/20 text-white' : 'bg-slate-900 text-slate-600'}`}>
-                                    <t.icon size={18} />
-                                 </div>
-                                 <div className="space-y-0.5">
-                                    <p className={`text-[11px] font-black uppercase tracking-tight ${selectedTable === t.id ? 'text-white' : 'text-slate-400'}`}>{t.id.replace(/_/g, ' ')}</p>
-                                    <p className={`text-[8px] font-bold uppercase tracking-widest ${selectedTable === t.id ? 'text-white/60' : 'text-slate-700'}`}>{t.group}</p>
-                                 </div>
-                              </div>
-                              <span className={`text-[10px] font-mono font-black ${selectedTable === t.id ? 'text-white' : 'text-slate-800'}`}>{tableCounts[t.id] || 0}</span>
-                           </button>
+                           <button key={t.id} onClick={() => setSelectedTable(t.id)} className={`w-full p-6 rounded-[2.5rem] border flex items-center justify-between transition-all group ${selectedTable === t.id ? 'bg-indigo-600 border-indigo-400 shadow-xl' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}><div className="flex items-center gap-4 text-left"><div className={`p-2.5 rounded-xl ${selectedTable === t.id ? 'bg-white/20 text-white' : 'bg-slate-900 text-slate-600'}`}><t.icon size={18} /></div><div className="space-y-0.5"><p className={`text-[11px] font-black uppercase tracking-tight ${selectedTable === t.id ? 'text-white' : 'text-slate-400'}`}>{t.id.replace(/_/g, ' ')}</p><p className={`text-[8px] font-bold uppercase tracking-widest ${selectedTable === t.id ? 'text-white/60' : 'text-slate-700'}`}>{t.group}</p></div></div><span className={`text-[10px] font-mono font-black ${selectedTable === t.id ? 'text-white' : 'text-slate-800'}`}>{tableCounts[t.id] || 0}</span></button>
                         ))}
                      </div>
                   </div>
@@ -565,10 +511,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <div className="flex items-center gap-5">
                            <div className="p-4 bg-indigo-500/10 rounded-[1.8rem] text-indigo-400"><Table size={24} /></div>
                            <div className="text-left">
-                              <div className="flex items-center gap-3">
-                                 <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">{selectedTable.replace(/_/g, ' ')}</h3>
-                                 <span className="text-[8px] font-black text-slate-700 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase tracking-widest italic">Live Node</span>
-                              </div>
+                              <div className="flex items-center gap-3"><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">{selectedTable.replace(/_/g, ' ')}</h3><span className="text-[8px] font-black text-slate-700 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase tracking-widest italic">Live Node</span></div>
                               <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic mt-2">REGISTRY_CAP: 100 RECORDS</p>
                            </div>
                         </div>
@@ -577,37 +520,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
                      <div className="flex-1 overflow-auto no-scrollbar p-10">
                         {tableLoading ? (
-                           <div className="h-full flex flex-col items-center justify-center gap-6 py-32 opacity-30">
-                              <Loader2 size={48} className="animate-spin text-indigo-500" />
-                              <p className="text-[11px] font-black uppercase tracking-widest italic">Interrogating Data Core...</p>
-                           </div>
+                           <div className="h-full flex flex-col items-center justify-center gap-6 py-32 opacity-30"><Loader2 size={48} className="animate-spin text-indigo-500" /><p className="text-[11px] font-black uppercase tracking-widest italic">Interrogating Data Core...</p></div>
                         ) : tableData.length === 0 ? (
-                           <div className="h-full flex flex-col items-center justify-center gap-6 py-32 opacity-20">
-                              <WifiOff size={48} />
-                              <p className="text-[11px] font-black uppercase tracking-widest italic">Null response from identifier.</p>
-                           </div>
+                           <div className="h-full flex flex-col items-center justify-center gap-6 py-32 opacity-20"><WifiOff size={48} /><p className="text-[11px] font-black uppercase tracking-widest italic">Null response from identifier.</p></div>
                         ) : (
                            <div className="min-w-full overflow-x-auto">
                               <table className="w-full text-left border-collapse">
                                  <thead>
-                                    <tr className="border-b border-white/5">
-                                       {Object.keys(tableData[0]).map((key) => (
-                                          <th key={key} className="pb-6 px-6 text-[10px] font-black uppercase text-slate-700 tracking-widest italic whitespace-nowrap">{key}</th>
-                                       ))}
-                                    </tr>
+                                    <tr className="border-b border-white/5">{Object.keys(tableData[0]).map((key) => (<th key={key} className="pb-6 px-6 text-[10px] font-black uppercase text-slate-700 tracking-widest italic whitespace-nowrap">{key}</th>))}</tr>
                                  </thead>
                                  <tbody>
                                     {tableData.map((row, i) => (
-                                       <tr key={i} className="group hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">
-                                          {Object.values(row).map((val: any, j) => (
-                                             <td key={j} className="py-6 px-6">
-                                                <div className="max-w-[250px] truncate text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors">
-                                                   {val === null ? <span className="opacity-20 italic">null</span> : 
-                                                    typeof val === 'object' ? JSON.stringify(val) : String(val)}
-                                                </div>
-                                             </td>
-                                          ))}
-                                       </tr>
+                                       <tr key={i} className="group hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">{Object.values(row).map((val: any, j) => (<td key={j} className="py-6 px-6"><div className="max-w-[250px] truncate text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors">{val === null ? <span className="opacity-20 italic">null</span> : typeof val === 'object' ? JSON.stringify(val) : String(val)}</div></td>))}</tr>
                                     ))}
                                  </tbody>
                               </table>
@@ -623,50 +547,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <m.div key="signals" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl border-white/5">
                   <div className="flex items-center gap-6 mb-16 px-4">
-                     <div className="p-4 bg-indigo-600/10 rounded-[1.8rem] text-indigo-400">
-                        <Radio className="animate-pulse" size={32} />
-                     </div>
-                     <div className="text-left space-y-1">
-                        <h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Security <span className="text-indigo-400">Pulse</span></h3>
-                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] italic">DB_TABLE: public.security_events</p>
-                     </div>
+                     <div className="p-4 bg-indigo-600/10 rounded-[1.8rem] text-indigo-400"><Radio className="animate-pulse" size={32} /></div>
+                     <div className="text-left space-y-1"><h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Security <span className="text-indigo-400">Pulse</span></h3><p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] italic">DB_TABLE: public.security_events</p></div>
                   </div>
-
                   <div className="space-y-4">
-                     {signals.length === 0 ? (
-                       <div className="py-40 text-center opacity-30 flex flex-col items-center gap-6">
-                          <WifiOff size={64} className="text-slate-800" />
-                          <p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void identified.</p>
-                       </div>
-                     ) : (
-                       signals.map((sig, idx) => (
-                         <div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
-                            <div className="flex items-center gap-8 text-left">
-                               <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${
-                                 sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' : 
-                                 sig.event_type.includes('FAIL') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 
-                                 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'
-                               }`}>
-                                 {sig.event_type.includes('FAIL') ? <ShieldX size={26} /> : <Zap size={26} />}
-                               </div>
-                               <div className="space-y-1">
-                                  <div className="flex items-center gap-3">
-                                     <p className="text-xl font-black text-white italic tracking-tight uppercase leading-none">{sig.event_type}</p>
-                                  </div>
-                                  <p className="text-[11px] font-bold text-slate-500 tracking-wider italic">{sig.user_email || 'ANONYMOUS_PULSE'} • {sig.details}</p>
-                               </div>
-                            </div>
-                            <div className="text-right">
-                               <div className="flex flex-col items-end gap-1.5 text-slate-700 group-hover:text-slate-400 transition-colors">
-                                 <div className="flex items-center gap-2">
-                                    <Clock size={12} />
-                                    <p className="text-[10px] font-mono font-black">{new Date(sig.created_at).toLocaleTimeString()}</p>
-                                 </div>
-                               </div>
-                            </div>
-                         </div>
-                       ))
-                     )}
+                     {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} className="text-slate-800" /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void identified.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all"><div className="flex items-center gap-8 text-left"><div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' : sig.event_type.includes('FAIL') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>{sig.event_type.includes('FAIL') ? <ShieldX size={26} /> : <Zap size={26} />}</div><div className="space-y-1"><div className="flex items-center gap-3"><p className="text-xl font-black text-white italic tracking-tight uppercase leading-none">{sig.event_type}</p></div><p className="text-[11px] font-bold text-slate-500 tracking-wider italic">{sig.user_email || 'ANONYMOUS_PULSE'} • {sig.details}</p></div></div><div className="text-right"><div className="flex flex-col items-end gap-1.5 text-slate-700 group-hover:text-slate-400 transition-colors"><div className="flex items-center gap-2"><Clock size={12} /><p className="text-[10px] font-mono font-black">{new Date(sig.created_at).toLocaleTimeString()}</p></div></div></div></div>))}
                   </div>
                </GlassCard>
             </m.div>
@@ -676,57 +561,20 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-10">
-                     <div className="relative">
-                        <div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400">
-                           <RefreshCw size={80} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />
-                        </div>
-                     </div>
-                     <div className="space-y-4">
-                        <h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual Handshake</h4>
-                        <p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize local registry state with cloud-native GA4 telemetry and security logs.</p>
-                     </div>
-                     <button 
-                        onClick={() => {
-                          setSyncState('SYNCING');
-                          fetchData();
-                        }} 
-                        className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic"
-                     >
-                       Execute Unified Sync
-                     </button>
+                     <div className="relative"><div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400"><RefreshCw size={80} className={syncState === 'SYNCING' ? 'animate-spin' : ''} /></div></div>
+                     <div className="space-y-4"><h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual Handshake</h4><p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize local registry state with cloud-native GA4 telemetry and security logs.</p></div>
+                     <button onClick={handleManualSync} className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic">Execute GA4 Re-Sync</button>
                   </GlassCard>
-                  
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col gap-10">
-                     <div className="flex items-center gap-5 border-b border-white/5 pb-10">
-                        <div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div>
-                        <div className="text-left space-y-1">
-                           <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3>
-                           <p className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest italic">Infrastructure Diagnostics</p>
-                        </div>
-                     </div>
+                     <div className="flex items-center gap-5 border-b border-white/5 pb-10"><div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div><div className="text-left space-y-1"><h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3><p className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest italic">Infrastructure Diagnostics</p></div></div>
                      <div className="space-y-6">
                         {[
-                           { 
-                             label: 'Telemetric Bridge (GA4)', 
-                             status: syncState === 'SYNCED' ? 'Sync Verified' : 
-                                     syncState === 'DEGRADED' ? 'Data Present (Idle)' : 
-                                     syncState === 'STALE' ? 'Stale Data (>24h)' : syncState, 
-                             color: syncState === 'SYNCED' ? 'text-emerald-400' : 
-                                    (syncState === 'DEGRADED' || syncState === 'STALE') ? 'text-amber-400' : 
-                                    syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500', 
-                             icon: Globe 
-                           },
+                           { label: 'Telemetric Bridge (GA4)', status: syncState, color: syncState === 'SYNCED' ? 'text-emerald-400' : syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500', icon: Globe },
                            { label: 'Security Handshake Hub', status: 'Active Bridge', color: 'text-rose-400', icon: Lock },
                            { label: 'Registry Synchronization', status: 'Mesh established', color: 'text-amber-400', icon: Database },
                            { label: 'Laboratory Signal Logs', status: 'Active (Direct)', color: 'text-cyan-400', icon: MessageSquare }
                         ].map((sys, idx) => (
-                           <div key={idx} className="flex justify-between items-center p-7 bg-black/40 rounded-[2rem] border border-white/5 group hover:border-white/10 transition-all text-left">
-                              <div className="flex items-center gap-5">
-                                 <sys.icon size={18} className="text-slate-600 group-hover:text-white" />
-                                 <span className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">{sys.label}</span>
-                              </div>
-                              <span className={`font-black text-[11px] italic uppercase tracking-tighter ${sys.color}`}>{sys.status}</span>
-                           </div>
+                           <div key={idx} className="flex justify-between items-center p-7 bg-black/40 rounded-[2rem] border border-white/5 group hover:border-white/10 transition-all text-left"><div className="flex items-center gap-5"><sys.icon size={18} className="text-slate-600 group-hover:text-white" /><span className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">{sys.label}</span></div><span className={`font-black text-[11px] italic uppercase tracking-tighter ${sys.color}`}>{sys.status}</span></div>
                         ))}
                      </div>
                   </GlassCard>

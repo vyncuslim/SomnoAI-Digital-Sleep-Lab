@@ -3,7 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, ShieldAlert, Zap, Lock, Eye, EyeOff, User, 
   ChevronLeft, Info, FlaskConical, AlertTriangle, ShieldCheck,
-  Chrome, RefreshCw, Shield
+  Chrome, RefreshCw, Shield, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
@@ -47,14 +47,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   useEffect(() => {
     const initTurnstile = () => {
       if (step === 'request' && turnstileRef.current) {
-        if (!(window as any).turnstile) {
-          // 如果 2秒后脚本还没加载，标记为不可用以解锁按钮
+        const ts = (window as any).turnstile;
+        
+        if (!ts) {
           setTurnstileStatus('unavailable');
           return;
         }
         
         try {
-          (window as any).turnstile.render(turnstileRef.current, {
+          if (turnstileRef.current) turnstileRef.current.innerHTML = '';
+          ts.render(turnstileRef.current, {
             sitekey: '0x4AAAAAACNi1FM3bbfW_VsI',
             theme: 'dark',
             callback: (token: string) => {
@@ -65,17 +67,26 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
             'error-callback': () => setTurnstileStatus('error')
           });
         } catch (e) {
-          setTurnstileStatus('error');
+          // 捕获跨域沙盒中的 SecurityError
+          setTurnstileStatus('unavailable');
+          console.debug("Turnstile restricted by sandbox policy.");
         }
       }
     };
 
-    const timer = setTimeout(initTurnstile, 800);
-    return () => clearTimeout(timer);
+    const timer = setTimeout(initTurnstile, 600);
+    const failsafe = setTimeout(() => {
+      if (turnstileStatus === 'pending') setTurnstileStatus('unavailable');
+    }, 2000);
+
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(failsafe);
+    };
   }, [step, activeTab]);
 
   const handleAuthAction = async (e: React.FormEvent) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (isProcessing) return;
     
     setError(null);
@@ -86,42 +97,30 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         const { error: otpErr } = await authApi.sendOTP(email.trim(), turnstileToken || undefined);
         if (otpErr) throw otpErr;
         setStep('verify');
-        notifyAdmin(`✉️ OTP REQUESTed from ${email}`);
         setTimeout(() => otpRefs.current[0]?.focus(), 200);
       } else if (activeTab === 'login') {
         const { error: signInErr } = await authApi.signIn(email.trim(), password, turnstileToken || undefined);
         if (signInErr) throw signInErr;
-        notifyAdmin(`🔑 SUCCESSFUL LOGIN: ${email}`);
         onLogin();
       } else if (activeTab === 'join') {
         const { error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, turnstileToken || undefined);
         if (signUpErr) throw signUpErr;
-        notifyAdmin(`🆕 NEW SIGNUP INITIATED: ${email} (${fullName})`);
         setStep('verify');
         setActiveTab('otp');
       }
     } catch (err: any) {
       const isRateLimit = err.status === 429;
       setError({ 
-        message: isRateLimit ? "Node Throttled. Please wait 60s." : (err.message || "Handshake Failure."),
+        message: isRateLimit ? "Protocol Throttled. Please wait 60s." : (err.message || "Handshake Failure."),
         isRateLimit
       });
       setIsProcessing(false);
-      notifyAdmin(`⚠️ AUTH_EXCEPTION: ${email}\nError: ${err.message}`);
     }
   };
 
-  const handleGoogleLogin = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await authApi.signInWithGoogle();
-    } catch (e) {
-      setIsGoogleLoading(false);
-    }
-  };
-
-  // 核心改动：如果验证码不可用或出错，不再禁用按钮，而是让用户尝试提交
-  const isSubmitDisabled = isProcessing || (turnstileStatus === 'pending' && !turnstileToken);
+  // 关键改动：只要输入了 email 和密码，按钮就是可点的。验证码仅作为增强项。
+  const canClick = email.length > 3 && (activeTab === 'otp' || password.length >= 6);
+  const isSubmitDisabled = isProcessing || !canClick;
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#020617] font-sans relative overflow-hidden">
@@ -137,7 +136,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         {step === 'request' ? (
           <>
             <button 
-              onClick={handleGoogleLogin} disabled={isGoogleLoading}
+              onClick={() => authApi.signInWithGoogle()} disabled={isGoogleLoading}
               className="w-full py-5 rounded-full bg-white text-black font-black text-[11px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50"
             >
               {isGoogleLoading ? <Loader2 className="animate-spin" size={18} /> : <Chrome size={18} />}
@@ -150,7 +149,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
             <div className="bg-slate-900/60 p-1 rounded-full border border-white/5 flex relative shadow-inner">
               {['login', 'join', 'otp'].map((tab) => (
-                <button key={tab} onClick={() => { setActiveTab(tab as any); setTurnstileToken(null); }} className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest z-10 transition-all ${activeTab === tab ? 'text-white' : 'text-slate-500'}`}>{tab === 'join' ? 'SIGNUP' : tab.toUpperCase()}</button>
+                <button key={tab} onClick={() => { setActiveTab(tab as any); setTurnstileToken(null); setError(null); }} className={`flex-1 py-3 rounded-full text-[9px] font-black uppercase tracking-widest z-10 transition-all ${activeTab === tab ? 'text-white' : 'text-slate-500'}`}>{tab === 'join' ? 'SIGNUP' : tab.toUpperCase()}</button>
               ))}
               <m.div className="absolute top-1 left-1 bottom-1 w-[calc(33.33%-2px)] bg-indigo-600 rounded-full shadow-lg" animate={{ x: activeTab === 'login' ? '0%' : activeTab === 'join' ? '100%' : '200%' }} />
             </div>
@@ -169,45 +168,35 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                 )}
               </div>
 
-              <div className="flex flex-col items-center min-h-[65px] gap-2">
+              <div className="flex flex-col items-center min-h-[50px] gap-2">
                 <div ref={turnstileRef} className="cf-turnstile"></div>
-                {turnstileStatus === 'error' && (
-                  <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest italic">
-                    Verification Error. Try bypass or refresh.
-                  </p>
-                )}
-                {turnstileStatus === 'unavailable' && (
-                  <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest italic">
-                    Security Shield Offline. Manual entry allowed.
-                  </p>
-                )}
               </div>
 
-              <button 
-                type="submit" disabled={isSubmitDisabled}
-                className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 transition-all hover:bg-indigo-500 disabled:opacity-40 active:scale-95"
-              >
-                {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
-                <span>
-                  {isProcessing 
-                    ? "SYNCHRONIZING" 
-                    : (turnstileToken || turnstileStatus === 'ready' || turnstileStatus === 'error' || turnstileStatus === 'unavailable' 
-                        ? "ESTABLISH LINK" 
-                        : "PENDING VERIFICATION")}
-                </span>
-              </button>
+              <div className="space-y-4">
+                <button 
+                  type="submit" disabled={isSubmitDisabled}
+                  className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 transition-all hover:bg-indigo-500 disabled:opacity-40 active:scale-95"
+                >
+                  {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
+                  <span>{isProcessing ? "SYNCHRONIZING" : "ESTABLISH LINK"}</span>
+                </button>
+
+                <AnimatePresence>
+                  {error && (
+                    <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-3xl flex items-start gap-3">
+                      <AlertCircle className="text-rose-500 shrink-0" size={16} />
+                      <p className="text-[10px] font-bold text-rose-400 uppercase leading-relaxed italic">{error.message}</p>
+                    </m.div>
+                  )}
+                </AnimatePresence>
+              </div>
             </form>
 
             <div className="flex flex-col items-center gap-4 pt-4">
-              {activeTab === 'login' ? (
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  No account? <button onClick={() => { setActiveTab('join'); window.history.pushState(null, '', '/signup'); }} className="text-indigo-400 hover:text-white underline underline-offset-4">Create one</button>
-                </p>
-              ) : (
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                  Already registered? <button onClick={() => { setActiveTab('login'); window.history.pushState(null, '', '/login'); }} className="text-indigo-400 hover:text-white underline underline-offset-4">Sign in</button>
-                </p>
-              )}
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                {activeTab === 'login' ? "No account? " : "Already registered? "}
+                <button onClick={() => setActiveTab(activeTab === 'login' ? 'join' : 'login')} className="text-indigo-400 hover:text-white underline underline-offset-4">{activeTab === 'login' ? 'Create one' : 'Sign in'}</button>
+              </p>
               
               <button onClick={onGuest} className="w-full py-4 border border-white/5 text-slate-500 rounded-full font-black text-[9px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-white/5 transition-all mt-2">
                 <FlaskConical size={14} /> Sandbox Mode

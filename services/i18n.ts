@@ -1,3 +1,4 @@
+
 export type Language = 'en' | 'zh';
 
 const commonEn = {
@@ -74,7 +75,13 @@ const commonEn = {
     feedbackContent: 'Telemetry Log / Description',
     feedbackSubmit: 'Execute Submission',
     feedbackSuccess: 'Log Committed',
-    feedbackError: 'Registry Failure'
+    feedbackError: 'Registry Failure',
+    apiKey: 'Neural Bridge API',
+    apiKeyPlaceholder: 'Select API Key from AI Studio...',
+    apiSave: 'Initialize Bridge',
+    resetPassword: 'Reset Access Key',
+    resetPasswordSub: 'Initiate password recovery handshake',
+    resetSent: 'Recovery token dispatched to node.'
   },
   auth: {
     lab: 'SomnoAI Sleep Lab',
@@ -221,7 +228,13 @@ const commonZh = {
     feedbackContent: '遥测日志 / 详细说明',
     feedbackSubmit: '执行提交',
     feedbackSuccess: '日志已记录',
-    feedbackError: '注册失败'
+    feedbackError: '注册失败',
+    apiKey: '神经网桥 API',
+    apiKeyPlaceholder: '从 AI Studio 选择 API 密钥...',
+    apiSave: '初始化网桥',
+    resetPassword: '重置访问密钥',
+    resetPasswordSub: '启动密码恢复流程',
+    resetSent: '恢复令牌已发送至您的邮箱。'
   },
   auth: {
     lab: 'SomnoAI Sleep Lab',
