@@ -5,7 +5,6 @@ import { Language } from '../../services/i18n.ts';
 
 /**
  * Access terminal for standard laboratory subjects.
- * Provides the neural handshake interface for existing nodes.
  */
 export default function UserLoginPage({ 
   onSuccess, 
@@ -23,7 +22,8 @@ export default function UserLoginPage({
       <Auth 
         lang={lang} 
         onLogin={() => {
-            // Standardize path to dashboard
+            // 设置 Hash 以强制触发 SPA 视图切换，同时更新物理路径
+            window.location.hash = '#/dashboard';
             window.history.replaceState(null, '', '/dashboard');
             onSuccess();
         }} 

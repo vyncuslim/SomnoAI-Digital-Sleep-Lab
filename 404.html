@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -7,88 +8,47 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,700;0,800;1,400;1,700;1,800&display=swap" rel="stylesheet">
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        :root {
-            --bg: #020617;
-            --accent: #6366f1;
-        }
-        body {
-            background-color: var(--bg);
-            color: #f1f5f9;
-            font-family: 'Plus Jakarta Sans', sans-serif;
-            overflow: hidden;
-            height: 100vh;
-        }
-        .nebula {
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80vw;
-            height: 80vw;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.08) 0%, transparent 70%);
-            filter: blur(100px);
-            z-index: -1;
-            animation: breathe 8s ease-in-out infinite;
-        }
-        @keyframes breathe {
-            0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.4; }
-            50% { transform: translate(-50%, -50%) scale(1.1); opacity: 0.7; }
-        }
-        .glitch-text {
-            text-shadow: 0 0 50px rgba(99, 102, 241, 0.5);
-        }
-        .scanline {
-            width: 100%;
-            height: 100vh;
-            background: linear-gradient(to bottom, transparent 50%, rgba(255,255,255,0.01) 50%);
-            background-size: 100% 4px;
-            position: fixed;
-            top: 0;
-            left: 0;
-            z-index: 100;
-            pointer-events: none;
-        }
+        :root { --bg: #010409; --accent: #6366f1; }
+        body { background-color: var(--bg); color: #f1f5f9; font-family: 'Plus Jakarta Sans', sans-serif; overflow: hidden; height: 100vh; margin: 0; }
+        .nebula { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 80vw; height: 80vw; background: radial-gradient(circle, rgba(99, 102, 241, 0.05) 0%, transparent 70%); filter: blur(120px); z-index: -1; }
+        .glitch-text { text-shadow: 0 0 40px rgba(99, 102, 241, 0.4); }
+        .grid-bg { position: fixed; inset: 0; background-image: radial-gradient(#1e1b4b 1px, transparent 1px); background-size: 32px 32px; opacity: 0.1; z-index: -1; }
     </style>
 </head>
 <body class="flex flex-col items-center justify-center p-6 text-center">
     <div class="nebula"></div>
-    <div class="scanline"></div>
+    <div class="grid-bg"></div>
     
-    <div class="mb-20 relative">
-        <div class="absolute inset-0 blur-[80px] bg-indigo-500/20 rounded-full animate-pulse"></div>
-        <svg width="140" height="140" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="relative z-10 drop-shadow-2xl">
+    <div class="mb-16 relative">
+        <div class="absolute inset-0 blur-[80px] bg-indigo-500/10 rounded-full"></div>
+        <svg width="120" height="120" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" class="relative z-10 opacity-40">
             <path d="M65 20 C45 20, 25 40, 25 65 C25 78, 30 88, 38 94 C25 86, 18 71, 18 56 C18 31, 38 11, 63 11 C71 11, 78 13, 84 16 C80 19, 75 20, 70 20" fill="white" />
             <circle cx="78" cy="32" r="4" fill="#818CF8" />
         </svg>
     </div>
 
-    <div class="space-y-12 max-w-lg relative z-10">
-        <div class="space-y-4">
-            <h1 class="text-[110px] md:text-[180px] font-black italic tracking-tighter leading-none text-white glitch-text">404</h1>
-            <div class="flex items-center justify-center gap-4">
-                <div class="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping"></div>
-                <p class="text-rose-500 font-black uppercase tracking-[0.7em] text-[11px] italic">Sector Access Violation</p>
-            </div>
+    <div class="space-y-10 max-w-2xl relative z-10">
+        <div class="space-y-2">
+            <h1 class="text-[120px] md:text-[180px] font-black italic tracking-tighter leading-none text-white glitch-text">404</h1>
+            <p class="text-indigo-500 font-black uppercase tracking-[1em] text-[10px] italic">Sector Unreachable</p>
         </div>
 
-        <div class="space-y-6 bg-white/[0.03] border border-white/5 p-10 rounded-[4rem] backdrop-blur-2xl">
-            <h2 class="text-2xl font-bold italic text-white uppercase tracking-tight leading-snug">Neural Link Terminated: The sector could not be resolved.</h2>
-            <p class="text-slate-500 text-[10px] leading-relaxed italic max-w-xs mx-auto uppercase tracking-[0.25em] opacity-70">
-                The requested terminal address is missing or has been restricted by laboratory command policy.
+        <div class="bg-white/[0.02] border border-white/5 p-12 rounded-[4rem] backdrop-blur-3xl">
+            <h2 class="text-2xl font-black italic text-white uppercase tracking-tight leading-snug">Neural Handshake Void</h2>
+            <p class="text-slate-500 text-[9px] leading-relaxed italic max-w-xs mx-auto uppercase tracking-[0.3em] mt-4 opacity-60">
+                The requested node terminal is missing or has been restricted by laboratory command protocols.
             </p>
         </div>
         
-        <div class="pt-10 flex flex-col items-center gap-8">
-            <a href="/" class="group relative px-16 py-7 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[11px] uppercase tracking-[0.5em] transition-all shadow-2xl shadow-indigo-950/60 active:scale-95 flex items-center gap-4 italic">
-                <span>Restore Neural Bridge</span>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="group-hover:translate-x-2 transition-transform"><path d="M5 12h14m-7-7 7 7-7 7"/></svg>
+        <div class="pt-8">
+            <a href="/" class="inline-flex px-16 py-7 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[11px] uppercase tracking-[0.5em] transition-all shadow-2xl active:scale-95 items-center gap-4 italic">
+                Restore Neural Bridge
             </a>
-            <p class="text-[9px] font-black text-slate-800 uppercase tracking-[0.8em] mt-8">Node Identifier: ERR-0404-VOID</p>
         </div>
     </div>
 
-    <footer class="fixed bottom-12 opacity-20 pointer-events-none">
-        <p class="text-[8px] font-mono font-black uppercase tracking-[0.8em] text-slate-600 italic">SomnoAI Digital Sleep Lab • Neural Infrastructure • @2026</p>
+    <footer class="fixed bottom-12 opacity-10">
+        <p class="text-[8px] font-mono font-black uppercase tracking-[0.8em] text-slate-500 italic">SomnoAI Digital Sleep Lab • v2.0</p>
     </footer>
 </body>
 </html>

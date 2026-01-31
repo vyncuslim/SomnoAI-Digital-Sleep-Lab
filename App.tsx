@@ -11,8 +11,7 @@ import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
-import { trackPageView, trackEvent } from './services/analytics.ts';
-import { logAuditLog } from './services/supabaseService.ts';
+import { trackPageView } from './services/analytics.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
@@ -47,13 +46,7 @@ const MOCK_RECORD: SleepRecord = {
     { name: 'Deep', duration: 100, startTime: '02:00' },
     { name: 'REM', duration: 80, startTime: '05:00' },
   ],
-  heartRate: {
-    resting: 58,
-    max: 75,
-    min: 48,
-    average: 62,
-    history: []
-  },
+  heartRate: { resting: 58, max: 75, min: 48, average: 62, history: [] },
   aiInsights: ["Neural handshake stable.", "Deep sleep optimization identified."]
 };
 
@@ -85,33 +78,6 @@ const AppContent: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
   const [isSimulated, setIsSimulated] = useState(false);
-  const lastTrackedView = useRef<string | null>(null);
-  const attemptedPath = useRef<string>('');
-
-  useEffect(() => {
-    if (lastTrackedView.current === activeView) return;
-    
-    const viewTitles: Record<ViewType, string> = {
-      'dashboard': 'Laboratory Hub',
-      'calendar': 'Trend Atlas',
-      'assistant': 'Neural Core Assistant',
-      'experiment': 'Sleep Optimization Lab',
-      'diary': 'Biological Recovery Log',
-      'settings': 'System Configuration',
-      'admin': 'Intelligence Command Center',
-      'admin-login': 'Restricted Access Terminal',
-      'feedback': 'Registry Feedback Hub',
-      'privacy': 'Neural Privacy Protocol',
-      'terms': 'Service Infrastructure Terms',
-      'profile': 'Subject Identity Registry',
-      'about': 'Laboratory Specifications',
-      'not-found': 'Neural Link Severed'
-    };
-    
-    let title = viewTitles[activeView] || 'SomnoAI Node';
-    trackPageView(activeView as string, title);
-    lastTrackedView.current = activeView;
-  }, [activeView]);
 
   const safeNavigate = useCallback((viewId: string) => {
     setActiveView(viewId as ViewType);
@@ -123,50 +89,31 @@ const AppContent: React.FC = () => {
       const pathOnly = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
       const hashOnly = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       
-      // 1. Handle physical path routing
-      if (pathOnly === 'signup' && hashOnly === '') {
-        setAuthMode('join');
-        return;
-      }
-      if ((pathOnly === 'login' || pathOnly === 'signin') && hashOnly === '') {
-        setAuthMode('login');
-        return;
-      }
-      if (pathOnly === 'dashboard' && hashOnly === '') {
-        setActiveView('dashboard');
-        return;
-      }
-      
-      if (pathOnly === 'admin' && hashOnly !== 'admin') {
-        safeNavigateHash('admin');
-        return;
+      // 1. 物理路径侦测 (针对登录后的 history.replaceState)
+      if (pathOnly === 'dashboard') { setActiveView('dashboard'); return; }
+      if (pathOnly === 'login' || pathOnly === 'signin') { setAuthMode('login'); return; }
+      if (pathOnly === 'signup') { setAuthMode('join'); return; }
+      if (pathOnly === 'admin') { 
+        if (hashOnly === 'admin/login') { setActiveView('admin-login'); }
+        else { setActiveView('admin'); }
+        return; 
       }
 
-      attemptedPath.current = hashOnly || pathOnly;
+      // 2. Hash 路径识别 (SPA 核心路由)
       const target = hashOnly || 'dashboard';
-
-      if (target === 'dashboard' || target === '') { setActiveView('dashboard'); return; }
-      if (target.startsWith('admin/login')) { setActiveView('admin-login'); return; }
-      if (target === 'admin') { setActiveView('admin'); return; }
-
       const mappings: Record<string, ViewType> = {
-        'dashboard': 'dashboard',
-        'calendar': 'calendar',
-        'assistant': 'assistant',
-        'experiment': 'experiment',
-        'diary': 'diary',
-        'settings': 'settings',
-        'feedback': 'feedback',
-        'privacy': 'privacy',
-        'terms': 'terms',
-        'profile': 'profile',
-        'about': 'about'
+        'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
+        'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
+        'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'admin/login': 'admin-login'
       };
 
       if (mappings[target]) {
         setActiveView(mappings[target]);
-      } else if (target !== '') {
-        setActiveView('not-found');
+      } else {
+        // 排除掉正常的登录/注册物理路径，否则会误报 404
+        if (target !== '' && !['login', 'signup', 'dashboard'].includes(pathOnly)) {
+           setActiveView('not-found');
+        }
       }
     };
     
@@ -194,24 +141,10 @@ const AppContent: React.FC = () => {
     }
 
     if (!profile && !isSimulated) {
-      const pathOnly = window.location.pathname.replace(/^\/+/, '');
-      if (pathOnly === 'signup' || authMode === 'join') {
-        return (
-          <UserSignupPage 
-            onSuccess={() => { setActiveView('dashboard'); refresh(); }} 
-            onSandbox={() => setIsSimulated(true)} 
-            lang={lang} 
-          />
-        );
+      if (authMode === 'join') {
+        return <UserSignupPage onSuccess={() => { setActiveView('dashboard'); refresh(); }} onSandbox={() => setIsSimulated(true)} lang={lang} />;
       }
-      return (
-        <UserLoginPage 
-          onSuccess={() => { setActiveView('dashboard'); refresh(); }} 
-          onSandbox={() => setIsSimulated(true)} 
-          lang={lang}
-          mode={authMode} 
-        />
-      );
+      return <UserLoginPage onSuccess={() => { setActiveView('dashboard'); refresh(); }} onSandbox={() => setIsSimulated(true)} lang={lang} mode={authMode} />;
     }
 
     if (profile && profile.role === 'user' && !profile.full_name && !isSimulated) {
@@ -248,30 +181,12 @@ const AppContent: React.FC = () => {
               { id: 'diary', icon: BookOpen, label: 'LOG' },
               { id: 'settings', icon: SettingsIcon, label: 'CFG' }
             ].map((nav) => (
-              <button 
-                key={nav.id} 
-                onClick={() => safeNavigate(nav.id)} 
-                className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}
-              >
+              <button key={nav.id} onClick={() => safeNavigate(nav.id)} className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
                 <nav.icon size={18} />
-                {activeView === nav.id && (
-                  <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>
-                )}
+                {activeView === nav.id && <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>}
               </button>
             ))}
-            
-            {isAdmin && (
-              <button 
-                onClick={() => safeNavigate('admin')} 
-                className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${(activeView as string) === 'admin' ? 'bg-rose-600 text-white' : 'text-rose-500/50 hover:text-rose-500'}`}
-              >
-                <ShieldAlert size={18} />
-                {(activeView as string) === 'admin' && (
-                  <span className="text-[9px] font-black uppercase tracking-widest">ADMIN</span>
-                )}
-              </button>
-            )}
-          </m.nav>
+          </nav>
         </div>
       </div>
     );
