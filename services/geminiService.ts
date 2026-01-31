@@ -9,14 +9,16 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
+const getApiKey = () => {
+  return localStorage.getItem('custom_gemini_key') || process.env.API_KEY || "";
+};
+
 const handleGeminiError = (err: any) => {
   const errMsg = err.message || "";
   console.error("Gemini API Error Context:", err);
   
-  // Specific catch for AI Studio key selector
   if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID")) {
-    console.warn("[Neural Bridge] Identity reset required. Re-triggering key selector.");
-    (window as any).aistudio?.openSelectKey().catch(() => {});
+    console.warn("[Neural Bridge] Identity reset required.");
     throw new Error("API_KEY_REQUIRED");
   }
   
@@ -38,7 +40,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     Data: Score ${data.score}, Deep ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm.`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: prompt,
@@ -65,7 +67,7 @@ export const chatWithCoach = async (
     Analyze facial scans for fatigue indicators and correlate with sleep telemetry.`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const contents = history.map(m => {
       const parts: any[] = [{ text: m.content }];
       if (m.image) {
@@ -99,7 +101,7 @@ export const chatWithCoach = async (
 
 export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: `Design a sleep experiment based on telemetry: score ${data.score}, RHR ${data.heartRate?.resting}.`,
@@ -126,7 +128,7 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
 
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: `Synthesize a weekly biometric trend report: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, English only.`,
@@ -143,7 +145,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
 
 export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 'en'): Promise<string | undefined> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
       contents: [{ parts: [{ text: `Say cheerfully: Guided meditation for recovery score ${data.score}. Relax your neural pathways.` }] }],

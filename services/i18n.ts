@@ -77,11 +77,13 @@ const commonEn = {
     feedbackSuccess: 'Log Committed',
     feedbackError: 'Registry Failure',
     apiKey: 'Neural Bridge API',
-    apiKeyPlaceholder: 'Select API Key from AI Studio...',
+    apiKeyPlaceholder: 'Enter custom API key...',
     apiSave: 'Initialize Bridge',
     resetPassword: 'Reset Access Key',
-    resetPasswordSub: 'Initiate password recovery handshake',
-    resetSent: 'Recovery token dispatched to node.'
+    resetPasswordSub: 'Initiate password recovery protocol',
+    resetSent: 'Recovery token dispatched to node.',
+    diagTelegram: 'Comms Diagnostic',
+    diagTelegramSub: 'Test link with administrative gateway'
   },
   auth: {
     lab: 'SomnoAI Sleep Lab',
@@ -230,11 +232,13 @@ const commonZh = {
     feedbackSuccess: '日志已记录',
     feedbackError: '注册失败',
     apiKey: '神经网桥 API',
-    apiKeyPlaceholder: '从 AI Studio 选择 API 密钥...',
+    apiKeyPlaceholder: '输入自定义 API 密钥...',
     apiSave: '初始化网桥',
     resetPassword: '重置访问密钥',
     resetPasswordSub: '启动密码恢复流程',
-    resetSent: '恢复令牌已发送至您的邮箱。'
+    resetSent: '恢复令牌已发送至您的邮箱。',
+    diagTelegram: '通信诊断',
+    diagTelegramSub: '测试与管理网关的连接'
   },
   auth: {
     lab: 'SomnoAI Sleep Lab',

@@ -28,6 +28,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isAiActive, setIsAiActive] = useState(false);
+  const [customKey, setCustomKey] = useState(localStorage.getItem('custom_gemini_key') || '');
   const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [resetStatus, setResetStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
@@ -40,22 +41,25 @@ export const Settings: React.FC<SettingsProps> = ({
       if ((window as any).aistudio?.hasSelectedApiKey) {
         try {
           const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-          setIsAiActive(hasKey || !!process.env.API_KEY);
+          setIsAiActive(hasKey || !!process.env.API_KEY || !!localStorage.getItem('custom_gemini_key'));
         } catch (e) {
-          setIsAiActive(!!process.env.API_KEY);
+          setIsAiActive(!!process.env.API_KEY || !!localStorage.getItem('custom_gemini_key'));
         }
       } else {
-        setIsAiActive(!!process.env.API_KEY);
+        setIsAiActive(!!process.env.API_KEY || !!localStorage.getItem('custom_gemini_key'));
       }
     };
     checkAiStatus();
   }, []);
 
-  const handleOpenAiKey = async () => {
-    if ((window as any).aistudio?.openSelectKey) {
-      await (window as any).aistudio.openSelectKey();
-      // Guidance says selection is successful after triggering
+  const handleSaveKey = () => {
+    if (customKey.trim()) {
+      localStorage.setItem('custom_gemini_key', customKey.trim());
       setIsAiActive(true);
+      alert("Neural Bridge key committed.");
+    } else {
+      localStorage.removeItem('custom_gemini_key');
+      alert("Manual override key removed.");
     }
   };
 
@@ -152,20 +156,30 @@ export const Settings: React.FC<SettingsProps> = ({
 
         {/* API Selection Section */}
         <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02]">
-          <div className="flex items-center justify-between">
-             <div className="space-y-1">
-                <div className="flex items-center gap-3">
-                   <Key size={18} className="text-indigo-400" />
-                   <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.apiKey}</h3>
-                </div>
-                <p className="text-[10px] text-slate-500 italic">Configure Gemini API protocol from AI Studio</p>
-             </div>
-             <button 
-               onClick={handleOpenAiKey}
-               className="px-8 py-4 bg-indigo-600 text-white rounded-full font-black text-[9px] uppercase tracking-widest hover:bg-indigo-500 transition-all active:scale-95 shadow-xl"
-             >
-               {t.apiSave}
-             </button>
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Key size={18} className="text-indigo-400" />
+              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.apiKey}</h3>
+            </div>
+            <div className="flex gap-3">
+              <input 
+                type="password"
+                value={customKey}
+                onChange={(e) => setCustomKey(e.target.value)}
+                placeholder={t.apiKeyPlaceholder}
+                className="flex-1 bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-indigo-500/40 transition-all font-mono"
+              />
+              <button 
+                onClick={handleSaveKey}
+                className="px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-500 transition-all active:scale-95"
+              >
+                {t.apiSave}
+              </button>
+            </div>
+            <p className="text-[9px] text-slate-500 italic px-2 flex items-start gap-2">
+              <Info size={12} className="shrink-0" />
+              Local keys prioritize processing for this node and are stored exclusively in your browser cache.
+            </p>
           </div>
         </GlassCard>
 
@@ -204,9 +218,9 @@ export const Settings: React.FC<SettingsProps> = ({
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <Send size={18} className="text-emerald-500" />
-              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms Diagnostic</h3>
+              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.diagTelegram}</h3>
             </div>
-            <p className="text-[10px] text-slate-500 italic leading-relaxed">Verify the secure uplink between this node and your administrative Telegram bot.</p>
+            <p className="text-[10px] text-slate-500 italic leading-relaxed">{t.diagTelegramSub}</p>
             <button 
               onClick={handleTestTelegram}
               disabled={testStatus === 'sending'}
