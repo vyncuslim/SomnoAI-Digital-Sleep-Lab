@@ -5,7 +5,7 @@ import { notifyAdmin } from './telegramService.ts';
 export { supabase };
 
 /**
- * 核心审计协议 - 强制服务器端记录
+ * 高可靠审计协议
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   const sensitiveActions = ['ADMIN_ROLE_CHANGE', 'SECURITY_BREACH_ATTEMPT', 'SYSTEM_EXCEPTION', 'ROOT_NODE_PROTECTION_TRIGGER', 'ADMIN_MANUAL_SYNC'];
@@ -16,13 +16,14 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
   }
 
   try {
-    const { data: { user } } = await (supabase.auth as any).getUser();
-    // 使用 p_ 前缀匹配 SQL 参数定义
+    // 使用 getSession 替代 getUser 以获得更快的响应，减少登录时的阻塞
+    const { data: { session } } = await (supabase.auth as any).getSession();
+    
     await supabase.rpc('log_audit_entry', {
       p_action: action,
       p_details: details,
       p_level: level,
-      p_user_id: user?.id || null
+      p_user_id: session?.user?.id || null
     });
   } catch (e) {
     console.debug("Audit registry link severed.");
@@ -30,31 +31,27 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 };
 
 /**
- * 安全事件脉冲记录
+ * 实时安全事件注入
  */
 const logSecurityEvent = async (email: string, type: string, details: string) => {
   try {
     const targetEmail = email.trim().toLowerCase();
     await supabase.rpc('log_security_event', { 
-      email: targetEmail, 
-      event_type: type, 
-      details: details 
+      p_email: targetEmail, 
+      p_event_type: type, 
+      p_details: details 
     });
-    
-    if (['LOGIN_FAIL', 'SECURITY_BREACH', 'OTP_FAIL', 'RATE_LIMIT'].includes(type)) {
-      notifyAdmin(`⚠️ SECURITY_SIGNAL: ${type}\nSUBJECT: ${targetEmail}\nINFO: ${details}`);
-    }
   } catch (e) {
     console.debug("Security pulse offline.");
   }
 };
 
 /**
- * Auth 增强 API - 增加全生命周期日志
+ * Auth 强化模块 - 确保每一阶段都有日志
  */
 export const authApi = {
   signInWithGoogle: async () => {
-    await logAuditLog('OAUTH_START', 'Redirecting to Google Auth provider');
+    await logAuditLog('OAUTH_START', 'Redirecting to Google provider');
     return await (supabase.auth as any).signInWithOAuth({
       provider: 'google',
       options: {
@@ -66,8 +63,8 @@ export const authApi = {
   signIn: async (email: string, password: string, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
     
-    // 1. 记录尝试（Attempt）
-    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Protocol sequence initiated via Password');
+    // 阶段 1: 发起尝试
+    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Sequence initiated via Password');
     
     const res = await (supabase.auth as any).signInWithPassword({ 
       email: targetEmail, 
@@ -76,19 +73,19 @@ export const authApi = {
     });
     
     if (res.error) {
-      // 2. 记录失败（Fail）
-      await logSecurityEvent(targetEmail, 'LOGIN_FAIL', res.error.message);
-      await logAuditLog('LOGIN_ATTEMPT_FAIL', `Node: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
+      // 阶段 2A: 登录失败记录
+      await logSecurityEvent(targetEmail, 'LOGIN_FAIL', `Error: ${res.error.message}`);
+      await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
     } else {
-      // 3. 记录成功（Success）
-      await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session established successfully');
-      await logAuditLog('USER_LOGIN', `Identity established: ${targetEmail}`);
+      // 阶段 2B: 登录成功记录
+      await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session handshake complete');
+      await logAuditLog('USER_LOGIN', `Identity confirmed: ${targetEmail}`);
     }
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
-    await logSecurityEvent(targetEmail, 'SIGNUP_ATTEMPT', 'Registration protocol triggered');
+    await logSecurityEvent(targetEmail, 'SIGNUP_ATTEMPT', 'New registration initiated');
     
     const res = await (supabase.auth as any).signUp({ 
       email: targetEmail, 
@@ -99,8 +96,8 @@ export const authApi = {
     if (res.error) {
       await logSecurityEvent(targetEmail, 'SIGNUP_FAIL', res.error.message);
     } else {
-      await logSecurityEvent(targetEmail, 'SIGNUP_SUCCESS', 'New subject node registered');
-      await logAuditLog('USER_SIGNUP', `New subject node registered: ${targetEmail}`);
+      await logSecurityEvent(targetEmail, 'SIGNUP_SUCCESS', 'New user node registered');
+      await logAuditLog('USER_SIGNUP', `Registered: ${targetEmail}`);
     }
     return res;
   },
@@ -114,7 +111,7 @@ export const authApi = {
     if (res.error) {
       await logSecurityEvent(targetEmail, 'OTP_FAIL', res.error.message);
     } else {
-      await logSecurityEvent(targetEmail, 'OTP_SENT', 'Protocol token dispatched to mailbox');
+      await logSecurityEvent(targetEmail, 'OTP_SENT', 'Handshake token dispatched');
     }
     return res;
   },
@@ -126,7 +123,7 @@ export const authApi = {
       await logSecurityEvent(targetEmail, 'OTP_VERIFY_FAIL', res.error.message);
     } else {
       await logSecurityEvent(targetEmail, 'OTP_VERIFY_SUCCESS', 'Handshake confirmed via OTP');
-      await logAuditLog('OTP_VERIFY_SUCCESS', `Auth handshake confirmed: ${targetEmail}`);
+      await logAuditLog('OTP_VERIFY_SUCCESS', `Confirmed: ${targetEmail}`);
     }
     return res;
   },
@@ -135,22 +132,22 @@ export const authApi = {
       redirectTo: `${window.location.origin}/#settings`
     });
     if (!res.error) {
-      await logSecurityEvent(email, 'PW_RESET_REQUEST', 'Recovery protocol initiated');
+      await logSecurityEvent(email, 'PW_RESET_REQUEST', 'Password recovery sequence triggered');
     }
     return res;
   },
   signOut: async () => {
-    const { data: { user } } = await (supabase.auth as any).getUser();
-    if (user) {
-      await logSecurityEvent(user.email || 'unknown', 'LOGOUT', 'Manual session severance');
-      await logAuditLog('USER_LOGOUT', `Manual session severance: ${user.email}`);
+    const { data: { session } } = await (supabase.auth as any).getSession();
+    if (session?.user) {
+      await logSecurityEvent(session.user.email || 'unknown', 'LOGOUT', 'Manual termination');
+      await logAuditLog('USER_LOGOUT', `Terminated: ${session.user.email}`);
     }
     return await (supabase.auth as any).signOut();
   }
 };
 
 /**
- * 管理端 API
+ * 管理端核心 API
  */
 export const adminApi = {
   getAdminClearance: async (userId: string) => {

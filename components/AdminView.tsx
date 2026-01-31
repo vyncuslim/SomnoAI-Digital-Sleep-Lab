@@ -145,9 +145,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => { fetchData(); }, []);
   
-  // 实时订阅安全事件，解决“日志不更新”问题
+  // 修正实时订阅参数：必须包含 schema
   useEffect(() => {
-    // Fix: Added required 'schema' parameter to the filter objects for 'postgres_changes' to match the Supabase SDK overload signature.
     const channel = supabase
       .channel('security_pulse')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'security_events' }, (payload) => {
@@ -186,7 +185,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleManualSync = async () => {
     setSyncState('SYNCING');
     try {
-      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET (Server side CRON_SECRET):");
+      // 提示用户使用他们提供的密钥
+      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET (Hint: 9f3ks...):");
       if (!secret) {
         setSyncState('IDLE');
         await checkSyncStatus();
@@ -496,7 +496,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                                    </div>
                                                    
                                                    <button onClick={() => handleSetRole(user, 'owner')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'hover:bg-amber-500/10 border-transparent text-slate-400 hover:text-amber-500'}`}><div className="flex items-center gap-3"><Crown size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Owner</span></div>{user.role === 'owner' && <CheckCircle2 size={12} />}</button>
-                                                   <button onClick={() => handleSetRole(user, 'admin')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}><div className="flex items-center gap-3"><Shield size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div>{user.role === 'admin' && <CheckCircle2 size={12} />}</button>
+                                                   <button onClick={() => handleSetRole(user, 'admin')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}><div className="flex items-center gap-3"><Shield size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div>{user.role === 'admin' && <CheckCircle2 size={12} />}</button>
                                                    <button onClick={() => handleSetRole(user, 'user')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'user' ? 'bg-slate-500/10 border-white/10 text-white' : 'hover:bg-white/5 border-transparent text-slate-400 hover:text-white'}`}><div className="flex items-center gap-3"><UserCircle size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">User</span></div>{user.role === 'user' && <CheckCircle2 size={12} />}</button>
                                                  </div>
                                                </m.div>
@@ -595,7 +595,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <div className="space-y-4">
                      {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} className="text-slate-800" /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all animate-in slide-in-from-bottom-4 duration-500">
                         <div className="flex items-center gap-8 text-left">
-                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-400' : sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>
+                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' : sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>
                               {sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? <ShieldX size={26} /> : <Zap size={26} />}
                            </div>
                            <div className="space-y-1 text-left">
