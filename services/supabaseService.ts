@@ -4,7 +4,7 @@ import { notifyAdmin } from './telegramService.ts';
 export { supabase };
 
 /**
- * 核心系统审计日志
+ * 核心系统审计日志 - 自动分发高优先级通知
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   try {
@@ -17,11 +17,12 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       timestamp: new Date().toISOString()
     }]);
     
+    // 自动将警告和严重错误路由到管理员 Telegram
     if (level === 'CRITICAL' || level === 'WARNING') {
-      await notifyAdmin(`🚨 SYSTEM_AUDIT [${level}]\nACTION: ${action}\nDETAILS: ${details}\nOP: ${user?.email || 'SYSTEM'}`);
+      notifyAdmin(`🚨 [${level}] ${action}\nSUBJECT: ${user?.email || 'SYSTEM'}\nINFO: ${details}`);
     }
   } catch (e) {
-    console.error("Audit log failed:", e);
+    console.error("Audit log synchronization failed:", e);
   }
 };
 
@@ -30,7 +31,7 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
     await supabase.rpc('log_security_event', { email, event_type: type, details });
     
     if (type === 'LOGIN_FAIL' || type === 'SECURITY_BREACH') {
-      await notifyAdmin(`⚠️ SECURITY_ALERT: [${type}] detected for ${email}.\nReason: ${details}`);
+      notifyAdmin(`⚠️ SECURITY ALERT: ${type} for ${email}\nReason: ${details}`);
     }
   } catch (e) {
     console.warn("Security logger unreachable");
@@ -57,10 +58,10 @@ export const authApi = {
       options: { captchaToken }
     });
     if (res.error) {
-      await logSecurityEvent(email, 'LOGIN_FAIL', res.error.message);
+      logSecurityEvent(email, 'LOGIN_FAIL', res.error.message);
     } else {
-      await logSecurityEvent(email, 'LOGIN_SUCCESS', 'Node verified');
-      await logAuditLog('USER_LOGIN', `Successful login for ${email}`);
+      logSecurityEvent(email, 'LOGIN_SUCCESS', 'Identity verified');
+      logAuditLog('USER_LOGIN', `Login successful for ${email}`);
     }
     return res;
   },
@@ -71,8 +72,8 @@ export const authApi = {
       options: { ...options, captchaToken } 
     });
     if (!res.error) {
-      await logSecurityEvent(email, 'REGISTRATION', 'New node request');
-      await logAuditLog('USER_SIGNUP', `New account created: ${email}`);
+      logSecurityEvent(email, 'REGISTRATION', 'New subject initialized');
+      logAuditLog('USER_SIGNUP', `Account created: ${email}`);
     }
     return res;
   },
@@ -81,22 +82,22 @@ export const authApi = {
       email,
       options: { captchaToken }
     });
-    if (res.error) await logSecurityEvent(email, 'OTP_FAIL', res.error.message);
-    else await logSecurityEvent(email, 'OTP_SENT', 'Handshake token dispatched');
+    if (res.error) logSecurityEvent(email, 'OTP_FAIL', res.error.message);
+    else logSecurityEvent(email, 'OTP_SENT', 'Handshake token dispatched');
     return res;
   },
   verifyOTP: async (email: string, token: string) => {
     const res = await supabase.auth.verifyOtp({ email, token, type: 'email' });
     if (res.error) await logSecurityEvent(email, 'OTP_VERIFY_FAIL', res.error.message);
     else {
-      await logSecurityEvent(email, 'OTP_VERIFY_SUCCESS', 'Identity confirmed');
-      await logAuditLog('OTP_VERIFY', `Identity verified via OTP: ${email}`);
+      await logSecurityEvent(email, 'OTP_VERIFY_SUCCESS', 'Node authorized');
+      logAuditLog('OTP_VERIFY', `OTP verification successful: ${email}`);
     }
     return res;
   },
   signOut: async () => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (user) await logAuditLog('USER_LOGOUT', `Session terminated: ${user.email}`);
+    if (user) logAuditLog('USER_LOGOUT', `Session terminated: ${user.email}`);
     return await supabase.auth.signOut();
   }
 };
@@ -106,7 +107,7 @@ export const authApi = {
  */
 export const adminApi = {
   getAdminClearance: async (userId: string) => {
-    const { data, error } = await supabase.rpc('get_my_detailed_profile');
+    const { data } = await supabase.rpc('get_my_detailed_profile');
     return data?.[0] || null;
   },
   checkAdminStatus: async (): Promise<boolean> => {
@@ -147,14 +148,17 @@ export const adminApi = {
     const newState = !currentlyBlocked;
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
     if (!error) {
-      await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} user ${email}`, newState ? 'WARNING' : 'INFO');
+      logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node ${email}`, newState ? 'WARNING' : 'INFO');
     }
     return { error };
   },
+  /**
+   * 角色切换逻辑: user -> admin -> owner
+   */
   updateUserRole: async (id: string, email: string, newRole: string) => {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
     if (!error) {
-      await logAuditLog('ADMIN_ROLE_CHANGE', `User ${email} clearance updated to ${newRole.toUpperCase()}`, 'CRITICAL');
+      logAuditLog('ADMIN_ROLE_CHANGE', `Node ${email} clearance shifted to ${newRole.toUpperCase()}`, 'CRITICAL');
     }
     return { error };
   },
@@ -208,7 +212,7 @@ export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { data, error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error };
-    await notifyAdmin(`📩 NEW FEEDBACK\nType: ${type.toUpperCase()}\nFrom: ${email}\nContent: ${content}`);
+    notifyAdmin(`📩 NEW FEEDBACK\nTYPE: ${type.toUpperCase()}\nFROM: ${email}\nCONTENT: ${content}`);
     return { success: true };
   }
 };

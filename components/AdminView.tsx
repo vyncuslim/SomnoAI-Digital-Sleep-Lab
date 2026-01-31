@@ -8,19 +8,18 @@ import {
   CheckCircle, UserCircle, CheckCircle2, WifiOff, Info, Key, AlertCircle, Clock, TrendingUp, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint, PieChart,
   Lock, Table, List, Filter, Database as DbIcon, Code2, ExternalLink,
-  ShieldQuestion, UserMinus, UserPlus, Unlock
+  ShieldQuestion, Unlock
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
 import { trackConversion } from '../services/analytics.ts';
-import { notifyAdmin } from '../services/telegramService.ts';
 
 const m = motion as any;
 
 type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system';
-type SyncStatus = 'idle' | 'syncing' | 'synced' | 'error';
+type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_country', group: 'Traffic (GA4)', icon: Globe },
@@ -43,6 +42,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
   const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
+  const [syncState, setSyncState] = useState<SyncState>('IDLE');
   
   // Registry State
   const [users, setUsers] = useState<any[]>([]);
@@ -61,16 +61,31 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [tableSearch, setTableSearch] = useState('');
   
   const [actionError, setActionError] = useState<string | null>(null);
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
 
   const isOwner = useMemo(() => {
     const role = currentAdmin?.role?.toLowerCase();
     return role === 'owner' || currentAdmin?.is_super_owner === true;
   }, [currentAdmin]);
 
-  const fetchData = useCallback(async (isManual = false) => {
+  const checkSyncStatus = async () => {
+    // Determine sync state based on audit logs
+    const { data } = await supabase
+      .from('audit_logs')
+      .select('action, timestamp')
+      .in('action', ['GA4_SYNC_SUCCESS', 'GA4_SYNC_ERROR'])
+      .order('timestamp', { ascending: false })
+      .limit(1);
+    
+    if (data?.[0]) {
+      const isRecent = new Date().getTime() - new Date(data[0].timestamp).getTime() < 1000 * 60 * 60; // Within 1h
+      if (data[0].action === 'GA4_SYNC_SUCCESS') setSyncState(isRecent ? 'SYNCED' : 'IDLE');
+      else if (data[0].action === 'GA4_SYNC_ERROR') setSyncState('ERROR');
+    }
+  };
+
+  const fetchData = useCallback(async () => {
     setLoading(true);
-    setSyncStatus('syncing');
+    setSyncState('SYNCING');
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
@@ -94,18 +109,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         try { counts[t.id] = await adminApi.getTableCount(t.id); } catch { counts[t.id] = 0; }
       }));
       setTableCounts(counts);
-      
-      setSyncStatus('synced');
-      if (isManual) {
-        await logAuditLog('GA4_MANUAL_SYNC', `Node registry refresh triggered by ${profile?.email}`, 'INFO');
-      }
+      await checkSyncStatus();
     } catch (err: any) {
-      setActionError(err.message || "Unified data synchronization failure.");
-      setSyncStatus('error');
-      await logAuditLog('ADMIN_SYNC_ERROR', err.message || 'Unknown sync error', 'CRITICAL');
+      setActionError(err.message || "Registry synchronization failure.");
+      setSyncState('ERROR');
     } finally {
       setLoading(false);
-      setTimeout(() => setSyncStatus('idle'), 3000);
     }
   }, []);
 
@@ -126,10 +135,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (activeTab === 'explorer') fetchSelectedTableData(selectedTable);
   }, [activeTab, selectedTable]);
 
-  // 管理员动作：封禁切换
   const handleToggleBlock = async (user: any) => {
     if (user.is_super_owner) return;
-    if (!confirm(`Are you sure you want to ${user.is_blocked ? 'UNBLOCK' : 'BLOCK'} user ${user.email}?`)) return;
+    if (!confirm(`Confirm restrictive protocol for node ${user.email}?`)) return;
     
     setProcessingUserId(user.id);
     try {
@@ -143,15 +151,24 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
-  // 管理员动作：角色修改
-  const handleUpdateRole = async (user: any) => {
-    if (!isOwner || user.is_super_owner) return;
-    const newRole = user.role === 'admin' ? 'user' : 'admin';
-    if (!confirm(`Confirm promotion/demotion: Set ${user.email} role to ${newRole.toUpperCase()}?`)) return;
+  /**
+   * Neural Key: Cycle user roles (User -> Admin -> Owner)
+   */
+  const handleCycleRole = async (user: any) => {
+    if (!isOwner || user.is_super_owner) {
+      setActionError("MOD_DENIED: Owner clearance required to modify registry keys.");
+      return;
+    }
+    
+    const roles: string[] = ['user', 'admin', 'owner'];
+    const currentIdx = roles.indexOf(user.role?.toLowerCase() || 'user');
+    const nextRole = roles[(currentIdx + 1) % roles.length];
+
+    if (!confirm(`ELEVATE_DELEGATION: Set node ${user.email} to ${nextRole.toUpperCase()}?`)) return;
 
     setProcessingUserId(user.id);
     try {
-      const { error } = await adminApi.updateUserRole(user.id, user.email, newRole);
+      const { error } = await adminApi.updateUserRole(user.id, user.email, nextRole);
       if (error) throw error;
       await fetchData();
     } catch (e: any) {
@@ -175,8 +192,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               Command <span style={{ color: themeColor }}>Bridge</span>
             </h1>
             <div className="flex items-center gap-3">
-               <div className={`w-2 h-2 rounded-full ${syncStatus === 'synced' ? 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]' : syncStatus === 'error' ? 'bg-rose-500' : 'bg-slate-700'} animate-pulse`} />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Pulse: {syncStatus.toUpperCase()}</p>
+               <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable</p>
             </div>
           </div>
         </div>
@@ -201,7 +218,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </nav>
       </header>
 
-      {loading && syncStatus === 'syncing' ? (
+      {loading ? (
         <div className="flex flex-col items-center justify-center py-48 gap-8">
           <div className="relative">
              <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
@@ -240,14 +257,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            <TrendingUp size={14} /> Traffic Reach (30D)
                         </h3>
                         {/* GA4 Sync Status Indicator */}
-                        <div className={`px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest flex items-center gap-2 transition-all ${
-                          syncStatus === 'synced' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' :
-                          syncStatus === 'syncing' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' :
-                          syncStatus === 'error' ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' :
-                          'bg-white/5 border-white/10 text-slate-500'
+                        <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic ${
+                          syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                          syncState === 'SYNCING' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
+                          syncState === 'ERROR' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
+                          'bg-white/5 border-white/5 text-slate-600'
                         }`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${syncStatus === 'synced' ? 'bg-emerald-500' : syncStatus === 'error' ? 'bg-rose-500' : 'bg-indigo-500'} animate-pulse`} />
-                          GA4 Status: {syncStatus}
+                          <div className={`w-1.5 h-1.5 rounded-full ${
+                            syncState === 'SYNCED' ? 'bg-emerald-500' :
+                            syncState === 'SYNCING' ? 'bg-indigo-500 animate-spin' :
+                            syncState === 'ERROR' ? 'bg-rose-500' : 'bg-slate-700'
+                          }`} />
+                          GA4 SYNC: {syncState}
                         </div>
                      </div>
                      <GlassCard className="p-10 rounded-[4rem] border-white/5 h-[400px]">
@@ -362,18 +383,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                   </td>
                                   <td className="py-6 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right">
                                      <div className="flex justify-end gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
-                                        {/* 修改角色：只有 Owner 可以升级/降级 Admin */}
+                                        {/* Neural Key: Promote/Demote Roles (Only for Owners) */}
                                         {isOwner && !user.is_super_owner && (
                                            <button 
-                                              onClick={() => handleUpdateRole(user)}
+                                              onClick={() => handleCycleRole(user)}
                                               disabled={processingUserId === user.id}
-                                              className="p-3 bg-white/5 hover:bg-indigo-500/20 text-slate-400 hover:text-indigo-400 rounded-xl transition-all border border-white/5"
-                                              title={user.role === 'admin' ? "Demote to User" : "Promote to Admin"}
+                                              className="p-3 bg-white/5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-500 rounded-xl transition-all border border-white/5"
+                                              title="Shift Node Clearance"
                                            >
-                                              {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : (user.role === 'admin' ? <UserMinus size={16} /> : <UserPlus size={16} />)}
+                                              {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
                                            </button>
                                         )}
-                                        {/* 封禁控制：禁止自封或封禁超级管理员 */}
+                                        {/* Restriction Control */}
                                         {!user.is_super_owner && (
                                            <button 
                                               onClick={() => handleToggleBlock(user)}
@@ -383,7 +404,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                                  ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-600/20' 
                                                  : 'bg-rose-600/10 text-rose-500 border-rose-500/20 hover:bg-rose-600/20'
                                               }`}
-                                              title={user.is_blocked ? "Unblock Node" : "Restrict Node"}
+                                              title={user.is_blocked ? "Authorize Node" : "Restrict Node"}
                                            >
                                               {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : (user.is_blocked ? <Unlock size={16} /> : <Ban size={16} />)}
                                            </button>
@@ -559,14 +580,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-10">
                      <div className="relative">
                         <div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400">
-                           <RefreshCw size={80} className={syncStatus === 'syncing' ? 'animate-spin' : ''} />
+                           <RefreshCw size={80} className={loading ? 'animate-spin' : ''} />
                         </div>
                      </div>
                      <div className="space-y-4">
                         <h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual Handshake</h4>
                         <p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize local registry state with cloud-native GA4 telemetry and security logs.</p>
                      </div>
-                     <button onClick={() => fetchData(true)} className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic">Execute Unified Sync</button>
+                     <button onClick={() => fetchData()} className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic">Execute Unified Sync</button>
                   </GlassCard>
                   
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col gap-10">
@@ -579,7 +600,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      </div>
                      <div className="space-y-6">
                         {[
-                           { label: 'Telemetric Bridge (GA4)', status: 'Sync Verified', color: 'text-indigo-400', icon: Globe },
+                           { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState, color: syncState === 'SYNCED' ? 'text-indigo-400' : 'text-rose-400', icon: Globe },
                            { label: 'Security Handshake Hub', status: 'Active Bridge', color: 'text-rose-400', icon: Lock },
                            { label: 'Registry Synchronization', status: 'Mesh established', color: 'text-amber-400', icon: Database },
                            { label: 'Laboratory Signal Logs', status: 'Active (Direct)', color: 'text-cyan-400', icon: MessageSquare }

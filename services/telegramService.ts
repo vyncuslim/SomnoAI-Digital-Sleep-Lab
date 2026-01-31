@@ -1,7 +1,7 @@
 /**
  * SomnoAI Admin Notification Service
  * Routes system alerts and feedback via Supabase Edge Functions to Telegram.
- * Updated with robust handling for missing deployments and Abort signals.
+ * Optimized for resilience: prevents blocking UI or auth flows.
  */
 
 const EDGE_FUNCTION_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/notify_telegram';
@@ -19,8 +19,9 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     finalMessage = `🚨 SOMNO LAB ${type}\n\nLOG: ${content}\nTIME: ${new Date().toLocaleString()}`;
   }
 
+  // Use a shorter timeout for non-critical background notifications
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000); // 8s timeout
+  const timeoutId = setTimeout(() => controller.abort(), 5000); 
 
   try {
     const response = await fetch(EDGE_FUNCTION_URL, {
@@ -35,22 +36,10 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     });
 
     clearTimeout(timeoutId);
-
-    if (response.status === 404) {
-      const data = await response.json().catch(() => ({}));
-      if (data.code === 'NOT_FOUND' || data.message?.includes('not found')) {
-        return false;
-      }
-    }
-
     return response.ok;
   } catch (err: any) {
     clearTimeout(timeoutId);
-    if (err.name === 'AbortError') {
-      console.warn('[Telegram Service]: Operation timed out or was aborted by user/system.');
-      return false;
-    }
-    console.debug("[Telegram Service Alert]:", err.message);
+    // Silent fail for background telemetry
     return false;
   }
 };
