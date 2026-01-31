@@ -19,11 +19,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// 辅助函数：同步预警与日志
+// Helper: Report critical sync failures to Telegram and Registry
 const reportSyncFailure = async (errorMsg) => {
   const message = `🚨 GA4_SYNC_CRITICAL_FAILURE\nPROPERTY: ${propertyId}\nERROR: ${errorMsg}\nTIMESTAMP: ${new Date().toISOString()}\nNODE: Vercel_API_Worker`;
   
-  // 1. 尝试通知 Telegram
+  // 1. Notify Telegram via Edge Function
   try {
     await fetch(`${process.env.SUPABASE_URL}/functions/v1/notify_telegram`, {
       method: 'POST',
@@ -35,7 +35,7 @@ const reportSyncFailure = async (errorMsg) => {
     });
   } catch (e) { console.error("Alert notification failed"); }
 
-  // 2. 写入 audit_logs
+  // 2. Commit to Audit Logs
   try {
     await supabase.from("audit_logs").insert([{
       action: "GA4_SYNC_ERROR",
@@ -113,11 +113,12 @@ export default async function handler(req, res) {
       if (error) throw error;
     }
 
-    // 记录成功审计
+    // Record success audit
     await supabase.from("audit_logs").insert([{
       action: "GA4_SYNC_SUCCESS",
       details: `Telemetry captured for ${yesterday}`,
-      level: "INFO"
+      level: "INFO",
+      timestamp: new Date().toISOString()
     }]);
 
     return res.status(200).json({ success: true, status: "SYNC_COMPLETE" });

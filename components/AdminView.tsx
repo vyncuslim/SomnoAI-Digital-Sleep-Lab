@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   Users, Database, ShieldAlert, Search, RefreshCw, 
   Loader2, ChevronLeft, ShieldCheck, 
@@ -8,7 +8,7 @@ import {
   CheckCircle, UserCircle, CheckCircle2, WifiOff, Info, Key, AlertCircle, Clock, TrendingUp, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint, PieChart,
   Lock, Table, List, Filter, Database as DbIcon, Code2, ExternalLink,
-  ShieldQuestion, Unlock
+  ShieldQuestion, Unlock, User
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -48,6 +48,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [users, setUsers] = useState<any[]>([]);
   const [registrySearch, setRegistrySearch] = useState('');
   const [processingUserId, setProcessingUserId] = useState<string | null>(null);
+  const [roleSelectUserId, setRoleSelectUserId] = useState<string | null>(null);
+  
+  const popoverRef = useRef<HTMLDivElement>(null);
   
   // Stats
   const [dailyStats, setDailyStats] = useState<any[]>([]);
@@ -67,8 +70,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return role === 'owner' || currentAdmin?.is_super_owner === true;
   }, [currentAdmin]);
 
+  // Click outside listener for role selector
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
+        setRoleSelectUserId(null);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
   const checkSyncStatus = async () => {
-    // Determine sync state based on audit logs
     const { data } = await supabase
       .from('audit_logs')
       .select('action, timestamp')
@@ -77,9 +90,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       .limit(1);
     
     if (data?.[0]) {
-      const isRecent = new Date().getTime() - new Date(data[0].timestamp).getTime() < 1000 * 60 * 60; // Within 1h
-      if (data[0].action === 'GA4_SYNC_SUCCESS') setSyncState(isRecent ? 'SYNCED' : 'IDLE');
-      else if (data[0].action === 'GA4_SYNC_ERROR') setSyncState('ERROR');
+      const diffMs = new Date().getTime() - new Date(data[0].timestamp).getTime();
+      const isStale = diffMs > 1000 * 60 * 60 * 25;
+      if (data[0].action === 'GA4_SYNC_SUCCESS') setSyncState(isStale ? 'IDLE' : 'SYNCED');
+      else setSyncState('ERROR');
     }
   };
 
@@ -87,7 +101,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setLoading(true);
     setSyncState('SYNCING');
     try {
-      const { data: { user } } = await supabase.auth.getUser();
+      const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user) return;
 
       const profile = await adminApi.getAdminClearance(user.id);
@@ -118,6 +132,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   }, []);
 
+  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    if (activeTab === 'explorer') fetchSelectedTableData(selectedTable);
+  }, [activeTab, selectedTable]);
+
   const fetchSelectedTableData = async (tableName: string) => {
     setTableLoading(true);
     try {
@@ -130,14 +149,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
-  useEffect(() => {
-    if (activeTab === 'explorer') fetchSelectedTableData(selectedTable);
-  }, [activeTab, selectedTable]);
-
   const handleToggleBlock = async (user: any) => {
     if (user.is_super_owner) return;
-    if (!confirm(`Confirm restrictive protocol for node ${user.email}?`)) return;
+    if (!confirm(`MOD_PROTOCOL: Confirm restrictive override for node ${user.email}?`)) return;
     
     setProcessingUserId(user.id);
     try {
@@ -151,24 +165,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
-  /**
-   * Neural Key: Cycle user roles (User -> Admin -> Owner)
-   */
-  const handleCycleRole = async (user: any) => {
-    if (!isOwner || user.is_super_owner) {
-      setActionError("MOD_DENIED: Owner clearance required to modify registry keys.");
+  const handleSetRole = async (user: any, newRole: string) => {
+    if (!isOwner || user.is_super_owner) return;
+    if (user.role === newRole) {
+      setRoleSelectUserId(null);
       return;
     }
-    
-    const roles: string[] = ['user', 'admin', 'owner'];
-    const currentIdx = roles.indexOf(user.role?.toLowerCase() || 'user');
-    const nextRole = roles[(currentIdx + 1) % roles.length];
-
-    if (!confirm(`ELEVATE_DELEGATION: Set node ${user.email} to ${nextRole.toUpperCase()}?`)) return;
 
     setProcessingUserId(user.id);
+    setRoleSelectUserId(null);
     try {
-      const { error } = await adminApi.updateUserRole(user.id, user.email, nextRole);
+      const { error } = await adminApi.updateUserRole(user.id, user.email, newRole);
       if (error) throw error;
       await fetchData();
     } catch (e: any) {
@@ -218,7 +225,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </nav>
       </header>
 
-      {loading ? (
+      {loading && syncState === 'SYNCING' ? (
         <div className="flex flex-col items-center justify-center py-48 gap-8">
           <div className="relative">
              <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
@@ -256,8 +263,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic flex items-center gap-2">
                            <TrendingUp size={14} /> Traffic Reach (30D)
                         </h3>
-                        {/* GA4 Sync Status Indicator */}
-                        <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic ${
+                        <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic transition-all ${
                           syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                           syncState === 'SYNCING' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
                           syncState === 'ERROR' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
@@ -320,8 +326,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
 
           {activeTab === 'registry' && (
-             <m.div key="registry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8">
-                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] border-white/5 bg-slate-950/60 shadow-2xl relative overflow-hidden">
+             <m.div key="registry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-40">
+                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] border-white/5 bg-slate-950/60 shadow-2xl relative overflow-visible">
                    <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16 relative z-10">
                       <div className="space-y-2 text-left w-full">
                          <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span className="text-indigo-400">Registry</span></h2>
@@ -381,20 +387,72 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                         </span>
                                      )}
                                   </td>
-                                  <td className="py-6 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right">
-                                     <div className="flex justify-end gap-2 opacity-20 group-hover:opacity-100 transition-opacity">
-                                        {/* Neural Key: Promote/Demote Roles (Only for Owners) */}
+                                  <td className="py-6 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right relative">
+                                     <div className="flex justify-end gap-2">
+                                        {/* Neural Key: Role Selector Hub */}
                                         {isOwner && !user.is_super_owner && (
-                                           <button 
-                                              onClick={() => handleCycleRole(user)}
-                                              disabled={processingUserId === user.id}
-                                              className="p-3 bg-white/5 hover:bg-amber-500/20 text-slate-400 hover:text-amber-500 rounded-xl transition-all border border-white/5"
-                                              title="Shift Node Clearance"
-                                           >
-                                              {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
-                                           </button>
+                                           <div className="relative" ref={popoverRef}>
+                                              <button 
+                                                 onClick={() => setRoleSelectUserId(roleSelectUserId === user.id ? null : user.id)}
+                                                 disabled={processingUserId === user.id}
+                                                 className={`p-3 rounded-xl transition-all border border-white/5 shadow-lg ${roleSelectUserId === user.id ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-indigo-400'}`}
+                                                 title="Neural Hub: Toggle Protocols"
+                                              >
+                                                 {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
+                                              </button>
+
+                                              <AnimatePresence>
+                                                {roleSelectUserId === user.id && (
+                                                  <m.div 
+                                                    initial={{ opacity: 0, scale: 0.9, y: 10, x: 20 }}
+                                                    animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
+                                                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
+                                                    className="absolute bottom-full right-0 mb-6 z-[200] min-w-[220px]"
+                                                  >
+                                                    <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/10 p-3 rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] flex flex-col gap-1.5">
+                                                      <div className="px-4 py-3 border-b border-white/5 mb-1">
+                                                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Select Clearance</p>
+                                                      </div>
+                                                      
+                                                      <button 
+                                                        onClick={() => handleSetRole(user, 'owner')}
+                                                        className="flex items-center justify-between w-full p-4 rounded-2xl hover:bg-amber-500/10 text-slate-300 hover:text-amber-500 transition-all group/opt border border-transparent hover:border-amber-500/20"
+                                                      >
+                                                        <div className="flex items-center gap-3">
+                                                           <Crown size={14} className="group-hover/opt:scale-110 transition-transform" />
+                                                           <span className="text-[10px] font-black uppercase tracking-widest">Protocol: OWNER</span>
+                                                        </div>
+                                                        {user.role === 'owner' && <CheckCircle size={10} className="text-amber-500" />}
+                                                      </button>
+
+                                                      <button 
+                                                        onClick={() => handleSetRole(user, 'admin')}
+                                                        className="flex items-center justify-between w-full p-4 rounded-2xl hover:bg-indigo-500/10 text-slate-300 hover:text-indigo-400 transition-all group/opt border border-transparent hover:border-indigo-500/20"
+                                                      >
+                                                        <div className="flex items-center gap-3">
+                                                           <Shield size={14} className="group-hover/opt:scale-110 transition-transform" />
+                                                           <span className="text-[10px] font-black uppercase tracking-widest">Protocol: ADMIN</span>
+                                                        </div>
+                                                        {user.role === 'admin' && <CheckCircle size={10} className="text-indigo-400" />}
+                                                      </button>
+
+                                                      <button 
+                                                        onClick={() => handleSetRole(user, 'user')}
+                                                        className="flex items-center justify-between w-full p-4 rounded-2xl hover:bg-slate-500/10 text-slate-300 hover:text-white transition-all group/opt border border-transparent hover:border-white/10"
+                                                      >
+                                                        <div className="flex items-center gap-3">
+                                                           <UserCircle size={14} className="group-hover/opt:scale-110 transition-transform" />
+                                                           <span className="text-[10px] font-black uppercase tracking-widest">Protocol: USER</span>
+                                                        </div>
+                                                        {user.role === 'user' && <CheckCircle size={10} className="text-white" />}
+                                                      </button>
+                                                    </div>
+                                                  </m.div>
+                                                )}
+                                              </AnimatePresence>
+                                           </div>
                                         )}
-                                        {/* Restriction Control */}
+
                                         {!user.is_super_owner && (
                                            <button 
                                               onClick={() => handleToggleBlock(user)}
@@ -404,7 +462,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                                  ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-600/20' 
                                                  : 'bg-rose-600/10 text-rose-500 border-rose-500/20 hover:bg-rose-600/20'
                                               }`}
-                                              title={user.is_blocked ? "Authorize Node" : "Restrict Node"}
+                                              title={user.is_blocked ? "Unblock Node" : "Restrict Node"}
                                            >
                                               {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : (user.is_blocked ? <Unlock size={16} /> : <Ban size={16} />)}
                                            </button>
@@ -522,7 +580,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
 
           {activeTab === 'signals' && (
-            <m.div key="signals" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
+            <m.div key="signals" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl border-white/5">
                   <div className="flex items-center gap-6 mb-16 px-4">
                      <div className="p-4 bg-indigo-600/10 rounded-[1.8rem] text-indigo-400">
@@ -575,12 +633,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
 
           {activeTab === 'system' && (
-            <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12">
+            <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-10">
                      <div className="relative">
                         <div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400">
-                           <RefreshCw size={80} className={loading ? 'animate-spin' : ''} />
+                           <RefreshCw size={80} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />
                         </div>
                      </div>
                      <div className="space-y-4">
@@ -600,7 +658,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      </div>
                      <div className="space-y-6">
                         {[
-                           { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState, color: syncState === 'SYNCED' ? 'text-indigo-400' : 'text-rose-400', icon: Globe },
+                           { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState, color: syncState === 'SYNCED' ? 'text-indigo-400' : syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500', icon: Globe },
                            { label: 'Security Handshake Hub', status: 'Active Bridge', color: 'text-rose-400', icon: Lock },
                            { label: 'Registry Synchronization', status: 'Mesh established', color: 'text-amber-400', icon: Database },
                            { label: 'Laboratory Signal Logs', status: 'Active (Direct)', color: 'text-cyan-400', icon: MessageSquare }

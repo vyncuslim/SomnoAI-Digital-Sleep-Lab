@@ -30,7 +30,8 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      // Cast supabase.auth to any to bypass type errors for getUser
+      const { data: { user } } = await (supabase.auth as any).getUser();
       if (user?.email) setEmail(user.email);
     };
     fetchUser();

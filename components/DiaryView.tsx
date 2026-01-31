@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Book, PenTool, Trash2, Calendar, Sparkles, Send, Loader2, BookOpen, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -44,7 +45,8 @@ export const DiaryView: React.FC<{ lang: Language }> = ({ lang }) => {
       // 触发多重通知系统
       notificationService.sendNotification("Diary Saved", `Mood: ${mood} • Your biological log has been archived.`);
       
-      const { data: { user } } = await supabase.auth.getUser();
+      // Cast supabase.auth to any to bypass type errors for getUser
+      const { data: { user } } = await (supabase.auth as any).getUser();
       notifyAdmin(`📝 NEW DIARY ENTRY\n\nSubject: ${user?.email}\nMood: ${mood}\nEntry: ${content.slice(0, 100)}${content.length > 100 ? '...' : ''}`);
 
       setContent('');
