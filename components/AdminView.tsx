@@ -85,7 +85,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const checkSyncStatus = async () => {
     try {
       // 1. Check explicit sync logs
-      const { data: logs } = await supabase
+      const { data: logs, error: logErr } = await supabase
         .from('audit_logs')
         .select('action, timestamp')
         .in('action', ['GA4_SYNC_SUCCESS', 'GA4_SYNC_ERROR'])
@@ -107,13 +107,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         }
       }
 
-      // 2. Deep Scan for resident data if no logs found
-      const { data: residentData } = await supabase
-        .from('analytics_daily')
-        .select('id')
-        .limit(1);
-      
-      setSyncState(residentData && residentData.length > 0 ? 'DATA_RESIDENT' : 'IDLE');
+      // 2. Fallback: check resident data count
+      const count = await adminApi.getTableCount('analytics_daily');
+      setSyncState(count > 0 ? 'DATA_RESIDENT' : 'IDLE');
     } catch (e) {
       setSyncState('IDLE');
     }
@@ -131,7 +127,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       const [d, s, u] = await Promise.all([
         adminApi.getDailyAnalytics(30),
-        adminApi.getSecurityEvents(30),
+        adminApi.getSecurityEvents(40),
         adminApi.getUsers()
       ]);
 
@@ -173,7 +169,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleManualSync = async () => {
     setSyncState('SYNCING');
     try {
-      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET:");
+      // CLEARANCE HINT: SOMNO_SYNC_RECOVERY_2026
+      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET (Hint: Recovery Key):");
       if (!secret) {
         setSyncState('IDLE');
         await checkSyncStatus();
@@ -183,6 +180,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         headers: { 'Authorization': `Bearer ${secret}` }
       });
       if (response.ok) {
+        await logAuditLog('ADMIN_MANUAL_SYNC', `GA4 synchronization triggered by ${currentAdmin?.email}`);
         alert("SYNC_SIGNAL_CONFIRMED: Telemetry grid refreshed.");
         fetchData();
       } else {
@@ -196,7 +194,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleToggleBlock = async (user: any) => {
     if (user.is_super_owner) {
-      logAuditLog('ROOT_NODE_PROTECTION_TRIGGER', `Attempted restriction of ROOT node: ${user.email} by ${currentAdmin?.email}`, 'CRITICAL');
+      await logAuditLog('ROOT_NODE_PROTECTION_TRIGGER', `Attempted restriction of ROOT node: ${user.email} by ${currentAdmin?.email}`, 'CRITICAL');
       setActionError("SECURITY_VIOLATION: Root node is write-protected.");
       return;
     }
@@ -216,7 +214,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleSetRole = async (user: any, newRole: string) => {
     if (user.is_super_owner) {
-      logAuditLog('SECURITY_BREACH_ATTEMPT', `CRITICAL: Attempted role modification of ROOT node: ${user.email} (Target: ${newRole}) by ${currentAdmin?.email}`, 'CRITICAL');
+      await logAuditLog('SECURITY_BREACH_ATTEMPT', `CRITICAL: Attempted role modification of ROOT node: ${user.email} (Target: ${newRole}) by ${currentAdmin?.email}`, 'CRITICAL');
       setActionError("RESTRICTED_PROTOCOL: Root node clearance cannot be shifted.");
       setRoleSelectUserId(null);
       return;
@@ -383,7 +381,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            </div>
                         )) : (
                           <div className="py-12 text-center opacity-20 border border-white/5 border-dashed rounded-[2.2rem]">
-                            <p className="text-[9px] font-black uppercase tracking-widest italic">No pulse detected</p>
+                            <p className="text-[9px] font-black uppercase tracking-widest italic">Registry logs empty</p>
                           </div>
                         )}
                      </div>
@@ -480,7 +478,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                                    </div>
                                                    
                                                    <button onClick={() => handleSetRole(user, 'owner')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'hover:bg-amber-500/10 border-transparent text-slate-400 hover:text-amber-500'}`}><div className="flex items-center gap-3"><Crown size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Owner</span></div>{user.role === 'owner' && <CheckCircle2 size={12} />}</button>
-                                                   <button onClick={() => handleSetRole(user, 'admin')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}><div className="flex items-center gap-3"><Shield size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div>{user.role === 'admin' && <CheckCircle2 size={12} />}</button>
+                                                   <button onClick={() => handleSetRole(user, 'admin')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}><div className="flex items-center gap-3"><Shield size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div>{user.role === 'admin' && <CheckCircle2 size={12} />}</button>
                                                    <button onClick={() => handleSetRole(user, 'user')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'user' ? 'bg-slate-500/10 border-white/10 text-white' : 'hover:bg-white/5 border-transparent text-slate-400 hover:text-white'}`}><div className="flex items-center gap-3"><UserCircle size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">User</span></div>{user.role === 'user' && <CheckCircle2 size={12} />}</button>
                                                  </div>
                                                </m.div>
@@ -603,7 +601,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-10">
                      <div className="relative"><div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400"><RefreshCw size={80} className={syncState === 'SYNCING' ? 'animate-spin' : ''} /></div></div>
-                     <div className="space-y-4"><h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual GA4 Re-Sync</h4><p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize dashboard metrics with cloud-native GA4 telemetry. This protocol updates daily traffic records.</p></div>
+                     <div className="space-y-4"><h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual GA4 Re-Sync</h4><p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize dashboard metrics with cloud-native GA4 telemetry. Required if the automated cron fails.</p></div>
                      <button onClick={handleManualSync} className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic">Execute Synchronization</button>
                   </GlassCard>
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col gap-10 text-left">

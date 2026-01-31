@@ -6,6 +6,8 @@ export { supabase };
 
 /**
  * Enhanced Audit Protocol
+ * Uses RPC with SECURITY DEFINER to ensure logs are committed even during 
+ * sensitive auth transitions where RLS might block direct inserts.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   const sensitiveActions = ['ADMIN_ROLE_CHANGE', 'SECURITY_BREACH_ATTEMPT', 'SYSTEM_EXCEPTION', 'ROOT_NODE_PROTECTION_TRIGGER'];
@@ -17,15 +19,15 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    await supabase.from('audit_logs').insert([{
-      action,
-      details,
-      level,
-      user_id: user?.id,
-      timestamp: new Date().toISOString()
-    }]);
+    // Use RPC instead of direct insert to avoid RLS write permission issues
+    await supabase.rpc('log_audit_entry', {
+      p_action: action,
+      p_details: details,
+      p_level: level,
+      p_user_id: user?.id || null
+    });
   } catch (e) {
-    console.debug("Audit registry detached.");
+    console.debug("Audit registry link severed.");
   }
 };
 
@@ -69,59 +71,61 @@ export const authApi = {
     });
   },
   signIn: async (email: string, password: string, captchaToken?: string) => {
+    const targetEmail = email.trim().toLowerCase();
     const res = await (supabase.auth as any).signInWithPassword({ 
       email, 
       password,
       options: { captchaToken }
     });
     
-    const targetEmail = email.trim().toLowerCase();
     if (res.error) {
-      logSecurityEvent(targetEmail, 'LOGIN_FAIL', res.error.message);
+      await logSecurityEvent(targetEmail, 'LOGIN_FAIL', res.error.message);
+      await logAuditLog('LOGIN_ATTEMPT_FAIL', `Node: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
     } else {
-      // Log to BOTH for pulse visibility and audit trail
-      logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session established via Password');
-      logAuditLog('USER_LOGIN', `Identity established: ${targetEmail}`);
+      await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session established via Password');
+      await logAuditLog('USER_LOGIN', `Identity established: ${targetEmail}`);
     }
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
+    const targetEmail = email.trim().toLowerCase();
     const res = await (supabase.auth as any).signUp({ 
       email, 
       password, 
       options: { ...options, captchaToken } 
     });
     
-    const targetEmail = email.trim().toLowerCase();
-    if (!res.error) {
-      logSecurityEvent(targetEmail, 'SIGNUP_SUCCESS', 'New subject node registered');
-      logAuditLog('USER_SIGNUP', `New subject node registered: ${targetEmail}`);
+    if (res.error) {
+      await logSecurityEvent(targetEmail, 'SIGNUP_FAIL', res.error.message);
+    } else {
+      await logSecurityEvent(targetEmail, 'SIGNUP_SUCCESS', 'New subject node registered');
+      await logAuditLog('USER_SIGNUP', `New subject node registered: ${targetEmail}`);
     }
     return res;
   },
   sendOTP: async (email: string, captchaToken?: string) => {
+    const targetEmail = email.trim().toLowerCase();
     const res = await (supabase.auth as any).signInWithOtp({ 
       email,
       options: { captchaToken }
     });
     
-    const targetEmail = email.trim().toLowerCase();
     if (res.error) {
-      logSecurityEvent(targetEmail, 'OTP_FAIL', res.error.message);
+      await logSecurityEvent(targetEmail, 'OTP_FAIL', res.error.message);
     } else {
-      logSecurityEvent(targetEmail, 'OTP_SENT', 'Protocol token dispatched');
+      await logSecurityEvent(targetEmail, 'OTP_SENT', 'Protocol token dispatched');
     }
     return res;
   },
   verifyOTP: async (email: string, token: string) => {
-    const res = await (supabase.auth as any).verifyOtp({ email, token, type: 'email' });
     const targetEmail = email.trim().toLowerCase();
+    const res = await (supabase.auth as any).verifyOtp({ email, token, type: 'email' });
     
     if (res.error) {
       await logSecurityEvent(targetEmail, 'OTP_VERIFY_FAIL', res.error.message);
     } else {
       await logSecurityEvent(targetEmail, 'OTP_VERIFY_SUCCESS', 'Auth handshake confirmed via OTP');
-      logAuditLog('OTP_VERIFY_SUCCESS', `Auth handshake confirmed: ${targetEmail}`);
+      await logAuditLog('OTP_VERIFY_SUCCESS', `Auth handshake confirmed: ${targetEmail}`);
     }
     return res;
   },
@@ -130,16 +134,16 @@ export const authApi = {
       redirectTo: `${window.location.origin}/#settings`
     });
     if (!res.error) {
-      logSecurityEvent(email, 'PW_RESET_REQUEST', 'Password recovery protocol initiated');
-      logAuditLog('AUTH_RESET_REQUEST', `Password recovery protocol initiated for: ${email}`);
+      await logSecurityEvent(email, 'PW_RESET_REQUEST', 'Password recovery protocol initiated');
+      await logAuditLog('AUTH_RESET_REQUEST', `Password recovery protocol initiated for: ${email}`);
     }
     return res;
   },
   signOut: async () => {
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (user) {
-      logSecurityEvent(user.email || 'unknown', 'LOGOUT', 'Manual session severance');
-      logAuditLog('USER_LOGOUT', `Manual session severance: ${user.email}`);
+      await logSecurityEvent(user.email || 'unknown', 'LOGOUT', 'Manual session severance');
+      await logAuditLog('USER_LOGOUT', `Manual session severance: ${user.email}`);
     }
     return await (supabase.auth as any).signOut();
   }
@@ -193,12 +197,12 @@ export const adminApi = {
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
     const newState = !currentlyBlocked;
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
-    if (!error) logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node ${email}`, newState ? 'WARNING' : 'INFO');
+    if (!error) await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node ${email}`, newState ? 'WARNING' : 'INFO');
     return { error };
   },
   updateUserRole: async (id: string, email: string, newRole: string) => {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
-    if (!error) logAuditLog('ADMIN_ROLE_CHANGE', `Clearance shift: ${email} -> ${newRole.toUpperCase()}`, 'CRITICAL');
+    if (!error) await logAuditLog('ADMIN_ROLE_CHANGE', `Clearance shift: ${email} -> ${newRole.toUpperCase()}`, 'CRITICAL');
     return { error };
   },
   getDailyAnalytics: async (days: number = 30) => {
