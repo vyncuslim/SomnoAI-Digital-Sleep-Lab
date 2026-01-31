@@ -5,22 +5,25 @@ import {
   Loader2, ChevronLeft, ShieldCheck, 
   Ban, Shield, Crown, ShieldX, KeyRound, 
   Zap, Globe, Monitor, Terminal as TerminalIcon, X, Cpu,
-  MessageSquare, LayoutDashboard, Radio, MapPin, Layers, 
-  CheckCircle, UserCircle, CheckCircle2, WifiOff, Info, Key, AlertCircle, Clock, TrendingUp, Activity,
-  ChevronRight, Send, Smartphone, BarChart3, Fingerprint, PieChart,
-  Lock, Table, List, Filter, Database as DbIcon, Code2, ExternalLink,
-  ShieldQuestion, Unlock, User, AlertTriangle
+  MessageSquare, LayoutDashboard, Radio, Activity,
+  ChevronRight, Send, Smartphone, BarChart3, Fingerprint,
+  Lock, Table, List, Clock, TrendingUp,
+  // Fix: Added missing icons to resolve "Cannot find name" errors
+  CheckCircle2, Unlock, WifiOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
-import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, BarChart, Bar, Cell } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { trackConversion } from '../services/analytics.ts';
 
 const m = motion as any;
 
 type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system';
 type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE';
+
+// Fix: Moved UserCircle declaration before DATABASE_SCHEMA to resolve block-scoped variable usage before declaration
+const UserCircle = Users;
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_country', group: 'Traffic (GA4)', icon: Globe },
@@ -32,11 +35,8 @@ const DATABASE_SCHEMA = [
   { id: 'login_attempts', group: 'Security', icon: KeyRound },
   { id: 'profiles', group: 'Core Registry', icon: UserCircle },
   { id: 'user_data', group: 'Core Registry', icon: Fingerprint },
-  { id: 'user_app_status', group: 'Core Registry', icon: ShieldCheck },
   { id: 'diary_entries', group: 'Lab Data', icon: MessageSquare },
   { id: 'feedback', group: 'Lab Data', icon: Send },
-  { id: 'health_raw_data', group: 'Lab Data', icon: Database },
-  { id: 'sleep_records', group: 'Lab Data', icon: Monitor },
 ];
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
@@ -81,6 +81,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const checkSyncStatus = async () => {
     try {
+      // 严格检查：必须使用 created_at。如果此处仍报 400，说明数据库表结构中确实丢失了该列。
       const { data: logs, error } = await supabase
         .from('audit_logs')
         .select('action, created_at')
@@ -108,7 +109,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const count = await adminApi.getTableCount('analytics_daily');
       setSyncState(count > 0 ? 'DATA_RESIDENT' : 'IDLE');
     } catch (e) {
-      console.debug("Sync status check bypassed.");
+      console.debug("Telemetry sync status unresolved.");
       setSyncState('IDLE');
     }
   };
@@ -155,7 +156,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setSignals(prev => [payload.new as any, ...prev].slice(0, 40));
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_logs' }, () => {
-        fetchData(); // 审计日志插入时刷新整体计数
+        checkSyncStatus();
       })
       .subscribe();
 
@@ -181,10 +182,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleManualSync = async () => {
     setSyncState('SYNCING');
     try {
-      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET (Server side CRON_SECRET):\nHint: 9f3ks8dk...", "9f3ks8dk29dk3k2kd93kdkf83kd9dk2");
+      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET:", "9f3ks8dk29dk3k2kd93kdkf83kd9dk2");
       if (!secret) {
         setSyncState('IDLE');
-        await checkSyncStatus();
         return;
       }
       const response = await fetch('/api/sync-analytics', {
@@ -267,7 +267,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </h1>
             <div className="flex items-center gap-3">
                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable</p>
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • v22.4.2</p>
             </div>
           </div>
         </div>
@@ -363,10 +363,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            </ResponsiveContainer>
                         ) : (
                            <div className="text-center space-y-6 opacity-30">
-                              <WifiOff size={48} className="mx-auto" />
+                              <Loader2 size={48} className="mx-auto animate-spin" />
                               <div className="space-y-1">
-                                 <p className="text-[10px] font-black uppercase tracking-[0.4em]">Telemetry bridge void.</p>
-                                 <p className="text-[8px] font-bold text-slate-500 uppercase">Awaiting Protocol Initialization</p>
+                                 <p className="text-[10px] font-black uppercase tracking-[0.4em]">Querying GA4 Hub...</p>
                               </div>
                            </div>
                         )}

@@ -17,8 +17,6 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
-    
-    // 严格对应 SQL 函数中的参数定义
     await supabase.rpc('log_audit_entry', {
       p_action: action,
       p_details: details,
@@ -47,7 +45,7 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
 };
 
 /**
- * Auth 强化模块 - 确保每一阶段都有日志
+ * Auth 强化模块
  */
 export const authApi = {
   signInWithGoogle: async () => {
@@ -63,13 +61,11 @@ export const authApi = {
   signIn: async (email: string, password: string, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
     await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Sequence initiated via Password');
-    
     const res = await (supabase.auth as any).signInWithPassword({ 
       email: targetEmail, 
       password,
       options: { captchaToken }
     });
-    
     if (res.error) {
       await logSecurityEvent(targetEmail, 'LOGIN_FAIL', `Error: ${res.error.message}`);
       await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
@@ -82,13 +78,11 @@ export const authApi = {
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
     await logSecurityEvent(targetEmail, 'SIGNUP_ATTEMPT', 'New registration initiated');
-    
     const res = await (supabase.auth as any).signUp({ 
       email: targetEmail, 
       password, 
       options: { ...options, captchaToken } 
     });
-    
     if (res.error) {
       await logSecurityEvent(targetEmail, 'SIGNUP_FAIL', res.error.message);
     } else {
@@ -103,7 +97,6 @@ export const authApi = {
       email: targetEmail,
       options: { captchaToken }
     });
-    
     if (res.error) {
       await logSecurityEvent(targetEmail, 'OTP_FAIL', res.error.message);
     } else {
@@ -114,7 +107,6 @@ export const authApi = {
   verifyOTP: async (email: string, token: string) => {
     const targetEmail = email.trim().toLowerCase();
     const res = await (supabase.auth as any).verifyOtp({ email: targetEmail, token, type: 'email' });
-    
     if (res.error) {
       await logSecurityEvent(targetEmail, 'OTP_VERIFY_FAIL', res.error.message);
     } else {
@@ -164,15 +156,16 @@ export const adminApi = {
   },
   getTableData: async (tableName: string, limit = 100) => {
     try {
+      // 智能排序：根据表前缀决定排序字段
+      const orderCol = tableName.startsWith('analytics_') ? 'date' : 'created_at';
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
-        .order('created_at', { ascending: false, nullsFirst: false })
+        .order(orderCol, { ascending: false, nullsFirst: false })
         .limit(limit);
       if (error) throw error;
       return data || [];
     } catch {
-      // 容错处理：如果 created_at 不存在则尝试无序查询
       const { data } = await supabase.from(tableName).select('*').limit(limit);
       return data || [];
     }

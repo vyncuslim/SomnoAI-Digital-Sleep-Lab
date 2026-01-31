@@ -2,7 +2,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
-// Fix: Import logAuditLog as reportError is not exported from supabaseService
 import { logAuditLog } from './services/supabaseService.ts';
 
 /**
@@ -15,7 +14,7 @@ const isNoise = (msg: string) => {
   const noise = [
     'ERR_BLOCKED_BY_CLIENT', 'Extension', 'Salesmartly', 
     'Google is not defined', 'Permissions-Policy', 'browsing-topics',
-    'reading \'query\'', 'content.js' // 过滤扩展插件的 query 错误
+    'reading \'query\'', 'content.js', 'chrome-extension'
   ];
   return noise.some(n => msg.includes(n));
 };
@@ -24,17 +23,15 @@ const isNoise = (msg: string) => {
 window.onerror = (message, source, lineno, colno, error) => {
   const msgStr = String(message);
   if (!isNoise(msgStr)) {
-    // Fix: Use logAuditLog instead of non-existent reportError. Signature: (action, details, level)
     logAuditLog(`RUNTIME_ERROR: ${source}:${lineno}:${colno}`, `${msgStr}\nStack: ${error?.stack}`, 'CRITICAL');
   }
-  return false;
+  return isNoise(msgStr); // 如果是噪声则不再向上传递
 };
 
 // 2. 拦截未处理的 Promise 拒绝
 window.onunhandledrejection = (event) => {
   const reason = event.reason?.message || event.reason;
   if (!isNoise(String(reason))) {
-    // Fix: Use logAuditLog instead of non-existent reportError. Signature: (action, details, level)
     logAuditLog(
       'ASYNC_HANDSHAKE_VOID',
       `Unhandled Promise Rejection: ${reason}\nStack: ${event.reason?.stack}`,
@@ -50,11 +47,12 @@ console.error = (...args) => {
     .map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg))
     .join(' ');
     
-  if (!isNoise(message)) {
-    // Fix: Use logAuditLog instead of non-existent reportError. Signature: (action, details, level)
-    logAuditLog('CONSOLE_ERROR_PROXIED', `${message}\nStack: ${new Error().stack}`, 'WARNING');
+  if (isNoise(message)) {
+    // 对插件错误执行静默处理：不记录、不显示
+    return;
   }
   
+  logAuditLog('CONSOLE_ERROR_PROXIED', `${message}\nStack: ${new Error().stack}`, 'WARNING');
   originalConsoleError.apply(console, args);
 };
 
