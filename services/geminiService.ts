@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -21,9 +22,10 @@ const handleGeminiError = (err: any) => {
   throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
-// Model Constants - Following strictly the model naming guidelines
-const MODEL_FLASH = 'gemini-3-flash-preview'; 
-const MODEL_PRO = 'gemini-3-pro-preview'; 
+// Model Constants - Optimized for production as per project guidelines
+// Preferring Gemini 2.5 series for system logic and complex reasoning tasks
+const MODEL_FLASH = 'gemini-2.5-flash'; 
+const MODEL_PRO = 'gemini-2.5-pro'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {

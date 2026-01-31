@@ -15,6 +15,9 @@
     { "source": "/api/sync-analytics", "destination": "/api/sync-analytics.js" },
     { "source": "/api/health-upload", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" },
     { "source": "/api/((?!sync-analytics).*)", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/$1" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/settings", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "crons": [

@@ -12,6 +12,8 @@ import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { getSafeHash, safeNavigateHash, safeReload, getSafeUrl } from './services/navigation.ts';
 import { trackPageView, trackEvent } from './services/analytics.ts';
+import { authApi } from './services/supabaseService.ts';
+import { notifyAdmin } from './services/telegramService.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
@@ -127,10 +129,11 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     const bridgeRouting = () => {
       const currentUrl = getSafeUrl();
-      const pathOnly = currentUrl.split('#')[0].replace(window.location.origin, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      const origin = window.location.origin;
+      const pathOnly = currentUrl.split('#')[0].replace(origin, '').replace(/^\/+/, '').replace(/\/+$/, '');
       const hashOnly = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       
-      // If landed on sleepsomno.com/admin, force hash bridge to #/admin
+      // CRITICAL FIX: If user landed on sleepsomno.com/admin, force hash bridge
       if (pathOnly === 'admin' && hashOnly !== 'admin') {
         safeNavigateHash('admin');
         return;
@@ -167,6 +170,16 @@ const AppContent: React.FC = () => {
     bridgeRouting();
     return () => window.removeEventListener('hashchange', bridgeRouting);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      await authApi.signOut();
+      notifyAdmin(`🚪 DISCONNECT: User session ${profile?.email} terminated manually.`);
+      safeReload();
+    } catch (e) {
+      window.location.href = '/';
+    }
+  };
 
   if (loading) return <DecisionLoading />;
 
@@ -206,7 +219,7 @@ const AppContent: React.FC = () => {
               {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} />}
               {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
               {activeView === 'diary' && <DiaryView lang={lang} />}
-              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => {}} onNavigate={() => {}} />}
+              {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} />}
               {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('settings')} />}
             </m.div>
           </AnimatePresence>

@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient.ts';
 
@@ -5,6 +6,8 @@ export type UserRole = "user" | "admin" | "owner";
 
 export interface Profile {
   id: string;
+  // Added email property to the Profile interface to resolve access errors.
+  email: string;
   role: UserRole;
   is_super_owner: boolean;
   is_blocked: boolean;
@@ -55,9 +58,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.rpc('get_my_detailed_profile');
       
       if (error || !data || data.length === 0) {
+        // Fixed: Added email to the selection query to ensure the Profile object is fully populated.
         const { data: fallbackData } = await supabase
           .from("profiles")
-          .select("id, role, is_super_owner, is_blocked, full_name")
+          .select("id, email, role, is_super_owner, is_blocked, full_name")
           .eq("id", user.id)
           .single();
         
