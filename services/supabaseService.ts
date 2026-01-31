@@ -47,7 +47,7 @@ export const reportError = async (message: string, stack?: string, source: strin
 const logSecurityEvent = async (email: string, type: string, details: string) => {
   try {
     await supabase.rpc('log_security_event', { email, event_type: type, details });
-    if (['LOGIN_FAIL', 'SECURITY_BREACH', 'OTP_FAIL'].includes(type)) {
+    if (['LOGIN_FAIL', 'SECURITY_BREACH', 'OTP_FAIL', 'RATE_LIMIT'].includes(type)) {
       notifyAdmin(`⚠️ SECURITY_SIGNAL: ${type}\nSUBJECT: ${email}\nINFO: ${details}`);
     }
   } catch (e) {
@@ -74,8 +74,15 @@ export const authApi = {
       password,
       options: { captchaToken }
     });
-    if (res.error) logSecurityEvent(email, 'LOGIN_FAIL', res.error.message);
-    else logAuditLog('USER_LOGIN', `Identity established: ${email}`);
+    
+    const targetEmail = email.trim().toLowerCase();
+    if (res.error) {
+      logSecurityEvent(targetEmail, 'LOGIN_FAIL', res.error.message);
+    } else {
+      // Log to BOTH for pulse visibility and audit trail
+      logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session established via Password');
+      logAuditLog('USER_LOGIN', `Identity established: ${targetEmail}`);
+    }
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
@@ -84,7 +91,12 @@ export const authApi = {
       password, 
       options: { ...options, captchaToken } 
     });
-    if (!res.error) logAuditLog('USER_SIGNUP', `New subject node registered: ${email}`);
+    
+    const targetEmail = email.trim().toLowerCase();
+    if (!res.error) {
+      logSecurityEvent(targetEmail, 'SIGNUP_SUCCESS', 'New subject node registered');
+      logAuditLog('USER_SIGNUP', `New subject node registered: ${targetEmail}`);
+    }
     return res;
   },
   sendOTP: async (email: string, captchaToken?: string) => {
@@ -92,26 +104,43 @@ export const authApi = {
       email,
       options: { captchaToken }
     });
-    if (res.error) logSecurityEvent(email, 'OTP_FAIL', res.error.message);
-    else logSecurityEvent(email, 'OTP_SENT', 'Protocol token dispatched');
+    
+    const targetEmail = email.trim().toLowerCase();
+    if (res.error) {
+      logSecurityEvent(targetEmail, 'OTP_FAIL', res.error.message);
+    } else {
+      logSecurityEvent(targetEmail, 'OTP_SENT', 'Protocol token dispatched');
+    }
     return res;
   },
   verifyOTP: async (email: string, token: string) => {
     const res = await (supabase.auth as any).verifyOtp({ email, token, type: 'email' });
-    if (res.error) await logSecurityEvent(email, 'OTP_VERIFY_FAIL', res.error.message);
-    else logAuditLog('OTP_VERIFY_SUCCESS', `Auth handshake confirmed: ${email}`);
+    const targetEmail = email.trim().toLowerCase();
+    
+    if (res.error) {
+      await logSecurityEvent(targetEmail, 'OTP_VERIFY_FAIL', res.error.message);
+    } else {
+      await logSecurityEvent(targetEmail, 'OTP_VERIFY_SUCCESS', 'Auth handshake confirmed via OTP');
+      logAuditLog('OTP_VERIFY_SUCCESS', `Auth handshake confirmed: ${targetEmail}`);
+    }
     return res;
   },
   resetPassword: async (email: string) => {
     const res = await (supabase.auth as any).resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/#settings`
     });
-    if (!res.error) logAuditLog('AUTH_RESET_REQUEST', `Password recovery protocol initiated for: ${email}`);
+    if (!res.error) {
+      logSecurityEvent(email, 'PW_RESET_REQUEST', 'Password recovery protocol initiated');
+      logAuditLog('AUTH_RESET_REQUEST', `Password recovery protocol initiated for: ${email}`);
+    }
     return res;
   },
   signOut: async () => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    if (user) logAuditLog('USER_LOGOUT', `Manual session severance: ${user.email}`);
+    if (user) {
+      logSecurityEvent(user.email || 'unknown', 'LOGOUT', 'Manual session severance');
+      logAuditLog('USER_LOGOUT', `Manual session severance: ${user.email}`);
+    }
     return await (supabase.auth as any).signOut();
   }
 };
@@ -154,7 +183,11 @@ export const adminApi = {
     return count || 0;
   },
   getSecurityEvents: async (limit = 50) => {
-    const { data } = await supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(limit);
+    const { data } = await supabase
+      .from('security_events')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limit);
     return data || [];
   },
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {

@@ -1,8 +1,7 @@
 
 /**
- * SomnoAI Admin Notification Service
- * Routes system alerts and feedback via Supabase Edge Functions to Telegram.
- * Optimized for resilience: prevents blocking UI or auth flows.
+ * SOMNO LAB - TELEGRAM GATEWAY SERVICE v4.2
+ * Routes system alerts and audit logs via encrypted Supabase Edge Functions.
  */
 
 const EDGE_FUNCTION_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/notify_telegram';
@@ -10,21 +9,22 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 export const notifyAdmin = async (payload: string | { error?: string; message?: string; type?: string }) => {
   if (!EDGE_FUNCTION_URL || !SUPABASE_ANON_KEY) {
-    console.warn("TELEGRAM_UPLINK_OFFLINE: Gateway configuration missing.");
+    console.warn("TELEGRAM_GATEWAY_OFFLINE: Endpoint or credentials void.");
     return false;
   }
 
   let finalMessage = '';
   if (typeof payload === 'string') {
-    finalMessage = `🛡️ SOMNO LAB ALERT\n\n${payload}`;
+    finalMessage = `🛡️ SOMNO LAB NODE ALERT\n\n${payload}`;
   } else {
-    const type = payload.type || 'SYSTEM_EVENT';
-    const content = payload.error || payload.message || 'No additional data';
-    finalMessage = `🚨 SOMNO LAB ${type}\n\nLOG: ${content}\nTIME: ${new Date().toLocaleString()}`;
+    const type = payload.type || 'SYSTEM_SIGNAL';
+    const content = payload.error || payload.message || 'Telemetry Null';
+    finalMessage = `🚨 SOMNO LAB [${type}]\n\nLOG: ${content}\nTIME: ${new Date().toISOString()}`;
   }
 
+  // Prevent UI blocking with background transmission and local timeout
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 6000); 
+  const timeoutId = setTimeout(() => controller.abort(), 8000); 
 
   try {
     const response = await fetch(EDGE_FUNCTION_URL, {
@@ -32,7 +32,7 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
       headers: { 
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY
+        'apikey': SUPABASE_ANON_KEY // Essential for Supabase Edge Functions
       },
       body: JSON.stringify({ message: finalMessage }),
       signal: controller.signal
@@ -41,14 +41,14 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     clearTimeout(timeoutId);
     
     if (!response.ok) {
-        console.error(`TELEGRAM_UPLINK_FAILURE: HTTP_${response.status}`);
+        console.error(`TELEGRAM_GATEWAY_HTTP_ERR: ${response.status}`);
         return false;
     }
     
     return true;
   } catch (err: any) {
     clearTimeout(timeoutId);
-    console.debug(`TELEGRAM_PULSE_ERROR: ${err.message || 'GATEWAY_TIMEOUT'}`);
+    console.debug(`TELEGRAM_GATEWAY_HANDSHAKE_VOID: ${err.message || 'ABORTED'}`);
     return false;
   }
 };

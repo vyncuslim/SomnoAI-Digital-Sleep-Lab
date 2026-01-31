@@ -20,7 +20,7 @@ import { trackConversion } from '../services/analytics.ts';
 const m = motion as any;
 
 type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system';
-type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DEGRADED' | 'STALE';
+type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_country', group: 'Traffic (GA4)', icon: Globe },
@@ -83,25 +83,38 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, []);
 
   const checkSyncStatus = async () => {
-    const { data: logs } = await supabase
-      .from('audit_logs')
-      .select('action, timestamp')
-      .in('action', ['GA4_SYNC_SUCCESS', 'GA4_SYNC_ERROR'])
-      .order('timestamp', { ascending: false })
-      .limit(1);
-    
-    if (logs?.[0]) {
-      const syncDate = new Date(logs[0].timestamp);
-      setLastSyncTime(syncDate.toLocaleTimeString());
-      const diffMs = new Date().getTime() - syncDate.getTime();
-      const isStale = diffMs > 1000 * 60 * 60 * 24; 
+    try {
+      // 1. Check explicit sync logs
+      const { data: logs } = await supabase
+        .from('audit_logs')
+        .select('action, timestamp')
+        .in('action', ['GA4_SYNC_SUCCESS', 'GA4_SYNC_ERROR'])
+        .order('timestamp', { ascending: false })
+        .limit(1);
       
-      if (logs[0].action === 'GA4_SYNC_SUCCESS') {
-        setSyncState(isStale ? 'STALE' : 'SYNCED');
-      } else {
-        setSyncState('ERROR');
+      if (logs?.[0]) {
+        const syncDate = new Date(logs[0].timestamp);
+        setLastSyncTime(syncDate.toLocaleTimeString());
+        const diffMs = new Date().getTime() - syncDate.getTime();
+        const isStale = diffMs > 1000 * 60 * 60 * 24; 
+        
+        if (logs[0].action === 'GA4_SYNC_SUCCESS') {
+          setSyncState(isStale ? 'STALE' : 'SYNCED');
+          return;
+        } else if (logs[0].action === 'GA4_SYNC_ERROR') {
+          setSyncState('ERROR');
+          return;
+        }
       }
-    } else {
+
+      // 2. Deep Scan for resident data if no logs found
+      const { data: residentData } = await supabase
+        .from('analytics_daily')
+        .select('id')
+        .limit(1);
+      
+      setSyncState(residentData && residentData.length > 0 ? 'DATA_RESIDENT' : 'IDLE');
+    } catch (e) {
       setSyncState('IDLE');
     }
   };
@@ -118,7 +131,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       const [d, s, u] = await Promise.all([
         adminApi.getDailyAnalytics(30),
-        adminApi.getSecurityEvents(20),
+        adminApi.getSecurityEvents(30),
         adminApi.getUsers()
       ]);
 
@@ -163,16 +176,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET:");
       if (!secret) {
         setSyncState('IDLE');
+        await checkSyncStatus();
         return;
       }
       const response = await fetch('/api/sync-analytics', {
         headers: { 'Authorization': `Bearer ${secret}` }
       });
       if (response.ok) {
-        alert("SYNC_SIGNAL_CONFIRMED: Dashboard data restored.");
+        alert("SYNC_SIGNAL_CONFIRMED: Telemetry grid refreshed.");
         fetchData();
       } else {
-        throw new Error("GATEWAY_DENIED: Check administrative secrets.");
+        throw new Error("GATEWAY_DENIED: Handshake verification failed.");
       }
     } catch (e: any) {
       setActionError(e.message);
@@ -236,7 +250,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {onBack && (
             <button onClick={onBack} className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-lg active:scale-95"><ChevronLeft size={24} /></button>
           )}
-          <div className="space-y-2">
+          <div className="space-y-2 text-left">
             <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-4">
               Command <span style={{ color: themeColor }}>Bridge</span>
             </h1>
@@ -291,7 +305,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform"><stat.icon size={22} /></div>
                         <span className="text-[8px] font-black text-slate-700 border border-white/5 px-2 py-1 rounded-md uppercase tracking-widest">{stat.source}</span>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1 text-left">
                         <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2">{stat.label}</p>
                       </div>
@@ -305,13 +319,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic flex items-center gap-2">
                            <TrendingUp size={14} /> Traffic Reach (30D)
                         </h3>
-                        <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic ${
+                        <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic transition-all group/sync relative overflow-hidden ${
                           syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                          syncState === 'DATA_RESIDENT' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
                           syncState === 'ERROR' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' :
                           'bg-slate-900/60 border-white/5 text-slate-500'
                         }`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${syncState === 'SYNCED' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-slate-700 animate-pulse'}`} />
-                          GA4 SYNC: {syncState}
+                          <div className={`w-1.5 h-1.5 rounded-full ${syncState === 'SYNCED' || syncState === 'DATA_RESIDENT' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-slate-700 animate-pulse'}`} />
+                          GA4 SYNC: {syncState.replace('_', ' ')}
                           {lastSyncTime && <span className="opacity-40 lowercase font-bold tracking-normal">[{lastSyncTime}]</span>}
                         </div>
                      </div>
@@ -336,9 +351,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                               </AreaChart>
                            </ResponsiveContainer>
                         ) : (
-                           <div className="text-center space-y-4 opacity-30">
+                           <div className="text-center space-y-6 opacity-30">
                               <WifiOff size={48} className="mx-auto" />
-                              <p className="text-[10px] font-black uppercase tracking-[0.4em]">Telemetry bridge void identified.</p>
+                              <div className="space-y-1">
+                                 <p className="text-[10px] font-black uppercase tracking-[0.4em]">Telemetry bridge void identified.</p>
+                                 <p className="text-[8px] font-bold text-slate-500 uppercase">Initialize GA4 Sync from System Tab</p>
+                              </div>
                            </div>
                         )}
                      </GlassCard>
@@ -350,20 +368,24 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         </h3>
                      </div>
                      <div className="space-y-4">
-                        {signals.slice(0, 5).map((sig, i) => (
+                        {signals.length > 0 ? signals.slice(0, 5).map((sig, i) => (
                            <div key={i} className="p-5 bg-white/[0.02] border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                               <div className="flex items-center gap-4">
                                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
                                     {sig.event_type.includes('SUCCESS') ? <ShieldCheck size={20} /> : <ShieldX size={20} />}
                                  </div>
-                                 <div className="space-y-0.5 overflow-hidden">
+                                 <div className="space-y-0.5 overflow-hidden text-left">
                                     <p className="text-xs font-black text-white italic truncate w-36 uppercase tracking-tight">{sig.event_type}</p>
                                     <p className="text-[9px] font-bold text-slate-600 tracking-wider truncate w-36 uppercase">{new Date(sig.created_at).toLocaleTimeString()}</p>
                                  </div>
                               </div>
                               <ChevronRight size={14} className="text-slate-800" />
                            </div>
-                        ))}
+                        )) : (
+                          <div className="py-12 text-center opacity-20 border border-white/5 border-dashed rounded-[2.2rem]">
+                            <p className="text-[9px] font-black uppercase tracking-widest italic">No pulse detected</p>
+                          </div>
+                        )}
                      </div>
                   </div>
                </div>
@@ -373,7 +395,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {activeTab === 'registry' && (
              <m.div key="registry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-40">
                 <GlassCard className="p-10 md:p-14 rounded-[4.5rem] border-white/5 bg-slate-950/60 shadow-2xl relative overflow-visible">
-                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16 relative z-10">
+                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16 relative z-10 text-left">
                       <div className="space-y-2 text-left w-full">
                          <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span className="text-indigo-400">Registry</span></h2>
                          <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Manage laboratory subjects and node clearances.</p>
@@ -401,18 +423,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <tbody>
                             {users.filter(u => (u.email || '').toLowerCase().includes(registrySearch.toLowerCase())).map((user) => (
                                <tr key={user.id} className="group">
-                                  <td className="py-6 px-8 bg-white/[0.02] rounded-l-[2rem] border-y border-l border-white/5">
-                                     <div className="flex items-center gap-4">
+                                  <td className="py-6 px-8 bg-white/[0.02] rounded-l-[2rem] border-y border-l border-white/5 text-left">
+                                     <div className="flex items-center gap-4 text-left">
                                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${user.is_super_owner ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-slate-900 border-white/5 text-slate-500'}`}>
                                            {user.is_super_owner ? <Crown size={22} /> : <UserCircle size={22} />}
                                         </div>
-                                        <div className="space-y-0.5">
+                                        <div className="space-y-0.5 text-left">
                                            <p className="text-sm font-black italic text-white leading-none uppercase tracking-tight">{user.email || 'Anonymized'}</p>
                                            <p className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">{user.id.slice(0, 12)}</p>
                                         </div>
                                      </div>
                                   </td>
-                                  <td className="py-6 px-8 bg-white/[0.02] border-y border-white/5">
+                                  <td className="py-6 px-8 bg-white/[0.02] border-y border-white/5 text-left">
                                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${
                                         user.role === 'owner' ? 'bg-amber-600/10 border-amber-500/30 text-amber-500' : 
                                         user.role === 'admin' ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' : 
@@ -421,7 +443,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                         <Shield size={10} /> {user.role}
                                      </div>
                                   </td>
-                                  <td className="py-6 px-8 bg-white/[0.02] border-y border-white/5">
+                                  <td className="py-6 px-8 bg-white/[0.02] border-y border-white/5 text-left">
                                      {user.is_blocked ? (
                                         <span className="flex items-center gap-2 text-rose-500 text-[10px] font-black uppercase italic animate-pulse">
                                            <Lock size={12} /> Restricted
@@ -453,7 +475,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                                  className="absolute bottom-full right-0 mb-6 z-[200] min-w-[240px]"
                                                >
                                                  <div className="bg-slate-950/98 backdrop-blur-[100px] border border-white/15 p-4 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.9)] flex flex-col gap-2">
-                                                   <div className="px-4 py-2 border-b border-white/5 mb-2">
+                                                   <div className="px-4 py-2 border-b border-white/5 mb-2 text-left">
                                                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Assign clearance</p>
                                                    </div>
                                                    
@@ -493,7 +515,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <m.div key="explorer" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 flex flex-col h-[calc(100vh-280px)]">
                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 flex-1">
                   <div className="lg:col-span-1 space-y-6 overflow-y-auto no-scrollbar pr-2 flex flex-col">
-                     <div className="space-y-2 mb-4 px-4">
+                     <div className="space-y-2 mb-4 px-4 text-left">
                         <div className="flex items-center justify-between mb-4">
                            <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Public Schema</h4>
                            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -505,13 +527,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      </div>
                      <div className="space-y-2 flex-1 overflow-y-auto no-scrollbar pb-10">
                         {DATABASE_SCHEMA.filter(t => t.id.toLowerCase().includes(tableSearch.toLowerCase())).map((t) => (
-                           <button key={t.id} onClick={() => setSelectedTable(t.id)} className={`w-full p-6 rounded-[2.5rem] border flex items-center justify-between transition-all group ${selectedTable === t.id ? 'bg-indigo-600 border-indigo-400 shadow-xl' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}><div className="flex items-center gap-4 text-left"><div className={`p-2.5 rounded-xl ${selectedTable === t.id ? 'bg-white/20 text-white' : 'bg-slate-900 text-slate-600'}`}><t.icon size={18} /></div><div className="space-y-0.5"><p className={`text-[11px] font-black uppercase tracking-tight ${selectedTable === t.id ? 'text-white' : 'text-slate-400'}`}>{t.id.replace(/_/g, ' ')}</p><p className={`text-[8px] font-bold uppercase tracking-widest ${selectedTable === t.id ? 'text-white/60' : 'text-slate-700'}`}>{t.group}</p></div></div><span className={`text-[10px] font-mono font-black ${selectedTable === t.id ? 'text-white' : 'text-slate-800'}`}>{tableCounts[t.id] || 0}</span></button>
+                           <button key={t.id} onClick={() => setSelectedTable(t.id)} className={`w-full p-6 rounded-[2.5rem] border flex items-center justify-between transition-all group ${selectedTable === t.id ? 'bg-indigo-600 border-indigo-400 shadow-xl' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}><div className="flex items-center gap-4 text-left"><div className={`p-2.5 rounded-xl ${selectedTable === t.id ? 'bg-white/20 text-white' : 'bg-slate-900 text-slate-600'}`}><t.icon size={18} /></div><div className="space-y-0.5 text-left"><p className={`text-[11px] font-black uppercase tracking-tight ${selectedTable === t.id ? 'text-white' : 'text-slate-400'}`}>{t.id.replace(/_/g, ' ')}</p><p className={`text-[8px] font-bold uppercase tracking-widest ${selectedTable === t.id ? 'text-white/60' : 'text-slate-700'}`}>{t.group}</p></div></div><span className={`text-[10px] font-mono font-black ${selectedTable === t.id ? 'text-white' : 'text-slate-800'}`}>{tableCounts[t.id] || 0}</span></button>
                         ))}
                      </div>
                   </div>
 
                   <GlassCard className="lg:col-span-3 rounded-[4.5rem] border-white/5 flex flex-col relative overflow-hidden bg-slate-950/40">
-                     <div className="p-10 border-b border-white/5 flex justify-between items-center bg-black/20">
+                     <div className="p-10 border-b border-white/5 flex justify-between items-center bg-black/20 text-left">
                         <div className="flex items-center gap-5">
                            <div className="p-4 bg-indigo-500/10 rounded-[1.8rem] text-indigo-400"><Table size={24} /></div>
                            <div className="text-left">
@@ -528,14 +550,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         ) : tableData.length === 0 ? (
                            <div className="h-full flex flex-col items-center justify-center gap-6 py-32 opacity-20"><WifiOff size={48} /><p className="text-[11px] font-black uppercase tracking-widest italic">Null response from identifier.</p></div>
                         ) : (
-                           <div className="min-w-full overflow-x-auto">
+                           <div className="min-w-full overflow-x-auto text-left">
                               <table className="w-full text-left border-collapse">
                                  <thead>
                                     <tr className="border-b border-white/5">{Object.keys(tableData[0]).map((key) => (<th key={key} className="pb-6 px-6 text-[10px] font-black uppercase text-slate-700 tracking-widest italic whitespace-nowrap">{key}</th>))}</tr>
                                  </thead>
                                  <tbody>
                                     {tableData.map((row, i) => (
-                                       <tr key={i} className="group hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">{Object.values(row).map((val: any, j) => (<td key={j} className="py-6 px-6"><div className="max-w-[250px] truncate text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors">{val === null ? <span className="opacity-20 italic">null</span> : typeof val === 'object' ? JSON.stringify(val) : String(val)}</div></td>))}</tr>
+                                       <tr key={i} className="group hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">{Object.values(row).map((val: any, j) => (<td key={j} className="py-6 px-6"><div className="max-w-[250px] truncate text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors text-left">{val === null ? <span className="opacity-20 italic">null</span> : typeof val === 'object' ? JSON.stringify(val) : String(val)}</div></td>))}</tr>
                                     ))}
                                  </tbody>
                               </table>
@@ -550,12 +572,27 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {activeTab === 'signals' && (
             <m.div key="signals" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl border-white/5">
-                  <div className="flex items-center gap-6 mb-16 px-4">
+                  <div className="flex items-center gap-6 mb-16 px-4 text-left">
                      <div className="p-4 bg-indigo-600/10 rounded-[1.8rem] text-indigo-400"><Radio className="animate-pulse" size={32} /></div>
                      <div className="text-left space-y-1"><h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Security <span className="text-indigo-400">Pulse</span></h3><p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] italic">DB_TABLE: public.security_events</p></div>
                   </div>
                   <div className="space-y-4">
-                     {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} className="text-slate-800" /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void identified.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all"><div className="flex items-center gap-8 text-left"><div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' : sig.event_type.includes('FAIL') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>{sig.event_type.includes('FAIL') ? <ShieldX size={26} /> : <Zap size={26} />}</div><div className="space-y-1"><div className="flex items-center gap-3"><p className="text-xl font-black text-white italic tracking-tight uppercase leading-none">{sig.event_type}</p></div><p className="text-[11px] font-bold text-slate-500 tracking-wider italic">{sig.user_email || 'ANONYMOUS_PULSE'} • {sig.details}</p></div></div><div className="text-right"><div className="flex flex-col items-end gap-1.5 text-slate-700 group-hover:text-slate-400 transition-colors"><div className="flex items-center gap-2"><Clock size={12} /><p className="text-[10px] font-mono font-black">{new Date(sig.created_at).toLocaleTimeString()}</p></div></div></div></div>))}
+                     {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} className="text-slate-800" /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void identified.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+                        <div className="flex items-center gap-8 text-left">
+                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' : sig.event_type.includes('FAIL') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>
+                              {sig.event_type.includes('FAIL') ? <ShieldX size={26} /> : <Zap size={26} />}
+                           </div>
+                           <div className="space-y-1 text-left">
+                              <div className="flex items-center gap-3"><p className="text-xl font-black text-white italic tracking-tight uppercase leading-none">{sig.event_type}</p></div>
+                              <p className="text-[11px] font-bold text-slate-500 tracking-wider italic text-left">{sig.user_email || 'ANONYMOUS_PULSE'} • {sig.details}</p>
+                           </div>
+                        </div>
+                        <div className="text-right">
+                           <div className="flex flex-col items-end gap-1.5 text-slate-700 group-hover:text-slate-400 transition-colors">
+                              <div className="flex items-center gap-2"><Clock size={12} /><p className="text-[10px] font-mono font-black">{new Date(sig.created_at).toLocaleTimeString()}</p></div>
+                           </div>
+                        </div>
+                     </div>))}
                   </div>
                </GlassCard>
             </m.div>
@@ -563,22 +600,22 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
           {activeTab === 'system' && (
             <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-10">
                      <div className="relative"><div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400"><RefreshCw size={80} className={syncState === 'SYNCING' ? 'animate-spin' : ''} /></div></div>
-                     <div className="space-y-4"><h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual Handshake</h4><p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize local registry state with cloud-native GA4 telemetry and security logs.</p></div>
-                     <button onClick={handleManualSync} className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic">Execute GA4 Re-Sync</button>
+                     <div className="space-y-4"><h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual GA4 Re-Sync</h4><p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize dashboard metrics with cloud-native GA4 telemetry. This protocol updates daily traffic records.</p></div>
+                     <button onClick={handleManualSync} className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic">Execute Synchronization</button>
                   </GlassCard>
-                  <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col gap-10">
-                     <div className="flex items-center gap-5 border-b border-white/5 pb-10"><div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div><div className="text-left space-y-1"><h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3><p className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest italic">Infrastructure Diagnostics</p></div></div>
+                  <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col gap-10 text-left">
+                     <div className="flex items-center gap-5 border-b border-white/5 pb-10 text-left"><div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div><div className="text-left space-y-1"><h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3><p className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest italic">Infrastructure Diagnostics</p></div></div>
                      <div className="space-y-6">
                         {[
-                           { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState, color: syncState === 'SYNCED' ? 'text-emerald-400' : syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500', icon: Globe },
+                           { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState === 'DATA_RESIDENT' ? 'Data Present' : syncState, color: (syncState === 'SYNCED' || syncState === 'DATA_RESIDENT') ? 'text-emerald-400' : syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500', icon: Globe },
                            { label: 'Security Handshake Hub', status: 'Active Bridge', color: 'text-rose-400', icon: Lock },
                            { label: 'Registry Synchronization', status: 'Mesh established', color: 'text-amber-400', icon: Database },
                            { label: 'Laboratory Signal Logs', status: 'Active (Direct)', color: 'text-cyan-400', icon: MessageSquare }
                         ].map((sys, idx) => (
-                           <div key={idx} className="flex justify-between items-center p-7 bg-black/40 rounded-[2rem] border border-white/5 group hover:border-white/10 transition-all text-left"><div className="flex items-center gap-5"><sys.icon size={18} className="text-slate-600 group-hover:text-white" /><span className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors">{sys.label}</span></div><span className={`font-black text-[11px] italic uppercase tracking-tighter ${sys.color}`}>{sys.status}</span></div>
+                           <div key={idx} className="flex justify-between items-center p-7 bg-black/40 rounded-[2rem] border border-white/5 group hover:border-white/10 transition-all text-left"><div className="flex items-center gap-5"><sys.icon size={18} className="text-slate-600 group-hover:text-white" /><span className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors text-left">{sys.label}</span></div><span className={`font-black text-[11px] italic uppercase tracking-tighter ${sys.color}`}>{sys.status}</span></div>
                         ))}
                      </div>
                   </GlassCard>

@@ -38,16 +38,8 @@ export const Settings: React.FC<SettingsProps> = ({
 
   useEffect(() => {
     const checkAiStatus = async () => {
-      if ((window as any).aistudio?.hasSelectedApiKey) {
-        try {
-          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
-          setIsAiActive(hasKey || !!process.env.API_KEY || !!localStorage.getItem('custom_gemini_key'));
-        } catch (e) {
-          setIsAiActive(!!process.env.API_KEY || !!localStorage.getItem('custom_gemini_key'));
-        }
-      } else {
-        setIsAiActive(!!process.env.API_KEY || !!localStorage.getItem('custom_gemini_key'));
-      }
+      const active = !!localStorage.getItem('custom_gemini_key') || !!process.env.API_KEY;
+      setIsAiActive(active);
     };
     checkAiStatus();
   }, []);
@@ -56,10 +48,11 @@ export const Settings: React.FC<SettingsProps> = ({
     if (customKey.trim()) {
       localStorage.setItem('custom_gemini_key', customKey.trim());
       setIsAiActive(true);
-      alert("Neural Bridge key committed.");
+      alert("Neural bridge key committed to local node.");
     } else {
       localStorage.removeItem('custom_gemini_key');
-      alert("Manual override key removed.");
+      setIsAiActive(!!process.env.API_KEY);
+      alert("Custom key purged. Using system defaults.");
     }
   };
 
@@ -71,6 +64,7 @@ export const Settings: React.FC<SettingsProps> = ({
       const { error } = await authApi.resetPassword(user.email);
       if (error) throw error;
       setResetStatus('success');
+      notifyAdmin(`🔐 SECURITY: Password reset handshake initiated for ${user.email}`);
     } catch (e) {
       setResetStatus('error');
     }
@@ -82,7 +76,7 @@ export const Settings: React.FC<SettingsProps> = ({
     setIsDisconnecting(true);
     try {
       await authApi.signOut();
-      notifyAdmin(`🚪 DISCONNECT: Manual session termination.`);
+      notifyAdmin(`🚪 DISCONNECT: Subject node manual termination.`);
       safeReload();
     } catch (e) {
       window.location.href = '/';
@@ -93,7 +87,7 @@ export const Settings: React.FC<SettingsProps> = ({
     setTestStatus('sending');
     const nodeIdentity = getSafeHostname();
     try {
-      const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nStatus: Operational`);
+      const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nStatus: Operational\nNode Ver: 5.8.2`);
       setTestStatus(success ? 'success' : 'error');
     } catch (e) {
       setTestStatus('error');
@@ -154,7 +148,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
-        {/* API Selection Section */}
+        {/* API Bridge Section */}
         <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02]">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -178,15 +172,15 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
             <p className="text-[9px] text-slate-500 italic px-2 flex items-start gap-2">
               <Info size={12} className="shrink-0" />
-              Local keys prioritize processing for this node and are stored exclusively in your browser cache.
+              Manual override keys are stored locally and will be purged upon registry disconnect.
             </p>
           </div>
         </GlassCard>
 
-        {/* Reset Password Section */}
+        {/* Reset Access Key Section */}
         <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
            <div className="flex items-center justify-between">
-              <div className="space-y-1">
+              <div className="space-y-1 text-left">
                  <div className="flex items-center gap-3">
                     <Lock size={18} className="text-rose-500" />
                     <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.resetPassword}</h3>
@@ -218,9 +212,9 @@ export const Settings: React.FC<SettingsProps> = ({
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <Send size={18} className="text-emerald-500" />
-              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.diagTelegram}</h3>
+              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms Diagnostic</h3>
             </div>
-            <p className="text-[10px] text-slate-500 italic leading-relaxed">{t.diagTelegramSub}</p>
+            <p className="text-[10px] text-slate-500 italic leading-relaxed text-left">Verify the secure uplink between this node and the administrative Telegram gateway.</p>
             <button 
               onClick={handleTestTelegram}
               disabled={testStatus === 'sending'}
@@ -239,7 +233,7 @@ export const Settings: React.FC<SettingsProps> = ({
         <GlassCard className="p-10 rounded-[4rem] border-white/10 bg-white/[0.01]">
           <div className="space-y-12">
             <div className="space-y-4">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2 block text-left">{t.language}</span>
                <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
                   {['en', 'zh'].map((l) => (
                     <button key={l} onClick={() => onLanguageChange(l as Language)} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{l === 'en' ? 'ENGLISH' : '中文简体'}</button>
@@ -263,7 +257,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
             <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={(e: React.MouseEvent) => e.stopPropagation()} className="w-full max-w-2xl text-center space-y-10">
               <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 rounded-full bg-[#f43f5e] flex items-center justify-center text-white shadow-[0_0_50px_rgba(244,63,94,0.5)] mx-auto"><Heart size={48} fill="white" strokeWidth={0} /></m.div>
-              <div className="space-y-4"><h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-none">CONTRIBUTION<br />ACKNOWLEDGED</h2><p className="text-[13px] text-slate-400 italic max-w-md mx-auto leading-relaxed">Your support fuels lab processing and research development.</p></div>
+              <div className="space-y-4 text-center"><h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-none">CONTRIBUTION<br />ACKNOWLEDGED</h2><p className="text-[13px] text-slate-400 italic max-w-md mx-auto leading-relaxed">Your support fuels lab processing and research development.</p></div>
               <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
                 <div className="md:col-span-2 p-8 bg-slate-900/80 border border-white/5 rounded-[3rem] flex flex-col items-center gap-6">
                    <div className="bg-white p-5 rounded-[2.5rem] shadow-sm"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=020617&bgcolor=ffffff`} alt="QR" className="w-36 h-36 md:w-44 md:h-44" /></div>
@@ -272,7 +266,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div className="md:col-span-3 space-y-4 text-left">
                   {[{ id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' }, { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' }].map((item) => (
                     <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
-                      <div className="space-y-1">
+                      <div className="space-y-1 text-left">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
                         <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>
                       </div>

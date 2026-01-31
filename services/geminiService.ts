@@ -9,16 +9,19 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
+/**
+ * IDENTITY_ACCESS_PROTOCOL
+ * Prioritizes local node overrides for processing sovereignty.
+ */
 const getApiKey = () => {
   return localStorage.getItem('custom_gemini_key') || process.env.API_KEY || "";
 };
 
 const handleGeminiError = (err: any) => {
   const errMsg = err.message || "";
-  console.error("Gemini API Error Context:", err);
+  console.error("Neural processing exception:", err);
   
   if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID")) {
-    console.warn("[Neural Bridge] Identity reset required.");
     throw new Error("API_KEY_REQUIRED");
   }
   
@@ -26,7 +29,7 @@ const handleGeminiError = (err: any) => {
   throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
-// Model Constants
+// Model Architecture Constants
 const MODEL_FLASH = 'gemini-3-flash-preview'; 
 const MODEL_PRO = 'gemini-3-pro-preview'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
@@ -64,7 +67,7 @@ export const chatWithCoach = async (
 ) => {
   const bio = contextData ? `\nTELEMETRY_CONTEXT: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, RHR: ${contextData.heartRate.resting}bpm.` : "";
   const systemInstruction = `You are the Somno Chief Research Officer (CRO). Data-driven and professional. Bio: ${bio}
-    Analyze facial scans for fatigue indicators and correlate with sleep telemetry.`;
+    Analyze biometric data and provide strategic recovery protocols.`;
 
   try {
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
@@ -131,7 +134,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
-      contents: `Synthesize a weekly biometric trend report: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, English only.`,
+      contents: `Synthesize a weekly biometric trend report: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, Language: ${lang}.`,
       config: {
         thinkingConfig: { thinkingBudget: 8000 }
       }
@@ -148,7 +151,7 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
     const ai = new GoogleGenAI({ apiKey: getApiKey() });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
-      contents: [{ parts: [{ text: `Say cheerfully: Guided meditation for recovery score ${data.score}. Relax your neural pathways.` }] }],
+      contents: [{ parts: [{ text: `Say cheerfully: Calibration complete for recovery score ${data.score}. Commencing neural relaxation sequence.` }] }],
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
@@ -156,7 +159,7 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   } catch (err) { 
-    console.warn("Lullaby generation failed:", err);
+    console.warn("Lullaby logic failure:", err);
     return undefined; 
   }
 };
