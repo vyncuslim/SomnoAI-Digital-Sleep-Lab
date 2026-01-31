@@ -58,8 +58,16 @@ export interface SecurityEvent {
   event_type: string;
   event_reason?: string;
   notified?: boolean;
-  created_at?: string;
-  timestamp?: string;
+  created_at: string; // Standardized
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  details: string;
+  level: string;
+  user_id?: string;
+  created_at: string; // Standardized
 }
 
 export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'not-found';

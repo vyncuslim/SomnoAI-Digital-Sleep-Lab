@@ -14,7 +14,8 @@ import { logAuditLog } from './services/supabaseService.ts';
 const isNoise = (msg: string) => {
   const noise = [
     'ERR_BLOCKED_BY_CLIENT', 'Extension', 'Salesmartly', 
-    'Google is not defined', 'Permissions-Policy', 'browsing-topics'
+    'Google is not defined', 'Permissions-Policy', 'browsing-topics',
+    'reading \'query\'', 'content.js' // 过滤扩展插件的 query 错误
   ];
   return noise.some(n => msg.includes(n));
 };

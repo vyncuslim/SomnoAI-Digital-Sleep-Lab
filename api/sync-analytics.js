@@ -1,8 +1,9 @@
+
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNOAI ANALYTICS SYNC ENGINE v2.4
+ * SOMNOAI ANALYTICS SYNC ENGINE v2.5
  * Triggered by Vercel Cron
  * Integrated with Telegram Alerts & Audit Logs
  */
@@ -35,13 +36,13 @@ const reportSyncFailure = async (errorMsg) => {
     });
   } catch (e) { console.error("Alert notification failed"); }
 
-  // 2. Commit to Audit Logs
+  // 2. Commit to Audit Logs - Standardized field: created_at
   try {
     await supabase.from("audit_logs").insert([{
       action: "GA4_SYNC_ERROR",
       details: errorMsg,
       level: "CRITICAL",
-      timestamp: new Date().toISOString()
+      created_at: new Date().toISOString()
     }]);
   } catch (e) { console.error("Audit logging failed"); }
 };
@@ -49,6 +50,7 @@ const reportSyncFailure = async (errorMsg) => {
 export default async function handler(req, res) {
   // 1. SECURITY HANDSHAKE
   const authHeader = req.headers.authorization;
+  // Use the secret provided: 9f3ks8dk29dk3k2kd93kdkf83kd9dk2
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
     console.error("UNAUTHORIZED_SYNC_ATTEMPT");
     return res.status(401).json({ error: "Unauthorized Access Detected" });
@@ -113,12 +115,12 @@ export default async function handler(req, res) {
       if (error) throw error;
     }
 
-    // Record success audit
+    // Record success audit - Standardized field: created_at
     await supabase.from("audit_logs").insert([{
       action: "GA4_SYNC_SUCCESS",
       details: `Telemetry captured for ${yesterday}`,
       level: "INFO",
-      timestamp: new Date().toISOString()
+      created_at: new Date().toISOString()
     }]);
 
     return res.status(200).json({ success: true, status: "SYNC_COMPLETE" });
