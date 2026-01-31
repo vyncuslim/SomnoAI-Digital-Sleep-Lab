@@ -1,16 +1,16 @@
 
 -- ==========================================
--- AUDIT & LOGGING INFRASTRUCTURE (V7.0)
+-- AUDIT & LOGGING INFRASTRUCTURE (V8.0)
 -- ==========================================
 
--- 1. 审计日志表
+-- 1. 审计日志表 (标准化命名以解决查询错误)
 CREATE TABLE IF NOT EXISTS public.audit_logs (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     action text NOT NULL,
     details text,
     level text DEFAULT 'INFO',
     user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
-    timestamp timestamptz DEFAULT now()
+    created_at timestamptz DEFAULT now()
 );
 
 -- 2. 安全事件表
@@ -27,16 +27,18 @@ ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.security_events ENABLE ROW LEVEL SECURITY;
 
 -- 权限策略：仅管理员可见
+DROP POLICY IF EXISTS "Admins can view audit logs" ON public.audit_logs;
 CREATE POLICY "Admins can view audit logs" ON public.audit_logs 
 FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
+DROP POLICY IF EXISTS "Admins can view security logs" ON public.security_events;
 CREATE POLICY "Admins can view security logs" ON public.security_events 
 FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
 -- 3. 安全定义函数 (SECURITY DEFINER)
--- 允许前端在没有完整 Auth Session 的情况下（如登录中途）写入日志
+-- 修正参数命名，确保 RPC 调用的原子性
 
 CREATE OR REPLACE FUNCTION public.log_security_event(p_email text, p_event_type text, p_details text)
 RETURNS void AS $$

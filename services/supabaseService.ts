@@ -16,9 +16,9 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
   }
 
   try {
-    // 使用 getSession 替代 getUser 以获得更快的响应，减少登录时的阻塞
     const { data: { session } } = await (supabase.auth as any).getSession();
     
+    // 严格对应 SQL 函数中的参数定义
     await supabase.rpc('log_audit_entry', {
       p_action: action,
       p_details: details,
@@ -62,8 +62,6 @@ export const authApi = {
   },
   signIn: async (email: string, password: string, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
-    
-    // 阶段 1: 发起尝试
     await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Sequence initiated via Password');
     
     const res = await (supabase.auth as any).signInWithPassword({ 
@@ -73,11 +71,9 @@ export const authApi = {
     });
     
     if (res.error) {
-      // 阶段 2A: 登录失败记录
       await logSecurityEvent(targetEmail, 'LOGIN_FAIL', `Error: ${res.error.message}`);
       await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
     } else {
-      // 阶段 2B: 登录成功记录
       await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session handshake complete');
       await logAuditLog('USER_LOGIN', `Identity confirmed: ${targetEmail}`);
     }
@@ -167,21 +163,26 @@ export const adminApi = {
     return data || [];
   },
   getTableData: async (tableName: string, limit = 100) => {
-    const { data, error } = await supabase
-      .from(tableName)
-      .select('*')
-      .order('created_at', { ascending: false, nullsFirst: false })
-      .limit(limit);
-    if (error) {
-      const { data: fallbackData } = await supabase.from(tableName).select('*').limit(limit);
-      return fallbackData || [];
+    try {
+      const { data, error } = await supabase
+        .from(tableName)
+        .select('*')
+        .order('created_at', { ascending: false, nullsFirst: false })
+        .limit(limit);
+      if (error) throw error;
+      return data || [];
+    } catch {
+      // 容错处理：如果 created_at 不存在则尝试无序查询
+      const { data } = await supabase.from(tableName).select('*').limit(limit);
+      return data || [];
     }
-    return data || [];
   },
   getTableCount: async (tableName: string) => {
-    const { count, error } = await supabase.from(tableName).select('*', { count: 'exact', head: true });
-    if (error) throw error;
-    return count || 0;
+    try {
+      const { count, error } = await supabase.from(tableName).select('*', { count: 'exact', head: true });
+      if (error) return 0;
+      return count || 0;
+    } catch { return 0; }
   },
   getSecurityEvents: async (limit = 50) => {
     const { data } = await supabase

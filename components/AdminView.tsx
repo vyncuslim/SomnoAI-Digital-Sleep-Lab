@@ -81,15 +81,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const checkSyncStatus = async () => {
     try {
-      const { data: logs } = await supabase
+      const { data: logs, error } = await supabase
         .from('audit_logs')
-        .select('action, timestamp')
+        .select('action, created_at')
         .in('action', ['GA4_SYNC_SUCCESS', 'GA4_SYNC_ERROR'])
-        .order('timestamp', { ascending: false })
+        .order('created_at', { ascending: false })
         .limit(1);
       
+      if (error) throw error;
+
       if (logs?.[0]) {
-        const syncDate = new Date(logs[0].timestamp);
+        const syncDate = new Date(logs[0].created_at);
         setLastSyncTime(syncDate.toLocaleTimeString());
         const diffMs = new Date().getTime() - syncDate.getTime();
         const isStale = diffMs > 1000 * 60 * 60 * 24; 
@@ -106,6 +108,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const count = await adminApi.getTableCount('analytics_daily');
       setSyncState(count > 0 ? 'DATA_RESIDENT' : 'IDLE');
     } catch (e) {
+      console.debug("Sync status check bypassed.");
       setSyncState('IDLE');
     }
   };
@@ -132,7 +135,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       
       const counts: Record<string, number> = {};
       await Promise.all(DATABASE_SCHEMA.map(async (t) => {
-        try { counts[t.id] = await adminApi.getTableCount(t.id); } catch { counts[t.id] = 0; }
+        counts[t.id] = await adminApi.getTableCount(t.id);
       }));
       setTableCounts(counts);
       await checkSyncStatus();
@@ -145,7 +148,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => { fetchData(); }, []);
   
-  // 修正实时订阅参数：必须包含 schema
   useEffect(() => {
     const channel = supabase
       .channel('security_pulse')
@@ -153,13 +155,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setSignals(prev => [payload.new as any, ...prev].slice(0, 40));
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_logs' }, () => {
-        // 当审计日志更新时，刷新计数
-        DATABASE_SCHEMA.forEach(async (t) => {
-          if (t.id === 'audit_logs') {
-            const count = await adminApi.getTableCount('audit_logs');
-            setTableCounts(prev => ({ ...prev, audit_logs: count }));
-          }
-        });
+        fetchData(); // 审计日志插入时刷新整体计数
       })
       .subscribe();
 
@@ -185,8 +181,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleManualSync = async () => {
     setSyncState('SYNCING');
     try {
-      // 提示用户使用他们提供的密钥
-      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET (Hint: 9f3ks...):");
+      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET (Server side CRON_SECRET):\nHint: 9f3ks8dk...", "9f3ks8dk29dk3k2kd93kdkf83kd9dk2");
       if (!secret) {
         setSyncState('IDLE');
         await checkSyncStatus();
