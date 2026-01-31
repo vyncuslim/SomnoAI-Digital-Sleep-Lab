@@ -32,7 +32,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const [showPassword, setShowPassword] = useState(false);
   
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileStatus, setTurnstileStatus] = useState<'pending' | 'ready' | 'error'>('pending');
+  const [turnstileStatus, setTurnstileStatus] = useState<'pending' | 'ready' | 'error' | 'unavailable'>('pending');
   
   const turnstileRef = useRef<HTMLDivElement>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -46,7 +46,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
   useEffect(() => {
     const initTurnstile = () => {
-      if (step === 'request' && turnstileRef.current && (window as any).turnstile) {
+      if (step === 'request' && turnstileRef.current) {
+        if (!(window as any).turnstile) {
+          // 如果 2秒后脚本还没加载，标记为不可用以解锁按钮
+          setTurnstileStatus('unavailable');
+          return;
+        }
+        
         try {
           (window as any).turnstile.render(turnstileRef.current, {
             sitekey: '0x4AAAAAACNi1FM3bbfW_VsI',
@@ -64,10 +70,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       }
     };
 
-    const timer = setTimeout(initTurnstile, 600);
-    return () => {
-      clearTimeout(timer);
-    };
+    const timer = setTimeout(initTurnstile, 800);
+    return () => clearTimeout(timer);
   }, [step, activeTab]);
 
   const handleAuthAction = async (e: React.FormEvent) => {
@@ -115,6 +119,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       setIsGoogleLoading(false);
     }
   };
+
+  // 核心改动：如果验证码不可用或出错，不再禁用按钮，而是让用户尝试提交
+  const isSubmitDisabled = isProcessing || (turnstileStatus === 'pending' && !turnstileToken);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#020617] font-sans relative overflow-hidden">
@@ -166,17 +173,28 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                 <div ref={turnstileRef} className="cf-turnstile"></div>
                 {turnstileStatus === 'error' && (
                   <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest italic">
-                    Verification Error. Please Refresh.
+                    Verification Error. Try bypass or refresh.
+                  </p>
+                )}
+                {turnstileStatus === 'unavailable' && (
+                  <p className="text-[9px] font-black text-amber-500 uppercase tracking-widest italic">
+                    Security Shield Offline. Manual entry allowed.
                   </p>
                 )}
               </div>
 
               <button 
-                type="submit" disabled={isProcessing || (turnstileStatus === 'pending' && !turnstileToken)}
+                type="submit" disabled={isSubmitDisabled}
                 className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 transition-all hover:bg-indigo-500 disabled:opacity-40 active:scale-95"
               >
                 {isProcessing ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} fill="currentColor" />}
-                <span>{isProcessing ? "SYNCHRONIZING" : (turnstileToken || turnstileStatus === 'ready' || turnstileStatus === 'error' ? "ESTABLISH LINK" : "PENDING VERIFICATION")}</span>
+                <span>
+                  {isProcessing 
+                    ? "SYNCHRONIZING" 
+                    : (turnstileToken || turnstileStatus === 'ready' || turnstileStatus === 'error' || turnstileStatus === 'unavailable' 
+                        ? "ESTABLISH LINK" 
+                        : "PENDING VERIFICATION")}
+                </span>
               </button>
             </form>
 
