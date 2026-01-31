@@ -33,7 +33,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [turnstileStatus, setTurnstileStatus] = useState<'pending' | 'ready' | 'error'>('pending');
-  const [showBypass, setShowBypass] = useState(false);
   
   const turnstileRef = useRef<HTMLDivElement>(null);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -46,10 +45,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   }, [initialTab]);
 
   useEffect(() => {
-    let bypassTimer = setTimeout(() => {
-      if (turnstileStatus === 'pending') setShowBypass(true);
-    }, 5000);
-
     const initTurnstile = () => {
       if (step === 'request' && turnstileRef.current && (window as any).turnstile) {
         try {
@@ -72,7 +67,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     const timer = setTimeout(initTurnstile, 600);
     return () => {
       clearTimeout(timer);
-      clearTimeout(bypassTimer);
     };
   }, [step, activeTab]);
 
@@ -170,14 +164,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
               <div className="flex flex-col items-center min-h-[65px] gap-2">
                 <div ref={turnstileRef} className="cf-turnstile"></div>
-                {(showBypass || turnstileStatus === 'error') && (
-                  <button 
-                    type="button" 
-                    onClick={() => { setTurnstileStatus('ready'); setShowBypass(false); }}
-                    className="text-[9px] font-black text-indigo-400 uppercase tracking-widest hover:text-white transition-colors"
-                  >
-                    Handshake Latency Detected? Click to Force Protocol
-                  </button>
+                {turnstileStatus === 'error' && (
+                  <p className="text-[9px] font-black text-rose-500 uppercase tracking-widest italic">
+                    Verification Error. Please Refresh.
+                  </p>
                 )}
               </div>
 
@@ -190,7 +180,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
               </button>
             </form>
 
-            {/* 底部导航链接 - 对应用户要求的 "/login" "/signup" 跳转逻辑 */}
             <div className="flex flex-col items-center gap-4 pt-4">
               {activeTab === 'login' ? (
                 <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
