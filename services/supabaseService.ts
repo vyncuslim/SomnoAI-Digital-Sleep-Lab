@@ -17,7 +17,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
-    // 强制使用 p_ 前缀匹配数据库函数定义
+    // 强制使用 p_ 前缀匹配数据库函数定义，增加捕获处理
     await supabase.rpc('log_audit_entry', {
       p_action: action,
       p_details: details,
