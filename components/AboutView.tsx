@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   ArrowLeft, BrainCircuit, Target, Cpu, FlaskConical, Binary, 

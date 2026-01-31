@@ -1,9 +1,8 @@
-
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNOAI ANALYTICS SYNC ENGINE v2.3
+ * SOMNOAI ANALYTICS SYNC ENGINE v2.4
  * Triggered by Vercel Cron
  * Integrated with Telegram Alerts & Audit Logs
  */
@@ -22,9 +21,9 @@ const supabase = createClient(
 
 // 辅助函数：同步预警与日志
 const reportSyncFailure = async (errorMsg) => {
-  const message = `🚨 GA4_SYNC_CRITICAL_FAILURE\nPROPERTY: ${propertyId}\nERROR: ${errorMsg}\nTIME: ${new Date().toISOString()}`;
+  const message = `🚨 GA4_SYNC_CRITICAL_FAILURE\nPROPERTY: ${propertyId}\nERROR: ${errorMsg}\nTIMESTAMP: ${new Date().toISOString()}\nNODE: Vercel_API_Worker`;
   
-  // 1. 尝试通知 Telegram (调用 Supabase Edge Function 或内部逻辑)
+  // 1. 尝试通知 Telegram
   try {
     await fetch(`${process.env.SUPABASE_URL}/functions/v1/notify_telegram`, {
       method: 'POST',
