@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { 
   Users, Database, ShieldAlert, Search, RefreshCw, 
@@ -8,7 +9,7 @@ import {
   CheckCircle, UserCircle, CheckCircle2, WifiOff, Info, Key, AlertCircle, Clock, TrendingUp, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint, PieChart,
   Lock, Table, List, Filter, Database as DbIcon, Code2, ExternalLink,
-  ShieldQuestion, Unlock, User
+  ShieldQuestion, Unlock, User, AlertTriangle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -43,6 +44,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('IDLE');
+  const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   
   // Registry State
   const [users, setUsers] = useState<any[]>([]);
@@ -70,7 +72,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     return role === 'owner' || currentAdmin?.is_super_owner === true;
   }, [currentAdmin]);
 
-  // Click outside listener for role selector
+  // Click outside to close role selector
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
@@ -90,10 +92,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       .limit(1);
     
     if (data?.[0]) {
-      const diffMs = new Date().getTime() - new Date(data[0].timestamp).getTime();
-      const isStale = diffMs > 1000 * 60 * 60 * 25;
-      if (data[0].action === 'GA4_SYNC_SUCCESS') setSyncState(isStale ? 'IDLE' : 'SYNCED');
-      else setSyncState('ERROR');
+      const syncDate = new Date(data[0].timestamp);
+      setLastSyncTime(syncDate.toLocaleTimeString());
+      const diffMs = new Date().getTime() - syncDate.getTime();
+      const isStale = diffMs > 1000 * 60 * 60 * 24; 
+      
+      if (data[0].action === 'GA4_SYNC_SUCCESS') {
+        setSyncState(isStale ? 'IDLE' : 'SYNCED');
+      } else {
+        setSyncState('ERROR');
+      }
+    } else {
+      setSyncState('IDLE');
     }
   };
 
@@ -151,7 +161,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleToggleBlock = async (user: any) => {
     if (user.is_super_owner) return;
-    if (!confirm(`MOD_PROTOCOL: Confirm restrictive override for node ${user.email}?`)) return;
+    if (!confirm(`CONFIRM_SECURITY_OVERRIDE: Restrict access for ${user.email}?`)) return;
     
     setProcessingUserId(user.id);
     try {
@@ -225,7 +235,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </nav>
       </header>
 
-      {loading && syncState === 'SYNCING' ? (
+      {loading && syncState === 'SYNCING' && dailyStats.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-48 gap-8">
           <div className="relative">
              <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
@@ -263,18 +273,29 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic flex items-center gap-2">
                            <TrendingUp size={14} /> Traffic Reach (30D)
                         </h3>
-                        <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic transition-all ${
-                          syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
+                        <div className={`flex items-center gap-4 px-5 py-2.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic transition-all group/sync relative overflow-hidden ${
+                          syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]' :
                           syncState === 'SYNCING' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
-                          syncState === 'ERROR' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500' :
-                          'bg-white/5 border-white/5 text-slate-600'
+                          syncState === 'ERROR' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' :
+                          'bg-slate-900/60 border-white/5 text-slate-500'
                         }`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${
-                            syncState === 'SYNCED' ? 'bg-emerald-500' :
-                            syncState === 'SYNCING' ? 'bg-indigo-500 animate-spin' :
-                            syncState === 'ERROR' ? 'bg-rose-500' : 'bg-slate-700'
-                          }`} />
-                          GA4 SYNC: {syncState}
+                          <div className="relative flex items-center justify-center">
+                            {syncState === 'SYNCING' ? (
+                              <RefreshCw size={12} className="animate-spin" />
+                            ) : syncState === 'ERROR' ? (
+                              <AlertTriangle size={12} className="text-rose-500" />
+                            ) : (
+                              <div className={`w-1.5 h-1.5 rounded-full ${
+                                syncState === 'SYNCED' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-slate-700 animate-pulse'
+                              }`} />
+                            )}
+                          </div>
+                          <div className="flex flex-col">
+                             <span>GA4 SYNC: {syncState}</span>
+                             {lastSyncTime && syncState !== 'SYNCING' && (
+                               <span className="text-[7px] opacity-40 lowercase font-bold tracking-normal">Last: {lastSyncTime}</span>
+                             )}
+                          </div>
                         </div>
                      </div>
                      <GlassCard className="p-10 rounded-[4rem] border-white/5 h-[400px]">
@@ -389,14 +410,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                   </td>
                                   <td className="py-6 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right relative">
                                      <div className="flex justify-end gap-2">
-                                        {/* Neural Key: Role Selector Hub */}
+                                        {/* Neural Key: Protocols Hub */}
                                         {isOwner && !user.is_super_owner && (
                                            <div className="relative" ref={popoverRef}>
                                               <button 
                                                  onClick={() => setRoleSelectUserId(roleSelectUserId === user.id ? null : user.id)}
                                                  disabled={processingUserId === user.id}
                                                  className={`p-3 rounded-xl transition-all border border-white/5 shadow-lg ${roleSelectUserId === user.id ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-indigo-400'}`}
-                                                 title="Neural Hub: Toggle Protocols"
+                                                 title="Access Hub: Set Node Clearance"
                                               >
                                                  {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
                                               </button>
@@ -404,47 +425,47 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                               <AnimatePresence>
                                                 {roleSelectUserId === user.id && (
                                                   <m.div 
-                                                    initial={{ opacity: 0, scale: 0.9, y: 10, x: 20 }}
+                                                    initial={{ opacity: 0, scale: 0.95, y: 10, x: 20 }}
                                                     animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
-                                                    exit={{ opacity: 0, scale: 0.9, y: 10 }}
-                                                    className="absolute bottom-full right-0 mb-6 z-[200] min-w-[220px]"
+                                                    exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                                                    className="absolute bottom-full right-0 mb-6 z-[200] min-w-[240px]"
                                                   >
-                                                    <div className="bg-slate-950/95 backdrop-blur-3xl border border-white/10 p-3 rounded-[2.5rem] shadow-[0_30px_60px_rgba(0,0,0,0.8)] flex flex-col gap-1.5">
-                                                      <div className="px-4 py-3 border-b border-white/5 mb-1">
-                                                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Select Clearance</p>
+                                                    <div className="bg-slate-950/98 backdrop-blur-[100px] border border-white/15 p-4 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.9)] flex flex-col gap-2">
+                                                      <div className="px-4 py-2 border-b border-white/5 mb-2">
+                                                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Assign clearance</p>
                                                       </div>
                                                       
                                                       <button 
                                                         onClick={() => handleSetRole(user, 'owner')}
-                                                        className="flex items-center justify-between w-full p-4 rounded-2xl hover:bg-amber-500/10 text-slate-300 hover:text-amber-500 transition-all group/opt border border-transparent hover:border-amber-500/20"
+                                                        className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'hover:bg-amber-500/10 border-transparent text-slate-400 hover:text-amber-500'}`}
                                                       >
                                                         <div className="flex items-center gap-3">
-                                                           <Crown size={14} className="group-hover/opt:scale-110 transition-transform" />
-                                                           <span className="text-[10px] font-black uppercase tracking-widest">Protocol: OWNER</span>
+                                                           <Crown size={16} className="group-hover/opt:scale-110 transition-transform" />
+                                                           <span className="text-[11px] font-black uppercase tracking-widest">Owner</span>
                                                         </div>
-                                                        {user.role === 'owner' && <CheckCircle size={10} className="text-amber-500" />}
+                                                        {user.role === 'owner' && <CheckCircle2 size={12} />}
                                                       </button>
 
                                                       <button 
                                                         onClick={() => handleSetRole(user, 'admin')}
-                                                        className="flex items-center justify-between w-full p-4 rounded-2xl hover:bg-indigo-500/10 text-slate-300 hover:text-indigo-400 transition-all group/opt border border-transparent hover:border-indigo-500/20"
+                                                        className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}
                                                       >
                                                         <div className="flex items-center gap-3">
-                                                           <Shield size={14} className="group-hover/opt:scale-110 transition-transform" />
-                                                           <span className="text-[10px] font-black uppercase tracking-widest">Protocol: ADMIN</span>
+                                                           <Shield size={16} className="group-hover/opt:scale-110 transition-transform" />
+                                                           <span className="text-[11px] font-black uppercase tracking-widest">Admin</span>
                                                         </div>
-                                                        {user.role === 'admin' && <CheckCircle size={10} className="text-indigo-400" />}
+                                                        {user.role === 'admin' && <CheckCircle2 size={12} />}
                                                       </button>
 
                                                       <button 
                                                         onClick={() => handleSetRole(user, 'user')}
-                                                        className="flex items-center justify-between w-full p-4 rounded-2xl hover:bg-slate-500/10 text-slate-300 hover:text-white transition-all group/opt border border-transparent hover:border-white/10"
+                                                        className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'user' ? 'bg-slate-500/10 border-white/10 text-white' : 'hover:bg-white/5 border-transparent text-slate-400 hover:text-white'}`}
                                                       >
                                                         <div className="flex items-center gap-3">
-                                                           <UserCircle size={14} className="group-hover/opt:scale-110 transition-transform" />
-                                                           <span className="text-[10px] font-black uppercase tracking-widest">Protocol: USER</span>
+                                                           <UserCircle size={16} className="group-hover/opt:scale-110 transition-transform" />
+                                                           <span className="text-[11px] font-black uppercase tracking-widest">User</span>
                                                         </div>
-                                                        {user.role === 'user' && <CheckCircle size={10} className="text-white" />}
+                                                        {user.role === 'user' && <CheckCircle2 size={12} />}
                                                       </button>
                                                     </div>
                                                   </m.div>
@@ -481,7 +502,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {activeTab === 'explorer' && (
             <m.div key="explorer" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 flex flex-col h-[calc(100vh-280px)]">
                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 flex-1">
-                  {/* Table Sidebar */}
                   <div className="lg:col-span-1 space-y-6 overflow-y-auto no-scrollbar pr-2 flex flex-col">
                      <div className="space-y-2 mb-4 px-4">
                         <div className="flex items-center justify-between mb-4">
@@ -519,7 +539,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      </div>
                   </div>
 
-                  {/* Data Editor Grid */}
                   <GlassCard className="lg:col-span-3 rounded-[4.5rem] border-white/5 flex flex-col relative overflow-hidden bg-slate-950/40">
                      <div className="p-10 border-b border-white/5 flex justify-between items-center bg-black/20">
                         <div className="flex items-center gap-5">
@@ -635,7 +654,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           {activeTab === 'system' && (
             <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                  <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-10">
+                  <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-940/40 shadow-2xl flex flex-col items-center text-center gap-10">
                      <div className="relative">
                         <div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400">
                            <RefreshCw size={80} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />

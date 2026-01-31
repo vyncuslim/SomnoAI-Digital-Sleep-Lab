@@ -9,7 +9,6 @@ export { supabase };
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   try {
-    // Cast supabase.auth to any to bypass type errors for getUser
     const { data: { user } } = await (supabase.auth as any).getUser();
     await supabase.from('audit_logs').insert([{
       action,
@@ -19,13 +18,30 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       timestamp: new Date().toISOString()
     }]);
     
-    // Automatically route warnings and critical errors to Admin Telegram
+    // 自动将警告和严重错误路由至 Admin Telegram
     if (level === 'CRITICAL' || level === 'WARNING') {
-      notifyAdmin(`🚨 [${level}] ${action}\nSUBJECT: ${user?.email || 'SYSTEM'}\nINFO: ${details}`);
+      notifyAdmin(`🚨 [${level}] ${action}\nSUBJECT: ${user?.email || 'ANONYMOUS'}\nINFO: ${details}`);
     }
   } catch (e) {
-    console.error("Audit log synchronization failed:", e);
+    console.warn("Audit log synchronization failed:", e);
   }
+};
+
+/**
+ * 全域错误报告协议 - 捕获控制台及运行时异常
+ */
+export const reportError = async (message: string, stack?: string, source: string = 'FRONTEND_RUNTIME') => {
+  const isNoise = 
+    message.includes('Location.href') || 
+    message.includes('cross-origin frame') || 
+    message.includes('AbortError');
+    
+  if (isNoise) return;
+
+  const { data: { user } } = await (supabase.auth as any).getUser();
+  const context = `[${source}] ${message}${stack ? `\n\nStack Trace:\n${stack.slice(0, 1000)}` : ''}`;
+  
+  await logAuditLog('SYSTEM_EXCEPTION', context, 'CRITICAL');
 };
 
 const logSecurityEvent = async (email: string, type: string, details: string) => {
@@ -45,7 +61,6 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
  */
 export const authApi = {
   signInWithGoogle: async () => {
-    // Cast supabase.auth to any to bypass type errors for signInWithOAuth
     return await (supabase.auth as any).signInWithOAuth({
       provider: 'google',
       options: {
@@ -55,7 +70,6 @@ export const authApi = {
     });
   },
   signIn: async (email: string, password: string, captchaToken?: string) => {
-    // Cast supabase.auth to any to bypass type errors for signInWithPassword
     const res = await (supabase.auth as any).signInWithPassword({ 
       email, 
       password,
@@ -70,7 +84,6 @@ export const authApi = {
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
-    // Cast supabase.auth to any to bypass type errors for signUp
     const res = await (supabase.auth as any).signUp({ 
       email, 
       password, 
@@ -83,7 +96,6 @@ export const authApi = {
     return res;
   },
   sendOTP: async (email: string, captchaToken?: string) => {
-    // Cast supabase.auth to any to bypass type errors for signInWithOtp
     const res = await (supabase.auth as any).signInWithOtp({ 
       email,
       options: { captchaToken }
@@ -93,7 +105,6 @@ export const authApi = {
     return res;
   },
   verifyOTP: async (email: string, token: string) => {
-    // Cast supabase.auth to any to bypass type errors for verifyOtp
     const res = await (supabase.auth as any).verifyOtp({ email, token, type: 'email' });
     if (res.error) await logSecurityEvent(email, 'OTP_VERIFY_FAIL', res.error.message);
     else {
@@ -103,10 +114,8 @@ export const authApi = {
     return res;
   },
   signOut: async () => {
-    // Cast supabase.auth to any to bypass type errors for getUser
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (user) logAuditLog('USER_LOGOUT', `Session terminated: ${user.email}`);
-    // Cast supabase.auth to any to bypass type errors for signOut
     return await (supabase.auth as any).signOut();
   }
 };
@@ -161,9 +170,6 @@ export const adminApi = {
     }
     return { error };
   },
-  /**
-   * Shift clearance level for a specific node
-   */
   updateUserRole: async (id: string, email: string, newRole: string) => {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
     if (!error) {
@@ -187,14 +193,12 @@ export const adminApi = {
 
 export const profileApi = {
   getMyProfile: async () => {
-    // Cast supabase.auth to any to bypass type errors for getUser
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return null;
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     return data;
   },
   updateProfile: async (updates: any) => {
-    // Cast supabase.auth to any to bypass type errors for getUser
     const { data: { user } } = await (supabase.auth as any).getUser();
     return await supabase.from('profiles').update(updates).eq('id', user.id);
   }
@@ -202,19 +206,16 @@ export const profileApi = {
 
 export const userDataApi = {
   getUserData: async () => {
-    // Cast supabase.auth to any to bypass type errors for getUser
     const { data: { user } } = await (supabase.auth as any).getUser();
     if (!user) return null;
     const { data } = await supabase.from('user_data').select('*').eq('id', user.id).single();
     return data;
   },
   updateUserData: async (updates: any) => {
-    // Cast supabase.auth to any to bypass type errors for getUser
     const { data: { user } } = await (supabase.auth as any).getUser();
     return await supabase.from('user_data').upsert({ user_id: user.id, ...updates });
   },
   completeSetup: async (fullName: string, metrics: any) => {
-    // Cast supabase.auth to any to bypass type errors for getUser
     const { data: { user } } = await (supabase.auth as any).getUser();
     await supabase.from('profiles').update({ full_name: fullName }).eq('id', user?.id);
     await supabase.from('user_data').upsert({ user_id: user?.id, ...metrics });
@@ -242,7 +243,6 @@ export const diaryApi = {
     return data;
   },
   saveEntry: async (content: string, mood: string) => {
-    // Cast supabase.auth to any to bypass type errors for getUser
     const { data: { user } } = await (supabase.auth as any).getUser();
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user?.id }]).select().single();
     if (error) throw error;
