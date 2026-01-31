@@ -31,12 +31,8 @@ import { AboutView } from './components/AboutView.tsx';
 
 const m = motion as any;
 
-/**
- * Neural Error Boundary - Captures runtime node crashes
- */
-// Fix: Added explicit interfaces for props and state to ensure 'state' and 'props' are correctly typed in ErrorBoundary
 interface ErrorBoundaryProps {
-  children: React.ReactNode;
+  children?: React.ReactNode;
 }
 
 interface ErrorBoundaryState {
@@ -45,20 +41,13 @@ interface ErrorBoundaryState {
 }
 
 class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    // Initialize state properly
-    this.state = { hasError: false, error: null };
-  }
-  static getDerivedStateFromError(error: any) {
-    // Update state so the next render will show the fallback UI.
-    return { hasError: true, error };
-  }
+  public state: ErrorBoundaryState = { hasError: false, error: null };
+  constructor(props: ErrorBoundaryProps) { super(props); }
+  static getDerivedStateFromError(error: any) { return { hasError: true, error }; }
   componentDidCatch(error: any, errorInfo: ErrorInfo) {
     console.error("CRITICAL_NODE_CRASH:", error, errorInfo);
   }
   render() {
-    // Fix: Correctly access this.state after defining the state interface
     if (this.state.hasError) {
       return (
         <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-10 text-center">
@@ -74,8 +63,7 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
         </div>
       );
     }
-    // Fix: Correctly access this.props after defining the props interface
-    return this.props.children;
+    return (this as any).props.children;
   }
 }
 
@@ -113,7 +101,7 @@ const DecisionLoading = () => (
 );
 
 const AppContent: React.FC = () => {
-  const { profile, loading, refresh } = useAuth();
+  const { profile, loading, refresh, isAdmin } = useAuth();
   const [lang, setLang] = useState<Language>('en'); 
   const [activeView, setActiveView] = useState<ViewType>('dashboard');
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
@@ -124,43 +112,54 @@ const AppContent: React.FC = () => {
     safeNavigateHash(viewId);
   }, []);
 
-  // Neural Dispatcher
+  // Neural Dispatcher - 改进的物理路径与 Hash 路由同步器
   useEffect(() => {
     const bridgeRouting = () => {
       const pathOnly = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
       const hashRaw = getSafeHash();
       const hashOnly = hashRaw.replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       
-      // Auto-rebase if physically stuck on auth pages while logged in
-      if (profile) {
-        if (['login', 'signup', 'signin'].includes(pathOnly)) {
-           window.history.replaceState(null, '', '/#dashboard');
-           setActiveView('dashboard');
-           return;
+      const mappings: Record<string, ViewType> = {
+        'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
+        'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
+        'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 
+        'admin/login': 'admin-login'
+      };
+
+      // 1. 登录态强制纠偏逻辑 - 解决登录后反复要求登录的关键
+      if (profile && !loading) {
+        const isAuthTarget = ['login', 'signup', 'signin', 'otp'].some(p => pathOnly === p || hashOnly === p);
+        
+        if (isAuthTarget) {
+          // 强制清洗物理路径，重置为根路径 Hash
+          window.history.replaceState(null, '', '/#dashboard');
+          setActiveView('dashboard');
+          return;
         }
-        if (!hashOnly || hashOnly === 'dashboard' || pathOnly === 'dashboard') {
+
+        if (hashOnly === 'admin/login' && isAdmin) {
+          setActiveView('admin');
+          return;
+        } else if (hashOnly === 'admin/login' && !isAdmin) {
+          window.history.replaceState(null, '', '/#dashboard');
           setActiveView('dashboard');
           return;
         }
       }
 
-      if (!profile) {
+      // 2. 未登录状态的路径捕获
+      if (!profile && !loading) {
         if (pathOnly === 'signup') { setAuthMode('join'); return; }
-        if (pathOnly === 'login' || pathOnly === 'signin') { setAuthMode('login'); return; }
+        if (['login', 'signin'].includes(pathOnly)) { setAuthMode('login'); return; }
       }
       
-      const mappings: Record<string, ViewType> = {
-        'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
-        'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
-        'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'admin/login': 'admin-login'
-      };
-
+      // 3. 执行最终视图映射
       const target = hashOnly || 'dashboard';
       if (mappings[target]) {
         setActiveView(mappings[target]);
       } else {
-        const isLegitRoute = ['login', 'signup', 'dashboard', 'admin', 'signin', ''].includes(pathOnly);
-        if (!profile && target !== '' && !isLegitRoute) {
+        const isKnownPhysical = ['login', 'signup', 'dashboard', 'admin', 'signin', ''].includes(pathOnly);
+        if (!profile && target !== '' && !isKnownPhysical) {
           setActiveView('not-found');
         } else if (profile) {
           setActiveView('dashboard');
@@ -175,15 +174,36 @@ const AppContent: React.FC = () => {
       window.removeEventListener('hashchange', bridgeRouting);
       window.removeEventListener('popstate', bridgeRouting);
     };
-  }, [profile]);
+  }, [profile, isAdmin, loading]);
 
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    if (activeView === 'admin-login') return <AdminLoginPage />;
-    if (profile && activeView === 'not-found') return <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={safeNavigate} />;
-    if (activeView === 'not-found') return <NotFoundView />;
-    
+    // 权限与登录态独占性检查 (Guard Rail)
+    // 核心修复：如果 profile 存在，绝对严禁渲染登录相关组件，无论路由指向何处
+    if (profile && !isSimulated) {
+      // 检查新用户初始化状态
+      if (profile.role === 'user' && !profile.full_name) {
+        return <FirstTimeSetup onComplete={() => refresh()} />;
+      }
+      
+      // 如果已登录但 activeView 指向了 auth 相关的兜底视图，强行重定向到 dashboard
+      if (activeView === 'admin-login') {
+         if (isAdmin) return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
+         return <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={safeNavigate} />;
+      }
+    }
+
+    // 未登录拦截
+    if (!profile && !isSimulated) {
+      if (activeView === 'admin-login') return <AdminLoginPage />;
+      if (authMode === 'join') {
+        return <UserSignupPage onSuccess={() => { refresh(); }} onSandbox={() => setIsSimulated(true)} lang={lang} />;
+      }
+      return <UserLoginPage onSuccess={() => { refresh(); }} onSandbox={() => setIsSimulated(true)} lang={lang} mode={authMode} />;
+    }
+
+    // 管理员后台逻辑
     if (activeView === 'admin') {
       return (
         <ProtectedRoute level="admin">
@@ -192,17 +212,7 @@ const AppContent: React.FC = () => {
       );
     }
 
-    if (!profile && !isSimulated) {
-      if (authMode === 'join') {
-        return <UserSignupPage onSuccess={() => { setActiveView('dashboard'); refresh(); }} onSandbox={() => setIsSimulated(true)} lang={lang} />;
-      }
-      return <UserLoginPage onSuccess={() => { setActiveView('dashboard'); refresh(); }} onSandbox={() => setIsSimulated(true)} lang={lang} mode={authMode} />;
-    }
-
-    if (profile && profile.role === 'user' && !profile.full_name && !isSimulated) {
-       return <FirstTimeSetup onComplete={() => refresh()} />;
-    }
-
+    // 主视图容器
     return (
       <div className="w-full flex flex-col min-h-screen">
         <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 pb-48">
@@ -216,10 +226,12 @@ const AppContent: React.FC = () => {
               {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={safeReload} onNavigate={safeNavigate} />}
               {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('settings')} />}
               {activeView === 'about' && <AboutView lang={lang} onBack={() => safeNavigate('settings')} />}
+              {activeView === 'not-found' && <NotFoundView />}
             </m.div>
           </AnimatePresence>
         </main>
         
+        {/* 底部导航栏 */}
         <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
           <m.nav 
             initial={{ y: 100 }} animate={{ y: 0 }} 

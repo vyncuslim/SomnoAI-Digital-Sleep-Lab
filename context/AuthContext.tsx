@@ -6,7 +6,6 @@ export type UserRole = "user" | "admin" | "owner";
 
 export interface Profile {
   id: string;
-  // Added email property to the Profile interface to resolve access errors.
   email: string;
   role: UserRole;
   is_super_owner: boolean;
@@ -38,20 +37,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const initialized = useRef(false);
 
   const fetchProfile = useCallback(async () => {
+    // 关键修复：确保在手动调用 refresh 时，应用进入 loading 状态，锁死 UI 切换
+    setLoading(true);
+    
     try {
-      // Defensive Handshake: 6-second timeout to prevent loading-screen lock
+      // Defensive Handshake: 6-second timeout
       const timeoutPromise = new Promise((_, reject) => 
         setTimeout(() => reject(new Error("HANDSHAKE_TIMEOUT")), 6000)
       );
 
-      // Cast supabase.auth to any to bypass type errors for getUser
       const authPromise = (supabase.auth as any).getUser();
       const result: any = await Promise.race([authPromise, timeoutPromise]);
       const user = result?.data?.user;
 
       if (!user) {
         setProfile(null);
-        setLoading(false);
         return;
       }
 
@@ -59,7 +59,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await supabase.rpc('get_my_detailed_profile');
       
       if (error || !data || data.length === 0) {
-        // Fixed: Added email to the selection query to ensure the Profile object is fully populated.
         const { data: fallbackData } = await supabase
           .from("profiles")
           .select("id, email, role, is_super_owner, is_blocked, full_name")
@@ -81,7 +80,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     fetchProfile();
 
-    // Cast supabase.auth to any to bypass type errors for onAuthStateChange
     const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((event: string) => {
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         fetchProfile();

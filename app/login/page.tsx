@@ -22,8 +22,9 @@ export default function UserLoginPage({
       <Auth 
         lang={lang} 
         onLogin={() => {
-            // 强力跳转方案：清除所有状态并强制进入 Hash 主视图
-            window.location.replace('/#dashboard');
+            // 物理路径清洗：在通知上层 onSuccess 之前，
+            // 强制将 sleepsomno.com/login 改为 sleepsomno.com/#dashboard
+            window.history.replaceState(null, '', '/#dashboard');
             onSuccess();
         }} 
         onGuest={onSandbox}
