@@ -58,7 +58,7 @@ const DecisionLoading = () => (
     <div className="space-y-6 text-center max-w-xs">
        <div className="space-y-1">
           <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.8em] italic animate-pulse opacity-80">Synchronizing Identity</p>
-          <p className="text-slate-700 text-[8px] font-black uppercase tracking-widest">Protocol Handshake • Node v22.4</p>
+          <p className="text-slate-700 text-[8px] font-black uppercase tracking-widest">Protocol Handshake • Node v22.4.8</p>
        </div>
     </div>
   </div>
@@ -111,17 +111,16 @@ const AppContent: React.FC = () => {
         }
       }
 
-      if (!profile && !loading) {
+      if (!profile && !loading && !isSimulated) {
         if (pathOnly === 'signup' || hashOnly === 'signup') { setAuthMode('join'); return; }
         if (['login', 'signin'].includes(pathOnly) || ['login', 'signin'].includes(hashOnly)) { setAuthMode('login'); return; }
-        // 关键逻辑：如果未登录但试图进 admin 路径，强制显示管理员登录页
         if (hashOnly.startsWith('admin')) { setActiveView('admin-login'); return; }
       }
       
       const target = hashOnly || 'dashboard';
       if (mappings[target]) {
         setActiveView(mappings[target]);
-      } else if (profile) {
+      } else if (profile || isSimulated) {
         setActiveView('dashboard');
       }
     };
@@ -133,17 +132,16 @@ const AppContent: React.FC = () => {
       window.removeEventListener('hashchange', bridgeRouting);
       window.removeEventListener('popstate', bridgeRouting);
     };
-  }, [profile, isAdmin, loading, isExchangingTokens]);
+  }, [profile, isAdmin, loading, isExchangingTokens, isSimulated]);
 
   if (loading || (isExchangingTokens && !profile)) return <DecisionLoading />;
 
   const renderContent = () => {
-    if (profile && !isSimulated) {
-      if (profile.role === 'user' && !profile.full_name) {
+    if ((profile || isSimulated)) {
+      if (profile?.role === 'user' && !profile.full_name) {
         return <FirstTimeSetup onComplete={() => refresh()} />;
       }
       
-      // 管理员路由拦截
       if (activeView === 'admin-login' || activeView === 'admin') {
         return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
       }
@@ -155,13 +153,13 @@ const AppContent: React.FC = () => {
               <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={safeNavigate} />}
                 {activeView === 'calendar' && <Trends history={[MOCK_RECORD]} lang={lang} />}
-                {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} />}
+                {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} isSandbox={isSimulated} />}
                 {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
                 {activeView === 'diary' && <DiaryView lang={lang} />}
-                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={safeReload} onNavigate={safeNavigate} />}
+                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => safeReload()} onNavigate={safeNavigate} />}
                 {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('settings')} />}
                 {activeView === 'about' && <AboutView lang={lang} onBack={() => safeNavigate('settings')} />}
-                {activeView === 'not-found' && <NotFoundView />}
+                {(activeView as any) === 'not-found' && <NotFoundView />}
               </m.div>
             </AnimatePresence>
           </main>

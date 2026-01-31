@@ -14,7 +14,8 @@ const isNoise = (msg: string) => {
   const noise = [
     'ERR_BLOCKED_BY_CLIENT', 'Extension', 'Salesmartly', 
     'Google is not defined', 'Permissions-Policy', 'browsing-topics',
-    'reading \'query\'', 'content.js', 'chrome-extension'
+    'reading \'query\'', 'content.js', 'chrome-extension', 'Object.defineProperty',
+    'reading \'postMessage\'', 'chrome.tabs.query'
   ];
   return noise.some(n => msg.includes(n));
 };
@@ -22,22 +23,25 @@ const isNoise = (msg: string) => {
 // 1. 拦截未捕获的运行时错误
 window.onerror = (message, source, lineno, colno, error) => {
   const msgStr = String(message);
-  if (!isNoise(msgStr)) {
-    logAuditLog(`RUNTIME_ERROR: ${source}:${lineno}:${colno}`, `${msgStr}\nStack: ${error?.stack}`, 'CRITICAL');
-  }
-  return isNoise(msgStr); // 如果是噪声则不再向上传递
+  if (isNoise(msgStr)) return true; // 返回 true 彻底静默报错
+  
+  logAuditLog(`RUNTIME_ERROR: ${source}:${lineno}:${colno}`, `${msgStr}\nStack: ${error?.stack}`, 'CRITICAL');
+  return false;
 };
 
 // 2. 拦截未处理的 Promise 拒绝
 window.onunhandledrejection = (event) => {
   const reason = event.reason?.message || event.reason;
-  if (!isNoise(String(reason))) {
-    logAuditLog(
-      'ASYNC_HANDSHAKE_VOID',
-      `Unhandled Promise Rejection: ${reason}\nStack: ${event.reason?.stack}`,
-      'CRITICAL'
-    );
+  if (isNoise(String(reason))) {
+    event.preventDefault(); // 阻止浏览器控制台显示
+    return;
   }
+  
+  logAuditLog(
+    'ASYNC_HANDSHAKE_VOID',
+    `Unhandled Promise Rejection: ${reason}\nStack: ${event.reason?.stack}`,
+    'CRITICAL'
+  );
 };
 
 // 3. 拦截 console.error 调用 (Monkeypatch)
@@ -47,10 +51,7 @@ console.error = (...args) => {
     .map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg))
     .join(' ');
     
-  if (isNoise(message)) {
-    // 对插件错误执行静默处理：不记录、不显示
-    return;
-  }
+  if (isNoise(message)) return; // 直接吞掉插件报错
   
   logAuditLog('CONSOLE_ERROR_PROXIED', `${message}\nStack: ${new Error().stack}`, 'WARNING');
   originalConsoleError.apply(console, args);

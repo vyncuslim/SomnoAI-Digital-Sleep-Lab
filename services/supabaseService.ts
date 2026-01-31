@@ -155,19 +155,26 @@ export const adminApi = {
     return data || [];
   },
   getTableData: async (tableName: string, limit = 100) => {
+    // 方案：自适应排序。如果不成功，则降级为普通查询。
+    // 解决错误：400 (Bad Request) - column "created_at" does not exist
+    const tryQuery = async (column: string) => {
+      return await supabase.from(tableName).select('*').order(column, { ascending: false }).limit(limit);
+    };
+
     try {
-      // 智能排序：根据表前缀决定排序字段
-      const orderCol = tableName.startsWith('analytics_') ? 'date' : 'created_at';
-      const { data, error } = await supabase
-        .from(tableName)
-        .select('*')
-        .order(orderCol, { ascending: false, nullsFirst: false })
-        .limit(limit);
-      if (error) throw error;
-      return data || [];
-    } catch {
+      // 1. 尝试使用常规 created_at
+      let result = await tryQuery('created_at');
+      if (!result.error) return result.data;
+
+      // 2. 如果失败，尝试分析表专用的 date 字段
+      result = await tryQuery('date');
+      if (!result.error) return result.data;
+
+      // 3. 最终保底：无序读取
       const { data } = await supabase.from(tableName).select('*').limit(limit);
       return data || [];
+    } catch {
+      return [];
     }
   },
   getTableCount: async (tableName: string) => {

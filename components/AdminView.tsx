@@ -8,7 +8,6 @@ import {
   MessageSquare, LayoutDashboard, Radio, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint,
   Lock, Table, List, Clock, TrendingUp,
-  // Fix: Added missing icons to resolve "Cannot find name" errors
   CheckCircle2, Unlock, WifiOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -22,7 +21,6 @@ const m = motion as any;
 type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system';
 type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE';
 
-// Fix: Moved UserCircle declaration before DATABASE_SCHEMA to resolve block-scoped variable usage before declaration
 const UserCircle = Users;
 
 const DATABASE_SCHEMA = [
@@ -81,7 +79,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const checkSyncStatus = async () => {
     try {
-      // 严格检查：必须使用 created_at。如果此处仍报 400，说明数据库表结构中确实丢失了该列。
+      // 容错查询：先检查 audit_logs 是否可按 created_at 排序
       const { data: logs, error } = await supabase
         .from('audit_logs')
         .select('action, created_at')
@@ -89,7 +87,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         .order('created_at', { ascending: false })
         .limit(1);
       
-      if (error) throw error;
+      if (error) {
+        setSyncState('IDLE');
+        return;
+      }
 
       if (logs?.[0]) {
         const syncDate = new Date(logs[0].created_at);
@@ -109,7 +110,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const count = await adminApi.getTableCount('analytics_daily');
       setSyncState(count > 0 ? 'DATA_RESIDENT' : 'IDLE');
     } catch (e) {
-      console.debug("Telemetry sync status unresolved.");
       setSyncState('IDLE');
     }
   };
@@ -151,7 +151,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   
   useEffect(() => {
     const channel = supabase
-      .channel('security_pulse')
+      .channel('security_pulse_v3')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'security_events' }, (payload) => {
         setSignals(prev => [payload.new as any, ...prev].slice(0, 40));
       })
@@ -267,7 +267,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             </h1>
             <div className="flex items-center gap-3">
                <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • v22.4.2</p>
+               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • v22.4.8</p>
             </div>
           </div>
         </div>
