@@ -8,7 +8,7 @@ import {
   Send, Fingerprint, Lock, Table, List, 
   Unlock, Mail, ExternalLink, ActivitySquare,
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
-  Rocket, MousePointer2
+  Rocket, MousePointer2, Trash2, Database, Search, Shield
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -20,11 +20,13 @@ type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system' | 'a
 type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE' | 'FORBIDDEN';
 
 const DATABASE_SCHEMA = [
-  { id: 'analytics_daily', group: 'Traffic (GA4)', icon: Activity },
-  { id: 'audit_logs', group: 'System Audit', icon: List },
-  { id: 'security_events', group: 'Security', icon: ShieldAlert },
-  { id: 'profiles', group: 'Core Registry', icon: Users },
-  { id: 'user_data', group: 'Core Registry', icon: Fingerprint },
+  { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity, desc: 'Stores aggregated daily traffic metrics from Google Analytics.' },
+  { id: 'audit_logs', name: 'System Audits', group: 'Maintenance', icon: List, desc: 'Central log for all administrative and automated actions.' },
+  { id: 'security_events', name: 'Security Signals', group: 'Security', icon: ShieldAlert, desc: 'Tracks authentication attempts and potential breach indicators.' },
+  { id: 'profiles', name: 'Subject Registry', group: 'Core', icon: Users, desc: 'Main identity table mapping users to roles and permissions.' },
+  { id: 'user_data', name: 'Biological Metrics', group: 'Core', icon: Fingerprint, desc: 'Subject-specific biometric data and physiological metadata.' },
+  { id: 'diary_entries', name: 'Subject Journals', group: 'Engagement', icon: List, desc: 'User-submitted sleep logs and mood annotations.' },
+  { id: 'feedback', name: 'Nexus Feedback', group: 'Engagement', icon: Mail, desc: 'Consolidated report logs from user terminal interactions.' }
 ];
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
@@ -39,6 +41,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [signals, setSignals] = useState<any[]>([]);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
+  const [processingUser, setProcessingUser] = useState<string | null>(null);
 
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://sleepsomno.com';
@@ -105,11 +108,36 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const handleToggleBlock = async (user: any) => {
+    setProcessingUser(user.id);
     try {
       const { error } = await adminApi.toggleBlock(user.id, user.email, user.is_blocked);
       if (error) throw error;
-      fetchData();
+      await fetchData();
     } catch (err: any) { setActionError(err.message); }
+    finally { setProcessingUser(null); }
+  };
+
+  const handleCycleRole = async (user: any) => {
+    // Only Owners/SuperOwners can promote others
+    if (!(currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner)) {
+      setActionError("SECURITY_DENIED: Lacks OWNER level clearance for role manipulation.");
+      return;
+    }
+
+    const roles = ['user', 'admin', 'owner'];
+    const currentIndex = roles.indexOf(user.role || 'user');
+    const nextRole = roles[(currentIndex + 1) % roles.length];
+    
+    setProcessingUser(user.id);
+    try {
+      const { error } = await adminApi.updateUserRole(user.id, user.email, nextRole);
+      if (error) throw error;
+      await fetchData();
+    } catch (err: any) {
+      setActionError(err.message);
+    } finally {
+      setProcessingUser(null);
+    }
   };
 
   const isOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
@@ -156,7 +184,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             {activeTab === 'overview' && (
               <div className="space-y-10">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  {DATABASE_SCHEMA.map((stat, i) => (
+                  {DATABASE_SCHEMA.slice(0, 4).map((stat, i) => (
                     <GlassCard key={i} className="p-8 rounded-[3rem] border-white/5">
                       <div className="flex justify-between items-start mb-6">
                         <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400"><stat.icon size={20} /></div>
@@ -187,9 +215,73 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </div>
             )}
 
+            {activeTab === 'explorer' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {DATABASE_SCHEMA.map((table) => (
+                  <GlassCard key={table.id} className="p-8 rounded-[3rem] border-white/5 flex flex-col justify-between group hover:border-indigo-500/20 transition-all">
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-start">
+                        <div className="p-4 bg-white/5 rounded-2xl text-slate-400 group-hover:text-indigo-400 transition-colors">
+                          <table.icon size={24} />
+                        </div>
+                        <div className="text-right">
+                          <span className="text-[10px] font-black text-slate-700 uppercase tracking-widest">Records</span>
+                          <p className="text-2xl font-black text-white italic">{tableCounts[table.id] || 0}</p>
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-black italic text-white uppercase tracking-tight">{table.name}</h3>
+                        <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{table.group}</p>
+                        <p className="text-xs text-slate-500 font-medium italic pt-2 leading-relaxed">{table.desc}</p>
+                      </div>
+                    </div>
+                    <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">
+                       <span className="text-[9px] font-mono text-slate-700 uppercase font-black">{table.id}.tbl</span>
+                       <button className="text-[10px] font-black text-indigo-400 uppercase hover:text-white transition-colors flex items-center gap-2">
+                         Inspect <ChevronRight size={12} />
+                       </button>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+            )}
+
+            {activeTab === 'signals' && (
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 px-6 mb-6">
+                  <Radio size={18} className="text-indigo-400 animate-pulse" />
+                  <h2 className="text-[11px] font-black uppercase text-slate-400 tracking-[0.3em]">Live Security Stream</h2>
+                </div>
+                {signals.length === 0 ? (
+                  <div className="py-24 text-center">
+                    <ShieldCheck size={48} className="mx-auto text-slate-800 mb-4" />
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">No anomalous signals detected.</p>
+                  </div>
+                ) : signals.map((sig, i) => (
+                  <GlassCard key={i} className="p-6 rounded-[2.5rem] border-white/5 flex items-center justify-between group">
+                    <div className="flex items-center gap-6">
+                      <div className={`p-4 rounded-2xl ${sig.event_type.includes('FAIL') ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                        {sig.event_type.includes('FAIL') ? <ShieldAlert size={20} /> : <ShieldCheck size={20} />}
+                      </div>
+                      <div className="space-y-1">
+                        <p className="text-sm font-black italic text-white uppercase tracking-tight">{sig.event_type.replace('_', ' ')}</p>
+                        <p className="text-[10px] font-bold text-slate-500 flex items-center gap-2"><Mail size={10} /> {sig.email || 'System'}</p>
+                        <p className="text-[10px] font-medium text-slate-600 italic">{sig.event_reason}</p>
+                      </div>
+                    </div>
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <span className="text-[9px] font-black text-slate-700 uppercase tracking-widest bg-white/5 px-2 py-1 rounded-lg">
+                        {new Date(sig.created_at).toLocaleTimeString()}
+                      </span>
+                      <span className="text-[8px] font-mono text-slate-800">{new Date(sig.created_at).toLocaleDateString()}</span>
+                    </div>
+                  </GlassCard>
+                ))}
+              </div>
+            )}
+
             {activeTab === 'automation' && (
               <div className="space-y-10 max-w-5xl mx-auto pb-20">
-                 {/* UptimeRobot Quick Start Guide */}
                  <div className="text-center space-y-6">
                     <div className="w-24 h-24 bg-[#32cd32]/10 rounded-[3rem] flex items-center justify-center mx-auto text-[#32cd32] border border-[#32cd32]/20 shadow-[0_0_50px_rgba(50,205,50,0.1)]">
                        <Rocket size={44} />
@@ -230,7 +322,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                  </div>
 
                  <div className="grid grid-cols-1 gap-8">
-                    {/* Job 1: Sync */}
                     <GlassCard className="p-10 rounded-[4rem] border-indigo-500/20 relative overflow-hidden">
                        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none rotate-12"><Activity size={200} /></div>
                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
@@ -259,7 +350,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                        </div>
                     </GlassCard>
 
-                    {/* Job 2: Pulse */}
                     <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 relative overflow-hidden">
                        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none -rotate-12"><HeartPulse size={200} /></div>
                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
@@ -288,33 +378,40 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                        </div>
                     </GlassCard>
                  </div>
-
-                 <div className="p-10 bg-amber-500/5 border border-amber-500/10 rounded-[4rem] flex gap-8 items-center">
-                    <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
-                       <ShieldAlert size={32} />
-                    </div>
-                    <div className="space-y-2">
-                       <h4 className="text-sm font-black uppercase text-amber-500 tracking-widest italic">Security Advisory</h4>
-                       <p className="text-[12px] text-slate-400 italic leading-relaxed max-w-2xl">
-                         这些 URL 包含您的敏感 API 凭证。<b>请勿在公开场所分享这些链接。</b> 如果 UptimeRobot 报告 "500 Internal Server Error"，请检查控制台中的 Signals 标签页，查看具体的数据库或 API 连接异常。
-                       </p>
-                    </div>
-                 </div>
               </div>
             )}
             
             {activeTab === 'registry' && (
               <div className="grid grid-cols-1 gap-4">
                 {users.map((u) => (
-                  <GlassCard key={u.id} className="p-8 rounded-[3rem] border-white/5 group hover:border-indigo-500/30 transition-all">
+                  <GlassCard key={u.id} className={`p-8 rounded-[3rem] border-white/5 group hover:border-indigo-500/30 transition-all ${processingUser === u.id ? 'opacity-50 pointer-events-none' : ''}`}>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                       <div className="flex items-center gap-6 text-left">
-                        <div className="w-16 h-16 bg-slate-900 border border-white/5 rounded-2xl flex items-center justify-center text-white font-black italic text-2xl shadow-inner">{u.full_name?.[0] || '?'}</div>
+                        <div className="w-16 h-16 bg-slate-900 border border-white/5 rounded-2xl flex items-center justify-center text-white font-black italic text-2xl shadow-inner relative overflow-hidden">
+                           {u.full_name?.[0] || '?'}
+                           {processingUser === u.id && (
+                             <div className="absolute inset-0 bg-indigo-600/20 backdrop-blur-sm flex items-center justify-center">
+                               <Loader2 size={24} className="animate-spin text-white" />
+                             </div>
+                           )}
+                        </div>
                         <div className="space-y-1">
                            <p className="text-lg font-black italic text-white uppercase tracking-tight">{u.full_name || 'Anonymous Node'}</p>
                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2"><Mail size={10} /> {u.email}</p>
-                           <div className="flex gap-2 pt-2">
-                              <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border ${u.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'}`}>ROLE: {u.role}</span>
+                           <div className="flex flex-wrap gap-2 pt-2">
+                              <button 
+                                onClick={() => handleCycleRole(u)}
+                                disabled={!isOwner}
+                                className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${
+                                  u.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 
+                                  u.role === 'admin' ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 
+                                  'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
+                                } ${isOwner ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'}`}
+                              >
+                                {u.role === 'owner' ? <Crown size={8} /> : <Shield size={8} />}
+                                ROLE: {u.role || 'user'}
+                                {isOwner && <Settings2 size={8} className="opacity-50" />}
+                              </button>
                               {u.is_blocked && <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-full text-[8px] font-black uppercase tracking-widest">RESTRICTED</span>}
                            </div>
                         </div>
@@ -329,22 +426,57 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             )}
 
             {activeTab === 'system' && (
-              <div className="max-w-2xl mx-auto space-y-12">
+              <div className="max-w-4xl mx-auto space-y-12">
                  <div className="text-center space-y-4">
                     <div className="w-24 h-24 bg-indigo-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto text-indigo-400 border border-indigo-500/20"><Cpu size={48} /></div>
                     <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">System Infrastructure</h2>
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Root Node Clearance</p>
                  </div>
-                 <GlassCard className="p-10 rounded-[4rem] border-white/5 text-left space-y-6">
-                    <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                       <span className="text-[10px] font-black text-slate-500 uppercase italic">Identifier</span>
-                       <span className="text-xs font-bold text-white">{currentAdmin?.email}</span>
-                    </div>
-                    <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                       <span className="text-[10px] font-black text-slate-500 uppercase italic">Clearance</span>
-                       <span className="text-xs font-bold text-emerald-400 uppercase">{currentAdmin?.role}</span>
-                    </div>
-                 </GlassCard>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <GlassCard className="p-10 rounded-[3.5rem] border-white/5 text-left space-y-6">
+                       <div className="flex items-center gap-4 mb-4">
+                         <div className="p-3 bg-white/5 rounded-2xl text-slate-400"><Monitor size={20} /></div>
+                         <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Active Identity</h3>
+                       </div>
+                       <div className="space-y-4">
+                          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                             <span className="text-[10px] font-black text-slate-500 uppercase italic">Identifier</span>
+                             <span className="text-xs font-bold text-white truncate max-w-[180px]">{currentAdmin?.email}</span>
+                          </div>
+                          <div className="flex justify-between items-center border-b border-white/5 pb-4">
+                             <span className="text-[10px] font-black text-slate-500 uppercase italic">Clearance</span>
+                             <span className="text-xs font-bold text-emerald-400 uppercase">{currentAdmin?.role}</span>
+                          </div>
+                          <div className="flex justify-between items-center pb-2">
+                             <span className="text-[10px] font-black text-slate-500 uppercase italic">Status</span>
+                             <span className="flex items-center gap-2 text-xs font-bold text-white uppercase">
+                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Authorized
+                             </span>
+                          </div>
+                       </div>
+                    </GlassCard>
+
+                    <GlassCard className="p-10 rounded-[3.5rem] border-white/5 text-left space-y-6">
+                       <div className="flex items-center gap-4 mb-4">
+                         <div className="p-3 bg-white/5 rounded-2xl text-slate-400"><Database size={20} /></div>
+                         <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Infrastructure Health</h3>
+                       </div>
+                       <div className="space-y-6">
+                          <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                            Primary database link is managed via Supabase Postgres. AI processing is handled by Google Gemini 2.5 Pro.
+                          </p>
+                          <div className="flex flex-col gap-3">
+                             <button className="w-full py-4 bg-slate-900 border border-white/5 rounded-2xl text-[10px] font-black uppercase text-slate-400 tracking-widest flex items-center justify-center gap-3 hover:text-white hover:border-indigo-500/30 transition-all">
+                               <RefreshCw size={14} /> Ping Database
+                             </button>
+                             <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="w-full py-4 bg-rose-600/10 border border-rose-500/20 rounded-2xl text-[10px] font-black uppercase text-rose-500 tracking-widest flex items-center justify-center gap-3 hover:bg-rose-600 hover:text-white transition-all">
+                               <Trash2 size={14} /> Purge Node Cache
+                             </button>
+                          </div>
+                       </div>
+                    </GlassCard>
+                 </div>
               </div>
             )}
           </m.div>

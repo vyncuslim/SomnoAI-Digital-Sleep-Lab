@@ -6,7 +6,7 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB AUDIT PROTOCOL v15.0
+ * SOMNO LAB AUDIT PROTOCOL v15.1
  * Features: Direct table injection with error suppression and mirrored alerts.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
@@ -45,7 +45,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       ]);
     }
 
-    // 2. 将日志存入数据库 (使用直接插入代替 RPC 避免 404)
+    // 2. 将日志存入数据库
     await supabase.from('audit_logs').insert([{
       action: actionKey,
       details: details,
@@ -178,6 +178,16 @@ export const adminApi = {
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
     if (!error) {
       await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node: ${email}`, newState ? 'WARNING' : 'INFO');
+    }
+    return { error };
+  },
+  updateUserRole: async (id: string, email: string, newRole: string) => {
+    const { error } = await supabase.rpc('admin_update_user_role', { 
+      target_user_id: id, 
+      new_role: newRole 
+    });
+    if (!error) {
+      await logAuditLog('ADMIN_ROLE_CHANGE', `Role set to ${newRole.toUpperCase()} for node: ${email}`, 'WARNING');
     }
     return { error };
   },
