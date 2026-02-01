@@ -11,7 +11,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
 import { notifyAdmin } from '../services/telegramService.ts';
 import { getSafeHostname, safeReload } from '../services/navigation.ts';
-import { authApi, supabase } from '../services/supabaseService.ts';
+// Fix: Added missing import for logAuditLog
+import { authApi, supabase, logAuditLog } from '../services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -44,6 +45,11 @@ export const Settings: React.FC<SettingsProps> = ({
     checkAiStatus();
   }, []);
 
+  const handleLanguageChange = (newLang: Language) => {
+    localStorage.setItem('somno_lang', newLang);
+    onLanguageChange(newLang);
+  };
+
   const handleSaveKey = () => {
     if (customKey.trim()) {
       localStorage.setItem('custom_gemini_key', customKey.trim());
@@ -64,7 +70,8 @@ export const Settings: React.FC<SettingsProps> = ({
       const { error } = await authApi.resetPassword(user.email);
       if (error) throw error;
       setResetStatus('success');
-      notifyAdmin(`🔐 SECURITY: Password reset handshake initiated for ${user.email}`);
+      // Fix: Call logAuditLog which is now imported
+      logAuditLog('PW_RESET_HANDSHAKE', `Triggered for ${user.email}`);
     } catch (e) {
       setResetStatus('error');
     }
@@ -76,7 +83,6 @@ export const Settings: React.FC<SettingsProps> = ({
     setIsDisconnecting(true);
     try {
       await authApi.signOut();
-      notifyAdmin(`🚪 DISCONNECT: Subject node manual termination.`);
       safeReload();
     } catch (e) {
       window.location.href = '/';
@@ -87,7 +93,10 @@ export const Settings: React.FC<SettingsProps> = ({
     setTestStatus('sending');
     const nodeIdentity = getSafeHostname();
     try {
-      const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nStatus: Operational\nNode Ver: 5.8.2`);
+      const success = await notifyAdmin({
+        type: 'DIAGNOSTIC_PULSE',
+        message: `Signal confirmed from node ${nodeIdentity}. Protocol: Operational.`
+      }, lang);
       setTestStatus(success ? 'success' : 'error');
     } catch (e) {
       setTestStatus('error');
@@ -177,37 +186,7 @@ export const Settings: React.FC<SettingsProps> = ({
           </div>
         </GlassCard>
 
-        {/* Reset Access Key Section */}
-        <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
-           <div className="flex items-center justify-between">
-              <div className="space-y-1 text-left">
-                 <div className="flex items-center gap-3">
-                    <Lock size={18} className="text-rose-500" />
-                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.resetPassword}</h3>
-                 </div>
-                 <p className="text-[10px] text-slate-500 italic">{t.resetPasswordSub}</p>
-              </div>
-              <button 
-                onClick={handleResetPassword}
-                disabled={resetStatus === 'sending'}
-                className={`px-8 py-4 rounded-full font-black text-[9px] uppercase tracking-widest transition-all active:scale-95 ${
-                  resetStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                  resetStatus === 'error' ? 'bg-rose-600 text-white' : 
-                  'bg-white/5 text-rose-500 border border-rose-500/30 hover:bg-rose-500/10'
-                }`}
-              >
-                {resetStatus === 'sending' ? <Loader2 size={14} className="animate-spin" /> : 'INITIATE RESET'}
-              </button>
-           </div>
-           <AnimatePresence>
-             {resetStatus === 'success' && (
-               <m.p initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] text-emerald-400 font-bold mt-4 px-2">
-                 {t.resetSent}
-               </m.p>
-             )}
-           </AnimatePresence>
-        </GlassCard>
-
+        {/* Telegram Diagnostic Section */}
         <GlassCard className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02]">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -235,8 +214,18 @@ export const Settings: React.FC<SettingsProps> = ({
             <div className="space-y-4">
                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2 block text-left">{t.language}</span>
                <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
-                  {['en', 'zh'].map((l) => (
-                    <button key={l} onClick={() => onLanguageChange(l as Language)} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{l === 'en' ? 'ENGLISH' : '中文简体'}</button>
+                  {[
+                    { code: 'en', label: 'ENGLISH' },
+                    { code: 'zh', label: '中文' },
+                    { code: 'es', label: 'ESPAÑOL' }
+                  ].map((l) => (
+                    <button 
+                      key={l.code} 
+                      onClick={() => handleLanguageChange(l.code as Language)} 
+                      className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l.code ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                    >
+                      {l.label}
+                    </button>
                   ))}
                </div>
             </div>

@@ -5,18 +5,40 @@ import { notifyAdmin } from './telegramService.ts';
 export { supabase };
 
 /**
- * 高可靠审计协议
+ * 高可靠审计协议 - 支持多语言 Telegram 路由
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
-  const sensitiveActions = ['ADMIN_ROLE_CHANGE', 'SECURITY_BREACH_ATTEMPT', 'SYSTEM_EXCEPTION', 'ROOT_NODE_PROTECTION_TRIGGER', 'ADMIN_MANUAL_SYNC'];
+  // 获取当前系统语言
+  const currentLang = (localStorage.getItem('somno_lang') as any) || 'en';
+  
+  // 核心敏感操作：无论日志级别，均实时推送 Telegram
+  const sensitiveActions = [
+    'ADMIN_ROLE_CHANGE', 
+    'ADMIN_USER_BLOCK',   // 明确加入封禁操作
+    'SECURITY_BREACH_ATTEMPT', 
+    'SYSTEM_EXCEPTION', 
+    'ROOT_NODE_PROTECTION_TRIGGER', 
+    'ADMIN_MANUAL_SYNC',
+    'USER_LOGIN',
+    'USER_SIGNUP',
+    'OTP_VERIFY_SUCCESS'
+  ];
+  
   const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(action);
-
-  if (shouldNotify) {
-    notifyAdmin(`🚨 [${level}] ${action}\nNODE: ${window.location.hostname}\nDATA: ${details}\nTIME: ${new Date().toISOString()}`);
-  }
 
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
+    const actingAdmin = session?.user?.email || 'SYSTEM_NODE';
+
+    if (shouldNotify) {
+      // 构造结构化对象以触发 Telegram 国际化映射，并附带操作者信息
+      notifyAdmin({
+        type: action,
+        message: `[BY: ${actingAdmin}] ${details}`,
+        error: level === 'CRITICAL' ? details : undefined
+      }, currentLang);
+    }
+
     // 显式指定参数名 p_ 前缀，解决 404 函数签名匹配失败
     await supabase.rpc('log_audit_entry', {
       p_action: action,
@@ -25,7 +47,6 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       p_user_id: session?.user?.id || null
     });
   } catch (e) {
-    // 吞掉审计本身的报错，防止循环触发
     console.debug("Audit registry link severed.");
   }
 };
@@ -73,7 +94,7 @@ export const authApi = {
       await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
     } else {
       await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session handshake complete');
-      await logAuditLog('USER_LOGIN', `Identity confirmed: ${targetEmail}`);
+      await logAuditLog('USER_LOGIN', `Identity confirmed via Password: ${targetEmail}`);
     }
     return res;
   },
@@ -113,7 +134,7 @@ export const authApi = {
       await logSecurityEvent(targetEmail, 'OTP_VERIFY_FAIL', res.error.message);
     } else {
       await logSecurityEvent(targetEmail, 'OTP_VERIFY_SUCCESS', 'Handshake confirmed via OTP');
-      await logAuditLog('OTP_VERIFY_SUCCESS', `Confirmed: ${targetEmail}`);
+      await logAuditLog('OTP_VERIFY_SUCCESS', `Confirmed via OTP: ${targetEmail}`);
     }
     return res;
   },
@@ -203,12 +224,16 @@ export const adminApi = {
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
     const newState = !currentlyBlocked;
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
-    if (!error) await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node ${email}`, newState ? 'WARNING' : 'INFO');
+    if (!error) {
+      await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'RESTRICTED' : 'AUTHORIZED'} access for node: ${email}`, newState ? 'WARNING' : 'INFO');
+    }
     return { error };
   },
   updateUserRole: async (id: string, email: string, newRole: string) => {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
-    if (!error) await logAuditLog('ADMIN_ROLE_CHANGE', `Clearance shift: ${email} -> ${newRole.toUpperCase()}`, 'CRITICAL');
+    if (!error) {
+      await logAuditLog('ADMIN_ROLE_CHANGE', `Node clearance shift: ${email} -> ${newRole.toUpperCase()}`, 'CRITICAL');
+    }
     return { error };
   },
   getDailyAnalytics: async (days: number = 30) => {
@@ -253,7 +278,10 @@ export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error };
-    notifyAdmin(`📩 FEEDBACK_SIGNAL\nTYPE: ${type.toUpperCase()}\nFROM: ${email}\nDATA: ${content}`);
+    notifyAdmin({
+        type: 'FEEDBACK_SIGNAL',
+        message: `Type: ${type.toUpperCase()}, From: ${email}, Content: ${content}`
+    }, (localStorage.getItem('somno_lang') as any) || 'en');
     return { success: true };
   }
 };
@@ -266,7 +294,7 @@ export const diaryApi = {
   },
   saveEntry: async (content: string, mood: string) => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user?.id }]).select().single();
+    const { data, error = null } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user?.id }]).select().single();
     if (error) throw error;
     return data;
   },

@@ -72,4 +72,4 @@ export interface AuditLog {
 
 export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'not-found';
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
-export type Language = 'en' | 'zh';
+export type Language = 'en' | 'zh' | 'es';

@@ -1,12 +1,60 @@
 
 /**
- * SOMNO LAB - DIRECT TELEGRAM GATEWAY v5.1
- * Direct Telegram Bot API integration using HTML parsing for robustness.
+ * SOMNO LAB - DIRECT TELEGRAM GATEWAY v6.1
+ * Multi-language support: English, Chinese, Spanish
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+/**
+ * Localization Map for Admin Notifications
+ */
+const I18N_ALERTS: Record<string, Record<string, string>> = {
+  en: {
+    header: '🛡️ <b>SOMNO LAB NODE ALERT</b>',
+    type: 'TYPE',
+    log: 'LOG',
+    time: 'TIME',
+    node: 'NODE',
+    user_login: '👤 USER_LOGIN',
+    user_signup: '🆕 USER_SIGNUP',
+    critical: '🚨 CRITICAL_EXCEPTION',
+    warning: '⚠️ WARNING_SIGNAL',
+    admin_role_change: '⚖️ CLEARANCE_SHIFT',
+    admin_user_block: '🚫 ACCESS_RESTRICTION',
+    admin_manual_sync: '🔄 TELEMETRY_SYNC'
+  },
+  zh: {
+    header: '🛡️ <b>SOMNO LAB 节点告警</b>',
+    type: '类型',
+    log: '日志',
+    time: '时间',
+    node: '节点',
+    user_login: '👤 用户登录',
+    user_signup: '🆕 用户注册',
+    critical: '🚨 关键异常',
+    warning: '⚠️ 告警信号',
+    admin_role_change: '⚖️ 权限变更',
+    admin_user_block: '🚫 访问限制',
+    admin_manual_sync: '🔄 手动数据同步'
+  },
+  es: {
+    header: '🛡️ <b>ALERTA DE NODO SOMNO LAB</b>',
+    type: 'TIPO',
+    log: 'REGISTRO',
+    time: 'HORA',
+    node: 'NODO',
+    user_login: '👤 INICIO_SESIÓN',
+    user_signup: '🆕 REGISTRO_USUARIO',
+    critical: '🚨 EXCEPCIÓN_CRÍTICA',
+    warning: '⚠️ SEÑAL_ADVERTENCIA',
+    admin_role_change: '⚖️ CAMBIO_DE_PERMISOS',
+    admin_user_block: '🚫 RESTRICCIÓN_DE_ACCESO',
+    admin_manual_sync: '🔄 SINC_MANUAL'
+  }
+};
 
 /**
  * Escapes characters that would break Telegram HTML parsing.
@@ -18,20 +66,24 @@ const escapeHTML = (str: string): string => {
     .replace(/>/g, '&gt;');
 };
 
-export const notifyAdmin = async (payload: string | { error?: string; message?: string; type?: string }) => {
-  if (!BOT_TOKEN || !ADMIN_CHAT_ID) {
-    console.warn("TELEGRAM_GATEWAY_VOID: Bot credentials or Chat ID missing.");
-    return false;
-  }
+export const notifyAdmin = async (
+    payload: string | { error?: string; message?: string; type?: string },
+    lang: 'en' | 'zh' | 'es' = 'en'
+) => {
+  if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
+  const dictionary = I18N_ALERTS[lang] || I18N_ALERTS.en;
   let finalMessage = '';
+
   if (typeof payload === 'string') {
-    // Escape the payload content to prevent breaking the HTML structure
-    finalMessage = `🛡️ <b>SOMNO LAB NODE ALERT</b>\n\n${escapeHTML(payload)}`;
+    finalMessage = `${dictionary.header}\n\n${escapeHTML(payload)}`;
   } else {
-    const type = escapeHTML(payload.type || 'SYSTEM_SIGNAL');
+    const rawType = payload.type || 'SYSTEM_SIGNAL';
+    const localizedType = dictionary[rawType.toLowerCase()] || rawType;
     const content = escapeHTML(payload.error || payload.message || 'Telemetry Null');
-    finalMessage = `🚨 <b>SOMNO LAB [${type}]</b>\n\n<b>LOG:</b> <code>${content}</code>\n<b>TIME:</b> <code>${new Date().toISOString()}</code>`;
+    const nodeName = window.location.hostname;
+    
+    finalMessage = `${dictionary.header}\n\n<b>${dictionary.type}:</b> <code>${localizedType}</code>\n<b>${dictionary.node}:</b> <code>${nodeName}</code>\n<b>${dictionary.log}:</b> <code>${content}</code>\n<b>${dictionary.time}:</b> <code>${new Date().toISOString()}</code>`;
   }
 
   const controller = new AbortController();
@@ -53,20 +105,9 @@ export const notifyAdmin = async (payload: string | { error?: string; message?: 
     });
 
     clearTimeout(timeoutId);
-    
-    if (!response.ok) {
-        const errorDetail = await response.json().catch(() => ({}));
-        // Use console.debug here instead of error to avoid potential loops if index.tsx captures this too
-        console.debug(`TELEGRAM_GATEWAY_HTTP_ERR: ${response.status}`, errorDetail);
-        return false;
-    }
-    
-    return true;
-  } catch (err: any) {
+    return response.ok;
+  } catch (err) {
     clearTimeout(timeoutId);
-    if (err.name !== 'AbortError') {
-      console.debug(`TELEGRAM_GATEWAY_HANDSHAKE_VOID: ${err.message}`);
-    }
     return false;
   }
 };

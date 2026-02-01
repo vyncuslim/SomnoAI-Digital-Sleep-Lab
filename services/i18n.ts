@@ -1,5 +1,5 @@
 
-export type Language = 'en' | 'zh';
+export type Language = 'en' | 'zh' | 'es';
 
 const commonEn = {
   nav: { lab: 'LAB', trends: 'TRENDS', insights: 'CORE', settings: 'CFG', experiment: 'EXP' },
@@ -311,7 +311,165 @@ const commonZh = {
   }
 };
 
+const commonEs = {
+  nav: { lab: 'LAB', trends: 'TENDENCIAS', insights: 'NÚCLEO', settings: 'CONF', experiment: 'EXP' },
+  errors: {
+    healthApiDenied: 'Acceso denegado: se requieren permisos.',
+    syncFailed: 'Error de sincronización de telemetría.',
+    noDataFound: 'No se identificaron datos locales.',
+    noSleepData: 'No se detectaron métricas de sueño.',
+    authExpired: 'Sesión expirada. Inicie sesión de nuevo.',
+    blocked: 'Acceso restringido por política del sistema.'
+  },
+  dashboard: {
+    neuralActive: 'Red Neuronal Activa',
+    liveLink: 'Enlace en Vivo',
+    processorLoad: 'Carga del Procesador',
+    aiSynthesis: 'Síntesis Neuronal IA',
+    secureHandshake: 'Handshake Seguro',
+    stable: 'Estable',
+    sleepScore: 'Puntuación de Sueño',
+    deepRepair: 'Reparación Profunda',
+    remConsolid: 'Consolidación REM',
+    efficiency: 'Eficiencia',
+    telemetry: 'Flujo Telemétrico',
+    cmdSync: 'Sincronizar Datos',
+    cmdExport: 'Archivar Métricas',
+    lullaby: 'Nana Neuronal',
+    manifesto: 'SomnoAI Digital Sleep Lab integra monitoreo de indicadores fisiológicos, conocimientos profundos de IA y consejos de salud.'
+  },
+  experiment: {
+    title: 'Laboratorio Neuronal',
+    subtitle: 'Experimentos de Optimización',
+    generate: 'Sintetizar Protocolo',
+    synthesizing: 'Síntesis en curso...',
+    activeHeader: 'Protocolo Activo',
+    hypothesis: 'Hipótesis Neuronal',
+    protocol: 'Protocolo de Laboratorio',
+    impact: 'Resultado Previsto',
+    commit: 'Activar Protocolo',
+    noExperiment: 'No hay protocolo activo. Inicie síntesis.'
+  },
+  settings: {
+    title: 'Configuración',
+    language: 'Idioma',
+    coffee: 'Apoyar Investigación',
+    logout: 'Desconectar y Recargar',
+    profileTitle: 'Perfil del Sujeto',
+    displayName: 'Señal de Llamada',
+    personalInfo: 'Metadatos Biológicos',
+    age: 'Edad',
+    gender: 'Polaridad Neuronal',
+    genderMale: 'Masculino',
+    genderFemale: 'Femenino',
+    genderOther: 'Otro',
+    genderNone: 'N/A',
+    height: 'Altura',
+    weight: 'Masa',
+    preferences: 'Preferencias Lógicas',
+    units: 'Unidades',
+    coaching: 'Estilo de CRO',
+    styleClinical: 'Clínico',
+    styleMotivational: 'Motivacional',
+    styleMinimal: 'Minimalista',
+    // Added missing paypal and feedback properties for Spanish localization
+    paypalId: 'Vyncuslim vyncuslim',
+    duitNowId: '+60 187807388',
+    paypalLink: 'https://paypal.me/vyncuslim',
+    feedback: 'Comentarios del Laboratorio',
+    feedbackSub: 'Identificar anomalías o proponer mejoras',
+    feedbackType: 'Tipo de registro',
+    feedbackReport: 'Reporte',
+    feedbackSuggestion: 'Sugerencia',
+    feedbackImprovement: 'Mejora',
+    feedbackEmail: 'Nodo de contacto (Email)',
+    feedbackContent: 'Registro de telemetría / Descripción',
+    feedbackSubmit: 'Ejecutar envío',
+    feedbackSuccess: 'Registro comprometido',
+    feedbackError: 'Fallo del registro',
+    apiKey: 'Puente API Neuronal',
+    apiKeyPlaceholder: 'Clave API personalizada...',
+    apiSave: 'Inicializar Puente',
+    resetPassword: 'Reiniciar Acceso',
+    resetPasswordSub: 'Protocolo de recuperación',
+    resetSent: 'Token de recuperación enviado.',
+    diagTelegram: 'Diagnóstico Comms',
+    diagTelegramSub: 'Probar enlace con puerta de enlace'
+  },
+  auth: {
+    lab: 'SomnoAI Sleep Lab',
+    tagline: 'INFRAESTRUCTURA NEURONAL',
+    // Added missing properties for Spanish auth localization
+    manifesto: 'SomnoAI Digital Sleep Lab integra monitoreo de indicadores fisiológicos, conocimientos profundos de IA y consejos de salud para brindar a los usuarios una experiencia completa de laboratorio de sueño digital.',
+    sendCode: 'SOLICITAR TOKEN',
+    emailLabel: 'Identificador Email',
+    passwordLabel: 'Clave de Acceso',
+    authorize: 'AUTORIZAR ACCESO',
+    confirmRegister: 'CONFIRMAR REGISTRO',
+    google: 'GOOGLE',
+    sandbox: 'MODO SANDBOX',
+    help: '¿NO PUEDE ACTIVAR LA CUENTA?',
+    verifyCode: 'Verificar Token',
+    back: 'Volver a la Terminal',
+    handshake: 'Handshake Neuronal',
+    dispatched: 'Token enviado',
+    initialize: 'SOBRESCRIBIR',
+    resend: 'REENVIAR',
+    wait: 'ESPERE',
+    retry: 'PARA REINTENTAR',
+    accessRestricted: 'ACCESO RESTRINGIDO',
+    policyNotice: 'Espere a que termine el tiempo de enfriamiento.',
+    auditNotice: 'La actividad neuronal se registra criptográficamente.',
+    forgotPassword: '¿Olvidó la clave?',
+    resetHeading: 'RECUPERAR ACCESO',
+    resetSub: 'Ingrese el correo electrónico para el enlace de recuperación.',
+    sendReset: 'ENVIAR ENLACE',
+    resetSuccess: 'Handshake iniciado.'
+  },
+  assistant: {
+    title: 'Núcleo Neuronal',
+    intro: 'Enlace neuronal establecido. ¿Cómo optimizamos su recuperación?',
+    placeholder: 'Consulta de telemetría...',
+    error: 'Fallo de síntesis.',
+    generateLullaby: 'Nana Neuronal',
+    playing: 'Sintetizando...'
+  },
+  about: {
+    title: 'Especificaciones',
+    manifesto: 'Protocolo de SomnoAI Sleep Lab.',
+    protocolTitle: 'Protocolo de Puente',
+    waterAnalogyTitle: 'Flujo Biológico',
+    waterAnalogyDesc: 'Health Connect actúa como el reservorio principal.',
+    toolboxTitle: 'Caja de herramientas Digital',
+    toolboxDesc: 'SDK de Android Health Connect.',
+    whsTitle: 'Sincronización de Almacén',
+    whsDesc: 'Los datos se mueven mediante actualizaciones atómicas.',
+    tokenTitle: 'Ciclo de Vida del Token',
+    step1: 'Identificar SDK.',
+    step2: 'Iniciar cliente.',
+    step3: 'Validar Manifiesto.',
+    step4: 'Registrar lanzador.',
+    step5: 'Lanzar diálogo.',
+    step6: 'Verificar hashes.',
+    step7: 'Leer registros.',
+    step8: 'Bucle.',
+    tokenInitial: 'Token: Generado.',
+    tokenCycle: 'Token: Activo.',
+    tokenStore: 'Token: Asegurado.',
+    tokenExpire: 'Token: Expirado.',
+    guideTitle: 'Guía de Operación',
+    guideIntro: 'Maestría en herramientas de laboratorio.',
+    guideSection1: '1. Telemetría',
+    guideSection1Desc: 'Sincronizar dispositivos portátiles.',
+    guideSection2: '2. Conocimientos Profundos',
+    guideSection2Desc: 'Sintetizar métricas.',
+    guideSection3: '3. Consejos Estratégicos',
+    guideSection3Desc: 'Protocolos basados en evidencia.'
+  }
+};
+
 export const translations: Record<Language, typeof commonEn> = {
   en: commonEn,
-  zh: commonZh
+  zh: commonZh,
+  es: commonEs
 };

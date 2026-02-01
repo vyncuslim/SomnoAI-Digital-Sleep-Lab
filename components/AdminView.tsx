@@ -201,7 +201,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        await logAuditLog('ADMIN_MANUAL_SYNC', `GA4 synchronization triggered by ${currentAdmin?.email}`);
+        // 修改点：确保手动同步也通过 logAuditLog 发送 Telegram
+        await logAuditLog('ADMIN_MANUAL_SYNC', `GA4 synchronization triggered manually`);
         alert("SYNC_SIGNAL_CONFIRMED: Telemetry grid refreshed.");
         fetchData();
       } else {
@@ -234,6 +235,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     
     setProcessingUserId(user.id);
     try {
+      // adminApi.toggleBlock 内部已经调用了 logAuditLog
       const { error } = await adminApi.toggleBlock(user.id, user.email, user.is_blocked);
       if (error) throw error;
       await fetchData();
@@ -261,6 +263,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setProcessingUserId(user.id);
     setRoleSelectUserId(null);
     try {
+      // adminApi.updateUserRole 内部已经调用了 logAuditLog
       const { error } = await adminApi.updateUserRole(user.id, user.email, newRole);
       if (error) throw error;
       await fetchData();
@@ -327,7 +330,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   {[
                     { label: 'Daily Users (GA4)', value: dailyStats[dailyStats.length - 1]?.users || 0, icon: Globe, source: 'GA4' },
                     { label: 'Audit Records', value: tableCounts['audit_logs'] || 0, icon: List, source: 'DB' },
-                    { label: 'Subject Profiles', value: tableCounts['profiles'] || 0, icon: Users, source: 'DB' },
+                    { label: 'Subject Profiles', value: tableCounts['profiles'] || 0, icon: UserCircle, source: 'DB' },
                     { label: 'Security Pulses', value: tableCounts['security_events'] || 0, icon: ShieldAlert, source: 'DB' }
                   ].map((stat, i) => (
                     <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5 group hover:border-indigo-500/20 transition-all">

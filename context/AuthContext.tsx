@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient.ts';
+import { logAuditLog } from '../services/supabaseService.ts';
 
 export type UserRole = "user" | "admin" | "owner";
 
@@ -36,6 +37,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
   const isSyncing = useRef(false);
   const authLockActive = useRef(false);
+  const lastEventLogged = useRef<string | null>(null);
 
   // 关键检测：是否处于 OAuth 回跳过程中
   const hasAuthParams = 
@@ -45,7 +47,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   if (hasAuthParams) authLockActive.current = true;
 
-  const fetchProfile = useCallback(async () => {
+  const fetchProfile = useCallback(async (isFreshLogin: boolean = false) => {
     if (isSyncing.current) return;
     isSyncing.current = true;
     
@@ -53,7 +55,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { user } } = await (supabase.auth as any).getUser();
 
       if (!user) {
-        // 如果 OAuth 锁激活中，暂不取消 loading 状态
         if (!authLockActive.current) {
           setProfile(null);
           setLoading(false);
@@ -62,6 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       const { data, error } = await supabase.rpc('get_my_detailed_profile');
+      let currentProfile: Profile | null = null;
       
       if (error || !data || data.length === 0) {
         const { data: fallbackData } = await supabase
@@ -70,12 +72,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq("id", user.id)
           .single();
         
-        if (fallbackData) setProfile(fallbackData as Profile);
+        if (fallbackData) currentProfile = fallbackData as Profile;
       } else {
-        setProfile(data[0] as Profile);
+        currentProfile = data[0] as Profile;
       }
       
-      authLockActive.current = false; // 获取到 profile 后释放锁
+      setProfile(currentProfile);
+
+      // 如果检测到是新鲜登录（OAuth 回跳或 SIGNED_IN 事件），手动记录一次审计触发告警
+      if (isFreshLogin && currentProfile) {
+        // 防止页面热重载导致的重复记录
+        const eventKey = `login_${currentProfile.id}_${new Date().getMinutes()}`;
+        if (lastEventLogged.current !== eventKey) {
+           lastEventLogged.current = eventKey;
+           logAuditLog('USER_LOGIN', `Identity detected via Auth Guard: ${currentProfile.email}`, 'INFO');
+        }
+      }
+      
+      authLockActive.current = false;
     } catch (err) {
       console.warn("AuthContext: Telemetry sync error.", err);
     } finally {
@@ -85,29 +99,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   useEffect(() => {
-    // 初始检测
     fetchProfile();
 
-    // 监听认证状态变更
     const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((event: string, session: any) => {
       console.debug(`[Auth Engine] EVENT: ${event}`);
       
       if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
         authLockActive.current = false;
-        fetchProfile();
+        fetchProfile(event === 'SIGNED_IN'); // SIGNED_IN 标记为新鲜登录
       } else if (event === 'SIGNED_OUT') {
         authLockActive.current = false;
         setProfile(null);
         setLoading(false);
       } else if (event === 'INITIAL_SESSION') {
-        // 如果没有 Session 且没有 OAuth 参数，才允许结束加载状态
         if (!session && !hasAuthParams) {
           setLoading(false);
         }
       }
     });
 
-    // 冗余保险：如果发生 OAuth 错误或死锁，3秒后强制释放 UI
     const timer = setTimeout(() => {
       if (loading) {
         console.warn("Auth Engine: Handshake timeout, forcing UI release.");

@@ -13,7 +13,7 @@ import { notifyAdmin } from '../services/telegramService.ts';
 const m = motion as any;
 
 interface AuthProps {
-  lang: 'en' | 'zh';
+  lang: 'en' | 'zh' | 'es';
   onLogin: () => void;
   onGuest: () => void; 
   initialTab?: 'login' | 'join' | 'otp';
@@ -46,19 +46,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   }, [initialTab]);
 
   useEffect(() => {
+    const SITE_KEY = '0x4AAAAAACNi1FM3bbfW_VsI'; // SomnoAI Turnstile Key
+    
     const initTurnstile = () => {
+      // Turnstile should only be initialized if we are on the request step and the ref exists
       if (step === 'request' && turnstileRef.current) {
         const ts = (window as any).turnstile;
         
         if (!ts) {
+          // If script isn't loaded yet, it might be due to AdBlock or slow network
           setTurnstileStatus('unavailable');
           return;
         }
         
         try {
+          // Clear current content to prevent double-rendering
           if (turnstileRef.current) turnstileRef.current.innerHTML = '';
+          
           ts.render(turnstileRef.current, {
-            sitekey: '0x4AAAAAACNi1FM3bbfW_VsI',
+            sitekey: SITE_KEY,
             theme: 'dark',
             callback: (token: string) => {
               setTurnstileToken(token);
@@ -69,15 +75,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
           });
         } catch (e) {
           setTurnstileStatus('unavailable');
-          console.debug("Turnstile restricted by sandbox policy.");
+          console.debug("Turnstile initialization exception. Likely script conflict or AdBlock.");
         }
       }
     };
 
+    // Delay slightly to ensure script is fully ready and DOM is stable
     const timer = setTimeout(initTurnstile, 600);
     const failsafe = setTimeout(() => {
       if (turnstileStatus === 'pending') setTurnstileStatus('unavailable');
-    }, 2000);
+    }, 4000);
 
     return () => {
       clearTimeout(timer);
@@ -199,7 +206,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                 </div>
 
                 <div className="flex flex-col items-center min-h-[50px] gap-2">
-                  <div ref={turnstileRef} className="cf-turnstile"></div>
+                  {/* CRITICAL FIX: Removed 'cf-turnstile' class to prevent double-initialization error 'expected string, got object' */}
+                  <div ref={turnstileRef} className="turnstile-container"></div>
                 </div>
 
                 <div className="space-y-4">
