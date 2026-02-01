@@ -153,11 +153,23 @@ const AppContent: React.FC = () => {
   if (loading || (isExchangingTokens && !profile)) return <DecisionLoading />;
 
   const renderContent = () => {
-    // Password Update Terminal (Interception)
+    // 1. Password Update Terminal (Interception)
     if (activeView === 'update-password') {
       return <UpdatePasswordView onSuccess={() => safeNavigate('dashboard')} />;
     }
 
+    // 2. Public Sector (Always Unlocked)
+    if (activeView === 'about') {
+      return (
+        <div className="w-full flex flex-col min-h-screen">
+          <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 pb-48">
+            <AboutView lang={lang} onBack={() => safeNavigate(profile || isSimulated ? 'settings' : 'login')} />
+          </main>
+        </div>
+      );
+    }
+
+    // 3. Authorized Sector
     if ((profile || isSimulated)) {
       if (profile?.role === 'user' && !profile.full_name) {
         return <FirstTimeSetup onComplete={() => refresh()} />;
@@ -179,7 +191,6 @@ const AppContent: React.FC = () => {
                 {activeView === 'diary' && <DiaryView lang={lang} />}
                 {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => safeReload()} onNavigate={safeNavigate} />}
                 {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('settings')} />}
-                {activeView === 'about' && <AboutView lang={lang} onBack={() => safeNavigate('settings')} />}
                 {(activeView as any) === 'not-found' && <NotFoundView />}
               </m.div>
             </AnimatePresence>
@@ -206,6 +217,7 @@ const AppContent: React.FC = () => {
       );
     }
 
+    // 4. Guest / Access Terminal
     if (!profile && !isSimulated) {
       if (activeView === 'admin-login') return <AdminLoginPage />;
       if (authMode === 'join') {
