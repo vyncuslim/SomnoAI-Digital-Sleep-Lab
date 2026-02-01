@@ -8,7 +8,7 @@ import {
   Send, Fingerprint, Lock, Table, List, 
   Unlock, Mail, ExternalLink, ActivitySquare,
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
-  Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle
+  Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle, Key
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -35,6 +35,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('IDLE');
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [missingKeys, setMissingKeys] = useState<string[]>([]);
   
   const [users, setUsers] = useState<any[]>([]);
   const [dailyStats, setDailyStats] = useState<any[]>([]);
@@ -88,32 +89,41 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleManualSync = async () => {
     setSyncState('SYNCING');
     setActionError(null);
+    setMissingKeys([]);
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
       
-      // Robust Check: Verify content type before parsing JSON to prevent "Unexpected token A" error
       const contentType = response.headers.get("content-type");
-      if (!contentType || !contentType.includes("application/json")) {
+      let data: any;
+      if (contentType && contentType.includes("application/json")) {
+        data = await response.json();
+      } else {
         const text = await response.text();
-        throw new Error(`CRITICAL_SERVER_CRASH: The server returned an HTML error instead of data. This usually indicates a 500 Internal Server Error in the serverless function. Raw: ${text.slice(0, 30)}...`);
+        throw new Error(`CRITICAL_SERVER_CRASH: Gateway returned HTML. Path misconfigured or server down. Raw: ${text.slice(0, 30)}...`);
       }
-
-      const data = await response.json();
+      
       if (response.ok) {
         setSyncState('SYNCED');
         fetchData();
       } else {
-        if (response.status === 403) {
+        if (data.error === "ENV_MISCONFIGURED" && data.missing) {
+          setMissingKeys(data.missing);
+        }
+        if (response.status === 403 || data.error === "FORBIDDEN") {
           setSyncState('FORBIDDEN');
           throw new Error(`GA4 PERMISSION DENIED: Service Account unauthorized.`);
         }
+        setSyncState('ERROR');
         throw new Error(data.detail || data.error || "Sync gateway error.");
       }
     } catch (e: any) {
       setActionError(e.message);
       if (syncState !== 'FORBIDDEN') setSyncState('ERROR');
     }
-    if (syncState !== 'FORBIDDEN') setTimeout(() => setSyncState('IDLE'), 4000);
+    
+    if (syncState !== 'FORBIDDEN' && missingKeys.length === 0) {
+      setTimeout(() => setSyncState('IDLE'), 4000);
+    }
   };
 
   const handleTableInspect = (tableId: string) => {
@@ -245,15 +255,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                 </div>
 
-                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${syncState === 'FORBIDDEN' || syncState === 'ERROR' ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
+                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${syncState === 'FORBIDDEN' || syncState === 'ERROR' || missingKeys.length > 0 ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
                    <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                       <div className="flex items-center gap-8 text-left">
-                         <div className={`p-6 rounded-[2rem] border border-white/5 ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : (syncState === 'FORBIDDEN' || syncState === 'ERROR') ? 'bg-rose-600/10 text-rose-500' : 'bg-indigo-600/10 text-indigo-400'}`}>
-                            {syncState === 'FORBIDDEN' || syncState === 'ERROR' ? <ShieldAlert size={32} /> : <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />}
+                         <div className={`p-6 rounded-[2rem] border border-white/5 ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : (syncState === 'FORBIDDEN' || syncState === 'ERROR' || missingKeys.length > 0) ? 'bg-rose-600/10 text-rose-500' : 'bg-indigo-600/10 text-indigo-400'}`}>
+                            {syncState === 'FORBIDDEN' || syncState === 'ERROR' || missingKeys.length > 0 ? <ShieldAlert size={32} /> : <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />}
                          </div>
                          <div>
                             <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Sync</h3>
-                            <p className={`text-[10px] font-black uppercase tracking-widest mt-1 italic ${syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500'}`}>
+                            <p className={`text-[10px] font-black uppercase tracking-widest mt-1 italic ${syncState === 'ERROR' || missingKeys.length > 0 ? 'text-rose-400' : 'text-slate-500'}`}>
                               Internal Processor Status: {syncState}
                             </p>
                          </div>
@@ -291,15 +301,25 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           </div>
                        </m.div>
                      )}
-                     {syncState === 'ERROR' && (
-                       <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-8 pt-8 border-t border-rose-500/20 space-y-4 text-left">
+                     {(syncState === 'ERROR' || missingKeys.length > 0) && (
+                       <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-8 pt-8 border-t border-rose-500/20 space-y-6 text-left">
                           <div className="flex items-center gap-3 text-rose-400">
                              <ShieldAlert size={18} />
-                             <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">Bridge Severed: Execution Failure</span>
+                             <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">Bridge Severed: Environment Discontinuity</span>
                           </div>
                           <p className="text-sm text-slate-400 italic leading-relaxed">
-                            The telemetry gateway has crashed. This usually indicates that required environment variables are missing from the server host. Ensure <b>GA_SERVICE_ACCOUNT_KEY</b> and <b>SUPABASE_SERVICE_ROLE_KEY</b> are configured.
+                            The telemetry gateway reports missing security definitions. The following keys MUST be configured in your host environment (Vercel/Host):
                           </p>
+                          <div className="flex flex-wrap gap-3">
+                             {(missingKeys.length > 0 ? missingKeys : ['GA_SERVICE_ACCOUNT_KEY', 'GA_PROPERTY_ID', 'SUPABASE_SERVICE_ROLE_KEY']).map(k => (
+                               <div key={k} className="px-4 py-2 bg-rose-500/10 border border-rose-500/30 rounded-xl text-rose-400 font-mono text-[10px] font-bold">
+                                 {k}
+                               </div>
+                             ))}
+                          </div>
+                          <button onClick={() => setActiveTab('system')} className="text-[10px] font-black text-indigo-400 uppercase tracking-widest flex items-center gap-2 hover:text-white transition-colors">
+                            Inspect Key Registry <ChevronRight size={12} />
+                          </button>
                        </m.div>
                      )}
                    </AnimatePresence>
@@ -362,8 +382,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       <div className={`p-4 rounded-2xl ${sig.event_type.includes('FAIL') || sig.level === 'CRITICAL' ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-400'}`}>
                         {sig.event_type.includes('FAIL') || sig.level === 'CRITICAL' ? <ShieldAlert size={20} /> : <ShieldCheck size={20} />}
                       </div>
-                      <div className="space-y-1">
-                        <p className="text-sm font-black italic text-white uppercase tracking-tight">{(sig.event_type || sig.action).replace('_', ' ')}</p>
+                      <div className="space-y-1 text-left">
+                        <p className="text-sm font-black italic text-white uppercase tracking-tight">{(sig.event_type || sig.action || 'LOG').replace('_', ' ')}</p>
                         <p className="text-[10px] font-bold text-slate-500 flex items-center gap-2"><Mail size={10} /> {sig.email || 'System'}</p>
                         <p className="text-[10px] font-medium text-slate-600 italic max-w-xl truncate">{sig.event_reason || sig.details}</p>
                       </div>
@@ -539,6 +559,32 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">System Infrastructure</h2>
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Root Node Clearance</p>
                  </div>
+
+                 <GlassCard className="p-10 rounded-[3.5rem] border-white/5 text-left space-y-8">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Key size={20} /></div>
+                      <div className="space-y-1">
+                        <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Key Registry</h3>
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Environment Variable Pulse</p>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {['GA_PROPERTY_ID', 'GA_SERVICE_ACCOUNT_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY', 'API_KEY'].map(key => {
+                        const isSet = !!process.env[key] || (key === 'API_KEY' && !!process.env.API_KEY);
+                        return (
+                          <div key={key} className="flex items-center justify-between p-4 bg-black/20 rounded-2xl border border-white/5">
+                            <code className="text-[10px] font-mono text-slate-400">{key}</code>
+                            <div className="flex items-center gap-2">
+                               <span className={`text-[8px] font-black uppercase tracking-widest ${isSet ? 'text-emerald-500' : 'text-rose-500'}`}>
+                                 {isSet ? 'DEFINED' : 'VOID'}
+                               </span>
+                               {isSet ? <Check size={12} className="text-emerald-500" /> : <X size={12} className="text-rose-500" />}
+                            </div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                 </GlassCard>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <GlassCard className="p-10 rounded-[3.5rem] border-white/5 text-left space-y-6">

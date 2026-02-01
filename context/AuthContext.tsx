@@ -76,8 +76,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastLoggedSessionId.current = currentSessionId;
         const isStaff = ['admin', 'owner'].includes(currentProfile.role) || currentProfile.is_super_owner;
         const identityTag = isStaff ? '[IDENTITY: STAFF_ADMIN]' : '[IDENTITY: SUBJECT_USER]';
-        // 异步执行，不阻塞 UI 渲染
-        logAuditLog('USER_LOGIN', `${identityTag} Access verified for: ${currentProfile.email}`, 'INFO');
+        
+        // 核心：使用匹配三语翻译器的特定日志格式
+        const logMsg = `${identityTag} Identity detected via Auth Guard: ${currentProfile.email}`;
+        logAuditLog('USER_LOGIN', logMsg, 'INFO');
       }
     } catch (err) {
       console.warn("AuthContext: Handshake sync delayed.");

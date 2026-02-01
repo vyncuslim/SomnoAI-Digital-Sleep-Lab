@@ -6,8 +6,8 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB AUDIT PROTOCOL v15.1
- * Features: Direct table injection with error suppression and mirrored alerts.
+ * SOMNO LAB AUDIT PROTOCOL v15.2
+ * Features: Identity Synthesis and Multi-Channel Mirrored Alerts.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   const actionKey = action.toUpperCase();
@@ -39,10 +39,9 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
         error: level === 'CRITICAL' ? details : undefined
       };
 
-      await Promise.allSettled([
-        notifyAdmin(alertPayload),
-        emailService.sendAdminAlert(alertPayload)
-      ]);
+      // 异步分发通知
+      emailService.sendAdminAlert(alertPayload).catch(e => console.debug("Email backup link failed."));
+      notifyAdmin(alertPayload).catch(e => console.debug("Telegram backup link failed."));
     }
 
     // 2. 将日志存入数据库
@@ -244,10 +243,9 @@ export const feedbackApi = {
       message: `From: ${email}\n${content}`
     };
     
-    await Promise.allSettled([
-      notifyAdmin(alertPayload),
-      emailService.sendAdminAlert(alertPayload)
-    ]);
+    // 分发通知
+    emailService.sendAdminAlert(alertPayload).catch(() => {});
+    notifyAdmin(alertPayload).catch(() => {});
 
     return { success: true };
   }
