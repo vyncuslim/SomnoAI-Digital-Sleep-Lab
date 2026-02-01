@@ -1,59 +1,63 @@
 
 -- ==========================================
--- AUDIT & LOGGING INFRASTRUCTURE (V9.0)
+-- GA4 TELEMETRY MIRROR TABLES (V9.1)
 -- ==========================================
 
--- 1. 审计日志表 (标准化命名)
-CREATE TABLE IF NOT EXISTS public.audit_logs (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    action text NOT NULL,
-    details text,
-    level text DEFAULT 'INFO',
-    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+-- 1. Daily Traffic Statistics
+CREATE TABLE IF NOT EXISTS public.analytics_daily (
+    date date PRIMARY KEY,
+    users integer DEFAULT 0,
+    sessions integer DEFAULT 0,
+    pageviews integer DEFAULT 0,
     created_at timestamptz DEFAULT now()
 );
 
--- 2. 安全事件表
-CREATE TABLE IF NOT EXISTS public.security_events (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    user_email text,
-    event_type text NOT NULL,
-    details text,
+-- 2. Geographic Distribution
+CREATE TABLE IF NOT EXISTS public.analytics_country (
+    country text PRIMARY KEY,
+    users integer DEFAULT 0,
     created_at timestamptz DEFAULT now()
 );
 
--- 启用 RLS
-ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.security_events ENABLE ROW LEVEL SECURITY;
+-- 3. Device Segmentation
+CREATE TABLE IF NOT EXISTS public.analytics_device (
+    device_category text PRIMARY KEY,
+    users integer DEFAULT 0,
+    created_at timestamptz DEFAULT now()
+);
 
--- 权限策略：仅管理员可见
-DROP POLICY IF EXISTS "Admins can view audit logs" ON public.audit_logs;
-CREATE POLICY "Admins can view audit logs" ON public.audit_logs 
+-- 4. Realtime Pulse (Temporary buffer)
+CREATE TABLE IF NOT EXISTS public.analytics_realtime (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    active_users integer DEFAULT 0,
+    recorded_at timestamptz DEFAULT now()
+);
+
+-- ==========================================
+-- SECURITY & RLS CONFIGURATION
+-- ==========================================
+
+-- Enable RLS on all analytics tables
+ALTER TABLE public.analytics_daily ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_country ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_device ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.analytics_realtime ENABLE ROW LEVEL SECURITY;
+
+-- POLICY: Admins and Owners can READ all analytics
+DROP POLICY IF EXISTS "Admin Read Analytics Daily" ON public.analytics_daily;
+CREATE POLICY "Admin Read Analytics Daily" ON public.analytics_daily
 FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
-DROP POLICY IF EXISTS "Admins can view security logs" ON public.security_events;
-CREATE POLICY "Admins can view security logs" ON public.security_events 
+DROP POLICY IF EXISTS "Admin Read Analytics Country" ON public.analytics_country;
+CREATE POLICY "Admin Read Analytics Country" ON public.analytics_country
 FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
--- 3. 安全定义函数 (SECURITY DEFINER)
--- 使用 p_ 前缀防止命名冲突
+DROP POLICY IF EXISTS "Admin Read Analytics Device" ON public.analytics_device;
+CREATE POLICY "Admin Read Analytics Device" ON public.analytics_device
+FOR SELECT TO authenticated
+USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
-CREATE OR REPLACE FUNCTION public.log_security_event(p_email text, p_event_type text, p_details text)
-RETURNS void AS $$
-BEGIN
-    INSERT INTO public.security_events (user_email, event_type, details)
-    VALUES (p_email, p_event_type, p_details);
-END; $$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE OR REPLACE FUNCTION public.log_audit_entry(p_action text, p_details text, p_level text, p_user_id uuid DEFAULT NULL)
-RETURNS void AS $$
-BEGIN
-    INSERT INTO public.audit_logs (action, details, level, user_id)
-    VALUES (p_action, p_details, p_level, p_user_id);
-END; $$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- 授予匿名用户执行权限（仅限写入），解决 404 RPC 拒绝问题
-GRANT EXECUTE ON FUNCTION public.log_security_event(text, text, text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.log_audit_entry(text, text, text, uuid) TO anon, authenticated;
+-- POLICY: Service Role / API Sync can UPSERT (Implicitly handled by Bypass RLS in Vercel if using Service Key)
+-- But we add an explicit permission for robustness if using Anon key with specific headers

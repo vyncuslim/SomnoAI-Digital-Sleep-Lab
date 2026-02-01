@@ -3,106 +3,100 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNOAI ANALYTICS SYNC ENGINE v3.1
- * Direct Telegram Bot Integration with HTML escaping
+ * SOMNOAI ANALYTICS SYNC ENGINE v3.2
+ * Synchronizes GA4 Cloud Telemetry to Supabase Persistence
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
+const INTERNAL_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
 
-const analyticsDataClient = new BetaAnalyticsDataClient({
-  credentials: process.env.GA_SERVICE_ACCOUNT_KEY 
-    ? JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY) 
-    : undefined,
-});
-
-const propertyId = process.env.GA_PROPERTY_ID;
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Helper: Escape HTML
 const escapeHTML = (str) => {
-  if (!str) return '';
-  return String(str)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  if (!str) return 'null';
+  return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 };
 
-// Helper: Direct Telegram Notification
-const sendTelegram = async (text) => {
+const sendTelegramAlert = async (text) => {
   try {
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: ADMIN_CHAT_ID,
-        text,
-        parse_mode: 'HTML'
-      })
+      body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text, parse_mode: 'HTML' })
     });
-  } catch (e) { console.error("Internal alert dispatch failed"); }
-};
-
-const reportSyncFailure = async (errorMsg) => {
-  const safeMsg = escapeHTML(errorMsg);
-  const safeProp = escapeHTML(propertyId);
-  const message = `🚨 <b>GA4_SYNC_CRITICAL_FAILURE</b>\n\n<b>PROPERTY:</b> <code>${safeProp}</code>\n<b>ERROR:</b> <code>${safeMsg}</code>\n<b>TIMESTAMP:</b> <code>${new Date().toISOString()}</code>\n<b>NODE:</b> <code>Vercel_API_Worker</code>`;
-  
-  // 1. Notify Telegram
-  await sendTelegram(message);
-
-  // 2. Commit to Audit Logs
-  try {
-    await supabase.from("audit_logs").insert([{
-      action: "GA4_SYNC_ERROR",
-      details: errorMsg,
-      level: "CRITICAL",
-      created_at: new Date().toISOString()
-    }]);
-  } catch (e) { console.error("Audit logging failed"); }
+  } catch (e) { console.error("Alert dispatch failed"); }
 };
 
 export default async function handler(req, res) {
+  // 1. Authorization Check
   const authHeader = req.headers.authorization;
-  if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: "Unauthorized Access Detected" });
+  if (authHeader !== `Bearer ${INTERNAL_SECRET}` && authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+    return res.status(401).json({ error: "UNAUTHORIZED_NODE: Invalid Handshake Secret" });
+  }
+
+  // 2. Environment Validation
+  if (!process.env.GA_PROPERTY_ID || !process.env.GA_SERVICE_ACCOUNT_KEY) {
+    const err = "MISSING_ENV_VARS: GA_PROPERTY_ID or GA_SERVICE_ACCOUNT_KEY not defined.";
+    await sendTelegramAlert(`🚨 <b>GA4_CONFIG_VOID</b>\n${err}`);
+    return res.status(500).json({ error: err });
   }
 
   try {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-
-    const [dailyResponse] = await analyticsDataClient.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
-      metrics: [{ name: "totalUsers" }, { name: "sessions" }, { name: "screenPageViews" }],
+    const analyticsDataClient = new BetaAnalyticsDataClient({
+      credentials: JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY),
     });
 
+    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
+
+    // 3. Fetch Data from GA4
+    const [dailyResponse] = await analyticsDataClient.runReport({
+      property: `properties/${process.env.GA_PROPERTY_ID}`,
+      dateRanges: [{ startDate: "30daysAgo", endDate: "today" }],
+      metrics: [
+        { name: "totalUsers" }, 
+        { name: "sessions" }, 
+        { name: "screenPageViews" }
+      ],
+      dimensions: [{ name: "date" }]
+    });
+
+    // 4. Batch Upsert to Supabase
     if (dailyResponse.rows?.length > 0) {
-      const vals = dailyResponse.rows[0].metricValues;
-      const { error } = await supabase.from("analytics_daily").upsert({
-        date: yesterday,
-        users: parseInt(vals[0].value),
-        sessions: parseInt(vals[1].value),
-        pageviews: parseInt(vals[2].value),
-      });
+      const rows = dailyResponse.rows.map(row => ({
+        // GA4 date format is YYYYMMDD
+        date: `${row.dimensionValues[0].value.slice(0, 4)}-${row.dimensionValues[0].value.slice(4, 6)}-${row.dimensionValues[0].value.slice(6, 8)}`,
+        users: parseInt(row.metricValues[0].value),
+        sessions: parseInt(row.metricValues[1].value),
+        pageviews: parseInt(row.metricValues[2].value),
+      }));
+
+      const { error } = await supabase.from("analytics_daily").upsert(rows, { onConflict: 'date' });
       if (error) throw error;
     }
 
-    // Success audit
+    // 5. Log Success
     await supabase.from("audit_logs").insert([{
       action: "GA4_SYNC_SUCCESS",
-      details: `Telemetry captured for ${yesterday}`,
-      level: "INFO",
-      created_at: new Date().toISOString()
+      details: `Telemetry sync complete for ${dailyResponse.rows?.length || 0} days.`,
+      level: "INFO"
     }]);
 
-    return res.status(200).json({ success: true, status: "SYNC_COMPLETE" });
-    
+    return res.status(200).json({ success: true, count: dailyResponse.rows?.length });
+
   } catch (err) {
-    await reportSyncFailure(err.message);
-    return res.status(500).json({ success: false, error: err.message });
+    const safeMsg = escapeHTML(err.message);
+    await sendTelegramAlert(`🚨 <b>GA4_SYNC_FAILURE</b>\n\n<b>Error:</b> <code>${safeMsg}</code>\n<b>Node:</b> <code>Vercel_Worker</code>`);
+    
+    await supabase.from("audit_logs").insert([{
+      action: "GA4_SYNC_ERROR",
+      details: err.message,
+      level: "CRITICAL"
+    }]);
+
+    return res.status(500).json({ error: err.message });
   }
 }
