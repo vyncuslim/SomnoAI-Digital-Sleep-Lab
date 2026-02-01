@@ -1,18 +1,19 @@
 
 import { supabase } from '../lib/supabaseClient.ts';
 import { notifyAdmin } from './telegramService.ts';
+import { emailService } from './emailService.ts';
 
 export { supabase };
 
 /**
  * SOMNO LAB AUDIT PROTOCOL
- * Dispatches encrypted logs to the database and real-time alerts to the Admin Bot.
+ * Dispatches encrypted logs to the database and real-time alerts to Telegram & Email.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   const currentLang = (localStorage.getItem('somno_lang') as any) || 'en';
   const actionKey = action.toUpperCase();
   
-  // Sensitive actions that ALWAYS trigger a Telegram alert
+  // All sensitive signals that MUST be mirrored to Telegram and Email
   const sensitiveActions = [
     'ADMIN_ROLE_CHANGE', 
     'ADMIN_USER_BLOCK', 
@@ -22,7 +23,11 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
     'ADMIN_MANUAL_SYNC',
     'USER_LOGIN',
     'USER_SIGNUP',
-    'OTP_VERIFY_SUCCESS'
+    'OTP_VERIFY_SUCCESS',
+    'RUNTIME_ERROR',
+    'ASYNC_HANDSHAKE_VOID',
+    'ADMIN_PAGE_CHANGE',
+    'PW_UPDATE_SUCCESS'
   ];
   
   const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(actionKey);
@@ -32,15 +37,20 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
     const actingAdmin = session?.user?.email || 'SYSTEM_NODE';
 
     if (shouldNotify) {
-      // Background dispatch to Telegram
-      notifyAdmin({
+      const alertPayload = {
         type: actionKey,
         message: `[SUBJECT: ${actingAdmin}] ${details}`,
         error: level === 'CRITICAL' ? details : undefined
-      }, currentLang).catch(() => {});
+      };
+
+      // Concurrent dual-channel dispatch
+      await Promise.allSettled([
+        notifyAdmin(alertPayload, currentLang),
+        emailService.sendAdminAlert(alertPayload, currentLang)
+      ]);
     }
 
-    // Persist to persistent audit mesh
+    // Persist to central registry
     await supabase.rpc('log_audit_entry', {
       p_action: actionKey,
       p_details: details,
@@ -94,7 +104,7 @@ export const authApi = {
       await logSecurityEvent(targetEmail, 'LOGIN_FAIL', `Error: ${res.error.message}`);
       await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
     }
-    // Success is audited in AuthContext
+    // Success is caught by SIGNED_IN event listener in AuthContext
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {

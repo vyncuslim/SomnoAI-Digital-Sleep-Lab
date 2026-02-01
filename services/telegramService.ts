@@ -1,7 +1,7 @@
 
 /**
- * SOMNO LAB - DIRECT TELEGRAM GATEWAY v6.1
- * Multi-language support: English, Chinese, Spanish
+ * SOMNO LAB - DIRECT TELEGRAM GATEWAY v7.1
+ * Fully localized for English, Chinese (Simplified), and Spanish.
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -9,9 +9,9 @@ const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
 /**
- * Localization Map for Admin Notifications
+ * Full Internationalization Map for Administrative Signals
  */
-const I18N_ALERTS: Record<string, Record<string, string>> = {
+export const I18N_ALERTS: Record<string, Record<string, string>> = {
   en: {
     header: '🛡️ <b>SOMNO LAB NODE ALERT</b>',
     type: 'TYPE',
@@ -20,11 +20,16 @@ const I18N_ALERTS: Record<string, Record<string, string>> = {
     node: 'NODE',
     user_login: '👤 USER_LOGIN',
     user_signup: '🆕 USER_SIGNUP',
+    user_logout: '🚪 USER_LOGOUT',
     critical: '🚨 CRITICAL_EXCEPTION',
     warning: '⚠️ WARNING_SIGNAL',
+    info: 'ℹ️ SYSTEM_INFO',
     admin_role_change: '⚖️ CLEARANCE_SHIFT',
     admin_user_block: '🚫 ACCESS_RESTRICTION',
-    admin_manual_sync: '🔄 TELEMETRY_SYNC'
+    admin_manual_sync: '🔄 TELEMETRY_SYNC',
+    runtime_error: '💥 RUNTIME_FAILURE',
+    async_handshake_void: '🌐 ASYNC_EXCEPTION',
+    admin_page_change: '🛠️ REGISTRY_MODIFICATION'
   },
   zh: {
     header: '🛡️ <b>SOMNO LAB 节点告警</b>',
@@ -34,11 +39,16 @@ const I18N_ALERTS: Record<string, Record<string, string>> = {
     node: '节点',
     user_login: '👤 用户登录',
     user_signup: '🆕 用户注册',
-    critical: '🚨 关键异常',
+    user_logout: '🚪 用户登出',
+    critical: '🚨 严重异常',
     warning: '⚠️ 告警信号',
+    info: 'ℹ️ 系统信息',
     admin_role_change: '⚖️ 权限变更',
     admin_user_block: '🚫 访问限制',
-    admin_manual_sync: '🔄 手动数据同步'
+    admin_manual_sync: '🔄 手动数据同步',
+    runtime_error: '💥 运行时错误',
+    async_handshake_void: '🌐 异步握手失效',
+    admin_page_change: '🛠️ 注册表修改'
   },
   es: {
     header: '🛡️ <b>ALERTA DE NODO SOMNO LAB</b>',
@@ -48,22 +58,22 @@ const I18N_ALERTS: Record<string, Record<string, string>> = {
     node: 'NODO',
     user_login: '👤 INICIO_SESIÓN',
     user_signup: '🆕 REGISTRO_USUARIO',
+    user_logout: '🚪 CIERRE_SESIÓN',
     critical: '🚨 EXCEPCIÓN_CRÍTICA',
     warning: '⚠️ SEÑAL_ADVERTENCIA',
+    info: 'ℹ️ INFO_SISTEMA',
     admin_role_change: '⚖️ CAMBIO_DE_PERMISOS',
     admin_user_block: '🚫 RESTRICCIÓN_DE_ACCESO',
-    admin_manual_sync: '🔄 SINC_MANUAL'
+    admin_manual_sync: '🔄 SINC_MANUAL',
+    runtime_error: '💥 ERROR_DE_EJECUCIÓN',
+    async_handshake_void: '🌐 EXCEPCIÓN_ASÍNCRONA',
+    admin_page_change: '🛠️ MODIFICACIÓN_REGISTRO'
   }
 };
 
-/**
- * Escapes characters that would break Telegram HTML parsing.
- */
 const escapeHTML = (str: string): string => {
-  return str
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  if (!str) return 'null';
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 };
 
 export const notifyAdmin = async (
@@ -72,22 +82,19 @@ export const notifyAdmin = async (
 ) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
-  const dictionary = I18N_ALERTS[lang] || I18N_ALERTS.en;
+  const dict = I18N_ALERTS[lang] || I18N_ALERTS.en;
   let finalMessage = '';
 
   if (typeof payload === 'string') {
-    finalMessage = `${dictionary.header}\n\n${escapeHTML(payload)}`;
+    finalMessage = `${dict.header}\n\n${escapeHTML(payload)}`;
   } else {
     const rawType = payload.type || 'SYSTEM_SIGNAL';
-    const localizedType = dictionary[rawType.toLowerCase()] || rawType;
+    const localizedType = dict[rawType.toLowerCase()] || rawType;
     const content = escapeHTML(payload.error || payload.message || 'Telemetry Null');
     const nodeName = window.location.hostname;
     
-    finalMessage = `${dictionary.header}\n\n<b>${dictionary.type}:</b> <code>${localizedType}</code>\n<b>${dictionary.node}:</b> <code>${nodeName}</code>\n<b>${dictionary.log}:</b> <code>${content}</code>\n<b>${dictionary.time}:</b> <code>${new Date().toISOString()}</code>`;
+    finalMessage = `${dict.header}\n\n<b>${dict.type}:</b> <code>${localizedType}</code>\n<b>${dict.node}:</b> <code>${nodeName}</code>\n<b>${dict.log}:</b> <code>${content}</code>\n<b>${dict.time}:</b> <code>${new Date().toISOString()}</code>`;
   }
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   try {
     const response = await fetch(TELEGRAM_API, {
@@ -98,16 +105,10 @@ export const notifyAdmin = async (
         text: finalMessage,
         parse_mode: 'HTML',
         disable_web_page_preview: true
-      }),
-      signal: controller.signal,
-      // @ts-ignore
-      keepalive: true 
+      })
     });
-
-    clearTimeout(timeoutId);
     return response.ok;
   } catch (err) {
-    clearTimeout(timeoutId);
     return false;
   }
 };

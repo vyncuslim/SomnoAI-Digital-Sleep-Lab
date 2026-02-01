@@ -79,12 +79,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setProfile(currentProfile);
 
-      // ALERT TRIGGER: Dispatch Telegram notification for successful logins
+      // CRITICAL: TRIGGER LOGIN NOTIFICATION
       if (isFreshLogin && currentProfile) {
+        // Prevent duplicate logs for the same session refresh
         const eventKey = `login_${currentProfile.id}_${new Date().getMinutes()}`;
         if (lastEventLogged.current !== eventKey) {
            lastEventLogged.current = eventKey;
-           await logAuditLog('USER_LOGIN', `Successful authentication established for node: ${currentProfile.email}`, 'INFO');
+           // logAuditLog with 'USER_LOGIN' will automatically notify Telegram
+           await logAuditLog('USER_LOGIN', `Access protocol verified for: ${currentProfile.email}`, 'INFO');
         }
       }
       
@@ -105,7 +107,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       if (event === 'SIGNED_IN') {
         authLockActive.current = false;
-        fetchProfile(true); // Explicitly trigger the login notification
+        fetchProfile(true); // Signal this as a fresh login
       } else if (event === 'TOKEN_REFRESHED') {
         fetchProfile(false);
       } else if (event === 'SIGNED_OUT') {

@@ -5,11 +5,11 @@ import App from './App.tsx';
 import { logAuditLog } from './services/supabaseService.ts';
 
 /**
- * SOMNO LAB NEURAL TELEMETRY GUARD
- * 监控全域异常并执行异地备份及告警
+ * SOMNO LAB NEURAL TELEMETRY GUARD v8.0
+ * Monitors full-stack anomalies with dual-channel (Telegram + Email) fallback alert protocol.
  */
 
-// 错误过滤逻辑：屏蔽插件/扩展引起的无效错误
+// Error Noise Filter: Prevents alerting on harmless client-side plugins
 const isNoise = (msg: string) => {
   const noise = [
     'ERR_BLOCKED_BY_CLIENT', 'Extension', 'Salesmartly', 
@@ -17,23 +17,33 @@ const isNoise = (msg: string) => {
     'reading \'query\'', 'content.js', 'chrome-extension', 'Object.defineProperty',
     'reading \'postMessage\'', 'chrome.tabs.query', 'signal is aborted',
     'AbortError', 'user_app_status', 'Failed to initialize current tab',
-    'initializeCurrentTab', 'TypeError', 'Failed to load resource',
-    'Cannot read properties of undefined (reading \'query\')'
+    'initializeCurrentTab', 'Script error'
   ];
   return noise.some(n => msg.includes(n));
 };
 
-// 1. 拦截未捕获的运行时错误
+// Application State Capture
+const getAppState = () => {
+  return {
+    path: window.location.hash || window.location.pathname,
+    agent: navigator.userAgent,
+    timestamp: new Date().toISOString()
+  };
+};
+
+// 1. Intercept Uncaught Runtime Exceptions
 window.onerror = (message, source, lineno, colno, error) => {
   const msgStr = String(message);
-  // CRITICAL: 拦截扩展干扰项，不进行审计
   if (isNoise(msgStr)) return true; 
   
-  logAuditLog(`RUNTIME_ERROR: ${source}:${lineno}:${colno}`, `${msgStr}\nStack: ${error?.stack}`, 'CRITICAL');
+  const state = getAppState();
+  const report = `CRITICAL_EXCEPTION: ${msgStr} | AT: ${source}:${lineno}:${colno} | PATH: ${state.path} | AGENT: ${state.agent}`;
+  
+  logAuditLog('RUNTIME_ERROR', report, 'CRITICAL');
   return false;
 };
 
-// 2. 拦截未处理的 Promise 拒绝
+// 2. Intercept Unhandled Promise Rejections (Async Handshakes)
 window.onunhandledrejection = (event) => {
   const reason = event.reason?.message || event.reason;
   if (isNoise(String(reason))) {
@@ -41,24 +51,22 @@ window.onunhandledrejection = (event) => {
     return;
   }
   
-  logAuditLog(
-    'ASYNC_HANDSHAKE_VOID',
-    `Unhandled Promise Rejection: ${reason}\nStack: ${event.reason?.stack}`,
-    'CRITICAL'
-  );
+  const state = getAppState();
+  const report = `ASYNC_EXCEPTION: ${reason} | PATH: ${state.path} | AGENT: ${state.agent}`;
+  
+  logAuditLog('ASYNC_HANDSHAKE_VOID', report, 'CRITICAL');
 };
 
-// 3. 拦截 console.error 调用 (Monkeypatch)
+// 3. Intercept Console Error (Monkeypatch for database logging)
 const originalConsoleError = console.error;
 console.error = (...args) => {
   const message = args
     .map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg))
     .join(' ');
     
-  if (isNoise(message)) return; 
-  
-  // 记录真实的控制台错误
-  logAuditLog('CONSOLE_ERROR_PROXIED', `${message}`, 'WARNING');
+  if (!isNoise(message)) {
+    logAuditLog('CONSOLE_ERROR_PROXIED', `LOG: ${message.slice(0, 500)}`, 'WARNING');
+  }
   originalConsoleError.apply(console, args);
 };
 
