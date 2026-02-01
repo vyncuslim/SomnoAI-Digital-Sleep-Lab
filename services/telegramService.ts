@@ -1,6 +1,6 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v29.0
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v30.0
  * Features: True Multi-lingual Payload Translation & Identity Synthesis
  */
 
@@ -17,25 +17,6 @@ const EVENT_MAP: Record<string, { en: string, es: string, zh: string }> = {
   'USER_LOGOUT': { en: '🔒 Session Terminated', es: '🔒 Sesión Terminada', zh: '🔒 会话退出' }
 };
 
-const translateDetails = (text: string, lang: 'en' | 'es' | 'zh'): string => {
-  let result = text;
-  
-  if (text.includes('Identity detected via Auth Guard:')) {
-    const email = text.split(':').pop()?.trim() || 'Unknown';
-    if (lang === 'zh') return `检测到受试者身份 (Auth Guard): ${email}`;
-    if (lang === 'es') return `Identidad detectada (Auth Guard): ${email}`;
-    if (lang === 'en') return `Identity detected (Auth Guard): ${email}`;
-  }
-
-  const isStaff = text.includes('STAFF_ADMIN');
-  if (isStaff) {
-    if (lang === 'zh') result = result.replace(/\[IDENTITY: STAFF_ADMIN\]/, '【管理员特权】');
-    if (lang === 'es') result = result.replace(/\[IDENTITY: STAFF_ADMIN\]/, '【ID: ADMINISTRADOR】');
-  }
-
-  return result;
-};
-
 export const getMYTTime = () => {
   return new Intl.DateTimeFormat('zh-CN', {
     timeZone: 'Asia/Kuala_Lumpur',
@@ -48,7 +29,6 @@ export const notifyAdmin = async (payload: any) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
   const msgType = payload.type || 'SYSTEM_SIGNAL';
-  const path = payload.path || 'Root_Node';
   const rawDetails = payload.message || payload.error || 'N/A';
   const mytTime = getMYTTime();
   const isoTime = new Date().toISOString();
@@ -57,25 +37,26 @@ export const notifyAdmin = async (payload: any) => {
   const mapping = EVENT_MAP[msgType] || { en: msgType, es: msgType, zh: msgType };
   const icon = (msgType.includes('FAIL') || msgType.includes('ERROR')) ? '🚨' : '🛡️';
 
+  // 构造详细的三语 Telegram 消息
   const finalMessage = `${icon} <b>SOMNO LAB 节点告警</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
     `🇬🇧 <b>[ENGLISH]</b>\n` +
     `<b>Type:</b> <code>${mapping.en}</code>\n` +
     `<b>Node:</b> <code>${nodeIdentity}</code>\n` +
-    `<b>Log:</b> <code>${translateDetails(rawDetails, 'en')}</code>\n` +
+    `<b>Log:</b> <code>${rawDetails}</code>\n` +
     `<b>Time:</b> <code>${isoTime}</code>\n\n` +
     `🇪🇸 <b>[ESPAÑOL]</b>\n` +
     `<b>Tipo:</b> <code>${mapping.es}</code>\n` +
     `<b>Nodo:</b> <code>${nodeIdentity}</code>\n` +
-    `<b>Registro:</b> <code>${translateDetails(rawDetails, 'es')}</code>\n` +
+    `<b>Registro:</b> <code>${rawDetails}</code>\n` +
     `<b>Tiempo:</b> <code>${isoTime}</code>\n\n` +
     `🇨🇳 <b>[中文]</b>\n` +
     `<b>类型:</b> <code>${mapping.zh}</code>\n` +
     `<b>节点:</b> <code>${nodeIdentity}</code>\n` +
-    `<b>日志:</b> <code>${translateDetails(rawDetails, 'zh')}</code>\n` +
+    `<b>日志:</b> <code>${rawDetails}</code>\n` +
     `<b>时间:</b> <code>${mytTime}</code>\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `📍 <b>SOURCE:</b> <code>${path.includes('admin') ? 'ADMIN_BACKPLANE' : 'SUBJECT_NODE'}</code>`;
+    `📍 <b>STATUS:</b> <code>COMMITTED</code>`;
 
   try {
     const res = await fetch(TELEGRAM_API, {
