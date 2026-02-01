@@ -45,8 +45,11 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 
       // Concurrent dual-channel dispatch
       await Promise.allSettled([
-        notifyAdmin(alertPayload, currentLang),
-        emailService.sendAdminAlert(alertPayload, currentLang)
+        // Fix: notifyAdmin expects only one argument (payload). 
+        // It internally handles multi-lingual notifications as defined in telegramService.ts.
+        notifyAdmin(alertPayload),
+        // Fix: Removed currentLang as sendAdminAlert only expects the payload argument.
+        emailService.sendAdminAlert(alertPayload)
       ]);
     }
 

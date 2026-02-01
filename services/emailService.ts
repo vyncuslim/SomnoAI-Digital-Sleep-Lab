@@ -1,94 +1,69 @@
 
-import { I18N_ALERTS, getMYTTime } from './telegramService.ts';
+import { getMYTTime } from './telegramService.ts';
 
 /**
- * SOMNOAI EMAIL BRIDGE v2.2
- * Synchronized with MYT (Asia/Kuala_Lumpur)
+ * SOMNO LAB EMAIL BRIDGE v3.0
+ * Mirrored Multi-lingual Dispatch
  */
 
 const ADMIN_EMAIL = 'ongyuze1401@gmail.com';
 
-const I18N_EMAIL_TEMPLATES: Record<string, any> = {
-  en: {
-    subject: "🛡️ Somno Lab Security Protocol Alert",
-    header: "Neural Link Alert",
-  },
-  zh: {
-    subject: "🛡️ Somno Lab 安全协议告警",
-    header: "神经链接告警",
-  },
-  es: {
-    subject: "🛡️ Alerta de Protocolo de Seguridad Somno Lab",
-    header: "Alerta de Enlace Neuronal",
-  }
-};
-
 export const emailService = {
-  /**
-   * Dispatches a high-priority administrative alert to the SMTP gateway.
-   */
-  sendAdminAlert: async (payload: { type: string; message: string; error?: string }, lang: 'en' | 'zh' | 'es' = 'en') => {
-    const et = I18N_EMAIL_TEMPLATES[lang] || I18N_EMAIL_TEMPLATES.en;
-    const dict = I18N_ALERTS[lang] || I18N_ALERTS.en;
-    const nodeIdentity = window.location.hostname;
-    const mytTime = getMYTTime();
-    
-    const rawType = payload.type || 'SYSTEM_SIGNAL';
-    const localizedType = dict[rawType.toLowerCase()] || rawType;
-
-    const html = `
-      <div style="font-family: 'JetBrains Mono', monospace, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px; border-radius: 24px; border: 1px solid #1e293b;">
-        <div style="text-align: center; margin-bottom: 40px;">
-          <div style="display: inline-block; padding: 12px 24px; background: #ef4444; border-radius: 12px; color: white; font-weight: 800; font-size: 10px; letter-spacing: 2px; text-transform: uppercase;">
-            ${et.header}
-          </div>
-        </div>
-        <div style="background: rgba(255,255,255,0.02); padding: 30px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.05);">
-          <p style="margin: 0 0 10px 0; font-size: 10px; color: #64748b; text-transform: uppercase;">${dict.type}</p>
-          <p style="margin: 0 0 24px 0; font-size: 16px; color: #818cf8; font-weight: bold;">${localizedType}</p>
-          
-          <p style="margin: 0 0 10px 0; font-size: 10px; color: #64748b; text-transform: uppercase;">${dict.log}</p>
-          <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #e2e8f0; font-style: italic;">${payload.message}</p>
-          
-          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; border-top: 1px solid rgba(255,255,255,0.05); pt: 24px;">
-            <div>
-              <p style="margin: 20px 0 5px 0; font-size: 10px; color: #64748b; text-transform: uppercase;">${dict.node}</p>
-              <p style="margin: 0; font-size: 12px; color: #f1f5f9; font-weight: bold;">${nodeIdentity}</p>
-            </div>
-            <div>
-              <p style="margin: 20px 0 5px 0; font-size: 10px; color: #64748b; text-transform: uppercase;">${dict.time}</p>
-              <p style="margin: 0; font-size: 12px; color: #f1f5f9; font-weight: bold;">${mytTime}</p>
-            </div>
-          </div>
-        </div>
-        <div style="text-align: center; margin-top: 30px; font-size: 9px; color: #475569; letter-spacing: 1px;">
-          SOMNO NEURAL TELEMETRY GUARD • SYSTEM AUTO-DISPATCH
-        </div>
-      </div>
-    `;
-
-    return await emailService.sendSystemEmail(ADMIN_EMAIL, `${et.subject} [${localizedType}]`, html);
-  },
-
+  // Fix: Added formatAnalysisHtml to support AIAssistant.tsx requirements
   formatAnalysisHtml: (content: string, email: string) => {
     return `
-      <div style="font-family: sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px; border-radius: 20px;">
-        <div style="text-align: center; margin-bottom: 30px;">
-          <h1 style="color: #818cf8; font-style: italic; margin-bottom: 5px;">SomnoAI Neural Report</h1>
-          <p style="font-size: 10px; color: #475569; letter-spacing: 2px;">SECURE TELEMETRY DISPATCH</p>
+      <div style="font-family: sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px; border-radius: 20px; border: 1px solid #1e293b;">
+        <div style="text-align: center; border-bottom: 1px solid #1e293b; padding-bottom: 20px; margin-bottom: 20px;">
+          <h2 style="color: #818cf8; margin: 0;">Neural Lab Analysis Dispatch</h2>
+          <p style="font-size: 10px; color: #64748b; text-transform: uppercase;">SomnoAI Secure Telemetry Hub</p>
         </div>
-        <div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.1); padding: 30px; border-radius: 15px; line-height: 1.6;">
-          <p style="color: #94a3b8; font-size: 12px;">SUBJECT: ${email}</p>
-          <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.05); margin: 20px 0;">
-          <div style="font-size: 14px; color: #e2e8f0; white-space: pre-wrap; font-style: italic;">
-            ${content}
-          </div>
+        <div style="margin-bottom: 20px;">
+          <p style="color: #94a3b8; font-size: 12px; margin-bottom: 5px;">Subject Identity:</p>
+          <p style="font-weight: bold; color: #ffffff;">${email}</p>
         </div>
-        <div style="text-align: center; margin-top: 30px; font-size: 10px; color: #475569;">
-          © 2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
+        <div style="background-color: #050a1f; padding: 25px; border-radius: 15px; border: 1px solid #1e293b; line-height: 1.6;">
+          <p style="font-style: italic; color: #cbd5e1; margin: 0;">${content.replace(/\n/g, '<br/>')}</p>
+        </div>
+        <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #1e293b; text-align: center; font-size: 10px; color: #475569;">
+          @2026 SOMNO LAB • NEURAL INFRASTRUCTURE • ALL BIOMETRICS ENCRYPTED
         </div>
       </div>
     `;
+  },
+
+  sendAdminAlert: async (payload: { type: string; message: string; error?: string }) => {
+    const mytTime = getMYTTime();
+    const nodeIdentity = typeof window !== 'undefined' ? window.location.hostname : 'Cloud_Edge';
+    
+    const html = `
+      <div style="font-family: sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px; border-radius: 20px;">
+        <div style="text-align: center; border-bottom: 1px solid #1e293b; padding-bottom: 20px; margin-bottom: 20px;">
+          <h2 style="color: #818cf8; margin: 0;">Somno Lab Multi-lingual Dispatch</h2>
+          <p style="font-size: 10px; color: #64748b; text-transform: uppercase;">Global Security Mirror</p>
+        </div>
+        
+        <div style="margin-bottom: 30px;">
+          <h3 style="color: #ef4444; font-size: 14px; text-transform: uppercase;">[EN] System Signal: ${payload.type}</h3>
+          <p style="font-style: italic;">${payload.message}</p>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+          <h3 style="color: #ef4444; font-size: 14px; text-transform: uppercase;">[ES] Señal del Sistema: ${payload.type}</h3>
+          <p style="font-style: italic;">${payload.message}</p>
+        </div>
+
+        <div style="margin-bottom: 30px;">
+          <h3 style="color: #ef4444; font-size: 14px; text-transform: uppercase;">[ZH] 系统信号: ${payload.type}</h3>
+          <p style="font-style: italic;">${payload.message}</p>
+        </div>
+
+        <div style="font-size: 10px; color: #475569; border-top: 1px solid #1e293b; padding-top: 20px;">
+          NODE: ${nodeIdentity} | TIME: ${mytTime}
+        </div>
+      </div>
+    `;
+
+    return await emailService.sendSystemEmail(ADMIN_EMAIL, `🛡️ Lab Security Pulse: ${payload.type}`, html);
   },
 
   sendSystemEmail: async (to: string, subject: string, html: string) => {
@@ -99,11 +74,9 @@ export const emailService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to, subject, html, secret }),
       });
-      const data = await response.json();
-      return { success: response.ok, data };
+      return { success: response.ok };
     } catch (e) {
-      console.error("Email bridge severed.", e);
-      return { success: false, error: "NETWORK_EXCEPTION" };
+      return { success: false };
     }
   }
 };
