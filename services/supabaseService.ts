@@ -6,8 +6,8 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB AUDIT PROTOCOL v12.0
- * Dispatches encrypted logs with Source Origin Detection.
+ * SOMNO LAB AUDIT PROTOCOL v13.0
+ * Dispatches encrypted logs with Automatic Path & Source Detection.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   const actionKey = action.toUpperCase();
@@ -24,7 +24,8 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
     'RUNTIME_ERROR',
     'ASYNC_HANDSHAKE_VOID',
     'ADMIN_PAGE_CHANGE',
-    'PW_UPDATE_SUCCESS'
+    'PW_UPDATE_SUCCESS',
+    'PERMISSION_DENIED'
   ];
   
   const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(actionKey);
@@ -32,16 +33,21 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
     const actingAdmin = session?.user?.email || 'SYSTEM_NODE';
+    
+    // 🕵️ PATH DETECTION (Extract current hash route)
+    const currentPath = typeof window !== 'undefined' ? 
+      (window.location.hash.replace(/^#\/?/, '') || 'home') : 'cloud_logic';
 
     if (shouldNotify) {
-      // 🕵️ SOURCE ORIGIN DETECTION
-      // If action starts with ADMIN_, we know it came from the Admin Page
-      const source = actionKey.startsWith('ADMIN_') ? 'ADMIN_CONSOLE' : 'USER_TERMINAL';
+      // SOURCE ORIGIN DETECTION
+      const source = actionKey.startsWith('ADMIN_') || currentPath.includes('admin') 
+        ? 'ADMIN_CONSOLE' : 'USER_TERMINAL';
 
       const alertPayload = {
         source,
+        path: currentPath,
         type: actionKey,
-        message: `[ID: ${actingAdmin}] ${details}`,
+        message: details, // details usually contains the ID or the error message
         error: level === 'CRITICAL' ? details : undefined
       };
 
@@ -256,8 +262,9 @@ export const feedbackApi = {
 
     const alertPayload = {
       source: 'USER_TERMINAL',
+      path: 'feedback',
       type: `USER_FEEDBACK_${type.toUpperCase()}`,
-      message: `📩 NEW FEEDBACK\nFrom: ${email}\nType: ${type}\nContent: ${content.slice(0, 500)}`
+      message: `From: ${email}\nType: ${type}\nContent: ${content.slice(0, 500)}`
     };
     
     await Promise.allSettled([
