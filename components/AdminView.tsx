@@ -230,7 +230,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              <div className="p-6 bg-slate-900/60 rounded-[2rem] border border-white/5 space-y-4">
                                <p className="text-xs text-slate-300 font-bold italic">故障排查步骤 (Checklist):</p>
                                <ol className="space-y-3 text-[10px] text-slate-400 list-decimal pl-5 italic font-medium">
-                                  <li>进入 GA4 后台 -> <b>媒体资源设置</b> -> <b>账号管理</b>。</li>
+                                  <li>进入 GA4 后台 &rarr; <b>媒体资源设置</b> &rarr; <b>账号管理</b>。</li>
                                   <li>点击 "+" 号并选择 <b>"添加用户"</b>。</li>
                                   <li>粘贴下方的 Service Account 邮箱。</li>
                                   <li>分配角色为 <b>"查看者 (Viewer)"</b> 并保存。</li>
