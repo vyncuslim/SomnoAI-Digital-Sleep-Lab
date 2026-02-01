@@ -1,7 +1,7 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v22.5
- * Protocol: Mirrored Triple-lingual Dispatch with Precise Origin & Path Tracking
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v23.0
+ * Features: Bi-directional Source Identity & Triple-lingual Precision
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -9,26 +9,18 @@ const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
 const TRANSLATIONS: Record<string, { en: string, es: string, zh: string }> = {
-  'RUNTIME_ERROR': { en: 'System Runtime Exception', es: 'Excepción de Ejecución', zh: '系统运行时异常' },
-  'USER_LOGIN': { en: 'Subject Access Verified', es: 'Acceso de Sujeto Verificado', zh: '受试者身份验证成功' },
-  'USER_SIGNUP': { en: 'New Subject Node Linked', es: 'Nuevo Nodo Vinculado', zh: '新受试者注册' },
-  'SECURITY_BREACH_ATTEMPT': { en: 'Intrusion Protocol Detected', es: 'Protocolo de Intrusión', zh: '监测到入侵协议' },
-  'PULSE_STABLE': { en: 'Neural Grid Stable', es: 'Red Neural Estable', zh: '神经网格运行稳定' },
-  'PULSE_ANOMALY': { en: 'Grid Anomaly Detected', es: 'Anomalía Detectada', zh: '检测到网格运行异常' },
-  'GA4_SYNC_FAILURE': { en: 'GA4 Telemetry Interrupted', es: 'Telemetría Interrumpida', zh: 'GA4 遥测同步中断' },
-  'PW_UPDATE_SUCCESS': { en: 'Access Key Rotated', es: 'Clave de Acceso Rotada', zh: '访问密钥轮换成功' },
-  'SYSTEM_SIGNAL': { en: 'Internal System Signal', es: 'Señal del Sistema', zh: '内部系统信号' },
-  'ADMIN_MANUAL_SYNC': { en: 'Admin Manual Pulse', es: 'Pulso Manual Admin', zh: '管理员执行手动同步' },
-  'ADMIN_ROLE_CHANGE': { en: 'Clearance Elevation', es: 'Elevación de Acceso', zh: '管理员调整权限等级' },
-  'ADMIN_USER_BLOCK': { en: 'Node Access Revoked', es: 'Acceso Revocado', zh: '管理员封禁受试者节点' },
-  'PERMISSION_DENIED': { en: 'Handshake Forbidden', es: 'Handshake Prohibido', zh: '访问被拒绝（权限不足）' }
+  'RUNTIME_ERROR': { en: 'System Exception', es: 'Excepción del Sistema', zh: '系统运行异常' },
+  'USER_LOGIN': { en: 'Identity Verified', es: 'Identidad Verificada', zh: '用户访问成功' },
+  'GA4_SYNC_FAILURE': { en: 'Telemetry Sync Failed', es: 'Fallo de Sincronización', zh: 'GA4 同步失败' },
+  'ADMIN_MANUAL_SYNC': { en: 'Admin Manual Pulse', es: 'Pulso Manual Admin', zh: '管理员手动同步' },
+  'PERMISSION_DENIED': { en: 'Handshake Forbidden', es: 'Handshake Prohibido', zh: '访问被拒绝（权限不足）' },
+  'SECURITY_ALERT': { en: 'Security Breach Protocol', es: 'Alerta de Seguridad', zh: '安全预警' }
 };
 
-const SOURCE_MAPPING: Record<string, string> = {
-  'ADMIN_CONSOLE': '🖥️ ADMIN_BACKPLANE | 管理端后台',
-  'USER_TERMINAL': '🧪 SUBJECT_NODE | 受试者终端',
-  'SYSTEM_LOGIC': '⚙️ SYSTEM_CORE | 系统逻辑核心',
-  'AI_WEBHOOK': '🤖 NEURAL_ROBOT | 机器人交互'
+const SOURCE_TAGS: Record<string, string> = {
+  'ADMIN_CONSOLE': '🖥️ [ADMIN_BACKPLANE] | 管理端后台',
+  'USER_TERMINAL': '🧪 [SUBJECT_NODE] | 受试者终端',
+  'SYSTEM': '⚙️ [SYSTEM_CORE] | 系统核心'
 };
 
 export const getMYTTime = () => {
@@ -39,54 +31,47 @@ export const getMYTTime = () => {
   }).format(new Date()) + ' (MYT)';
 };
 
-/**
- * Standardized Dispatcher with Metadata Analysis
- */
 export const notifyAdmin = async (payload: any) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
   const msgType = payload.type || 'SYSTEM_SIGNAL';
-  const sourceKey = payload.source || (msgType.startsWith('ADMIN_') ? 'ADMIN_CONSOLE' : 'USER_TERMINAL');
-  const path = payload.path || 'Root_Handshake';
+  const path = payload.path || (typeof window !== 'undefined' ? window.location.hash : 'Cloud_Logic');
   
-  const mapping = TRANSLATIONS[msgType] || TRANSLATIONS['SYSTEM_SIGNAL'];
-  const sourceLabel = SOURCE_MAPPING[sourceKey] || SOURCE_MAPPING['SYSTEM_LOGIC'];
-  
-  const mytTime = getMYTTime();
-  const nodeName = typeof window !== 'undefined' ? window.location.hostname : 'Cloud_Edge';
-  const content = payload.message || payload.error || 'N/A';
+  // 智能来源判定
+  let sourceLabel = SOURCE_TAGS['SYSTEM'];
+  if (payload.source === 'ADMIN_CONSOLE' || path.includes('admin')) {
+    sourceLabel = SOURCE_TAGS['ADMIN_CONSOLE'];
+  } else if (payload.source === 'USER_TERMINAL' || path.includes('dashboard')) {
+    sourceLabel = SOURCE_TAGS['USER_TERMINAL'];
+  }
 
-  // 1. Header Logic
-  const isError = msgType.includes('FAIL') || msgType.includes('ANOMALY') || msgType.includes('ERROR') || msgType.includes('DENIED');
-  const icon = isError ? '🚨' : '🛡️';
+  const mapping = TRANSLATIONS[msgType] || { en: msgType, es: msgType, zh: msgType };
+  const content = payload.message || payload.error || 'N/A';
+  const mytTime = getMYTTime();
+  const icon = (msgType.includes('FAIL') || msgType.includes('ERROR') || msgType.includes('DENIED')) ? '🚨' : '🛡️';
 
   const finalMessage = `${icon} <b>LAB DISPATCH | 实验室通讯</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `📍 <b>ORIGIN:</b> <code>${sourceLabel}</code>\n` +
-    `🔗 <b>PATH:</b> <code>#${path}</code>\n\n` +
+    `📍 <b>SOURCE:</b> <code>${sourceLabel}</code>\n` +
+    `🔗 <b>PATH:</b> <code>${path}</code>\n\n` +
     `🇬🇧 <b>[ENGLISH]</b>\n` +
     `<b>Event:</b> <code>${mapping.en}</code>\n` +
-    `<b>Log:</b> <code>${content}</code>\n\n` +
+    `<b>Detail:</b> <code>${content}</code>\n\n` +
     `🇪🇸 <b>[ESPAÑOL]</b>\n` +
     `<b>Evento:</b> <code>${mapping.es}</code>\n` +
     `<b>Log:</b> <code>${content}</code>\n\n` +
     `🇨🇳 <b>[中文]</b>\n` +
     `<b>事件:</b> <code>${mapping.zh}</code>\n` +
-    `<b>日志:</b> <code>${content}</code>\n\n` +
+    `<b>详情:</b> <code>${content}</code>\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `<b>NODE:</b> <code>${nodeName}</code>\n` +
+    `<b>NODE:</b> <code>${typeof window !== 'undefined' ? window.location.hostname : 'Vercel_Edge'}</code>\n` +
     `<b>TIME:</b> <code>${mytTime}</code>`;
 
   try {
     const res = await fetch(TELEGRAM_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        chat_id: ADMIN_CHAT_ID,
-        text: finalMessage,
-        parse_mode: 'HTML',
-        disable_web_page_preview: true
-      })
+      body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: finalMessage, parse_mode: 'HTML' })
     });
     return res.ok;
   } catch (err) {

@@ -12,6 +12,7 @@ import { safeReload, getSafeHostname } from '../services/navigation.ts';
 import { notifyAdmin } from '../services/telegramService.ts';
 import { emailService } from '../services/emailService.ts';
 import { useAuth } from '../context/AuthContext.tsx';
+import { ExitFeedbackModal } from './ExitFeedbackModal.tsx';
 
 const m = motion as any;
 
@@ -32,12 +33,17 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isPersonalAiActive, setIsPersonalAiActive] = useState(!!customKey);
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
   const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [showExitFeedback, setShowExitFeedback] = useState(false);
 
   const t = translations[lang]?.settings || translations.en.settings;
 
   const handleLanguageChange = (newLang: Language) => {
     localStorage.setItem('somno_lang', newLang);
     onLanguageChange(newLang);
+  };
+
+  const handleLogoutInitiation = () => {
+    setShowExitFeedback(true);
   };
 
   const handleTestComms = async () => {
@@ -60,9 +66,14 @@ export const Settings: React.FC<SettingsProps> = ({
 
   return (
     <div className="space-y-8 pb-48 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
+      <ExitFeedbackModal 
+        isOpen={showExitFeedback} 
+        lang={lang} 
+        onConfirmLogout={onLogout} 
+      />
+
       <div className="flex flex-col gap-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* System Key Status - Only functional/visible in meaningful way for Admins */}
           <GlassCard className={`p-6 rounded-[2.5rem] border-white/5 ${isAdmin ? 'opacity-100 bg-amber-500/5 border-amber-500/10' : 'opacity-40 grayscale'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
@@ -76,11 +87,6 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
               <ShieldCheck size={18} className={isSystemAiActive ? 'text-amber-500' : 'text-slate-700'} />
             </div>
-            {!isAdmin && (
-              <div className="mt-3 flex items-center gap-2 text-[8px] font-black text-slate-600 uppercase italic">
-                <ShieldAlert size={10} /> Restricted to Administrator
-              </div>
-            )}
           </GlassCard>
 
           <GlassCard className="p-6 rounded-[2.5rem] border-indigo-500/20 bg-indigo-500/5">
@@ -99,29 +105,6 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
-        {isAdmin && (
-          <GlassCard className="p-8 rounded-[3rem] border-amber-500/20 bg-amber-500/[0.02]">
-            <div className="space-y-6">
-              <div className="flex items-center gap-3">
-                <Terminal size={18} className="text-amber-500" />
-                <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Admin Diagnostic Gateway</h3>
-              </div>
-              <p className="text-[10px] text-slate-500 italic">Verify the system's global environment assets (Telegram & SMTP).</p>
-              <button 
-                onClick={handleTestComms}
-                disabled={testStatus === 'sending'}
-                className={`w-full py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-xl ${
-                  testStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                  testStatus === 'error' ? 'bg-rose-600 text-white' : 'bg-amber-600/10 text-amber-500 border border-amber-500/30'
-                }`}
-              >
-                {testStatus === 'sending' ? <RefreshCw size={14} className="animate-spin" /> : <Send size={14} />}
-                {testStatus === 'success' ? 'MIRROR CONFIRMED' : 'EXECUTE SYSTEM PULSE'}
-              </button>
-            </div>
-          </GlassCard>
-        )}
-
         {/* Personal Key Config Section */}
         <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02]">
           <div className="space-y-6">
@@ -131,7 +114,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
             <div className="space-y-4">
               <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                Regular subjects must provide a personal API Key to enable AI analysis. Your key remains stored only in this node's local registry.
+                Regular subjects must provide a personal API Key to enable AI analysis.
               </p>
               <input 
                 type="password"
@@ -165,7 +148,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
 
             <div className="space-y-4 pt-4 border-t border-white/5">
-               <button onClick={onLogout} className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 shadow-2xl">
+               <button onClick={handleLogoutInitiation} className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 shadow-2xl">
                  <DisconnectIcon size={18} /> {t.logout}
                </button>
             </div>
