@@ -3,17 +3,12 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v11.0
- * Optimized for UptimeRobot Scheduler with enhanced Audit Logging
+ * SOMNO LAB GA4 SYNC GATEWAY v12.0
+ * Optimized for UptimeRobot Scheduler with enhanced Audit Logging & Error Isolation
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
 const SERVICE_ACCOUNT_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
-
-const supabase = createClient(
-  process.env.SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
 
 export default async function handler(req, res) {
   const authHeader = req.headers.authorization;
@@ -30,12 +25,41 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "UNAUTHORIZED" });
   }
 
+  // Define response utility to ensure JSON consistency
+  const sendError = async (status, error, detail, code = "SYNC_FAILURE") => {
+    // Try to log to audit if possible, but don't crash the response if Supabase fails
+    try {
+      if (process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY) {
+        const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+        await supabase.from('audit_logs').insert([{
+          action: 'GA4_SYNC_FAILURE',
+          details: `Status: ${status} | Error: ${detail} | Code: ${error}`,
+          level: status === 403 ? 'CRITICAL' : 'WARNING'
+        }]);
+      }
+    } catch (e) {
+      console.error("[GATEWAY_AUDIT] Failed to commit log:", e.message);
+    }
+    return res.status(status).json({ error, detail, code });
+  };
+
   try {
+    // 2. Environment Validation
     if (!process.env.GA_PROPERTY_ID || !process.env.GA_SERVICE_ACCOUNT_KEY) {
-      throw new Error("SERVER_ENV_VOID");
+      return sendError(500, "ENV_MISCONFIGURED", "GA_PROPERTY_ID or GA_SERVICE_ACCOUNT_KEY is missing from server environment.");
     }
 
-    const credentials = JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY);
+    if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
+      return sendError(500, "ENV_MISCONFIGURED", "Supabase credentials missing from server environment.");
+    }
+
+    let credentials;
+    try {
+      credentials = JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY);
+    } catch (e) {
+      return sendError(500, "JSON_PARSE_ERROR", "Failed to parse GA_SERVICE_ACCOUNT_KEY environment variable.");
+    }
+
     const client = new BetaAnalyticsDataClient({ credentials });
 
     const [response] = await client.runReport({
@@ -52,6 +76,7 @@ export default async function handler(req, res) {
     }));
 
     if (rows.length > 0) {
+      const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
       const { error: upsertError } = await supabase
         .from("analytics_daily")
         .upsert(rows, { onConflict: 'date' });
@@ -66,17 +91,11 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   } catch (err) {
-    const isPermissionError = err.message.includes('PERMISSION_DENIED') || err.code === 7;
+    console.error("[GATEWAY_EXCEPTION]", err);
+    const isPermissionError = err.message?.includes('PERMISSION_DENIED') || err.code === 7;
     const status = isPermissionError ? 403 : 500;
-    const detail = isPermissionError ? `Add ${SERVICE_ACCOUNT_EMAIL} to GA4.` : err.message;
-
-    // Log the failure to audit logs for visibility in Admin View
-    await supabase.from('audit_logs').insert([{
-      action: 'GA4_SYNC_FAILURE',
-      details: `Status: ${status} | Error: ${detail}`,
-      level: isPermissionError ? 'CRITICAL' : 'WARNING'
-    }]).catch(() => {});
-
-    return res.status(status).json({ error: "SYNC_FAILURE", detail });
+    const detail = isPermissionError ? `Add ${SERVICE_ACCOUNT_EMAIL} to GA4 as Viewer.` : err.message;
+    
+    return sendError(status, "SYNC_FAILURE", detail);
   }
 }

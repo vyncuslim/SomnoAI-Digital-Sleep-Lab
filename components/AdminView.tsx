@@ -90,6 +90,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setActionError(null);
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
+      
+      // Robust Check: Verify content type before parsing JSON to prevent "Unexpected token A" error
+      const contentType = response.headers.get("content-type");
+      if (!contentType || !contentType.includes("application/json")) {
+        const text = await response.text();
+        throw new Error(`CRITICAL_SERVER_CRASH: The server returned an HTML error instead of data. This usually indicates a 500 Internal Server Error in the serverless function. Raw: ${text.slice(0, 30)}...`);
+      }
+
       const data = await response.json();
       if (response.ok) {
         setSyncState('SYNCED');
@@ -105,7 +113,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setActionError(e.message);
       if (syncState !== 'FORBIDDEN') setSyncState('ERROR');
     }
-    if (syncState !== 'FORBIDDEN') setTimeout(() => setSyncState('IDLE'), 3000);
+    if (syncState !== 'FORBIDDEN') setTimeout(() => setSyncState('IDLE'), 4000);
   };
 
   const handleTableInspect = (tableId: string) => {
@@ -237,15 +245,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                 </div>
 
-                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${syncState === 'FORBIDDEN' ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
+                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${syncState === 'FORBIDDEN' || syncState === 'ERROR' ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
                    <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                       <div className="flex items-center gap-8 text-left">
-                         <div className={`p-6 rounded-[2rem] border border-white/5 ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : syncState === 'FORBIDDEN' ? 'bg-rose-600/10 text-rose-500' : 'bg-indigo-600/10 text-indigo-400'}`}>
-                            {syncState === 'FORBIDDEN' ? <ShieldAlert size={32} /> : <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />}
+                         <div className={`p-6 rounded-[2rem] border border-white/5 ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : (syncState === 'FORBIDDEN' || syncState === 'ERROR') ? 'bg-rose-600/10 text-rose-500' : 'bg-indigo-600/10 text-indigo-400'}`}>
+                            {syncState === 'FORBIDDEN' || syncState === 'ERROR' ? <ShieldAlert size={32} /> : <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />}
                          </div>
                          <div>
                             <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Sync</h3>
-                            <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">Internal Processor Status: {syncState}</p>
+                            <p className={`text-[10px] font-black uppercase tracking-widest mt-1 italic ${syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500'}`}>
+                              Internal Processor Status: {syncState}
+                            </p>
                          </div>
                       </div>
                       <div className="flex gap-4">
@@ -279,6 +289,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                {copiedKey === 'sa_email_2' ? <Check size={16} /> : <Copy size={16} />}
                              </button>
                           </div>
+                       </m.div>
+                     )}
+                     {syncState === 'ERROR' && (
+                       <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-8 pt-8 border-t border-rose-500/20 space-y-4 text-left">
+                          <div className="flex items-center gap-3 text-rose-400">
+                             <ShieldAlert size={18} />
+                             <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">Bridge Severed: Execution Failure</span>
+                          </div>
+                          <p className="text-sm text-slate-400 italic leading-relaxed">
+                            The telemetry gateway has crashed. This usually indicates that required environment variables are missing from the server host. Ensure <b>GA_SERVICE_ACCOUNT_KEY</b> and <b>SUPABASE_SERVICE_ROLE_KEY</b> are configured.
+                          </p>
                        </m.div>
                      )}
                    </AnimatePresence>
