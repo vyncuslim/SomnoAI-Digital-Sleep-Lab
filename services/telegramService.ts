@@ -1,73 +1,49 @@
 
 /**
- * SOMNO LAB - DIRECT TELEGRAM GATEWAY v7.1
- * Fully localized for English, Chinese (Simplified), and Spanish.
+ * SOMNO LAB - DIRECT TELEGRAM GATEWAY v7.2
+ * Enhanced with Neural Pulse diagnostic messaging.
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
-/**
- * Full Internationalization Map for Administrative Signals
- */
 export const I18N_ALERTS: Record<string, Record<string, string>> = {
   en: {
     header: '🛡️ <b>SOMNO LAB NODE ALERT</b>',
+    pulse_stable: '✅ <b>PULSE STABLE</b>',
+    pulse_anomaly: '🚨 <b>PULSE ANOMALY</b>',
     type: 'TYPE',
     log: 'LOG',
     time: 'TIME',
     node: 'NODE',
-    user_login: '👤 USER_LOGIN',
-    user_signup: '🆕 USER_SIGNUP',
-    user_logout: '🚪 USER_LOGOUT',
-    critical: '🚨 CRITICAL_EXCEPTION',
-    warning: '⚠️ WARNING_SIGNAL',
-    info: 'ℹ️ SYSTEM_INFO',
-    admin_role_change: '⚖️ CLEARANCE_SHIFT',
-    admin_user_block: '🚫 ACCESS_RESTRICTION',
-    admin_manual_sync: '🔄 TELEMETRY_SYNC',
-    runtime_error: '💥 RUNTIME_FAILURE',
-    async_handshake_void: '🌐 ASYNC_EXCEPTION',
-    admin_page_change: '🛠️ REGISTRY_MODIFICATION'
+    latency: 'LATENCY',
+    status_ok: 'Operational: All systems nominal.',
+    status_err: 'Degraded: Immediate inspection required.'
   },
   zh: {
     header: '🛡️ <b>SOMNO LAB 节点告警</b>',
+    pulse_stable: '✅ <b>脉搏稳定</b>',
+    pulse_anomaly: '🚨 <b>脉搏异常</b>',
     type: '类型',
     log: '日志',
     time: '时间',
     node: '节点',
-    user_login: '👤 用户登录',
-    user_signup: '🆕 用户注册',
-    user_logout: '🚪 用户登出',
-    critical: '🚨 严重异常',
-    warning: '⚠️ 告警信号',
-    info: 'ℹ️ 系统信息',
-    admin_role_change: '⚖️ 权限变更',
-    admin_user_block: '🚫 访问限制',
-    admin_manual_sync: '🔄 手动数据同步',
-    runtime_error: '💥 运行时错误',
-    async_handshake_void: '🌐 异步握手失效',
-    admin_page_change: '🛠️ 注册表修改'
+    latency: '延迟',
+    status_ok: '运行中：所有系统状态正常。',
+    status_err: '降级：需立即检查异常原因。'
   },
   es: {
     header: '🛡️ <b>ALERTA DE NODO SOMNO LAB</b>',
+    pulse_stable: '✅ <b>PULSO ESTABLE</b>',
+    pulse_anomaly: '🚨 <b>ANOMALÍA DE PULSO</b>',
     type: 'TIPO',
     log: 'REGISTRO',
     time: 'HORA',
     node: 'NODO',
-    user_login: '👤 INICIO_SESIÓN',
-    user_signup: '🆕 REGISTRO_USUARIO',
-    user_logout: '🚪 CIERRE_SESIÓN',
-    critical: '🚨 EXCEPCIÓN_CRÍTICA',
-    warning: '⚠️ SEÑAL_ADVERTENCIA',
-    info: 'ℹ️ INFO_SISTEMA',
-    admin_role_change: '⚖️ CAMBIO_DE_PERMISOS',
-    admin_user_block: '🚫 RESTRICCIÓN_DE_ACCESO',
-    admin_manual_sync: '🔄 SINC_MANUAL',
-    runtime_error: '💥 ERROR_DE_EJECUCIÓN',
-    async_handshake_void: '🌐 EXCEPCIÓN_ASÍNCRONA',
-    admin_page_change: '🛠️ MODIFICACIÓN_REGISTRO'
+    latency: 'LATENCIA',
+    status_ok: 'Operativo: Todos los sistemas nominales.',
+    status_err: 'Degradado: Inspección inmediata requerida.'
   }
 };
 
@@ -77,7 +53,7 @@ const escapeHTML = (str: string): string => {
 };
 
 export const notifyAdmin = async (
-    payload: string | { error?: string; message?: string; type?: string },
+    payload: string | { error?: string; message?: string; type?: string; isPulse?: boolean; isSuccess?: boolean; latency?: string },
     lang: 'en' | 'zh' | 'es' = 'en'
 ) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
@@ -87,6 +63,12 @@ export const notifyAdmin = async (
 
   if (typeof payload === 'string') {
     finalMessage = `${dict.header}\n\n${escapeHTML(payload)}`;
+  } else if (payload.isPulse) {
+    const header = payload.isSuccess ? dict.pulse_stable : dict.pulse_anomaly;
+    const body = payload.isSuccess ? dict.status_ok : escapeHTML(payload.message || 'Unknown protocol void');
+    const nodeName = window.location.hostname;
+    
+    finalMessage = `${header}\n\n<b>${dict.node}:</b> <code>${nodeName}</code>\n<b>${dict.latency}:</b> <code>${payload.latency || '--'}ms</code>\n<b>${dict.log}:</b> <code>${body}</code>\n<b>${dict.time}:</b> <code>${new Date().toISOString()}</code>`;
   } else {
     const rawType = payload.type || 'SYSTEM_SIGNAL';
     const localizedType = dict[rawType.toLowerCase()] || rawType;

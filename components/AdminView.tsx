@@ -8,13 +8,14 @@ import {
   MessageSquare, LayoutDashboard, Radio, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint,
   Lock, Table, List, Clock, TrendingUp,
-  CheckCircle2, Unlock, WifiOff, Mail, ExternalLink, ActivitySquare, AlertCircle
+  CheckCircle2, Unlock, WifiOff, Mail, ExternalLink, ActivitySquare, AlertCircle,
+  HeartPulse, ShieldQuestion
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
+import { systemMonitor, DiagnosticResult } from '../services/systemMonitor.ts';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import { trackConversion } from '../services/analytics.ts';
 
 const m = motion as any;
 
@@ -38,6 +39,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('IDLE');
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
+  
+  const [isPulsing, setIsPulsing] = useState(false);
+  const [pulseResult, setPulseResult] = useState<DiagnosticResult | null>(null);
   
   const [users, setUsers] = useState<any[]>([]);
   const [dailyStats, setDailyStats] = useState<any[]>([]);
@@ -66,6 +70,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     } catch (e) { setSyncState('IDLE'); }
   };
 
+  const executePulse = async () => {
+    setIsPulsing(true);
+    const res = await systemMonitor.executePulseCheck('zh');
+    setPulseResult(res);
+    setIsPulsing(false);
+  };
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -91,6 +102,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       }));
       setTableCounts(counts);
       await checkSyncStatus();
+      
+      // Auto-pulse on entry
+      executePulse();
     } catch (err: any) {
       setActionError(err.message || "Mesh synchronization failure.");
     } finally {
@@ -165,22 +179,76 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <AnimatePresence mode="wait">
           {activeTab === 'overview' && (
             <m.div key="overview" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} className="space-y-16">
-               <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  {[
-                    { label: 'Daily Users (GA4)', value: dailyStats[dailyStats.length - 1]?.users || 0, icon: Globe, source: 'GA4' },
-                    { label: 'Audit Records', value: tableCounts['audit_logs'] || 0, icon: List, source: 'DB' },
-                    { label: 'Subject Profiles', value: tableCounts['profiles'] || 0, icon: Users, source: 'DB' },
-                    { label: 'Security Pulses', value: tableCounts['security_events'] || 0, icon: ShieldAlert, source: 'DB' }
-                  ].map((stat, i) => (
-                    <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5">
-                      <div className="flex justify-between items-start mb-6">
-                        <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400"><stat.icon size={22} /></div>
-                        <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest">{stat.source}</span>
-                      </div>
-                      <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2">{stat.label}</p>
-                    </GlassCard>
-                  ))}
+               
+               {/* New Neural Pulse Hub */}
+               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                 <GlassCard className="lg:col-span-1 p-8 rounded-[3.5rem] border-white/5 relative overflow-hidden group">
+                    {isPulsing && (
+                      <m.div 
+                        animate={{ opacity: [0.1, 0.3, 0.1], scale: [1, 1.2, 1] }} 
+                        transition={{ duration: 2, repeat: Infinity }}
+                        className="absolute inset-0 bg-indigo-500/10 rounded-full blur-[80px]"
+                      />
+                    )}
+                    <div className="flex items-center justify-between mb-8 relative z-10">
+                       <div className="flex items-center gap-4">
+                          <div className={`p-4 rounded-2xl ${pulseResult?.isSuccess ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                            <HeartPulse size={24} className={isPulsing ? 'animate-pulse' : ''} />
+                          </div>
+                          <div className="space-y-0.5 text-left">
+                             <h3 className="text-sm font-black italic text-white uppercase tracking-tight">Neural Pulse</h3>
+                             <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Diagnostic Stream</p>
+                          </div>
+                       </div>
+                       <button onClick={executePulse} disabled={isPulsing} className="p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all text-slate-500 hover:text-indigo-400">
+                         {isPulsing ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
+                       </button>
+                    </div>
+
+                    <div className="space-y-6 relative z-10">
+                       <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Status</span>
+                          <span className={`text-xs font-black italic uppercase ${pulseResult?.isSuccess ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {isPulsing ? 'Scanning...' : pulseResult?.isSuccess ? 'STABLE' : 'ANOMALY'}
+                          </span>
+                       </div>
+                       <div className="flex justify-between items-end border-b border-white/5 pb-4">
+                          <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Latency</span>
+                          <span className="text-xs font-black italic text-white">{pulseResult?.latency || '--'} <span className="text-[8px] not-italic text-slate-600">ms</span></span>
+                       </div>
+                       <div className="flex justify-between items-center pt-2">
+                          <div className="flex gap-2">
+                             {[
+                               { active: pulseResult?.details.database, icon: Database, label: 'DB' },
+                               { active: pulseResult?.details.auth, icon: ShieldCheck, label: 'AUTH' },
+                               { active: pulseResult?.details.environment, icon: Zap, label: 'ENV' }
+                             ].map((d, i) => (
+                               <div key={i} className={`flex items-center gap-1.5 px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest transition-all ${d.active ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-slate-900 border-white/5 text-slate-600'}`}>
+                                  <d.icon size={8} /> {d.label}
+                               </div>
+                             ))}
+                          </div>
+                       </div>
+                    </div>
+                 </GlassCard>
+
+                 <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-4 gap-6">
+                    {[
+                      { label: 'Daily Users (GA4)', value: dailyStats[dailyStats.length - 1]?.users || 0, icon: Globe, source: 'GA4' },
+                      { label: 'Audit Records', value: tableCounts['audit_logs'] || 0, icon: List, source: 'DB' },
+                      { label: 'Subject Profiles', value: tableCounts['profiles'] || 0, icon: Users, source: 'DB' },
+                      { label: 'Security Pulses', value: tableCounts['security_events'] || 0, icon: ShieldAlert, source: 'DB' }
+                    ].map((stat, i) => (
+                      <GlassCard key={i} className="p-6 rounded-[3rem] border-white/5">
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400"><stat.icon size={18} /></div>
+                          <span className="text-[7px] font-black text-slate-700 uppercase tracking-widest">{stat.source}</span>
+                        </div>
+                        <p className="text-3xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
+                        <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-2">{stat.label}</p>
+                      </GlassCard>
+                    ))}
+                 </div>
                </div>
 
                <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-indigo-500/[0.01]">
