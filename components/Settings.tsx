@@ -3,16 +3,13 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Terminal, Key, Info, Bell, RefreshCw, Smartphone, Zap, MessageSquare, Send, KeyRound,
-  Loader2, Info as AboutIcon, ChevronRight, Lock, ShieldAlert, CheckCircle2, Mail
+  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
-import { notifyAdmin } from '../services/telegramService.ts';
-import { emailService } from '../services/emailService.ts';
-import { getSafeHostname, safeReload } from '../services/navigation.ts';
-import { authApi, supabase, logAuditLog } from '../services/supabaseService.ts';
+import { safeReload } from '../services/navigation.ts';
+import { supabase } from '../services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -30,8 +27,6 @@ export const Settings: React.FC<SettingsProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isAiActive, setIsAiActive] = useState(false);
   const [customKey, setCustomKey] = useState(localStorage.getItem('custom_gemini_key') || '');
-  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
@@ -50,38 +45,12 @@ export const Settings: React.FC<SettingsProps> = ({
     onLanguageChange(newLang);
   };
 
-  const handleTestEmail = async () => {
-    setEmailStatus('sending');
-    try {
-      const { data: { user } } = await (supabase.auth as any).getUser();
-      if (!user?.email) throw new Error("IDENT_VOID");
-      
-      const res = await emailService.sendSystemEmail(
-        user.email,
-        "SomnoAI SMTP Diagnostic Pulse",
-        `<h3>Protocol Confirmation</h3><p>This is a diagnostic signal from your laboratory node <b>${getSafeHostname()}</b>.</p><p>SMTP status: <b>OPERATIONAL</b></p>`
-      );
-      
-      setEmailStatus(res.success ? 'success' : 'error');
-    } catch (e) {
-      setEmailStatus('error');
+  const handleRequestNotif = async () => {
+    const granted = await notificationService.requestPermission();
+    setNotifPermission(Notification.permission);
+    if (granted) {
+      notificationService.sendNotification("SomnoAI Connected", "Neural bridge active. System notifications enabled.");
     }
-    setTimeout(() => setEmailStatus('idle'), 4000);
-  };
-
-  const handleTestTelegram = async () => {
-    setTestStatus('sending');
-    const nodeIdentity = getSafeHostname();
-    try {
-      const success = await notifyAdmin({
-        type: 'DIAGNOSTIC_PULSE',
-        message: `Signal confirmed from node ${nodeIdentity}. Protocol: Operational.`
-      }, lang);
-      setTestStatus(success ? 'success' : 'error');
-    } catch (e) {
-      setTestStatus('error');
-    }
-    setTimeout(() => setTestStatus('idle'), 4000);
   };
 
   const handleCopy = (id: string, text: string) => {
@@ -120,55 +89,13 @@ export const Settings: React.FC<SettingsProps> = ({
                     <p className="text-sm font-black text-white italic">{notifPermission.toUpperCase()}</p>
                   </div>
                 </div>
+                {notifPermission !== 'granted' && (
+                  <button onClick={handleRequestNotif} className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
+                    <RefreshCw size={16} />
+                  </button>
+                )}
              </div>
           </GlassCard>
-        </div>
-
-        {/* Diagnostic Tools Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-           {/* Telegram Tool */}
-           <GlassCard className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02]">
-             <div className="space-y-6">
-               <div className="flex items-center gap-3">
-                 <Send size={18} className="text-emerald-500" />
-                 <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms</h3>
-               </div>
-               <button 
-                 onClick={handleTestTelegram}
-                 disabled={testStatus === 'sending'}
-                 className={`w-full py-5 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${
-                   testStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                   testStatus === 'error' ? 'bg-rose-600 text-white' : 
-                   'bg-white/5 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/5 shadow-xl'
-                 }`}
-               >
-                 {testStatus === 'sending' ? <RefreshCw size={16} className="animate-spin" /> : <Terminal size={16} />}
-                 {testStatus === 'success' ? 'SIGNAL CONFIRMED' : 'TEST TELEGRAM'}
-               </button>
-             </div>
-           </GlassCard>
-
-           {/* Email Tool */}
-           <GlassCard className="p-8 rounded-[3rem] border-blue-500/20 bg-blue-500/[0.02]">
-             <div className="space-y-6">
-               <div className="flex items-center gap-3">
-                 <Mail size={18} className="text-blue-400" />
-                 <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">SMTP Comms</h3>
-               </div>
-               <button 
-                 onClick={handleTestEmail}
-                 disabled={emailStatus === 'sending'}
-                 className={`w-full py-5 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${
-                   emailStatus === 'success' ? 'bg-blue-600 text-white' : 
-                   emailStatus === 'error' ? 'bg-rose-600 text-white' : 
-                   'bg-white/5 text-blue-400 border border-blue-500/30 hover:bg-blue-500/5 shadow-xl'
-                 }`}
-               >
-                 {emailStatus === 'sending' ? <RefreshCw size={16} className="animate-spin" /> : <Mail size={16} />}
-                 {emailStatus === 'success' ? 'EMAIL DISPATCHED' : 'TEST SMTP'}
-               </button>
-             </div>
-           </GlassCard>
         </div>
 
         {/* API Bridge Section */}
@@ -182,7 +109,12 @@ export const Settings: React.FC<SettingsProps> = ({
               <input 
                 type="password"
                 value={customKey}
-                onChange={(e) => setCustomKey(e.target.value)}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setCustomKey(val);
+                  localStorage.setItem('custom_gemini_key', val);
+                  setIsAiActive(!!val || !!process.env.API_KEY);
+                }}
                 placeholder={t.apiKeyPlaceholder}
                 className="flex-1 bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-indigo-500/40 transition-all font-mono"
               />

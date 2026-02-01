@@ -8,13 +8,16 @@ import {
   MessageSquare, LayoutDashboard, Radio, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint,
   Lock, Table, List, Clock, TrendingUp,
-  CheckCircle2, Unlock, WifiOff
+  CheckCircle2, Unlock, WifiOff, Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
 import { trackConversion } from '../services/analytics.ts';
+import { notifyAdmin } from '../services/telegramService.ts';
+import { emailService } from '../services/emailService.ts';
+import { getSafeHostname } from '../services/navigation.ts';
 
 const m = motion as any;
 
@@ -61,6 +64,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [tableSearch, setTableSearch] = useState('');
   
   const [actionError, setActionError] = useState<string | null>(null);
+
+  // Diagnostic states
+  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   const isOwner = useMemo(() => {
     const role = currentAdmin?.role?.toLowerCase();
@@ -189,9 +196,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         return;
       }
       
-      // 使用 AbortController 处理超时，防止 UI 无限挂起
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒超时
+      const timeoutId = setTimeout(() => controller.abort(), 60000); 
 
       const response = await fetch('/api/sync-analytics', {
         headers: { 'Authorization': `Bearer ${secret}` },
@@ -201,7 +207,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       clearTimeout(timeoutId);
 
       if (response.ok) {
-        // 修改点：确保手动同步也通过 logAuditLog 发送 Telegram
         await logAuditLog('ADMIN_MANUAL_SYNC', `GA4 synchronization triggered manually`);
         alert("SYNC_SIGNAL_CONFIRMED: Telemetry grid refreshed.");
         fetchData();
@@ -225,6 +230,40 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
+  const handleTestEmail = async () => {
+    setEmailStatus('sending');
+    try {
+      const { data: { user } } = await (supabase.auth as any).getUser();
+      if (!user?.email) throw new Error("IDENT_VOID");
+      
+      const res = await emailService.sendSystemEmail(
+        user.email,
+        "SomnoAI SMTP Diagnostic Pulse",
+        `<h3>Protocol Confirmation</h3><p>This is a diagnostic signal from your laboratory node <b>${getSafeHostname()}</b>.</p><p>SMTP status: <b>OPERATIONAL</b></p>`
+      );
+      
+      setEmailStatus(res.success ? 'success' : 'error');
+    } catch (e) {
+      setEmailStatus('error');
+    }
+    setTimeout(() => setEmailStatus('idle'), 4000);
+  };
+
+  const handleTestTelegram = async () => {
+    setTestStatus('sending');
+    const nodeIdentity = getSafeHostname();
+    try {
+      const success = await notifyAdmin({
+        type: 'DIAGNOSTIC_PULSE',
+        message: `Signal confirmed from node ${nodeIdentity}. Protocol: Operational.`
+      });
+      setTestStatus(success ? 'success' : 'error');
+    } catch (e) {
+      setTestStatus('error');
+    }
+    setTimeout(() => setTestStatus('idle'), 4000);
+  };
+
   const handleToggleBlock = async (user: any) => {
     if (user.is_super_owner) {
       await logAuditLog('ROOT_NODE_PROTECTION_TRIGGER', `Attempted restriction of ROOT node: ${user.email}`, 'CRITICAL');
@@ -235,7 +274,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     
     setProcessingUserId(user.id);
     try {
-      // adminApi.toggleBlock 内部已经调用了 logAuditLog
       const { error } = await adminApi.toggleBlock(user.id, user.email, user.is_blocked);
       if (error) throw error;
       await fetchData();
@@ -263,7 +301,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setProcessingUserId(user.id);
     setRoleSelectUserId(null);
     try {
-      // adminApi.updateUserRole 内部已经调用了 logAuditLog
       const { error } = await adminApi.updateUserRole(user.id, user.email, newRole);
       if (error) throw error;
       await fetchData();
@@ -358,7 +395,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           syncState === 'ERROR' || syncState === 'TIMEOUT' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' :
                           'bg-slate-900/60 border-white/5 text-slate-500'
                         }`}>
-                          <div className={`w-1.5 h-1.5 rounded-full ${syncState === 'SYNCED' || syncState === 'DATA_RESIDENT' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-slate-700 animate-pulse'}`} />
                           BRIDGE: {syncState.replace('_', ' ')}
                           {lastSyncTime && <span className="opacity-40 lowercase font-bold tracking-normal">[{lastSyncTime}]</span>}
                         </div>
@@ -493,43 +529,24 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                               onClick={() => setRoleSelectUserId(roleSelectUserId === user.id ? null : user.id)}
                                               disabled={processingUserId === user.id}
                                               className={`p-3 rounded-xl transition-all border border-white/5 shadow-lg ${roleSelectUserId === user.id ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-indigo-400'}`}
-                                              title="Access Hub: Set Node Clearance"
                                            >
                                               {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
                                            </button>
 
                                            <AnimatePresence>
                                              {roleSelectUserId === user.id && (
-                                               <m.div 
-                                                 initial={{ opacity: 0, scale: 0.95, y: 10, x: 20 }}
-                                                 animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
-                                                 exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                                                 className="absolute bottom-full right-0 mb-6 z-[200] min-w-[240px]"
-                                               >
-                                                 <div className="bg-slate-950/98 backdrop-blur-[100px] border border-white/15 p-4 rounded-[2.5rem] shadow-[0_40px_80px_rgba(0,0,0,0.9)] flex flex-col gap-2">
-                                                   <div className="px-4 py-2 border-b border-white/5 mb-2 text-left">
-                                                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.3em] italic">Assign clearance</p>
-                                                   </div>
-                                                   
-                                                   <button onClick={() => handleSetRole(user, 'owner')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'hover:bg-amber-500/10 border-transparent text-slate-400 hover:text-amber-500'}`}><div className="flex items-center gap-3"><Crown size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Owner</span></div>{user.role === 'owner' && <CheckCircle2 size={12} />}</button>
-                                                   <button onClick={() => handleSetRole(user, 'admin')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'admin' ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' : 'hover:bg-indigo-500/10 border-transparent text-slate-400 hover:text-indigo-400'}`}><div className="flex items-center gap-3"><Shield size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div>{user.role === 'admin' && <CheckCircle2 size={12} />}</button>
-                                                   <button onClick={() => handleSetRole(user, 'user')} className={`flex items-center justify-between w-full p-4 rounded-2xl transition-all group/opt border ${user.role === 'user' ? 'bg-slate-500/10 border-white/10 text-white' : 'hover:bg-white/5 border-transparent text-slate-400 hover:text-white'}`}><div className="flex items-center gap-3"><UserCircle size={16} className="group-hover/opt:scale-110 transition-transform" /><span className="text-[11px] font-black uppercase tracking-widest">User</span></div>{user.role === 'user' && <CheckCircle2 size={12} />}</button>
+                                               <m.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="absolute bottom-full right-0 mb-6 z-[200] min-w-[240px]">
+                                                 <div className="bg-slate-950/98 backdrop-blur-[100px] border border-white/15 p-4 rounded-[2.5rem] shadow-2xl flex flex-col gap-2">
+                                                   <button onClick={() => handleSetRole(user, 'owner')} className="flex items-center justify-between w-full p-4 rounded-2xl transition-all hover:bg-amber-500/10 text-slate-400 hover:text-amber-500"><div className="flex items-center gap-3"><Crown size={16} /><span className="text-[11px] font-black uppercase tracking-widest">Owner</span></div></button>
+                                                   <button onClick={() => handleSetRole(user, 'admin')} className="flex items-center justify-between w-full p-4 rounded-2xl transition-all hover:bg-indigo-600/10 text-slate-400 hover:text-indigo-400"><div className="flex items-center gap-3"><Shield size={16} /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div></button>
+                                                   <button onClick={() => handleSetRole(user, 'user')} className="flex items-center justify-between w-full p-4 rounded-2xl transition-all hover:bg-white/5 text-slate-400 hover:text-white"><div className="flex items-center gap-3"><UserCircle size={16} /><span className="text-[11px] font-black uppercase tracking-widest">User</span></div></button>
                                                  </div>
                                                </m.div>
                                              )}
                                            </AnimatePresence>
                                         </div>
 
-                                        <button 
-                                           onClick={() => handleToggleBlock(user)}
-                                           disabled={processingUserId === user.id}
-                                           className={`p-3 rounded-xl transition-all border shadow-lg ${
-                                              user.is_blocked 
-                                              ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-600/20' 
-                                              : 'bg-rose-600/10 text-rose-500 border-rose-500/20 hover:bg-rose-600/20'
-                                           }`}
-                                           title={user.is_blocked ? "Unblock Node" : "Restrict Node"}
-                                        >
+                                        <button onClick={() => handleToggleBlock(user)} disabled={processingUserId === user.id} className={`p-3 rounded-xl transition-all border shadow-lg ${user.is_blocked ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-600/10 text-rose-500 border-rose-500/20'}`}>
                                            {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : (user.is_blocked ? <Unlock size={16} /> : <Ban size={16} />)}
                                         </button>
                                      </div>
@@ -548,10 +565,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 flex-1">
                   <div className="lg:col-span-1 space-y-6 overflow-y-auto no-scrollbar pr-2 flex flex-col">
                      <div className="space-y-2 mb-4 px-4 text-left">
-                        <div className="flex items-center justify-between mb-4">
-                           <h4 className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Public Mesh</h4>
-                           <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                        </div>
                         <div className="relative group">
                            <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
                            <input type="text" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Filter mesh tables..." className="w-full bg-slate-950/60 border border-white/5 rounded-full pl-14 pr-6 py-5 text-[11px] font-bold italic text-white outline-none focus:border-indigo-500/50 transition-all" />
@@ -569,7 +582,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <div className="flex items-center gap-5">
                            <div className="p-4 bg-indigo-500/10 rounded-[1.8rem] text-indigo-400"><Table size={24} /></div>
                            <div className="text-left">
-                              <div className="flex items-center gap-3"><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">{selectedTable.replace(/_/g, ' ')}</h3><span className="text-[8px] font-black text-slate-700 bg-white/5 px-2 py-0.5 rounded border border-white/5 uppercase tracking-widest italic">Live Node</span></div>
+                              <div className="flex items-center gap-3"><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">{selectedTable.replace(/_/g, ' ')}</h3></div>
                               <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic mt-2">REGISTRY_CAP: 100 RECORDS</p>
                            </div>
                         </div>
@@ -579,13 +592,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <div className="flex-1 overflow-auto no-scrollbar p-10">
                         {tableLoading ? (
                            <div className="h-full flex flex-col items-center justify-center gap-6 py-32 opacity-30"><Loader2 size={48} className="animate-spin text-indigo-500" /><p className="text-[11px] font-black uppercase tracking-widest italic">Interrogating Data Core...</p></div>
-                        ) : tableData.length === 0 ? (
-                           <div className="h-full flex flex-col items-center justify-center gap-6 py-32 opacity-20"><WifiOff size={48} /><p className="text-[11px] font-black uppercase tracking-widest italic">Null response from identifier.</p></div>
                         ) : (
                            <div className="min-w-full overflow-x-auto text-left">
                               <table className="w-full text-left border-collapse">
                                  <thead>
-                                    <tr className="border-b border-white/5">{Object.keys(tableData[0]).map((key) => (<th key={key} className="pb-6 px-6 text-[10px] font-black uppercase text-slate-700 tracking-widest italic whitespace-nowrap">{key}</th>))}</tr>
+                                    <tr className="border-b border-white/5">{tableData.length > 0 && Object.keys(tableData[0]).map((key) => (<th key={key} className="pb-6 px-6 text-[10px] font-black uppercase text-slate-700 tracking-widest italic whitespace-nowrap">{key}</th>))}</tr>
                                  </thead>
                                  <tbody>
                                     {tableData.map((row, i) => (
@@ -606,24 +617,20 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl border-white/5">
                   <div className="flex items-center gap-6 mb-16 px-4 text-left">
                      <div className="p-4 bg-indigo-600/10 rounded-[1.8rem] text-indigo-400"><Radio className="animate-pulse" size={32} /></div>
-                     <div className="text-left space-y-1"><h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Security <span className="text-indigo-400">Pulse</span></h3><p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.4em] italic">DB_TABLE: public.security_events</p></div>
+                     <div className="text-left space-y-1"><h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Security <span className="text-indigo-400">Pulse</span></h3></div>
                   </div>
                   <div className="space-y-4">
-                     {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} className="text-slate-800" /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all animate-in slide-in-from-bottom-4 duration-500">
+                     {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                         <div className="flex items-center gap-8 text-left">
                            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' : sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>
                               {sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? <ShieldX size={26} /> : <Zap size={26} />}
                            </div>
                            <div className="space-y-1 text-left">
-                              <div className="flex items-center gap-3"><p className="text-xl font-black text-white italic tracking-tight uppercase leading-none">{sig.event_type}</p></div>
+                              <p className="text-xl font-black text-white italic tracking-tight uppercase leading-none">{sig.event_type}</p>
                               <p className="text-[11px] font-bold text-slate-500 tracking-wider italic text-left">{sig.user_email || 'ANONYMOUS_PULSE'} • {sig.details}</p>
                            </div>
                         </div>
-                        <div className="text-right">
-                           <div className="flex flex-col items-end gap-1.5 text-slate-700 group-hover:text-slate-400 transition-colors">
-                              <div className="flex items-center gap-2"><Clock size={12} /><p className="text-[10px] font-mono font-black">{new Date(sig.created_at).toLocaleTimeString()}</p></div>
-                           </div>
-                        </div>
+                        <div className="text-right"><div className="flex items-center gap-2 text-slate-700 group-hover:text-slate-400 transition-colors"><Clock size={12} /><p className="text-[10px] font-mono font-black">{new Date(sig.created_at).toLocaleTimeString()}</p></div></div>
                      </div>))}
                   </div>
                </GlassCard>
@@ -635,22 +642,77 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-10">
                      <div className="relative"><div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400"><RefreshCw size={80} className={syncState === 'SYNCING' ? 'animate-spin' : ''} /></div></div>
-                     <div className="space-y-4"><h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual GA4 Re-Sync</h4><p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize dashboard metrics with cloud-native GA4 telemetry. Required if the automated cron fails.</p></div>
+                     <div className="space-y-4"><h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual GA4 Re-Sync</h4><p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize dashboard metrics with cloud-native GA4 telemetry.</p></div>
                      <button onClick={handleManualSync} className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic">Execute Synchronization</button>
                   </GlassCard>
+                  
                   <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col gap-10 text-left">
-                     <div className="flex items-center gap-5 border-b border-white/5 pb-10 text-left"><div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div><div className="text-left space-y-1"><h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3><p className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest italic">Infrastructure Diagnostics</p></div></div>
+                     <div className="flex items-center gap-5 border-b border-white/5 pb-10 text-left"><div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div><div className="text-left space-y-1"><h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3></div></div>
                      <div className="space-y-6">
                         {[
                            { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState === 'DATA_RESIDENT' ? 'Data Present' : syncState === 'TIMEOUT' ? 'Handshake Timeout' : syncState, color: (syncState === 'SYNCED' || syncState === 'DATA_RESIDENT') ? 'text-emerald-400' : (syncState === 'ERROR' || syncState === 'TIMEOUT') ? 'text-rose-400' : 'text-slate-500', icon: Globe },
                            { label: 'Security Handshake Hub', status: 'Active Bridge', color: 'text-rose-400', icon: Lock },
                            { label: 'Registry Synchronization', status: tableCounts['profiles'] > 0 ? 'Mesh established' : 'Initializing', color: 'text-amber-400', icon: Database },
-                           { label: 'Laboratory Signal Logs', status: 'Active (Direct)', color: 'text-cyan-400', icon: MessageSquare }
                         ].map((sys, idx) => (
-                           <div key={idx} className="flex justify-between items-center p-7 bg-black/40 rounded-[2rem] border border-white/5 group hover:border-white/10 transition-all text-left"><div className="flex items-center gap-5"><sys.icon size={18} className="text-slate-600 group-hover:text-white" /><span className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors text-left">{sys.label}</span></div><span className={`font-black text-[11px] italic uppercase tracking-tighter ${sys.color}`}>{sys.status}</span></div>
+                           <div key={idx} className="flex justify-between items-center p-7 bg-black/40 rounded-[2rem] border border-white/5 transition-all text-left"><div className="flex items-center gap-5"><sys.icon size={18} className="text-slate-600" /><span className="text-xs font-black text-slate-500 uppercase tracking-widest text-left">{sys.label}</span></div><span className={`font-black text-[11px] italic uppercase tracking-tighter ${sys.color}`}>{sys.status}</span></div>
                         ))}
                      </div>
                   </GlassCard>
+               </div>
+
+               {/* Diagnostic Tools - Moved from Settings */}
+               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                 {/* Telegram Comms Diagnostic */}
+                 <GlassCard className="p-12 rounded-[4.5rem] border-rose-500/20 bg-rose-500/[0.02]">
+                   <div className="space-y-10">
+                     <div className="flex items-center gap-5">
+                       <div className="p-4 bg-rose-500/10 rounded-2xl text-rose-500"><Send size={32} /></div>
+                       <div className="text-left space-y-1">
+                          <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Telegram Comms</h3>
+                          <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-widest italic">Diagnostic Pulse Protocol</p>
+                       </div>
+                     </div>
+                     <p className="text-sm text-slate-500 italic leading-relaxed font-medium">Verify the link between the laboratory node and the Telegram administrative gateway.</p>
+                     <button 
+                       onClick={handleTestTelegram}
+                       disabled={testStatus === 'sending'}
+                       className={`w-full py-7 rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 transition-all active:scale-95 shadow-2xl ${
+                         testStatus === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 
+                         testStatus === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' : 
+                         'bg-white/5 text-rose-500 border border-rose-500/30 hover:bg-rose-500/5'
+                       }`}
+                     >
+                       {testStatus === 'sending' ? <RefreshCw size={20} className="animate-spin" /> : <TerminalIcon size={20} />}
+                       {testStatus === 'success' ? 'SIGNAL CONFIRMED' : 'TEST TELEGRAM LINK'}
+                     </button>
+                   </div>
+                 </GlassCard>
+
+                 {/* SMTP Comms Diagnostic */}
+                 <GlassCard className="p-12 rounded-[4.5rem] border-blue-500/20 bg-blue-500/[0.02]">
+                   <div className="space-y-10">
+                     <div className="flex items-center gap-5">
+                       <div className="p-4 bg-blue-500/10 rounded-2xl text-blue-400"><Mail size={32} /></div>
+                       <div className="text-left space-y-1">
+                          <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">SMTP Comms</h3>
+                          <p className="text-[10px] font-black text-blue-400/60 uppercase tracking-widest italic">Email Dispatch Protocol</p>
+                       </div>
+                     </div>
+                     <p className="text-sm text-slate-500 italic leading-relaxed font-medium">Test native SMTP dispatch capabilities from the serverless edge environment.</p>
+                     <button 
+                       onClick={handleTestEmail}
+                       disabled={emailStatus === 'sending'}
+                       className={`w-full py-7 rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 transition-all active:scale-95 shadow-2xl ${
+                         emailStatus === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 
+                         emailStatus === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' : 
+                         'bg-white/5 text-blue-400 border border-blue-500/30 hover:bg-blue-500/5'
+                       }`}
+                     >
+                       {emailStatus === 'sending' ? <RefreshCw size={20} className="animate-spin" /> : <Mail size={20} />}
+                       {emailStatus === 'success' ? 'EMAIL DISPATCHED' : 'TEST SMTP LINK'}
+                     </button>
+                   </div>
+                 </GlassCard>
                </div>
             </m.div>
           )}
