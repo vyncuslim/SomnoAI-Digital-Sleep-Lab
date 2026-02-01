@@ -3,8 +3,8 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNOAI ANALYTICS SYNC ENGINE v3.0
- * Direct Telegram Bot Integration for Reliability
+ * SOMNOAI ANALYTICS SYNC ENGINE v3.1
+ * Direct Telegram Bot Integration with HTML escaping
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -22,6 +22,15 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// Helper: Escape HTML
+const escapeHTML = (str) => {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+};
+
 // Helper: Direct Telegram Notification
 const sendTelegram = async (text) => {
   try {
@@ -31,14 +40,16 @@ const sendTelegram = async (text) => {
       body: JSON.stringify({
         chat_id: ADMIN_CHAT_ID,
         text,
-        parse_mode: 'Markdown'
+        parse_mode: 'HTML'
       })
     });
   } catch (e) { console.error("Internal alert dispatch failed"); }
 };
 
 const reportSyncFailure = async (errorMsg) => {
-  const message = `🚨 *GA4_SYNC_CRITICAL_FAILURE*\n\n*PROPERTY:* \`${propertyId}\`\n*ERROR:* \`${errorMsg}\`\n*TIMESTAMP:* \`${new Date().toISOString()}\`\n*NODE:* \`Vercel_API_Worker\``;
+  const safeMsg = escapeHTML(errorMsg);
+  const safeProp = escapeHTML(propertyId);
+  const message = `🚨 <b>GA4_SYNC_CRITICAL_FAILURE</b>\n\n<b>PROPERTY:</b> <code>${safeProp}</code>\n<b>ERROR:</b> <code>${safeMsg}</code>\n<b>TIMESTAMP:</b> <code>${new Date().toISOString()}</code>\n<b>NODE:</b> <code>Vercel_API_Worker</code>`;
   
   // 1. Notify Telegram
   await sendTelegram(message);
