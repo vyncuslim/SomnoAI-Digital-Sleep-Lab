@@ -2,8 +2,8 @@
 import { getMYTTime } from './telegramService.ts';
 
 /**
- * SOMNO LAB EMAIL BRIDGE v7.0
- * Protocol: Mirrored Triple-lingual Dispatch with Source Transparency
+ * SOMNO LAB EMAIL BRIDGE v8.0
+ * Protocol: Mirrored Triple-lingual Dispatch with Silent Failure Recovery
  */
 
 const ADMIN_EMAIL = 'ongyuze1401@gmail.com';
@@ -88,11 +88,11 @@ export const emailService = {
 
   /**
    * Executes the HTTP POST request to the Vercel SMTP handler.
+   * CRITICAL: Using console.warn/debug instead of error to avoid infinite alerting loops.
    */
   sendSystemEmail: async (to: string, subject: string, html: string, secret?: string) => {
     const finalSecret = secret || INTERNAL_LAB_KEY;
     try {
-      console.log(`[Email_Bridge] Dispatching signal to ${to}...`);
       const response = await fetch('/api/send-system-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -100,15 +100,15 @@ export const emailService = {
       });
       
       if (!response.ok) {
-        const err = await response.json();
-        console.error(`[Email_Bridge] Gateway Rejection: ${err.error}`);
+        const err = await response.json().catch(() => ({ error: 'Unknown rejection' }));
+        console.debug(`[Email_Bridge] Refusal: ${err.error}. This usually means SMTP env is missing.`);
         return { success: false, error: err.error };
       }
 
-      console.log(`[Email_Bridge] 200 OK. Dispatch archived.`);
       return { success: true };
     } catch (e: any) {
-      console.error(`[Email_Bridge] Network Failure: ${e.message}`);
+      // Use warn to prevent the global console.error interception in index.tsx
+      console.warn(`[Email_Bridge] Offline. SMTP gateway unreachable.`);
       return { success: false, error: e.message };
     }
   }

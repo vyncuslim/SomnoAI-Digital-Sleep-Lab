@@ -1,6 +1,6 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v23.0
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v24.0
  * Features: Bi-directional Source Identity & Triple-lingual Precision
  */
 
@@ -14,7 +14,8 @@ const TRANSLATIONS: Record<string, { en: string, es: string, zh: string }> = {
   'GA4_SYNC_FAILURE': { en: 'Telemetry Sync Failed', es: 'Fallo de Sincronización', zh: 'GA4 同步失败' },
   'ADMIN_MANUAL_SYNC': { en: 'Admin Manual Pulse', es: 'Pulso Manual Admin', zh: '管理员手动同步' },
   'PERMISSION_DENIED': { en: 'Handshake Forbidden', es: 'Handshake Prohibido', zh: '访问被拒绝（权限不足）' },
-  'SECURITY_ALERT': { en: 'Security Breach Protocol', es: 'Alerta de Seguridad', zh: '安全预警' }
+  'SECURITY_ALERT': { en: 'Security Breach Protocol', es: 'Alerta de Seguridad', zh: '安全预警' },
+  'USER_SESSION_EVALUATION': { en: 'Session Feedback Rating', es: 'Calificación de Sesión', zh: '用户离境评价' }
 };
 
 const SOURCE_TAGS: Record<string, string> = {
@@ -48,7 +49,8 @@ export const notifyAdmin = async (payload: any) => {
   const mapping = TRANSLATIONS[msgType] || { en: msgType, es: msgType, zh: msgType };
   const content = payload.message || payload.error || 'N/A';
   const mytTime = getMYTTime();
-  const icon = (msgType.includes('FAIL') || msgType.includes('ERROR') || msgType.includes('DENIED')) ? '🚨' : '🛡️';
+  const icon = (msgType.includes('FAIL') || msgType.includes('ERROR') || msgType.includes('DENIED')) ? '🚨' : 
+               msgType.includes('EVALUATION') ? '⭐' : '🛡️';
 
   const finalMessage = `${icon} <b>LAB DISPATCH | 实验室通讯</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +

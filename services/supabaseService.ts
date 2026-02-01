@@ -6,7 +6,7 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB AUDIT PROTOCOL v13.0
+ * SOMNO LAB AUDIT PROTOCOL v14.0
  * Dispatches encrypted logs with Automatic Path & Source Detection.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
@@ -32,14 +32,10 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
-    const actingAdmin = session?.user?.email || 'SYSTEM_NODE';
-    
-    // 🕵️ PATH DETECTION (Extract current hash route)
     const currentPath = typeof window !== 'undefined' ? 
       (window.location.hash.replace(/^#\/?/, '') || 'home') : 'cloud_logic';
 
     if (shouldNotify) {
-      // SOURCE ORIGIN DETECTION
       const source = actionKey.startsWith('ADMIN_') || currentPath.includes('admin') 
         ? 'ADMIN_CONSOLE' : 'USER_TERMINAL';
 
@@ -47,10 +43,11 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
         source,
         path: currentPath,
         type: actionKey,
-        message: details, // details usually contains the ID or the error message
+        message: details,
         error: level === 'CRITICAL' ? details : undefined
       };
 
+      // Concurrent Mirroring
       await Promise.allSettled([
         notifyAdmin(alertPayload),
         emailService.sendAdminAlert(alertPayload)
@@ -260,11 +257,14 @@ export const feedbackApi = {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error };
 
+    const isRating = content.includes('[RATING:');
+    const alertType = isRating ? 'USER_SESSION_EVALUATION' : `USER_FEEDBACK_${type.toUpperCase()}`;
+    
     const alertPayload = {
       source: 'USER_TERMINAL',
       path: 'feedback',
-      type: `USER_FEEDBACK_${type.toUpperCase()}`,
-      message: `From: ${email}\nType: ${type}\nContent: ${content.slice(0, 500)}`
+      type: alertType,
+      message: `From: ${email}\n${content}`
     };
     
     await Promise.allSettled([
