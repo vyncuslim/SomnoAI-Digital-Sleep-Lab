@@ -108,6 +108,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const handleToggleBlock = async (user: any) => {
+    // Cannot block super owners
+    if (user.is_super_owner) {
+      setActionError("SECURITY_DENIED: Super Owner identity is immune to standard restriction protocols.");
+      return;
+    }
+
     setProcessingUser(user.id);
     try {
       const { error } = await adminApi.toggleBlock(user.id, user.email, user.is_blocked);
@@ -118,12 +124,20 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const handleCycleRole = async (user: any) => {
-    // Only Owners/SuperOwners can promote others
-    if (!(currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner)) {
-      setActionError("SECURITY_DENIED: Lacks OWNER level clearance for role manipulation.");
+    // 1. Check if current admin has permission to edit roles (Admin/Owner/Super)
+    const hasClearance = ['admin', 'owner'].includes(currentAdmin?.role) || currentAdmin?.is_super_owner;
+    if (!hasClearance) {
+      setActionError("SECURITY_DENIED: Lacks administrative clearance for role manipulation.");
       return;
     }
 
+    // 2. PROHIBIT changing Super Owner roles (Critical Constraint)
+    if (user.is_super_owner) {
+      setActionError("SECURITY_DENIED: Super Owner identity is immutable via Command Bridge.");
+      return;
+    }
+
+    // 3. Cycle logic
     const roles = ['user', 'admin', 'owner'];
     const currentIndex = roles.indexOf(user.role || 'user');
     const nextRole = roles[(currentIndex + 1) % roles.length];
@@ -140,6 +154,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
+  const isAtLeastAdmin = ['admin', 'owner'].includes(currentAdmin?.role) || currentAdmin?.is_super_owner;
   const isOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
 
   return (
@@ -396,27 +411,35 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            )}
                         </div>
                         <div className="space-y-1">
-                           <p className="text-lg font-black italic text-white uppercase tracking-tight">{u.full_name || 'Anonymous Node'}</p>
+                           <p className="text-lg font-black italic text-white uppercase tracking-tight">
+                             {u.full_name || 'Anonymous Node'}
+                             {u.is_super_owner && <Crown size={14} className="inline ml-2 text-amber-500 fill-amber-500/20" />}
+                           </p>
                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2"><Mail size={10} /> {u.email}</p>
                            <div className="flex flex-wrap gap-2 pt-2">
                               <button 
                                 onClick={() => handleCycleRole(u)}
-                                disabled={!isOwner}
+                                disabled={!isAtLeastAdmin || u.is_super_owner}
                                 className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${
+                                  u.is_super_owner ? 'bg-amber-600 border-amber-400 text-white' :
                                   u.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 
                                   u.role === 'admin' ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 
                                   'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
-                                } ${isOwner ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default'}`}
+                                } ${(isAtLeastAdmin && !u.is_super_owner) ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default opacity-80'}`}
                               >
-                                {u.role === 'owner' ? <Crown size={8} /> : <Shield size={8} />}
-                                ROLE: {u.role || 'user'}
-                                {isOwner && <Settings2 size={8} className="opacity-50" />}
+                                {u.is_super_owner ? <Zap size={8} /> : (u.role === 'owner' ? <Crown size={8} /> : <Shield size={8} />)}
+                                ROLE: {u.is_super_owner ? 'SUPER OWNER' : (u.role || 'user')}
+                                {isAtLeastAdmin && !u.is_super_owner && <Settings2 size={8} className="opacity-50" />}
                               </button>
                               {u.is_blocked && <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-full text-[8px] font-black uppercase tracking-widest">RESTRICTED</span>}
                            </div>
                         </div>
                       </div>
-                      <button onClick={() => handleToggleBlock(u)} className={`p-4 rounded-xl border transition-all ${u.is_blocked ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' : 'bg-rose-500/10 border-rose-500/30 text-rose-500'}`}>
+                      <button 
+                        onClick={() => handleToggleBlock(u)} 
+                        disabled={u.is_super_owner}
+                        className={`p-4 rounded-xl border transition-all ${u.is_super_owner ? 'opacity-20 cursor-not-allowed' : (u.is_blocked ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20' : 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20')}`}
+                      >
                         {u.is_blocked ? <Unlock size={20} /> : <Ban size={20} />}
                       </button>
                     </div>
@@ -446,7 +469,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           </div>
                           <div className="flex justify-between items-center border-b border-white/5 pb-4">
                              <span className="text-[10px] font-black text-slate-500 uppercase italic">Clearance</span>
-                             <span className="text-xs font-bold text-emerald-400 uppercase">{currentAdmin?.role}</span>
+                             <span className="text-xs font-bold text-emerald-400 uppercase">{currentAdmin?.is_super_owner ? 'SUPER OWNER' : currentAdmin?.role}</span>
                           </div>
                           <div className="flex justify-between items-center pb-2">
                              <span className="text-[10px] font-black text-slate-500 uppercase italic">Status</span>
