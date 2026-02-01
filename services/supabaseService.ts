@@ -6,20 +6,24 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB AUDIT PROTOCOL v15.2
- * Features: Identity Synthesis and Multi-Channel Mirrored Alerts.
+ * SOMNO LAB AUDIT PROTOCOL v16.0
+ * Features: Identity Synthesis and Recursion Ingress Guard.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   const actionKey = action.toUpperCase();
+  
+  // 核心拦截逻辑：防止告警死循环
+  // 如果错误包含 [Email_Bridge] 或 SMTP_CONFIG_VOID，我们仅写入数据库，不触发后续告警通知
+  const isEmailError = details.includes('[Email_Bridge]') || details.includes('SMTP_CONFIG_VOID');
   
   const sensitiveActions = [
     'ADMIN_ROLE_CHANGE', 'ADMIN_USER_BLOCK', 'SECURITY_BREACH_ATTEMPT', 
     'SYSTEM_EXCEPTION', 'ADMIN_MANUAL_SYNC', 'USER_LOGIN', 'USER_SIGNUP',
     'OTP_VERIFY_SUCCESS', 'RUNTIME_ERROR', 'ASYNC_HANDSHAKE_VOID',
-    'PW_UPDATE_SUCCESS', 'PERMISSION_DENIED', 'GA4_SYNC_FAILURE'
+    'PW_UPDATE_SUCCESS', 'PERMISSION_DENIED', 'GA4_SYNC_FAILURE', 'CONSOLE_ERROR_PROXIED'
   ];
   
-  const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(actionKey);
+  const shouldNotify = (level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(actionKey)) && !isEmailError;
 
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
@@ -40,8 +44,8 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       };
 
       // 异步分发通知
-      emailService.sendAdminAlert(alertPayload).catch(e => console.debug("Email backup link failed."));
-      notifyAdmin(alertPayload).catch(e => console.debug("Telegram backup link failed."));
+      emailService.sendAdminAlert(alertPayload).catch(() => {});
+      notifyAdmin(alertPayload).catch(() => {});
     }
 
     // 2. 将日志存入数据库

@@ -3,12 +3,12 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight, Send, Terminal, Server, ShieldAlert
+  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight, Send, Terminal, Server, ShieldAlert, MessageSquare, Info
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
-import { safeReload, getSafeHostname } from '../services/navigation.ts';
+import { getSafeHostname } from '../services/navigation.ts';
 import { notifyAdmin } from '../services/telegramService.ts';
 import { emailService } from '../services/emailService.ts';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -27,12 +27,9 @@ export const Settings: React.FC<SettingsProps> = ({
   lang, onLanguageChange, onLogout, onNavigate
 }) => {
   const { isAdmin } = useAuth();
-  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isSystemAiActive, setIsSystemAiActive] = useState(!!process.env.API_KEY);
   const [customKey, setCustomKey] = useState(localStorage.getItem('custom_gemini_key') || '');
   const [isPersonalAiActive, setIsPersonalAiActive] = useState(!!customKey);
-  const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
-  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [showExitFeedback, setShowExitFeedback] = useState(false);
 
   const t = translations[lang]?.settings || translations.en.settings;
@@ -40,28 +37,6 @@ export const Settings: React.FC<SettingsProps> = ({
   const handleLanguageChange = (newLang: Language) => {
     localStorage.setItem('somno_lang', newLang);
     onLanguageChange(newLang);
-  };
-
-  const handleLogoutInitiation = () => {
-    setShowExitFeedback(true);
-  };
-
-  const handleTestComms = async () => {
-    setTestStatus('sending');
-    const nodeIdentity = getSafeHostname();
-    const payload = {
-      type: 'DIAGNOSTIC_TEST',
-      message: `🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nSystem Link: ${isSystemAiActive ? 'OK' : 'FAIL'}\nPersonal Link: ${isPersonalAiActive ? 'OK' : 'FAIL'}`
-    };
-    
-    try {
-      const [tgRes, emailRes] = await Promise.all([
-        notifyAdmin(payload),
-        emailService.sendAdminAlert(payload)
-      ]);
-      setTestStatus(tgRes && emailRes.success ? 'success' : 'error');
-    } catch (e) { setTestStatus('error'); }
-    setTimeout(() => setTestStatus('idle'), 4000);
   };
 
   return (
@@ -105,7 +80,23 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
-        {/* Personal Key Config Section */}
+        {/* Technical Support Bridge */}
+        <GlassCard onClick={() => onNavigate('feedback')} className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02] cursor-pointer group hover:bg-emerald-500/[0.05] transition-all">
+          <div className="flex items-center justify-between">
+             <div className="flex items-center gap-5">
+                <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-400 group-hover:scale-110 transition-transform">
+                   <MessageSquare size={24} />
+                </div>
+                <div className="space-y-1">
+                   <h3 className="text-sm font-black italic text-white uppercase tracking-widest">Support & Feedback</h3>
+                   <p className="text-[10px] text-slate-500 font-medium italic">Bridge to Laboratory Engineers</p>
+                </div>
+             </div>
+             <ChevronRight size={20} className="text-emerald-500/40 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
+          </div>
+        </GlassCard>
+
+        {/* Personal Key Config */}
         <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02]">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
@@ -148,7 +139,7 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
 
             <div className="space-y-4 pt-4 border-t border-white/5">
-               <button onClick={handleLogoutInitiation} className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 shadow-2xl">
+               <button onClick={() => setShowExitFeedback(true)} className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 shadow-2xl">
                  <DisconnectIcon size={18} /> {t.logout}
                </button>
             </div>

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, MessageSquare, AlertTriangle, Lightbulb, 
   Zap, Mail, Send, Loader2, CheckCircle2, XCircle, 
@@ -25,16 +25,23 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
   const [content, setContent] = useState('');
   const [status, setStatus] = useState<'idle' | 'transmitting' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  
+  const isMounted = useRef(true);
+  const transitionTimer = useRef<any>(null);
 
   const t = translations[lang].settings;
 
   useEffect(() => {
     const fetchUser = async () => {
-      // Cast supabase.auth to any to bypass type errors for getUser
       const { data: { user } } = await (supabase.auth as any).getUser();
-      if (user?.email) setEmail(user.email);
+      if (user?.email && isMounted.current) setEmail(user.email);
     };
     fetchUser();
+
+    return () => {
+      isMounted.current = false;
+      if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    };
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -46,37 +53,45 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
 
     try {
       const { success, error } = await feedbackApi.submitFeedback(type, content, email);
-      if (success) {
+      if (success && isMounted.current) {
         setStatus('success');
-        setTimeout(() => onBack(), 2500);
-      } else {
+        transitionTimer.current = setTimeout(() => {
+          if (isMounted.current) onBack();
+        }, 2000);
+      } else if (isMounted.current) {
         throw error || new Error("REGISTRY_DENIED");
       }
     } catch (err: any) {
+      if (!isMounted.current) return;
       console.error("[Feedback Transmission Error]:", err);
       setStatus('error');
       setErrorMessage(err.message || "Protocol transmission failure.");
       setTimeout(() => {
-        if (status === 'error') setStatus('idle');
+        if (isMounted.current) setStatus(prev => prev === 'error' ? 'idle' : prev);
       }, 5000);
     }
+  };
+
+  const handleManualBack = () => {
+    if (transitionTimer.current) clearTimeout(transitionTimer.current);
+    onBack();
   };
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans">
       <header className="flex items-center gap-6 mb-12 px-2">
         <button 
-          onClick={onBack}
+          onClick={handleManualBack}
           className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-lg active:scale-95"
         >
           <ArrowLeft size={24} />
         </button>
         <div>
           <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
-            Feedback <span className="text-indigo-400">Hub</span>
+            Technical <span className="text-indigo-400">Support</span>
           </h1>
           <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-2">
-            Registry Logging System • v2.1
+            Protocol Feedback & Error Logs • v2.1
           </p>
         </div>
       </header>
@@ -148,8 +163,8 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
                 type="submit"
                 disabled={status === 'transmitting' || status === 'success'}
                 className={`w-full py-8 rounded-full font-black text-sm uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 italic relative overflow-hidden shadow-2xl ${
-                  status === 'success' ? 'bg-emerald-600 shadow-emerald-500/20' :
-                  status === 'error' ? 'bg-rose-600 shadow-rose-500/20' :
+                  status === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' :
+                  status === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' :
                   'bg-indigo-600 hover:bg-indigo-500 shadow-indigo-600/30 active:scale-[0.98]'
                 }`}
               >
@@ -177,27 +192,9 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
                   )}
                 </AnimatePresence>
               </button>
-              
-              {errorMessage && status === 'error' && (
-                <m.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-rose-400 font-bold uppercase tracking-widest text-center italic">
-                  Error: {errorMessage}
-                </m.p>
-              )}
             </div>
           </form>
         </GlassCard>
-
-        {status === 'success' && (
-          <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="bg-emerald-500/5 border border-emerald-500/20 rounded-[3rem] p-10 flex items-center gap-8">
-            <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-400">
-               <ShieldCheck size={32} />
-            </div>
-            <div className="space-y-1 text-left">
-               <p className="text-white font-black italic uppercase text-lg leading-tight">Registry Updated</p>
-               <p className="text-[11px] text-slate-500 font-medium italic">Your telemetry has been archived. Returning to base terminal...</p>
-            </div>
-          </m.div>
-        )}
       </div>
     </div>
   );

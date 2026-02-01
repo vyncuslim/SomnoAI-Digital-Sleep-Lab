@@ -68,7 +68,7 @@ const DecisionLoading = () => (
 
 const AppContent: React.FC = () => {
   const { profile, loading, refresh, isAdmin } = useAuth();
-  const [lang, setLang] = useState<Language>('en'); 
+  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [activeView, setActiveView] = useState<ViewType | 'update-password'>('dashboard');
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
   const [isSimulated, setIsSimulated] = useState(false);
@@ -83,8 +83,11 @@ const AppContent: React.FC = () => {
     return hash.includes('type=recovery') || hash.includes('update-password');
   }, []);
 
+  /**
+   * CRITICAL FIX: safeNavigate 仅驱动 Hash 变更
+   * 状态同步由下方的 bridgeRouting 处理。这能防止双重渲染导致的黑屏。
+   */
   const safeNavigate = useCallback((viewId: string) => {
-    setActiveView(viewId as ViewType);
     safeNavigateHash(viewId);
   }, []);
 
@@ -153,12 +156,10 @@ const AppContent: React.FC = () => {
   if (loading || (isExchangingTokens && !profile)) return <DecisionLoading />;
 
   const renderContent = () => {
-    // 1. Password Update Terminal (Interception)
     if (activeView === 'update-password') {
       return <UpdatePasswordView onSuccess={() => safeNavigate('dashboard')} />;
     }
 
-    // 2. Public Sector (Always Unlocked)
     if (activeView === 'about') {
       return (
         <div className="w-full flex flex-col min-h-screen">
@@ -169,7 +170,6 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 3. Authorized Sector
     if ((profile || isSimulated)) {
       if (profile?.role === 'user' && !profile.full_name) {
         return <FirstTimeSetup onComplete={() => refresh()} />;
@@ -217,7 +217,6 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 4. Guest / Access Terminal
     if (!profile && !isSimulated) {
       if (activeView === 'admin-login') return <AdminLoginPage />;
       if (authMode === 'join') {

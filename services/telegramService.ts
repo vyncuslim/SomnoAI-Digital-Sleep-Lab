@@ -1,20 +1,30 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v30.0
- * Features: True Multi-lingual Payload Translation & Identity Synthesis
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v31.0
+ * Features: High-Fidelity Multi-lingual Detailed Payload
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
-const EVENT_MAP: Record<string, { en: string, es: string, zh: string }> = {
-  'USER_LOGIN': { en: '👤 Subject Login', es: '👤 Inicio de Sesión', zh: '👤 用户登录' },
-  'RUNTIME_ERROR': { en: '🚨 System Exception', es: '🚨 Excepción del Sistema', zh: '🚨 系统运行异常' },
-  'GA4_SYNC_FAILURE': { en: '📊 Telemetry Sync Failure', es: '📊 Fallo de Sincronización', zh: '📊 GA4 同步失败' },
-  'PERMISSION_DENIED': { en: '🚫 Access Forbidden', es: '🚫 Acceso Prohibido', zh: '🚫 权限不足' },
-  'USER_SESSION_EVALUATION': { en: '⭐ Session Feedback', es: '⭐ Calificación de Sesión', zh: '⭐ 用户离境评价' },
-  'USER_LOGOUT': { en: '🔒 Session Terminated', es: '🔒 Sesión Terminada', zh: '🔒 会话退出' }
+const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: string }> = {
+  'USER_LOGIN': { en: '👤 Subject Login', es: '👤 Inicio de Sesión', zh: '👤 用户登录', icon: '🔐' },
+  'RUNTIME_ERROR': { en: '🚨 System Exception', es: '🚨 Excepción del Sistema', zh: '🚨 系统运行异常', icon: '🔴' },
+  'USER_SIGNUP': { en: '✨ New Subject Registry', es: '✨ Nuevo Registro', zh: '✨ 新受试者注册', icon: '🟢' },
+  'GA4_SYNC_FAILURE': { en: '📊 Telemetry Sync Failure', es: '📊 Fallo de Telemetría', zh: '📊 GA4 同步失败', icon: '🟡' },
+  'CONSOLE_ERROR_PROXIED': { en: '📜 Terminal Error Log', es: '📜 Log de Error', zh: '📜 终端异常日志', icon: '🟠' },
+  'USER_SESSION_EVALUATION': { en: '⭐ Session Feedback', es: '⭐ Calificación', zh: '⭐ 受试者离境评价', icon: '💎' },
+  'DIARY_LOG_ENTRY': { en: '📝 Biological Log Entry', es: '📝 Nuevo Diario', zh: '📝 新生物节律日志', icon: '📗' }
+};
+
+const formatLogDetail = (text: string, lang: 'en' | 'es' | 'zh'): string => {
+  if (text.includes('SMTP_CONFIG_VOID')) {
+    if (lang === 'zh') return "⚠️ 核心错误：SMTP 邮件环境变量缺失 (Vercel ENV 未配置)";
+    if (lang === 'es') return "⚠️ Error: Faltan variables SMTP (Configuración Vercel)";
+    return "⚠️ Critical: SMTP ENV variables missing from host config.";
+  }
+  return text;
 };
 
 export const getMYTTime = () => {
@@ -29,34 +39,35 @@ export const notifyAdmin = async (payload: any) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
   const msgType = payload.type || 'SYSTEM_SIGNAL';
+  const path = payload.path || 'Global_Node';
   const rawDetails = payload.message || payload.error || 'N/A';
+  const source = payload.source || 'INTERNAL_BRIDGE';
   const mytTime = getMYTTime();
   const isoTime = new Date().toISOString();
-  const nodeIdentity = 'sleepsomno.com';
   
-  const mapping = EVENT_MAP[msgType] || { en: msgType, es: msgType, zh: msgType };
-  const icon = (msgType.includes('FAIL') || msgType.includes('ERROR')) ? '🚨' : '🛡️';
+  const mapping = EVENT_MAP[msgType] || { en: msgType, es: msgType, zh: msgType, icon: '📡' };
 
-  // 构造详细的三语 Telegram 消息
-  const finalMessage = `${icon} <b>SOMNO LAB 节点告警</b>\n` +
+  // 构造详细的三语 Telegram 消息 (增强版)
+  const finalMessage = `${mapping.icon} <b>SOMNO LAB DETAILED ALERT</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
     `🇬🇧 <b>[ENGLISH]</b>\n` +
-    `<b>Type:</b> <code>${mapping.en}</code>\n` +
-    `<b>Node:</b> <code>${nodeIdentity}</code>\n` +
-    `<b>Log:</b> <code>${rawDetails}</code>\n` +
+    `<b>Event:</b> <code>${mapping.en}</code>\n` +
+    `<b>Sector:</b> <code>${path}</code>\n` +
+    `<b>Log:</b> <code>${formatLogDetail(rawDetails, 'en')}</code>\n` +
     `<b>Time:</b> <code>${isoTime}</code>\n\n` +
     `🇪🇸 <b>[ESPAÑOL]</b>\n` +
     `<b>Tipo:</b> <code>${mapping.es}</code>\n` +
-    `<b>Nodo:</b> <code>${nodeIdentity}</code>\n` +
-    `<b>Registro:</b> <code>${rawDetails}</code>\n` +
+    `<b>Sector:</b> <code>${path}</code>\n` +
+    `<b>Registro:</b> <code>${formatLogDetail(rawDetails, 'es')}</code>\n` +
     `<b>Tiempo:</b> <code>${isoTime}</code>\n\n` +
     `🇨🇳 <b>[中文]</b>\n` +
     `<b>类型:</b> <code>${mapping.zh}</code>\n` +
-    `<b>节点:</b> <code>${nodeIdentity}</code>\n` +
-    `<b>日志:</b> <code>${rawDetails}</code>\n` +
+    `<b>路径:</b> <code>${path}</code>\n` +
+    `<b>日志:</b> <code>${formatLogDetail(rawDetails, 'zh')}</code>\n` +
     `<b>时间:</b> <code>${mytTime}</code>\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `📍 <b>STATUS:</b> <code>COMMITTED</code>`;
+    `📍 <b>ORIGIN:</b> <code>${source}</code>\n` +
+    `🛡️ <b>STATUS:</b> <code>ENCRYPTED_LOG</code>`;
 
   try {
     const res = await fetch(TELEGRAM_API, {
