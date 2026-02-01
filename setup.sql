@@ -1,9 +1,9 @@
 
 -- ==========================================
--- AUDIT & LOGGING INFRASTRUCTURE (V8.0)
+-- AUDIT & LOGGING INFRASTRUCTURE (V9.0)
 -- ==========================================
 
--- 1. 审计日志表 (标准化命名以解决查询错误)
+-- 1. 审计日志表 (标准化命名)
 CREATE TABLE IF NOT EXISTS public.audit_logs (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     action text NOT NULL,
@@ -38,7 +38,7 @@ FOR SELECT TO authenticated
 USING (EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND (role IN ('admin', 'owner') OR is_super_owner = true)));
 
 -- 3. 安全定义函数 (SECURITY DEFINER)
--- 修正参数命名，确保 RPC 调用的原子性
+-- 使用 p_ 前缀防止命名冲突
 
 CREATE OR REPLACE FUNCTION public.log_security_event(p_email text, p_event_type text, p_details text)
 RETURNS void AS $$
@@ -54,6 +54,6 @@ BEGIN
     VALUES (p_action, p_details, p_level, p_user_id);
 END; $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 授予匿名用户执行权限（仅限写入）
+-- 授予匿名用户执行权限（仅限写入），解决 404 RPC 拒绝问题
 GRANT EXECUTE ON FUNCTION public.log_security_event(text, text, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.log_audit_entry(text, text, text, uuid) TO anon, authenticated;

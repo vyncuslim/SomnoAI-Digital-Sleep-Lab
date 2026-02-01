@@ -19,7 +19,7 @@ import { trackConversion } from '../services/analytics.ts';
 const m = motion as any;
 
 type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system';
-type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE';
+type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE' | 'TIMEOUT';
 
 const UserCircle = Users;
 
@@ -79,7 +79,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const checkSyncStatus = async () => {
     try {
-      // 容错查询：先探测 created_at 字段，绝对禁止 timestamp 字段以防止缓存导致的 400 报错
       const { data: logs, error } = await supabase
         .from('audit_logs')
         .select('action, created_at')
@@ -181,27 +180,47 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const handleManualSync = async () => {
     setSyncState('SYNCING');
+    setActionError(null);
+    
     try {
       const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET:", "9f3ks8dk29dk3k2kd93kdkf83kd9dk2");
       if (!secret) {
         setSyncState('IDLE');
         return;
       }
+      
+      // 使用 AbortController 处理超时，防止 UI 无限挂起
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 60000); // 60秒超时
+
       const response = await fetch('/api/sync-analytics', {
-        headers: { 'Authorization': `Bearer ${secret}` }
+        headers: { 'Authorization': `Bearer ${secret}` },
+        signal: controller.signal
       });
+      
+      clearTimeout(timeoutId);
+
       if (response.ok) {
         await logAuditLog('ADMIN_MANUAL_SYNC', `GA4 synchronization triggered by ${currentAdmin?.email}`);
         alert("SYNC_SIGNAL_CONFIRMED: Telemetry grid refreshed.");
         fetchData();
       } else {
+        if (response.status === 524 || response.status === 504) {
+           setSyncState('TIMEOUT');
+           throw new Error("GATEWAY_TIMEOUT: GA4 Telemetry link exceeded 60s limit. Retrying later.");
+        }
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "GATEWAY_DENIED: Handshake verification failed.");
+        throw new Error(errorData.error || `GATEWAY_DENIED: Status ${response.status}`);
       }
     } catch (e: any) {
-      setActionError(e.message);
-      setSyncState('ERROR');
-      await logAuditLog('ADMIN_SYNC_FAIL', `Manual sync failed: ${e.message}`, 'WARNING');
+      if (e.name === 'AbortError') {
+        setActionError("REQUEST_TIMEOUT: Cloudflare/Vercel linkage severed.");
+        setSyncState('TIMEOUT');
+      } else {
+        setActionError(e.message);
+        setSyncState('ERROR');
+      }
+      await logAuditLog('ADMIN_SYNC_FAIL', `Manual sync error: ${e.message}`, 'WARNING');
     }
   };
 
@@ -333,7 +352,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic transition-all group/sync relative overflow-hidden ${
                           syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
                           syncState === 'DATA_RESIDENT' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
-                          syncState === 'ERROR' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' :
+                          syncState === 'ERROR' || syncState === 'TIMEOUT' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' :
                           'bg-slate-900/60 border-white/5 text-slate-500'
                         }`}>
                           <div className={`w-1.5 h-1.5 rounded-full ${syncState === 'SYNCED' || syncState === 'DATA_RESIDENT' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,1)]' : 'bg-slate-700 animate-pulse'}`} />
@@ -620,9 +639,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <div className="flex items-center gap-5 border-b border-white/5 pb-10 text-left"><div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div><div className="text-left space-y-1"><h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3><p className="text-[9px] font-black text-rose-500/60 uppercase tracking-widest italic">Infrastructure Diagnostics</p></div></div>
                      <div className="space-y-6">
                         {[
-                           { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState === 'DATA_RESIDENT' ? 'Data Present' : syncState, color: (syncState === 'SYNCED' || syncState === 'DATA_RESIDENT') ? 'text-emerald-400' : syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500', icon: Globe },
+                           { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState === 'DATA_RESIDENT' ? 'Data Present' : syncState === 'TIMEOUT' ? 'Handshake Timeout' : syncState, color: (syncState === 'SYNCED' || syncState === 'DATA_RESIDENT') ? 'text-emerald-400' : (syncState === 'ERROR' || syncState === 'TIMEOUT') ? 'text-rose-400' : 'text-slate-500', icon: Globe },
                            { label: 'Security Handshake Hub', status: 'Active Bridge', color: 'text-rose-400', icon: Lock },
-                           { label: 'Registry Synchronization', status: 'Mesh established', color: 'text-amber-400', icon: Database },
+                           { label: 'Registry Synchronization', status: tableCounts['profiles'] > 0 ? 'Mesh established' : 'Initializing', color: 'text-amber-400', icon: Database },
                            { label: 'Laboratory Signal Logs', status: 'Active (Direct)', color: 'text-cyan-400', icon: MessageSquare }
                         ].map((sys, idx) => (
                            <div key={idx} className="flex justify-between items-center p-7 bg-black/40 rounded-[2rem] border border-white/5 group hover:border-white/10 transition-all text-left"><div className="flex items-center gap-5"><sys.icon size={18} className="text-slate-600 group-hover:text-white" /><span className="text-xs font-black text-slate-500 uppercase tracking-widest group-hover:text-slate-300 transition-colors text-left">{sys.label}</span></div><span className={`font-black text-[11px] italic uppercase tracking-tighter ${sys.color}`}>{sys.status}</span></div>

@@ -16,7 +16,8 @@ const isNoise = (msg: string) => {
     'Google is not defined', 'Permissions-Policy', 'browsing-topics',
     'reading \'query\'', 'content.js', 'chrome-extension', 'Object.defineProperty',
     'reading \'postMessage\'', 'chrome.tabs.query', 'signal is aborted',
-    'AbortError', 'user_app_status', 'Failed to initialize current tab'
+    'AbortError', 'user_app_status', 'Failed to initialize current tab',
+    'initializeCurrentTab', 'TypeError', 'Failed to load resource'
   ];
   return noise.some(n => msg.includes(n));
 };

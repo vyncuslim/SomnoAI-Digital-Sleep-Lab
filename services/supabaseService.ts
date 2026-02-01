@@ -17,7 +17,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
-    // 强制使用 p_ 前缀匹配数据库函数定义，增加捕获处理
+    // 显式指定参数名 p_ 前缀，解决 404 函数签名匹配失败
     await supabase.rpc('log_audit_entry', {
       p_action: action,
       p_details: details,
@@ -25,6 +25,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       p_user_id: session?.user?.id || null
     });
   } catch (e) {
+    // 吞掉审计本身的报错，防止循环触发
     console.debug("Audit registry link severed.");
   }
 };
@@ -165,10 +166,7 @@ export const adminApi = {
     return data || [];
   },
   getTableData: async (tableName: string, limit = 100) => {
-    // 智能探针协议：自动尝试可能存在的时间列，防止 400 错误
     const probes = ['created_at', 'date', 'timestamp', 'recorded_at'];
-    
-    // 如果是分析相关的表，优先尝试 'date'
     if (tableName.includes('analytics')) probes.unshift('date');
 
     for (const col of Array.from(new Set(probes))) {
@@ -178,12 +176,10 @@ export const adminApi = {
           .select('*')
           .order(col, { ascending: false })
           .limit(limit);
-        
         if (!error) return data || [];
-      } catch (e) { /* 继续探测下一个 */ }
+      } catch (e) {}
     }
 
-    // 最终兜底：无序查询
     try {
       const { data } = await supabase.from(tableName).select('*').limit(limit);
       return data || [];
