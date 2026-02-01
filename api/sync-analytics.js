@@ -3,12 +3,11 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC v9.0 - MULTI-LINGUAL DIAGNOSTICS
+ * SOMNO LAB GA4 SYNC v14.0 - TRIPLE-LINGUAL DIAGNOSTICS
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
-const ADMIN_EMAIL = 'ongyuze1401@gmail.com';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -21,14 +20,15 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: "UNAUTHORIZED" });
   }
 
+  const TARGET_SERVICE_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
+
   try {
     if (!process.env.GA_PROPERTY_ID || !process.env.GA_SERVICE_ACCOUNT_KEY) {
-      throw new Error("API_KEY_MISSING_IN_ENV");
+      throw new Error("ENV_KEY_MISSING");
     }
 
-    const client = new BetaAnalyticsDataClient({
-      credentials: JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY),
-    });
+    const credentials = JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY);
+    const client = new BetaAnalyticsDataClient({ credentials });
 
     const [response] = await client.runReport({
       property: `properties/${process.env.GA_PROPERTY_ID}`,
@@ -55,15 +55,17 @@ export default async function handler(req, res) {
     const isPermissionError = err.message.includes('PERMISSION_DENIED') || err.code === 7;
     const mytTime = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Kuala_Lumpur' }) + ' (MYT)';
 
-    const tgMessage = `🚨 <b>GA4 SYNC FAILURE | GA4 同步故障</b>\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+    const tgMessage = `🚨 <b>GA4 SYNC FAILURE | 同步故障</b>\n` +
+      `━━━━━━━━━━━━━━━━━━━━\n\n` +
       `🇬🇧 <b>[ENGLISH]</b>\n` +
-      `<b>Status:</b> Permission Denied\n` +
-      `<b>Diagnostic:</b> The service account does not have access to Property ID <code>${process.env.GA_PROPERTY_ID}</code>.\n` +
-      `<b>Action:</b> Add your service account email to GA4 "Property Access Management".\n\n` +
+      `<b>Status:</b> <code>Permission Denied</code>\n` +
+      `<b>Fix:</b> Add <code>${TARGET_SERVICE_EMAIL}</code> to GA4 Property Permissions.\n\n` +
+      `🇪🇸 <b>[ESPAÑOL]</b>\n` +
+      `<b>Estado:</b> <code>Permiso Denegado</code>\n` +
+      `<b>Acción:</b> Agregue <code>${TARGET_SERVICE_EMAIL}</code> a los permisos de GA4.\n\n` +
       `🇨🇳 <b>[中文]</b>\n` +
-      `<b>状态:</b> 访问受限\n` +
-      `<b>诊断:</b> 服务账号无权访问 Property ID <code>${process.env.GA_PROPERTY_ID}</code>。\n` +
-      `<b>对策:</b> 请在 GA4 的“媒体资源访问管理”中添加该服务号邮箱。\n\n` +
+      `<b>状态:</b> <code>权限被拒绝</code>\n` +
+      `<b>对策:</b> 请将 <code>${TARGET_SERVICE_EMAIL}</code> 添加到 GA4 媒体资源权限管理中。\n\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `<b>TIME:</b> <code>${mytTime}</code>`;
 

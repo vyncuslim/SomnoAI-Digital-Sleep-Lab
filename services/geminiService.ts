@@ -10,11 +10,21 @@ export interface SleepExperiment {
 }
 
 /**
- * IDENTITY_ACCESS_PROTOCOL
- * Prioritizes local node overrides for processing sovereignty.
+ * IDENTITY_ACCESS_PROTOCOL v10.0
+ * System requests (Admin/Telegram) use process.env.API_KEY.
+ * Standard subjects (Users) MUST use personal local nodes for sovereignty.
  */
-const getApiKey = () => {
-  return localStorage.getItem('custom_gemini_key') || process.env.API_KEY || "";
+const getApiKey = (isAdminContext: boolean = false) => {
+  const localKey = localStorage.getItem('custom_gemini_key');
+  if (localKey) return localKey;
+  
+  // Strict Isolation: Global key is restricted to administrative identities
+  if (isAdminContext) {
+    return process.env.API_KEY || "";
+  }
+  
+  // Regular users get NO fallback to developer assets
+  return "";
 };
 
 const handleGeminiError = (err: any) => {
@@ -29,21 +39,17 @@ const handleGeminiError = (err: any) => {
   throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
-// Model Architecture Constants
 const MODEL_FLASH = 'gemini-3-flash-preview'; 
 const MODEL_PRO = 'gemini-3-pro-preview'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
-export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
-  const prompt = `You are a digital sleep scientist. Perform deep neural analysis based on physiological telemetry.
-    Return a JSON array containing 3 professional strings:
-    1. Neural Architecture Analysis (Deep/REM ratio)
-    2. Circadian Diagnosis
-    3. Tactical Biohacking Suggestion
-    Data: Score ${data.score}, Deep ${data.deepRatio}%, REM ${data.remRatio}%, RHR ${data.heartRate?.resting}bpm.`;
-
+export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en', isAdmin: boolean = false): Promise<string[]> => {
+  const prompt = `You are a digital sleep scientist. Perform deep neural analysis. Return JSON array with 3 insights. Data: Score ${data.score}, Deep ${data.deepRatio}%.`;
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const key = getApiKey(isAdmin);
+    if (!key) throw new Error("API_KEY_REQUIRED");
+
+    const ai = new GoogleGenAI({ apiKey: key });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: prompt,
@@ -56,29 +62,29 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
     return JSON.parse(response.text?.trim() || "[]");
   } catch (err) {
     handleGeminiError(err);
-    return ["Analysis stream paused.", "Recalibrating neural nodes.", "Link maintained."];
+    return ["Recalibrating neural nodes."];
   }
 };
 
 export const chatWithCoach = async (
   history: { role: string; content: string; image?: string }[], 
   lang: Language = 'en', 
-  contextData?: SleepRecord | null
+  contextData?: SleepRecord | null,
+  isAdmin: boolean = false
 ) => {
-  const bio = contextData ? `\nTELEMETRY_CONTEXT: Score: ${contextData.score}/100, Deep: ${contextData.deepRatio}%, RHR: ${contextData.heartRate.resting}bpm.` : "";
-  const systemInstruction = `You are the Somno Chief Research Officer (CRO). Data-driven and professional. Bio: ${bio}
-    Analyze biometric data and provide strategic recovery protocols.`;
+  const bio = contextData ? `\nTELEMETRY_CONTEXT: Score: ${contextData.score}/100.` : "";
+  const systemInstruction = `You are the Somno Chief Research Officer (CRO). ${bio}`;
 
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const key = getApiKey(isAdmin);
+    if (!key) throw new Error("API_KEY_REQUIRED");
+
+    const ai = new GoogleGenAI({ apiKey: key });
     const contents = history.map(m => {
       const parts: any[] = [{ text: m.content }];
       if (m.image) {
         parts.push({
-          inlineData: {
-            mimeType: 'image/jpeg',
-            data: m.image.split(',')[1],
-          },
+          inlineData: { mimeType: 'image/jpeg', data: m.image.split(',')[1] },
         });
       }
       return { role: m.role === 'user' ? 'user' : 'model', parts };
@@ -102,21 +108,20 @@ export const chatWithCoach = async (
   }
 };
 
-export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
+export const designExperiment = async (data: SleepRecord, lang: Language = 'en', isAdmin: boolean = false): Promise<SleepExperiment> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const key = getApiKey(isAdmin);
+    if (!key) throw new Error("API_KEY_REQUIRED");
+
+    const ai = new GoogleGenAI({ apiKey: key });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
-      contents: `Design a sleep experiment based on telemetry: score ${data.score}, RHR ${data.heartRate?.resting}.`,
+      contents: `Design a sleep experiment: score ${data.score}.`,
       config: { 
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
-          properties: { 
-            hypothesis: { type: Type.STRING }, 
-            protocol: { type: Type.ARRAY, items: { type: Type.STRING } }, 
-            expectedImpact: { type: Type.STRING } 
-          },
+          properties: { hypothesis: { type: Type.STRING }, protocol: { type: Type.ARRAY, items: { type: Type.STRING } }, expectedImpact: { type: Type.STRING } },
           required: ["hypothesis", "protocol", "expectedImpact"]
         },
         thinkingConfig: { thinkingBudget: 16384 }
@@ -129,15 +134,16 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
   }
 };
 
-export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
+export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en', isAdmin: boolean = false): Promise<string> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const key = getApiKey(isAdmin);
+    if (!key) throw new Error("API_KEY_REQUIRED");
+
+    const ai = new GoogleGenAI({ apiKey: key });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
-      contents: `Synthesize a weekly biometric trend report: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}, Language: ${lang}.`,
-      config: {
-        thinkingConfig: { thinkingBudget: 8000 }
-      }
+      contents: `Weekly trend report: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}.`,
+      config: { thinkingConfig: { thinkingBudget: 8000 } }
     });
     return response.text || "Summary failed.";
   } catch (err) { 
@@ -146,12 +152,15 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
   }
 };
 
-export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 'en'): Promise<string | undefined> => {
+export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 'en', isAdmin: boolean = false): Promise<string | undefined> => {
   try {
-    const ai = new GoogleGenAI({ apiKey: getApiKey() });
+    const key = getApiKey(isAdmin);
+    if (!key) return undefined;
+
+    const ai = new GoogleGenAI({ apiKey: key });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
-      contents: [{ parts: [{ text: `Say cheerfully: Calibration complete for recovery score ${data.score}. Commencing neural relaxation sequence.` }] }],
+      contents: [{ parts: [{ text: `Say cheerfully: Calibration complete for recovery score ${data.score}.` }] }],
       config: { 
         responseModalities: [Modality.AUDIO], 
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
@@ -159,7 +168,6 @@ export const generateNeuralLullaby = async (data: SleepRecord, lang: Language = 
     });
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   } catch (err) { 
-    console.warn("Lullaby logic failure:", err);
     return undefined; 
   }
 };

@@ -6,20 +6,17 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB AUDIT PROTOCOL
- * Dispatches encrypted logs to the database and real-time alerts to Telegram & Email.
+ * SOMNO LAB AUDIT PROTOCOL v12.0
+ * Dispatches encrypted logs with Source Origin Detection.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
-  const currentLang = (localStorage.getItem('somno_lang') as any) || 'en';
   const actionKey = action.toUpperCase();
   
-  // All sensitive signals that MUST be mirrored to Telegram and Email
   const sensitiveActions = [
     'ADMIN_ROLE_CHANGE', 
     'ADMIN_USER_BLOCK', 
     'SECURITY_BREACH_ATTEMPT', 
     'SYSTEM_EXCEPTION', 
-    'ROOT_NODE_PROTECTION_TRIGGER', 
     'ADMIN_MANUAL_SYNC',
     'USER_LOGIN',
     'USER_SIGNUP',
@@ -37,20 +34,23 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
     const actingAdmin = session?.user?.email || 'SYSTEM_NODE';
 
     if (shouldNotify) {
+      // 🕵️ SOURCE ORIGIN DETECTION
+      // If action starts with ADMIN_, we know it came from the Admin Page
+      const source = actionKey.startsWith('ADMIN_') ? 'ADMIN_CONSOLE' : 'USER_TERMINAL';
+
       const alertPayload = {
+        source,
         type: actionKey,
-        message: `[SUBJECT: ${actingAdmin}] ${details}`,
+        message: `[ID: ${actingAdmin}] ${details}`,
         error: level === 'CRITICAL' ? details : undefined
       };
 
-      // Concurrent dual-channel dispatch
       await Promise.allSettled([
         notifyAdmin(alertPayload),
         emailService.sendAdminAlert(alertPayload)
       ]);
     }
 
-    // Persist to central registry
     await supabase.rpc('log_audit_entry', {
       p_action: actionKey,
       p_details: details,
@@ -58,7 +58,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       p_user_id: session?.user?.id || null
     });
   } catch (e) {
-    console.debug("Audit record deferred due to network state.");
+    console.debug("Audit record deferred.");
   }
 };
 
@@ -77,11 +77,11 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
 };
 
 /**
- * ENHANCED AUTH API
+ * AUTH API
  */
 export const authApi = {
   signInWithGoogle: async () => {
-    await logAuditLog('OAUTH_START', 'Google authentication redirect initiated');
+    await logAuditLog('OAUTH_START', 'Google authentication initiated');
     return await (supabase.auth as any).signInWithOAuth({
       provider: 'google',
       options: {
@@ -92,7 +92,7 @@ export const authApi = {
   },
   signIn: async (email: string, password: string, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
-    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Password validation handshake');
+    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Validation handshake');
     
     const res = await (supabase.auth as any).signInWithPassword({ 
       email: targetEmail, 
@@ -113,9 +113,7 @@ export const authApi = {
       password, 
       options: { ...options, captchaToken } 
     });
-    if (res.error) {
-      await logSecurityEvent(targetEmail, 'SIGNUP_FAIL', res.error.message);
-    } else {
+    if (!res.error) {
       await logAuditLog('USER_SIGNUP', `New subject node registered: ${targetEmail}`);
     }
     return res;
@@ -256,10 +254,10 @@ export const feedbackApi = {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error };
 
-    // MIRROR: Notify Admin via both channels
     const alertPayload = {
+      source: 'USER_TERMINAL',
       type: `USER_FEEDBACK_${type.toUpperCase()}`,
-      message: `📩 NEW FEEDBACK RECEIVED\nFrom: ${email}\nType: ${type}\nContent: ${content.slice(0, 500)}${content.length > 500 ? '...' : ''}`
+      message: `📩 NEW FEEDBACK\nFrom: ${email}\nType: ${type}\nContent: ${content.slice(0, 500)}`
     };
     
     await Promise.allSettled([

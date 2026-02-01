@@ -2,7 +2,7 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB NEURAL MONITOR v1.7 - EN/ZH BILINGUAL REFACTOR
+ * SOMNO LAB NEURAL MONITOR v8.0 - TRIPLE LINGUAL ORIGIN DISPATCH
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -27,18 +27,19 @@ export default async function handler(req, res) {
     if (dbError) isDbHealthy = false;
 
     const mytTime = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Kuala_Lumpur' }) + ' (MYT)';
-    const nodeName = req.headers.host || 'Cloud_Edge';
+    const nodeName = req.headers.host || 'sleepsomno.com';
 
     if (!isDbHealthy || !isAiHealthy) {
-      const tgMessage = `🚨 <b>PULSE ANOMALY | 脉搏异常</b>\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+      const tgMessage = `🚨 <b>PULSE ANOMALY | 脉搏异常</b>\n` +
+        `━━━━━━━━━━━━━━━━━━━━\n\n` +
+        `📍 <b>SOURCE:</b> <code>⚙️ System Logic | 系统逻辑</code>\n\n` +
         `🇬🇧 <b>[ENGLISH]</b>\n` +
-        `${!isDbHealthy ? '❌ <b>Database:</b> Connection severed.' : '✅ <b>Database:</b> Nominal.'}\n` +
-        `${!isAiHealthy ? '❌ <b>Neural Link:</b> API Key is missing or invalid.' : '✅ <b>Neural Link:</b> Nominal.'}\n\n` +
+        `<b>Issue:</b> ${!isAiHealthy ? 'Neural Link Offline' : 'Database Disconnected'}\n\n` +
+        `🇪🇸 <b>[ESPAÑOL]</b>\n` +
+        `<b>Problema:</b> ${!isAiHealthy ? 'Enlace Neural Desconectado' : 'Base de Datos Desconectada'}\n\n` +
         `🇨🇳 <b>[中文]</b>\n` +
-        `${!isDbHealthy ? '❌ <b>数据库:</b> 连接已断开。' : '✅ <b>数据库:</b> 运行正常。'}\n` +
-        `${!isAiHealthy ? '❌ <b>神经链路:</b> API 密钥缺失或已失效。' : '✅ <b>神经链路:</b> 运行正常。'}\n\n` +
+        `<b>问题:</b> ${!isAiHealthy ? '神经链路离线' : '数据库连接断开'}\n\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `<b>NODE:</b> <code>${nodeName}</code>\n` +
         `<b>TIME:</b> <code>${mytTime}</code>`;
 
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
