@@ -4,14 +4,14 @@ import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
   Terminal, Key, Info, Bell, RefreshCw, Smartphone, Zap, MessageSquare, Send, KeyRound,
-  Loader2, Info as AboutIcon, ChevronRight, Lock, ShieldAlert, CheckCircle2
+  Loader2, Info as AboutIcon, ChevronRight, Lock, ShieldAlert, CheckCircle2, Mail
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
 import { notifyAdmin } from '../services/telegramService.ts';
+import { emailService } from '../services/emailService.ts';
 import { getSafeHostname, safeReload } from '../services/navigation.ts';
-// Fix: Added missing import for logAuditLog
 import { authApi, supabase, logAuditLog } from '../services/supabaseService.ts';
 
 const m = motion as any;
@@ -31,7 +31,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [isAiActive, setIsAiActive] = useState(false);
   const [customKey, setCustomKey] = useState(localStorage.getItem('custom_gemini_key') || '');
   const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [resetStatus, setResetStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
 
@@ -50,43 +50,23 @@ export const Settings: React.FC<SettingsProps> = ({
     onLanguageChange(newLang);
   };
 
-  const handleSaveKey = () => {
-    if (customKey.trim()) {
-      localStorage.setItem('custom_gemini_key', customKey.trim());
-      setIsAiActive(true);
-      alert("Neural bridge key committed to local node.");
-    } else {
-      localStorage.removeItem('custom_gemini_key');
-      setIsAiActive(!!process.env.API_KEY);
-      alert("Custom key purged. Using system defaults.");
-    }
-  };
-
-  const handleResetPassword = async () => {
-    setResetStatus('sending');
+  const handleTestEmail = async () => {
+    setEmailStatus('sending');
     try {
       const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user?.email) throw new Error("IDENT_VOID");
-      const { error } = await authApi.resetPassword(user.email);
-      if (error) throw error;
-      setResetStatus('success');
-      // Fix: Call logAuditLog which is now imported
-      logAuditLog('PW_RESET_HANDSHAKE', `Triggered for ${user.email}`);
+      
+      const res = await emailService.sendSystemEmail(
+        user.email,
+        "SomnoAI SMTP Diagnostic Pulse",
+        `<h3>Protocol Confirmation</h3><p>This is a diagnostic signal from your laboratory node <b>${getSafeHostname()}</b>.</p><p>SMTP status: <b>OPERATIONAL</b></p>`
+      );
+      
+      setEmailStatus(res.success ? 'success' : 'error');
     } catch (e) {
-      setResetStatus('error');
+      setEmailStatus('error');
     }
-    setTimeout(() => setResetStatus('idle'), 5000);
-  };
-
-  const handleLogout = async () => {
-    if (isDisconnecting) return;
-    setIsDisconnecting(true);
-    try {
-      await authApi.signOut();
-      safeReload();
-    } catch (e) {
-      window.location.href = '/';
-    }
+    setTimeout(() => setEmailStatus('idle'), 4000);
   };
 
   const handleTestTelegram = async () => {
@@ -102,14 +82,6 @@ export const Settings: React.FC<SettingsProps> = ({
       setTestStatus('error');
     }
     setTimeout(() => setTestStatus('idle'), 4000);
-  };
-
-  const handleRequestNotif = async () => {
-    const granted = await notificationService.requestPermission();
-    setNotifPermission(Notification.permission);
-    if (granted) {
-      notificationService.sendNotification("SomnoAI Connected", "Neural bridge active.");
-    }
   };
 
   const handleCopy = (id: string, text: string) => {
@@ -148,13 +120,55 @@ export const Settings: React.FC<SettingsProps> = ({
                     <p className="text-sm font-black text-white italic">{notifPermission.toUpperCase()}</p>
                   </div>
                 </div>
-                {notifPermission !== 'granted' && (
-                  <button onClick={handleRequestNotif} className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
-                    <RefreshCw size={16} />
-                  </button>
-                )}
              </div>
           </GlassCard>
+        </div>
+
+        {/* Diagnostic Tools Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+           {/* Telegram Tool */}
+           <GlassCard className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02]">
+             <div className="space-y-6">
+               <div className="flex items-center gap-3">
+                 <Send size={18} className="text-emerald-500" />
+                 <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms</h3>
+               </div>
+               <button 
+                 onClick={handleTestTelegram}
+                 disabled={testStatus === 'sending'}
+                 className={`w-full py-5 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${
+                   testStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                   testStatus === 'error' ? 'bg-rose-600 text-white' : 
+                   'bg-white/5 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/5 shadow-xl'
+                 }`}
+               >
+                 {testStatus === 'sending' ? <RefreshCw size={16} className="animate-spin" /> : <Terminal size={16} />}
+                 {testStatus === 'success' ? 'SIGNAL CONFIRMED' : 'TEST TELEGRAM'}
+               </button>
+             </div>
+           </GlassCard>
+
+           {/* Email Tool */}
+           <GlassCard className="p-8 rounded-[3rem] border-blue-500/20 bg-blue-500/[0.02]">
+             <div className="space-y-6">
+               <div className="flex items-center gap-3">
+                 <Mail size={18} className="text-blue-400" />
+                 <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">SMTP Comms</h3>
+               </div>
+               <button 
+                 onClick={handleTestEmail}
+                 disabled={emailStatus === 'sending'}
+                 className={`w-full py-5 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${
+                   emailStatus === 'success' ? 'bg-blue-600 text-white' : 
+                   emailStatus === 'error' ? 'bg-rose-600 text-white' : 
+                   'bg-white/5 text-blue-400 border border-blue-500/30 hover:bg-blue-500/5 shadow-xl'
+                 }`}
+               >
+                 {emailStatus === 'sending' ? <RefreshCw size={16} className="animate-spin" /> : <Mail size={16} />}
+                 {emailStatus === 'success' ? 'EMAIL DISPATCHED' : 'TEST SMTP'}
+               </button>
+             </div>
+           </GlassCard>
         </div>
 
         {/* API Bridge Section */}
@@ -172,40 +186,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 placeholder={t.apiKeyPlaceholder}
                 className="flex-1 bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-indigo-500/40 transition-all font-mono"
               />
-              <button 
-                onClick={handleSaveKey}
-                className="px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[9px] uppercase tracking-widest hover:bg-indigo-500 transition-all active:scale-95"
-              >
-                {t.apiSave}
-              </button>
             </div>
-            <p className="text-[9px] text-slate-500 italic px-2 flex items-start gap-2">
-              <Info size={12} className="shrink-0" />
-              Manual override keys are stored locally and will be purged upon registry disconnect.
-            </p>
-          </div>
-        </GlassCard>
-
-        {/* Telegram Diagnostic Section */}
-        <GlassCard className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02]">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <Send size={18} className="text-emerald-500" />
-              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms Diagnostic</h3>
-            </div>
-            <p className="text-[10px] text-slate-500 italic leading-relaxed text-left">Verify the secure uplink between this node and the administrative Telegram gateway.</p>
-            <button 
-              onClick={handleTestTelegram}
-              disabled={testStatus === 'sending'}
-              className={`w-full py-5 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all active:scale-[0.98] ${
-                testStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                testStatus === 'error' ? 'bg-rose-600 text-white' : 
-                'bg-white/5 text-emerald-500 border border-emerald-500/30 hover:bg-emerald-500/5 shadow-xl'
-              }`}
-            >
-              {testStatus === 'sending' ? <RefreshCw size={16} className="animate-spin" /> : <Terminal size={16} />}
-              {testStatus === 'success' ? 'SIGNAL CONFIRMED' : testStatus === 'error' ? 'LINK FAILED' : 'SEND TEST SIGNAL'}
-            </button>
           </div>
         </GlassCard>
 
@@ -232,7 +213,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
             <div className="space-y-4 pt-4 border-t border-white/5">
                <button onClick={() => setShowDonation(true)} className="w-full py-6 rounded-full bg-[#f43f5e]/5 border border-[#f43f5e]/20 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/10 hover:bg-[#f43f5e]/10"><Heart size={20} fill="currentColor" /> {t.coffee}</button>
-               <button onClick={handleLogout} disabled={isDisconnecting} className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 shadow-2xl">
+               <button onClick={onLogout} disabled={isDisconnecting} className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 shadow-2xl">
                  {isDisconnecting ? <Loader2 size={18} className="animate-spin" /> : <DisconnectIcon size={18} />} 
                  {isDisconnecting ? 'DISCONNECTING...' : t.logout}
                </button>
@@ -246,25 +227,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
             <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={(e: React.MouseEvent) => e.stopPropagation()} className="w-full max-w-2xl text-center space-y-10">
               <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 rounded-full bg-[#f43f5e] flex items-center justify-center text-white shadow-[0_0_50px_rgba(244,63,94,0.5)] mx-auto"><Heart size={48} fill="white" strokeWidth={0} /></m.div>
-              <div className="space-y-4 text-center"><h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-none">CONTRIBUTION<br />ACKNOWLEDGED</h2><p className="text-[13px] text-slate-400 italic max-w-md mx-auto leading-relaxed">Your support fuels lab processing and research development.</p></div>
-              <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
-                <div className="md:col-span-2 p-8 bg-slate-900/80 border border-white/5 rounded-[3rem] flex flex-col items-center gap-6">
-                   <div className="bg-white p-5 rounded-[2.5rem] shadow-sm"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=020617&bgcolor=ffffff`} alt="QR" className="w-36 h-36 md:w-44 md:h-44" /></div>
-                   <p className="text-[10px] font-black text-[#f43f5e] uppercase tracking-[0.3em] flex items-center gap-2"><QrCode size={14} /> SCAN TO PAYPAL</p>
-                </div>
-                <div className="md:col-span-3 space-y-4 text-left">
-                  {[{ id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' }, { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' }].map((item) => (
-                    <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
-                      <div className="space-y-1 text-left">
-                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
-                        <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>
-                      </div>
-                      <button onClick={() => handleCopy(item.id, item.value)} className={`p-4 rounded-2xl transition-all ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-600 hover:text-white bg-white/5'}`}><Copy size={20} /></button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              <button onClick={() => window.open('https://paypal.me/vyncuslim', '_blank')} className="w-full py-6 rounded-full bg-[#4f46e5] text-white font-black text-sm uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl transition-transform active:scale-95"><ArrowUpRight size={20} /> GO TO PAYPAL PAGE</button>
+              <div className="space-y-4 text-center"><h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-none">CONTRIBUTION<br />ACKNOWLEDGED</h2></div>
             </m.div>
           </div>
         )}

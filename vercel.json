@@ -13,8 +13,9 @@
   ],
   "rewrites": [
     { "source": "/api/sync-analytics", "destination": "/api/sync-analytics.js" },
+    { "source": "/api/send-system-email", "destination": "/api/send-system-email.js" },
     { "source": "/api/health-upload", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" },
-    { "source": "/api/((?!sync-analytics).*)", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/$1" },
+    { "source": "/api/((?!sync-analytics|send-system-email).*)", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/$1" },
     { "source": "/admin", "destination": "/index.html" },
     { "source": "/login", "destination": "/index.html" },
     { "source": "/signin", "destination": "/index.html" },

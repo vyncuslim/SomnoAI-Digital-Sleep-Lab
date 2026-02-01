@@ -120,7 +120,10 @@ const commonEn = {
     placeholder: 'Input telemetry query...',
     error: 'Synthesis failed.',
     generateLullaby: 'Neural Lullaby',
-    playing: 'Synthesizing...'
+    playing: 'Synthesizing...',
+    dispatchEmail: 'Dispatch to Node Email',
+    emailSuccess: 'Telemetry Dispatched',
+    emailError: 'Dispatch Failure'
   },
   about: {
     title: 'Specifications',
@@ -275,7 +278,10 @@ const commonZh = {
     placeholder: '输入遥测查询...',
     error: '合成失败。',
     generateLullaby: '神经催眠曲',
-    playing: '正在合成...'
+    playing: '正在合成...',
+    dispatchEmail: '发送至实验室邮箱',
+    emailSuccess: '遥测数据已发送',
+    emailError: '发送失败'
   },
   about: {
     title: '实验室规范',
@@ -372,7 +378,6 @@ const commonEs = {
     styleClinical: 'Clínico',
     styleMotivational: 'Motivacional',
     styleMinimal: 'Minimalista',
-    // Added missing paypal and feedback properties for Spanish localization
     paypalId: 'Vyncuslim vyncuslim',
     duitNowId: '+60 187807388',
     paypalLink: 'https://paypal.me/vyncuslim',
@@ -399,13 +404,12 @@ const commonEs = {
   auth: {
     lab: 'SomnoAI Sleep Lab',
     tagline: 'INFRAESTRUCTURA NEURONAL',
-    // Added missing properties for Spanish auth localization
     manifesto: 'SomnoAI Digital Sleep Lab integra monitoreo de indicadores fisiológicos, conocimientos profundos de IA y consejos de salud para brindar a los usuarios una experiencia completa de laboratorio de sueño digital.',
     sendCode: 'SOLICITAR TOKEN',
     emailLabel: 'Identificador Email',
     passwordLabel: 'Clave de Acceso',
     authorize: 'AUTORIZAR ACCESO',
-    confirmRegister: 'CONFIRMAR REGISTRO',
+    confirmRegister: 'CONFIRM REGISTRATION',
     google: 'GOOGLE',
     sandbox: 'MODO SANDBOX',
     help: '¿NO PUEDE ACTIVAR LA CUENTA?',
@@ -432,7 +436,10 @@ const commonEs = {
     placeholder: 'Consulta de telemetría...',
     error: 'Fallo de síntesis.',
     generateLullaby: 'Nana Neuronal',
-    playing: 'Sintetizando...'
+    playing: 'Sintetizando...',
+    dispatchEmail: 'Enviar a Correo de Nodo',
+    emailSuccess: 'Telemetría Enviada',
+    emailError: 'Fallo de Envío'
   },
   about: {
     title: 'Especificaciones',
@@ -443,7 +450,7 @@ const commonEs = {
     toolboxTitle: 'Caja de herramientas Digital',
     toolboxDesc: 'SDK de Android Health Connect.',
     whsTitle: 'Sincronización de Almacén',
-    whsDesc: 'Los datos se mueven mediante actualizaciones atómicas.',
+    whsDesc: 'Los datos se muveven mediante actualizaciones atómicas.',
     tokenTitle: 'Ciclo de Vida del Token',
     step1: 'Identificar SDK.',
     step2: 'Iniciar cliente.',
@@ -454,7 +461,7 @@ const commonEs = {
     step7: 'Leer registros.',
     step8: 'Bucle.',
     tokenInitial: 'Token: Generado.',
-    tokenCycle: 'Token: Activo.',
+    tokenCycle: 'Token: Active.',
     tokenStore: 'Token: Asegurado.',
     tokenExpire: 'Token: Expirado.',
     guideTitle: 'Guía de Operación',
