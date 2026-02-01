@@ -9,7 +9,7 @@ import {
   Unlock, Mail, ExternalLink, ActivitySquare,
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
   Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle, Key,
-  ExternalLink as LinkIcon, HelpCircle
+  ExternalLink as LinkIcon, HelpCircle, Bug, FileJson
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -18,7 +18,7 @@ import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts'
 const m = motion as any;
 
 type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system' | 'automation';
-type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE' | 'FORBIDDEN';
+type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE' | 'FORBIDDEN' | 'NOT_FOUND';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity, desc: 'Stores aggregated daily traffic metrics from Google Analytics.' },
@@ -41,13 +41,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [signals, setSignals] = useState<any[]>([]);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
-  const [processingUser, setProcessingUser] = useState<string | null>(null);
   
-  // 环境与指纹状态
+  // 诊断与支持
   const [serverEnvStatus, setServerEnvStatus] = useState<Record<string, boolean>>({});
   const [envFingerprints, setEnvFingerprints] = useState<Record<string, string>>({});
   const [saEmail, setSaEmail] = useState<string>("");
   const [isEnvLoading, setIsEnvLoading] = useState(false);
+  const [lastRawError, setLastRawError] = useState<any>(null);
   const [isSecretMismatch, setIsSecretMismatch] = useState(false);
 
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -115,6 +115,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const handleManualSync = async () => {
     setSyncState('SYNCING');
     setActionError(null);
+    setLastRawError(null);
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
       const data = await response.json();
@@ -123,21 +124,29 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setSyncState('SYNCED');
         fetchData();
       } else {
-        if (response.status === 403 || data.is_permission_denied) {
-          setSyncState('FORBIDDEN');
-          if (data.target_email) setSaEmail(data.target_email);
-        } else {
-          setSyncState('ERROR');
-        }
+        setLastRawError(data);
+        if (response.status === 403 || data.is_permission_denied) setSyncState('FORBIDDEN');
+        else if (response.status === 404 || data.is_not_found) setSyncState('NOT_FOUND');
+        else setSyncState('ERROR');
+        
         throw new Error(data.detail || data.error || "Sync gateway error.");
       }
     } catch (e: any) {
       setActionError(e.message);
     }
-    
-    if (syncState !== 'FORBIDDEN') {
-      setTimeout(() => setSyncState('IDLE'), 4000);
-    }
+  };
+
+  const generateDiagnosticReport = () => {
+    const report = {
+      timestamp: new Date().toISOString(),
+      admin_node: currentAdmin?.email,
+      env_status: serverEnvStatus,
+      fingerprints: envFingerprints,
+      last_sync_error: lastRawError,
+      service_account: saEmail
+    };
+    handleCopy(JSON.stringify(report, null, 2), 'diag_report');
+    alert("Diagnostic Report copied to clipboard. Send this to technical support.");
   };
 
   const isGlobalOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
@@ -189,15 +198,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                 </div>
 
-                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${syncState === 'FORBIDDEN' || syncState === 'ERROR' ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
+                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${['FORBIDDEN', 'ERROR', 'NOT_FOUND'].includes(syncState) ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
                    <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                       <div className="flex items-center gap-8 text-left">
-                         <div className={`p-6 rounded-[2rem] border border-white/5 ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : (syncState === 'FORBIDDEN' || syncState === 'ERROR') ? 'bg-rose-600/10 text-rose-500' : 'bg-indigo-600/10 text-indigo-400'}`}>
-                            {syncState === 'FORBIDDEN' || syncState === 'ERROR' ? <ShieldAlert size={32} /> : <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />}
+                         <div className={`p-6 rounded-[2rem] border border-white/5 ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : ['FORBIDDEN', 'ERROR', 'NOT_FOUND'].includes(syncState) ? 'bg-rose-600/10 text-rose-500' : 'bg-indigo-600/10 text-indigo-400'}`}>
+                            {['FORBIDDEN', 'ERROR', 'NOT_FOUND'].includes(syncState) ? <ShieldAlert size={32} /> : <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />}
                          </div>
                          <div>
                             <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Sync</h3>
-                            <p className={`text-[10px] font-black uppercase tracking-widest mt-1 italic ${syncState === 'ERROR' ? 'text-rose-400' : 'text-slate-500'}`}>
+                            <p className={`text-[10px] font-black uppercase tracking-widest mt-1 italic ${['FORBIDDEN', 'ERROR', 'NOT_FOUND'].includes(syncState) ? 'text-rose-400' : 'text-slate-500'}`}>
                               Internal Processor Status: {syncState}
                             </p>
                          </div>
@@ -216,26 +225,44 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              <AlertCircle size={18} />
                              <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">Access Denied: 403 Forbidden Protocol</span>
                           </div>
-                          <div className="p-6 bg-slate-900/60 rounded-[2rem] border border-white/5 space-y-4">
-                             <p className="text-sm text-slate-300 font-bold italic leading-relaxed">
-                               检测到权限缺失。UptimeRobot 的 403 报警也是由此引起的。请按照以下步骤恢复连接：
-                             </p>
-                             <ol className="space-y-4 text-xs text-slate-400 list-decimal pl-6 italic font-medium">
-                                <li>登录 <a href="https://analytics.google.com" target="_blank" className="text-indigo-400 underline">Google Analytics</a>。</li>
-                                <li>进入 <b>管理 (Admin)</b> -&gt; <b>媒体资源设置</b> -&gt; <b>媒体资源账号管理</b>。</li>
-                                <li>点击右上角 <b>"+"</b> 号 -&gt; <b>添加用户</b>。</li>
-                                <li>添加下方的服务账号邮箱，角色设为 <b>“查看者 (Viewer)”</b>。</li>
-                             </ol>
-                             <div className="mt-6 p-5 bg-black/40 border border-indigo-500/20 rounded-2xl flex items-center justify-between">
-                                <div className="flex flex-col">
-                                   <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest mb-1">Target Service Account</span>
-                                   <code className="text-xs font-mono text-indigo-300 font-bold select-all">{saEmail || 'Loading identifier...'}</code>
-                                </div>
-                                <button onClick={() => handleCopy(saEmail, 'sa_copy')} className="text-indigo-400 hover:text-white p-3 bg-indigo-600/10 rounded-xl">
-                                  {copiedKey === 'sa_copy' ? <Check size={16} /> : <Copy size={16} />}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                             <div className="p-6 bg-slate-900/60 rounded-[2rem] border border-white/5 space-y-4">
+                               <p className="text-xs text-slate-300 font-bold italic">故障排查步骤 (Checklist):</p>
+                               <ol className="space-y-3 text-[10px] text-slate-400 list-decimal pl-5 italic font-medium">
+                                  <li>进入 GA4 后台 -> <b>媒体资源设置</b> -> <b>账号管理</b>。</li>
+                                  <li>点击 "+" 号并选择 <b>"添加用户"</b>。</li>
+                                  <li>粘贴下方的 Service Account 邮箱。</li>
+                                  <li>分配角色为 <b>"查看者 (Viewer)"</b> 并保存。</li>
+                               </ol>
+                             </div>
+                             <div className="p-6 bg-black/40 border border-indigo-500/20 rounded-[2rem] flex flex-col justify-center gap-3">
+                                <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Service Account to Authorize</span>
+                                <code className="text-xs font-mono text-indigo-300 font-bold break-all select-all">{saEmail || 'ID_PENDING'}</code>
+                                <button onClick={() => handleCopy(saEmail, 'sa_copy')} className="flex items-center gap-2 text-[9px] font-black text-white bg-indigo-600/20 px-4 py-2 rounded-full w-fit hover:bg-indigo-600/40 transition-all uppercase">
+                                  {copiedKey === 'sa_copy' ? <Check size={10} /> : <Copy size={10} />} Copy Identifier
                                 </button>
                              </div>
                           </div>
+
+                          {lastRawError?.raw_google_error && (
+                            <div className="p-4 bg-rose-950/20 border border-rose-500/10 rounded-2xl">
+                               <p className="text-[8px] font-mono text-rose-500 uppercase font-black mb-1">Raw Upstream Pulse:</p>
+                               <code className="text-[10px] font-mono text-rose-400/80 leading-tight block">{lastRawError.raw_google_error}</code>
+                            </div>
+                          )}
+                       </m.div>
+                     )}
+
+                     {syncState === 'NOT_FOUND' && (
+                       <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-8 pt-8 border-t border-rose-500/20 space-y-4 text-left">
+                          <div className="flex items-center gap-3 text-amber-500">
+                             <AlertTriangle size={18} />
+                             <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">Resource Missing: 404 Not Found</span>
+                          </div>
+                          <p className="text-sm text-slate-400 italic">
+                            Google Analytics 未能找到请求的媒体资源 ID。这通常意味着环境变量 <code>GA_PROPERTY_ID</code> 配置错误。请确保该值是 <b>纯数字 ID</b>（例如 46892...），而不是以 G- 开头的追踪代码。
+                          </p>
                        </m.div>
                      )}
                    </AnimatePresence>
@@ -249,6 +276,34 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <div className="w-24 h-24 bg-indigo-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto text-indigo-400 border border-indigo-500/20"><Cpu size={48} /></div>
                     <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">System Infrastructure</h2>
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Root Node Clearance</p>
+                 </div>
+
+                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <GlassCard className="p-10 rounded-[3.5rem] border-white/5 space-y-6">
+                       <div className="flex items-center gap-4">
+                         <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400"><Bug size={24} /></div>
+                         <h3 className="text-lg font-black italic text-white uppercase">Diagnostic Tools</h3>
+                       </div>
+                       <p className="text-xs text-slate-500 italic leading-relaxed">
+                         遭遇无法解决的 403 或系统异常？生成一个加密的诊断包以获得开发者支持。
+                       </p>
+                       <button onClick={generateDiagnosticReport} className="w-full py-5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3">
+                         <FileJson size={14} /> {copiedKey === 'diag_report' ? 'REPORT COPIED' : 'GENERATE SUPPORT BUNDLE'}
+                       </button>
+                    </GlassCard>
+
+                    <GlassCard className="p-10 rounded-[3.5rem] border-rose-500/20 bg-rose-500/[0.02] space-y-6">
+                       <div className="flex items-center gap-4">
+                         <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><Mail size={24} /></div>
+                         <h3 className="text-lg font-black italic text-white uppercase">Direct Support</h3>
+                       </div>
+                       <p className="text-xs text-slate-500 italic leading-relaxed">
+                         通过加密通道直接向 SomnoAI 实验室工程师报告严重的架构崩溃或漏洞。
+                       </p>
+                       <button onClick={() => window.open('mailto:ongyuze1401@gmail.com')} className="w-full py-5 bg-rose-600/10 hover:bg-rose-600/20 border border-rose-500/20 text-rose-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3">
+                         <Send size={14} /> CONTACT ENGINEER
+                       </button>
+                    </GlassCard>
                  </div>
 
                  {isSecretMismatch && (
@@ -320,43 +375,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                        </div>
                     </div>
                  </GlassCard>
-
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <GlassCard className="p-10 rounded-[3.5rem] border-white/5 text-left space-y-6">
-                       <div className="flex items-center gap-4 mb-4">
-                         <div className="p-3 bg-white/5 rounded-2xl text-slate-400"><Monitor size={20} /></div>
-                         <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Active Node</h3>
-                       </div>
-                       <div className="space-y-4">
-                          <div className="flex justify-between items-center border-b border-white/5 pb-4">
-                             <span className="text-[10px] font-black text-slate-500 uppercase italic">Email</span>
-                             <span className="text-xs font-bold text-white truncate max-w-[180px]">{currentAdmin?.email}</span>
-                          </div>
-                          <div className="flex justify-between items-center">
-                             <span className="text-[10px] font-black text-slate-500 uppercase italic">Status</span>
-                             <span className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase">
-                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> Authorized
-                             </span>
-                          </div>
-                       </div>
-                    </GlassCard>
-
-                    <GlassCard className="p-10 rounded-[3.5rem] border-white/5 text-left space-y-6">
-                       <div className="flex items-center gap-4 mb-4">
-                         <div className="p-3 bg-white/5 rounded-2xl text-slate-400"><Database size={20} /></div>
-                         <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Cleanup Protocols</h3>
-                       </div>
-                       <div className="space-y-3">
-                          <button onClick={() => { localStorage.clear(); window.location.reload(); }} className="w-full py-4 bg-rose-600/10 border border-rose-500/20 rounded-2xl text-[10px] font-black uppercase text-rose-500 tracking-widest flex items-center justify-center gap-3 hover:bg-rose-600 hover:text-white transition-all">
-                             <Trash2 size={14} /> Purge Terminal Cache
-                          </button>
-                          <p className="text-[9px] text-slate-600 text-center italic">Clears local node storage and identity tokens.</p>
-                       </div>
-                    </GlassCard>
-                 </div>
               </div>
             )}
-            {/* ... 其余 Tab 保持不变 ... */}
           </m.div>
         )}
       </AnimatePresence>
