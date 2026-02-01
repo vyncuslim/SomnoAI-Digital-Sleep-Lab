@@ -118,10 +118,19 @@ export const authApi = {
   },
   resetPassword: async (email: string) => {
     const res = await (supabase.auth as any).resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/#settings`
+      redirectTo: `${window.location.origin}/#update-password`
     });
     if (!res.error) {
       await logSecurityEvent(email, 'PW_RESET_REQUEST', 'Password recovery sequence triggered');
+    }
+    return res;
+  },
+  updatePassword: async (newPassword: string) => {
+    const res = await (supabase.auth as any).updateUser({ password: newPassword });
+    if (!res.error) {
+       const { data: { user } } = await (supabase.auth as any).getUser();
+       await logAuditLog('PW_UPDATE_SUCCESS', `Password rotation complete for ${user?.email}`);
+       await logSecurityEvent(user?.email || 'unknown', 'PW_ROTATION', 'Access key successfully updated');
     }
     return res;
   },

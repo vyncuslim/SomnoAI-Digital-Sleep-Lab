@@ -28,6 +28,7 @@ import { FeedbackView } from './components/FeedbackView.tsx';
 import { ExperimentView } from './components/ExperimentView.tsx';
 import { NotFoundView } from './components/NotFoundView.tsx';
 import { AboutView } from './components/AboutView.tsx';
+import { UpdatePasswordView } from './components/UpdatePasswordView.tsx';
 
 const m = motion as any;
 
@@ -67,13 +68,18 @@ const DecisionLoading = () => (
 const AppContent: React.FC = () => {
   const { profile, loading, refresh, isAdmin } = useAuth();
   const [lang, setLang] = useState<Language>('en'); 
-  const [activeView, setActiveView] = useState<ViewType>('dashboard');
+  const [activeView, setActiveView] = useState<ViewType | 'update-password'>('dashboard');
   const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
   const [isSimulated, setIsSimulated] = useState(false);
 
   const isExchangingTokens = useMemo(() => {
     const hash = window.location.hash || '';
     return hash.includes('access_token=') || hash.includes('id_token=') || hash.includes('code=');
+  }, []);
+
+  const isRecoveryMode = useMemo(() => {
+    const hash = window.location.hash || '';
+    return hash.includes('type=recovery') || hash.includes('update-password');
   }, []);
 
   const safeNavigate = useCallback((viewId: string) => {
@@ -89,12 +95,18 @@ const AppContent: React.FC = () => {
       const hashRaw = getSafeHash();
       const hashOnly = hashRaw.replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       
-      const mappings: Record<string, ViewType> = {
+      const mappings: Record<string, ViewType | 'update-password'> = {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 
-        'admin/login': 'admin-login'
+        'admin/login': 'admin-login', 'update-password': 'update-password'
       };
+
+      // Recovery Priority
+      if (isRecoveryMode) {
+        setActiveView('update-password');
+        return;
+      }
 
       if (profile && !loading) {
         if (hashRaw.includes('access_token=') || hashRaw.includes('id_token=')) {
@@ -121,7 +133,6 @@ const AppContent: React.FC = () => {
       if (mappings[target]) {
         setActiveView(mappings[target]);
       } else if (profile || isSimulated) {
-        // 沙盒模式兜底：确保至少留在仪表盘
         setActiveView('dashboard');
       }
     };
@@ -133,11 +144,16 @@ const AppContent: React.FC = () => {
       window.removeEventListener('hashchange', bridgeRouting);
       window.removeEventListener('popstate', bridgeRouting);
     };
-  }, [profile, isAdmin, loading, isExchangingTokens, isSimulated]);
+  }, [profile, isAdmin, loading, isExchangingTokens, isSimulated, isRecoveryMode]);
 
   if (loading || (isExchangingTokens && !profile)) return <DecisionLoading />;
 
   const renderContent = () => {
+    // Password Update Terminal (Interception)
+    if (activeView === 'update-password') {
+      return <UpdatePasswordView onSuccess={() => safeNavigate('dashboard')} />;
+    }
+
     if ((profile || isSimulated)) {
       if (profile?.role === 'user' && !profile.full_name) {
         return <FirstTimeSetup onComplete={() => refresh()} />;
