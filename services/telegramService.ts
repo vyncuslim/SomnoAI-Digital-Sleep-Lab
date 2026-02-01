@@ -1,12 +1,23 @@
 
 /**
- * SOMNO LAB - UNIFIED TELEGRAM GATEWAY v9.0
- * Prevents redundant messages by consolidating EN, ES, ZH into one transmission.
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v10.5
+ * Features: Multi-lingual blocks + Alert Deduplication + Unified Layout
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+let lastAlertHash: string | null = null;
+
+const getHash = (str: string) => {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = (hash << 5) - hash + str.charCodeAt(i);
+    hash |= 0;
+  }
+  return hash.toString();
+};
 
 export const getMYTTime = () => {
   return new Intl.DateTimeFormat('zh-CN', {
@@ -17,12 +28,6 @@ export const getMYTTime = () => {
   }).format(new Date()).replace(/\//g, '-') + ' (MYT)';
 };
 
-const I18N_DICTS: Record<string, any> = {
-  en: { header: '🛡️ <b>GLOBAL ALERT</b>', node: 'NODE', time: 'TIME', type: 'TYPE' },
-  es: { header: '🛡️ <b>ALERTA GLOBAL</b>', node: 'NODO', time: 'TIEMPO', type: 'TIPO' },
-  zh: { header: '🛡️ <b>全球告警</b>', node: '节点', time: '时间', type: '类型' }
-};
-
 const escapeHTML = (str: string): string => {
   if (!str) return 'null';
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -31,27 +36,33 @@ const escapeHTML = (str: string): string => {
 export const notifyAdmin = async (payload: any) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
+  const msgType = payload.type || (payload.isPulse ? 'NEURAL_PULSE' : 'SYSTEM_SIGNAL');
+  const rawContent = payload.message || payload.error || 'Telemetry Void';
+  
+  const currentHash = getHash(`${msgType}:${rawContent}`);
+  if (currentHash === lastAlertHash) return true; 
+  lastAlertHash = currentHash;
+
   const mytTime = getMYTTime();
   const nodeName = typeof window !== 'undefined' ? window.location.hostname : 'Cloud_Edge';
-  const msgType = payload.type || 'SYSTEM_SIGNAL';
-  const content = escapeHTML(payload.message || payload.error || 'Telemetry Void');
+  const content = escapeHTML(rawContent);
 
   let finalMessage = `🛰️ <b>SOMNO LAB GLOBAL MESH</b>\n`;
   finalMessage += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
   // English Block
-  finalMessage += `${I18N_DICTS.en.header}\n`;
-  finalMessage += `<b>${I18N_DICTS.en.type}:</b> <code>${msgType}</code>\n`;
+  finalMessage += `🇬🇧 <b>[ENGLISH]</b>\n`;
+  finalMessage += `<b>Type:</b> <code>${msgType}</code>\n`;
   finalMessage += `<code>${content}</code>\n\n`;
 
   // Spanish Block
-  finalMessage += `${I18N_DICTS.es.header}\n`;
-  finalMessage += `<b>${I18N_DICTS.es.type}:</b> <code>${msgType}</code>\n`;
+  finalMessage += `🇪🇸 <b>[ESPAÑOL]</b>\n`;
+  finalMessage += `<b>Tipo:</b> <code>${msgType}</code>\n`;
   finalMessage += `<code>${content}</code>\n\n`;
 
   // Chinese Block
-  finalMessage += `${I18N_DICTS.zh.header}\n`;
-  finalMessage += `<b>${I18N_DICTS.zh.type}:</b> <code>${msgType}</code>\n`;
+  finalMessage += `🇨🇳 <b>[中文]</b>\n`;
+  finalMessage += `<b>类型:</b> <code>${msgType}</code>\n`;
   finalMessage += `<code>${content}</code>\n\n`;
 
   finalMessage += `━━━━━━━━━━━━━━━━━━━━\n`;
