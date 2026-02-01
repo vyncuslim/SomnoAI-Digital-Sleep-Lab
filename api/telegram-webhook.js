@@ -3,8 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB - MULTI-LINGUAL COMMAND WEBHOOK v3.5
- * Features: Multi-lingual AI + Mirrored Interaction Dispatch
+ * SOMNO LAB - MULTI-LINGUAL COMMAND WEBHOOK v4.0
+ * Features: High-Fidelity Multi-lingual AI (EN/ES/ZH) + Mirrored Dispatch
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -32,10 +32,11 @@ export default async function handler(req, res) {
   const chatId = String(message.chat.id);
   const text = message.text.trim();
 
+  // 严格管理员校验
   if (chatId !== ADMIN_CHAT_ID) return res.status(200).send('OK');
 
   try {
-    // 1. Context Acquisition
+    // 获取最新的遥测上下文
     const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
     const { data: analytics } = await supabase.from('analytics_daily').select('*').order('date', { ascending: false }).limit(5);
     
@@ -46,9 +47,6 @@ export default async function handler(req, res) {
         current_time_myt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Kuala_Lumpur' })
     };
 
-    let responseText = "";
-
-    // 2. Intelligence Execution
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const systemPrompt = `You are the SomnoAI Laboratory Artificial Intelligence.
@@ -59,21 +57,22 @@ export default async function handler(req, res) {
     
     RESPONSE PROTOCOL (MANDATORY):
     - You MUST provide your answer in THREE languages in every single message.
+    - Languages: English (🇬🇧), Spanish (🇪🇸), Chinese (🇨🇳).
     - Format exactly as follows:
     
-    🇬🇧 [ENGLISH]
+    🇬🇧 <b>[ENGLISH]</b>
     (Your concise professional answer here)
     
-    🇪🇸 [ESPAÑOL]
+    🇪🇸 <b>[ESPAÑOL]</b>
     (Tu respuesta técnica y profesional aquí)
     
-    🇨🇳 [中文]
+    🇨🇳 <b>[中文]</b>
     (在此输入您的专业回复)
     
     RULES:
-    - Use the Context Data to provide factual numbers if asked about users or traffic.
-    - Be technical and analytical.
-    - If asked for /status, use the context to report on "Total Subjects" and "Active Telemetry".`;
+    - Use technical, scientific, and authoritative tone.
+    - Incorporate context data numbers when discussing users or traffic.
+    - Format headers in bold.`;
 
     const response = await ai.models.generateContent({
         model: "gemini-2.5-pro",
@@ -81,11 +80,9 @@ export default async function handler(req, res) {
         config: { systemInstruction: systemPrompt }
     });
 
-    responseText = response.text || "⚠️ [EN] Neural Void. [ES] Vacío Neural. [ZH] 神经连接断开。";
+    const responseText = response.text || "⚠️ Communication Void. | Vacío de comunicación. | 通信中断。";
 
-    // 3. Dual-Channel Dispatch
-    
-    // Telegram Dispatch
+    // 1. 发送 Telegram
     await fetch(TELEGRAM_REPLY_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -97,16 +94,16 @@ export default async function handler(req, res) {
       })
     });
 
-    // Email Mirror Dispatch
+    // 2. 发送邮件镜像 ( archival )
     const emailHtml = `
       <div style="font-family:sans-serif;background-color:#020617;color:#f1f5f9;padding:40px;border-radius:20px;border:1px solid #1e293b;">
-        <h2 style="color:#818cf8;border-bottom:1px solid #1e293b;padding-bottom:15px;">🤖 AI INTERACTION MIRROR</h2>
+        <h2 style="color:#818cf8;border-bottom:1px solid #1e293b;padding-bottom:15px;">🤖 AI INTERACTION MIRROR (TRIPLE-LANG)</h2>
         <div style="margin:25px 0;">
           <p style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Admin Prompt:</p>
           <div style="background:#050a1f;padding:20px;border-radius:10px;border:1px solid #1e293b;font-style:italic;">${text}</div>
         </div>
         <div style="margin:25px 0;">
-          <p style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">AI Response:</p>
+          <p style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">AI Multi-lingual Response:</p>
           <div style="background:#0a0f25;padding:25px;border-radius:15px;border:1px solid #1e293b;line-height:1.6;color:#cbd5e1;">
             ${responseText.replace(/\n/g, '<br/>')}
           </div>
@@ -122,15 +119,15 @@ export default async function handler(req, res) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
           to: ADMIN_EMAIL, 
-          subject: "🤖 Lab Interaction: AI Mirrored Response", 
+          subject: "🤖 Lab AI Interaction: Multi-lingual Sync", 
           html: emailHtml,
           secret: process.env.CRON_SECRET
       }),
-    }).catch(e => console.error("Email Mirror Critical Exception:", e));
+    }).catch(e => console.error("Mirror Error:", e));
 
     return res.status(200).send('OK');
   } catch (e) {
-    console.error("AI Webhook Critical Failure:", e);
+    console.error("Critical Failure:", e);
     return res.status(200).send('OK');
   }
 }

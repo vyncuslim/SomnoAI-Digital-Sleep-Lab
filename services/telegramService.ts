@@ -1,7 +1,7 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v11.0
- * Features: Multi-lingual blocks + Type Mapping + Alert Deduplication
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v12.0
+ * Features: Multi-lingual blocks (EN/ES/ZH) + Unified Mirror Logic
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -10,6 +10,7 @@ const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
 let lastAlertHash: string | null = null;
 
+// 核心事件三语字典
 const TRANSLATIONS: Record<string, { en: string, es: string, zh: string }> = {
   'RUNTIME_ERROR': { en: 'System Exception', es: 'Excepción del Sistema', zh: '系统运行异常' },
   'USER_LOGIN': { en: 'Identity Verified', es: 'Identidad Verificada', zh: '用户身份验证成功' },
@@ -19,7 +20,8 @@ const TRANSLATIONS: Record<string, { en: string, es: string, zh: string }> = {
   'PULSE_ANOMALY': { en: 'Grid Anomaly', es: 'Anomalía de Red', zh: '网络连接异常' },
   'DIARY_LOG_ENTRY': { en: 'Biological Log Entry', es: 'Entrada de Registro Bio', zh: '生物日志更新' },
   'GA4_SYNC_FAILURE': { en: 'Telemetry Mirror Severed', es: 'Espejo Telemétrico Cortado', zh: '遥测镜像连接中断' },
-  'PW_UPDATE_SUCCESS': { en: 'Key Rotation Complete', es: 'Rotación de Llaves Completa', zh: '访问密钥轮换完成' }
+  'PW_UPDATE_SUCCESS': { en: 'Key Rotation Complete', es: 'Rotación de Llaves Completa', zh: '访问密钥轮换完成' },
+  'SYSTEM_SIGNAL': { en: 'System Signal Detected', es: 'Señal del Sistema Detectada', zh: '监测到系统信号' }
 };
 
 const getHash = (str: string) => {
@@ -58,22 +60,24 @@ export const notifyAdmin = async (payload: any) => {
   const mytTime = getMYTTime();
   const nodeName = typeof window !== 'undefined' ? window.location.hostname : 'Cloud_Edge';
   const content = escapeHTML(rawContent);
-  const mapping = TRANSLATIONS[msgType] || { en: 'Signal Detected', es: 'Señal Detectada', zh: '检测到系统信号' };
+  
+  // 获取翻译映射，如果不存在则使用通用信号
+  const mapping = TRANSLATIONS[msgType] || TRANSLATIONS['SYSTEM_SIGNAL'];
 
   let finalMessage = `🛰️ <b>SOMNO LAB GLOBAL MESH</b>\n`;
   finalMessage += `━━━━━━━━━━━━━━━━━━━━\n\n`;
 
-  // English Block
+  // 1. English Block
   finalMessage += `🇬🇧 <b>[ENGLISH]</b>\n`;
   finalMessage += `<b>Event:</b> <code>${mapping.en}</code>\n`;
   finalMessage += `<code>${content}</code>\n\n`;
 
-  // Spanish Block
+  // 2. Spanish Block
   finalMessage += `🇪🇸 <b>[ESPAÑOL]</b>\n`;
   finalMessage += `<b>Evento:</b> <code>${mapping.es}</code>\n`;
   finalMessage += `<code>${content}</code>\n\n`;
 
-  // Chinese Block
+  // 3. Chinese Block
   finalMessage += `🇨🇳 <b>[中文]</b>\n`;
   finalMessage += `<b>事件:</b> <code>${mapping.zh}</code>\n`;
   finalMessage += `<code>${content}</code>\n\n`;
