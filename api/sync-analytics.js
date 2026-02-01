@@ -3,10 +3,12 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNOAI ANALYTICS SYNC ENGINE v2.5
- * Triggered by Vercel Cron
- * Integrated with Telegram Alerts & Audit Logs
+ * SOMNOAI ANALYTICS SYNC ENGINE v3.0
+ * Direct Telegram Bot Integration for Reliability
  */
+
+const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
+const ADMIN_CHAT_ID = '-1003851949025';
 
 const analyticsDataClient = new BetaAnalyticsDataClient({
   credentials: process.env.GA_SERVICE_ACCOUNT_KEY 
@@ -20,23 +22,28 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
-// Helper: Report critical sync failures to Telegram and Registry
-const reportSyncFailure = async (errorMsg) => {
-  const message = `🚨 GA4_SYNC_CRITICAL_FAILURE\nPROPERTY: ${propertyId}\nERROR: ${errorMsg}\nTIMESTAMP: ${new Date().toISOString()}\nNODE: Vercel_API_Worker`;
-  
-  // 1. Notify Telegram via Edge Function
+// Helper: Direct Telegram Notification
+const sendTelegram = async (text) => {
   try {
-    await fetch(`${process.env.SUPABASE_URL}/functions/v1/notify_telegram`, {
+    await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY}`,
-        'Content-Type': 'application/json' 
-      },
-      body: JSON.stringify({ message })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: ADMIN_CHAT_ID,
+        text,
+        parse_mode: 'Markdown'
+      })
     });
-  } catch (e) { console.error("Alert notification failed"); }
+  } catch (e) { console.error("Internal alert dispatch failed"); }
+};
 
-  // 2. Commit to Audit Logs - Standardized field: created_at
+const reportSyncFailure = async (errorMsg) => {
+  const message = `🚨 *GA4_SYNC_CRITICAL_FAILURE*\n\n*PROPERTY:* \`${propertyId}\`\n*ERROR:* \`${errorMsg}\`\n*TIMESTAMP:* \`${new Date().toISOString()}\`\n*NODE:* \`Vercel_API_Worker\``;
+  
+  // 1. Notify Telegram
+  await sendTelegram(message);
+
+  // 2. Commit to Audit Logs
   try {
     await supabase.from("audit_logs").insert([{
       action: "GA4_SYNC_ERROR",
@@ -48,18 +55,14 @@ const reportSyncFailure = async (errorMsg) => {
 };
 
 export default async function handler(req, res) {
-  // 1. SECURITY HANDSHAKE
   const authHeader = req.headers.authorization;
-  // Use the secret provided: 9f3ks8dk29dk3k2kd93kdkf83kd9dk2
   if (!process.env.CRON_SECRET || authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    console.error("UNAUTHORIZED_SYNC_ATTEMPT");
     return res.status(401).json({ error: "Unauthorized Access Detected" });
   }
 
   try {
     const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
 
-    // 2. Fetch Daily Metrics from GA4
     const [dailyResponse] = await analyticsDataClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
@@ -77,45 +80,7 @@ export default async function handler(req, res) {
       if (error) throw error;
     }
 
-    // 3. Fetch Geo Rankings
-    const [geoResponse] = await analyticsDataClient.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
-      dimensions: [{ name: "country" }],
-      metrics: [{ name: "totalUsers" }],
-    });
-
-    const geoData = geoResponse.rows?.map(row => ({
-      date: yesterday,
-      country: row.dimensionValues[0].value,
-      users: parseInt(row.metricValues[0].value)
-    })) || [];
-
-    if (geoData.length > 0) {
-      const { error } = await supabase.from("analytics_country").upsert(geoData, { onConflict: "date, country" });
-      if (error) throw error;
-    }
-
-    // 4. Fetch Device Segments
-    const [deviceResponse] = await analyticsDataClient.runReport({
-      property: `properties/${propertyId}`,
-      dateRanges: [{ startDate: "yesterday", endDate: "yesterday" }],
-      dimensions: [{ name: "deviceCategory" }],
-      metrics: [{ name: "totalUsers" }],
-    });
-
-    const deviceData = deviceResponse.rows?.map(row => ({
-      date: yesterday,
-      device: row.dimensionValues[0].value,
-      users: parseInt(row.metricValues[0].value)
-    })) || [];
-
-    if (deviceData.length > 0) {
-      const { error } = await supabase.from("analytics_device").upsert(deviceData, { onConflict: "date, device" });
-      if (error) throw error;
-    }
-
-    // Record success audit - Standardized field: created_at
+    // Success audit
     await supabase.from("audit_logs").insert([{
       action: "GA4_SYNC_SUCCESS",
       details: `Telemetry captured for ${yesterday}`,

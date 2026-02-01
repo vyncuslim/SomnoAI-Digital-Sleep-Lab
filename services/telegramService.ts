@@ -1,58 +1,57 @@
 
 /**
- * SOMNO LAB - TELEGRAM GATEWAY SERVICE v4.3
- * Routes system alerts and audit logs via encrypted Supabase Edge Functions.
+ * SOMNO LAB - DIRECT TELEGRAM GATEWAY v5.0
+ * 直接接入 Telegram Bot API 执行全域安全告警与节点监控
  */
 
-const EDGE_FUNCTION_URL = 'https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/notify_telegram';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qY3Z2dHlhZWJkb2RtZWd3cWFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjgyODc2ODgsImV4cCI6MjA4Mzg2MzY4OH0.FJY9V6fdTFOFCXeqWNwv1cQnsnQfq4RZq-5WyLNzPCg';
+const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
+const ADMIN_CHAT_ID = '-1003851949025';
+const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
 export const notifyAdmin = async (payload: string | { error?: string; message?: string; type?: string }) => {
-  if (!EDGE_FUNCTION_URL || !SUPABASE_ANON_KEY) {
-    console.warn("TELEGRAM_GATEWAY_OFFLINE: Endpoint or credentials void.");
+  if (!BOT_TOKEN || !ADMIN_CHAT_ID) {
+    console.warn("TELEGRAM_GATEWAY_VOID: Bot credentials or Chat ID missing.");
     return false;
   }
 
   let finalMessage = '';
   if (typeof payload === 'string') {
-    finalMessage = `🛡️ SOMNO LAB NODE ALERT\n\n${payload}`;
+    finalMessage = `🛡️ *SOMNO LAB NODE ALERT*\n\n${payload}`;
   } else {
     const type = payload.type || 'SYSTEM_SIGNAL';
     const content = payload.error || payload.message || 'Telemetry Null';
-    finalMessage = `🚨 SOMNO LAB [${type}]\n\nLOG: ${content}\nTIME: ${new Date().toISOString()}`;
+    finalMessage = `🚨 *SOMNO LAB [${type}]*\n\n*LOG:* \`${content}\`\n*TIME:* \`${new Date().toISOString()}\``;
   }
 
-  // Increased timeout for edge cold starts and high latency connections
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => {
-    try {
-      controller.abort();
-    } catch (e) {}
-  }, 15000); 
+  const timeoutId = setTimeout(() => controller.abort(), 10000);
 
   try {
-    const response = await fetch(EDGE_FUNCTION_URL, {
+    const response = await fetch(TELEGRAM_API, {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-        'apikey': SUPABASE_ANON_KEY 
-      },
-      body: JSON.stringify({ message: finalMessage }),
-      signal: controller.signal
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: ADMIN_CHAT_ID,
+        text: finalMessage,
+        parse_mode: 'Markdown',
+        disable_web_page_preview: true
+      }),
+      signal: controller.signal,
+      // @ts-ignore - Ensure beacon-like delivery on page unloads
+      keepalive: true 
     });
 
     clearTimeout(timeoutId);
     
     if (!response.ok) {
-        console.error(`TELEGRAM_GATEWAY_HTTP_ERR: ${response.status}`);
+        const errorDetail = await response.json().catch(() => ({}));
+        console.error(`TELEGRAM_GATEWAY_HTTP_ERR: ${response.status}`, errorDetail);
         return false;
     }
     
     return true;
   } catch (err: any) {
     clearTimeout(timeoutId);
-    // Only debug log meaningful errors, ignore intentional aborts from navigation/timeout
     if (err.name !== 'AbortError') {
       console.debug(`TELEGRAM_GATEWAY_HANDSHAKE_VOID: ${err.message}`);
     }
