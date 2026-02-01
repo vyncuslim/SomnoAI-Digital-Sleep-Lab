@@ -1,27 +1,51 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v24.0
- * Features: Bi-directional Source Identity & Triple-lingual Precision
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v27.0
+ * Features: Dynamic Identity Translation & Triple-lingual Precision
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
-const TRANSLATIONS: Record<string, { en: string, es: string, zh: string }> = {
+const EVENT_MAP: Record<string, { en: string, es: string, zh: string }> = {
   'RUNTIME_ERROR': { en: 'System Exception', es: 'Excepción del Sistema', zh: '系统运行异常' },
-  'USER_LOGIN': { en: 'Identity Verified', es: 'Identidad Verificada', zh: '用户访问成功' },
-  'GA4_SYNC_FAILURE': { en: 'Telemetry Sync Failed', es: 'Fallo de Sincronización', zh: 'GA4 同步失败' },
-  'ADMIN_MANUAL_SYNC': { en: 'Admin Manual Pulse', es: 'Pulso Manual Admin', zh: '管理员手动同步' },
-  'PERMISSION_DENIED': { en: 'Handshake Forbidden', es: 'Handshake Prohibido', zh: '访问被拒绝（权限不足）' },
-  'SECURITY_ALERT': { en: 'Security Breach Protocol', es: 'Alerta de Seguridad', zh: '安全预警' },
-  'USER_SESSION_EVALUATION': { en: 'Session Feedback Rating', es: 'Calificación de Sesión', zh: '用户离境评价' }
+  'USER_LOGIN': { en: 'Identity Access Verified', es: 'Acceso Verificado', zh: '身份访问验证通过' },
+  'GA4_SYNC_FAILURE': { en: 'Telemetry Sync Failure', es: 'Fallo de Sincronización', zh: 'GA4 同步失败' },
+  'PERMISSION_DENIED': { en: 'Access Forbidden', es: 'Acceso Prohibido', zh: '访问被拒绝（权限不足）' },
+  'USER_SESSION_EVALUATION': { en: 'Session Feedback', es: 'Calificación de Sesión', zh: '用户评价反馈' }
 };
 
-const SOURCE_TAGS: Record<string, string> = {
-  'ADMIN_CONSOLE': '🖥️ [ADMIN_BACKPLANE] | 管理端后台',
-  'USER_TERMINAL': '🧪 [SUBJECT_NODE] | 受试者终端',
-  'SYSTEM': '⚙️ [SYSTEM_CORE] | 系统核心'
+/**
+ * 翻译日志正文，特别针对登录事件进行身份标注
+ */
+const translateDetails = (text: string, lang: 'en' | 'es' | 'zh'): string => {
+  let result = text;
+  
+  // 识别身份标签并翻译
+  const isStaff = text.includes('STAFF_ADMIN');
+  const isSubject = text.includes('SUBJECT_USER');
+  const emailMatch = text.match(/for: (.*)/) || text.match(/Email: (.*)/);
+  const email = emailMatch ? emailMatch[1] : 'Unknown Node';
+
+  if (isStaff) {
+    if (lang === 'zh') result = `👑 管理端后台登录: ${email}`;
+    if (lang === 'es') result = `👑 Acceso de Administrador: ${email}`;
+    if (lang === 'en') result = `👑 Admin Console Login: ${email}`;
+  } else if (isSubject) {
+    if (lang === 'zh') result = `🧪 受试者终端登录: ${email}`;
+    if (lang === 'es') result = `🧪 Acceso de Sujeto: ${email}`;
+    if (lang === 'en') result = `🧪 Subject Node Login: ${email}`;
+  }
+
+  // GA4 错误专用翻译
+  if (text.includes('PERMISSION_DENIED')) {
+    if (lang === 'zh') result = `🚨 GA4 访问被拒。请在 Google Analytics 中添加服务账号权限。`;
+    if (lang === 'es') result = `🚨 Acceso GA4 denegado. Agregue permisos a la cuenta de servicio.`;
+    if (lang === 'en') result = `🚨 GA4 Access Denied. Add service account permissions in GA4 console.`;
+  }
+
+  return result;
 };
 
 export const getMYTTime = () => {
@@ -36,46 +60,36 @@ export const notifyAdmin = async (payload: any) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
   const msgType = payload.type || 'SYSTEM_SIGNAL';
-  const path = payload.path || (typeof window !== 'undefined' ? window.location.hash : 'Cloud_Logic');
-  
-  // 智能来源判定
-  let sourceLabel = SOURCE_TAGS['SYSTEM'];
-  if (payload.source === 'ADMIN_CONSOLE' || path.includes('admin')) {
-    sourceLabel = SOURCE_TAGS['ADMIN_CONSOLE'];
-  } else if (payload.source === 'USER_TERMINAL' || path.includes('dashboard')) {
-    sourceLabel = SOURCE_TAGS['USER_TERMINAL'];
-  }
-
-  const mapping = TRANSLATIONS[msgType] || { en: msgType, es: msgType, zh: msgType };
-  const content = payload.message || payload.error || 'N/A';
+  const path = payload.path || 'Root_Node';
+  const rawDetails = payload.message || payload.error || 'N/A';
   const mytTime = getMYTTime();
-  const icon = (msgType.includes('FAIL') || msgType.includes('ERROR') || msgType.includes('DENIED')) ? '🚨' : 
-               msgType.includes('EVALUATION') ? '⭐' : '🛡️';
+  
+  const mapping = EVENT_MAP[msgType] || { en: msgType, es: msgType, zh: msgType };
+  const icon = msgType.includes('FAIL') || msgType.includes('ERROR') ? '🚨' : 
+               rawDetails.includes('STAFF_ADMIN') ? '👑' : '🛡️';
 
   const finalMessage = `${icon} <b>LAB DISPATCH | 实验室通讯</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n\n` +
-    `📍 <b>SOURCE:</b> <code>${sourceLabel}</code>\n` +
-    `🔗 <b>PATH:</b> <code>${path}</code>\n\n` +
+    `📍 <b>SOURCE:</b> <code>${path.includes('admin') ? 'ADMIN_BACKPLANE' : 'SUBJECT_NODE'}</code>\n\n` +
     `🇬🇧 <b>[ENGLISH]</b>\n` +
     `<b>Event:</b> <code>${mapping.en}</code>\n` +
-    `<b>Detail:</b> <code>${content}</code>\n\n` +
+    `<b>Detail:</b> <code>${translateDetails(rawDetails, 'en')}</code>\n\n` +
     `🇪🇸 <b>[ESPAÑOL]</b>\n` +
     `<b>Evento:</b> <code>${mapping.es}</code>\n` +
-    `<b>Log:</b> <code>${content}</code>\n\n` +
+    `<b>Registro:</b> <code>${translateDetails(rawDetails, 'es')}</code>\n\n` +
     `🇨🇳 <b>[中文]</b>\n` +
     `<b>事件:</b> <code>${mapping.zh}</code>\n` +
-    `<b>详情:</b> <code>${content}</code>\n\n` +
+    `<b>详情:</b> <code>${translateDetails(rawDetails, 'zh')}</code>\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    `<b>NODE:</b> <code>${typeof window !== 'undefined' ? window.location.hostname : 'Vercel_Edge'}</code>\n` +
     `<b>TIME:</b> <code>${mytTime}</code>`;
 
   try {
-    const res = await fetch(TELEGRAM_API, {
+    await fetch(TELEGRAM_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: finalMessage, parse_mode: 'HTML' })
     });
-    return res.ok;
+    return true;
   } catch (err) {
     return false;
   }

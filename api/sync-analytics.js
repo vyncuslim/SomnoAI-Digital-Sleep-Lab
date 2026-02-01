@@ -2,13 +2,8 @@
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
-/**
- * SOMNO LAB GA4 SYNC v17.0
- * Fixed: Secret mismatch and 500 error on permission denial.
- */
-
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
-const TARGET_SERVICE_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
+const SERVICE_ACCOUNT_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -45,24 +40,23 @@ export default async function handler(req, res) {
     }));
 
     if (rows.length > 0) {
-      const { error } = await supabase.from("analytics_daily").upsert(rows, { onConflict: 'date' });
-      if (error) throw error;
+      await supabase.from("analytics_daily").upsert(rows, { onConflict: 'date' });
     }
 
     return res.status(200).json({ success: true, count: rows.length });
   } catch (err) {
-    console.error("GA4_SYNC_ERROR:", err.message);
     const isPermissionError = err.message.includes('PERMISSION_DENIED') || err.code === 7;
+    
+    // 如果是权限错误，构造一个包含具体修复指令的错误消息
+    const detailedError = isPermissionError 
+      ? `PERMISSION_DENIED: Service account lacks access to Property ${process.env.GA_PROPERTY_ID}. Please add "${SERVICE_ACCOUNT_EMAIL}" to GA4 users with "Viewer" role.`
+      : err.message;
 
-    // 如果是权限错误，返回 403 而不是 500
-    if (isPermissionError) {
-      return res.status(403).json({ 
-        error: "PERMISSION_DENIED", 
-        message: "Service account lacks GA4 property access.",
-        required_email: TARGET_SERVICE_EMAIL 
-      });
-    }
-
-    return res.status(500).json({ error: err.message || "INTERNAL_SERVER_ERROR" });
+    console.error("GA4_SYNC_FAILURE:", detailedError);
+    
+    return res.status(isPermissionError ? 403 : 500).json({ 
+      error: isPermissionError ? "GA4_AUTH_REQUIRED" : "SYNC_ERROR",
+      message: detailedError 
+    });
   }
 }

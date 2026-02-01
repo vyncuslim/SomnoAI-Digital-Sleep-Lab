@@ -39,13 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const authLockActive = useRef(false);
   const lastEventLogged = useRef<string | null>(null);
 
-  const hasAuthParams = 
-    window.location.hash.includes('access_token=') || 
-    window.location.hash.includes('id_token=') || 
-    window.location.search.includes('code=');
-
-  if (hasAuthParams) authLockActive.current = true;
-
   const fetchProfile = useCallback(async (isFreshLogin: boolean = false) => {
     if (isSyncing.current) return;
     isSyncing.current = true;
@@ -54,14 +47,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { user } } = await (supabase.auth as any).getUser();
 
       if (!user) {
-        if (!authLockActive.current) {
-          setProfile(null);
-          setLoading(false);
-        }
+        setProfile(null);
+        setLoading(false);
         return;
       }
 
-      // Interrogate detailed profile registry
       const { data, error } = await supabase.rpc('get_my_detailed_profile');
       let currentProfile: Profile | null = null;
       
@@ -79,20 +69,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setProfile(currentProfile);
 
-      // CRITICAL: TRIGGER LOGIN NOTIFICATION
+      // 关键改进：在日志消息中显式标注身份和来源
       if (isFreshLogin && currentProfile) {
-        // Prevent duplicate logs for the same session refresh
         const eventKey = `login_${currentProfile.id}_${new Date().getMinutes()}`;
         if (lastEventLogged.current !== eventKey) {
            lastEventLogged.current = eventKey;
-           // logAuditLog with 'USER_LOGIN' will automatically notify Telegram
-           await logAuditLog('USER_LOGIN', `Access protocol verified for: ${currentProfile.email}`, 'INFO');
+           const isStaff = ['admin', 'owner'].includes(currentProfile.role) || currentProfile.is_super_owner;
+           const identityTag = isStaff ? '[IDENTITY: STAFF_ADMIN]' : '[IDENTITY: SUBJECT_USER]';
+           await logAuditLog('USER_LOGIN', `${identityTag} Access verified for: ${currentProfile.email}`, 'INFO');
         }
       }
       
       authLockActive.current = false;
     } catch (err) {
-      console.warn("AuthContext: Pulse interrupted.", err);
+      console.warn("AuthContext: Handshake latency.");
     } finally {
       setLoading(false);
       isSyncing.current = false;
@@ -101,39 +91,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     fetchProfile();
-
-    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((event: string, session: any) => {
-      console.debug(`[Auth Engine] EVENT: ${event}`);
-      
-      if (event === 'SIGNED_IN') {
-        authLockActive.current = false;
-        fetchProfile(true); // Signal this as a fresh login
-      } else if (event === 'TOKEN_REFRESHED') {
-        fetchProfile(false);
-      } else if (event === 'SIGNED_OUT') {
-        authLockActive.current = false;
-        setProfile(null);
-        setLoading(false);
-      } else if (event === 'INITIAL_SESSION') {
-        if (!session && !hasAuthParams) {
-          setLoading(false);
-        }
-      }
+    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((event: string) => {
+      if (event === 'SIGNED_IN') fetchProfile(true);
+      else if (event === 'SIGNED_OUT') { setProfile(null); setLoading(false); }
     });
-
-    const timer = setTimeout(() => {
-      if (loading) setLoading(false);
-    }, 5000);
-
-    return () => {
-      subscription.unsubscribe();
-      clearTimeout(timer);
-    };
-  }, [fetchProfile, hasAuthParams, loading]);
+    return () => subscription.unsubscribe();
+  }, [fetchProfile]);
 
   const value = {
-    profile,
-    loading,
+    profile, loading,
     isAdmin: profile?.role === "admin" || profile?.role === "owner" || profile?.is_super_owner === true,
     isOwner: profile?.role === "owner" || profile?.is_super_owner === true,
     isSuperOwner: profile?.is_super_owner === true,
