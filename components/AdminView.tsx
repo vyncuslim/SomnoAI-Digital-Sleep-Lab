@@ -45,6 +45,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
   const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://sleepsomno.com';
+  const GA4_SERVICE_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -96,7 +97,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } else {
         if (response.status === 403) {
           setSyncState('FORBIDDEN');
-          throw new Error(`GA4 PERMISSION DENIED: Please add ${data.required_email || 'the service account'} to GA4.`);
+          throw new Error(`GA4 PERMISSION DENIED: Please authorize the Service Account [${GA4_SERVICE_EMAIL}] in your Google Analytics Property settings.`);
         }
         throw new Error(data.detail || data.error || "Sync gateway error.");
       }
@@ -107,9 +108,21 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setTimeout(() => setSyncState('IDLE'), 3000);
   };
 
+  const handleTableInspect = (tableId: string) => {
+    if (tableId === 'profiles') {
+      setActiveTab('registry');
+    } else if (tableId === 'security_events' || tableId === 'audit_logs') {
+      setActiveTab('signals');
+    } else if (tableId === 'analytics_daily') {
+      setActiveTab('overview');
+    } else {
+      setActionError(`ACCESS_RESTRICTED: Direct UI inspection for ${tableId}.tbl is disabled. Please use SQL Editor for raw data management.`);
+    }
+  };
+
   const handleToggleBlock = async (user: any) => {
     if (user.is_super_owner) {
-      setActionError("SECURITY_DENIED: Super Owner identity is immune to standard restriction protocols.");
+      setActionError("SECURITY_DENIED: Super Owner identity is immune to block protocols.");
       return;
     }
 
@@ -123,13 +136,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const handleCycleRole = async (targetUser: any) => {
-    // 1. 超级管理员保护：任何人不得修改其角色
     if (targetUser.is_super_owner) {
       setActionError("ACCESS_DENIED: Super Owner identity is immutable via standard Command Bridge.");
       return;
     }
 
-    // 2. 确定当前操作者的最高权限
     const isSuper = currentAdmin?.is_super_owner === true;
     const isOwner = currentAdmin?.role === 'owner';
     const isAdmin = currentAdmin?.role === 'admin';
@@ -139,16 +150,19 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       return;
     }
 
-    // 3. 越权保护逻辑 (Role Escalation Protection)
-    let availableRoles = ['user', 'admin'];
+    let availableRoles = ['user', 'admin']; 
+    if (isAdmin && targetUser.role === 'owner') {
+      setActionError("PRIVILEGE_VIOLATION: Administrative nodes cannot manipulate OWNER level clearance.");
+      return;
+    }
+
     if (isSuper || isOwner) {
       availableRoles = ['user', 'admin', 'owner'];
     }
 
     const currentIndex = availableRoles.indexOf(targetUser.role || 'user');
-    // 如果当前角色超出了操作者的授权范围（例如管理员试图点击一个所有者），拒绝
-    if (currentIndex === -1 && !isSuper) {
-      setActionError("PRIVILEGE_VIOLATION: You cannot modify roles higher than your own clearance.");
+    if (currentIndex === -1) {
+      setActionError("PRIVILEGE_VIOLATION: Target node exists outside your clearance scope.");
       return;
     }
 
@@ -245,7 +259,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             {activeTab === 'explorer' && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {DATABASE_SCHEMA.map((table) => (
-                  <GlassCard key={table.id} className="p-8 rounded-[3rem] border-white/5 flex flex-col justify-between group hover:border-indigo-500/20 transition-all">
+                  <GlassCard 
+                    key={table.id} 
+                    onClick={() => handleTableInspect(table.id)}
+                    className="p-8 rounded-[3rem] border-white/5 flex flex-col justify-between group hover:border-indigo-500/20 transition-all cursor-pointer"
+                  >
                     <div className="space-y-6">
                       <div className="flex justify-between items-start">
                         <div className="p-4 bg-white/5 rounded-2xl text-slate-400 group-hover:text-indigo-400 transition-colors">
@@ -256,7 +274,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           <p className="text-2xl font-black text-white italic">{tableCounts[table.id] || 0}</p>
                         </div>
                       </div>
-                      <div className="space-y-1">
+                      <div className="space-y-1 text-left">
                         <h3 className="text-lg font-black italic text-white uppercase tracking-tight">{table.name}</h3>
                         <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">{table.group}</p>
                         <p className="text-xs text-slate-500 font-medium italic pt-2 leading-relaxed">{table.desc}</p>
@@ -264,7 +282,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     </div>
                     <div className="mt-8 pt-6 border-t border-white/5 flex justify-between items-center">
                        <span className="text-[9px] font-mono text-slate-700 uppercase font-black">{table.id}.tbl</span>
-                       <button className="text-[10px] font-black text-indigo-400 uppercase hover:text-white transition-colors flex items-center gap-2">
+                       <button 
+                         onClick={(e) => { e.stopPropagation(); handleTableInspect(table.id); }}
+                         className="text-[10px] font-black text-indigo-400 uppercase hover:text-white transition-colors flex items-center gap-2"
+                       >
                          Inspect <ChevronRight size={12} />
                        </button>
                     </div>
@@ -325,7 +346,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           <span className="w-7 h-7 rounded-full bg-indigo-600/20 flex items-center justify-center text-[10px] font-black">1</span>
                           <h3 className="text-[11px] font-black uppercase tracking-widest">Register & Access</h3>
                        </div>
-                       <p className="text-[13px] text-slate-400 italic leading-relaxed">访问 <a href="https://uptimerobot.com" target="_blank" className="text-indigo-400 underline">UptimeRobot.com</a> 并登录，点击 Dashboard 里的 <b>"Add New Monitor"</b>。</p>
+                       <p className="text-[13px] text-slate-400 italic leading-relaxed text-left">访问 <a href="https://uptimerobot.com" target="_blank" className="text-indigo-400 underline">UptimeRobot.com</a> 并登录，点击 Dashboard 里的 <b>"Add New Monitor"</b>。</p>
                     </GlassCard>
 
                     <GlassCard className="p-8 rounded-[3rem] border-white/5 space-y-6">
@@ -344,7 +365,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           <span className="w-7 h-7 rounded-full bg-indigo-600/20 flex items-center justify-center text-[10px] font-black">3</span>
                           <h3 className="text-[11px] font-black uppercase tracking-widest">Security Link</h3>
                        </div>
-                       <p className="text-[13px] text-slate-400 italic leading-relaxed">在 <b>URL (or IP)</b> 栏填入下方生成的加密接口地址。该地址包含独有的 <code>CRON_SECRET</code>。</p>
+                       <p className="text-[13px] text-slate-400 italic leading-relaxed text-left">在 <b>URL (or IP)</b> 栏填入下方生成的加密接口地址。该地址包含独有的 <code>CRON_SECRET</code>。</p>
                     </GlassCard>
                  </div>
 
@@ -352,7 +373,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <GlassCard className="p-10 rounded-[4rem] border-indigo-500/20 relative overflow-hidden">
                        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none rotate-12"><Activity size={200} /></div>
                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
-                          <div className="space-y-4">
+                          <div className="space-y-4 text-left">
                              <div className="flex items-center gap-4">
                                 <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><RefreshCw size={24} /></div>
                                 <div className="space-y-1">
@@ -370,7 +391,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 </div>
                              </div>
                           </div>
-                          <div className="bg-indigo-500/5 p-6 rounded-[2.5rem] border border-white/5 space-y-3 min-w-[240px]">
+                          <div className="bg-indigo-500/5 p-6 rounded-[2.5rem] border border-white/5 space-y-3 min-w-[240px] text-left">
                              <div className="flex items-center gap-2 text-indigo-400"><Clock size={14} /><span className="text-[9px] font-black uppercase">Schedule Recommendation</span></div>
                              <p className="text-[12px] text-slate-400 italic">设置为 <b>"Every 30 mins"</b> 即可满足 GA4 每日数据回传需求。</p>
                           </div>
@@ -380,7 +401,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 relative overflow-hidden">
                        <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none -rotate-12"><HeartPulse size={200} /></div>
                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
-                          <div className="space-y-4">
+                          <div className="space-y-4 text-left">
                              <div className="flex items-center gap-4">
                                 <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><Zap size={24} /></div>
                                 <div className="space-y-1">
@@ -398,8 +419,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 </div>
                              </div>
                           </div>
-                          <div className="bg-rose-500/5 p-6 rounded-[2.5rem] border border-white/5 space-y-3 min-w-[240px]">
-                             <div className="flex items-center gap-2 text-indigo-400"><Clock size={14} /><span className="text-[9px] font-black uppercase">Schedule Recommendation</span></div>
+                          <div className="bg-rose-500/5 p-6 rounded-[2.5rem] border border-white/5 space-y-3 min-w-[240px] text-left">
+                             <div className="flex items-center gap-2 text-rose-400"><Clock size={14} /><span className="text-[9px] font-black uppercase">Schedule Recommendation</span></div>
                              <p className="text-[12px] text-slate-400 italic">设置为 <b>"Every 5 mins"</b>。若系统宕机，UptimeRobot 会立即触发告警。</p>
                           </div>
                        </div>
@@ -497,7 +518,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <div className="p-3 bg-white/5 rounded-2xl text-slate-400"><Database size={20} /></div>
                          <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Infrastructure Health</h3>
                        </div>
-                       <div className="space-y-6">
+                       <div className="space-y-6 text-left">
                           <p className="text-[10px] text-slate-500 italic leading-relaxed">
                             Primary database link is managed via Supabase Postgres. AI processing is handled by Google Gemini 2.5 Pro.
                           </p>
