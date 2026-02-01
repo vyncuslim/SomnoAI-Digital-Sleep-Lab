@@ -72,7 +72,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const executePulse = async () => {
     setIsPulsing(true);
-    const res = await systemMonitor.executePulseCheck('zh');
+    // Modified to call Global Pulse Check (Triggers EN, ES, ZH Telegrams)
+    const res = await systemMonitor.executeGlobalPulseCheck();
     setPulseResult(res);
     setIsPulsing(false);
   };
@@ -197,7 +198,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           </div>
                           <div className="space-y-0.5 text-left">
                              <h3 className="text-sm font-black italic text-white uppercase tracking-tight">Neural Pulse</h3>
-                             <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Diagnostic Stream</p>
+                             <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Diagnostic Stream (EN/ES/ZH)</p>
                           </div>
                        </div>
                        <button onClick={executePulse} disabled={isPulsing} className="p-3 bg-white/5 rounded-xl hover:bg-white/10 transition-all text-slate-500 hover:text-indigo-400">
