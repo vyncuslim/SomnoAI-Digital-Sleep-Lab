@@ -39,7 +39,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const authLockActive = useRef(false);
   const lastEventLogged = useRef<string | null>(null);
 
-  // 关键检测：是否处于 OAuth 回跳过程中
   const hasAuthParams = 
     window.location.hash.includes('access_token=') || 
     window.location.hash.includes('id_token=') || 
@@ -62,6 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
+      // Interrogate detailed profile registry
       const { data, error } = await supabase.rpc('get_my_detailed_profile');
       let currentProfile: Profile | null = null;
       
@@ -79,19 +79,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setProfile(currentProfile);
 
-      // 如果检测到是新鲜登录（OAuth 回跳或 SIGNED_IN 事件），手动记录一次审计触发告警
+      // ALERT TRIGGER: Dispatch Telegram notification for successful logins
       if (isFreshLogin && currentProfile) {
-        // 防止页面热重载导致的重复记录
         const eventKey = `login_${currentProfile.id}_${new Date().getMinutes()}`;
         if (lastEventLogged.current !== eventKey) {
            lastEventLogged.current = eventKey;
-           logAuditLog('USER_LOGIN', `Identity detected via Auth Guard: ${currentProfile.email}`, 'INFO');
+           await logAuditLog('USER_LOGIN', `Successful authentication established for node: ${currentProfile.email}`, 'INFO');
         }
       }
       
       authLockActive.current = false;
     } catch (err) {
-      console.warn("AuthContext: Telemetry sync error.", err);
+      console.warn("AuthContext: Pulse interrupted.", err);
     } finally {
       setLoading(false);
       isSyncing.current = false;
@@ -104,9 +103,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((event: string, session: any) => {
       console.debug(`[Auth Engine] EVENT: ${event}`);
       
-      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+      if (event === 'SIGNED_IN') {
         authLockActive.current = false;
-        fetchProfile(event === 'SIGNED_IN'); // SIGNED_IN 标记为新鲜登录
+        fetchProfile(true); // Explicitly trigger the login notification
+      } else if (event === 'TOKEN_REFRESHED') {
+        fetchProfile(false);
       } else if (event === 'SIGNED_OUT') {
         authLockActive.current = false;
         setProfile(null);
@@ -119,11 +120,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     const timer = setTimeout(() => {
-      if (loading) {
-        console.warn("Auth Engine: Handshake timeout, forcing UI release.");
-        setLoading(false);
-      }
-    }, 4500);
+      if (loading) setLoading(false);
+    }, 5000);
 
     return () => {
       subscription.unsubscribe();

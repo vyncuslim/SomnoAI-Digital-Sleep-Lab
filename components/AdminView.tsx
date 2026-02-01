@@ -8,7 +8,7 @@ import {
   MessageSquare, LayoutDashboard, Radio, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint,
   Lock, Table, List, Clock, TrendingUp,
-  CheckCircle2, Unlock, WifiOff, Mail, ExternalLink
+  CheckCircle2, Unlock, WifiOff, Mail, ExternalLink, ActivitySquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -48,41 +48,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [lastSyncTime, setLastSyncTime] = useState<string | null>(null);
   
   const [users, setUsers] = useState<any[]>([]);
-  const [registrySearch, setRegistrySearch] = useState('');
-  const [processingUserId, setProcessingUserId] = useState<string | null>(null);
-  const [roleSelectUserId, setRoleSelectUserId] = useState<string | null>(null);
-  
-  const popoverRef = useRef<HTMLDivElement>(null);
-  
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [signals, setSignals] = useState<any[]>([]);
-  
-  const [selectedTable, setSelectedTable] = useState<string>('profiles');
-  const [tableData, setTableData] = useState<any[]>([]);
-  const [tableLoading, setTableLoading] = useState(false);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
-  const [tableSearch, setTableSearch] = useState('');
-  
   const [actionError, setActionError] = useState<string | null>(null);
-
-  // Diagnostic states
-  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [emailStatus, setEmailStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-
-  const isOwner = useMemo(() => {
-    const role = currentAdmin?.role?.toLowerCase();
-    return role === 'owner' || currentAdmin?.is_super_owner === true;
-  }, [currentAdmin]);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (popoverRef.current && !popoverRef.current.contains(event.target as Node)) {
-        setRoleSelectUserId(null);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const checkSyncStatus = async () => {
     try {
@@ -93,28 +62,21 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         .order('created_at', { ascending: false })
         .limit(1);
       
-      if (error) {
-        setSyncState('IDLE');
-        return;
-      }
-
       if (logs?.[0]) {
         const syncDate = new Date(logs[0].created_at);
-        setLastSyncTime(syncDate.toLocaleTimeString());
+        setLastSyncTime(syncDate.toLocaleString());
         const diffMs = new Date().getTime() - syncDate.getTime();
         const isStale = diffMs > 1000 * 60 * 60 * 24; 
         
         if (logs[0].action === 'GA4_SYNC_SUCCESS') {
           setSyncState(isStale ? 'STALE' : 'SYNCED');
-          return;
-        } else if (logs[0].action === 'GA4_SYNC_ERROR') {
+        } else {
           setSyncState('ERROR');
-          return;
         }
+      } else {
+        const count = await adminApi.getTableCount('analytics_daily');
+        setSyncState(count > 0 ? 'DATA_RESIDENT' : 'IDLE');
       }
-
-      const count = await adminApi.getTableCount('analytics_daily');
-      setSyncState(count > 0 ? 'DATA_RESIDENT' : 'IDLE');
     } catch (e) {
       setSyncState('IDLE');
     }
@@ -128,7 +90,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       const profile = await adminApi.getAdminClearance(user.id);
       setCurrentAdmin(profile);
-      trackConversion('admin_access');
 
       const [d, s, u] = await Promise.all([
         adminApi.getDailyAnalytics(30),
@@ -154,163 +115,27 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, []);
 
   useEffect(() => { fetchData(); }, []);
-  
-  useEffect(() => {
-    const channel = supabase
-      .channel('security_pulse_v4')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'security_events' }, (payload) => {
-        setSignals(prev => [payload.new as any, ...prev].slice(0, 40));
-      })
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'audit_logs' }, () => {
-        checkSyncStatus();
-      })
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []);
-
-  useEffect(() => {
-    if (activeTab === 'explorer') fetchSelectedTableData(selectedTable);
-  }, [activeTab, selectedTable]);
-
-  const fetchSelectedTableData = async (tableName: string) => {
-    setTableLoading(true);
-    try {
-      const data = await adminApi.getTableData(tableName);
-      setTableData(data || []);
-    } catch (e: any) {
-      setActionError(`Explorer Error: ${e.message}`);
-    } finally {
-      setTableLoading(false);
-    }
-  };
 
   const handleManualSync = async () => {
     setSyncState('SYNCING');
-    setActionError(null);
-    
     try {
-      const secret = prompt("ENTER_SYNC_PROTOCOL_SECRET:", "9f3ks8dk29dk3k2kd93kdkf83kd9dk2");
-      if (!secret) {
-        setSyncState('IDLE');
-        return;
-      }
-      
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 60000); 
-
+      const secret = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2"; 
       const response = await fetch('/api/sync-analytics', {
-        headers: { 'Authorization': `Bearer ${secret}` },
-        signal: controller.signal
+        headers: { 'Authorization': `Bearer ${secret}` }
       });
-      
-      clearTimeout(timeoutId);
-
       if (response.ok) {
-        await logAuditLog('ADMIN_MANUAL_SYNC', `GA4 synchronization triggered manually`);
-        alert("SYNC_SIGNAL_CONFIRMED: Telemetry grid refreshed.");
+        await logAuditLog('ADMIN_MANUAL_SYNC', `GA4 synchronization protocol executed by Admin.`);
         fetchData();
       } else {
-        if (response.status === 524 || response.status === 504) {
-           setSyncState('TIMEOUT');
-           throw new Error("GATEWAY_TIMEOUT: GA4 Telemetry link exceeded 60s limit. Retrying later.");
-        }
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || `GATEWAY_DENIED: Status ${response.status}`);
+        throw new Error("GATEWAY_TIMEOUT: GA4 link refused.");
       }
     } catch (e: any) {
-      if (e.name === 'AbortError') {
-        setActionError("REQUEST_TIMEOUT: Cloudflare/Vercel linkage severed.");
-        setSyncState('TIMEOUT');
-      } else {
-        setActionError(e.message);
-        setSyncState('ERROR');
-      }
-      await logAuditLog('ADMIN_SYNC_FAIL', `Manual sync error: ${e.message}`, 'WARNING');
-    }
-  };
-
-  const handleTestEmail = async () => {
-    setEmailStatus('sending');
-    try {
-      const { data: { user } } = await (supabase.auth as any).getUser();
-      if (!user?.email) throw new Error("IDENT_VOID");
-      
-      const res = await emailService.sendSystemEmail(
-        user.email,
-        "SomnoAI SMTP Diagnostic Pulse",
-        `<h3>Protocol Confirmation</h3><p>This is a diagnostic signal from your laboratory node <b>${getSafeHostname()}</b>.</p><p>SMTP status: <b>OPERATIONAL</b></p>`
-      );
-      
-      setEmailStatus(res.success ? 'success' : 'error');
-    } catch (e) {
-      setEmailStatus('error');
-    }
-    setTimeout(() => setEmailStatus('idle'), 4000);
-  };
-
-  const handleTestTelegram = async () => {
-    setTestStatus('sending');
-    const nodeIdentity = getSafeHostname();
-    try {
-      const success = await notifyAdmin({
-        type: 'DIAGNOSTIC_PULSE',
-        message: `Signal confirmed from node ${nodeIdentity}. Protocol: Operational.`
-      });
-      setTestStatus(success ? 'success' : 'error');
-    } catch (e) {
-      setTestStatus('error');
-    }
-    setTimeout(() => setTestStatus('idle'), 4000);
-  };
-
-  const handleToggleBlock = async (user: any) => {
-    if (user.is_super_owner) {
-      await logAuditLog('ROOT_NODE_PROTECTION_TRIGGER', `Attempted restriction of ROOT node: ${user.email}`, 'CRITICAL');
-      setActionError("SECURITY_VIOLATION: Root node is write-protected.");
-      return;
-    }
-    if (!confirm(`CONFIRM_SECURITY_OVERRIDE: Restrict access for ${user.email}?`)) return;
-    
-    setProcessingUserId(user.id);
-    try {
-      const { error } = await adminApi.toggleBlock(user.id, user.email, user.is_blocked);
-      if (error) throw error;
-      await fetchData();
-    } catch (e: any) {
       setActionError(e.message);
-    } finally {
-      setProcessingUserId(null);
+      setSyncState('ERROR');
     }
   };
 
-  const handleSetRole = async (user: any, newRole: string) => {
-    if (user.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH_ATTEMPT', `CRITICAL: Attempted role modification of ROOT node: ${user.email}`, 'CRITICAL');
-      setActionError("RESTRICTED_PROTOCOL: Root node clearance cannot be shifted.");
-      setRoleSelectUserId(null);
-      return;
-    }
-
-    if (!isOwner) return;
-    if (user.role === newRole) {
-      setRoleSelectUserId(null);
-      return;
-    }
-
-    setProcessingUserId(user.id);
-    setRoleSelectUserId(null);
-    try {
-      const { error } = await adminApi.updateUserRole(user.id, user.email, newRole);
-      if (error) throw error;
-      await fetchData();
-    } catch (e: any) {
-      setActionError(e.message);
-    } finally {
-      setProcessingUserId(null);
-    }
-  };
-
+  const isOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
   const themeColor = isOwner ? '#f59e0b' : '#6366f1';
 
   return (
@@ -324,10 +149,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-4">
               Command <span style={{ color: themeColor }}>Bridge</span>
             </h1>
-            <div className="flex items-center gap-3">
-               <div className="w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
-               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • v22.5.1</p>
-            </div>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Mesh Status Stable • TELEMETRY ACTIVE</p>
           </div>
         </div>
         
@@ -339,25 +161,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             { id: 'signals', label: 'SIGNALS', icon: Radio },
             { id: 'system', label: 'SYSTEM', icon: Cpu }
           ].map((tab) => (
-            <button 
-              key={tab.id} 
-              onClick={() => setActiveTab(tab.id as AdminTab)} 
-              className={`flex items-center gap-3 px-6 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-            >
-              <tab.icon size={14} />
-              {tab.label}
+            <button key={tab.id} onClick={() => setActiveTab(tab.id as AdminTab)} className={`flex items-center gap-3 px-6 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
+              <tab.icon size={14} /> {tab.label}
             </button>
           ))}
         </nav>
       </header>
 
-      {loading && syncState === 'SYNCING' && dailyStats.length === 0 ? (
+      {loading ? (
         <div className="flex flex-col items-center justify-center py-48 gap-8">
-          <div className="relative">
-             <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
-             <Loader2 className="animate-spin text-indigo-500 relative z-10" size={80} />
-          </div>
-          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic animate-pulse">Interrogating Node Registry...</p>
+          <Loader2 className="animate-spin text-indigo-500" size={80} />
+          <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic animate-pulse">Syncing Data Mesh...</p>
         </div>
       ) : (
         <AnimatePresence mode="wait">
@@ -370,50 +184,43 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     { label: 'Subject Profiles', value: tableCounts['profiles'] || 0, icon: UserCircle, source: 'DB' },
                     { label: 'Security Pulses', value: tableCounts['security_events'] || 0, icon: ShieldAlert, source: 'DB' }
                   ].map((stat, i) => (
-                    <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5 group hover:border-indigo-500/20 transition-all">
+                    <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5">
                       <div className="flex justify-between items-start mb-6">
-                        <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform"><stat.icon size={22} /></div>
-                        <span className="text-[8px] font-black text-slate-700 border border-white/5 px-2 py-1 rounded-md uppercase tracking-widest">{stat.source}</span>
+                        <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400"><stat.icon size={22} /></div>
+                        <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest">{stat.source}</span>
                       </div>
-                      <div className="space-y-1 text-left">
-                        <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
-                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2">{stat.label}</p>
-                      </div>
+                      <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{stat.value}</p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-2">{stat.label}</p>
                     </GlassCard>
                   ))}
                </div>
 
-               {/* Telemetry Bridge Verification */}
-               <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-white/[0.01]">
+               {/* GA4 Telemetry Verification Module */}
+               <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-indigo-500/[0.01]">
                  <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                    <div className="flex items-center gap-6 text-left">
-                     <div className={`p-5 rounded-[1.8rem] ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : 'bg-rose-600/10 text-rose-400'} border border-white/5`}>
-                       <Globe size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />
+                     <div className={`p-5 rounded-[1.8rem] ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-600/10 text-rose-400 border-rose-500/20'} border`}>
+                       <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin text-indigo-400' : ''} />
                      </div>
                      <div>
-                       <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Telemetry Verification</h3>
+                       <h3 className="text-xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Verification</h3>
                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">
-                         Google Analytics (GA4) -> Supabase Mirror Pulse
+                         Google Analytics (GA4) &rarr; Supabase Mirror Pulse
                        </p>
                      </div>
                    </div>
                    
                    <div className="flex flex-wrap gap-4 items-center justify-center">
                      <div className="px-6 py-4 bg-black/40 rounded-2xl border border-white/5 text-center min-w-[140px]">
-                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Mirror Status</p>
-                        <p className={`text-xs font-black italic uppercase ${syncState === 'SYNCED' ? 'text-emerald-400' : 'text-rose-400'}`}>{syncState.replace('_', ' ')}</p>
+                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Link Integrity</p>
+                        <p className={`text-xs font-black italic uppercase ${syncState === 'SYNCED' ? 'text-emerald-400' : 'text-rose-400'}`}>{syncState}</p>
                      </div>
                      <div className="px-6 py-4 bg-black/40 rounded-2xl border border-white/5 text-center min-w-[140px]">
                         <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Last Data Ingress</p>
                         <p className="text-xs font-black italic text-white uppercase">{lastSyncTime || 'VOID'}</p>
                      </div>
-                     <button 
-                       onClick={handleManualSync}
-                       disabled={syncState === 'SYNCING'}
-                       className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-3 shadow-xl"
-                     >
-                       {syncState === 'SYNCING' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                       Recalibrate Pulse
+                     <button onClick={handleManualSync} disabled={syncState === 'SYNCING'} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-3 shadow-xl">
+                       {syncState === 'SYNCING' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />} Manual Calibration
                      </button>
                    </div>
                  </div>
@@ -421,332 +228,45 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <div className="lg:col-span-8 space-y-6 text-left">
-                     <div className="flex items-center justify-between px-6">
-                        <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic flex items-center gap-2">
-                           <TrendingUp size={14} /> Traffic Velocity (30D)
-                        </h3>
-                     </div>
-                     <GlassCard className="p-10 rounded-[4rem] border-white/5 h-[400px] flex items-center justify-center">
+                     <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic px-6 flex items-center gap-2"><TrendingUp size={14} /> Traffic Velocity (30D)</h3>
+                     <GlassCard className="p-10 rounded-[4rem] border-white/5 h-[400px]">
                         {dailyStats.length > 0 ? (
                            <ResponsiveContainer width="100%" height="100%">
                               <AreaChart data={dailyStats}>
-                                 <defs>
-                                    <linearGradient id="fluxGrad" x1="0" y1="0" x2="0" y2="1">
-                                       <stop offset="5%" stopColor="#6366f1" stopOpacity={0.4}/>
-                                       <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                                    </linearGradient>
-                                 </defs>
                                  <XAxis dataKey="date" hide />
                                  <YAxis hide domain={['auto', 'auto']} />
-                                 <Tooltip 
-                                    contentStyle={{ background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', color: '#fff' }}
-                                    itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
-                                    labelStyle={{ fontSize: '10px', color: '#475569', marginBottom: '8px' }}
-                                 />
-                                 <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={5} fillOpacity={1} fill="url(#fluxGrad)" animationDuration={2000} />
+                                 <Tooltip contentStyle={{ background: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', color: '#fff' }} />
+                                 <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={5} fillOpacity={0.1} fill="#6366f1" />
                               </AreaChart>
                            </ResponsiveContainer>
-                        ) : (
-                           <div className="text-center space-y-6 opacity-30">
-                              <Loader2 size={48} className="mx-auto animate-spin" />
-                              <div className="space-y-1">
-                                 <p className="text-[10px] font-black uppercase tracking-[0.4em]">Querying GA4 Hub...</p>
-                              </div>
-                           </div>
-                        )}
+                        ) : <div className="h-full flex items-center justify-center text-slate-700 italic text-[10px] uppercase tracking-widest">Awaiting Pulse Data...</div>}
                      </GlassCard>
                   </div>
                   <div className="lg:col-span-4 space-y-6 text-left">
-                     <div className="flex items-center justify-between px-6">
-                        <h3 className="text-[11px] font-black uppercase text-rose-400 tracking-[0.4em] italic flex items-center gap-2">
-                           <Activity size={14} /> Global Pulse
-                        </h3>
-                     </div>
+                     <h3 className="text-[11px] font-black uppercase text-rose-400 tracking-[0.4em] italic px-6 flex items-center gap-2"><Activity size={14} /> Global Pulse</h3>
                      <div className="space-y-4 max-h-[400px] overflow-y-auto no-scrollbar">
-                        {signals.length > 0 ? signals.slice(0, 8).map((sig, i) => (
-                           <div key={i} className="p-5 bg-white/[0.02] border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all animate-in slide-in-from-right-4 duration-500">
-                              <div className="flex items-center gap-4">
+                        {signals.slice(0, 8).map((sig, i) => (
+                           <div key={i} className="p-5 bg-white/[0.02] border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+                              <div className="flex items-center gap-4 text-left">
                                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center border ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'}`}>
                                     {sig.event_type.includes('SUCCESS') ? <ShieldCheck size={20} /> : <ShieldX size={20} />}
                                  </div>
-                                 <div className="space-y-0.5 overflow-hidden text-left">
-                                    <p className="text-xs font-black text-white italic truncate w-36 uppercase tracking-tight">{sig.event_type}</p>
-                                    <p className="text-[9px] font-bold text-slate-600 tracking-wider truncate w-36 uppercase">{new Date(sig.created_at).toLocaleTimeString()}</p>
+                                 <div className="space-y-0.5 text-left">
+                                    <p className="text-xs font-black text-white italic uppercase tracking-tight truncate w-32">{sig.event_type}</p>
+                                    <p className="text-[9px] font-bold text-slate-600 uppercase">{new Date(sig.created_at).toLocaleTimeString()}</p>
                                  </div>
                               </div>
                               <ChevronRight size={14} className="text-slate-800" />
                            </div>
-                        )) : (
-                          <div className="py-12 text-center opacity-20 border border-white/5 border-dashed rounded-[2.2rem]">
-                            <p className="text-[9px] font-black uppercase tracking-widest italic">Registry logs empty</p>
-                          </div>
-                        )}
-                     </div>
-                  </div>
-               </div>
-            </m.div>
-          )}
-
-          {activeTab === 'registry' && (
-             <m.div key="registry" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-40">
-                <GlassCard className="p-10 md:p-14 rounded-[4.5rem] border-white/5 bg-slate-950/60 shadow-2xl relative overflow-visible">
-                   <div className="flex flex-col md:flex-row justify-between items-center gap-10 mb-16 relative z-10 text-left">
-                      <div className="space-y-2 text-left w-full">
-                         <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">Node <span className="text-indigo-400">Registry</span></h2>
-                         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">Manage subject node clearances.</p>
-                      </div>
-                      <div className="relative w-full md:w-96 group">
-                         <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
-                         <input 
-                            type="text" value={registrySearch} onChange={(e) => setRegistrySearch(e.target.value)}
-                            placeholder="Filter node identifiers..."
-                            className="w-full bg-black/60 border border-white/5 rounded-full pl-14 pr-6 py-5 text-[11px] font-bold italic text-white outline-none focus:border-indigo-500/50 transition-all"
-                         />
-                      </div>
-                   </div>
-
-                   <div className="overflow-x-auto no-scrollbar relative z-10">
-                      <table className="w-full text-left border-separate border-spacing-y-4">
-                         <thead>
-                            <tr className="text-[11px] font-black uppercase text-slate-700 tracking-widest italic px-8">
-                               <th className="px-8 pb-4">Identity</th>
-                               <th className="px-8 pb-4">Clearance</th>
-                               <th className="px-8 pb-4">Status</th>
-                               <th className="px-8 pb-4 text-right">Actions</th>
-                            </tr>
-                         </thead>
-                         <tbody>
-                            {users.filter(u => (u.email || '').toLowerCase().includes(registrySearch.toLowerCase())).map((user) => (
-                               <tr key={user.id} className="group">
-                                  <td className="py-6 px-8 bg-white/[0.02] rounded-l-[2rem] border-y border-l border-white/5 text-left">
-                                     <div className="flex items-center gap-4 text-left">
-                                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${user.is_super_owner ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-slate-900 border-white/5 text-slate-500'}`}>
-                                           {user.is_super_owner ? <Crown size={22} /> : <UserCircle size={22} />}
-                                        </div>
-                                        <div className="space-y-0.5 text-left">
-                                           <p className="text-sm font-black italic text-white leading-none uppercase tracking-tight">{user.email || 'Anonymized'}</p>
-                                           <p className="text-[9px] font-mono text-slate-600 uppercase tracking-tighter">{user.id.slice(0, 12)}</p>
-                                        </div>
-                                     </div>
-                                  </td>
-                                  <td className="py-6 px-8 bg-white/[0.02] border-y border-white/5 text-left">
-                                     <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${
-                                        user.role === 'owner' ? 'bg-amber-600/10 border-amber-500/30 text-amber-500' : 
-                                        user.role === 'admin' ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' : 
-                                        'bg-slate-900 border-white/5 text-slate-600'
-                                     }`}>
-                                        <Shield size={10} /> {user.role}
-                                     </div>
-                                  </td>
-                                  <td className="py-6 px-8 bg-white/[0.02] border-y border-white/5 text-left">
-                                     {user.is_blocked ? (
-                                        <span className="flex items-center gap-2 text-rose-500 text-[10px] font-black uppercase italic animate-pulse">
-                                           <Lock size={12} /> Restricted
-                                        </span>
-                                     ) : (
-                                        <span className="flex items-center gap-2 text-emerald-500 text-[10px] font-black uppercase italic">
-                                           <CheckCircle2 size={12} /> Authorized
-                                        </span>
-                                     )}
-                                  </td>
-                                  <td className="py-6 px-8 bg-white/[0.02] rounded-r-[2rem] border-y border-r border-white/5 text-right relative">
-                                     <div className="flex justify-end gap-2">
-                                        <div className="relative" ref={popoverRef}>
-                                           <button 
-                                              onClick={() => setRoleSelectUserId(roleSelectUserId === user.id ? null : user.id)}
-                                              disabled={processingUserId === user.id}
-                                              className={`p-3 rounded-xl transition-all border border-white/5 shadow-lg ${roleSelectUserId === user.id ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:text-indigo-400'}`}
-                                           >
-                                              {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : <KeyRound size={16} />}
-                                           </button>
-
-                                           <AnimatePresence>
-                                             {roleSelectUserId === user.id && (
-                                               <m.div initial={{ opacity: 0, scale: 0.95, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95, y: 10 }} className="absolute bottom-full right-0 mb-6 z-[200] min-w-[240px]">
-                                                 <div className="bg-slate-950/98 backdrop-blur-[100px] border border-white/15 p-4 rounded-[2.5rem] shadow-2xl flex flex-col gap-2">
-                                                   <button onClick={() => handleSetRole(user, 'owner')} className="flex items-center justify-between w-full p-4 rounded-2xl transition-all hover:bg-amber-500/10 text-slate-400 hover:text-amber-500"><div className="flex items-center gap-3"><Crown size={16} /><span className="text-[11px] font-black uppercase tracking-widest">Owner</span></div></button>
-                                                   <button onClick={() => handleSetRole(user, 'admin')} className="flex items-center justify-between w-full p-4 rounded-2xl transition-all hover:bg-indigo-600/10 text-slate-400 hover:text-indigo-400"><div className="flex items-center gap-3"><Shield size={16} /><span className="text-[11px] font-black uppercase tracking-widest">Admin</span></div></button>
-                                                   <button onClick={() => handleSetRole(user, 'user')} className="flex items-center justify-between w-full p-4 rounded-2xl transition-all hover:bg-white/5 text-slate-400 hover:text-white"><div className="flex items-center gap-3"><UserCircle size={16} /><span className="text-[11px] font-black uppercase tracking-widest">User</span></div></button>
-                                                 </div>
-                                               </m.div>
-                                             )}
-                                           </AnimatePresence>
-                                        </div>
-
-                                        <button onClick={() => handleToggleBlock(user)} disabled={processingUserId === user.id} className={`p-3 rounded-xl transition-all border shadow-lg ${user.is_blocked ? 'bg-emerald-600/10 text-emerald-400 border-emerald-500/20' : 'bg-rose-600/10 text-rose-500 border-rose-500/20'}`}>
-                                           {processingUserId === user.id ? <Loader2 size={16} className="animate-spin" /> : (user.is_blocked ? <Unlock size={16} /> : <Ban size={16} />)}
-                                        </button>
-                                     </div>
-                                  </td>
-                               </tr>
-                            ))}
-                         </tbody>
-                      </table>
-                   </div>
-                </GlassCard>
-             </m.div>
-          )}
-
-          {activeTab === 'explorer' && (
-            <m.div key="explorer" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 flex flex-col h-[calc(100vh-280px)]">
-               <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 flex-1">
-                  <div className="lg:col-span-1 space-y-6 overflow-y-auto no-scrollbar pr-2 flex flex-col">
-                     <div className="space-y-2 mb-4 px-4 text-left">
-                        <div className="relative group">
-                           <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
-                           <input type="text" value={tableSearch} onChange={(e) => setTableSearch(e.target.value)} placeholder="Filter mesh tables..." className="w-full bg-slate-950/60 border border-white/5 rounded-full pl-14 pr-6 py-5 text-[11px] font-bold italic text-white outline-none focus:border-indigo-500/50 transition-all" />
-                        </div>
-                     </div>
-                     <div className="space-y-2 flex-1 overflow-y-auto no-scrollbar pb-10">
-                        {DATABASE_SCHEMA.filter(t => t.id.toLowerCase().includes(tableSearch.toLowerCase())).map((t) => (
-                           <button key={t.id} onClick={() => setSelectedTable(t.id)} className={`w-full p-6 rounded-[2.5rem] border flex items-center justify-between transition-all group ${selectedTable === t.id ? 'bg-indigo-600 border-indigo-400 shadow-xl' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}><div className="flex items-center gap-4 text-left"><div className={`p-2.5 rounded-xl ${selectedTable === t.id ? 'bg-white/20 text-white' : 'bg-slate-900 text-slate-600'}`}><t.icon size={18} /></div><div className="space-y-0.5 text-left"><p className={`text-[11px] font-black uppercase tracking-tight ${selectedTable === t.id ? 'text-white' : 'text-slate-400'}`}>{t.id.replace(/_/g, ' ')}</p><p className={`text-[8px] font-bold uppercase tracking-widest ${selectedTable === t.id ? 'text-white/60' : 'text-slate-700'}`}>{t.group}</p></div></div><span className={`text-[10px] font-mono font-black ${selectedTable === t.id ? 'text-white' : 'text-slate-800'}`}>{tableCounts[t.id] || 0}</span></button>
                         ))}
                      </div>
                   </div>
-
-                  <GlassCard className="lg:col-span-3 rounded-[4.5rem] border-white/5 flex flex-col relative overflow-hidden bg-slate-950/40">
-                     <div className="p-10 border-b border-white/5 flex justify-between items-center bg-black/20 text-left">
-                        <div className="flex items-center gap-5">
-                           <div className="p-4 bg-indigo-500/10 rounded-[1.8rem] text-indigo-400"><Table size={24} /></div>
-                           <div className="text-left">
-                              <div className="flex items-center gap-3"><h3 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">{selectedTable.replace(/_/g, ' ')}</h3></div>
-                              <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] italic mt-2">REGISTRY_CAP: 100 RECORDS</p>
-                           </div>
-                        </div>
-                        <button onClick={() => fetchSelectedTableData(selectedTable)} className="p-5 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-500 hover:text-white transition-all shadow-lg active:scale-95"><RefreshCw size={18} className={tableLoading ? 'animate-spin' : ''} /></button>
-                     </div>
-
-                     <div className="flex-1 overflow-auto no-scrollbar p-10">
-                        {tableLoading ? (
-                           <div className="h-full flex flex-col items-center justify-center gap-6 py-32 opacity-30"><Loader2 size={48} className="animate-spin text-indigo-500" /><p className="text-[11px] font-black uppercase tracking-widest italic">Interrogating Data Core...</p></div>
-                        ) : (
-                           <div className="min-w-full overflow-x-auto text-left">
-                              <table className="w-full text-left border-collapse">
-                                 <thead>
-                                    <tr className="border-b border-white/5">{tableData.length > 0 && Object.keys(tableData[0]).map((key) => (<th key={key} className="pb-6 px-6 text-[10px] font-black uppercase text-slate-700 tracking-widest italic whitespace-nowrap">{key}</th>))}</tr>
-                                 </thead>
-                                 <tbody>
-                                    {tableData.map((row, i) => (
-                                       <tr key={i} className="group hover:bg-white/[0.02] transition-colors border-b border-white/[0.02]">{Object.values(row).map((val: any, j) => (<td key={j} className="py-6 px-6"><div className="max-w-[250px] truncate text-[11px] font-bold text-slate-500 group-hover:text-slate-300 transition-colors text-left">{val === null ? <span className="opacity-20 italic">null</span> : typeof val === 'object' ? JSON.stringify(val) : String(val)}</div></td>))}</tr>
-                                    ))}
-                                 </tbody>
-                              </table>
-                           </div>
-                        )}
-                     </div>
-                  </GlassCard>
-               </div>
-            </m.div>
-          )}
-
-          {activeTab === 'signals' && (
-            <m.div key="signals" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
-               <GlassCard className="p-10 md:p-14 rounded-[4.5rem] bg-slate-950/60 shadow-2xl border-white/5">
-                  <div className="flex items-center gap-6 mb-16 px-4 text-left">
-                     <div className="p-4 bg-indigo-600/10 rounded-[1.8rem] text-indigo-400"><Radio className="animate-pulse" size={32} /></div>
-                     <div className="text-left space-y-1"><h3 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Security <span className="text-indigo-400">Pulse</span></h3></div>
-                  </div>
-                  <div className="space-y-4">
-                     {signals.length === 0 ? (<div className="py-40 text-center opacity-30 flex flex-col items-center gap-6"><WifiOff size={64} /><p className="text-[11px] text-slate-500 font-black tracking-[0.5em] uppercase italic">Registry signal void.</p></div>) : signals.map((sig, idx) => (<div key={idx} className="p-7 bg-white/[0.02] border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
-                        <div className="flex items-center gap-8 text-left">
-                           <div className={`w-14 h-14 rounded-2xl flex items-center justify-center border shadow-xl ${sig.event_type.includes('SUCCESS') ? 'bg-emerald-600/10 border-emerald-500/20 text-emerald-500' : sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? 'bg-rose-600/10 border-rose-500/20 text-rose-500' : 'bg-indigo-600/10 border-indigo-500/20 text-indigo-400'}`}>
-                              {sig.event_type.includes('FAIL') || sig.event_type.includes('ATTEMPT') ? <ShieldX size={26} /> : <Zap size={26} />}
-                           </div>
-                           <div className="space-y-1 text-left">
-                              <p className="text-xl font-black text-white italic tracking-tight uppercase leading-none">{sig.event_type}</p>
-                              <p className="text-[11px] font-bold text-slate-500 tracking-wider italic text-left">{sig.user_email || 'ANONYMOUS_PULSE'} • {sig.details}</p>
-                           </div>
-                        </div>
-                        <div className="text-right"><div className="flex items-center gap-2 text-slate-700 group-hover:text-slate-400 transition-colors"><Clock size={12} /><p className="text-[10px] font-mono font-black">{new Date(sig.created_at).toLocaleTimeString()}</p></div></div>
-                     </div>))}
-                  </div>
-               </GlassCard>
-            </m.div>
-          )}
-
-          {activeTab === 'system' && (
-            <m.div key="system" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-12 pb-40">
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-left">
-                  <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col items-center text-center gap-10">
-                     <div className="relative"><div className="p-10 bg-indigo-500/10 rounded-[3.5rem] text-indigo-400"><RefreshCw size={80} className={syncState === 'SYNCING' ? 'animate-spin' : ''} /></div></div>
-                     <div className="space-y-4"><h4 className="text-2xl font-black italic uppercase tracking-tighter text-white">Manual GA4 Re-Sync</h4><p className="text-sm text-slate-500 italic leading-relaxed max-w-xs font-medium">Synchronize dashboard metrics with cloud-native GA4 telemetry.</p></div>
-                     <button onClick={handleManualSync} className="w-full py-8 bg-white text-black font-black text-[12px] uppercase tracking-[0.5em] rounded-full active:scale-95 transition-all shadow-2xl hover:bg-slate-200 italic">Execute Synchronization</button>
-                  </GlassCard>
-                  
-                  <GlassCard className="p-12 rounded-[4.5rem] border-white/5 bg-slate-950/40 shadow-2xl flex flex-col gap-10 text-left">
-                     <div className="flex items-center gap-5 border-b border-white/5 pb-10 text-left"><div className="p-5 bg-rose-600/10 rounded-[1.8rem] text-rose-500"><ShieldAlert size={32} /></div><div className="text-left space-y-1"><h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Integrity Status</h3></div></div>
-                     <div className="space-y-6">
-                        {[
-                           { label: 'Telemetric Bridge (GA4)', status: syncState === 'SYNCED' ? 'Sync Verified' : syncState === 'DATA_RESIDENT' ? 'Data Present' : syncState === 'TIMEOUT' ? 'Handshake Timeout' : syncState, color: (syncState === 'SYNCED' || syncState === 'DATA_RESIDENT') ? 'text-emerald-400' : (syncState === 'ERROR' || syncState === 'TIMEOUT') ? 'text-rose-400' : 'text-slate-500', icon: Globe },
-                           { label: 'Security Handshake Hub', status: 'Active Bridge', color: 'text-rose-400', icon: Lock },
-                           { label: 'Registry Synchronization', status: tableCounts['profiles'] > 0 ? 'Mesh established' : 'Initializing', color: 'text-amber-400', icon: Database },
-                        ].map((sys, idx) => (
-                           <div key={idx} className="flex justify-between items-center p-7 bg-black/40 rounded-[2rem] border border-white/5 transition-all text-left"><div className="flex items-center gap-5"><sys.icon size={18} className="text-slate-600" /><span className="text-xs font-black text-slate-500 uppercase tracking-widest text-left">{sys.label}</span></div><span className={`font-black text-[11px] italic uppercase tracking-tighter ${sys.color}`}>{sys.status}</span></div>
-                        ))}
-                     </div>
-                  </GlassCard>
-               </div>
-
-               {/* Diagnostic Tools - Moved from Settings */}
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                 {/* Telegram Comms Diagnostic */}
-                 <GlassCard className="p-12 rounded-[4.5rem] border-rose-500/20 bg-rose-500/[0.02]">
-                   <div className="space-y-10">
-                     <div className="flex items-center gap-5">
-                       <div className="p-4 bg-rose-500/10 rounded-2xl text-rose-500"><Send size={32} /></div>
-                       <div className="text-left space-y-1">
-                          <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Telegram Comms</h3>
-                          <p className="text-[10px] font-black text-rose-500/60 uppercase tracking-widest italic">Diagnostic Pulse Protocol</p>
-                       </div>
-                     </div>
-                     <p className="text-sm text-slate-500 italic leading-relaxed font-medium">Verify the link between the laboratory node and the Telegram administrative gateway.</p>
-                     <button 
-                       onClick={handleTestTelegram}
-                       disabled={testStatus === 'sending'}
-                       className={`w-full py-7 rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 transition-all active:scale-95 shadow-2xl ${
-                         testStatus === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 
-                         testStatus === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' : 
-                         'bg-white/5 text-rose-500 border border-rose-500/30 hover:bg-rose-500/5'
-                       }`}
-                     >
-                       {testStatus === 'sending' ? <RefreshCw size={20} className="animate-spin" /> : <TerminalIcon size={20} />}
-                       {testStatus === 'success' ? 'SIGNAL CONFIRMED' : 'TEST TELEGRAM LINK'}
-                     </button>
-                   </div>
-                 </GlassCard>
-
-                 {/* SMTP Comms Diagnostic */}
-                 <GlassCard className="p-12 rounded-[4.5rem] border-blue-500/20 bg-blue-500/[0.02]">
-                   <div className="space-y-10">
-                     <div className="flex items-center gap-5">
-                       <div className="p-4 bg-blue-500/10 rounded-2xl text-blue-400"><Mail size={32} /></div>
-                       <div className="text-left space-y-1">
-                          <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">SMTP Comms</h3>
-                          <p className="text-[10px] font-black text-blue-400/60 uppercase tracking-widest italic">Email Dispatch Protocol</p>
-                       </div>
-                     </div>
-                     <p className="text-sm text-slate-500 italic leading-relaxed font-medium">Test native SMTP dispatch capabilities from the serverless edge environment.</p>
-                     <button 
-                       onClick={handleTestEmail}
-                       disabled={emailStatus === 'sending'}
-                       className={`w-full py-7 rounded-full font-black text-[12px] uppercase tracking-[0.4em] flex items-center justify-center gap-4 transition-all active:scale-95 shadow-2xl ${
-                         emailStatus === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 
-                         emailStatus === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' : 
-                         'bg-white/5 text-blue-400 border border-blue-500/30 hover:bg-blue-500/5'
-                       }`}
-                     >
-                       {emailStatus === 'sending' ? <RefreshCw size={20} className="animate-spin" /> : <Mail size={20} />}
-                       {emailStatus === 'success' ? 'EMAIL DISPATCHED' : 'TEST SMTP LINK'}
-                     </button>
-                   </div>
-                 </GlassCard>
                </div>
             </m.div>
           )}
         </AnimatePresence>
       )}
 
-      {/* Global Toast for Errors */}
       <AnimatePresence>
         {actionError && (
           <m.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 30 }} className="fixed bottom-12 left-1/2 -translate-x-1/2 z-[1000] w-full max-w-xl px-6">

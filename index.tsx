@@ -26,7 +26,8 @@ const isNoise = (msg: string) => {
 // 1. 拦截未捕获的运行时错误
 window.onerror = (message, source, lineno, colno, error) => {
   const msgStr = String(message);
-  if (isNoise(msgStr)) return true; // 返回 true 彻底静默报错
+  // CRITICAL: 拦截扩展干扰项，不进行审计
+  if (isNoise(msgStr)) return true; 
   
   logAuditLog(`RUNTIME_ERROR: ${source}:${lineno}:${colno}`, `${msgStr}\nStack: ${error?.stack}`, 'CRITICAL');
   return false;
@@ -36,7 +37,7 @@ window.onerror = (message, source, lineno, colno, error) => {
 window.onunhandledrejection = (event) => {
   const reason = event.reason?.message || event.reason;
   if (isNoise(String(reason))) {
-    event.preventDefault(); // 阻止浏览器控制台显示
+    event.preventDefault(); 
     return;
   }
   
@@ -54,9 +55,10 @@ console.error = (...args) => {
     .map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg))
     .join(' ');
     
-  if (isNoise(message)) return; // 直接吞掉插件报错
+  if (isNoise(message)) return; 
   
-  logAuditLog('CONSOLE_ERROR_PROXIED', `${message}\nStack: ${new Error().stack}`, 'WARNING');
+  // 记录真实的控制台错误
+  logAuditLog('CONSOLE_ERROR_PROXIED', `${message}`, 'WARNING');
   originalConsoleError.apply(console, args);
 };
 

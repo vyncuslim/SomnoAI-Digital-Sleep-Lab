@@ -5,14 +5,14 @@ import { notifyAdmin } from './telegramService.ts';
 export { supabase };
 
 /**
- * 高可靠审计协议 - 支持多语言 Telegram 路由
+ * SOMNO LAB AUDIT PROTOCOL
+ * Dispatches encrypted logs to the database and real-time alerts to the Admin Bot.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
-  // 获取当前系统语言
   const currentLang = (localStorage.getItem('somno_lang') as any) || 'en';
-  
-  // 核心敏感操作映射：规范化 action 匹配
   const actionKey = action.toUpperCase();
+  
+  // Sensitive actions that ALWAYS trigger a Telegram alert
   const sensitiveActions = [
     'ADMIN_ROLE_CHANGE', 
     'ADMIN_USER_BLOCK', 
@@ -32,15 +32,15 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
     const actingAdmin = session?.user?.email || 'SYSTEM_NODE';
 
     if (shouldNotify) {
-      // 异步发出 Telegram 通知，不阻塞主流程
+      // Background dispatch to Telegram
       notifyAdmin({
         type: actionKey,
-        message: `[SOURCE: ${actingAdmin}] ${details}`,
+        message: `[SUBJECT: ${actingAdmin}] ${details}`,
         error: level === 'CRITICAL' ? details : undefined
-      }, currentLang).catch(e => console.debug("Telegram alert buffer full."));
+      }, currentLang).catch(() => {});
     }
 
-    // 执行数据库审计记录
+    // Persist to persistent audit mesh
     await supabase.rpc('log_audit_entry', {
       p_action: actionKey,
       p_details: details,
@@ -48,12 +48,12 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
       p_user_id: session?.user?.id || null
     });
   } catch (e) {
-    console.debug("Audit registry record deferred.");
+    console.debug("Audit record deferred due to network state.");
   }
 };
 
 /**
- * 实时安全事件注入
+ * SECURITY PULSE INGRESS
  */
 const logSecurityEvent = async (email: string, type: string, details: string) => {
   try {
@@ -63,17 +63,15 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
       p_event_type: type, 
       p_details: details 
     });
-  } catch (e) {
-    console.debug("Security pulse offline.");
-  }
+  } catch (e) {}
 };
 
 /**
- * Auth 强化模块
+ * ENHANCED AUTH API
  */
 export const authApi = {
   signInWithGoogle: async () => {
-    await logAuditLog('OAUTH_START', 'Redirecting to Google provider');
+    await logAuditLog('OAUTH_START', 'Google authentication redirect initiated');
     return await (supabase.auth as any).signInWithOAuth({
       provider: 'google',
       options: {
@@ -84,25 +82,23 @@ export const authApi = {
   },
   signIn: async (email: string, password: string, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
-    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Sequence initiated via Password');
+    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Password validation handshake');
+    
     const res = await (supabase.auth as any).signInWithPassword({ 
       email: targetEmail, 
       password,
       options: { captchaToken }
     });
+
     if (res.error) {
       await logSecurityEvent(targetEmail, 'LOGIN_FAIL', `Error: ${res.error.message}`);
       await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
-    } else {
-      await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session handshake complete');
-      // 成功登录后立即触发审计告警
-      await logAuditLog('USER_LOGIN', `Authorized access confirmed: ${targetEmail}`);
     }
+    // Success is audited in AuthContext
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
-    await logSecurityEvent(targetEmail, 'SIGNUP_ATTEMPT', 'New registration initiated');
     const res = await (supabase.auth as any).signUp({ 
       email: targetEmail, 
       password, 
@@ -111,65 +107,47 @@ export const authApi = {
     if (res.error) {
       await logSecurityEvent(targetEmail, 'SIGNUP_FAIL', res.error.message);
     } else {
-      await logSecurityEvent(targetEmail, 'SIGNUP_SUCCESS', 'New user node registered');
-      await logAuditLog('USER_SIGNUP', `Registered: ${targetEmail}`);
+      await logAuditLog('USER_SIGNUP', `New subject node registered: ${targetEmail}`);
     }
     return res;
   },
   sendOTP: async (email: string, captchaToken?: string) => {
-    const targetEmail = email.trim().toLowerCase();
-    const res = await (supabase.auth as any).signInWithOtp({ 
-      email: targetEmail,
+    return await (supabase.auth as any).signInWithOtp({ 
+      email: email.trim().toLowerCase(),
       options: { captchaToken }
     });
-    if (res.error) {
-      await logSecurityEvent(targetEmail, 'OTP_FAIL', res.error.message);
-    } else {
-      await logSecurityEvent(targetEmail, 'OTP_SENT', 'Handshake token dispatched');
-    }
-    return res;
   },
   verifyOTP: async (email: string, token: string) => {
-    const targetEmail = email.trim().toLowerCase();
-    const res = await (supabase.auth as any).verifyOtp({ email: targetEmail, token, type: 'email' });
-    if (res.error) {
-      await logSecurityEvent(targetEmail, 'OTP_VERIFY_FAIL', res.error.message);
-    } else {
-      await logSecurityEvent(targetEmail, 'OTP_VERIFY_SUCCESS', 'Handshake confirmed via OTP');
-      await logAuditLog('OTP_VERIFY_SUCCESS', `Confirmed via OTP: ${targetEmail}`);
+    const res = await (supabase.auth as any).verifyOtp({ email: email.trim().toLowerCase(), token, type: 'email' });
+    if (!res.error) {
+      await logAuditLog('OTP_VERIFY_SUCCESS', `Verified via OTP: ${email}`);
     }
     return res;
   },
   resetPassword: async (email: string) => {
-    const res = await (supabase.auth as any).resetPasswordForEmail(email, {
+    return await (supabase.auth as any).resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/#update-password`
     });
-    if (!res.error) {
-      await logSecurityEvent(email, 'PW_RESET_REQUEST', 'Password recovery sequence triggered');
-    }
-    return res;
   },
   updatePassword: async (newPassword: string) => {
     const res = await (supabase.auth as any).updateUser({ password: newPassword });
     if (!res.error) {
        const { data: { user } } = await (supabase.auth as any).getUser();
-       await logAuditLog('PW_UPDATE_SUCCESS', `Password rotation complete for ${user?.email}`);
-       await logSecurityEvent(user?.email || 'unknown', 'PW_ROTATION', 'Access key successfully updated');
+       await logAuditLog('PW_UPDATE_SUCCESS', `Access key rotation complete: ${user?.email}`);
     }
     return res;
   },
   signOut: async () => {
     const { data: { session } } = await (supabase.auth as any).getSession();
     if (session?.user) {
-      await logSecurityEvent(session.user.email || 'unknown', 'LOGOUT', 'Manual termination');
-      await logAuditLog('USER_LOGOUT', `Terminated: ${session.user.email}`);
+      await logAuditLog('USER_LOGOUT', `Session terminated: ${session.user.email}`);
     }
     return await (supabase.auth as any).signOut();
   }
 };
 
 /**
- * 管理端核心 API
+ * ADMINISTRATIVE CONTROL API
  */
 export const adminApi = {
   getAdminClearance: async (userId: string) => {
@@ -190,9 +168,7 @@ export const adminApi = {
   },
   getTableData: async (tableName: string, limit = 100) => {
     const probes = ['created_at', 'date', 'timestamp', 'recorded_at'];
-    if (tableName.includes('analytics')) probes.unshift('date');
-
-    for (const col of Array.from(new Set(probes))) {
+    for (const col of probes) {
       try {
         const { data, error } = await supabase
           .from(tableName)
@@ -202,39 +178,29 @@ export const adminApi = {
         if (!error) return data || [];
       } catch (e) {}
     }
-
-    try {
-      const { data } = await supabase.from(tableName).select('*').limit(limit);
-      return data || [];
-    } catch { return []; }
+    const { data } = await supabase.from(tableName).select('*').limit(limit);
+    return data || [];
   },
   getTableCount: async (tableName: string) => {
-    try {
-      const { count, error } = await supabase.from(tableName).select('*', { count: 'exact', head: true });
-      if (error) return 0;
-      return count || 0;
-    } catch { return 0; }
+    const { count, error } = await supabase.from(tableName).select('*', { count: 'exact', head: true });
+    return error ? 0 : (count || 0);
   },
   getSecurityEvents: async (limit = 50) => {
-    const { data } = await supabase
-      .from('security_events')
-      .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
+    const { data } = await supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(limit);
     return data || [];
   },
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
     const newState = !currentlyBlocked;
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
     if (!error) {
-      await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'RESTRICTED' : 'AUTHORIZED'} access for node: ${email}`, newState ? 'WARNING' : 'INFO');
+      await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node access: ${email}`, newState ? 'WARNING' : 'INFO');
     }
     return { error };
   },
   updateUserRole: async (id: string, email: string, newRole: string) => {
     const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
     if (!error) {
-      await logAuditLog('ADMIN_ROLE_CHANGE', `Node clearance shift: ${email} -> ${newRole.toUpperCase()}`, 'CRITICAL');
+      await logAuditLog('ADMIN_ROLE_CHANGE', `Clearance shift for ${email} -> ${newRole.toUpperCase()}`, 'CRITICAL');
     }
     return { error };
   },
@@ -280,10 +246,6 @@ export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error };
-    notifyAdmin({
-        type: 'FEEDBACK_SIGNAL',
-        message: `Type: ${type.toUpperCase()}, From: ${email}, Content: ${content}`
-    }, (localStorage.getItem('somno_lang') as any) || 'en');
     return { success: true };
   }
 };
