@@ -108,7 +108,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const handleToggleBlock = async (user: any) => {
-    // Cannot block super owners
     if (user.is_super_owner) {
       setActionError("SECURITY_DENIED: Super Owner identity is immune to standard restriction protocols.");
       return;
@@ -123,28 +122,41 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     finally { setProcessingUser(null); }
   };
 
-  const handleCycleRole = async (user: any) => {
-    // 1. Check if current admin has permission to edit roles (Admin/Owner/Super)
-    const hasClearance = ['admin', 'owner'].includes(currentAdmin?.role) || currentAdmin?.is_super_owner;
-    if (!hasClearance) {
-      setActionError("SECURITY_DENIED: Lacks administrative clearance for role manipulation.");
+  const handleCycleRole = async (targetUser: any) => {
+    // 1. 超级管理员保护：任何人不得修改其角色
+    if (targetUser.is_super_owner) {
+      setActionError("ACCESS_DENIED: Super Owner identity is immutable via standard Command Bridge.");
       return;
     }
 
-    // 2. PROHIBIT changing Super Owner roles (Critical Constraint)
-    if (user.is_super_owner) {
-      setActionError("SECURITY_DENIED: Super Owner identity is immutable via Command Bridge.");
+    // 2. 确定当前操作者的最高权限
+    const isSuper = currentAdmin?.is_super_owner === true;
+    const isOwner = currentAdmin?.role === 'owner';
+    const isAdmin = currentAdmin?.role === 'admin';
+
+    if (!isSuper && !isOwner && !isAdmin) {
+      setActionError("SECURITY_DENIED: Lacks administrative clearance.");
       return;
     }
 
-    // 3. Cycle logic
-    const roles = ['user', 'admin', 'owner'];
-    const currentIndex = roles.indexOf(user.role || 'user');
-    const nextRole = roles[(currentIndex + 1) % roles.length];
+    // 3. 越权保护逻辑 (Role Escalation Protection)
+    let availableRoles = ['user', 'admin'];
+    if (isSuper || isOwner) {
+      availableRoles = ['user', 'admin', 'owner'];
+    }
+
+    const currentIndex = availableRoles.indexOf(targetUser.role || 'user');
+    // 如果当前角色超出了操作者的授权范围（例如管理员试图点击一个所有者），拒绝
+    if (currentIndex === -1 && !isSuper) {
+      setActionError("PRIVILEGE_VIOLATION: You cannot modify roles higher than your own clearance.");
+      return;
+    }
+
+    const nextRole = availableRoles[(currentIndex + 1) % availableRoles.length];
     
-    setProcessingUser(user.id);
+    setProcessingUser(targetUser.id);
     try {
-      const { error } = await adminApi.updateUserRole(user.id, user.email, nextRole);
+      const { error } = await adminApi.updateUserRole(targetUser.id, targetUser.email, nextRole);
       if (error) throw error;
       await fetchData();
     } catch (err: any) {
@@ -155,7 +167,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const isAtLeastAdmin = ['admin', 'owner'].includes(currentAdmin?.role) || currentAdmin?.is_super_owner;
-  const isOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
+  const isGlobalOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
 
   return (
     <div className="space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left">
@@ -166,7 +178,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
           <div className="space-y-2 text-left">
             <h1 className="text-4xl font-black italic tracking-tighter text-white uppercase leading-none flex items-center gap-4">
-              Command <span style={{ color: isOwner ? '#f59e0b' : '#6366f1' }}>Bridge</span>
+              Command <span style={{ color: isGlobalOwner ? '#f59e0b' : '#6366f1' }}>Bridge</span>
             </h1>
             <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Telemetry Active • Secure Node</p>
           </div>
@@ -387,7 +399,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              </div>
                           </div>
                           <div className="bg-rose-500/5 p-6 rounded-[2.5rem] border border-white/5 space-y-3 min-w-[240px]">
-                             <div className="flex items-center gap-2 text-rose-400"><Clock size={14} /><span className="text-[9px] font-black uppercase">Schedule Recommendation</span></div>
+                             <div className="flex items-center gap-2 text-indigo-400"><Clock size={14} /><span className="text-[9px] font-black uppercase">Schedule Recommendation</span></div>
                              <p className="text-[12px] text-slate-400 italic">设置为 <b>"Every 5 mins"</b>。若系统宕机，UptimeRobot 会立即触发告警。</p>
                           </div>
                        </div>
@@ -399,10 +411,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             {activeTab === 'registry' && (
               <div className="grid grid-cols-1 gap-4">
                 {users.map((u) => (
-                  <GlassCard key={u.id} className={`p-8 rounded-[3rem] border-white/5 group hover:border-indigo-500/30 transition-all ${processingUser === u.id ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <GlassCard key={u.id} className={`p-8 rounded-[3rem] transition-all relative overflow-hidden ${processingUser === u.id ? 'opacity-50 pointer-events-none' : ''} ${u.is_super_owner ? 'border-amber-500/30 bg-amber-500/[0.02]' : 'border-white/5 group hover:border-indigo-500/30'}`}>
                     <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                       <div className="flex items-center gap-6 text-left">
-                        <div className="w-16 h-16 bg-slate-900 border border-white/5 rounded-2xl flex items-center justify-center text-white font-black italic text-2xl shadow-inner relative overflow-hidden">
+                        <div className={`w-16 h-16 rounded-2xl flex items-center justify-center font-black italic text-2xl shadow-inner relative overflow-hidden ${u.is_super_owner ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20' : 'bg-slate-900 text-white border border-white/5'}`}>
                            {u.full_name?.[0] || '?'}
                            {processingUser === u.id && (
                              <div className="absolute inset-0 bg-indigo-600/20 backdrop-blur-sm flex items-center justify-center">
@@ -411,25 +423,25 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            )}
                         </div>
                         <div className="space-y-1">
-                           <p className="text-lg font-black italic text-white uppercase tracking-tight">
-                             {u.full_name || 'Anonymous Node'}
-                             {u.is_super_owner && <Crown size={14} className="inline ml-2 text-amber-500 fill-amber-500/20" />}
-                           </p>
+                           <div className="flex items-center gap-2">
+                             <p className="text-lg font-black italic text-white uppercase tracking-tight">{u.full_name || 'Anonymous Node'}</p>
+                             {u.is_super_owner && <Crown size={16} className="text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" />}
+                           </div>
                            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest flex items-center gap-2"><Mail size={10} /> {u.email}</p>
                            <div className="flex flex-wrap gap-2 pt-2">
                               <button 
                                 onClick={() => handleCycleRole(u)}
                                 disabled={!isAtLeastAdmin || u.is_super_owner}
                                 className={`px-3 py-1 rounded-full text-[8px] font-black uppercase tracking-widest border transition-all flex items-center gap-2 ${
-                                  u.is_super_owner ? 'bg-amber-600 border-amber-400 text-white' :
+                                  u.is_super_owner ? 'bg-amber-600 border-amber-400 text-white cursor-default' :
                                   u.role === 'owner' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 
                                   u.role === 'admin' ? 'bg-purple-500/10 border-purple-500/30 text-purple-400' : 
                                   'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'
-                                } ${(isAtLeastAdmin && !u.is_super_owner) ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default opacity-80'}`}
+                                } ${(!u.is_super_owner && isAtLeastAdmin) ? 'hover:scale-105 active:scale-95 cursor-pointer' : 'cursor-default opacity-80'}`}
                               >
-                                {u.is_super_owner ? <Zap size={8} /> : (u.role === 'owner' ? <Crown size={8} /> : <Shield size={8} />)}
+                                {u.is_super_owner ? <Lock size={8} /> : (u.role === 'owner' ? <Crown size={8} /> : <Shield size={8} />)}
                                 ROLE: {u.is_super_owner ? 'SUPER OWNER' : (u.role || 'user')}
-                                {isAtLeastAdmin && !u.is_super_owner && <Settings2 size={8} className="opacity-50" />}
+                                {!u.is_super_owner && isAtLeastAdmin && <Settings2 size={8} className="opacity-50" />}
                               </button>
                               {u.is_blocked && <span className="px-3 py-1 bg-rose-500/10 border border-rose-500/30 text-rose-500 rounded-full text-[8px] font-black uppercase tracking-widest">RESTRICTED</span>}
                            </div>
@@ -438,7 +450,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       <button 
                         onClick={() => handleToggleBlock(u)} 
                         disabled={u.is_super_owner}
-                        className={`p-4 rounded-xl border transition-all ${u.is_super_owner ? 'opacity-20 cursor-not-allowed' : (u.is_blocked ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20' : 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20')}`}
+                        className={`p-4 rounded-xl border transition-all ${u.is_super_owner ? 'opacity-20 cursor-not-allowed bg-slate-900 border-white/5 text-slate-700' : (u.is_blocked ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 hover:bg-emerald-500/20' : 'bg-rose-500/10 border-rose-500/30 text-rose-500 hover:bg-rose-500/20')}`}
                       >
                         {u.is_blocked ? <Unlock size={20} /> : <Ban size={20} />}
                       </button>
