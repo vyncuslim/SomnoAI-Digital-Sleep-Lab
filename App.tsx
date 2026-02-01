@@ -11,6 +11,7 @@ import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
+import { trackPageView } from './services/analytics.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
@@ -105,6 +106,7 @@ const AppContent: React.FC = () => {
       // Recovery Priority
       if (isRecoveryMode) {
         setActiveView('update-password');
+        trackPageView('/update-password', 'Identity Recovery');
         return;
       }
 
@@ -124,16 +126,18 @@ const AppContent: React.FC = () => {
       }
 
       if (!profile && !loading && !isSimulated) {
-        if (pathOnly === 'signup' || hashOnly === 'signup') { setAuthMode('join'); return; }
-        if (['login', 'signin'].includes(pathOnly) || ['login', 'signin'].includes(hashOnly)) { setAuthMode('login'); return; }
-        if (hashOnly.startsWith('admin')) { setActiveView('admin-login'); return; }
+        if (pathOnly === 'signup' || hashOnly === 'signup') { setAuthMode('join'); trackPageView('/signup', 'Registration Terminal'); return; }
+        if (['login', 'signin'].includes(pathOnly) || ['login', 'signin'].includes(hashOnly)) { setAuthMode('login'); trackPageView('/login', 'Access Terminal'); return; }
+        if (hashOnly.startsWith('admin')) { setActiveView('admin-login'); trackPageView('/admin/login', 'Restricted Access'); return; }
       }
       
       const target = hashOnly || 'dashboard';
       if (mappings[target]) {
         setActiveView(mappings[target]);
+        trackPageView(`/${target}`, `SomnoAI: ${target.toUpperCase()}`);
       } else if (profile || isSimulated) {
         setActiveView('dashboard');
+        trackPageView('/dashboard', 'Subject Dashboard');
       }
     };
     

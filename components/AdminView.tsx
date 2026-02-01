@@ -8,7 +8,7 @@ import {
   MessageSquare, LayoutDashboard, Radio, Activity,
   ChevronRight, Send, Smartphone, BarChart3, Fingerprint,
   Lock, Table, List, Clock, TrendingUp,
-  CheckCircle2, Unlock, WifiOff, Mail
+  CheckCircle2, Unlock, WifiOff, Mail, ExternalLink
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -383,21 +383,48 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                </div>
 
+               {/* Telemetry Bridge Verification */}
+               <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-white/[0.01]">
+                 <div className="flex flex-col md:flex-row items-center justify-between gap-8">
+                   <div className="flex items-center gap-6 text-left">
+                     <div className={`p-5 rounded-[1.8rem] ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : 'bg-rose-600/10 text-rose-400'} border border-white/5`}>
+                       <Globe size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />
+                     </div>
+                     <div>
+                       <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Telemetry Verification</h3>
+                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">
+                         Google Analytics (GA4) -> Supabase Mirror Pulse
+                       </p>
+                     </div>
+                   </div>
+                   
+                   <div className="flex flex-wrap gap-4 items-center justify-center">
+                     <div className="px-6 py-4 bg-black/40 rounded-2xl border border-white/5 text-center min-w-[140px]">
+                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Mirror Status</p>
+                        <p className={`text-xs font-black italic uppercase ${syncState === 'SYNCED' ? 'text-emerald-400' : 'text-rose-400'}`}>{syncState.replace('_', ' ')}</p>
+                     </div>
+                     <div className="px-6 py-4 bg-black/40 rounded-2xl border border-white/5 text-center min-w-[140px]">
+                        <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest mb-1">Last Data Ingress</p>
+                        <p className="text-xs font-black italic text-white uppercase">{lastSyncTime || 'VOID'}</p>
+                     </div>
+                     <button 
+                       onClick={handleManualSync}
+                       disabled={syncState === 'SYNCING'}
+                       className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 flex items-center gap-3 shadow-xl"
+                     >
+                       {syncState === 'SYNCING' ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+                       Recalibrate Pulse
+                     </button>
+                   </div>
+                 </div>
+               </GlassCard>
+
                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                   <div className="lg:col-span-8 space-y-6 text-left">
                      <div className="flex items-center justify-between px-6">
                         <h3 className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.4em] italic flex items-center gap-2">
                            <TrendingUp size={14} /> Traffic Velocity (30D)
                         </h3>
-                        <div className={`flex items-center gap-3 px-4 py-1.5 rounded-full border text-[9px] font-black uppercase tracking-widest italic transition-all group/sync relative overflow-hidden ${
-                          syncState === 'SYNCED' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' :
-                          syncState === 'DATA_RESIDENT' ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' :
-                          syncState === 'ERROR' || syncState === 'TIMEOUT' ? 'bg-rose-500/10 border-rose-500/20 text-rose-500 animate-pulse' :
-                          'bg-slate-900/60 border-white/5 text-slate-500'
-                        }`}>
-                          BRIDGE: {syncState.replace('_', ' ')}
-                          {lastSyncTime && <span className="opacity-40 lowercase font-bold tracking-normal">[{lastSyncTime}]</span>}
-                        </div>
                      </div>
                      <GlassCard className="p-10 rounded-[4rem] border-white/5 h-[400px] flex items-center justify-center">
                         {dailyStats.length > 0 ? (

@@ -4,7 +4,7 @@
 <head>
     <script>
       /**
-       * SOMNO LAB - SHIELD-CORE v6.1
+       * SOMNO LAB - SHIELD-CORE v6.2
        * 针对生产环境优化：屏蔽广告拦截插件导致的非业务报错
        */
       (function() {
@@ -34,6 +34,16 @@
         };
         ['error', 'warn', 'info'].forEach(wrap);
       })();
+    </script>
+
+    <!-- Global site tag (gtag.js) - Google Analytics (Using Primary Lab ID) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-3F9KVPNYLR"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      // 默认配置，SPA 追踪由 analytics.ts 接管
+      gtag('config', 'G-3F9KVPNYLR', { 'send_page_view': false });
     </script>
 
     <!-- Google GSI SDK remains for Auth -->

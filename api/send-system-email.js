@@ -3,8 +3,8 @@ import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * SOMNOAI NATIVE SMTP DISPATCHER v1.0
- * 运行在 Vercel Serverless 环境
+ * SOMNOAI NATIVE SMTP DISPATCHER v1.1
+ * Improved error reporting for Admin diagnostics
  */
 
 const supabase = createClient(
@@ -19,24 +19,33 @@ export default async function handler(req, res) {
 
   const { to, subject, html, secret } = req.body;
 
-  // 1. 安全校验：验证调用密钥
+  // 1. 安全校验
   if (!process.env.CRON_SECRET || secret !== process.env.CRON_SECRET) {
-    return res.status(401).json({ error: 'UNAUTHORIZED_HANDSHAKE' });
+    return res.status(401).json({ error: 'UNAUTHORIZED_HANDSHAKE: Invalid dispatch secret.' });
   }
 
-  // 2. SMTP 传输配置 (从环境变量读取)
+  // 2. 环境检查
+  if (!process.env.SMTP_USER || !process.env.SMTP_PASS) {
+     return res.status(500).json({ 
+       error: 'SMTP_CONFIG_VOID: Missing credentials in node environment.',
+       hint: 'Ensure SMTP_USER and SMTP_PASS are defined in Vercel project settings.'
+     });
+  }
+
+  // 3. SMTP 传输配置
   const transporter = nodemailer.createTransport({
     host: process.env.SMTP_HOST || 'smtp.gmail.com',
     port: parseInt(process.env.SMTP_PORT || '465'),
-    secure: true, // 使用 SSL
+    secure: true,
     auth: {
       user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS, // 必须是应用专用密码
+      pass: process.env.SMTP_PASS,
     },
+    timeout: 10000 // 10s handshake limit
   });
 
   try {
-    // 3. 执行发送
+    // 4. 执行发送
     const info = await transporter.sendMail({
       from: `"SomnoAI Lab" <${process.env.SMTP_USER}>`,
       to,
@@ -44,7 +53,7 @@ export default async function handler(req, res) {
       html,
     });
 
-    // 4. 审计记录
+    // 5. 审计记录
     await supabase.from('audit_logs').insert([{
       action: 'EMAIL_DISPATCH_SUCCESS',
       details: `Target: ${to}, Subject: ${subject}, MessageId: ${info.messageId}`,
@@ -62,6 +71,10 @@ export default async function handler(req, res) {
       level: 'WARNING'
     }]);
 
-    return res.status(500).json({ success: false, error: error.message });
+    return res.status(500).json({ 
+      success: false, 
+      error: error.message,
+      code: error.code || 'UNKNOWN_SMTP_ERR'
+    });
   }
 }

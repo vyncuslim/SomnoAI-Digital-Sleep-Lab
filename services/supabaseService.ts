@@ -11,10 +11,11 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
   // 获取当前系统语言
   const currentLang = (localStorage.getItem('somno_lang') as any) || 'en';
   
-  // 核心敏感操作：无论日志级别，均实时推送 Telegram
+  // 核心敏感操作映射：规范化 action 匹配
+  const actionKey = action.toUpperCase();
   const sensitiveActions = [
     'ADMIN_ROLE_CHANGE', 
-    'ADMIN_USER_BLOCK',   // 明确加入封禁操作
+    'ADMIN_USER_BLOCK', 
     'SECURITY_BREACH_ATTEMPT', 
     'SYSTEM_EXCEPTION', 
     'ROOT_NODE_PROTECTION_TRIGGER', 
@@ -24,30 +25,30 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
     'OTP_VERIFY_SUCCESS'
   ];
   
-  const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(action);
+  const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(actionKey);
 
   try {
     const { data: { session } } = await (supabase.auth as any).getSession();
     const actingAdmin = session?.user?.email || 'SYSTEM_NODE';
 
     if (shouldNotify) {
-      // 构造结构化对象以触发 Telegram 国际化映射，并附带操作者信息
+      // 异步发出 Telegram 通知，不阻塞主流程
       notifyAdmin({
-        type: action,
-        message: `[BY: ${actingAdmin}] ${details}`,
+        type: actionKey,
+        message: `[SOURCE: ${actingAdmin}] ${details}`,
         error: level === 'CRITICAL' ? details : undefined
-      }, currentLang);
+      }, currentLang).catch(e => console.debug("Telegram alert buffer full."));
     }
 
-    // 显式指定参数名 p_ 前缀，解决 404 函数签名匹配失败
+    // 执行数据库审计记录
     await supabase.rpc('log_audit_entry', {
-      p_action: action,
+      p_action: actionKey,
       p_details: details,
       p_level: level,
       p_user_id: session?.user?.id || null
     });
   } catch (e) {
-    console.debug("Audit registry link severed.");
+    console.debug("Audit registry record deferred.");
   }
 };
 
@@ -94,7 +95,8 @@ export const authApi = {
       await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
     } else {
       await logSecurityEvent(targetEmail, 'LOGIN_SUCCESS', 'Session handshake complete');
-      await logAuditLog('USER_LOGIN', `Identity confirmed via Password: ${targetEmail}`);
+      // 成功登录后立即触发审计告警
+      await logAuditLog('USER_LOGIN', `Authorized access confirmed: ${targetEmail}`);
     }
     return res;
   },
