@@ -2,7 +2,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB NEURAL MONITOR v8.0 - TRIPLE LINGUAL ORIGIN DISPATCH
+ * SOMNO LAB INFRASTRUCTURE PULSE v10.0
+ * Healthcheck endpoint for UptimeRobot
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -14,31 +15,33 @@ const supabase = createClient(
 );
 
 export default async function handler(req, res) {
-  const authHeader = req.headers.authorization;
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-    return res.status(401).json({ error: "UNAUTHORIZED" });
+  const querySecret = req.query.secret;
+  const serverSecret = process.env.CRON_SECRET || "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
+
+  // 防止接口被索引
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+
+  if (querySecret !== serverSecret) {
+    return res.status(401).json({ error: "UNAUTHORIZED_PULSE" });
   }
 
   try {
-    let isDbHealthy = true;
-    let isAiHealthy = !!process.env.API_KEY;
+    let dbStatus = "ONLINE";
+    let aiStatus = "ONLINE";
     
     const { error: dbError } = await supabase.from('profiles').select('count', { count: 'exact', head: true }).limit(1);
-    if (dbError) isDbHealthy = false;
+    if (dbError) dbStatus = "OFFLINE";
+    if (!process.env.API_KEY) aiStatus = "OFFLINE";
 
-    const mytTime = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Kuala_Lumpur' }) + ' (MYT)';
-    const nodeName = req.headers.host || 'sleepsomno.com';
+    const isHealthy = dbStatus === "ONLINE" && aiStatus === "ONLINE";
 
-    if (!isDbHealthy || !isAiHealthy) {
-      const tgMessage = `🚨 <b>PULSE ANOMALY | 脉搏异常</b>\n` +
+    if (!isHealthy) {
+      const mytTime = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Kuala_Lumpur' }) + ' (MYT)';
+      const tgMessage = `🚨 <b>INFRASTRUCTURE ANOMALY</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n\n` +
-        `📍 <b>SOURCE:</b> <code>⚙️ System Logic | 系统逻辑</code>\n\n` +
-        `🇬🇧 <b>[ENGLISH]</b>\n` +
-        `<b>Issue:</b> ${!isAiHealthy ? 'Neural Link Offline' : 'Database Disconnected'}\n\n` +
-        `🇪🇸 <b>[ESPAÑOL]</b>\n` +
-        `<b>Problema:</b> ${!isAiHealthy ? 'Enlace Neural Desconectado' : 'Base de Datos Desconectada'}\n\n` +
-        `🇨🇳 <b>[中文]</b>\n` +
-        `<b>问题:</b> ${!isAiHealthy ? '神经链路离线' : '数据库连接断开'}\n\n` +
+        `📍 <b>NODE:</b> <code>Health Monitor</code>\n` +
+        `🗄️ <b>DATABASE:</b> <code>${dbStatus}</code>\n` +
+        `🧠 <b>AI LINK:</b> <code>${aiStatus}</code>\n\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
         `<b>TIME:</b> <code>${mytTime}</code>`;
 
@@ -49,8 +52,12 @@ export default async function handler(req, res) {
       }).catch(() => {});
     }
 
-    return res.status(200).json({ db: isDbHealthy, ai: isAiHealthy });
+    // UptimeRobot 需要 2xx 状态码表示 Healthy
+    return res.status(isHealthy ? 200 : 500).json({ 
+      status: isHealthy ? "HEALTHY" : "DEGRADED",
+      timestamp: new Date().toISOString()
+    });
   } catch (e) {
-    return res.status(500).json({ error: e.message });
+    return res.status(500).json({ error: "MONITOR_EXCEPTION" });
   }
 }

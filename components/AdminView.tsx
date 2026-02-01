@@ -7,16 +7,16 @@ import {
   LayoutDashboard, Radio, Activity, ChevronRight, 
   Send, Fingerprint, Lock, Table, List, 
   Unlock, Mail, ExternalLink, ActivitySquare,
-  HeartPulse, Copy
+  HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
+  Rocket, MousePointer2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
-import { systemMonitor, DiagnosticResult } from '../services/systemMonitor.ts';
 
 const m = motion as any;
 
-type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system';
+type AdminTab = 'overview' | 'explorer' | 'signals' | 'registry' | 'system' | 'automation';
 type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'DATA_RESIDENT' | 'STALE' | 'FORBIDDEN';
 
 const DATABASE_SCHEMA = [
@@ -32,14 +32,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('IDLE');
-  const [pulseResult, setPulseResult] = useState<DiagnosticResult | null>(null);
-  const [isPulsing, setIsPulsing] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
   
   const [users, setUsers] = useState<any[]>([]);
   const [dailyStats, setDailyStats] = useState<any[]>([]);
   const [signals, setSignals] = useState<any[]>([]);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
+
+  const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
+  const BASE_URL = typeof window !== 'undefined' ? window.location.origin : 'https://sleepsomno.com';
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -73,14 +75,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedKey(id);
+    setTimeout(() => setCopiedKey(null), 2000);
+  };
+
   const handleManualSync = async () => {
     setSyncState('SYNCING');
     setActionError(null);
     try {
-      const secret = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2"; 
-      const response = await fetch('/api/sync-analytics', {
-        headers: { 'Authorization': `Bearer ${secret}` }
-      });
+      const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
       const data = await response.json();
       if (response.ok) {
         setSyncState('SYNCED');
@@ -88,14 +93,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } else {
         if (response.status === 403) {
           setSyncState('FORBIDDEN');
-          throw new Error(`GA4 PERMISSION DENIED: Please add ${data.required_email} to your GA4 property.`);
+          throw new Error(`GA4 PERMISSION DENIED: Please add ${data.required_email || 'the service account'} to GA4.`);
         }
-        throw new Error(data.error || "Sync gateway error.");
+        throw new Error(data.detail || data.error || "Sync gateway error.");
       }
     } catch (e: any) {
       setActionError(e.message);
       setSyncState('ERROR');
     }
+    setTimeout(() => setSyncState('IDLE'), 3000);
   };
 
   const handleToggleBlock = async (user: any) => {
@@ -126,8 +132,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         <nav className="flex p-1.5 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
           {[
             { id: 'overview', label: 'OVERVIEW', icon: LayoutDashboard },
+            { id: 'automation', label: 'SCHEDULER', icon: Clock },
             { id: 'registry', label: 'REGISTRY', icon: Users },
-            { id: 'explorer', label: 'TABLE EDITOR', icon: Table },
+            { id: 'explorer', label: 'TABLES', icon: Table },
             { id: 'signals', label: 'SIGNALS', icon: Radio },
             { id: 'system', label: 'SYSTEM', icon: Cpu }
           ].map((tab) => (
@@ -164,7 +171,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <GlassCard className="p-10 rounded-[4rem] border-white/5">
                    <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                       <div className="flex items-center gap-8 text-left">
-                         <div className={`p-6 rounded-[2rem] ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : 'bg-rose-600/10 text-rose-400'} border border-white/5`}>
+                         <div className={`p-6 rounded-[2rem] ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : 'bg-indigo-600/10 text-indigo-400'} border border-white/5`}>
                             <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />
                          </div>
                          <div>
@@ -172,11 +179,127 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">Internal Processor Status: {syncState}</p>
                          </div>
                       </div>
-                      <button onClick={handleManualSync} disabled={syncState === 'SYNCING'} className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center gap-3 shadow-xl italic">
+                      <button onClick={handleManualSync} disabled={syncState === 'SYNCING'} className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 shadow-xl italic">
                         {syncState === 'SYNCING' ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />} EXECUTE MANUAL SYNC
                       </button>
                    </div>
                 </GlassCard>
+              </div>
+            )}
+
+            {activeTab === 'automation' && (
+              <div className="space-y-10 max-w-5xl mx-auto pb-20">
+                 {/* UptimeRobot Quick Start Guide */}
+                 <div className="text-center space-y-6">
+                    <div className="w-24 h-24 bg-[#32cd32]/10 rounded-[3rem] flex items-center justify-center mx-auto text-[#32cd32] border border-[#32cd32]/20 shadow-[0_0_50px_rgba(50,205,50,0.1)]">
+                       <Rocket size={44} />
+                    </div>
+                    <div className="space-y-2">
+                       <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter">UptimeRobot Scheduler</h2>
+                       <p className="text-[11px] text-slate-500 font-bold uppercase tracking-[0.6em] italic">No-Server Cron Implementation Guide</p>
+                    </div>
+                 </div>
+
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <GlassCard className="p-8 rounded-[3rem] border-white/5 space-y-6">
+                       <div className="flex items-center gap-3 text-indigo-400">
+                          <span className="w-7 h-7 rounded-full bg-indigo-600/20 flex items-center justify-center text-[10px] font-black">1</span>
+                          <h3 className="text-[11px] font-black uppercase tracking-widest">Register & Access</h3>
+                       </div>
+                       <p className="text-[13px] text-slate-400 italic leading-relaxed">访问 <a href="https://uptimerobot.com" target="_blank" className="text-indigo-400 underline">UptimeRobot.com</a> 并登录，点击 Dashboard 里的 <b>"Add New Monitor"</b>。</p>
+                    </GlassCard>
+
+                    <GlassCard className="p-8 rounded-[3rem] border-white/5 space-y-6">
+                       <div className="flex items-center gap-3 text-indigo-400">
+                          <span className="w-7 h-7 rounded-full bg-indigo-600/20 flex items-center justify-center text-[10px] font-black">2</span>
+                          <h3 className="text-[11px] font-black uppercase tracking-widest">Core Configuration</h3>
+                       </div>
+                       <div className="space-y-3">
+                          <div className="flex justify-between text-[10px]"><span className="text-slate-600 font-bold">Monitor Type</span><span className="text-white font-mono">HTTP(s)</span></div>
+                          <div className="flex justify-between text-[10px]"><span className="text-slate-600 font-bold">Interval</span><span className="text-[#32cd32] font-mono italic">Every 5 mins</span></div>
+                       </div>
+                    </GlassCard>
+
+                    <GlassCard className="p-8 rounded-[3rem] border-white/5 space-y-6">
+                       <div className="flex items-center gap-3 text-indigo-400">
+                          <span className="w-7 h-7 rounded-full bg-indigo-600/20 flex items-center justify-center text-[10px] font-black">3</span>
+                          <h3 className="text-[11px] font-black uppercase tracking-widest">Security Link</h3>
+                       </div>
+                       <p className="text-[13px] text-slate-400 italic leading-relaxed">在 <b>URL (or IP)</b> 栏填入下方生成的加密接口地址。该地址包含独有的 <code>CRON_SECRET</code>。</p>
+                    </GlassCard>
+                 </div>
+
+                 <div className="grid grid-cols-1 gap-8">
+                    {/* Job 1: Sync */}
+                    <GlassCard className="p-10 rounded-[4rem] border-indigo-500/20 relative overflow-hidden">
+                       <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none rotate-12"><Activity size={200} /></div>
+                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
+                          <div className="space-y-4">
+                             <div className="flex items-center gap-4">
+                                <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><RefreshCw size={24} /></div>
+                                <div className="space-y-1">
+                                   <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Sync</h3>
+                                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target: /api/sync-analytics</p>
+                                </div>
+                             </div>
+                             <div className="space-y-2">
+                                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest px-1">UptimeRobot Target URL (Critical)</p>
+                                <div className="relative group max-w-3xl">
+                                   <div className="w-full bg-[#050a1f] border border-indigo-500/20 rounded-2xl px-6 py-5 text-[11px] font-mono text-indigo-300 break-all pr-16 select-all shadow-inner">{BASE_URL}/api/sync-analytics?secret={CRON_SECRET}</div>
+                                   <button onClick={() => handleCopy(`${BASE_URL}/api/sync-analytics?secret=${CRON_SECRET}`, 'j1')} className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-indigo-600/20 text-indigo-400 rounded-xl hover:bg-indigo-600 hover:text-white transition-all">
+                                      {copiedKey === 'j1' ? <Check size={18} /> : <Copy size={18} />}
+                                   </button>
+                                </div>
+                             </div>
+                          </div>
+                          <div className="bg-indigo-500/5 p-6 rounded-[2.5rem] border border-white/5 space-y-3 min-w-[240px]">
+                             <div className="flex items-center gap-2 text-indigo-400"><Clock size={14} /><span className="text-[9px] font-black uppercase">Schedule Recommendation</span></div>
+                             <p className="text-[12px] text-slate-400 italic">设置为 <b>"Every 30 mins"</b> 即可满足 GA4 每日数据回传需求。</p>
+                          </div>
+                       </div>
+                    </GlassCard>
+
+                    {/* Job 2: Pulse */}
+                    <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 relative overflow-hidden">
+                       <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none -rotate-12"><HeartPulse size={200} /></div>
+                       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 relative z-10">
+                          <div className="space-y-4">
+                             <div className="flex items-center gap-4">
+                                <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><Zap size={24} /></div>
+                                <div className="space-y-1">
+                                   <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">System Pulse Monitor</h3>
+                                   <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Target: /api/monitor-pulse</p>
+                                </div>
+                             </div>
+                             <div className="space-y-2">
+                                <p className="text-[9px] font-black text-rose-400 uppercase tracking-widest px-1">UptimeRobot Target URL (Critical)</p>
+                                <div className="relative group max-w-3xl">
+                                   <div className="w-full bg-[#050a1f] border border-rose-500/20 rounded-2xl px-6 py-5 text-[11px] font-mono text-rose-300 break-all pr-16 select-all shadow-inner">{BASE_URL}/api/monitor-pulse?secret={CRON_SECRET}</div>
+                                   <button onClick={() => handleCopy(`${BASE_URL}/api/monitor-pulse?secret=${CRON_SECRET}`, 'j2')} className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-rose-600/20 text-rose-400 rounded-xl hover:bg-rose-600 hover:text-white transition-all">
+                                      {copiedKey === 'j2' ? <Check size={18} /> : <Copy size={18} />}
+                                   </button>
+                                </div>
+                             </div>
+                          </div>
+                          <div className="bg-rose-500/5 p-6 rounded-[2.5rem] border border-white/5 space-y-3 min-w-[240px]">
+                             <div className="flex items-center gap-2 text-rose-400"><Clock size={14} /><span className="text-[9px] font-black uppercase">Schedule Recommendation</span></div>
+                             <p className="text-[12px] text-slate-400 italic">设置为 <b>"Every 5 mins"</b>。若系统宕机，UptimeRobot 会立即触发告警。</p>
+                          </div>
+                       </div>
+                    </GlassCard>
+                 </div>
+
+                 <div className="p-10 bg-amber-500/5 border border-amber-500/10 rounded-[4rem] flex gap-8 items-center">
+                    <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-500 shadow-[0_0_30px_rgba(245,158,11,0.1)]">
+                       <ShieldAlert size={32} />
+                    </div>
+                    <div className="space-y-2">
+                       <h4 className="text-sm font-black uppercase text-amber-500 tracking-widest italic">Security Advisory</h4>
+                       <p className="text-[12px] text-slate-400 italic leading-relaxed max-w-2xl">
+                         这些 URL 包含您的敏感 API 凭证。<b>请勿在公开场所分享这些链接。</b> 如果 UptimeRobot 报告 "500 Internal Server Error"，请检查控制台中的 Signals 标签页，查看具体的数据库或 API 连接异常。
+                       </p>
+                    </div>
+                 </div>
               </div>
             )}
             

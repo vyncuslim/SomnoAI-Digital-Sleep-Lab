@@ -25,9 +25,5 @@
     { "source": "/dashboard", "destination": "/index.html" },
     { "source": "/settings", "destination": "/index.html" },
     { "source": "/(.*)", "destination": "/index.html" }
-  ],
-  "crons": [
-    { "path": "/api/sync-analytics", "schedule": "0 3 * * *" },
-    { "path": "/api/monitor-pulse", "schedule": "* * * * *" }
   ]
 }

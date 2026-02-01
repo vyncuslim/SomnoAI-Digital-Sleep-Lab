@@ -6,26 +6,17 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB AUDIT PROTOCOL v14.0
- * Dispatches encrypted logs with Automatic Path & Source Detection.
+ * SOMNO LAB AUDIT PROTOCOL v15.0
+ * Features: Direct table injection with error suppression and mirrored alerts.
  */
 export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
   const actionKey = action.toUpperCase();
   
   const sensitiveActions = [
-    'ADMIN_ROLE_CHANGE', 
-    'ADMIN_USER_BLOCK', 
-    'SECURITY_BREACH_ATTEMPT', 
-    'SYSTEM_EXCEPTION', 
-    'ADMIN_MANUAL_SYNC',
-    'USER_LOGIN',
-    'USER_SIGNUP',
-    'OTP_VERIFY_SUCCESS',
-    'RUNTIME_ERROR',
-    'ASYNC_HANDSHAKE_VOID',
-    'ADMIN_PAGE_CHANGE',
-    'PW_UPDATE_SUCCESS',
-    'PERMISSION_DENIED'
+    'ADMIN_ROLE_CHANGE', 'ADMIN_USER_BLOCK', 'SECURITY_BREACH_ATTEMPT', 
+    'SYSTEM_EXCEPTION', 'ADMIN_MANUAL_SYNC', 'USER_LOGIN', 'USER_SIGNUP',
+    'OTP_VERIFY_SUCCESS', 'RUNTIME_ERROR', 'ASYNC_HANDSHAKE_VOID',
+    'PW_UPDATE_SUCCESS', 'PERMISSION_DENIED', 'GA4_SYNC_FAILURE'
   ];
   
   const shouldNotify = level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(actionKey);
@@ -35,6 +26,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
     const currentPath = typeof window !== 'undefined' ? 
       (window.location.hash.replace(/^#\/?/, '') || 'home') : 'cloud_logic';
 
+    // 1. 发送 Telegram/邮件通知
     if (shouldNotify) {
       const source = actionKey.startsWith('ADMIN_') || currentPath.includes('admin') 
         ? 'ADMIN_CONSOLE' : 'USER_TERMINAL';
@@ -47,21 +39,22 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
         error: level === 'CRITICAL' ? details : undefined
       };
 
-      // Concurrent Mirroring
       await Promise.allSettled([
         notifyAdmin(alertPayload),
         emailService.sendAdminAlert(alertPayload)
       ]);
     }
 
-    await supabase.rpc('log_audit_entry', {
-      p_action: actionKey,
-      p_details: details,
-      p_level: level,
-      p_user_id: session?.user?.id || null
-    });
+    // 2. 将日志存入数据库 (使用直接插入代替 RPC 避免 404)
+    await supabase.from('audit_logs').insert([{
+      action: actionKey,
+      details: details,
+      level: level,
+      user_id: session?.user?.id || null
+    }]).select('id');
+    
   } catch (e) {
-    console.debug("Audit record deferred.");
+    console.debug("Audit record deferred due to link latency.");
   }
 };
 
@@ -71,11 +64,11 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 const logSecurityEvent = async (email: string, type: string, details: string) => {
   try {
     const targetEmail = email.trim().toLowerCase();
-    await supabase.rpc('log_security_event', { 
-      p_email: targetEmail, 
-      p_event_type: type, 
-      p_details: details 
-    });
+    await supabase.from('security_events').insert([{ 
+      email: targetEmail, 
+      event_type: type, 
+      event_reason: details 
+    }]);
   } catch (e) {}
 };
 
@@ -84,7 +77,6 @@ const logSecurityEvent = async (email: string, type: string, details: string) =>
  */
 export const authApi = {
   signInWithGoogle: async () => {
-    await logAuditLog('OAUTH_START', 'Google authentication initiated');
     return await (supabase.auth as any).signInWithOAuth({
       provider: 'google',
       options: {
@@ -95,7 +87,7 @@ export const authApi = {
   },
   signIn: async (email: string, password: string, captchaToken?: string) => {
     const targetEmail = email.trim().toLowerCase();
-    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Validation handshake');
+    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Handshake initiated');
     
     const res = await (supabase.auth as any).signInWithPassword({ 
       email: targetEmail, 
@@ -117,7 +109,7 @@ export const authApi = {
       options: { ...options, captchaToken } 
     });
     if (!res.error) {
-      await logAuditLog('USER_SIGNUP', `New subject node registered: ${targetEmail}`);
+      await logAuditLog('USER_SIGNUP', `New subject node: ${targetEmail}`);
     }
     return res;
   },
@@ -143,7 +135,7 @@ export const authApi = {
     const res = await (supabase.auth as any).updateUser({ password: newPassword });
     if (!res.error) {
        const { data: { user } } = await (supabase.auth as any).getUser();
-       await logAuditLog('PW_UPDATE_SUCCESS', `Access key rotation complete: ${user?.email}`);
+       await logAuditLog('PW_UPDATE_SUCCESS', `Access key rotation: ${user?.email}`);
     }
     return res;
   },
@@ -156,9 +148,6 @@ export const authApi = {
   }
 };
 
-/**
- * ADMINISTRATIVE CONTROL API
- */
 export const adminApi = {
   getAdminClearance: async (userId: string) => {
     const { data } = await supabase.rpc('get_my_detailed_profile');
@@ -176,21 +165,6 @@ export const adminApi = {
     const { data } = await supabase.rpc('admin_get_all_profiles');
     return data || [];
   },
-  getTableData: async (tableName: string, limit = 100) => {
-    const probes = ['created_at', 'date', 'timestamp', 'recorded_at'];
-    for (const col of probes) {
-      try {
-        const { data, error } = await supabase
-          .from(tableName)
-          .select('*')
-          .order(col, { ascending: false })
-          .limit(limit);
-        if (!error) return data || [];
-      } catch (e) {}
-    }
-    const { data } = await supabase.from(tableName).select('*').limit(limit);
-    return data || [];
-  },
   getTableCount: async (tableName: string) => {
     const { count, error } = await supabase.from(tableName).select('*', { count: 'exact', head: true });
     return error ? 0 : (count || 0);
@@ -203,14 +177,7 @@ export const adminApi = {
     const newState = !currentlyBlocked;
     const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
     if (!error) {
-      await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node access: ${email}`, newState ? 'WARNING' : 'INFO');
-    }
-    return { error };
-  },
-  updateUserRole: async (id: string, email: string, newRole: string) => {
-    const { error } = await supabase.rpc('admin_update_user_role', { target_user_id: id, new_role: newRole });
-    if (!error) {
-      await logAuditLog('ADMIN_ROLE_CHANGE', `Clearance shift for ${email} -> ${newRole.toUpperCase()}`, 'CRITICAL');
+      await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node: ${email}`, newState ? 'WARNING' : 'INFO');
     }
     return { error };
   },

@@ -36,21 +36,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const isSyncing = useRef(false);
-  const authLockActive = useRef(false);
-  const lastEventLogged = useRef<string | null>(null);
+  const lastLoggedSessionId = useRef<string | null>(null);
 
   const fetchProfile = useCallback(async (isFreshLogin: boolean = false) => {
     if (isSyncing.current) return;
     isSyncing.current = true;
     
     try {
-      const { data: { user } } = await (supabase.auth as any).getUser();
+      const { data: { session } } = await (supabase.auth as any).getSession();
 
-      if (!user) {
+      if (!session || !session.user) {
         setProfile(null);
         setLoading(false);
         return;
       }
+
+      // 仅在会话 ID 发生变化时才尝试记录登录日志
+      const currentSessionId = session.access_token.slice(-10);
+      const shouldLog = isFreshLogin && lastLoggedSessionId.current !== currentSessionId;
 
       const { data, error } = await supabase.rpc('get_my_detailed_profile');
       let currentProfile: Profile | null = null;
@@ -59,7 +62,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const { data: fallbackData } = await supabase
           .from("profiles")
           .select("id, email, role, is_super_owner, is_blocked, full_name")
-          .eq("id", user.id)
+          .eq("id", session.user.id)
           .single();
         
         if (fallbackData) currentProfile = fallbackData as Profile;
@@ -69,20 +72,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setProfile(currentProfile);
 
-      // 关键改进：在日志消息中显式标注身份和来源
-      if (isFreshLogin && currentProfile) {
-        const eventKey = `login_${currentProfile.id}_${new Date().getMinutes()}`;
-        if (lastEventLogged.current !== eventKey) {
-           lastEventLogged.current = eventKey;
-           const isStaff = ['admin', 'owner'].includes(currentProfile.role) || currentProfile.is_super_owner;
-           const identityTag = isStaff ? '[IDENTITY: STAFF_ADMIN]' : '[IDENTITY: SUBJECT_USER]';
-           await logAuditLog('USER_LOGIN', `${identityTag} Access verified for: ${currentProfile.email}`, 'INFO');
-        }
+      if (shouldLog && currentProfile) {
+        lastLoggedSessionId.current = currentSessionId;
+        const isStaff = ['admin', 'owner'].includes(currentProfile.role) || currentProfile.is_super_owner;
+        const identityTag = isStaff ? '[IDENTITY: STAFF_ADMIN]' : '[IDENTITY: SUBJECT_USER]';
+        // 异步执行，不阻塞 UI 渲染
+        logAuditLog('USER_LOGIN', `${identityTag} Access verified for: ${currentProfile.email}`, 'INFO');
       }
-      
-      authLockActive.current = false;
     } catch (err) {
-      console.warn("AuthContext: Handshake latency.");
+      console.warn("AuthContext: Handshake sync delayed.");
     } finally {
       setLoading(false);
       isSyncing.current = false;
@@ -91,9 +89,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   useEffect(() => {
     fetchProfile();
-    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((event: string) => {
-      if (event === 'SIGNED_IN') fetchProfile(true);
-      else if (event === 'SIGNED_OUT') { setProfile(null); setLoading(false); }
+    const { data: { subscription } } = (supabase.auth as any).onAuthStateChange((event: string, session: any) => {
+      if (event === 'SIGNED_IN' && session) {
+        fetchProfile(true);
+      } else if (event === 'SIGNED_OUT') {
+        setProfile(null);
+        setLoading(false);
+        lastLoggedSessionId.current = null;
+      }
     });
     return () => subscription.unsubscribe();
   }, [fetchProfile]);

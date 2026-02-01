@@ -2,6 +2,11 @@
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
+/**
+ * SOMNO LAB GA4 SYNC GATEWAY v10.0
+ * Optimized for UptimeRobot Scheduler
+ */
+
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
 const SERVICE_ACCOUNT_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
 
@@ -12,15 +17,24 @@ const supabase = createClient(
 
 export default async function handler(req, res) {
   const authHeader = req.headers.authorization;
+  const querySecret = req.query.secret;
+  const userAgent = req.headers["user-agent"] || "";
   const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
 
-  if (authHeader !== `Bearer ${serverSecret}`) {
-    return res.status(401).json({ error: "UNAUTHORIZED_ACCESS" });
+  // 1. 安全验证 (URL Secret 优先)
+  const isAuthorized = (querySecret === serverSecret) || (authHeader === `Bearer ${serverSecret}`);
+  
+  // 2. 爬虫防护：防止接口被索引
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+
+  if (!isAuthorized) {
+    console.warn("[GATEWAY] Unauthorized Cron Access Attempt.");
+    return res.status(401).json({ error: "UNAUTHORIZED" });
   }
 
   try {
     if (!process.env.GA_PROPERTY_ID || !process.env.GA_SERVICE_ACCOUNT_KEY) {
-      throw new Error("SERVER_ENV_MISSING");
+      throw new Error("SERVER_ENV_VOID");
     }
 
     const credentials = JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY);
@@ -40,23 +54,24 @@ export default async function handler(req, res) {
     }));
 
     if (rows.length > 0) {
-      await supabase.from("analytics_daily").upsert(rows, { onConflict: 'date' });
+      const { error: upsertError } = await supabase
+        .from("analytics_daily")
+        .upsert(rows, { onConflict: 'date' });
+      
+      if (upsertError) throw upsertError;
     }
 
-    return res.status(200).json({ success: true, count: rows.length });
+    return res.status(200).json({ 
+      success: true, 
+      count: rows.length, 
+      source: userAgent.includes("UptimeRobot") ? "UptimeRobot_Scheduler" : "Manual_Trigger",
+      timestamp: new Date().toISOString()
+    });
   } catch (err) {
     const isPermissionError = err.message.includes('PERMISSION_DENIED') || err.code === 7;
-    
-    // 如果是权限错误，构造一个包含具体修复指令的错误消息
-    const detailedError = isPermissionError 
-      ? `PERMISSION_DENIED: Service account lacks access to Property ${process.env.GA_PROPERTY_ID}. Please add "${SERVICE_ACCOUNT_EMAIL}" to GA4 users with "Viewer" role.`
-      : err.message;
-
-    console.error("GA4_SYNC_FAILURE:", detailedError);
-    
     return res.status(isPermissionError ? 403 : 500).json({ 
-      error: isPermissionError ? "GA4_AUTH_REQUIRED" : "SYNC_ERROR",
-      message: detailedError 
+      error: "SYNC_FAILURE", 
+      detail: isPermissionError ? `Add ${SERVICE_ACCOUNT_EMAIL} to GA4.` : err.message 
     });
   }
 }
