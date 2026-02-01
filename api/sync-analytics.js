@@ -3,8 +3,8 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNOAI ANALYTICS SYNC ENGINE v3.2
- * Synchronizes GA4 Cloud Telemetry to Supabase Persistence
+ * SOMNOAI ANALYTICS SYNC ENGINE v3.3
+ * Localized for Malaysia Time Reporting
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -16,6 +16,19 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+const getMYTTime = () => {
+  return new Intl.DateTimeFormat('zh-CN', {
+    timeZone: 'Asia/Kuala_Lumpur',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false
+  }).format(new Date()).replace(/\//g, '-') + ' (MYT)';
+};
+
 const escapeHTML = (str) => {
   if (!str) return 'null';
   return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -23,10 +36,11 @@ const escapeHTML = (str) => {
 
 const sendTelegramAlert = async (text) => {
   try {
+    const timestampedText = `${text}\n\n<b>TIME:</b> <code>${getMYTTime()}</code>`;
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text, parse_mode: 'HTML' })
+      body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: timestampedText, parse_mode: 'HTML' })
     });
   } catch (e) { console.error("Alert dispatch failed"); }
 };
@@ -50,8 +64,6 @@ export default async function handler(req, res) {
       credentials: JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY),
     });
 
-    const yesterday = new Date(Date.now() - 86400000).toISOString().split("T")[0];
-
     // 3. Fetch Data from GA4
     const [dailyResponse] = await analyticsDataClient.runReport({
       property: `properties/${process.env.GA_PROPERTY_ID}`,
@@ -67,7 +79,6 @@ export default async function handler(req, res) {
     // 4. Batch Upsert to Supabase
     if (dailyResponse.rows?.length > 0) {
       const rows = dailyResponse.rows.map(row => ({
-        // GA4 date format is YYYYMMDD
         date: `${row.dimensionValues[0].value.slice(0, 4)}-${row.dimensionValues[0].value.slice(4, 6)}-${row.dimensionValues[0].value.slice(6, 8)}`,
         users: parseInt(row.metricValues[0].value),
         sessions: parseInt(row.metricValues[1].value),
@@ -81,7 +92,7 @@ export default async function handler(req, res) {
     // 5. Log Success
     await supabase.from("audit_logs").insert([{
       action: "GA4_SYNC_SUCCESS",
-      details: `Telemetry sync complete for ${dailyResponse.rows?.length || 0} days.`,
+      details: `Telemetry sync complete for ${dailyResponse.rows?.length || 0} days. Reported at ${getMYTTime()}.`,
       level: "INFO"
     }]);
 

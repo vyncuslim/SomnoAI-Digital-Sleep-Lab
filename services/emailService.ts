@@ -1,9 +1,9 @@
 
-import { I18N_ALERTS } from './telegramService.ts';
+import { I18N_ALERTS, getMYTTime } from './telegramService.ts';
 
 /**
- * SOMNOAI EMAIL BRIDGE v2.1
- * Mirrored multi-lingual alert matrix for Telegram and SMTP gateways.
+ * SOMNOAI EMAIL BRIDGE v2.2
+ * Synchronized with MYT (Asia/Kuala_Lumpur)
  */
 
 const ADMIN_EMAIL = 'ongyuze1401@gmail.com';
@@ -31,6 +31,7 @@ export const emailService = {
     const et = I18N_EMAIL_TEMPLATES[lang] || I18N_EMAIL_TEMPLATES.en;
     const dict = I18N_ALERTS[lang] || I18N_ALERTS.en;
     const nodeIdentity = window.location.hostname;
+    const mytTime = getMYTTime();
     
     const rawType = payload.type || 'SYSTEM_SIGNAL';
     const localizedType = dict[rawType.toLowerCase()] || rawType;
@@ -56,7 +57,7 @@ export const emailService = {
             </div>
             <div>
               <p style="margin: 20px 0 5px 0; font-size: 10px; color: #64748b; text-transform: uppercase;">${dict.time}</p>
-              <p style="margin: 0; font-size: 12px; color: #f1f5f9; font-weight: bold;">${new Date().toISOString()}</p>
+              <p style="margin: 0; font-size: 12px; color: #f1f5f9; font-weight: bold;">${mytTime}</p>
             </div>
           </div>
         </div>
