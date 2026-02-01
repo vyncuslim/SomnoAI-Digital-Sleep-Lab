@@ -8,7 +8,7 @@ import {
   Send, Fingerprint, Lock, Table, List, 
   Unlock, Mail, ExternalLink, ActivitySquare,
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
-  Rocket, MousePointer2, Trash2, Database, Search, Shield
+  Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -97,15 +97,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } else {
         if (response.status === 403) {
           setSyncState('FORBIDDEN');
-          throw new Error(`GA4 PERMISSION DENIED: Please authorize the Service Account [${GA4_SERVICE_EMAIL}] in your Google Analytics Property settings.`);
+          throw new Error(`GA4 PERMISSION DENIED: Service Account unauthorized.`);
         }
         throw new Error(data.detail || data.error || "Sync gateway error.");
       }
     } catch (e: any) {
       setActionError(e.message);
-      setSyncState('ERROR');
+      if (syncState !== 'FORBIDDEN') setSyncState('ERROR');
     }
-    setTimeout(() => setSyncState('IDLE'), 3000);
+    if (syncState !== 'FORBIDDEN') setTimeout(() => setSyncState('IDLE'), 3000);
   };
 
   const handleTableInspect = (tableId: string) => {
@@ -237,21 +237,51 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                 </div>
 
-                <GlassCard className="p-10 rounded-[4rem] border-white/5">
+                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${syncState === 'FORBIDDEN' ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
                    <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                       <div className="flex items-center gap-8 text-left">
-                         <div className={`p-6 rounded-[2rem] ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : 'bg-indigo-600/10 text-indigo-400'} border border-white/5`}>
-                            <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />
+                         <div className={`p-6 rounded-[2rem] border border-white/5 ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : syncState === 'FORBIDDEN' ? 'bg-rose-600/10 text-rose-500' : 'bg-indigo-600/10 text-indigo-400'}`}>
+                            {syncState === 'FORBIDDEN' ? <ShieldAlert size={32} /> : <ActivitySquare size={32} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />}
                          </div>
                          <div>
                             <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Sync</h3>
                             <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">Internal Processor Status: {syncState}</p>
                          </div>
                       </div>
-                      <button onClick={handleManualSync} disabled={syncState === 'SYNCING'} className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 shadow-xl italic">
-                        {syncState === 'SYNCING' ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />} EXECUTE MANUAL SYNC
-                      </button>
+                      <div className="flex gap-4">
+                        {syncState === 'FORBIDDEN' && (
+                          <button 
+                            onClick={() => handleCopy(GA4_SERVICE_EMAIL, 'sa_email')}
+                            className="px-6 py-5 bg-white/5 border border-rose-500/20 text-rose-400 rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-rose-500/10 transition-all flex items-center gap-3 shadow-xl italic"
+                          >
+                            {copiedKey === 'sa_email' ? <Check size={14} /> : <Copy size={14} />} COPY SERVICE ACCOUNT
+                          </button>
+                        )}
+                        <button onClick={handleManualSync} disabled={syncState === 'SYNCING'} className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 shadow-xl italic">
+                          {syncState === 'SYNCING' ? <Loader2 size={18} className="animate-spin" /> : <RefreshCw size={18} />} EXECUTE MANUAL SYNC
+                        </button>
+                      </div>
                    </div>
+
+                   <AnimatePresence>
+                     {syncState === 'FORBIDDEN' && (
+                       <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-8 pt-8 border-t border-rose-500/20 space-y-4 text-left">
+                          <div className="flex items-center gap-3 text-rose-400">
+                             <AlertCircle size={18} />
+                             <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">Action Required: Authorization Breach</span>
+                          </div>
+                          <p className="text-sm text-slate-400 italic leading-relaxed">
+                            Google Analytics has denied the connection (403). You MUST add the service account email below to your GA4 Property as a <b>'Viewer'</b> to restore the telemetry bridge.
+                          </p>
+                          <div className="p-5 bg-black/40 border border-white/5 rounded-2xl flex items-center justify-between">
+                             <code className="text-xs font-mono text-indigo-300 font-bold select-all">{GA4_SERVICE_EMAIL}</code>
+                             <button onClick={() => handleCopy(GA4_SERVICE_EMAIL, 'sa_email_2')} className="text-indigo-400 hover:text-white p-2">
+                               {copiedKey === 'sa_email_2' ? <Check size={16} /> : <Copy size={16} />}
+                             </button>
+                          </div>
+                       </m.div>
+                     )}
+                   </AnimatePresence>
                 </GlassCard>
               </div>
             )}
@@ -284,9 +314,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                        <span className="text-[9px] font-mono text-slate-700 uppercase font-black">{table.id}.tbl</span>
                        <button 
                          onClick={(e) => { e.stopPropagation(); handleTableInspect(table.id); }}
-                         className="text-[10px] font-black text-indigo-400 uppercase hover:text-white transition-colors flex items-center gap-2"
+                         className="text-[10px] font-black text-indigo-400 uppercase hover:text-white transition-all flex items-center gap-2 group-hover:translate-x-1"
                        >
-                         Inspect <ChevronRight size={12} />
+                         Inspect <ChevronRight size={12} className="animate-pulse" />
                        </button>
                     </div>
                   </GlassCard>
@@ -308,13 +338,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 ) : signals.map((sig, i) => (
                   <GlassCard key={i} className="p-6 rounded-[2.5rem] border-white/5 flex items-center justify-between group">
                     <div className="flex items-center gap-6">
-                      <div className={`p-4 rounded-2xl ${sig.event_type.includes('FAIL') ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-400'}`}>
-                        {sig.event_type.includes('FAIL') ? <ShieldAlert size={20} /> : <ShieldCheck size={20} />}
+                      <div className={`p-4 rounded-2xl ${sig.event_type.includes('FAIL') || sig.level === 'CRITICAL' ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-400'}`}>
+                        {sig.event_type.includes('FAIL') || sig.level === 'CRITICAL' ? <ShieldAlert size={20} /> : <ShieldCheck size={20} />}
                       </div>
                       <div className="space-y-1">
-                        <p className="text-sm font-black italic text-white uppercase tracking-tight">{sig.event_type.replace('_', ' ')}</p>
+                        <p className="text-sm font-black italic text-white uppercase tracking-tight">{(sig.event_type || sig.action).replace('_', ' ')}</p>
                         <p className="text-[10px] font-bold text-slate-500 flex items-center gap-2"><Mail size={10} /> {sig.email || 'System'}</p>
-                        <p className="text-[10px] font-medium text-slate-600 italic">{sig.event_reason}</p>
+                        <p className="text-[10px] font-medium text-slate-600 italic max-w-xl truncate">{sig.event_reason || sig.details}</p>
                       </div>
                     </div>
                     <div className="text-right flex flex-col items-end gap-2">

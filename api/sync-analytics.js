@@ -3,8 +3,8 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v10.0
- * Optimized for UptimeRobot Scheduler
+ * SOMNO LAB GA4 SYNC GATEWAY v11.0
+ * Optimized for UptimeRobot Scheduler with enhanced Audit Logging
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -21,10 +21,8 @@ export default async function handler(req, res) {
   const userAgent = req.headers["user-agent"] || "";
   const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
 
-  // 1. 安全验证 (URL Secret 优先)
+  // 1. Security Verification
   const isAuthorized = (querySecret === serverSecret) || (authHeader === `Bearer ${serverSecret}`);
-  
-  // 2. 爬虫防护：防止接口被索引
   res.setHeader('X-Robots-Tag', 'noindex, nofollow');
 
   if (!isAuthorized) {
@@ -69,9 +67,16 @@ export default async function handler(req, res) {
     });
   } catch (err) {
     const isPermissionError = err.message.includes('PERMISSION_DENIED') || err.code === 7;
-    return res.status(isPermissionError ? 403 : 500).json({ 
-      error: "SYNC_FAILURE", 
-      detail: isPermissionError ? `Add ${SERVICE_ACCOUNT_EMAIL} to GA4.` : err.message 
-    });
+    const status = isPermissionError ? 403 : 500;
+    const detail = isPermissionError ? `Add ${SERVICE_ACCOUNT_EMAIL} to GA4.` : err.message;
+
+    // Log the failure to audit logs for visibility in Admin View
+    await supabase.from('audit_logs').insert([{
+      action: 'GA4_SYNC_FAILURE',
+      details: `Status: ${status} | Error: ${detail}`,
+      level: isPermissionError ? 'CRITICAL' : 'WARNING'
+    }]).catch(() => {});
+
+    return res.status(status).json({ error: "SYNC_FAILURE", detail });
   }
 }
