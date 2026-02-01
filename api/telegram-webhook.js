@@ -3,8 +3,8 @@ import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB - MULTI-LINGUAL COMMAND WEBHOOK v4.0
- * Features: High-Fidelity Multi-lingual AI (EN/ES/ZH) + Mirrored Dispatch
+ * SOMNO LAB - INTELLIGENT COMMAND WEBHOOK v5.0
+ * Features: High-Fidelity Multi-lingual AI + Contextual Biometric Insights + SMTP Mirror
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -17,6 +17,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 );
 
+// 幂等性记录，防止重复处理
 const processedUpdates = new Set();
 
 export default async function handler(req, res) {
@@ -27,107 +28,127 @@ export default async function handler(req, res) {
 
   if (processedUpdates.has(update_id)) return res.status(200).send('OK');
   processedUpdates.add(update_id);
-  if (processedUpdates.size > 100) processedUpdates.delete(Array.from(processedUpdates)[0]);
+  // 保持内存整洁
+  if (processedUpdates.size > 200) processedUpdates.delete(Array.from(processedUpdates)[0]);
 
   const chatId = String(message.chat.id);
   const text = message.text.trim();
 
-  // 严格管理员校验
-  if (chatId !== ADMIN_CHAT_ID) return res.status(200).send('OK');
+  // 严格安全准入控制
+  if (chatId !== ADMIN_CHAT_ID) {
+    console.warn(`[UNAUTHORIZED_ACCESS]: Attempt from ChatID ${chatId}`);
+    return res.status(200).send('OK');
+  }
 
   try {
-    // 获取最新的遥测上下文
+    // 1. 数据上下文采集 (Contextual Awareness)
     const { count: usersCount } = await supabase.from('profiles').select('*', { count: 'exact', head: true });
-    const { data: analytics } = await supabase.from('analytics_daily').select('*').order('date', { ascending: false }).limit(5);
+    const { data: recentAnalytics } = await supabase.from('analytics_daily').select('*').order('date', { ascending: false }).limit(7);
+    const { data: securityAlerts } = await supabase.from('security_events').select('event_type').limit(10);
     
-    const telemetryContext = {
-        total_subjects: usersCount,
-        recent_traffic_data: analytics || [],
-        node_url: "https://sleepsomno.com",
-        current_time_myt: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Kuala_Lumpur' })
+    const mytTime = new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Kuala_Lumpur' });
+    const telemetrySnapshot = {
+        total_subjects: usersCount || 0,
+        recent_traffic: recentAnalytics || [],
+        security_status: securityAlerts?.length > 0 ? "ATTENTIVE" : "STABLE",
+        system_time: mytTime,
+        node: "SleepSomno_Primary_Node"
     };
 
+    // 2. 神经认知层 (Gemini 2.5 Pro)
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    const systemPrompt = `You are the SomnoAI Laboratory Artificial Intelligence.
-    You are communicating with the System Administrator.
+    const systemInstruction = `You are the SomnoAI Chief Research Officer (CRO).
+    You are managing a global digital sleep laboratory.
     
-    CONTEXT DATA:
-    ${JSON.stringify(telemetryContext)}
+    REAL-TIME TELEMETRY CONTEXT:
+    ${JSON.stringify(telemetrySnapshot)}
     
-    RESPONSE PROTOCOL (MANDATORY):
-    - You MUST provide your answer in THREE languages in every single message.
-    - Languages: English (🇬🇧), Spanish (🇪🇸), Chinese (🇨🇳).
-    - Format exactly as follows:
+    RESPONSE PROTOCOL (STRICT):
+    - You must respond to the Admin's query using a technical, authoritative, yet supportive tone.
+    - You MUST provide the response in THREE languages in EVERY message.
+    - Structure: 🇬🇧 [ENGLISH] block, followed by 🇪🇸 [ESPAÑOL] block, followed by 🇨🇳 [中文] block.
+    - Use Markdown/HTML formatting (<b>, <code>) for readability in Telegram.
+    - If asked for status, synthesize the telemetry data into a concise laboratory report.
     
+    FORMAT EXAMPLE:
     🇬🇧 <b>[ENGLISH]</b>
-    (Your concise professional answer here)
+    The neural grid is operational...
     
     🇪🇸 <b>[ESPAÑOL]</b>
-    (Tu respuesta técnica y profesional aquí)
+    La red neural está operativa...
     
     🇨🇳 <b>[中文]</b>
-    (在此输入您的专业回复)
-    
-    RULES:
-    - Use technical, scientific, and authoritative tone.
-    - Incorporate context data numbers when discussing users or traffic.
-    - Format headers in bold.`;
+    神经网格运行正常...`;
 
     const response = await ai.models.generateContent({
         model: "gemini-2.5-pro",
         contents: [{ parts: [{ text: `Admin Input: ${text}` }] }],
-        config: { systemInstruction: systemPrompt }
+        config: { 
+            systemInstruction,
+            temperature: 0.7,
+            topP: 0.95
+        }
     });
 
-    const responseText = response.text || "⚠️ Communication Void. | Vacío de comunicación. | 通信中断。";
+    const aiOutput = response.text || "⚠️ Communication Handshake Timeout. | Handshake fallido. | 通信握手超时。";
 
-    // 1. 发送 Telegram
+    // 3. 执行 Telegram 回复
     await fetch(TELEGRAM_REPLY_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         chat_id: ADMIN_CHAT_ID,
-        text: responseText,
+        text: aiOutput,
         parse_mode: 'HTML',
         reply_to_message_id: message.message_id
       })
     });
 
-    // 2. 发送邮件镜像 ( archival )
+    // 4. 执行邮件镜像备份 (SMTP Mirroring)
     const emailHtml = `
-      <div style="font-family:sans-serif;background-color:#020617;color:#f1f5f9;padding:40px;border-radius:20px;border:1px solid #1e293b;">
-        <h2 style="color:#818cf8;border-bottom:1px solid #1e293b;padding-bottom:15px;">🤖 AI INTERACTION MIRROR (TRIPLE-LANG)</h2>
-        <div style="margin:25px 0;">
-          <p style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">Admin Prompt:</p>
-          <div style="background:#050a1f;padding:20px;border-radius:10px;border:1px solid #1e293b;font-style:italic;">${text}</div>
+      <div style="font-family: 'JetBrains Mono', monospace; background-color: #020617; color: #f1f5f9; padding: 40px; border-radius: 24px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
+        <div style="text-align: center; margin-bottom: 30px; border-bottom: 1px solid #1e293b; padding-bottom: 20px;">
+          <h2 style="color: #818cf8; margin: 0; font-style: italic;">🤖 Lab Interaction Mirror</h2>
+          <p style="font-size: 10px; color: #475569; text-transform: uppercase; letter-spacing: 2px;">Neural Intelligence Log</p>
         </div>
-        <div style="margin:25px 0;">
-          <p style="color:#64748b;font-size:10px;text-transform:uppercase;letter-spacing:1px;margin-bottom:5px;">AI Multi-lingual Response:</p>
-          <div style="background:#0a0f25;padding:25px;border-radius:15px;border:1px solid #1e293b;line-height:1.6;color:#cbd5e1;">
-            ${responseText.replace(/\n/g, '<br/>')}
+        
+        <div style="margin-bottom: 30px;">
+          <p style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: bold; margin-bottom: 8px;">Admin Query:</p>
+          <div style="background: rgba(129, 140, 248, 0.05); padding: 15px; border-radius: 12px; border-left: 3px solid #818cf8; font-style: italic;">
+            ${text}
           </div>
         </div>
-        <p style="font-size:10px;color:#475569;margin-top:30px;text-align:center;">
-          MIRRORED TELEMETRY LOG • NODE: ${req.headers.host || 'SleepSomno'} • ${telemetryContext.current_time_myt}
-        </p>
+
+        <div>
+          <p style="color: #64748b; font-size: 10px; text-transform: uppercase; font-weight: bold; margin-bottom: 8px;">CRO Response (Multi-lingual):</p>
+          <div style="background: #050a1f; padding: 20px; border-radius: 16px; border: 1px solid #1e293b; line-height: 1.6; color: #cbd5e1;">
+            ${aiOutput.replace(/\n/g, '<br/>')}
+          </div>
+        </div>
+
+        <div style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #1e293b; text-align: center; font-size: 9px; color: #334155;">
+          @2026 SOMNO LAB • ENCRYPTED TELEMETRY LINK • ${mytTime}
+        </div>
       </div>
     `;
 
+    // 调用内部发送接口进行镜像
     await fetch(`https://${req.headers.host}/api/send-system-email`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
           to: ADMIN_EMAIL, 
-          subject: "🤖 Lab AI Interaction: Multi-lingual Sync", 
+          subject: "🤖 CRO Interaction: Multi-lingual Sync", 
           html: emailHtml,
           secret: process.env.CRON_SECRET
       }),
-    }).catch(e => console.error("Mirror Error:", e));
+    }).catch(e => console.error("[MIRROR_FAIL]:", e));
 
     return res.status(200).send('OK');
-  } catch (e) {
-    console.error("Critical Failure:", e);
+  } catch (err) {
+    console.error("[WEBHOOK_CRITICAL_EXCEPTION]:", err);
+    // 即使出错也返回 200，防止 Telegram 重试机制造成循环
     return res.status(200).send('OK');
   }
 }
