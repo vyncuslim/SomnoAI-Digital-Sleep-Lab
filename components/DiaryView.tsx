@@ -8,6 +8,7 @@ import { DiaryEntry, Language } from '../types.ts';
 import { translations } from '../services/i18n.ts';
 import { notificationService } from '../services/notificationService.ts';
 import { notifyAdmin } from '../services/telegramService.ts';
+import { emailService } from '../services/emailService.ts';
 
 const m = motion as any;
 
@@ -42,12 +43,21 @@ export const DiaryView: React.FC<{ lang: Language }> = ({ lang }) => {
       const newEntry = await diaryApi.saveEntry(content, mood);
       setEntries([newEntry as DiaryEntry, ...entries]);
       
-      // 触发多重通知系统
+      // 1. Browser Notification
       notificationService.sendNotification("Diary Saved", `Mood: ${mood} • Your biological log has been archived.`);
       
-      // Cast supabase.auth to any to bypass type errors for getUser
+      // 2. Multi-channel Admin Alerting
       const { data: { user } } = await (supabase.auth as any).getUser();
-      notifyAdmin(`📝 NEW DIARY ENTRY\n\nSubject: ${user?.email}\nMood: ${mood}\nEntry: ${content.slice(0, 100)}${content.length > 100 ? '...' : ''}`);
+      const alertPayload = {
+        type: 'DIARY_LOG_ENTRY',
+        message: `📝 NEW BIOLOGICAL LOG\nSubject: ${user?.email}\nMood: ${mood}\nEntry: ${content.slice(0, 200)}${content.length > 200 ? '...' : ''}`
+      };
+
+      // Concurrent Dual-channel Mirroring
+      await Promise.allSettled([
+        notifyAdmin(alertPayload),
+        emailService.sendAdminAlert(alertPayload)
+      ]);
 
       setContent('');
       setMood('Neutral');

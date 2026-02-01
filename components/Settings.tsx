@@ -3,13 +3,14 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight
+  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight, Send, Terminal
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
-import { safeReload } from '../services/navigation.ts';
-import { supabase } from '../services/supabaseService.ts';
+import { safeReload, getSafeHostname } from '../services/navigation.ts';
+import { notifyAdmin } from '../services/telegramService.ts';
+import { emailService } from '../services/emailService.ts';
 
 const m = motion as any;
 
@@ -29,6 +30,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [customKey, setCustomKey] = useState(localStorage.getItem('custom_gemini_key') || '');
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
 
   const t = translations[lang]?.settings || translations.en.settings;
 
@@ -53,10 +55,26 @@ export const Settings: React.FC<SettingsProps> = ({
     }
   };
 
-  const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
+  const handleTestComms = async () => {
+    setTestStatus('sending');
+    const nodeIdentity = getSafeHostname();
+    const payload = {
+      type: 'DIAGNOSTIC_TEST',
+      message: `🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nSubject: Admin Console Test\nStatus: Operational\nMirrored: TRUE`
+    };
+    
+    try {
+      const [tgRes, emailRes] = await Promise.all([
+        notifyAdmin(payload),
+        emailService.sendAdminAlert(payload)
+      ]);
+      
+      const success = tgRes && emailRes.success;
+      setTestStatus(success ? 'success' : 'error');
+    } catch (e) {
+      setTestStatus('error');
+    }
+    setTimeout(() => setTestStatus('idle'), 4000);
   };
 
   return (
@@ -97,6 +115,28 @@ export const Settings: React.FC<SettingsProps> = ({
              </div>
           </GlassCard>
         </div>
+
+        {/* Lab Comms Diagnostic Tool */}
+        <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02]">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Send size={18} className="text-indigo-400" />
+              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Global Comms Diagnostic</h3>
+            </div>
+            <p className="text-[10px] text-slate-500 italic">Verify the mirrored link between your node and the dual Telegram/Email administrative gateways.</p>
+            <button 
+              onClick={handleTestComms}
+              disabled={testStatus === 'sending'}
+              className={`w-full py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all shadow-xl ${
+                testStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                testStatus === 'error' ? 'bg-rose-600 text-white' : 'bg-indigo-600/10 text-indigo-400 border border-indigo-500/30'
+              }`}
+            >
+              {testStatus === 'sending' ? <RefreshCw size={14} className="animate-spin" /> : <Terminal size={14} />}
+              {testStatus === 'success' ? 'MIRROR CONFIRMED' : testStatus === 'error' ? 'HANDSHAKE FAILED' : 'EXECUTE COMMS TEST'}
+            </button>
+          </div>
+        </GlassCard>
 
         {/* API Bridge Section */}
         <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02]">

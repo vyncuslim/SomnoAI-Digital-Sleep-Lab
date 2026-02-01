@@ -1,10 +1,11 @@
 
 import { supabase } from './supabaseService.ts';
 import { notifyAdmin } from './telegramService.ts';
+import { emailService } from './emailService.ts';
 
 /**
- * SOMNO LAB NEURAL PULSE MONITOR v1.2
- * Consolidates reports into a single non-redundant transmission.
+ * SOMNO LAB NEURAL PULSE MONITOR v1.5
+ * Consolidates reports into mirrored non-redundant transmissions (TG + Email).
  */
 
 export interface DiagnosticResult {
@@ -21,7 +22,7 @@ export interface DiagnosticResult {
 export const systemMonitor = {
   /**
    * Executes a single diagnostic sweep and dispatches a single consolidated 
-   * notification containing EN, ES, and ZH sections.
+   * notification containing EN, ES, and ZH sections to both TG and Email.
    */
   executeGlobalPulseCheck: async (): Promise<DiagnosticResult> => {
     const startTime = performance.now();
@@ -57,25 +58,35 @@ export const systemMonitor = {
         result.message = "ALL_SYSTEMS_NOMINAL";
       }
 
-      // Dispatch single consolidated message (EN/ES/ZH internal to notifyAdmin)
-      await notifyAdmin({
+      const alertPayload = {
         isPulse: true,
-        isSuccess: result.isSuccess,
+        type: result.isSuccess ? 'PULSE_STABLE' : 'PULSE_ANOMALY',
         message: result.message,
         latency: result.latency.toString()
-      });
+      };
+
+      // Dispatch mirrored notifications
+      await Promise.allSettled([
+        notifyAdmin(alertPayload),
+        emailService.sendAdminAlert(alertPayload)
+      ]);
 
       return result;
     } catch (e: any) {
       result.isSuccess = false;
       result.message = `HANDSHAKE_TIMEOUT: ${e.message}`;
       
-      await notifyAdmin({
+      const failPayload = {
         isPulse: true,
-        isSuccess: false,
+        type: 'PULSE_CRITICAL_FAIL',
         message: result.message,
         latency: "--"
-      });
+      };
+
+      await Promise.allSettled([
+        notifyAdmin(failPayload),
+        emailService.sendAdminAlert(failPayload)
+      ]);
 
       return result;
     }

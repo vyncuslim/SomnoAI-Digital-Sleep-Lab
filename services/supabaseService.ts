@@ -45,10 +45,7 @@ export const logAuditLog = async (action: string, details: string, level: 'INFO'
 
       // Concurrent dual-channel dispatch
       await Promise.allSettled([
-        // Fix: notifyAdmin expects only one argument (payload). 
-        // It internally handles multi-lingual notifications as defined in telegramService.ts.
         notifyAdmin(alertPayload),
-        // Fix: Removed currentLang as sendAdminAlert only expects the payload argument.
         emailService.sendAdminAlert(alertPayload)
       ]);
     }
@@ -107,7 +104,6 @@ export const authApi = {
       await logSecurityEvent(targetEmail, 'LOGIN_FAIL', `Error: ${res.error.message}`);
       await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
     }
-    // Success is caught by SIGNED_IN event listener in AuthContext
     return res;
   },
   signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
@@ -259,6 +255,18 @@ export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (error) return { success: false, error };
+
+    // MIRROR: Notify Admin via both channels
+    const alertPayload = {
+      type: `USER_FEEDBACK_${type.toUpperCase()}`,
+      message: `📩 NEW FEEDBACK RECEIVED\nFrom: ${email}\nType: ${type}\nContent: ${content.slice(0, 500)}${content.length > 500 ? '...' : ''}`
+    };
+    
+    await Promise.allSettled([
+      notifyAdmin(alertPayload),
+      emailService.sendAdminAlert(alertPayload)
+    ]);
+
     return { success: true };
   }
 };

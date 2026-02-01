@@ -2,13 +2,14 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB NEURAL MONITOR v1.5 (State-Aware Dispatch)
+ * SOMNO LAB NEURAL MONITOR v1.6 (Dual-Channel State-Aware Dispatch)
  * Frequency: 1 Minute
- * Logic: Merges EN, ES, ZH. Only notifies on STATUS CHANGE.
+ * Logic: Merges EN, ES, ZH. Notifies via Telegram + Email on STATUS CHANGE.
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
+const ADMIN_EMAIL = 'ongyuze1401@gmail.com';
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
@@ -40,7 +41,7 @@ export default async function handler(req, res) {
 
     const currentState = isHealthy ? "STABLE" : "ANOMALY";
 
-    // 2. State-Aware Filter: Query last recorded state
+    // 2. State-Aware Filter
     const { data: lastStateLog } = await supabase
       .from('audit_logs')
       .select('details')
@@ -51,20 +52,49 @@ export default async function handler(req, res) {
     const prevState = lastStateLog?.[0]?.details || "UNKNOWN";
     const statusChanged = prevState !== currentState;
 
-    // 3. Dispatch Only if status flipped
+    // 3. Dual-Channel Dispatch
     if (statusChanged) {
       const mytTime = getMYTTime();
-      const finalMessage = `🛡️ <b>PULSE STATE SHIFT</b>\n━━━━━━━━━━━━━━━━━━━━\n\n` +
+      const nodeName = req.headers.host || 'Cloud_Edge';
+      
+      const tgMessage = `🛡️ <b>PULSE STATE SHIFT</b>\n━━━━━━━━━━━━━━━━━━━━\n\n` +
         `<b>[EN]:</b> System is now <b>${currentState}</b>. ${isHealthy ? 'All nominal.' : errorLog}\n\n` +
         `<b>[ES]:</b> El sistema está ahora <b>${isHealthy ? 'ESTABLE' : 'ANOMALÍA'}</b>.\n\n` +
         `<b>[ZH]:</b> 系统当前状态为 <b>${isHealthy ? '稳定' : '异常'}</b>。\n\n` +
         `━━━━━━━━━━━━━━━━━━━━\n<b>TIME:</b> <code>${mytTime}</code>`;
 
+      const emailHtml = `
+        <div style="font-family:sans-serif;background-color:#020617;color:#f1f5f9;padding:40px;border-radius:20px;">
+          <h2 style="color:#818cf8;">🛡️ Pulse State Shift Detected</h2>
+          <p>The neural grid has transitioned to: <b>${currentState}</b></p>
+          <hr style="border-color:#1e293b;"/>
+          <div style="margin:20px 0;">
+            <p><b>[EN]</b> System Status: ${currentState}</p>
+            <p><b>[ES]</b> Estado del Sistema: ${isHealthy ? 'ESTABLE' : 'ANOMALÍA'}</p>
+            <p><b>[ZH]</b> 系统状态: ${isHealthy ? '稳定' : '异常'}</p>
+          </div>
+          <p style="font-size:10px;color:#475569;">NODE: ${nodeName} | TIME: ${mytTime}</p>
+        </div>
+      `;
+
+      // Dispatch Telegram
       await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: finalMessage, parse_mode: 'HTML' })
-      });
+        body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: tgMessage, parse_mode: 'HTML' })
+      }).catch(e => console.error("TG Fail", e));
+
+      // Dispatch Email Mirror
+      await fetch(`https://${nodeName}/api/send-system-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            to: ADMIN_EMAIL, 
+            subject: `🛡️ Lab Security Pulse: ${currentState}`, 
+            html: emailHtml,
+            secret: process.env.CRON_SECRET
+        }),
+      }).catch(e => console.error("Email Fail", e));
     }
 
     // 4. Persistence
