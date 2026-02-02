@@ -83,7 +83,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setCurrentAdmin(profile);
 
       const [sRes, uRes] = await Promise.allSettled([
-        adminApi.getSecurityEvents(30),
+        adminApi.getSecurityEvents(50),
         adminApi.getUsers()
       ]);
 
@@ -134,6 +134,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     } catch (e: any) {
       setActionError(e.message);
     }
+  };
+
+  const handleToggleBlock = async (user: any) => {
+    try {
+      const { error } = await adminApi.toggleBlock(user.id, user.email, user.is_blocked);
+      if (!error) fetchData();
+    } catch (e) {}
   };
 
   const generateDiagnosticReport = () => {
@@ -244,21 +251,123 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 </button>
                              </div>
                           </div>
-
-                          {lastRawError?.raw_google_error && (
-                            <div className="p-4 bg-rose-950/20 border border-rose-500/10 rounded-2xl">
-                               <p className="text-[7px] font-mono text-rose-500 uppercase font-black mb-1">Raw Trace:</p>
-                               <code className="text-[9px] font-mono text-rose-400/80 leading-tight block truncate">{lastRawError.raw_google_error}</code>
-                            </div>
-                          )}
                        </m.div>
                      )}
                    </AnimatePresence>
                 </GlassCard>
               </div>
             )}
+
+            {activeTab === 'automation' && (
+              <div className="space-y-8">
+                 <GlassCard className="p-10 rounded-[3rem] border-white/5">
+                    <div className="flex items-center gap-4 mb-10">
+                       <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><RefreshCw size={24} /></div>
+                       <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Active Automations</h2>
+                    </div>
+                    <div className="space-y-4">
+                       {[
+                         { name: 'Daily Analytics Sync', status: 'Operational', trigger: 'Every 24h', icon: Radio },
+                         { name: 'Infrastructure Pulse', status: 'Operational', trigger: 'Every 15m', icon: Activity },
+                         { name: 'Registry Maintenance', status: 'Manual Only', trigger: 'On-demand', icon: Database }
+                       ].map((task, i) => (
+                         <div key={i} className="p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] flex items-center justify-between">
+                            <div className="flex items-center gap-5">
+                               <div className="p-3 bg-white/5 rounded-xl text-slate-500"><task.icon size={18} /></div>
+                               <div>
+                                  <p className="text-sm font-black text-white italic">{task.name}</p>
+                                  <p className="text-[9px] text-slate-600 uppercase tracking-widest">{task.trigger}</p>
+                               </div>
+                            </div>
+                            <span className="px-4 py-1 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-[8px] font-black uppercase rounded-full">{task.status}</span>
+                         </div>
+                       ))}
+                    </div>
+                 </GlassCard>
+              </div>
+            )}
+
+            {activeTab === 'registry' && (
+              <div className="space-y-6">
+                <div className="flex justify-between items-center px-4">
+                   <h2 className="text-xl font-black italic text-white uppercase">Subject Registry</h2>
+                   <p className="text-[9px] text-slate-500 font-bold uppercase tracking-widest">{users.length} Nodes Active</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   {users.map((u) => (
+                     <GlassCard key={u.id} className="p-6 rounded-[2.5rem] border-white/5 hover:bg-white/[0.02] transition-all group">
+                        <div className="flex items-start justify-between">
+                           <div className="flex items-center gap-4">
+                              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/10 flex items-center justify-center text-indigo-400 font-black italic">
+                                 {u.full_name?.[0] || u.email[0].toUpperCase()}
+                              </div>
+                              <div className="space-y-0.5">
+                                 <p className="text-sm font-black text-white italic">{u.full_name || 'Unidentified Node'}</p>
+                                 <p className="text-[10px] text-slate-500 italic opacity-60">{u.email}</p>
+                              </div>
+                           </div>
+                           <div className="flex gap-2">
+                              <span className={`px-3 py-1 rounded-full text-[8px] font-black uppercase ${u.role === 'owner' ? 'bg-amber-500/10 text-amber-500' : 'bg-white/5 text-slate-400'}`}>
+                                 {u.role}
+                              </span>
+                              <button onClick={() => handleToggleBlock(u)} className={`p-2 rounded-xl transition-all ${u.is_blocked ? 'bg-rose-500/20 text-rose-500' : 'bg-white/5 text-slate-700 hover:text-rose-400'}`}>
+                                 {u.is_blocked ? <Unlock size={14} /> : <Ban size={14} />}
+                              </button>
+                           </div>
+                        </div>
+                     </GlassCard>
+                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'explorer' && (
+              <div className="space-y-6">
+                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {DATABASE_SCHEMA.map((table) => (
+                      <GlassCard key={table.id} className="p-8 rounded-[3rem] border-white/5">
+                         <div className="flex justify-between items-start mb-6">
+                            <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><table.icon size={20} /></div>
+                            <span className="text-[9px] font-black text-emerald-500 bg-emerald-500/5 px-3 py-1 rounded-full border border-emerald-500/10">{tableCounts[table.id] || 0} ROWS</span>
+                         </div>
+                         <h3 className="text-base font-black italic text-white uppercase tracking-tight mb-2">{table.name}</h3>
+                         <p className="text-[10px] text-slate-500 italic leading-relaxed">{table.desc}</p>
+                      </GlassCard>
+                    ))}
+                 </div>
+              </div>
+            )}
+
+            {activeTab === 'signals' && (
+              <div className="space-y-6">
+                 <GlassCard className="p-10 rounded-[4rem] border-white/5">
+                    <div className="flex justify-between items-center mb-10">
+                       <h2 className="text-xl font-black italic text-white uppercase">Security Signals</h2>
+                       <RefreshCw size={16} onClick={fetchData} className="text-slate-700 cursor-pointer hover:text-indigo-400 transition-colors" />
+                    </div>
+                    <div className="space-y-4 max-h-[600px] overflow-y-auto pr-4 scrollbar-hide">
+                       {signals.map((s, i) => (
+                         <div key={s.id || i} className="p-5 bg-white/[0.02] border border-white/5 rounded-2xl flex items-center justify-between group hover:bg-white/[0.04] transition-all">
+                            <div className="flex items-center gap-5">
+                               <div className={`p-2 rounded-lg ${s.event_type.includes('FAIL') ? 'bg-rose-500/10 text-rose-500' : 'bg-emerald-500/10 text-emerald-500'}`}>
+                                  <Shield size={14} />
+                               </div>
+                               <div>
+                                  <p className="text-[11px] font-black text-white italic tracking-tight">{s.event_type}</p>
+                                  <p className="text-[9px] text-slate-600 italic">{s.email || 'System'}</p>
+                               </div>
+                            </div>
+                            <div className="text-right">
+                               <p className="text-[9px] font-mono text-slate-700 uppercase">{new Date(s.created_at).toLocaleTimeString()}</p>
+                               <p className="text-[8px] font-black text-slate-800 tracking-tighter italic">{s.event_reason || 'Link established'}</p>
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                 </GlassCard>
+              </div>
+            )}
             
-            {/* Other tabs follow same responsive logic... */}
             {activeTab === 'system' && (
               <div className="max-w-4xl mx-auto space-y-10 md:space-y-12">
                  <div className="text-center space-y-4">
