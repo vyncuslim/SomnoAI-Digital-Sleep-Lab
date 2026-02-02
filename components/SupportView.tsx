@@ -192,8 +192,13 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
                 <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8 items-start pb-4">
                   <div className="md:col-span-2 p-6 md:p-8 bg-slate-900/80 border border-white/5 rounded-[2.5rem] md:rounded-[3rem] flex flex-col items-center gap-4 md:gap-6">
-                     <div className="bg-white p-3 md:p-5 rounded-[2rem] md:rounded-[2.5rem] shadow-sm">
-                        <img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=020617&bgcolor=ffffff`} alt="QR" className="w-32 h-32 md:w-44 md:h-44" />
+                     {/* QR Code Optimized Container */}
+                     <div className="bg-white p-5 rounded-[2.5rem] shadow-2xl border border-white/10">
+                        <img 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=000000&bgcolor=ffffff&margin=1`} 
+                          alt="Contribution QR Code" 
+                          className="w-32 h-32 md:w-44 md:h-44 [image-rendering:pixelated]" 
+                        />
                      </div>
                      <p className="text-[8px] md:text-[10px] font-black text-[#f43f5e] uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center gap-2"><QrCode size={12} /> SCAN TO PAYPAL</p>
                   </div>
