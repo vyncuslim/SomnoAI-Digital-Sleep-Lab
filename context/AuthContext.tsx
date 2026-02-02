@@ -48,10 +48,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (!session || !session.user) {
         setProfile(null);
         setLoading(false);
+        isSyncing.current = false;
         return;
       }
 
-      // 仅在会话 ID 发生变化时才尝试记录登录日志
+      // Track session uniqueness to avoid redundant logs
       const currentSessionId = session.access_token.slice(-10);
       const shouldLog = isFreshLogin && lastLoggedSessionId.current !== currentSessionId;
 
@@ -77,8 +78,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const isStaff = ['admin', 'owner'].includes(currentProfile.role) || currentProfile.is_super_owner;
         const identityTag = isStaff ? '[IDENTITY: STAFF_ADMIN]' : '[IDENTITY: SUBJECT_USER]';
         
-        // 核心：使用匹配三语翻译器的特定日志格式
-        const logMsg = `${identityTag} Identity detected via Auth Guard: ${currentProfile.email}`;
+        // Protocol: Successful login notification dispatch
+        const logMsg = `Identity link verified: ${currentProfile.email} (${identityTag})`;
         logAuditLog('USER_LOGIN', logMsg, 'INFO');
       }
     } catch (err) {

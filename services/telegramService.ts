@@ -1,7 +1,7 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v31.0
- * Features: High-Fidelity Multi-lingual Detailed Payload
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v32.0
+ * Features: High-Fidelity Multi-lingual Detailed Payload with User Context.
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -9,7 +9,7 @@ const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
 const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: string }> = {
-  'USER_LOGIN': { en: '👤 Subject Login', es: '👤 Inicio de Sesión', zh: '👤 用户登录', icon: '🔐' },
+  'USER_LOGIN': { en: '👤 Subject Access Granted', es: '👤 Inicio de Sesión', zh: '👤 受试者登录授权', icon: '🔐' },
   'RUNTIME_ERROR': { en: '🚨 System Exception', es: '🚨 Excepción del Sistema', zh: '🚨 系统运行异常', icon: '🔴' },
   'USER_SIGNUP': { en: '✨ New Subject Registry', es: '✨ Nuevo Registro', zh: '✨ 新受试者注册', icon: '🟢' },
   'GA4_SYNC_FAILURE': { en: '📊 Telemetry Sync Failure', es: '📊 Fallo de Telemetría', zh: '📊 GA4 同步失败', icon: '🟡' },
@@ -47,19 +47,18 @@ export const notifyAdmin = async (payload: any) => {
   
   const mapping = EVENT_MAP[msgType] || { en: msgType, es: msgType, zh: msgType, icon: '📡' };
 
-  // 构造详细的三语 Telegram 消息 (增强版)
+  // Special formatting for Login to make it Admin-friendly
+  const isLogin = msgType === 'USER_LOGIN';
+  const loginHeader = isLogin ? `\n🔑 <b>AUTHENTICATION EVENT</b>\n` : '';
+
   const finalMessage = `${mapping.icon} <b>SOMNO LAB DETAILED ALERT</b>\n` +
-    `━━━━━━━━━━━━━━━━━━━━\n\n` +
+    `━━━━━━━━━━━━━━━━━━━━\n` +
+    loginHeader +
     `🇬🇧 <b>[ENGLISH]</b>\n` +
     `<b>Event:</b> <code>${mapping.en}</code>\n` +
     `<b>Sector:</b> <code>${path}</code>\n` +
     `<b>Log:</b> <code>${formatLogDetail(rawDetails, 'en')}</code>\n` +
     `<b>Time:</b> <code>${isoTime}</code>\n\n` +
-    `🇪🇸 <b>[ESPAÑOL]</b>\n` +
-    `<b>Tipo:</b> <code>${mapping.es}</code>\n` +
-    `<b>Sector:</b> <code>${path}</code>\n` +
-    `<b>Registro:</b> <code>${formatLogDetail(rawDetails, 'es')}</code>\n` +
-    `<b>Tiempo:</b> <code>${isoTime}</code>\n\n` +
     `🇨🇳 <b>[中文]</b>\n` +
     `<b>类型:</b> <code>${mapping.zh}</code>\n` +
     `<b>路径:</b> <code>${path}</code>\n` +

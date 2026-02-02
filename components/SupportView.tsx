@@ -192,7 +192,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
                 <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8 items-start pb-4">
                   <div className="md:col-span-2 p-6 md:p-8 bg-slate-900/80 border border-white/5 rounded-[2.5rem] md:rounded-[3rem] flex flex-col items-center gap-4 md:gap-6">
-                     {/* QR Code Optimized: Deep Contrast for Scanners */}
+                     {/* QR Code Optimized: Deep Contrast, moderate ECC (M), and explicit pixel rendering for maximum scannability */}
                      <div className="bg-white p-6 rounded-[2.5rem] shadow-[0_20px_50px_rgba(255,255,255,0.1)] border border-white/10 ring-4 ring-white/5">
                         <img 
                           src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=000000&bgcolor=ffffff&margin=4&ecc=M`} 

@@ -9,7 +9,7 @@ import {
   Unlock, Mail, ExternalLink, ActivitySquare,
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
   Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle, Key,
-  ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame
+  ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame, Activity as MonitoringIcon, Eye
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -43,9 +43,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [actionError, setActionError] = useState<string | null>(null);
   const [lastRawError, setLastRawError] = useState<any>(null);
   
-  // 诊断与支持
   const [serverEnvStatus, setServerEnvStatus] = useState<Record<string, boolean>>({});
-  const [envFingerprints, setEnvFingerprints] = useState<Record<string, string>>({});
   const [saEmail, setSaEmail] = useState<string>("");
 
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -56,7 +54,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       if (response.ok) {
         const data = await response.json();
         if (data.env) setServerEnvStatus(data.env);
-        if (data.fingerprints) setEnvFingerprints(data.fingerprints);
         if (data.service_account_email) setSaEmail(data.service_account_email);
       }
     } catch (e) {
@@ -130,13 +127,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   return (
     <div className="space-y-8 md:space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left relative">
-      {/* High Visibility Incident Alert */}
+      {/* Incident Alert Bar */}
       <AnimatePresence>
         {syncState === 'FORBIDDEN' && (
           <m.div 
             initial={{ height: 0, opacity: 0 }} 
             animate={{ height: 'auto', opacity: 1 }} 
-            className="bg-rose-600/10 border-b border-rose-600/30 overflow-hidden"
+            className="bg-rose-600/10 border-b border-rose-600/30 overflow-hidden sticky top-0 z-[100] backdrop-blur-xl"
           >
             <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
               <div className="flex items-center gap-4">
@@ -148,9 +145,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <p className="text-sm font-black text-white italic">403 Forbidden: GA4 Telemetry Link Blocked</p>
                 </div>
               </div>
-              <div className="flex gap-4">
-                <button onClick={() => setActiveTab('overview')} className="px-6 py-2 bg-rose-600 text-white rounded-full font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all italic">Resolve Now</button>
-              </div>
+              <button 
+                onClick={() => setActiveTab('overview')} 
+                className="px-6 py-2 bg-rose-600 text-white rounded-full font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all italic shadow-lg shadow-rose-600/20"
+              >
+                Resolve Anomaly
+              </button>
             </div>
           </m.div>
         )}
@@ -237,7 +237,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              <div className="p-6 bg-slate-900/60 rounded-[2rem] border border-white/5 space-y-4">
                                <p className="text-xs text-slate-300 font-bold italic">Resolution Protocol:</p>
                                <ol className="space-y-3 text-[10px] text-slate-400 list-decimal pl-5 italic font-medium">
-                                  <li>Log into Google Analytics Console.</li>
+                                  <li>Log into <a href="https://analytics.google.com/" target="_blank" className="text-indigo-400 underline decoration-indigo-500/30">Google Analytics Console</a>.</li>
                                   <li>Navigate to <b>Admin &rarr; Property Settings &rarr; Property Access Management</b>.</li>
                                   <li>Click "+" and select <b>"Add users"</b>.</li>
                                   <li>Paste the Service Account identifier provided below.</li>
@@ -258,10 +258,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 </GlassCard>
               </div>
             )}
-            
-            {/* Rest of the tabs remain stable... */}
+
             {activeTab === 'automation' && (
-              <div className="space-y-8">
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
                  <GlassCard className="p-10 rounded-[3rem] border-white/5">
                     <div className="flex items-center gap-4 mb-10">
                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><RefreshCw size={24} /></div>
@@ -290,8 +289,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                  </GlassCard>
               </div>
             )}
-            
-            {/* Logic for other tabs truncated for brevity as per instructions... */}
+
             {activeTab === 'registry' && (
               <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-500">
                 <div className="flex justify-between items-center px-6">
@@ -425,6 +423,38 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                        </button>
                     </GlassCard>
                  </div>
+
+                 {/* Monitoring Gateway Section */}
+                 <GlassCard className="p-10 rounded-[4rem] border-white/5 space-y-8">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><MonitoringIcon size={24} /></div>
+                      <h3 className="text-xl font-black italic text-white uppercase tracking-widest">Monitoring Gateway</h3>
+                    </div>
+                    
+                    <div className="space-y-4">
+                       {[
+                         { name: 'Monitor Pulse Status Key (Pulse)', key: 'm802263899-afe36156f55dbe457d886724' },
+                         { name: 'Telemetry Sync Status Key (Sync)', key: 'm802263914-5bac38c94fcd1d8afb83ff17' }
+                       ].map((monitor, i) => (
+                         <div key={i} className="p-6 bg-black/40 border border-white/5 rounded-[2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+                            <div className="space-y-1">
+                               <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{monitor.name}</p>
+                               <code className="text-[11px] font-mono text-indigo-300 font-bold select-all">{monitor.key}</code>
+                            </div>
+                            <button onClick={() => handleCopy(monitor.key, `mon_${i}`)} className={`p-3 rounded-xl transition-all ${copiedKey === `mon_${i}` ? 'bg-emerald-600/20 text-emerald-400' : 'bg-white/5 text-slate-500 hover:text-white'}`}>
+                               {copiedKey === `mon_${i}` ? <Check size={14} /> : <Copy size={14} />}
+                            </button>
+                         </div>
+                       ))}
+                    </div>
+                    
+                    <div className="flex items-center gap-4 p-6 bg-indigo-500/5 rounded-[2.5rem] border border-indigo-500/10">
+                       <Info size={18} className="text-indigo-400 shrink-0" />
+                       <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                         These identifiers are utilized by external Uptime nodes (Ohio, N. Virginia, Ashburn) to verify endpoint integrity via automated HTTP/S handshakes. Access restricted to laboratory infrastructure.
+                       </p>
+                    </div>
+                 </GlassCard>
               </div>
             )}
           </m.div>
