@@ -76,10 +76,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       if (shouldLog && currentProfile) {
         lastLoggedSessionId.current = currentSessionId;
         const isStaff = ['admin', 'owner'].includes(currentProfile.role) || currentProfile.is_super_owner;
-        const identityTag = isStaff ? '[IDENTITY: STAFF_ADMIN]' : '[IDENTITY: SUBJECT_USER]';
+        const identityTag = isStaff ? 'STAFF_ADMIN' : 'SUBJECT_USER';
         
-        // Protocol: Successful login notification dispatch
-        const logMsg = `Identity link verified: ${currentProfile.email} (${identityTag})`;
+        // Protocol: Enriched Login Metadata
+        const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown Device';
+        const logMsg = `Identity: ${currentProfile.email} | Name: ${currentProfile.full_name || 'N/A'} | Role: ${identityTag} | Device: ${userAgent}`;
+        
+        // Triggers dual-channel notification (Email + Telegram) via supabaseService sensitiveActions
         logAuditLog('USER_LOGIN', logMsg, 'INFO');
       }
     } catch (err) {
