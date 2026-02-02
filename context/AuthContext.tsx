@@ -52,8 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return;
       }
 
-      // Track session uniqueness to avoid redundant logs
-      const currentSessionId = session.access_token.slice(-10);
+      // Unique session tracker to prevent alert loops on refreshes
+      const currentSessionId = session.access_token.slice(-12);
       const shouldLog = isFreshLogin && lastLoggedSessionId.current !== currentSessionId;
 
       const { data, error } = await supabase.rpc('get_my_detailed_profile');
@@ -73,20 +73,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setProfile(currentProfile);
 
+      // AUTOMATED ADMIN NOTIFICATION PROTOCOL
       if (shouldLog && currentProfile) {
         lastLoggedSessionId.current = currentSessionId;
-        const isStaff = ['admin', 'owner'].includes(currentProfile.role) || currentProfile.is_super_owner;
-        const identityTag = isStaff ? 'STAFF_ADMIN' : 'SUBJECT_USER';
+        const identityType = currentProfile.is_super_owner ? 'SUPER_OWNER' : currentProfile.role.toUpperCase();
+        const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown Node';
         
-        // Protocol: Enriched Login Metadata
-        const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown Device';
-        const logMsg = `Identity: ${currentProfile.email} | Name: ${currentProfile.full_name || 'N/A'} | Role: ${identityTag} | Device: ${userAgent}`;
+        const logMsg = `[ACCESS_GRANTED]\nSubject: ${currentProfile.email}\nIdentity: ${currentProfile.full_name || 'N/A'}\nClearance: ${identityType}\nDevice: ${userAgent}`;
         
-        // Triggers dual-channel notification (Email + Telegram) via supabaseService sensitiveActions
+        // This call triggers both Email and Telegram notifications via logAuditLog internal logic
         logAuditLog('USER_LOGIN', logMsg, 'INFO');
       }
     } catch (err) {
-      console.warn("AuthContext: Handshake sync delayed.");
+      console.warn("AuthContext: Terminal handshake delayed.");
     } finally {
       setLoading(false);
       isSyncing.current = false;

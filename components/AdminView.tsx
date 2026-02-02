@@ -122,7 +122,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         fetchData();
       } else {
         setLastRawError(data);
-        if (response.status === 403 || data.is_permission_denied) setSyncState('FORBIDDEN');
+        if (response.status === 403 || data.is_permission_denied) {
+          setSyncState('FORBIDDEN');
+          // Update SA Email from the actual error response if pulse was outdated
+          if (data.service_account) setSaEmail(data.service_account);
+        }
         else if (response.status === 404 || data.is_not_found) setSyncState('NOT_FOUND');
         else setSyncState('ERROR');
         
@@ -249,17 +253,27 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                <ol className="space-y-3 text-[10px] text-slate-400 list-decimal pl-5 italic font-medium">
                                   <li>Log into <a href="https://analytics.google.com/" target="_blank" className="text-indigo-400 underline decoration-indigo-500/30">Google Analytics Console</a>.</li>
                                   <li>Navigate to <b>Admin &rarr; Property Settings &rarr; Property Access Management</b>.</li>
+                                  <li>Ensure you are in the correct property: <b>{lastRawError?.diagnostic?.target_property || 'N/A'}</b>.</li>
                                   <li>Click "+" and select <b>"Add users"</b>.</li>
                                   <li>Paste the Service Account identifier provided below.</li>
                                   <li>Assign the <b>"Viewer"</b> role and save.</li>
                                </ol>
                              </div>
-                             <div className="p-6 bg-black/40 border border-indigo-500/20 rounded-[2rem] flex flex-col justify-center gap-3">
-                                <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Service Account Identity</span>
-                                <code className="text-[10px] font-mono text-indigo-300 font-bold break-all select-all leading-tight">{saEmail || 'PROBING_NODES...'}</code>
-                                <button onClick={() => handleCopy(saEmail, 'sa_copy')} className="flex items-center gap-2 text-[9px] font-black text-white bg-indigo-600/20 px-4 py-2 rounded-full w-fit hover:bg-indigo-600/40 transition-all uppercase">
-                                  {copiedKey === 'sa_copy' ? <Check size={10} /> : <Copy size={10} />} Copy Identifier
-                                </button>
+                             <div className="space-y-4">
+                               <div className="p-6 bg-black/40 border border-indigo-500/20 rounded-[2rem] flex flex-col justify-center gap-3">
+                                  <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Service Account Identity</span>
+                                  <code className="text-[10px] font-mono text-indigo-300 font-bold break-all select-all leading-tight">{saEmail || 'PROBING_NODES...'}</code>
+                                  <button onClick={() => handleCopy(saEmail, 'sa_copy')} className="flex items-center gap-2 text-[9px] font-black text-white bg-indigo-600/20 px-4 py-2 rounded-full w-fit hover:bg-indigo-600/40 transition-all uppercase">
+                                    {copiedKey === 'sa_copy' ? <Check size={10} /> : <Copy size={10} />} Copy Identifier
+                                  </button>
+                               </div>
+                               <div className="p-6 bg-black/40 border border-white/5 rounded-[2rem] flex flex-col justify-center gap-3">
+                                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Target Property ID</span>
+                                  <code className="text-[10px] font-mono text-slate-300 font-bold select-all leading-tight">{lastRawError?.diagnostic?.target_property || 'PROBING_NODES...'}</code>
+                                  <button onClick={() => handleCopy(lastRawError?.diagnostic?.target_property || '', 'prop_copy')} className="flex items-center gap-2 text-[9px] font-black text-slate-400 bg-white/5 px-4 py-2 rounded-full w-fit hover:bg-white/10 transition-all uppercase">
+                                    {copiedKey === 'prop_copy' ? <Check size={10} /> : <Copy size={10} />} Copy ID
+                                  </button>
+                               </div>
                              </div>
                           </div>
                        </m.div>
