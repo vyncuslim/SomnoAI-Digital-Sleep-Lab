@@ -3,8 +3,8 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v15.0
- * 诊断增强版：返回完整的 Google API 堆栈信息
+ * SOMNO LAB GA4 SYNC GATEWAY v16.0
+ * Incident Response Edition: Enhanced diagnostic stack for 403/404 resolution.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -20,21 +20,21 @@ export default async function handler(req, res) {
 
   const isAuthorized = (querySecret === serverSecret) || (authHeader === `Bearer ${serverSecret}`);
   if (!isAuthorized) {
-    return res.status(401).json({ error: "UNAUTHORIZED_GATEWAY", detail: "Secret mismatch." });
+    return res.status(401).json({ error: "UNAUTHORIZED_GATEWAY", detail: "Secret mismatch. Protocol handshake rejected." });
   }
 
   const requiredKeys = ['GA_PROPERTY_ID', 'GA_SERVICE_ACCOUNT_KEY', 'SUPABASE_URL', 'SUPABASE_SERVICE_ROLE_KEY'];
   const missingKeys = requiredKeys.filter(k => !process.env[k]);
 
   if (missingKeys.length > 0) {
-    return res.status(500).json({ error: "ENV_MISCONFIGURED", missing: missingKeys });
+    return res.status(500).json({ error: "ENV_MISCONFIGURED", missing: missingKeys, hint: "Check Vercel Project Settings for environment variables." });
   }
 
   let credentials;
   try {
     credentials = JSON.parse(process.env.GA_SERVICE_ACCOUNT_KEY);
   } catch (e) {
-    return res.status(500).json({ error: "JSON_PARSE_ERROR", detail: "GA_SERVICE_ACCOUNT_KEY is not a valid JSON." });
+    return res.status(500).json({ error: "JSON_PARSE_ERROR", detail: "GA_SERVICE_ACCOUNT_KEY environment variable contains invalid JSON formatting." });
   }
 
   const saEmail = credentials.client_email || DEFAULT_SA_EMAIL;
@@ -64,25 +64,30 @@ export default async function handler(req, res) {
     return res.status(200).json({ 
       success: true, 
       count: rows.length,
-      property_id_used: `${propertyId.substring(0,3)}***` 
+      property_id_used: propertyId,
+      timestamp: new Date().toISOString()
     });
 
   } catch (err) {
-    const isPermissionError = err.message?.includes('PERMISSION_DENIED') || err.code === 7;
-    const isNotFoundError = err.message?.includes('NOT_FOUND') || err.code === 5;
+    const msg = err.message || "";
+    const isPermissionError = msg.includes('PERMISSION_DENIED') || err.code === 7 || msg.includes('403');
+    const isNotFoundError = msg.includes('NOT_FOUND') || err.code === 5 || msg.includes('404');
     
+    // Log error to Vercel console for debugging
+    console.error(`[SYNC_INCIDENT] Status: ${isPermissionError ? '403' : '500'} | Error: ${msg}`);
+
     return res.status(isPermissionError ? 403 : (isNotFoundError ? 404 : 500)).json({ 
       error: "EXECUTION_FAILURE", 
       is_permission_denied: isPermissionError,
       is_not_found: isNotFoundError,
       target_email: saEmail,
-      raw_google_error: err.message,
+      raw_google_error: msg,
       diagnostic: {
         property_id_used: propertyId,
         service_account: saEmail,
         suggestion: isPermissionError 
-          ? `Add '${saEmail}' to GA4 Property Users as 'Viewer'.` 
-          : (isNotFoundError ? "Check if GA_PROPERTY_ID is correct (Numeric ID, not G-XXXXX)." : "Unknown upstream error.")
+          ? `CRITICAL: The Service Account '${saEmail}' is not authorized on GA4 Property '${propertyId}'. Visit GA4 Admin > Property Access Management and add this email as a 'Viewer'.` 
+          : (isNotFoundError ? "The GA_PROPERTY_ID might be incorrect. Ensure it is the numeric ID found in Property Settings, not the G- measurement ID." : "Internal gateway timeout or API limit reached.")
       }
     });
   }
