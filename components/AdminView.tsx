@@ -9,7 +9,7 @@ import {
   Unlock, Mail, ExternalLink, ActivitySquare,
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
   Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle, Key,
-  ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame, Activity as MonitoringIcon, Eye
+  ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame, Activity as MonitoringIcon, Eye, ChevronDown
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -97,6 +97,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     navigator.clipboard.writeText(text);
     setCopiedKey(id);
     setTimeout(() => setCopiedKey(null), 2000);
+  };
+
+  const handleRoleUpdate = async (userId: string, email: string, newRole: string) => {
+    try {
+      const { error } = await adminApi.updateUserRole(userId, email, newRole);
+      if (error) throw error;
+      fetchData(); // Refresh list
+    } catch (err: any) {
+      alert(`Role transition failed: ${err.message}`);
+    }
   };
 
   const handleManualSync = async () => {
@@ -311,14 +321,25 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                  <p className="text-[10px] text-slate-500 italic opacity-60 font-mono">{u.email}</p>
                               </div>
                            </div>
-                           <div className="flex gap-2">
-                              <div className={`px-3 py-1 rounded-full text-[8px] font-black uppercase flex items-center gap-1.5 ${u.role === 'owner' ? 'bg-amber-500/10 text-amber-500' : 'bg-white/5 text-slate-400'}`}>
-                                 {u.role === 'owner' ? <Crown size={10} /> : <User size={10} />}
-                                 {u.role}
+                           <div className="flex flex-col items-end gap-2">
+                              <div className="relative group/role">
+                                 <select 
+                                   value={u.role} 
+                                   onChange={(e) => handleRoleUpdate(u.id, u.email, e.target.value)}
+                                   disabled={!isGlobalOwner && u.role === 'owner'}
+                                   className={`appearance-none bg-slate-900 border border-white/10 rounded-full px-4 py-1.5 text-[9px] font-black uppercase tracking-widest outline-none cursor-pointer transition-all pr-8 ${u.role === 'owner' ? 'text-amber-500 bg-amber-500/5' : u.role === 'admin' ? 'text-indigo-400 bg-indigo-500/5' : 'text-slate-400 hover:text-white'}`}
+                                 >
+                                    <option value="user">USER</option>
+                                    <option value="admin">ADMIN</option>
+                                    <option value="owner">OWNER</option>
+                                 </select>
+                                 <ChevronDown size={10} className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none opacity-40" />
                               </div>
-                              <button onClick={() => adminApi.toggleBlock(u.id, u.email, u.is_blocked).then(() => fetchData())} className={`p-2.5 rounded-xl transition-all ${u.is_blocked ? 'bg-rose-500/20 text-rose-500' : 'bg-white/5 text-slate-700 hover:text-rose-400'}`}>
-                                 {u.is_blocked ? <Unlock size={14} /> : <Ban size={14} />}
-                              </button>
+                              <div className="flex gap-2">
+                                <button onClick={() => adminApi.toggleBlock(u.id, u.email, u.is_blocked).then(() => fetchData())} className={`p-2.5 rounded-xl transition-all ${u.is_blocked ? 'bg-rose-500/20 text-rose-500' : 'bg-white/5 text-slate-700 hover:text-rose-400'}`}>
+                                   {u.is_blocked ? <Unlock size={14} /> : <Ban size={14} />}
+                                </button>
+                              </div>
                            </div>
                         </div>
                      </GlassCard>
