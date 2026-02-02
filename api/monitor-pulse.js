@@ -2,27 +2,27 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB INFRASTRUCTURE PULSE v13.1
- * Enhanced diagnostic to verify environment integrity and prevent crashes.
+ * SOMNO LAB INFRASTRUCTURE PULSE v13.2
+ * Global try-catch protected to ensure diagnostic link integrity.
  */
 
 const DEFAULT_SA_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
 
 export default async function handler(req, res) {
-  const querySecret = req.query.secret;
-  const serverSecret = process.env.CRON_SECRET || "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
-
-  res.setHeader('X-Robots-Tag', 'noindex, nofollow');
-  res.setHeader('Content-Type', 'application/json');
-
-  if (querySecret !== serverSecret) {
-    return res.status(401).json({ 
-      error: "UNAUTHORIZED_PULSE", 
-      detail: "Secret mismatch. Verify Vercel CRON_SECRET." 
-    });
-  }
-
   try {
+    const querySecret = req.query.secret;
+    const serverSecret = process.env.CRON_SECRET || "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
+
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+    res.setHeader('Content-Type', 'application/json');
+
+    if (querySecret !== serverSecret) {
+      return res.status(401).json({ 
+        error: "UNAUTHORIZED_PULSE", 
+        detail: "Secret mismatch. Verify Vercel CRON_SECRET." 
+      });
+    }
+
     const supabaseUrl = process.env.SUPABASE_URL || '';
     const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
     
@@ -82,11 +82,11 @@ export default async function handler(req, res) {
       timestamp: new Date().toISOString()
     });
   } catch (e) {
-    console.error("[PULSE_FATAL]", e.message);
+    console.error("[PULSE_FATAL]", e);
     return res.status(500).json({ 
         error: "MONITOR_EXCEPTION", 
         details: e.message,
-        hint: "Check server-side logs for unhandled pulse exceptions."
+        timestamp: new Date().toISOString()
     });
   }
 }

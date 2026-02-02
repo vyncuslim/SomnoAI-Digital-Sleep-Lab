@@ -3,9 +3,9 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v16.9
- * Resilience + Deep Diagnostics Edition
- * Prevents recursive 500 errors by wrapping reporting logic.
+ * SOMNO LAB GA4 SYNC GATEWAY v17.0
+ * Ultra-Resilience Edition
+ * Designed to capture all unhandled exceptions and prevent generic 500s.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -14,48 +14,63 @@ const ADMIN_CHAT_ID = '-1003851949025';
 const DEFAULT_SA_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
 
 export default async function handler(req, res) {
-  const querySecret = req.query.secret;
-  const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
-
-  if (querySecret !== serverSecret) {
-    return res.status(401).json({ error: "UNAUTHORIZED_SYNC" });
-  }
-
-  const propertyId = process.env.GA_PROPERTY_ID;
-  const credentialsJson = process.env.GA_SERVICE_ACCOUNT_KEY;
-
-  if (!propertyId || !credentialsJson) {
-    return res.status(500).json({ 
-      error: "MISSING_CONFIGURATION", 
-      message: "GA_PROPERTY_ID or GA_SERVICE_ACCOUNT_KEY environment variables are null or undefined." 
-    });
-  }
-
-  let credentials;
+  // Wrap everything in a massive try-catch to prevent generic 500s
   try {
-    // Sanitize credentials: Replace escaped newlines if present from Vercel UI pasting
-    const sanitized = credentialsJson.replace(/\\n/g, '\n');
-    credentials = JSON.parse(sanitized);
-  } catch (e) {
-    return res.status(500).json({ 
-      error: "INVALID_CREDENTIALS_JSON", 
-      message: "Failed to parse GA_SERVICE_ACCOUNT_KEY. Check for syntax errors.",
-      hint: credentialsJson.substring(0, 20) + "..."
-    });
-  }
+    const querySecret = req.query.secret;
+    const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
 
-  const analyticsClient = new BetaAnalyticsDataClient({ credentials });
-  const supabaseUrl = process.env.SUPABASE_URL || '';
-  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-  
-  if (!supabaseUrl || !supabaseKey) {
-    return res.status(500).json({ error: "SUPABASE_LINK_VOID", message: "Supabase connection variables missing." });
-  }
+    if (querySecret !== serverSecret) {
+      return res.status(401).json({ error: "UNAUTHORIZED_SYNC", message: "Secret key mismatch." });
+    }
 
-  const supabase = createClient(supabaseUrl, supabaseKey);
-  const saEmail = credentials.client_email || DEFAULT_SA_EMAIL;
+    const propertyId = process.env.GA_PROPERTY_ID;
+    const credentialsJson = process.env.GA_SERVICE_ACCOUNT_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-  try {
+    // 1. Pre-flight check for environment variables
+    const missing = [];
+    if (!propertyId) missing.push("GA_PROPERTY_ID");
+    if (!credentialsJson) missing.push("GA_SERVICE_ACCOUNT_KEY");
+    if (!supabaseUrl) missing.push("SUPABASE_URL");
+    if (!supabaseKey) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+
+    if (missing.length > 0) {
+      return res.status(500).json({ 
+        error: "MISSING_ENV_VARS", 
+        message: `Missing: ${missing.join(", ")}`,
+        diagnostic: "Check Vercel Project Settings > Environment Variables."
+      });
+    }
+
+    // 2. Parse Credentials safely
+    let credentials;
+    try {
+      const sanitized = credentialsJson.replace(/\\n/g, '\n');
+      credentials = JSON.parse(sanitized);
+    } catch (e) {
+      return res.status(500).json({ 
+        error: "INVALID_CREDENTIALS_JSON", 
+        message: "Failed to parse GA_SERVICE_ACCOUNT_KEY. Check JSON syntax.",
+        hint: credentialsJson.substring(0, 15) + "..."
+      });
+    }
+
+    const saEmail = credentials.client_email || DEFAULT_SA_EMAIL;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    // 3. Initialize Analytics Client
+    let analyticsClient;
+    try {
+      analyticsClient = new BetaAnalyticsDataClient({ credentials });
+    } catch (initErr) {
+      return res.status(500).json({ 
+        error: "CLIENT_INIT_FAILED", 
+        message: initErr.message 
+      });
+    }
+
+    // 4. Execute Report
     const [response] = await analyticsClient.runReport({
       property: `properties/${propertyId}`,
       dateRanges: [{ startDate: 'yesterday', endDate: 'today' }],
@@ -70,7 +85,7 @@ export default async function handler(req, res) {
       if (!row.dimensionValues?.[0]?.value) continue;
       
       const date = row.dimensionValues[0].value;
-      const { error } = await supabase
+      const { error: upsertErr } = await supabase
         .from('analytics_daily')
         .upsert({
           date: `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`,
@@ -80,63 +95,48 @@ export default async function handler(req, res) {
           updated_at: new Date().toISOString()
         }, { onConflict: 'date' });
       
-      if (error) {
-         console.error("[GA_SYNC] Upsert failure:", error.message);
-         throw error;
+      if (upsertErr) {
+         throw new Error(`DB_UPSERT_FAILURE: ${upsertErr.message}`);
       }
       results.push({ date, status: 'synced' });
     }
 
-    return res.status(200).json({ success: true, processed: results.length });
+    return res.status(200).json({ 
+      success: true, 
+      processed: results.length,
+      timestamp: new Date().toISOString()
+    });
 
   } catch (error) {
-    const errorMsg = error?.message || "Unknown error during analytics handshake.";
+    // 5. Handle all errors gracefully
+    const errorMsg = error?.message || "Unknown runtime exception during telemetry sync.";
     const isPermissionDenied = errorMsg.includes('Permission denied') || error.code === 7;
-    const errorType = isPermissionDenied ? 'GA4_PERMISSION_DENIED_403' : 'GA4_SYNC_FAILURE';
+    const errorType = isPermissionDenied ? 'GA4_PERMISSION_DENIED_403' : 'SYNC_RUNTIME_FAULT';
     
-    console.error(`[GA_SYNC_CRITICAL] ${errorType}:`, errorMsg);
+    console.error(`[SYNC_ERROR_TRACE]`, error);
 
-    // 1. Log to Audit Table (Safe Execution)
+    // Attempt to notify admin (fire and forget)
     try {
-        await supabase.from('audit_logs').insert([{
-          action: errorType,
-          details: `Sync failure on property ${propertyId}. Trace: ${errorMsg}`,
-          level: 'CRITICAL'
-        }]);
-    } catch (auditErr) {
-        console.warn("Audit logging failed during sync error reporting.");
-    }
-
-    // 2. DISPATCH EMERGENCY TELEGRAM SIGNAL (Safe Execution)
-    try {
-      const tgMsg = `🚨 <b>SOMNO LAB: API INCIDENT (500/403)</b>\n` +
+      const tgMsg = `🚨 <b>SOMNO LAB: CRITICAL API ERROR</b>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `<b>Event:</b> <code>${errorType}</code>\n` +
-        `<b>Status:</b> ${isPermissionDenied ? '403 Forbidden' : '500 Server Error'}\n` +
-        `<b>Details:</b> <code>${errorMsg.substring(0, 200)}</code>\n` +
-        `<b>Node Identity:</b> <code>${saEmail}</code>\n` +
+        `<b>Type:</b> <code>${errorType}</code>\n` +
+        `<b>Message:</b> <code>${errorMsg.substring(0, 300)}</code>\n` +
+        `<b>Timestamp:</b> <code>${new Date().toISOString()}</code>\n` +
         `━━━━━━━━━━━━━━━━━━━━\n` +
-        `📍 <b>DIAGNOSTIC:</b> Verify Service Account access or Vercel Environment variables.`;
+        `📍 <b>SYSTEM:</b> Manual intervention required in Vercel/GA Console.`;
         
-      await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+      fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: tgMsg, parse_mode: 'HTML' })
-      });
-    } catch (tgErr) { 
-        console.error("Telegram alert failed during sync error handling."); 
-    }
+      }).catch(() => {});
+    } catch (notifErr) {}
 
-    const statusCode = isPermissionDenied ? 403 : 500;
-    return res.status(statusCode).json({
+    return res.status(isPermissionDenied ? 403 : 500).json({
       error: errorType,
       message: errorMsg,
-      is_permission_denied: isPermissionDenied,
-      service_account: saEmail,
-      diagnostic: {
-        suggestion: isPermissionDenied ? "Grant 'Viewer' access to the Service Account in Google Analytics Console." : "Check API quota and server-side logs.",
-        target_property: propertyId
-      }
+      timestamp: new Date().toISOString(),
+      stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     });
   }
 }
