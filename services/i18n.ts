@@ -2,8 +2,7 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v4.2
- * Consolidates all localized strings for subject terminals and administrative bridges.
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v4.6
  */
 
 const commonEn = {
@@ -30,6 +29,25 @@ const commonEn = {
     genderNone: 'N/A',
     height: 'Height',
     weight: 'Weight'
+  },
+  support: {
+    title: 'Support Hub',
+    subtitle: 'Laboratory Assistance & Research Funding',
+    techSupport: 'Technical Help',
+    techDesc: 'Resolve 403 Forbidden, sync errors, or report neural anomalies.',
+    funding: 'Support Research',
+    fundingDesc: 'Fuel processing power and the development of neural algorithms.',
+    faq: 'System FAQ',
+    contact: 'Direct Link',
+    donateTitle: 'Contribution Protocol',
+    donateSubtitle: 'Your support fuels global lab processing.',
+    copySuccess: 'Identifier Copied',
+    backToLab: 'Back to Terminal',
+    platforms: 'Multi-Device Support',
+    pcTitle: 'PC / Desktop',
+    pcDesc: 'Full Command Bridge experience. Recommended for detailed analysis.',
+    mobileTitle: 'Mobile / PWA',
+    mobileDesc: 'Add to Home Screen for a native biometric tracking experience.'
   },
   feedback: {
     exitTitle: 'Session Termination',
@@ -82,6 +100,25 @@ const commonZh = {
     height: '身高',
     weight: '体重'
   },
+  support: {
+    title: '支持中心',
+    subtitle: '实验室协助与研究资助',
+    techSupport: '技术求助',
+    techDesc: '解决 403 权限问题、同步错误或报告系统异常。',
+    funding: '赞助研究',
+    fundingDesc: '资助算力成本及神经算法的持续开发。',
+    faq: '常见问题',
+    contact: '直接联系',
+    donateTitle: '贡献协议',
+    donateSubtitle: '您的支持是实验室持续运行的动力。',
+    copySuccess: '标识符已复制',
+    backToLab: '返回实验室',
+    platforms: '多端适配支持',
+    pcTitle: '电脑 / 桌面端',
+    pcDesc: '完整控制桥体验。推荐用于深度数据分析与实验。',
+    mobileTitle: '手机 / PWA',
+    mobileDesc: '点击“添加到主屏幕”即可获得类原生应用的生理追踪体验。'
+  },
   feedback: {
     exitTitle: '会话终止确认',
     exitSubtitle: '请对本次实验室体验进行评分',
@@ -133,6 +170,25 @@ const commonEs = {
     height: 'Altura',
     weight: 'Peso'
   },
+  support: {
+    title: 'Centro de Soporte',
+    subtitle: 'Asistencia de Laboratorio y Financiación',
+    techSupport: 'Ayuda Técnica',
+    techDesc: 'Resolver 403 Prohibido, errores de sincronización o anomalías.',
+    funding: 'Apoyar Investigación',
+    fundingDesc: 'Impulsar el poder de procesamiento y algoritmos neurales.',
+    faq: 'Preguntas Frecuentes',
+    contact: 'Contacto Directo',
+    donateTitle: 'Protocolo de Contribución',
+    donateSubtitle: 'Su apoyo impulsa el procesamiento global.',
+    copySuccess: 'Identificador Copiado',
+    backToLab: 'Volver a la Terminal',
+    platforms: 'Soporte Multidispositivo',
+    pcTitle: 'PC / Escritorio',
+    pcDesc: 'Experiencia completa de puente de mando. Recomendado para análisis detallado.',
+    mobileTitle: 'Móvil / PWA',
+    mobileDesc: 'Añadir a la pantalla de inicio para una experiencia nativa.'
+  },
   feedback: {
     exitTitle: 'Terminación de Sesión',
     exitSubtitle: 'Por favor califique su experiencia',
@@ -159,7 +215,6 @@ const commonEs = {
   }
 };
 
-// Fixed: Explicitly defining the translation map to satisfy component dependencies and TS checks
 export const translations: Record<Language, any> = {
   en: { ...commonEn },
   zh: { ...commonZh },

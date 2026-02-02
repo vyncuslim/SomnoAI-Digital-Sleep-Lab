@@ -27,6 +27,7 @@ import { DiaryView } from './components/DiaryView.tsx';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { FeedbackView } from './components/FeedbackView.tsx';
 import { ExperimentView } from './components/ExperimentView.tsx';
+import { SupportView } from './components/SupportView.tsx';
 import { NotFoundView } from './components/NotFoundView.tsx';
 import { AboutView } from './components/AboutView.tsx';
 import { UpdatePasswordView } from './components/UpdatePasswordView.tsx';
@@ -70,7 +71,7 @@ const AppContent: React.FC = () => {
   const { profile, loading, refresh, isAdmin } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [activeView, setActiveView] = useState<ViewType | 'update-password'>('dashboard');
-  const [authMode, setAuthMode] = useState<'login' | 'join'>('login');
+  const [authMode, setAuthMode] = useState<'login' | 'join' | 'otp'>( 'login' );
   const [isSimulated, setIsSimulated] = useState(false);
 
   const isExchangingTokens = useMemo(() => {
@@ -83,10 +84,6 @@ const AppContent: React.FC = () => {
     return hash.includes('type=recovery') || hash.includes('update-password');
   }, []);
 
-  /**
-   * CRITICAL FIX: safeNavigate 仅驱动 Hash 变更
-   * 状态同步由下方的 bridgeRouting 处理。这能防止双重渲染导致的黑屏。
-   */
   const safeNavigate = useCallback((viewId: string) => {
     safeNavigateHash(viewId);
   }, []);
@@ -102,7 +99,7 @@ const AppContent: React.FC = () => {
       const mappings: Record<string, ViewType | 'update-password'> = {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
-        'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 
+        'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
         'admin/login': 'admin-login', 'update-password': 'update-password'
       };
 
@@ -181,7 +178,7 @@ const AppContent: React.FC = () => {
 
       return (
         <div className="w-full flex flex-col min-h-screen">
-          <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 pb-48">
+          <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-6 md:pt-10 pb-48">
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
                 {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={safeNavigate} />}
@@ -190,14 +187,15 @@ const AppContent: React.FC = () => {
                 {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
                 {activeView === 'diary' && <DiaryView lang={lang} />}
                 {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => safeReload()} onNavigate={safeNavigate} />}
-                {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('settings')} />}
+                {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('support')} />}
+                {activeView === 'support' && <SupportView lang={lang} onBack={() => safeNavigate('settings')} onNavigate={safeNavigate} />}
                 {(activeView as any) === 'not-found' && <NotFoundView />}
               </m.div>
             </AnimatePresence>
           </main>
           
-          <div className="fixed bottom-12 left-0 right-0 z-[60] px-6 flex justify-center pointer-events-none">
-            <m.nav initial={{ y: 100 }} animate={{ y: 0 }} className="bg-[#0a0f25]/90 backdrop-blur-3xl border border-white/5 rounded-full p-2 flex gap-1 pointer-events-auto shadow-2xl">
+          <div className="fixed bottom-6 md:bottom-12 left-0 right-0 z-[60] px-4 md:px-6 flex justify-center pointer-events-none pb-safe">
+            <m.nav initial={{ y: 100 }} animate={{ y: 0 }} className="bg-[#0a0f25]/90 backdrop-blur-3xl border border-white/5 rounded-full p-1.5 md:p-2 flex gap-1 pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar max-w-[95vw]">
               {[
                 { id: 'dashboard', icon: Moon, label: 'LAB' },
                 { id: 'calendar', icon: History, label: 'HIST' },
@@ -206,9 +204,9 @@ const AppContent: React.FC = () => {
                 { id: 'diary', icon: BookOpen, label: 'LOG' },
                 { id: 'settings', icon: SettingsIcon, label: 'CFG' }
               ].map((nav) => (
-                <button key={nav.id} onClick={() => safeNavigate(nav.id)} className={`relative flex items-center gap-3 px-6 py-4 rounded-full transition-all duration-500 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
-                  <nav.icon size={18} />
-                  {activeView === nav.id && <span className="text-[9px] font-black uppercase tracking-widest">{nav.label}</span>}
+                <button key={nav.id} onClick={() => safeNavigate(nav.id)} className={`relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-full transition-all duration-500 shrink-0 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
+                  <nav.icon size={16} className="md:w-[18px] md:h-[18px]" />
+                  {activeView === nav.id && <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest whitespace-nowrap">{nav.label}</span>}
                 </button>
               ))}
             </m.nav>

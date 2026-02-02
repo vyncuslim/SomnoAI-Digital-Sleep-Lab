@@ -3,14 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight, Send, Terminal, Server, ShieldAlert, MessageSquare, Info
+  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight, Send, Terminal, Server, ShieldAlert, MessageSquare, Info, LifeBuoy
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
-import { getSafeHostname } from '../services/navigation.ts';
-import { notifyAdmin } from '../services/telegramService.ts';
-import { emailService } from '../services/emailService.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ExitFeedbackModal } from './ExitFeedbackModal.tsx';
 
@@ -80,16 +77,16 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
-        {/* Technical Support Bridge */}
-        <GlassCard onClick={() => onNavigate('feedback')} className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02] cursor-pointer group hover:bg-emerald-500/[0.05] transition-all">
+        {/* Enhanced Support Hub Entry */}
+        <GlassCard onClick={() => onNavigate('support')} className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02] cursor-pointer group hover:bg-emerald-500/[0.05] transition-all">
           <div className="flex items-center justify-between">
              <div className="flex items-center gap-5">
                 <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-400 group-hover:scale-110 transition-transform">
-                   <MessageSquare size={24} />
+                   <LifeBuoy size={24} />
                 </div>
                 <div className="space-y-1">
-                   <h3 className="text-sm font-black italic text-white uppercase tracking-widest">Support & Feedback</h3>
-                   <p className="text-[10px] text-slate-500 font-medium italic">Bridge to Laboratory Engineers</p>
+                   <h3 className="text-sm font-black italic text-white uppercase tracking-widest">{translations[lang].support.title}</h3>
+                   <p className="text-[10px] text-slate-500 font-medium italic">Support, FAQ & Contributions</p>
                 </div>
              </div>
              <ChevronRight size={20} className="text-emerald-500/40 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
