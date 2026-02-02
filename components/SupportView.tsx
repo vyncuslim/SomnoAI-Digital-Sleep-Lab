@@ -192,15 +192,15 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
                 <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-6 md:gap-8 items-start pb-4">
                   <div className="md:col-span-2 p-6 md:p-8 bg-slate-900/80 border border-white/5 rounded-[2.5rem] md:rounded-[3rem] flex flex-col items-center gap-4 md:gap-6">
-                     {/* QR Code Optimized Container - Pure black, high margin (quiet zone), larger size */}
-                     <div className="bg-white p-6 rounded-[2rem] shadow-2xl">
+                     {/* QR Code Optimized: Pure black, H error correction, 8 margin units quiet zone, larger base area */}
+                     <div className="bg-white p-8 rounded-[3rem] shadow-[0_0_40px_rgba(255,255,255,0.2)]">
                         <img 
-                          src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=000000&bgcolor=ffffff&margin=4`} 
-                          alt="Contribution QR Code" 
-                          className="w-48 h-48 md:w-56 md:h-56" 
+                          src={`https://api.qrserver.com/v1/create-qr-code/?size=500x500&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=000000&bgcolor=ffffff&margin=8&ecc=H`} 
+                          alt="Scannable Contribution QR" 
+                          className="w-48 h-48 md:w-60 md:h-60 mix-blend-multiply" 
                         />
                      </div>
-                     <p className="text-[8px] md:text-[10px] font-black text-[#f43f5e] uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center gap-2"><QrCode size={12} /> SCAN TO PAYPAL</p>
+                     <p className="text-[8px] md:text-[10px] font-black text-[#f43f5e] uppercase tracking-[0.3em] flex items-center gap-2 drop-shadow-lg"><QrCode size={12} /> SCAN TO PAYPAL</p>
                   </div>
                   <div className="md:col-span-3 space-y-3 md:space-y-4 text-left">
                     {[
@@ -220,8 +220,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
                   </div>
                 </div>
                 <div className="flex flex-col md:flex-row gap-3 md:gap-4 pt-4 sticky bottom-0 bg-slate-950 py-2">
-                   <button onClick={() => setShowDonation(false)} className="order-2 md:order-1 px-10 py-4 md:py-6 border border-white/10 text-slate-500 rounded-full font-black text-xs md:text-sm uppercase tracking-widest active:scale-95">CLOSE</button>
-                   <button onClick={() => window.open('https://paypal.me/vyncuslim', '_blank')} className="order-1 md:order-2 flex-1 py-4 md:py-6 rounded-full bg-[#4f46e5] text-white font-black text-xs md:text-sm uppercase tracking-[0.3em] md:tracking-[0.4em] flex items-center justify-center gap-3 md:gap-4 shadow-2xl transition-transform active:scale-95">
+                   <button onClick={() => setShowDonation(false)} className="order-2 md:order-1 px-10 py-4 md:py-6 border border-white/10 text-slate-500 rounded-full font-black text-xs md:text-sm uppercase tracking-widest active:scale-95 transition-all hover:text-white">CLOSE</button>
+                   <button onClick={() => window.open('https://paypal.me/vyncuslim', '_blank')} className="order-1 md:order-2 flex-1 py-4 md:py-6 rounded-full bg-[#4f46e5] text-white font-black text-xs md:text-sm uppercase tracking-[0.3em] md:tracking-[0.4em] flex items-center justify-center gap-3 md:gap-4 shadow-2xl transition-all active:scale-95 hover:bg-indigo-500">
                       <ArrowUpRight size={18} /> GO TO PAYPAL
                    </button>
                 </div>
