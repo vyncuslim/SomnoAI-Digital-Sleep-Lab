@@ -2,8 +2,8 @@
 import { getMYTTime } from './telegramService.ts';
 
 /**
- * SOMNO LAB EMAIL BRIDGE v13.5
- * Protocol: Multi-lingual Alert Synthesis with Specialized Ingress Support.
+ * SOMNO LAB EMAIL BRIDGE v13.6
+ * Fixed recursion bug and optimized payload synthesis.
  */
 
 const ADMIN_EMAIL = 'ongyuze1401@gmail.com';
@@ -14,6 +14,7 @@ const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: stri
   'RUNTIME_ERROR': { en: '🚨 System Exception', es: '🚨 Excepción del Sistema', zh: '🚨 系统运行异常', icon: '🔴' },
   'USER_SIGNUP': { en: '✨ New Subject Node Registered', es: '✨ Nuevo Nodo de Sujeto', zh: '✨ 新受试者注册', icon: '🟢' },
   'GA4_SYNC_FAILURE': { en: '📊 Telemetry Sync Failure', es: '📊 Fallo de Sincronización', zh: '📊 GA4 同步失败', icon: '🟡' },
+  'GA4_PERMISSION_DENIED_403': { en: '🛡️ GA4 Access Denied (403)', es: '🛡️ GA4 Acceso Denegado', zh: '🛡️ GA4 访问被拒绝 (403)', icon: '🚫' },
   'SECURITY_BREACH_ATTEMPT': { en: '🛡️ Unauthorized Ingress', es: '🛡️ Ingreso No Autorizado', zh: '🛡️ 未经授权的入侵尝试', icon: '⛔' },
   'SYSTEM_SIGNAL': { en: '📡 System Signal', es: '📡 Señal del Sistema', zh: '📡 系统信号', icon: '📡' }
 };
@@ -28,16 +29,17 @@ export const emailService = {
     
     const mapping = EVENT_MAP[eventType] || { en: eventType, es: eventType, zh: eventType, icon: '📡' };
 
-    // Specialized Subject for Logins
     const isLogin = eventType === 'USER_LOGIN';
-    const subjectPrefix = isLogin ? '🔑 [ACCESS_DETECTED]' : '🛡️ [SYSTEM_ALERT]';
+    const isIncident = eventType.includes('FAILURE') || eventType.includes('DENIED') || eventType.includes('ERROR');
+    
+    const subjectPrefix = isLogin ? '🔑 [ACCESS_GRANTED]' : isIncident ? '🚨 [INCIDENT_ALERT]' : '🛡️ [SYSTEM_SIGNAL]';
     const subject = `${subjectPrefix} ${mapping.en}`;
 
     const html = `
       <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
         <div style="text-align: center; margin-bottom: 40px;">
           <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">${mapping.icon} SOMNO LAB</h2>
-          <p style="font-size: 10px; color: #6366f1; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">${isLogin ? 'Access Identity Pulse' : 'Node Alert Protocol'}</p>
+          <p style="font-size: 10px; color: #6366f1; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">${isLogin ? 'Identity Pulse' : 'Incident Protocol'}</p>
         </div>
 
         <div style="background: rgba(99, 102, 241, 0.03); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(99, 102, 241, 0.1);">
@@ -76,13 +78,9 @@ export const emailService = {
         body: JSON.stringify({ to, subject, html, secret: finalSecret }),
       });
       const data = await response.json();
-      if (!response.ok) {
-        console.error("[Email_Bridge] Dispatch failure:", data);
-        return { success: false, error: data.error };
-      }
+      if (!response.ok) return { success: false, error: data.error };
       return { success: true };
     } catch (e: any) {
-      console.warn(`[Email_Bridge] Handshake failed: ${e.message}`);
       return { success: false, error: e.message };
     }
   }
