@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus
@@ -19,7 +18,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
-      {/* 顶部操作桥 - 纯净链接支持 */}
+      {/* 顶部操作控制栏 */}
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between mb-12 md:mb-20 sticky top-4 z-[100]">
         <button 
           onClick={onBack}
@@ -53,7 +52,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             About <span className="text-indigo-400">SomnoAI Lab</span>
           </h1>
           <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-4">
-            SomnoAI Digital Sleep Lab • Neural Infrastructure v2.6
+            SomnoAI Digital Sleep Lab • Neural Infrastructure v2.7
           </p>
         </div>
       </header>
@@ -64,8 +63,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Globe size={24} /></div>
             <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Project Overview</h2>
           </div>
-          <div className="space-y-6 text-slate-300 text-lg md:text-xl leading-relaxed italic">
-            <p>SomnoAI Digital Sleep Lab is an AI-powered digital health platform focused on advanced sleep architecture analysis and personalized optimization.</p>
+          <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic">
+            <p><b>SomnoAI Digital Sleep Lab</b> is an AI-powered digital health platform focused on advanced sleep architecture analysis and personalized optimization.</p>
             <p>Unlike traditional hardware-dependent trackers, we offer a pure software solution: collect biometric data from any wearable, smart mattress, phone sensors or manual input — then use sophisticated AI models to deliver meaningful insights.</p>
           </div>
         </GlassCard>
@@ -106,7 +105,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Lead Developer</h2>
           </div>
           <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic">
-            <p>Built independently by <strong>Vyncuslim</strong> (Penang, Malaysia). A build-in-public project with strong focus on data sovereignty and neural recovery.</p>
+            <p>Built independently by <b>Vyncuslim</b> (Penang, Malaysia). A build-in-public project with strong focus on data sovereignty and neural recovery.</p>
             <div className="flex flex-wrap gap-6 mt-10">
               <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="inline-flex items-center px-8 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Github size={16} className="mr-2" /> Source</a>
               <a href="mailto:ongyuze1401@gmail.com" className="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-xl"><Mail size={16} className="mr-2" /> Contact</a>
@@ -115,7 +114,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         </GlassCard>
 
         <footer className="pt-12 text-center opacity-30">
-           <p className="text-[9px] font-mono tracking-widest uppercase mb-8">SomnoAI Digital Sleep Lab • Secure Infrastructure v2.6</p>
+           <p className="text-[9px] font-mono tracking-widest uppercase mb-8">SomnoAI Digital Sleep Lab • Secure Infrastructure v2.7</p>
            <button onClick={onBack} className="px-12 py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-widest italic shadow-2xl active:scale-95 transition-all">Back to Console</button>
         </footer>
       </div>

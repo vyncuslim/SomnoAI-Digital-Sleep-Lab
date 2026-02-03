@@ -1,16 +1,15 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
   Moon, BrainCircuit, Settings as SettingsIcon, History, 
-  BookOpen, FlaskConical, Fingerprint, LockKeyhole, LogOut
+  BookOpen, FlaskConical, RefreshCw, Fingerprint, LockKeyhole, LogOut, ShieldAlert
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
-import { getSafeHash } from './services/navigation.ts';
+import { getSafeHash, safeReload } from './services/navigation.ts';
 import { trackPageView } from './services/analytics.ts';
 import { authApi } from './services/supabaseService.ts';
 
@@ -62,7 +61,7 @@ const DecisionLoading = () => (
   </div>
 );
 
-// 封禁终端：红色警戒风格，彻底切断访问
+// 封禁终端页面
 const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
   <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
     <div className="absolute inset-0 bg-rose-600/10 blur-[120px] rounded-full animate-pulse" />
@@ -70,11 +69,11 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
       <LockKeyhole size={80} strokeWidth={1.5} />
     </div>
     <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-4">Access <span className="text-rose-600">Revoked</span></h2>
-    <p className="text-slate-400 text-sm font-medium italic max-w-sm mb-12 leading-relaxed text-center">
-      Your laboratory credentials for SomnoAI Digital Sleep Lab have been restricted by the command bridge. Access to the internal grid is strictly forbidden.
+    <p className="text-slate-400 text-sm font-medium italic max-w-sm mb-12 leading-relaxed">
+      Your laboratory credentials for <b>SomnoAI Digital Sleep Lab</b> have been restricted. Access to the neural grid is strictly severed.
     </p>
     <button onClick={onLogout} className="px-12 py-5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 active:scale-95 transition-all shadow-2xl">
-      <LogOut size={18} /> DISCONNECT NODE
+      <LogOut size={18} /> DISCONNECT SESSION
     </button>
   </div>
 );
@@ -94,13 +93,11 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const bridgeRouting = () => {
-      // 优先解析路径名 (Clean URL)，用于直接访问场景
-      const path = window.location.pathname.replace(/^\/+/, '');
-      // 兼容 Hash 路由
-      const hash = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '');
+      // 路由逻辑：物理路径优先，Hash 为辅
+      const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
+      const hash = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       const route = path || hash || 'dashboard';
 
-      // 路径清洗与重定向逻辑
       if (route === 'login') { setActiveView('dashboard'); return; }
       if (route === 'signup' || route === 'sign-in') { setActiveView('dashboard'); return; }
       if (route === 'about') { setActiveView('about'); return; }
@@ -131,17 +128,17 @@ const AppContent: React.FC = () => {
     };
   }, [profile, loading, isSimulated]);
 
-  // 【核心补丁】全域封禁拦截
+  // 全域封禁拦截
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
     const path = window.location.pathname.replace(/^\/+/, '');
     
-    // 强制专用登录/注册页面
+    // 强制专用登录/注册页面渲染
     if (!profile && !isSimulated) {
-      if (path === 'login') return <UserLoginPage onSuccess={() => { window.location.href = '/dashboard'; }} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
-      if (path === 'signup' || path === 'sign-in') return <UserSignupPage onSuccess={() => { window.location.href = '/dashboard'; }} onSandbox={() => setIsSimulated(true)} lang={lang} />;
+      if (path === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
+      if (path === 'signup' || path === 'sign-in') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
     }
 
     if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => setActiveView('dashboard')} />;
@@ -200,8 +197,8 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 默认回退到干净的登录页
-    return <UserLoginPage onSuccess={() => { window.location.href = '/dashboard'; }} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
+    // 默认回退到登录页
+    return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
   };
 
   return <RootLayout>{renderContent()}</RootLayout>;

@@ -1,7 +1,6 @@
-
 import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
-import { LockKeyhole, Home } from 'lucide-react';
+import { LockKeyhole, Home, ShieldAlert } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { logAuditLog } from '../services/supabaseService.ts';
 
@@ -29,16 +28,16 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
     }
   }, [loading, hasAccess, profile, level]);
 
-  // 【物理拦截】封禁用户绝对禁止进入受保护区域
+  // 账号封禁强制物理隔离
   if (profile?.is_blocked) {
      return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
-        <div className="w-24 h-24 bg-rose-600/10 rounded-full flex items-center justify-center text-rose-600 mb-8">
-          <LockKeyhole size={48} />
+        <div className="w-24 h-24 bg-rose-600/10 rounded-full flex items-center justify-center text-rose-600 mb-8 border border-rose-600/30 shadow-[0_0_50px_rgba(225,29,72,0.2)]">
+          <ShieldAlert size={48} />
         </div>
-        <h2 className="text-2xl font-black text-white uppercase italic mb-4">Neural Link Severed</h2>
-        <p className="text-slate-500 text-xs italic max-w-xs mb-10 text-center">Your account status prevents access to restricted sectors of SomnoAI Digital Sleep Lab. Contact the command bridge.</p>
-        <button onClick={() => window.location.href = '/'} className="px-8 py-3 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-widest">RE-SYNC HUB</button>
+        <h2 className="text-2xl font-black text-white uppercase italic mb-4">Neural Hub Locked</h2>
+        <p className="text-slate-500 text-xs italic max-w-xs mb-10 text-center uppercase tracking-widest leading-loose">Your node status: [BLOCKED].<br/>Connection to restricted sectors is prohibited.</p>
+        <button onClick={() => window.location.href = '/'} className="px-10 py-4 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-widest active:scale-95 transition-all">RE-SYNC HUB</button>
       </div>
      );
   }

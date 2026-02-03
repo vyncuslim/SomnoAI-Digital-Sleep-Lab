@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, Zap, Eye, EyeOff, 
@@ -18,7 +17,7 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab = 'login' }) => {
-  // 锁定模式，防止在 /login 页面看到注册表单，反之亦然
+  // 在专用路径下锁定 Tab，不允许随意切换以符合用户需求
   const [activeTab] = useState<'login' | 'signup' | 'otp'>(initialTab);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -61,7 +60,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         setError({ message: "Registry requested. Check email for verification link." });
       }
     } catch (err: any) {
-      setError({ message: err.message || "Handshake Failure." });
+      setError({ message: err.message || "Protocol link severed." });
     } finally {
       setIsProcessing(false);
     }
@@ -88,7 +87,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
           className="w-full py-5 rounded-full bg-white text-black font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-200 transition-all active:scale-95"
         >
           <Chrome size={18} />
-          {isLogin ? 'LOGIN WITH GOOGLE' : 'INITIALIZE WITH GOOGLE'}
+          {isLogin ? 'LOGIN WITH GOOGLE' : 'JOIN WITH GOOGLE'}
         </button>
 
         <div className="flex items-center gap-4 opacity-30">
@@ -98,7 +97,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         <form onSubmit={handleAuthAction} className="space-y-6">
           <div className="space-y-4">
             {!isLogin && (
-              <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Full Name" className="w-full bg-[#050a1f] border border-white/5 rounded-full px-8 py-5 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
+              <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Subject Name (Full Name)" className="w-full bg-[#050a1f] border border-white/5 rounded-full px-8 py-5 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
             )}
             <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Email Identifier" className="w-full bg-[#050a1f] border border-white/5 rounded-full px-8 py-5 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
             <div className="relative">
@@ -114,7 +113,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
             className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 transition-all hover:bg-indigo-500 disabled:opacity-40"
           >
             {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} fill="currentColor" />}
-            <span>{isLogin ? 'ESTABLISH LINK' : 'COMMIT REGISTRY'}</span>
+            <span>{isLogin ? 'ESTABLISH LINK' : 'INITIALIZE REGISTRY'}</span>
           </button>
         </form>
 
