@@ -1,12 +1,16 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v32.0
- * Features: High-Fidelity Multi-lingual Detailed Payload with User Context.
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v32.1
+ * Features: Rate Limiting & High-Fidelity Multi-lingual Detailed Payload.
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
+
+// 内存节流锁 (Prevent micro-bursts)
+let lastSentTime = 0;
+const MICRO_COOLDOWN = 10000; // 10 Seconds
 
 const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: string }> = {
   'USER_LOGIN': { en: '👤 Subject Access Granted', es: '👤 Inicio de Sesión', zh: '👤 受试者登录授权', icon: '🔐' },
@@ -16,15 +20,6 @@ const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: stri
   'CONSOLE_ERROR_PROXIED': { en: '📜 Terminal Error Log', es: '📜 Log de Error', zh: '📜 终端异常日志', icon: '🟠' },
   'USER_SESSION_EVALUATION': { en: '⭐ Session Feedback', es: '⭐ Calificación', zh: '⭐ 受试者离境评价', icon: '💎' },
   'DIARY_LOG_ENTRY': { en: '📝 Biological Log Entry', es: '📝 Nuevo Diario', zh: '📝 新生物节律日志', icon: '📗' }
-};
-
-const formatLogDetail = (text: string, lang: 'en' | 'es' | 'zh'): string => {
-  if (text.includes('SMTP_CONFIG_VOID')) {
-    if (lang === 'zh') return "⚠️ 核心错误：SMTP 邮件环境变量缺失 (Vercel ENV 未配置)";
-    if (lang === 'es') return "⚠️ Error: Faltan variables SMTP (Configuración Vercel)";
-    return "⚠️ Critical: SMTP ENV variables missing from host config.";
-  }
-  return text;
 };
 
 export const getMYTTime = () => {
@@ -38,6 +33,12 @@ export const getMYTTime = () => {
 export const notifyAdmin = async (payload: any) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
+  const now = Date.now();
+  if (now - lastSentTime < MICRO_COOLDOWN) {
+    console.debug("[Telegram] Micro-burst suppressed.");
+    return false;
+  }
+
   const msgType = payload.type || 'SYSTEM_SIGNAL';
   const path = payload.path || 'Global_Node';
   const rawDetails = payload.message || payload.error || 'N/A';
@@ -47,28 +48,20 @@ export const notifyAdmin = async (payload: any) => {
   
   const mapping = EVENT_MAP[msgType] || { en: msgType, es: msgType, zh: msgType, icon: '📡' };
 
-  // Special formatting for Login to make it Admin-friendly
-  const isLogin = msgType === 'USER_LOGIN';
-  const loginHeader = isLogin ? `\n🔑 <b>AUTHENTICATION EVENT</b>\n` : '';
-
-  const finalMessage = `${mapping.icon} <b>SOMNO LAB DETAILED ALERT</b>\n` +
+  const finalMessage = `${mapping.icon} <b>SOMNO LAB ALERT</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
-    loginHeader +
     `🇬🇧 <b>[ENGLISH]</b>\n` +
     `<b>Event:</b> <code>${mapping.en}</code>\n` +
-    `<b>Sector:</b> <code>${path}</code>\n` +
-    `<b>Log:</b> <code>${formatLogDetail(rawDetails, 'en')}</code>\n` +
-    `<b>Time:</b> <code>${isoTime}</code>\n\n` +
+    `<b>Log:</b> <code>${rawDetails.substring(0, 200)}</code>\n\n` +
     `🇨🇳 <b>[中文]</b>\n` +
     `<b>类型:</b> <code>${mapping.zh}</code>\n` +
-    `<b>路径:</b> <code>${path}</code>\n` +
-    `<b>日志:</b> <code>${formatLogDetail(rawDetails, 'zh')}</code>\n` +
-    `<b>时间:</b> <code>${mytTime}</code>\n\n` +
+    `<b>日志:</b> <code>${rawDetails.substring(0, 200)}</code>\n\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📍 <b>ORIGIN:</b> <code>${source}</code>\n` +
-    `🛡️ <b>STATUS:</b> <code>ENCRYPTED_LOG</code>`;
+    `🛡️ <b>STATUS:</b> <code>ENCRYPTED</code>`;
 
   try {
+    lastSentTime = now;
     const res = await fetch(TELEGRAM_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

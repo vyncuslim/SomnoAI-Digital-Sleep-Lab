@@ -1,8 +1,8 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB INFRASTRUCTURE PULSE v13.4
- * Secure diagnostic logic with robust JSON parsing.
+ * SOMNO LAB INFRASTRUCTURE PULSE v13.6
+ * Secure diagnostic logic with robust JSON parsing mirroring Sync Gateway.
  */
 
 const DEFAULT_SA_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
@@ -16,10 +16,7 @@ export default async function handler(req, res) {
     res.setHeader('Content-Type', 'application/json');
 
     if (querySecret !== serverSecret) {
-      return res.status(401).json({ 
-        error: "UNAUTHORIZED_PULSE", 
-        detail: "Secret mismatch. Verify Vercel CRON_SECRET." 
-      });
+      return res.status(401).json({ error: "UNAUTHORIZED_PULSE" });
     }
 
     const supabaseUrl = process.env.SUPABASE_URL || '';
@@ -28,34 +25,22 @@ export default async function handler(req, res) {
     const envStatus = {};
     const fingerprints = {};
 
-    const checkList = [
-      'GA_PROPERTY_ID', 
-      'GA_SERVICE_ACCOUNT_KEY', 
-      'SUPABASE_URL', 
-      'SUPABASE_SERVICE_ROLE_KEY', 
-      'API_KEY',
-      'SMTP_USER'
-    ];
+    const checkList = ['GA_PROPERTY_ID', 'GA_SERVICE_ACCOUNT_KEY', 'SUPABASE_URL', 'API_KEY'];
 
     checkList.forEach(key => {
       const val = process.env[key];
       envStatus[key] = !!val;
-      if (val && typeof val === 'string') {
-        fingerprints[key] = `${val.substring(0, 4)}... (Len: ${val.length})`;
-      } else if (val) {
-        fingerprints[key] = `TYPE: ${typeof val} (Len: ${String(val).length})`;
-      }
+      if (val) fingerprints[key] = `${val.substring(0, 5)}... (Len: ${val.length})`;
     });
 
     let activeSaEmail = DEFAULT_SA_EMAIL;
     try {
       if (process.env.GA_SERVICE_ACCOUNT_KEY) {
-        let cleaned = process.env.GA_SERVICE_ACCOUNT_KEY.trim();
-        if (cleaned.startsWith('"') && cleaned.endsWith('"')) cleaned = cleaned.slice(1, -1);
-        cleaned = cleaned.replace(/\n/g, '\\n');
-        cleaned = cleaned.replace(/\\\\n/g, '\\n');
-        const keyJson = JSON.parse(cleaned);
-        activeSaEmail = keyJson.client_email || activeSaEmail;
+        let raw = process.env.GA_SERVICE_ACCOUNT_KEY.trim();
+        if (raw.startsWith('"') && raw.endsWith('"')) raw = raw.substring(1, raw.length - 1);
+        const sanitized = raw.replace(/\n/g, "\\n").replace(/\\n/g, "\n");
+        const credentials = JSON.parse(sanitized);
+        activeSaEmail = credentials.client_email || activeSaEmail;
         envStatus['GA_KEY_PARSE_STATUS'] = 'SUCCESS';
       }
     } catch (e) {
@@ -70,9 +55,7 @@ export default async function handler(req, res) {
             const { error: dbError } = await supabase.from('profiles').select('count', { count: 'exact', head: true }).limit(1);
             if (!dbError) dbStatus = "ONLINE";
             else dbStatus = `ERROR: ${dbError.message}`;
-        } catch (dbEx) {
-            dbStatus = `INIT_CRASH: ${dbEx.message}`;
-        }
+        } catch (dbEx) { dbStatus = `INIT_CRASH: ${dbEx.message}`; }
     }
 
     return res.status(200).json({ 
@@ -82,15 +65,9 @@ export default async function handler(req, res) {
       fingerprints,
       service_account_email: activeSaEmail,
       vercel_runtime: process.env.VERCEL_ENV || 'production',
-      node_version: process.version,
       timestamp: new Date().toISOString()
     });
   } catch (e) {
-    console.error("[PULSE_FATAL]", e);
-    return res.status(500).json({ 
-        error: "MONITOR_EXCEPTION", 
-        details: e.message,
-        timestamp: new Date().toISOString()
-    });
+    return res.status(500).json({ error: "MONITOR_EXCEPTION", details: e.message });
   }
 }

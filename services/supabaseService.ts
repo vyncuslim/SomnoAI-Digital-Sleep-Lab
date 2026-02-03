@@ -8,13 +8,21 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
+ * SOMNO LAB NOTIFICATION THROTTLE
+ * Prevents "Too many messages" error by enforcing a cooldown on external dispatches.
+ */
+let lastNotificationDispatchTime = 0;
+const GLOBAL_NOTIFICATION_COOLDOWN = 5 * 60 * 1000; // 5 Minutes
+
+/**
  * LOG_AUDIT_LOG
- * Centrally manages system audit logs and triggers dual-channel administrative alerts
- * for critical events or security-related actions.
+ * Centrally manages system audit logs and triggers dual-channel administrative alerts.
  */
 export const logAuditLog = async (action: string, details: string, level: string = 'INFO') => {
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
+    
+    // Always persist to database for historical auditing
     const { error } = await supabase.from('audit_logs').insert([{
       action,
       details,
@@ -22,14 +30,16 @@ export const logAuditLog = async (action: string, details: string, level: string
       user_id: user?.id
     }]);
     
-    // AUTO-ALERT PROTOCOL v15.0
-    // Trigger notification if:
-    // 1. Level is Warning/Critical
-    // 2. Action is a 'Subject Dynamic' (Login, Signup, Feedback, Diary)
-    const isDynamicEvent = ['USER_LOGIN', 'USER_SIGNUP', 'FEEDBACK_SUBMITTED', 'DIARY_LOG_ENTRY', 'ADMIN_RECIPIENT_ADDED'].includes(action);
-    const isPriorityError = level === 'CRITICAL' || level === 'WARNING';
+    // 1. Determine if this event is priority
+    const isPriorityEvent = level === 'CRITICAL' || level === 'WARNING' || action === 'USER_LOGIN' || action === 'USER_SIGNUP';
 
-    if (isPriorityError || isDynamicEvent) {
+    // 2. Check Notification Cooldown
+    const now = Date.now();
+    const isCooldownActive = (now - lastNotificationDispatchTime) < GLOBAL_NOTIFICATION_COOLDOWN;
+
+    if (isPriorityEvent && !isCooldownActive) {
+      lastNotificationDispatchTime = now;
+      
       const payload = { 
         type: action, 
         message: details, 
@@ -37,12 +47,13 @@ export const logAuditLog = async (action: string, details: string, level: string
         source: user?.email || 'SYSTEM_NODE'
       };
       
-      // Concurrent dispatch to Telegram Bot and SMTP Gateway
+      // Dispatch
       await Promise.allSettled([
         notifyAdmin(payload),
         emailService.sendAdminAlert(payload)
       ]);
     }
+    
     return !error;
   } catch (e) {
     console.error("Audit log dispatch failed:", e);
@@ -52,7 +63,6 @@ export const logAuditLog = async (action: string, details: string, level: string
 
 /**
  * AUTH_API
- * Manages identity lifecycle and authentication handshakes.
  */
 export const authApi = {
   signIn: (email: string, password: string, captchaToken?: string) => 
@@ -128,31 +138,19 @@ export const adminApi = {
   },
   
   getNotificationRecipients: async () => {
-    const { data, error } = await supabase
-      .from('notification_recipients')
-      .select('*')
-      .order('created_at', { ascending: true });
+    const { data, error } = await supabase.from('notification_recipients').select('*').order('created_at', { ascending: true });
     return { data: data || [], error };
   },
   
   addNotificationRecipient: async (email: string, label: string) => {
-    const { data, error } = await supabase
-      .from('notification_recipients')
-      .insert([{ email: email.toLowerCase().trim(), label }]);
-    if (!error) {
-      await logAuditLog('ADMIN_RECIPIENT_ADDED', `New link established: ${email}`, 'WARNING');
-    }
+    const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `New link established: ${email}`, 'WARNING');
     return { data, error };
   },
   
   removeNotificationRecipient: async (id: string, email: string) => {
-    const { error } = await supabase
-      .from('notification_recipients')
-      .delete()
-      .eq('id', id);
-    if (!error) {
-      await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Link severed: ${email}`, 'WARNING');
-    }
+    const { error } = await supabase.from('notification_recipients').delete().eq('id', id);
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Link severed: ${email}`, 'WARNING');
     return { error };
   }
 };
@@ -162,7 +160,7 @@ export const adminApi = {
  */
 export const profileApi = {
   getMyProfile: async () => {
-    const { data: { user } } = await (supabase.auth as any).getUser();
+    const { data: { user } } = await (supabase.auth as any).getSession().then(({data}) => ({data: {user: data.session?.user}}));
     if (!user) return null;
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     return data;
@@ -197,7 +195,7 @@ export const userDataApi = {
     const dataRes = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
     if (dataRes.error) throw dataRes.error;
     
-    await logAuditLog('USER_SETUP_COMPLETE', `Subject ${user?.email} initialized biological metrics.`, 'INFO');
+    await logAuditLog('USER_SETUP_COMPLETE', `Subject ${user?.email} initialized metrics.`, 'INFO');
     return { success: true };
   }
 };
@@ -230,7 +228,7 @@ export const diaryApi = {
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user.id }]).select().single();
     if (error) throw error;
     
-    await logAuditLog('DIARY_LOG_ENTRY', `Subject ${user.email} logged mood: ${mood}\nEntry: ${content.substring(0, 300)}${content.length > 300 ? '...' : ''}`, 'INFO');
+    await logAuditLog('DIARY_LOG_ENTRY', `Subject ${user.email} logged mood: ${mood}`, 'INFO');
     return data;
   },
   
