@@ -1,7 +1,7 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v32.1
- * Features: Rate Limiting & High-Fidelity Multi-lingual Detailed Payload.
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v32.2
+ * Features: Aggressive Rate Limiting & High-Fidelity Multi-lingual Detailed Payload.
  */
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
@@ -10,7 +10,7 @@ const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
 // 内存节流锁 (Prevent micro-bursts)
 let lastSentTime = 0;
-const MICRO_COOLDOWN = 10000; // 10 Seconds
+const MICRO_COOLDOWN = 60000; // 60 Seconds - Increased to prevent redundant frontend bursts
 
 const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: string }> = {
   'USER_LOGIN': { en: '👤 Subject Access Granted', es: '👤 Inicio de Sesión', zh: '👤 受试者登录授权', icon: '🔐' },
@@ -34,8 +34,9 @@ export const notifyAdmin = async (payload: any) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
   const now = Date.now();
+  // Don't send if we sent something in the last 60 seconds (frontend session lock)
   if (now - lastSentTime < MICRO_COOLDOWN) {
-    console.debug("[Telegram] Micro-burst suppressed.");
+    console.debug("[Telegram] Frontend micro-burst suppressed.");
     return false;
   }
 
@@ -44,7 +45,6 @@ export const notifyAdmin = async (payload: any) => {
   const rawDetails = payload.message || payload.error || 'N/A';
   const source = payload.source || 'INTERNAL_BRIDGE';
   const mytTime = getMYTTime();
-  const isoTime = new Date().toISOString();
   
   const mapping = EVENT_MAP[msgType] || { en: msgType, es: msgType, zh: msgType, icon: '📡' };
 

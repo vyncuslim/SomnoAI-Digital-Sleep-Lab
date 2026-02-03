@@ -1,11 +1,32 @@
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB INFRASTRUCTURE PULSE v13.6
- * Secure diagnostic logic with robust JSON parsing mirroring Sync Gateway.
+ * SOMNO LAB INFRASTRUCTURE PULSE v13.7
+ * Secure diagnostic logic with robust multi-pass JSON parsing.
  */
 
 const DEFAULT_SA_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
+
+function robustParse(input) {
+  if (!input) return null;
+  let str = input.trim();
+  try {
+    const p = JSON.parse(str);
+    if (typeof p === 'object' && p !== null) return p;
+    if (typeof p === 'string') str = p;
+  } catch (e) {}
+  if (str.startsWith("'") && str.endsWith("'")) str = str.slice(1, -1);
+  if (str.startsWith('"') && str.endsWith('"')) str = str.slice(1, -1);
+  try {
+    const repaired = str.replace(/\n/g, '\\n').replace(/\r/g, '\\r');
+    return JSON.parse(repaired);
+  } catch (e) {
+    try {
+      const literal = str.replace(/\\n/g, '\n');
+      return JSON.parse(literal);
+    } catch (e2) { return null; }
+  }
+}
 
 export default async function handler(req, res) {
   try {
@@ -36,12 +57,13 @@ export default async function handler(req, res) {
     let activeSaEmail = DEFAULT_SA_EMAIL;
     try {
       if (process.env.GA_SERVICE_ACCOUNT_KEY) {
-        let raw = process.env.GA_SERVICE_ACCOUNT_KEY.trim();
-        if (raw.startsWith('"') && raw.endsWith('"')) raw = raw.substring(1, raw.length - 1);
-        const sanitized = raw.replace(/\n/g, "\\n").replace(/\\n/g, "\n");
-        const credentials = JSON.parse(sanitized);
-        activeSaEmail = credentials.client_email || activeSaEmail;
-        envStatus['GA_KEY_PARSE_STATUS'] = 'SUCCESS';
+        const credentials = robustParse(process.env.GA_SERVICE_ACCOUNT_KEY);
+        if (credentials) {
+            activeSaEmail = credentials.client_email || activeSaEmail;
+            envStatus['GA_KEY_PARSE_STATUS'] = 'SUCCESS';
+        } else {
+            envStatus['GA_KEY_PARSE_STATUS'] = 'FAIL';
+        }
       }
     } catch (e) {
         envStatus['GA_KEY_PARSE_STATUS'] = 'FAIL';
