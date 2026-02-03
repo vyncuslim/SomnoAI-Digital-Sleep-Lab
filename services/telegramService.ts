@@ -1,6 +1,7 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v43.0
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v46.0
+ * Features: High-density alert suppression & 24h fingerprint cooldown for recurring errors.
  */
 
 // @ts-ignore
@@ -10,8 +11,7 @@ const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
-// In-memory circuit breaker
-const memoryCache = new Set<string>();
+const memoryCache = new Map<string, number>();
 const processingPayloads = new Set<string>();
 
 const EVENT_MAP: Record<string, { en: string, zh: string, icon: string }> = {
@@ -33,35 +33,43 @@ export const getMYTTime = () => {
   }).format(new Date());
 };
 
+/**
+ * 核心逻辑：基于错误指纹的去重抑制
+ */
 const isRecentlySent = async (action: string, fingerprint: string) => {
   const cacheKey = `${action}:${fingerprint}`;
-  
-  // 1. Concurrent Lock (Prevent identical calls in the same execution wave)
+  const now = Date.now();
+
+  // 1. 并发写保护
   if (processingPayloads.has(cacheKey)) return true;
   processingPayloads.add(cacheKey);
 
   try {
-    // 2. Immediate Memory Check (1 minute TTL)
-    if (memoryCache.has(cacheKey)) return true;
+    // 2. 内存热数据校验：GA4 权限错误执行 24 小时冷却，其他执行 10 分钟冷却
+    const isPersistentError = action === 'GA4_PERMISSION_DENIED';
+    const cooldownPeriod = isPersistentError ? 86400000 : 600000; 
+    
+    const lastSentTime = memoryCache.get(cacheKey);
+    if (lastSentTime && (now - lastSentTime < cooldownPeriod)) {
+      return true;
+    }
 
-    // 3. Database Audit Check (Strict 1 minute lookback)
-    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+    // 3. 数据库审计校验
+    const lookbackTime = new Date(now - cooldownPeriod).toISOString();
     const { data } = await supabase
       .from('audit_logs')
       .select('id')
       .eq('action', action)
       .ilike('details', `%${fingerprint}%`)
-      .gt('created_at', oneMinuteAgo)
+      .gt('created_at', lookbackTime)
       .limit(1);
 
     if (data && data.length > 0) {
-      memoryCache.add(cacheKey);
-      setTimeout(() => memoryCache.delete(cacheKey), 60000);
+      memoryCache.set(cacheKey, now);
       return true;
     }
 
-    memoryCache.add(cacheKey);
-    setTimeout(() => memoryCache.delete(cacheKey), 60000);
+    memoryCache.set(cacheKey, now);
     return false;
   } catch (e) {
     return false;
@@ -76,12 +84,19 @@ export const notifyAdmin = async (payload: any) => {
   const msgType = payload.type || 'SYSTEM_SIGNAL';
   const rawDetails = typeof payload === 'string' ? payload : (payload.message || payload.error || 'N/A');
   
-  // Extract specific fingerprint for GA4 errors to avoid storming
-  let fingerprint = rawDetails.substring(0, 60).replace(/\s/g, '');
-  if (msgType.includes('GA4')) fingerprint = 'GA4_PERMISSION_BLOCK_CLUSTER';
+  // 对于特定的 GA4 错误使用固定指纹，确保 24 小时内只报警一次
+  let fingerprint = 'GENERAL_SIGNAL';
+  if (msgType === 'GA4_PERMISSION_DENIED' || rawDetails.includes('PERMISSION_DENIED')) {
+    fingerprint = 'GA4_AUTH_BLOCK_PROTOCOL';
+  } else {
+    fingerprint = rawDetails.substring(0, 100).replace(/\s/g, '');
+  }
 
   const duplicated = await isRecentlySent(msgType, fingerprint);
-  if (duplicated) return false;
+  if (duplicated) {
+    console.log(`[Alert_Suppressed] Notification throttled for ${msgType}`);
+    return false;
+  }
 
   const mapping = EVENT_MAP[msgType] || { en: msgType, zh: msgType, icon: '📡' };
   const source = payload.source || 'INTERNAL_NODE';
@@ -93,7 +108,7 @@ export const notifyAdmin = async (payload: any) => {
     `<b>Log:</b> <code>${rawDetails.substring(0, 350)}</code>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📍 <b>ORIGIN:</b> <code>${source}</code>\n` +
-    `🛡️ <b>INTERVAL:</b> <code>60s LOCK ACTIVE</code>`;
+    `🛡️ <b>STATUS:</b> <code>Suppression Active (24h)</code>`;
 
   try {
     const res = await fetch(TELEGRAM_API, {

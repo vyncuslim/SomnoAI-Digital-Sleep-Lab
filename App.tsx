@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
@@ -9,7 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
-import { getSafeHash, safeReload } from './services/navigation.ts';
+import { getSafeHash } from './services/navigation.ts';
 import { trackPageView } from './services/analytics.ts';
 import { authApi } from './services/supabaseService.ts';
 
@@ -61,7 +62,7 @@ const DecisionLoading = () => (
   </div>
 );
 
-// 封禁终端页面
+// 彻底切断封禁用户的访问终端
 const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
   <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
     <div className="absolute inset-0 bg-rose-600/10 blur-[120px] rounded-full animate-pulse" />
@@ -70,7 +71,7 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
     </div>
     <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-4">Access <span className="text-rose-600">Revoked</span></h2>
     <p className="text-slate-400 text-sm font-medium italic max-w-sm mb-12 leading-relaxed">
-      Your laboratory credentials for <b>SomnoAI Digital Sleep Lab</b> have been restricted. Access to the neural grid is strictly severed.
+      Your credentials for <b>SomnoAI Digital Sleep Lab</b> have been restricted by the command bridge. Access to laboratory sectors is prohibited.
     </p>
     <button onClick={onLogout} className="px-12 py-5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 active:scale-95 transition-all shadow-2xl">
       <LogOut size={18} /> DISCONNECT SESSION
@@ -93,7 +94,7 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const bridgeRouting = () => {
-      // 路由逻辑：物理路径优先，Hash 为辅
+      // 解析路径名 (Clean URL)
       const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
       const hash = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
       const route = path || hash || 'dashboard';
@@ -128,14 +129,14 @@ const AppContent: React.FC = () => {
     };
   }, [profile, loading, isSimulated]);
 
-  // 全域封禁拦截
+  // 全域封禁拦截补丁
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
     const path = window.location.pathname.replace(/^\/+/, '');
     
-    // 强制专用登录/注册页面渲染
+    // 强制专用登录/注册页面
     if (!profile && !isSimulated) {
       if (path === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
       if (path === 'signup' || path === 'sign-in') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
@@ -197,7 +198,7 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 默认回退到登录页
+    // 默认进入官方登录
     return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
   };
 

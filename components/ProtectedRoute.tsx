@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LockKeyhole, Home, ShieldAlert } from 'lucide-react';
@@ -28,7 +29,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
     }
   }, [loading, hasAccess, profile, level]);
 
-  // 账号封禁强制物理隔离
+  // 【物理隔离】封禁用户绝对禁止进入受保护区域
   if (profile?.is_blocked) {
      return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">

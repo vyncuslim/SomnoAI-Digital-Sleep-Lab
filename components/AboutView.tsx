@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus
@@ -18,7 +19,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
-      {/* 顶部操作控制栏 */}
+      {/* 顶部操作控制桥 */}
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between mb-12 md:mb-20 sticky top-4 z-[100]">
         <button 
           onClick={onBack}
