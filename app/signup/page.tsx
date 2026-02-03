@@ -25,7 +25,8 @@ export default function UserSignupPage({
             onSuccess();
         }} 
         onGuest={onSandbox}
-        initialTab="join"
+        // Fixed: Changed 'join' to 'signup' to match Auth component's allowed initialTab values
+        initialTab="signup"
       />
     </div>
   );

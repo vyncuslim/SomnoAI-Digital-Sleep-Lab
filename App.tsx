@@ -1,21 +1,21 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+
+import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
   Moon, BrainCircuit, Settings as SettingsIcon, History, 
-  BookOpen, FlaskConical, RefreshCw, Fingerprint
+  BookOpen, FlaskConical, RefreshCw, Fingerprint, LockKeyhole, LogOut
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
-import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
+import { getSafeHash, safeReload } from './services/navigation.ts';
 import { trackPageView } from './services/analytics.ts';
 import { authApi } from './services/supabaseService.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
-import AdminLoginPage from './app/admin/login/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
 import UserSignupPage from './app/signup/page.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
@@ -28,7 +28,6 @@ import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { FeedbackView } from './components/FeedbackView.tsx';
 import { ExperimentView } from './components/ExperimentView.tsx';
 import { SupportView } from './components/SupportView.tsx';
-import { NotFoundView } from './components/NotFoundView.tsx';
 import { AboutView } from './components/AboutView.tsx';
 import { UpdatePasswordView } from './components/UpdatePasswordView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
@@ -59,99 +58,66 @@ const DecisionLoading = () => (
        <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
        <Logo size={160} animated={true} className="mx-auto relative z-10" />
     </div>
-    <div className="space-y-6 text-center max-w-xs">
-       <div className="space-y-1">
-          <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.8em] italic animate-pulse opacity-80">Synchronizing Identity</p>
-          <p className="text-slate-700 text-[8px] font-black uppercase tracking-widest">Protocol Handshake • Node v22.5.1</p>
-       </div>
+    <p className="text-white font-mono font-black uppercase text-[11px] tracking-[0.8em] italic animate-pulse opacity-80 text-center">Synchronizing Node</p>
+  </div>
+);
+
+// 封禁终端：红色警戒风格
+const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
+  <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
+    <div className="absolute inset-0 bg-rose-600/10 blur-[120px] rounded-full animate-pulse" />
+    <div className="w-40 h-40 bg-rose-600/10 border-2 border-rose-600/30 rounded-[3rem] flex items-center justify-center text-rose-600 shadow-[0_0_80px_rgba(225,29,72,0.2)] mb-10">
+      <LockKeyhole size={80} strokeWidth={1.5} />
     </div>
+    <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-4">Access <span className="text-rose-600">Revoked</span></h2>
+    <p className="text-slate-400 text-sm font-medium italic max-w-sm mb-12 leading-relaxed text-center">
+      Your laboratory credentials for SomnoAI Digital Sleep Lab have been restricted by the command bridge. Access to Neural Grid is severed.
+    </p>
+    <button onClick={onLogout} className="px-12 py-5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 active:scale-95 transition-all shadow-2xl">
+      <LogOut size={18} /> DISCONNECT NODE
+    </button>
   </div>
 );
 
 const AppContent: React.FC = () => {
-  const { profile, loading, refresh, isAdmin } = useAuth();
+  const { profile, loading, refresh } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [activeView, setActiveView] = useState<ViewType | 'update-password'>('dashboard');
-  const [authMode, setAuthMode] = useState<'login' | 'join' | 'otp'>( 'login' );
   const [isSimulated, setIsSimulated] = useState(false);
 
-  const isExchangingTokens = useMemo(() => {
-    const hash = window.location.hash || '';
-    return hash.includes('access_token=') || hash.includes('id_token=') || hash.includes('code=');
-  }, []);
-
-  const isRecoveryMode = useMemo(() => {
-    const hash = window.location.hash || '';
-    return hash.includes('type=recovery') || hash.includes('update-password');
-  }, []);
-
-  const safeNavigate = useCallback((viewId: string) => {
-    safeNavigateHash(viewId);
-  }, []);
-
   const handleLogout = useCallback(async () => {
-    try {
-      await authApi.signOut();
-    } catch (e) {
-      console.warn("Session termination signal delayed.");
-    } finally {
+    try { await authApi.signOut(); } finally {
       setIsSimulated(false);
-      // Force clean reload to clear all memory states and redirect
-      safeReload();
+      window.location.href = '/login';
     }
   }, []);
 
   useEffect(() => {
-    if (isExchangingTokens && !profile && loading) return;
-
     const bridgeRouting = () => {
-      const pathOnly = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-      const hashRaw = getSafeHash();
-      const hashOnly = hashRaw.replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
-      
+      // 优先解析路径名 (Clean URL)，备选解析 Hash
+      const path = window.location.pathname.replace(/^\/+/, '');
+      const hash = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '');
+      const route = path || hash || 'dashboard';
+
+      if (route === 'login') { setActiveView('dashboard'); return; }
+      if (route === 'signup' || route === 'sign-in') { setActiveView('dashboard'); return; }
+      if (route === 'about') { setActiveView('about'); return; }
+      if (route === 'admin') { setActiveView('admin'); return; }
+
       const mappings: Record<string, ViewType | 'update-password'> = {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
-        'registry': 'registry', 'admin/login': 'admin-login', 'update-password': 'update-password'
+        'registry': 'registry', 'update-password': 'update-password'
       };
 
-      // Recovery Priority
-      if (isRecoveryMode) {
-        setActiveView('update-password');
-        trackPageView('/update-password', 'Identity Recovery');
-        return;
-      }
-
-      if (profile && !loading) {
-        if (hashRaw.includes('access_token=') || hashRaw.includes('id_token=')) {
-          window.history.replaceState(null, '', '/#dashboard');
-          setActiveView('dashboard');
-          return;
-        }
-
-        const isAuthRelated = ['login', 'signup', 'signin', 'otp'].some(p => pathOnly === p || hashOnly === p);
-        if (isAuthRelated || !hashOnly) {
-           window.history.replaceState(null, '', '/#dashboard');
-           setActiveView('dashboard');
-           return;
-        }
-      }
-
-      if (!profile && !loading && !isSimulated) {
-        if (pathOnly === 'signup' || hashOnly === 'signup') { setAuthMode('join'); trackPageView('/signup', 'Registration Terminal'); return; }
-        if (['login', 'signin'].includes(pathOnly) || ['login', 'signin'].includes(hashOnly)) { setAuthMode('login'); trackPageView('/login', 'Access Terminal'); return; }
-        if (hashOnly.startsWith('admin')) { setActiveView('admin-login'); trackPageView('/admin/login', 'Restricted Access'); return; }
-      }
-      
-      const target = hashOnly || 'dashboard';
-      if (mappings[target]) {
-        setActiveView(mappings[target]);
-        trackPageView(`/${target}`, `SomnoAI: ${target.toUpperCase()}`);
+      if (mappings[route]) {
+        setActiveView(mappings[route]);
       } else if (profile || isSimulated) {
         setActiveView('dashboard');
-        trackPageView('/dashboard', 'Subject Dashboard');
       }
+      
+      trackPageView(`/${route}`, `SomnoAI: ${route.toUpperCase()}`);
     };
     
     window.addEventListener('hashchange', bridgeRouting);
@@ -161,55 +127,54 @@ const AppContent: React.FC = () => {
       window.removeEventListener('hashchange', bridgeRouting);
       window.removeEventListener('popstate', bridgeRouting);
     };
-  }, [profile, isAdmin, loading, isExchangingTokens, isSimulated, isRecoveryMode]);
+  }, [profile, loading, isSimulated]);
 
-  if (loading || (isExchangingTokens && !profile)) return <DecisionLoading />;
+  // 全域封禁拦截逻辑
+  if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
+  if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    if (activeView === 'update-password') {
-      return <UpdatePasswordView onSuccess={() => safeNavigate('dashboard')} />;
+    const path = window.location.pathname.replace(/^\/+/, '');
+    
+    // 强制独占页面：登录和注册 (支持专用模式)
+    if (!profile && !isSimulated) {
+      if (path === 'login') return <UserLoginPage onSuccess={() => { window.location.href = '/dashboard'; }} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
+      if (path === 'signup' || path === 'sign-in') return <UserSignupPage onSuccess={() => { window.location.href = '/dashboard'; }} onSandbox={() => setIsSimulated(true)} lang={lang} />;
     }
 
-    if (activeView === 'about') {
-      return (
-        <div className="w-full flex flex-col min-h-screen">
-          <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-10 pb-48">
-            <AboutView lang={lang} onBack={() => safeNavigate(profile || isSimulated ? 'settings' : 'login')} />
-          </main>
-        </div>
-      );
-    }
+    if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => setActiveView('dashboard')} />;
+    if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView(profile || isSimulated ? 'settings' : 'dashboard')} onNavigate={(v) => {
+      if (v === 'login' || v === 'signup') {
+         window.location.href = `/${v}`;
+      } else {
+         setActiveView(v as any);
+      }
+    }} />;
 
-    if ((profile || isSimulated)) {
-      if (profile?.role === 'user' && !profile.full_name) {
-        return <FirstTimeSetup onComplete={() => refresh()} />;
-      }
-      
-      if (activeView === 'admin-login' || activeView === 'admin') {
-        return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
-      }
+    if (profile || isSimulated) {
+      if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
+      if (activeView === 'admin') return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
 
       return (
         <div className="w-full flex flex-col min-h-screen">
           <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-6 md:pt-10 pb-48">
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={safeNavigate} />}
+                {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={setActiveView} />}
                 {activeView === 'calendar' && <Trends history={[MOCK_RECORD]} lang={lang} />}
                 {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} isSandbox={isSimulated} />}
                 {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
                 {activeView === 'diary' && <DiaryView lang={lang} />}
                 {activeView === 'registry' && <UserProfile lang={lang} />}
-                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={safeNavigate} />}
-                {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('support')} />}
-                {activeView === 'support' && <SupportView lang={lang} onBack={() => safeNavigate('settings')} onNavigate={safeNavigate} />}
-                {(activeView as any) === 'not-found' && <NotFoundView />}
+                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} />}
+                {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => setActiveView('support')} />}
+                {activeView === 'support' && <SupportView lang={lang} onBack={() => setActiveView('settings')} onNavigate={setActiveView} />}
               </m.div>
             </AnimatePresence>
           </main>
           
           <div className="fixed bottom-6 md:bottom-12 left-0 right-0 z-[60] px-4 md:px-6 flex justify-center pointer-events-none pb-safe">
-            <m.nav initial={{ y: 100 }} animate={{ y: 0 }} className="bg-[#0a0f25]/90 backdrop-blur-3xl border border-white/5 rounded-full p-1.5 md:p-2 flex gap-1 pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar max-w-[95vw]">
+            <m.nav initial={{ y: 100 }} animate={{ y: 0 }} className="bg-[#0a0f25]/90 backdrop-blur-3xl border border-white/5 rounded-full p-1.5 md:p-2 flex gap-1 pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar">
               {[
                 { id: 'dashboard', icon: Moon, label: 'LAB' },
                 { id: 'calendar', icon: History, label: 'HIST' },
@@ -219,8 +184,11 @@ const AppContent: React.FC = () => {
                 { id: 'diary', icon: BookOpen, label: 'LOG' },
                 { id: 'settings', icon: SettingsIcon, label: 'CFG' }
               ].map((nav) => (
-                <button key={nav.id} onClick={() => safeNavigate(nav.id)} className={`relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-full transition-all duration-500 shrink-0 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
-                  <nav.icon size={16} className="md:w-[18px] md:h-[18px]" />
+                <button key={nav.id} onClick={() => {
+                  window.history.pushState(null, '', `/${nav.id}`);
+                  setActiveView(nav.id as any);
+                }} className={`relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-full transition-all duration-500 shrink-0 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
+                  <nav.icon size={16} />
                   {activeView === nav.id && <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest whitespace-nowrap">{nav.label}</span>}
                 </button>
               ))}
@@ -230,20 +198,11 @@ const AppContent: React.FC = () => {
       );
     }
 
-    if (!profile && !isSimulated) {
-      if (activeView === 'admin-login') return <AdminLoginPage />;
-      if (authMode === 'join') {
-        return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
-      }
-      return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode={authMode} />;
-    }
-
-    return <NotFoundView />;
+    // 默认进入登录终端
+    return <UserLoginPage onSuccess={() => { window.location.href = '/dashboard'; }} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
   };
 
-  return (
-    <RootLayout>{renderContent()}</RootLayout>
-  );
+  return <RootLayout>{renderContent()}</RootLayout>;
 };
 
 const App: React.FC = () => (

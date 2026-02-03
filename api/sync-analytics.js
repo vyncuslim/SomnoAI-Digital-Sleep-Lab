@@ -2,9 +2,8 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v38.0 - PRODUCTION CORE
- * This gateway strictly targets the Google Analytics 4 Data API (analyticsdata.googleapis.com).
- * Legacy Universal Analytics (UA) endpoints are not used.
+ * SOMNO LAB GA4 SYNC GATEWAY v38.1 - PRODUCTION CORE
+ * Implements strict deduplication for Telegram alerts to prevent flooding.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -37,12 +36,15 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const currentAction = isForbidden ? 'GA4_PERMISSION_DENIED' : 'GA4_SYNC_FAILURE';
   
-  const fiveMinutesAgo = new Date(Date.now() - 300000).toISOString();
+  // 对于已知权限错误，将去重时间延长至 24 小时 (86400000 ms)
+  const dedupTime = isForbidden ? 86400000 : 300000;
+  const timeLimit = new Date(Date.now() - dedupTime).toISOString();
+  
   const { data: existing } = await supabase
     .from('audit_logs')
     .select('id')
     .eq('action', currentAction)
-    .gt('created_at', fiveMinutesAgo)
+    .gt('created_at', timeLimit)
     .limit(1);
 
   if (existing && existing.length > 0) return;
@@ -53,6 +55,7 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
     level: isForbidden ? 'CRITICAL' : 'WARNING'
   }]);
 
+  // 如果是权限被拒且已经在 24 小时内记录过，不再发送 TG
   try {
     const tgMsg = `🚨 <b>SOMNO LAB: SYNC INCIDENT</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -60,7 +63,7 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
       `<b>Type:</b> <code>${currentAction}</code>\n` +
       `<b>Err:</b> <code>${errorMsg.substring(0, 150)}...</code>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📍 <b>NOTICE:</b> Legacy UA requests (analyticsreporting) are disabled. Check Property Permissions.`;
+      `📍 <b>NOTICE:</b> Gateway throttled for 24h to prevent spam. Fix in Admin Bridge.`;
       
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -97,7 +100,6 @@ export default async function handler(req, res) {
       ? credentials.private_key.replace(/\\n/g, '\n')
       : credentials.private_key;
 
-    // Explicitly verified: BetaAnalyticsDataClient uses https://analyticsdata.googleapis.com
     const analyticsClient = new BetaAnalyticsDataClient({ 
       credentials: { ...credentials, private_key: formattedKey } 
     });
@@ -105,7 +107,6 @@ export default async function handler(req, res) {
     checkpoint = "GA_API_HANDSHAKE";
     const cleanId = GA_PROPERTY_ID.trim().replace(/^properties\//, '');
     
-    // Ensure numeric Property ID is used (e.g. 380909155)
     const [response] = await analyticsClient.runReport({
       property: `properties/${cleanId}`,
       dateRanges: [{ startDate: 'yesterday', endDate: 'today' }],
@@ -139,7 +140,6 @@ export default async function handler(req, res) {
       is_permission_denied: isPermissionDenied,
       service_account: diagCreds?.client_email || "DECODING_FAILURE",
       property_id: GA_PROPERTY_ID?.trim() || "MISSING",
-      endpoint_verified: "analyticsdata.googleapis.com (GA4)",
       failed_at: checkpoint
     });
   }

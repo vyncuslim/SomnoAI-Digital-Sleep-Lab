@@ -15,8 +15,8 @@ export default function UserLoginPage({
   onSuccess: () => void, 
   onSandbox: () => void, 
   lang?: Language,
-  // Fix: Added 'otp' to the allowed mode types to match Auth component requirements
-  mode?: 'login' | 'join' | 'otp'
+  // Fixed: Changed 'join' to 'signup' to match Auth component requirements
+  mode?: 'login' | 'signup' | 'otp'
 }) {
   return (
     <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center">
