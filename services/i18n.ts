@@ -1,17 +1,24 @@
+
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v7.0
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v8.0
  * Optimized for world-class digital health branding.
  */
 
+const BRAND_NAME = "SomnoAI Digital Sleep Lab";
+
 const commonEn = {
+  brand: {
+    name: BRAND_NAME,
+    sublabel: "Digital Sleep Lab"
+  },
   dashboard: {
     manifesto: "High-performance recovery is the blueprint for high-performance living."
   },
   assistant: {
     title: "Neural Assistant",
-    intro: "Welcome back to the Laboratory. I have synchronized with your latest biometric telemetry. How can I optimize your restoration today?",
+    intro: `Welcome back to the ${BRAND_NAME}. I have synchronized with your latest biometric telemetry. How can I optimize your restoration today?`,
     placeholder: "Ask about your sleep architecture, diet, or recovery window..."
   },
   registry: {
@@ -27,7 +34,7 @@ const commonEn = {
     identifier: "Registry Email",
     polarity: "Gender",
     sovereignty: "Privacy Sovereignty",
-    sovereigntyDesc: "Your health telemetry is processed locally. We utilize physiological baselines exclusively for AI synthesis. Data is never persisted on our cloud infrastructure."
+    sovereigntyDesc: "Your health telemetry is processed locally within our secure digital infrastructure. We utilize physiological baselines exclusively for AI synthesis. Data is never persisted on our cloud nodes."
   },
   settings: {
     title: 'Lab Config',
@@ -85,12 +92,16 @@ const commonEn = {
 };
 
 const commonZh = {
+  brand: {
+    name: "SomnoAI 数字化睡眠实验室",
+    sublabel: "数字化睡眠实验室"
+  },
   dashboard: {
     manifesto: "优质的睡眠恢复，是高效生活的基石。"
   },
   assistant: {
     title: "AI 睡眠教练",
-    intro: "欢迎回到实验室。我已分析完您最新的生理指标，今天我能如何协助您优化恢复质量？",
+    intro: `欢迎回到 ${BRAND_NAME}。我已分析完您最新的生理指标，今天我能如何协助您优化恢复质量？`,
     placeholder: "询问关于您睡眠质量、饮食或恢复建议的任何问题..."
   },
   registry: {
@@ -155,7 +166,7 @@ const commonZh = {
   },
   feedback: {
     exitTitle: '会话终止',
-    exitSubtitle: '断开连接前请提供恢复反馈。',
+    exitSubtitle: '断开连接前请提供恢复 feedback。',
     success: '反馈已存档',
     commentPlaceholder: '记录您的睡眠质量或系统性能...',
     submitAndLogout: '提交并退出',

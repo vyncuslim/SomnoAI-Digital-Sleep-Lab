@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -52,7 +53,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
              <Logo size={32} animated={true} />
-             <span className="text-xl font-black italic tracking-tighter uppercase text-white">SomnoAI</span>
+             <div className="flex flex-col">
+               <span className="text-xl font-black italic tracking-tighter uppercase text-white leading-none">SomnoAI</span>
+               <span className="text-[7px] font-bold tracking-[0.3em] uppercase text-indigo-400 opacity-80">Digital Sleep Lab</span>
+             </div>
           </div>
           
           <nav className="hidden md:flex items-center gap-10">
@@ -125,7 +129,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         >
           <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-4">
              <div className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">SomnoAI Lab • Clinical Intelligence</span>
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">SomnoAI Digital Sleep Lab • Clinical Intelligence</span>
           </div>
 
           <div className="space-y-8">
@@ -197,8 +201,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                </div>
                <p className="text-xl text-slate-400 font-medium italic leading-relaxed">
                   {isZh 
-                    ? '我们采用“边缘计算”架构，您的生理数据仅存储在浏览器会话中，绝不上传到后台服务器，且在退出登录后立即永久抹除。' 
-                    : 'Utilizing Edge Processing architecture, your biometric telemetry is stored exclusively in-browser and purged immediately upon session termination. We prioritize your human data sovereignty.'}
+                    ? 'SomnoAI 数字化睡眠实验室采用“边缘计算”架构，您的生理数据仅存储在浏览器会话中，绝不上传到后台服务器，且在退出登录后立即永久抹除。' 
+                    : 'Utilizing Edge Processing architecture, SomnoAI Digital Sleep Lab ensures your biometric telemetry is stored exclusively in-browser and purged immediately upon session termination.'}
                </p>
                <div className="flex flex-wrap gap-4">
                   {['Bank-Level Encryption', 'No Server Persistence', '100% Anonymous'].map((t, i) => (
@@ -221,7 +225,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                   </div>
                   <div className="space-y-6">
                     <p className="text-sm text-slate-500 italic leading-relaxed">
-                      {isZh ? '我们致力于通过心率变异性（HRV）与深度学习模型，探索睡眠架构与认知表现之间的直接关联。' : 'SomnoAI explores the direct correlation between heart rate variability (HRV), neural sleep architecture, and executive cognitive performance through deep-learning neural networks.'}
+                      {isZh ? '我们致力于通过心率变异性（HRV）与深度学习模型，探索睡眠架构与认知表现之间的直接关联。' : 'SomnoAI Digital Sleep Lab explores the direct correlation between heart rate variability (HRV), neural sleep architecture, and executive cognitive performance.'}
                     </p>
                     <button onClick={() => onNavigate('science')} className="flex items-center gap-3 text-indigo-400 font-black uppercase text-[10px] tracking-[0.3em] hover:text-white transition-all italic">
                        {isZh ? '阅读科学协议' : 'READ SCIENTIFIC PROTOCOL'} <ExternalLink size={14} />
@@ -239,7 +243,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           <div className="col-span-1 md:col-span-2 space-y-10">
              <div className="flex items-center gap-4">
                 <Logo size={48} animated={true} />
-                <span className="text-3xl font-black italic tracking-tighter uppercase text-white">SomnoAI Lab</span>
+                <div className="flex flex-col">
+                  <span className="text-3xl font-black italic tracking-tighter uppercase text-white leading-none">SomnoAI</span>
+                  <span className="text-[9px] font-bold tracking-[0.4em] uppercase text-indigo-500">Digital Sleep Lab</span>
+                </div>
              </div>
              <p className="text-slate-500 text-sm italic font-medium max-w-md leading-relaxed">
                {isZh 
@@ -277,7 +284,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
         <div className="max-w-7xl mx-auto pt-32 text-center">
            <p className="text-[10px] font-mono uppercase tracking-[0.6em] text-slate-700">
-             © 2026 SomnoAI • SECURING YOUR NIGHT POTENTIAL
+             © 2026 SomnoAI Digital Sleep Lab • SECURING YOUR NIGHT POTENTIAL
            </p>
         </div>
       </footer>
