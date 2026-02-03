@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { 
-  ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus, Microscope, HelpCircle, Zap
+  ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus, Microscope, HelpCircle, Zap, Linkedin
 } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -115,9 +114,11 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
           </div>
           <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic">
             <p>Built independently by <b>Vyncuslim</b> (Penang, Malaysia). A build-in-public project with strong focus on data sovereignty and neural recovery.</p>
-            <div className="flex flex-wrap gap-6 mt-10">
-              <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="inline-flex items-center px-8 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Github size={16} className="mr-2" /> Source</a>
-              <a href="mailto:ongyuze1401@gmail.com" className="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-xl"><Mail size={16} className="mr-2" /> Contact</a>
+            <div className="flex flex-wrap gap-4 mt-10">
+              <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="inline-flex items-center px-6 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Github size={16} className="mr-2" /> GitHub</a>
+              <a href="https://www.linkedin.com/in/vyncus-lim-761300375/" target="_blank" className="inline-flex items-center px-6 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Linkedin size={16} className="mr-2" /> LinkedIn</a>
+              <a href="https://share.google/r71Eapdw1ZSgxO7RE" target="_blank" className="inline-flex items-center px-6 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Globe size={16} className="mr-2" /> Google</a>
+              <a href="mailto:ongyuze1401@gmail.com" className="inline-flex items-center px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-xl"><Mail size={16} className="mr-2" /> Contact</a>
             </div>
           </div>
         </GlassCard>

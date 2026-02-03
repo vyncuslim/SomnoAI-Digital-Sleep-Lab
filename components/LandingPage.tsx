@@ -1,9 +1,9 @@
-
-import React from 'react';
-import { motion } from 'framer-motion';
+import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, ShieldCheck, Moon, BrainCircuit, Activity, 
-  ArrowRight, CheckCircle2, Lock, Microscope, Sparkles, LogIn
+  ArrowRight, Lock, Microscope, Sparkles, LogIn, HeartPulse, Waves, 
+  CheckCircle2, Menu, X, Globe, Mail, Github, Linkedin, ExternalLink, HelpCircle
 } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { GlassCard } from './GlassCard.tsx';
@@ -18,200 +18,268 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) => {
   const isZh = lang === 'zh';
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const steps = [
     {
       icon: Activity,
-      title: isZh ? '1. 记录睡眠数据' : '1. Record Data',
-      desc: isZh ? '手动录入、佩戴设备或使用手机传感器自动同步。' : 'Manual entry, wearable sync, or phone sensor tracking.'
+      title: isZh ? '1. 智能数据同步' : '1. Biometric Ingress',
+      desc: isZh ? '通过 Health Connect 自动同步手环、手表数据，或手动记录生理感受。' : 'Sync wearable telemetry via Health Connect or log subjective recovery metrics manually.'
     },
     {
       icon: BrainCircuit,
-      title: isZh ? '2. AI 深度分析' : '2. AI Analysis',
-      desc: isZh ? '识别夜醒、浅睡及作息规律，找出影响因素。' : 'Identify waking, light sleep, and routine patterns.'
+      title: isZh ? '2. AI 神经建模' : '2. Neural Synthesis',
+      desc: isZh ? '利用 Google Gemini 尖端模型，识别您的深睡效率、REM 阶段及作息规律。' : 'Leverage Google Gemini models to reconstruct sleep stages and identify recovery architecture.'
     },
     {
-      icon: Zap,
-      title: isZh ? '3. 获得专属建议' : '3. Get Insights',
-      desc: isZh ? '为您定制环境优化、作息调整与睡前习惯方案。' : 'Customized environment, routine, and habit optimizations.'
+      icon: Sparkles,
+      title: isZh ? '3. 获得专属处方' : '3. Precision Protocol',
+      desc: isZh ? '根据您的生物基准，定制化改善建议，锁定破坏睡眠的隐藏因素。' : 'Receive tailored optimization protocols to eliminate disruptors and maximize deep sleep.'
     }
   ];
 
-  const benefits = [
-    isZh ? '更容易进入深睡' : 'Fall asleep faster',
-    isZh ? '减少半夜惊醒频率' : 'Reduce middle-night waking',
-    isZh ? '白天精神状态显著提升' : 'Significantly better daytime energy',
-    isZh ? '锁定破坏睡眠的隐藏因素' : 'Identify hidden sleep disruptors'
-  ];
-
-  const trustPoints = [
-    { icon: Lock, label: isZh ? '数据加密存储' : 'Encrypted Storage' },
-    { icon: ShieldCheck, label: isZh ? '绝不出售个人数据' : 'No Data Sales' },
-    { icon: Microscope, label: isZh ? '基于睡眠科学模型' : 'Science-Based' },
-    { icon: Sparkles, label: isZh ? '辅助建议而非诊断' : 'AI Optimization' }
+  const navLinks = [
+    { label: isZh ? '科学原理' : 'Science', view: 'science' },
+    { label: isZh ? '研究案例' : 'Case Studies', view: 'about' },
+    { label: isZh ? '常见问题' : 'FAQ', view: 'faq' },
+    { label: isZh ? '技术支持' : 'Support', view: 'support' },
   ];
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 overflow-x-hidden font-sans">
-      {/* SECTION 1: HERO */}
-      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-20">
+      {/* PROFESSIONAL HEADER */}
+      <header className="fixed top-0 left-0 right-0 z-[100] backdrop-blur-xl border-b border-white/5 px-6 py-4">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
+             <Logo size={32} animated={true} />
+             <span className="text-xl font-black italic tracking-tighter uppercase text-white">SomnoAI</span>
+          </div>
+          
+          <nav className="hidden md:flex items-center gap-10">
+            {navLinks.map((link) => (
+              <button 
+                key={link.view} 
+                onClick={() => onNavigate(link.view)} 
+                className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors"
+              >
+                {link.label}
+              </button>
+            ))}
+          </nav>
+
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => onNavigate('login')}
+              className="hidden sm:block px-8 py-2.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all"
+            >
+              {isZh ? '实验室入口' : 'Enter Lab'}
+            </button>
+            <button className="md:hidden p-2 text-slate-400" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+          </div>
+        </div>
+      </header>
+
+      {/* MOBILE MENU */}
+      <AnimatePresence>
+        {mobileMenuOpen && (
+          <m.div 
+            initial={{ opacity: 0, y: -20 }} 
+            animate={{ opacity: 1, y: 0 }} 
+            exit={{ opacity: 0, y: -20 }}
+            className="fixed inset-0 z-[90] bg-[#020617] pt-24 px-6 md:hidden"
+          >
+            <div className="flex flex-col gap-8">
+              {navLinks.map((link) => (
+                <button 
+                  key={link.view} 
+                  onClick={() => { onNavigate(link.view); setMobileMenuOpen(false); }} 
+                  className="text-2xl font-black uppercase italic text-left text-white"
+                >
+                  {link.label}
+                </button>
+              ))}
+              <button 
+                onClick={() => { onNavigate('login'); setMobileMenuOpen(false); }}
+                className="w-full py-6 rounded-3xl bg-indigo-600 text-white font-black uppercase tracking-widest text-sm"
+              >
+                {isZh ? '进入实验室' : 'Login to Console'}
+              </button>
+            </div>
+          </m.div>
+        )}
+      </AnimatePresence>
+
+      {/* HERO SECTION */}
+      <section className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-20 pb-32">
         <div className="absolute inset-0 overflow-hidden pointer-events-none">
-          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[120vw] h-[120vw] bg-indigo-600/10 blur-[180px] rounded-full animate-pulse" />
+          <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[120vw] h-[120vw] bg-indigo-600/10 blur-[200px] rounded-full animate-pulse" />
+          <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#020617] to-transparent" />
         </div>
 
         <m.div 
           initial={{ opacity: 0, y: 30 }} 
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-10 relative z-10 max-w-4xl"
+          className="text-center space-y-12 relative z-10 max-w-5xl"
         >
-          <Logo size={120} animated={true} className="mx-auto" />
-          
-          <div className="space-y-6">
-            <h1 className="text-5xl md:text-8xl font-black italic tracking-tighter text-white uppercase leading-[0.9]">
-              {isZh ? 'AI 帮你看懂睡眠' : 'AI Decodes'} <br/>
-              <span className="text-indigo-500">{isZh ? '让每一晚都更高质量' : 'Your Sleep'}</span>
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-4">
+             <div className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
+             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">SomnoAI Lab • Clinical Intelligence</span>
+          </div>
+
+          <div className="space-y-8">
+            <h1 className="text-5xl md:text-9xl font-black italic tracking-tighter text-white uppercase leading-[0.85]">
+              {isZh ? '让每一次睡眠' : 'ENGINEER YOUR'} <br/>
+              <span className="text-indigo-500">{isZh ? '都成为能量补给' : 'NIGHT POTENTIAL'}</span>
             </h1>
-            <p className="text-lg md:text-2xl text-slate-400 font-medium italic max-w-2xl mx-auto leading-relaxed">
+            <p className="text-lg md:text-2xl text-slate-400 font-medium italic max-w-3xl mx-auto leading-relaxed px-4">
               {isZh 
-                ? '通过数据分析找出影响你睡眠的真正原因，并给出可执行的改善建议。' 
-                : 'Identify the real causes affecting your sleep patterns and receive actionable optimization protocols.'}
+                ? 'SomnoAI 数字化睡眠实验室。融合生理指标监控、AI 深度洞察与科学健康建议，为您揭示数据背后的睡眠真相。' 
+                : 'SomnoAI Digital Sleep Lab integrates advanced physiological monitoring and Google Gemini neural insights to reconstruct your recovery architecture.'}
             </p>
           </div>
 
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-6 pt-6 px-4">
             <button 
               onClick={() => onNavigate('signup')}
-              className="w-full sm:w-auto px-12 py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-sm uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 italic flex items-center gap-4"
+              className="w-full sm:w-auto px-16 py-7 bg-white text-[#020617] rounded-full font-black text-xs uppercase tracking-[0.4em] shadow-[0_20px_50px_rgba(255,255,255,0.1)] transition-all hover:scale-105 active:scale-95 italic flex items-center justify-center gap-4"
             >
-              {isZh ? '立即开始分析' : 'Start Analysis'} <ArrowRight size={20} />
+              {isZh ? '立即开始优化' : 'START OPTIMIZATION'} <ArrowRight size={20} />
             </button>
             <button 
               onClick={() => onNavigate('login')}
-              className="w-full sm:w-auto px-10 py-6 bg-white/5 hover:bg-white/10 text-slate-300 rounded-full font-black text-sm uppercase tracking-[0.3em] border border-white/10 transition-all active:scale-95 italic flex items-center gap-3"
+              className="w-full sm:w-auto px-10 py-7 bg-white/5 hover:bg-white/10 text-slate-300 rounded-full font-black text-xs uppercase tracking-[0.3em] border border-white/10 transition-all active:scale-95 italic flex items-center justify-center gap-3"
             >
-              <LogIn size={18} /> {isZh ? '已有账号' : 'Sign In'}
+              <LogIn size={18} /> {isZh ? '登录账号' : 'ENTER LABORATORY'}
             </button>
           </div>
         </m.div>
 
         <m.div 
           initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-          className="absolute bottom-10 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-30"
+          className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-20"
         >
-          <span className="text-[10px] font-black uppercase tracking-[0.5em] italic">{isZh ? '向下探索' : 'Scroll to Explore'}</span>
           <div className="w-px h-12 bg-gradient-to-b from-white to-transparent" />
         </m.div>
       </section>
 
-      {/* SECTION 2: HOW IT WORKS */}
-      <section className="py-32 px-4 max-w-6xl mx-auto">
-        <div className="text-center mb-20 space-y-4">
-           <span className="text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '工作流程' : 'The Protocol'}</span>
-           <h2 className="text-3xl md:text-5xl font-black italic text-white uppercase tracking-tighter">{isZh ? '简单三步，开启优化' : 'Three Steps to Recovery'}</h2>
+      {/* SERVICES SECTION */}
+      <section className="py-32 px-4 max-w-7xl mx-auto">
+        <div className="text-center mb-24 space-y-4">
+           <span className="text-emerald-400 font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '核心流程' : 'THE PROTOCOL'}</span>
+           <h2 className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">{isZh ? '科学闭环，深度重塑' : 'PRECISION ANALYSIS'}</h2>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {steps.map((step, i) => (
-            <GlassCard key={i} className="p-10 rounded-[3.5rem] border-white/5">
-              <div className="w-16 h-16 bg-indigo-600/10 rounded-2xl flex items-center justify-center text-indigo-400 mb-8 border border-indigo-500/20 shadow-xl">
-                 <step.icon size={32} />
+            <GlassCard key={i} className="p-12 rounded-[4rem] border-white/5 bg-slate-900/20 group hover:bg-emerald-600/[0.03]">
+              <div className="w-20 h-20 bg-indigo-600/10 rounded-[2rem] flex items-center justify-center text-indigo-400 mb-10 border border-indigo-500/20 shadow-2xl group-hover:scale-110 transition-transform">
+                 <step.icon size={36} />
               </div>
-              <h3 className="text-xl font-black italic text-white uppercase mb-4">{step.title}</h3>
-              <p className="text-slate-500 text-sm leading-relaxed italic font-medium">{step.desc}</p>
+              <h3 className="text-2xl font-black italic text-white uppercase mb-4 tracking-tight leading-none">{step.title}</h3>
+              <p className="text-slate-500 text-[15px] leading-relaxed italic font-medium">{step.desc}</p>
             </GlassCard>
           ))}
         </div>
       </section>
 
-      {/* SECTION 3: BENEFITS */}
-      <section className="py-32 px-4 bg-indigo-600/[0.02]">
-        <div className="max-w-6xl mx-auto flex flex-col lg:flex-row items-center gap-20">
-          <div className="flex-1 space-y-10">
-            <div className="space-y-4">
-              <span className="text-emerald-500 font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '预期收益' : 'The Result'}</span>
-              <h2 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter leading-none">
-                {isZh ? '你能得到什么' : 'Expect Real'} <br/> <span className="text-emerald-500">{isZh ? '好处' : 'Impact'}</span>
-              </h2>
+      {/* CASE STUDY / TRUST SECTION */}
+      <section className="py-32 px-4 bg-indigo-600/[0.01] border-y border-white/5">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
+            <div className="space-y-12 text-left">
+               <div className="space-y-4">
+                  <span className="text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '隐私与安全' : 'PRIVACY & INFRASTRUCTURE'}</span>
+                  <h2 className="text-4xl md:text-8xl font-black italic text-white uppercase tracking-tighter leading-[0.85]">
+                    {isZh ? '数据主权' : 'DATA'} <br/> <span className="text-indigo-500">{isZh ? '由你掌控' : 'SOVEREIGNTY'}</span>
+                  </h2>
+               </div>
+               <p className="text-xl text-slate-400 font-medium italic leading-relaxed">
+                  {isZh 
+                    ? '我们采用“边缘计算”架构，您的生理数据仅存储在浏览器会话中，绝不上传到后台服务器，且在退出登录后立即永久抹除。' 
+                    : 'Utilizing Edge Processing architecture, your biometric telemetry is stored exclusively in-browser and purged immediately upon session termination. We prioritize your human data sovereignty.'}
+               </p>
+               <div className="flex flex-wrap gap-4">
+                  {['Bank-Level Encryption', 'No Server Persistence', '100% Anonymous'].map((t, i) => (
+                    <div key={i} className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                       <CheckCircle2 size={12} className="text-emerald-500" />
+                       <span className="text-[10px] font-black uppercase text-emerald-400 tracking-widest">{t}</span>
+                    </div>
+                  ))}
+               </div>
             </div>
-            
-            <div className="space-y-6">
-              {benefits.map((benefit, i) => (
-                <div key={i} className="flex items-center gap-6 group">
-                   <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center text-emerald-500 border border-emerald-500/20 group-hover:scale-110 transition-transform">
-                      <CheckCircle2 size={24} />
-                   </div>
-                   <span className="text-lg md:text-xl font-bold italic text-slate-300 group-hover:text-white transition-colors">{benefit}</span>
-                </div>
-              ))}
-            </div>
+
+            <GlassCard className="p-10 md:p-16 rounded-[5rem] border-white/10 bg-black/40 relative overflow-hidden">
+               <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+                  <HelpCircle size={400} />
+               </div>
+               <div className="space-y-8 relative z-10">
+                  <div className="flex items-center gap-4">
+                     <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white"><Microscope size={24} /></div>
+                     <h3 className="text-xl font-black italic uppercase text-white tracking-tight">{isZh ? '研究方向' : 'RESEARCH FOCUS'}</h3>
+                  </div>
+                  <div className="space-y-6">
+                    <p className="text-sm text-slate-500 italic leading-relaxed">
+                      {isZh ? '我们致力于通过心率变异性（HRV）与深度学习模型，探索睡眠架构与认知表现之间的直接关联。' : 'SomnoAI explores the direct correlation between heart rate variability (HRV), neural sleep architecture, and executive cognitive performance through deep-learning neural networks.'}
+                    </p>
+                    <button onClick={() => onNavigate('science')} className="flex items-center gap-3 text-indigo-400 font-black uppercase text-[10px] tracking-[0.3em] hover:text-white transition-all italic">
+                       {isZh ? '阅读科学协议' : 'READ SCIENTIFIC PROTOCOL'} <ExternalLink size={14} />
+                    </button>
+                  </div>
+               </div>
+            </GlassCard>
+          </div>
+        </div>
+      </section>
+
+      {/* WORLD CLASS FOOTER */}
+      <footer className="bg-slate-950 border-t border-white/5 pt-32 pb-20 px-6">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-20">
+          <div className="col-span-1 md:col-span-2 space-y-10">
+             <div className="flex items-center gap-4">
+                <Logo size={48} animated={true} />
+                <span className="text-3xl font-black italic tracking-tighter uppercase text-white">SomnoAI Lab</span>
+             </div>
+             <p className="text-slate-500 text-sm italic font-medium max-w-md leading-relaxed">
+               {isZh 
+                 ? '通过先进的生物测定科学和人工智能，致力于追求人类最优化的生理恢复。' 
+                 : 'Dedicated to the pursuit of optimal human recovery through advanced biometric science and generative intelligence.'}
+             </p>
+             <div className="flex gap-6">
+                <a href="https://github.com/vyncuslim" target="_blank" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all"><Github size={20} /></a>
+                <a href="https://linkedin.com" target="_blank" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all"><Linkedin size={20} /></a>
+                <a href="mailto:ongyuze1401@gmail.com" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all"><Mail size={20} /></a>
+             </div>
           </div>
 
-          <div className="w-full lg:w-[450px]">
-             <GlassCard className="p-10 rounded-[4rem] border-white/5 bg-slate-900/40">
-                <div className="space-y-8">
-                   <div className="flex items-center justify-between border-b border-white/5 pb-6">
-                      <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Core Calibration</span>
-                      <Moon size={16} className="text-indigo-400" />
-                   </div>
-                   <div className="space-y-6">
-                      {[
-                        { label: isZh ? '入睡速度' : 'Sleep Onset', val: '+24%' },
-                        { label: isZh ? '神经恢复指数' : 'Neural Recovery', val: '+38%' },
-                        { label: isZh ? '早间警觉性' : 'Morning Alertness', val: '+42%' }
-                      ].map((stat, i) => (
-                        <div key={i} className="flex justify-between items-end">
-                           <span className="text-sm font-bold text-slate-400 italic">{stat.label}</span>
-                           <span className="text-2xl font-black text-indigo-400 italic">{stat.val}</span>
-                        </div>
-                      ))}
-                   </div>
+          <div className="space-y-10">
+             <h4 className="text-white font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '实验室' : 'LABORATORY'}</h4>
+             <nav className="flex flex-col gap-6">
+                {navLinks.map((link) => (
+                  <button key={link.view} onClick={() => onNavigate(link.view)} className="text-slate-500 hover:text-white text-left text-sm italic font-medium transition-all">{link.label}</button>
+                ))}
+             </nav>
+          </div>
+
+          <div className="space-y-10">
+             <h4 className="text-white font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '法律与合规' : 'LEGAL & NODES'}</h4>
+             <nav className="flex flex-col gap-6">
+                <button onClick={() => onNavigate('privacy')} className="text-slate-500 hover:text-white text-left text-sm italic font-medium transition-all">{isZh ? '隐私政策' : 'Privacy Policy'}</button>
+                <button onClick={() => onNavigate('terms')} className="text-slate-500 hover:text-white text-left text-sm italic font-medium transition-all">{isZh ? '服务条款' : 'Terms of Service'}</button>
+                <div className="pt-4">
+                   <p className="text-[9px] font-mono text-slate-800 uppercase tracking-widest">Version: 2.8.4-STABLE</p>
+                   <p className="text-[9px] font-mono text-slate-800 uppercase tracking-widest">Network: Neural-Grid-Alpha</p>
                 </div>
-             </GlassCard>
+             </nav>
           </div>
         </div>
-      </section>
 
-      {/* SECTION 4: TRUST */}
-      <section className="py-32 px-4 max-w-6xl mx-auto">
-        <div className="text-center mb-20 space-y-4">
-           <span className="text-slate-600 font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '安全保障' : 'Privacy & Trust'}</span>
-           <h2 className="text-3xl md:text-5xl font-black italic text-white uppercase tracking-tighter">{isZh ? '值得信赖的睡眠实验室' : 'A Laboratory You Can Trust'}</h2>
+        <div className="max-w-7xl mx-auto pt-32 text-center">
+           <p className="text-[10px] font-mono uppercase tracking-[0.6em] text-slate-700">
+             © 2026 SomnoAI • SECURING YOUR NIGHT POTENTIAL
+           </p>
         </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          {trustPoints.map((point, i) => (
-            <div key={i} className="flex flex-col items-center text-center space-y-4 p-8 bg-white/5 border border-white/5 rounded-[3rem] hover:bg-white/[0.08] transition-all">
-               <div className="text-indigo-400"><point.icon size={32} /></div>
-               <span className="text-[11px] font-black uppercase tracking-widest text-slate-300 italic">{point.label}</span>
-            </div>
-          ))}
-        </div>
-      </section>
-
-      {/* SECTION 5: FINAL CTA */}
-      <section className="py-40 px-4 text-center relative overflow-hidden">
-        <div className="absolute inset-0 bg-indigo-600/5 blur-[120px] rounded-full animate-pulse" />
-        <m.div 
-          initial={{ opacity: 0, scale: 0.9 }} whileInView={{ opacity: 1, scale: 1 }}
-          className="relative z-10 space-y-12"
-        >
-          <h2 className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter">
-            {isZh ? '开启你的第一次' : 'Begin Your First'} <br/> <span className="text-indigo-500">{isZh ? '睡眠分析' : 'Deep Analysis'}</span>
-          </h2>
-          <button 
-            onClick={() => onNavigate('signup')}
-            className="px-16 py-8 bg-white text-[#020617] rounded-full font-black text-sm uppercase tracking-[0.4em] shadow-[0_20px_50px_rgba(255,255,255,0.2)] hover:bg-slate-200 transition-all active:scale-95 italic"
-          >
-            {isZh ? '现在加入注册表' : 'Join Registry Now'}
-          </button>
-        </m.div>
-      </section>
-
-      <footer className="py-20 border-t border-white/5 text-center opacity-30">
-        <Logo size={40} className="mx-auto mb-6 grayscale opacity-50" />
-        <p className="text-[10px] font-mono uppercase tracking-[0.5em] text-slate-500">
-          © 2026 SomnoAI Digital Sleep Lab • Neural Recovery Project
-        </p>
       </footer>
     </div>
   );
