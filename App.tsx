@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { getSafeHash, safeNavigateHash, safeReload } from './services/navigation.ts';
 import { trackPageView } from './services/analytics.ts';
+import { authApi } from './services/supabaseService.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
@@ -86,6 +87,18 @@ const AppContent: React.FC = () => {
 
   const safeNavigate = useCallback((viewId: string) => {
     safeNavigateHash(viewId);
+  }, []);
+
+  const handleLogout = useCallback(async () => {
+    try {
+      await authApi.signOut();
+    } catch (e) {
+      console.warn("Session termination signal delayed.");
+    } finally {
+      setIsSimulated(false);
+      // Force clean reload to clear all memory states and redirect
+      safeReload();
+    }
   }, []);
 
   useEffect(() => {
@@ -186,7 +199,7 @@ const AppContent: React.FC = () => {
                 {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} isSandbox={isSimulated} />}
                 {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
                 {activeView === 'diary' && <DiaryView lang={lang} />}
-                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => safeReload()} onNavigate={safeNavigate} />}
+                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={safeNavigate} />}
                 {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('support')} />}
                 {activeView === 'support' && <SupportView lang={lang} onBack={() => safeNavigate('settings')} onNavigate={safeNavigate} />}
                 {(activeView as any) === 'not-found' && <NotFoundView />}

@@ -9,7 +9,8 @@ import {
   Unlock, Mail, ExternalLink, ActivitySquare,
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
   Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle, Key,
-  ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame, Activity as MonitoringIcon, Eye, ChevronDown
+  ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame, Activity as MonitoringIcon, Eye, ChevronDown,
+  Calendar, ShieldX
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -70,7 +71,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setCurrentAdmin(profile);
 
       const [sRes, uRes] = await Promise.allSettled([
-        adminApi.getSecurityEvents(50),
+        adminApi.getSecurityEvents(100),
         adminApi.getUsers()
       ]);
 
@@ -100,12 +101,25 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   const handleRoleUpdate = async (userId: string, email: string, newRole: string) => {
+    if (!window.confirm(`Escalate node ${email} to ${newRole.toUpperCase()}?`)) return;
     try {
       const { error } = await adminApi.updateUserRole(userId, email, newRole);
       if (error) throw error;
-      fetchData(); // Refresh list
+      fetchData(); 
     } catch (err: any) {
       alert(`Role transition failed: ${err.message}`);
+    }
+  };
+
+  const handleToggleBlock = async (id: string, email: string, currentlyBlocked: boolean) => {
+    const action = currentlyBlocked ? 'UNBLOCK' : 'BLOCK';
+    if (!window.confirm(`${action} access for node ${email}?`)) return;
+    try {
+      const { error } = await adminApi.toggleBlock(id, email, currentlyBlocked);
+      if (error) throw error;
+      fetchData();
+    } catch (err: any) {
+      alert(`${action} protocol failed: ${err.message}`);
     }
   };
 
@@ -156,7 +170,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none italic">Ongoing Incident detected</p>
                   <p className="text-sm font-black text-white italic">
-                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Telemetry Access Denied' : '500 Server Error: Synchronizer Crash'}
+                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Telemetry Access Denied' : `500 Server Error: Failed at ${lastRawError?.failed_at || 'Handshake'}`}
                   </p>
                 </div>
               </div>
@@ -241,23 +255,33 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                    </div>
 
                    <AnimatePresence>
-                     {syncState === 'FORBIDDEN' && (
+                     {(syncState === 'FORBIDDEN' || syncState === 'ERROR') && (
                        <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-8 pt-8 border-t border-rose-500/20 space-y-6 text-left">
                           <div className="flex items-center gap-3 text-rose-400">
                              <AlertCircle size={16} />
-                             <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">Access Denied: 403 Forbidden</span>
+                             <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">
+                                {syncState === 'FORBIDDEN' ? 'Access Denied: 403 Forbidden' : `Diagnostic: Sync failed at ${lastRawError?.failed_at || 'Handshake'}`}
+                             </span>
                           </div>
                           
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                              <div className="p-6 bg-slate-900/60 rounded-[2rem] border border-white/5 space-y-4">
                                <p className="text-xs text-slate-300 font-bold italic">Resolution Protocol:</p>
                                <ol className="space-y-3 text-[10px] text-slate-400 list-decimal pl-5 italic font-medium">
-                                  <li>Log into <a href="https://analytics.google.com/" target="_blank" className="text-indigo-400 underline decoration-indigo-500/30">Google Analytics Console</a>.</li>
-                                  <li>Navigate to <b>Admin &rarr; Property Settings &rarr; Property Access Management</b>.</li>
-                                  <li>Ensure you are in the correct property: <b>{lastRawError?.diagnostic?.target_property || '380909155'}</b>.</li>
-                                  <li>Click "+" and select <b>"Add users"</b>.</li>
-                                  <li>Paste the Service Account identifier provided below.</li>
-                                  <li>Assign the <b>"Viewer"</b> role and save.</li>
+                                  {syncState === 'ERROR' && lastRawError?.failed_at === 'ENV_VAR_CAPTURE' ? (
+                                    <>
+                                      <li>Check Vercel Project Settings &rarr; Environment Variables.</li>
+                                      <li>Ensure <b>GA_SERVICE_ACCOUNT_KEY</b> is present and correctly pasted.</li>
+                                      <li>Redeploy if changes were made recently.</li>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <li>Log into <a href="https://analytics.google.com/" target="_blank" className="text-indigo-400 underline decoration-indigo-500/30">Google Analytics Console</a>.</li>
+                                      <li>Navigate to <b>Admin &rarr; Property Settings &rarr; Property Access Management</b>.</li>
+                                      <li>Ensure you are in the correct property ID shown on the right.</li>
+                                      <li>Add the Service Account identifier as a <b>"Viewer"</b> and save.</li>
+                                    </>
+                                  )}
                                </ol>
                              </div>
                              <div className="space-y-4">
@@ -269,11 +293,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                   </button>
                                </div>
                                <div className="p-6 bg-black/40 border border-white/5 rounded-[2rem] flex flex-col justify-center gap-3">
-                                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Target Property ID</span>
-                                  <code className="text-[10px] font-mono text-slate-300 font-bold select-all leading-tight">{lastRawError?.diagnostic?.target_property || '380909155'}</code>
-                                  <button onClick={() => handleCopy(lastRawError?.diagnostic?.target_property || '380909155', 'prop_copy')} className="flex items-center gap-2 text-[9px] font-black text-slate-400 bg-white/5 px-4 py-2 rounded-full w-fit hover:bg-white/10 transition-all uppercase">
-                                    {copiedKey === 'prop_copy' ? <Check size={10} /> : <Copy size={10} />} Copy ID
-                                  </button>
+                                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Current Error Payload</span>
+                                  <code className="text-[10px] font-mono text-rose-300 font-bold select-all leading-tight">
+                                    {lastRawError?.message?.substring(0, 100) || 'PROTOCOL_VIOLATION'}
+                                  </code>
                                </div>
                              </div>
                           </div>
@@ -284,6 +307,186 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </div>
             )}
 
+            {activeTab === 'registry' && (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="flex items-center justify-between px-4">
+                  <div className="flex items-center gap-4">
+                    <Users size={24} className="text-indigo-400" />
+                    <h2 className="text-2xl font-black italic text-white uppercase">Subject Registry</h2>
+                  </div>
+                  <button onClick={fetchData} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all"><RefreshCw size={18} /></button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-4">
+                  {users.length > 0 ? users.map((user) => (
+                    <GlassCard key={user.id} className="p-6 md:p-8 rounded-[2.5rem] border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 group">
+                      <div className="flex items-center gap-6 w-full md:w-auto">
+                        <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center text-indigo-400 font-black italic text-xl shadow-inner">
+                          {user.full_name?.[0]?.toUpperCase() || '?'}
+                        </div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-3">
+                            <h3 className="text-base font-black text-white italic">{user.full_name || 'Anonymous Node'}</h3>
+                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${user.role === 'owner' ? 'bg-amber-500/20 text-amber-500' : user.role === 'admin' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-500'}`}>
+                              {user.role}
+                            </span>
+                          </div>
+                          <p className="text-[10px] font-mono text-slate-500 uppercase">{user.email}</p>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
+                        <div className="flex gap-2">
+                           <button 
+                             onClick={() => handleRoleUpdate(user.id, user.email, 'admin')}
+                             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'admin' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600 hover:text-white'}`}
+                           >ADMIN</button>
+                           <button 
+                             onClick={() => handleRoleUpdate(user.id, user.email, 'user')}
+                             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600 hover:text-white'}`}
+                           >USER</button>
+                        </div>
+                        
+                        <div className="h-8 w-px bg-white/5 mx-2" />
+                        
+                        <button 
+                          onClick={() => handleToggleBlock(user.id, user.email, !!user.is_blocked)}
+                          className={`p-3 rounded-xl transition-all ${user.is_blocked ? 'bg-rose-600/20 text-rose-500' : 'bg-white/5 text-slate-600 hover:text-rose-500'}`}
+                        >
+                          {user.is_blocked ? <Unlock size={18} /> : <Ban size={18} />}
+                        </button>
+                      </div>
+                    </GlassCard>
+                  )) : (
+                    <div className="py-32 text-center italic text-slate-600">No identity nodes synchronized.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'signals' && (
+              <div className="space-y-8 animate-in fade-in duration-500">
+                <div className="flex items-center justify-between px-4">
+                  <div className="flex items-center gap-4">
+                    <MonitoringIcon size={24} className="text-rose-500" />
+                    <h2 className="text-2xl font-black italic text-white uppercase">Security Signals</h2>
+                  </div>
+                  <button onClick={fetchData} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all"><RefreshCw size={18} /></button>
+                </div>
+
+                <div className="space-y-4">
+                  {signals.length > 0 ? signals.map((sig) => (
+                    <GlassCard key={sig.id} className="p-6 rounded-[2rem] border-white/5 flex gap-6 items-start group">
+                      <div className={`p-4 rounded-2xl shrink-0 ${sig.event_type.includes('FAIL') || sig.event_type.includes('ERROR') ? 'bg-rose-500/10 text-rose-500' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                         {sig.event_type.includes('FAIL') ? <ShieldX size={20} /> : <Activity size={20} />}
+                      </div>
+                      <div className="space-y-2 flex-1 text-left">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">
+                           <div className="flex items-center gap-3">
+                              <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white italic">{sig.event_type}</span>
+                              <span className="text-[9px] font-mono text-slate-600 uppercase">{new Date(sig.created_at).toLocaleString()}</span>
+                           </div>
+                           <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{sig.email || 'SYSTEM'}</span>
+                        </div>
+                        <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
+                           <code className="text-[11px] font-mono text-slate-400 leading-relaxed block break-all whitespace-pre-wrap">
+                             {sig.event_reason || 'No detailed reason provided.'}
+                           </code>
+                        </div>
+                      </div>
+                    </GlassCard>
+                  )) : (
+                    <div className="py-32 text-center italic text-slate-600">Signal grid quiet. No exceptions detected.</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'explorer' && (
+              <div className="space-y-10 animate-in fade-in duration-500">
+                <div className="flex items-center gap-4 px-4">
+                  <Database size={24} className="text-emerald-400" />
+                  <h2 className="text-2xl font-black italic text-white uppercase">Data Shards</h2>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                   {DATABASE_SCHEMA.map((table) => (
+                     <GlassCard key={table.id} className="p-8 rounded-[3rem] border-white/5 space-y-6 flex flex-col justify-between hover:bg-white/[0.02] transition-all">
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-start">
+                              <div className="p-3 bg-white/5 rounded-2xl text-emerald-400"><table.icon size={20} /></div>
+                              <div className="text-right">
+                                 <p className="text-3xl font-black text-white italic">{tableCounts[table.id] || 0}</p>
+                                 <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">TOTAL_RECORDS</p>
+                              </div>
+                           </div>
+                           <div className="space-y-1">
+                              <h3 className="text-sm font-black text-white uppercase italic tracking-tight">{table.name}</h3>
+                              <p className="text-[10px] text-slate-500 italic leading-relaxed">{table.desc}</p>
+                           </div>
+                        </div>
+                        <div className="pt-4 border-t border-white/5 flex justify-between items-center">
+                           <span className="text-[8px] font-mono text-slate-700 uppercase tracking-widest">ID: {table.id}</span>
+                           <Search size={14} className="text-slate-800" />
+                        </div>
+                     </GlassCard>
+                   ))}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'automation' && (
+               <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500">
+                  <div className="text-center space-y-4">
+                    <div className="w-20 h-20 bg-indigo-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto text-indigo-400 border border-indigo-500/20 shadow-2xl"><Zap size={36} /></div>
+                    <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Automation Engine</h2>
+                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Background Ops Terminal</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                     <GlassCard className="p-10 rounded-[4rem] border-white/5 space-y-8">
+                        <div className="flex items-center gap-4">
+                           <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><RefreshCw size={24} /></div>
+                           <h3 className="text-lg font-black italic text-white uppercase">Sync Scheduling</h3>
+                        </div>
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-center p-4 bg-black/40 rounded-2xl border border-white/5">
+                              <div className="space-y-0.5">
+                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">GA4 Telemetry</p>
+                                 <p className="text-xs font-bold text-white italic">Automatic Pulse (Cron)</p>
+                              </div>
+                              <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[8px] font-black uppercase">Active</div>
+                           </div>
+                           <p className="text-[10px] text-slate-600 italic leading-relaxed">The analytics synchronization gateway is currently linked to the Vercel internal cron scheduler. All signals are processed daily at 00:00 UTC.</p>
+                        </div>
+                        <button onClick={handleManualSync} disabled={syncState === 'SYNCING'} className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] transition-all hover:bg-indigo-500 flex items-center justify-center gap-3">
+                           {syncState === 'SYNCING' ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />} FORCE FULL SYNC
+                        </button>
+                     </GlassCard>
+
+                     <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 bg-rose-500/[0.02] space-y-8">
+                        <div className="flex items-center gap-4">
+                           <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><Send size={24} /></div>
+                           <h3 className="text-lg font-black italic text-white uppercase">Alerting Hub</h3>
+                        </div>
+                        <div className="space-y-4">
+                           <div className="flex justify-between items-center p-4 bg-black/40 rounded-2xl border border-white/5">
+                              <div className="space-y-0.5">
+                                 <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">Critical Alerting</p>
+                                 <p className="text-xs font-bold text-white italic">Dual-Channel (TG+Email)</p>
+                              </div>
+                              <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[8px] font-black uppercase">Established</div>
+                           </div>
+                           <p className="text-[10px] text-slate-600 italic leading-relaxed">Incident alerts are dispatched automatically upon detecting 403, 500, or unauthorized ingress attempts. Multi-lingual mirroring active.</p>
+                        </div>
+                        <button onClick={() => window.open('https://t.me/somno_lab_bot')} className="w-full py-5 bg-white/5 text-slate-400 border border-white/10 rounded-full font-black text-[10px] uppercase tracking-[0.4em] transition-all hover:text-white flex items-center justify-center gap-3">
+                           <ExternalLink size={16} /> VIEW BOT TERMINAL
+                        </button>
+                     </GlassCard>
+                  </div>
+               </div>
+            )}
+
             {activeTab === 'system' && (
               <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
                  <div className="text-center space-y-4">
@@ -292,7 +495,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Root Sector Configuration</p>
                  </div>
 
-                 {/* Infrastructure Pulse Card */}
                  <GlassCard className="p-10 rounded-[4rem] border-white/5">
                     <div className="flex justify-between items-center mb-8">
                        <div className="flex items-center gap-4">
@@ -360,15 +562,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                  </div>
               </div>
             )}
-
-            {/* Other tabs remain similar but hidden for brevity... */}
-            {activeTab === 'automation' && <div className="p-20 text-center italic text-slate-500">Automation registries nominal.</div>}
-            {activeTab === 'registry' && <div className="p-20 text-center italic text-slate-500">Registry shards synchronized.</div>}
-            {activeTab === 'explorer' && <div className="p-20 text-center italic text-slate-500">Data explorer standby.</div>}
-            {activeTab === 'signals' && <div className="p-20 text-center italic text-slate-500">Security grid listening.</div>}
           </m.div>
         )}
       </AnimatePresence>
     </div>
   );
 };
+
+// Internal sub-component for Play icon since it wasn't imported from lucide
+const Play = ({ size }: { size: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none">
+    <path d="M5 3l14 9-14 9V3z" />
+  </svg>
+);
