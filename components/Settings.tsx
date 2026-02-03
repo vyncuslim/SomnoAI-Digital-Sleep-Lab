@@ -1,13 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight, Send, Terminal, Server, ShieldAlert, MessageSquare, Info, LifeBuoy, Mail, Check
+  LogOut as DisconnectIcon, ShieldCheck,
+  Key, RefreshCw, Zap, Loader2, ChevronRight, Terminal, Server, LifeBuoy
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
-import { motion, AnimatePresence } from 'framer-motion';
-import { notificationService } from '../services/notificationService.ts';
+import { motion } from 'framer-motion';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ExitFeedbackModal } from './ExitFeedbackModal.tsx';
 import { notifyAdmin } from '../services/telegramService.ts';
@@ -26,9 +25,6 @@ export const Settings: React.FC<SettingsProps> = ({
   lang, onLanguageChange, onLogout, onNavigate
 }) => {
   const { isAdmin, profile } = useAuth();
-  const [isSystemAiActive, setIsSystemAiActive] = useState(!!process.env.API_KEY);
-  const [customKey, setCustomKey] = useState(localStorage.getItem('custom_gemini_key') || '');
-  const [isPersonalAiActive, setIsPersonalAiActive] = useState(!!customKey);
   const [showExitFeedback, setShowExitFeedback] = useState(false);
   const [testStatus, setTestStatus] = useState<'idle' | 'transmitting' | 'success' | 'error'>('idle');
 
@@ -50,7 +46,6 @@ export const Settings: React.FC<SettingsProps> = ({
     };
 
     try {
-      // Execute mirrored dispatch
       const [tgRes, emailRes] = await Promise.all([
         notifyAdmin(payload),
         emailService.sendAdminAlert(payload)
@@ -81,35 +76,34 @@ export const Settings: React.FC<SettingsProps> = ({
           <GlassCard className={`p-6 rounded-[2.5rem] border-white/5 ${isAdmin ? 'opacity-100 bg-amber-500/5 border-amber-500/10' : 'opacity-40 grayscale'}`}>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-2xl ${isSystemAiActive ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-800 text-slate-600'}`}>
+                <div className={`p-3 rounded-2xl ${process.env.API_KEY ? 'bg-amber-500/10 text-amber-500' : 'bg-slate-800 text-slate-600'}`}>
                   <Server size={20} />
                 </div>
                 <div>
                   <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Admin Global Link</p>
-                  <p className="text-sm font-black text-white italic">{isSystemAiActive ? 'CONNECTED' : 'OFFLINE'}</p>
+                  <p className="text-sm font-black text-white italic">{process.env.API_KEY ? 'CONNECTED' : 'OFFLINE'}</p>
                 </div>
               </div>
-              <ShieldCheck size={18} className={isSystemAiActive ? 'text-amber-500' : 'text-slate-700'} />
+              <ShieldCheck size={18} className={process.env.API_KEY ? 'text-amber-500' : 'text-slate-700'} />
             </div>
           </GlassCard>
 
           <GlassCard className="p-6 rounded-[2.5rem] border-indigo-500/20 bg-indigo-500/5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-2xl ${isPersonalAiActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                  <Zap size={20} className={isPersonalAiActive ? 'animate-pulse' : ''} />
+                <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400">
+                  <Zap size={20} className="animate-pulse" />
                 </div>
                 <div>
-                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Personal Bridge</p>
-                  <p className="text-sm font-black text-white italic">{isPersonalAiActive ? 'ACTIVE' : 'CONFIG REQUIRED'}</p>
+                  <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Neural Bridge</p>
+                  <p className="text-sm font-black text-white italic">OPERATIONAL</p>
                 </div>
               </div>
-              <Key size={18} className={isPersonalAiActive ? 'text-emerald-500' : 'text-slate-700'} />
+              <Key size={18} className="text-emerald-500" />
             </div>
           </GlassCard>
         </div>
 
-        {/* Unified Comms Diagnostic (Mirrored TG + Email) */}
         {isAdmin && (
           <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
             <div className="space-y-6">
@@ -118,7 +112,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Mirrored Comms Diagnostic</h3>
               </div>
               <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                Test concurrent signal dispatch to both Telegram and Email administrative gateways.
+                Verify concurrent signal dispatch to both Telegram and Email administrative gateways.
               </p>
               <button 
                 onClick={handleFullCommsDiagnostic}
@@ -136,7 +130,6 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         )}
 
-        {/* Enhanced Support Hub Entry */}
         <GlassCard onClick={() => onNavigate('support')} className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02] cursor-pointer group hover:bg-emerald-500/[0.05] transition-all">
           <div className="flex items-center justify-between">
              <div className="flex items-center gap-5">
@@ -149,33 +142,6 @@ export const Settings: React.FC<SettingsProps> = ({
                 </div>
              </div>
              <ChevronRight size={20} className="text-emerald-500/40 group-hover:text-emerald-400 group-hover:translate-x-1 transition-all" />
-          </div>
-        </GlassCard>
-
-        {/* Personal Key Config */}
-        <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.02]">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <Zap size={18} className="text-indigo-400" />
-              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">{t.apiKey}</h3>
-            </div>
-            <div className="space-y-4">
-              <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                Regular subjects must provide a personal API Key to enable AI analysis.
-              </p>
-              <input 
-                type="password"
-                value={customKey}
-                onChange={(e) => {
-                  const val = e.target.value;
-                  setCustomKey(val);
-                  localStorage.setItem('custom_gemini_key', val);
-                  setIsPersonalAiActive(!!val);
-                }}
-                placeholder={t.apiKeyPlaceholder}
-                className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-xs text-white outline-none focus:border-indigo-500/40 transition-all font-mono"
-              />
-            </div>
           </div>
         </GlassCard>
 
@@ -206,7 +172,6 @@ export const Settings: React.FC<SettingsProps> = ({
   );
 };
 
-// Internal sub-component for Radio icon since it wasn't imported from lucide properly in some contexts
 const Radio = ({ size, className }: { size: number, className?: string }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
     <circle cx="12" cy="12" r="2" />

@@ -164,18 +164,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
       const data = await response.json();
-      if (response.ok) {
+      if (response.ok && data.success) {
         setSyncState('SYNCED');
         fetchData();
       } else {
         setLastRawError(data);
-        if (response.status === 403 || data.is_permission_denied) {
+        if (data.is_permission_denied || response.status === 403) {
           setSyncState('FORBIDDEN');
           if (data.service_account) setSaEmail(data.service_account);
         }
-        else if (response.status === 404 || data.is_not_found) setSyncState('NOT_FOUND');
+        else if (data.is_not_found || response.status === 404) setSyncState('NOT_FOUND');
         else setSyncState('ERROR');
-        throw new Error(data.message || data.error || "Sync gateway protocol violation.");
+        throw new Error(data.error || "Sync gateway protocol violation.");
       }
     } catch (e: any) {
       setActionError(e.message);
@@ -188,7 +188,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       case 'SYNCED': return { label: 'SYNCED', color: 'bg-emerald-600/20 text-emerald-400', animate: false, icon: Check };
       case 'ERROR':
       case 'FORBIDDEN':
-      case 'NOT_FOUND': return { label: 'ERRORED', color: 'bg-rose-600/20 text-rose-500', animate: true, icon: AlertTriangle };
+      case 'NOT_FOUND': return { label: 'BLOCKER', color: 'bg-rose-600/20 text-rose-500', animate: true, icon: AlertTriangle };
       case 'STALE': return { label: 'STALLED', color: 'bg-amber-600/20 text-amber-500', animate: false, icon: Clock };
       default: return { label: 'READY', color: 'bg-white/5 text-slate-500', animate: false, icon: ShieldCheck };
     }
@@ -197,33 +197,42 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const syncBadge = getSyncBadgeConfig();
   const isGlobalOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
 
+  // Validate Property ID format (Should be a string of digits, e.g. 345678901)
+  const isProperIdFormat = (id: string) => {
+    const cleanId = id.replace(/^properties\//, '');
+    return /^\d+$/.test(cleanId);
+  };
+
   return (
     <div className="space-y-8 md:space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left relative">
-      {/* Incident Alert Bar */}
       <AnimatePresence>
         {(syncState === 'FORBIDDEN' || syncState === 'ERROR') && (
           <m.div 
             initial={{ height: 0, opacity: 0 }} 
             animate={{ height: 'auto', opacity: 1 }} 
-            className="bg-rose-600/10 border-b border-rose-600/30 overflow-hidden sticky top-0 z-[100] backdrop-blur-xl"
+            className="bg-rose-600/15 border-b border-rose-600/30 overflow-hidden sticky top-0 z-[100] backdrop-blur-xl shadow-2xl"
           >
             <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <div className="p-2 bg-rose-600 rounded-lg text-white animate-pulse">
-                  <Flame size={18} />
+              <div className="flex items-center gap-4 text-left">
+                <div className="p-2.5 bg-rose-600 rounded-xl text-white animate-pulse">
+                  <ShieldAlert size={20} />
                 </div>
                 <div className="space-y-0.5">
-                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none italic">Ongoing Incident detected</p>
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none italic">Action Required</p>
                   <p className="text-sm font-black text-white italic">
-                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Telemetry Access Denied (Permissions Required)' : `500 Server Error: Failed at ${lastRawError?.failed_at || 'Handshake'}`}
+                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Google Analytics Link Severed.' : `Sync Failed: ${lastRawError?.failed_at || 'Handshake Error'}`}
                   </p>
                 </div>
               </div>
               <button 
-                onClick={() => setActiveTab('system')} 
-                className="px-6 py-2 bg-rose-600 text-white rounded-full font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all italic shadow-lg shadow-rose-600/20"
+                onClick={() => {
+                  const el = document.getElementById('resolution-anchor');
+                  el?.scrollIntoView({ behavior: 'smooth' });
+                  setActiveTab('overview');
+                }} 
+                className="px-6 py-2.5 bg-white text-rose-600 rounded-full font-black text-[9px] uppercase tracking-widest active:scale-95 transition-all italic shadow-lg hover:bg-rose-50"
               >
-                Inspect Infrastructure
+                ACCESS PROTOCOL FIX
               </button>
             </div>
           </m.div>
@@ -279,7 +288,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                 </div>
 
-                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${['FORBIDDEN', 'ERROR', 'NOT_FOUND'].includes(syncState) ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
+                <GlassCard id="resolution-anchor" className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${['FORBIDDEN', 'ERROR', 'NOT_FOUND'].includes(syncState) ? 'border-rose-500/40 bg-rose-500/[0.03]' : ''}`}>
                    <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                       <div className="flex items-center gap-8 text-left">
                          <div className={`p-6 rounded-[2rem] border border-white/5 ${syncState === 'SYNCED' ? 'bg-emerald-600/10 text-emerald-400' : ['FORBIDDEN', 'ERROR', 'NOT_FOUND'].includes(syncState) ? 'bg-rose-600/10 text-rose-500' : 'bg-indigo-600/10 text-indigo-400'}`}>
@@ -293,7 +302,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          </div>
                       </div>
                       <div className="w-full md:w-auto flex flex-col md:flex-row items-center gap-6">
-                        {/* 动态同步状态徽章 */}
                         <div className={`px-4 py-2 rounded-full border border-white/5 flex items-center gap-3 transition-all duration-500 ${syncBadge.color} ${syncBadge.animate ? 'animate-pulse' : ''}`}>
                            <syncBadge.icon size={12} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />
                            <span className="text-[9px] font-black uppercase tracking-[0.2em] italic">{syncBadge.label}</span>
@@ -304,49 +312,68 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         </button>
                       </div>
                    </div>
+                   
                    <AnimatePresence>
-                     {(syncState === 'FORBIDDEN' || syncState === 'ERROR') && (
+                     {(syncState === 'FORBIDDEN' || (lastRawError?.property_id && !isProperIdFormat(lastRawError.property_id))) && (
                        <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-8 pt-8 border-t border-rose-500/20 space-y-6 text-left">
-                          <div className="flex items-center gap-3 text-rose-400">
-                             <AlertCircle size={16} />
-                             <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">
-                                {syncState === 'FORBIDDEN' ? 'Access Denied: Permission Optimization Required' : `Diagnostic: Sync failed at ${lastRawError?.failed_at || 'Handshake'}`}
-                             </span>
+                          <div className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-[2.5rem] flex items-start gap-5">
+                             <AlertCircle className="text-rose-500 shrink-0 mt-1" size={24} />
+                             <div className="space-y-1">
+                                <h4 className="text-sm font-black text-white uppercase italic">Infrastructure Protocol Disruption</h4>
+                                <p className="text-[11px] text-slate-400 italic leading-relaxed">
+                                  Access to Google Analytics is being blocked. Either the Service Account is not authorized, or the Property ID format is incorrect.
+                                </p>
+                             </div>
                           </div>
+
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                             <div className="p-6 bg-slate-900/60 rounded-[2rem] border border-white/5 space-y-4">
-                               <p className="text-xs text-slate-300 font-bold italic">Resolution Protocol:</p>
-                               <ol className="space-y-3 text-[10px] text-slate-400 list-decimal pl-5 italic font-medium leading-relaxed">
-                                  {syncState === 'FORBIDDEN' ? (
-                                    <>
-                                      <li>Log into the <a href="https://analytics.google.com/" target="_blank" className="text-indigo-400 underline decoration-indigo-500/30">Google Analytics Console</a>.</li>
-                                      <li>Navigate to <b>Admin &rarr; Property Settings &rarr; Property Access Management</b>.</li>
-                                      <li>Confirm you are in Property ID: <code>{process.env.GA_PROPERTY_ID || 'UNSET'}</code></li>
-                                      <li>Add the Service Account (below) as a <span className="text-white font-black">"Viewer"</span>.</li>
-                                      <li>Ensure there are no domain restrictions blocking the service account.</li>
-                                    </>
-                                  ) : lastRawError?.failed_at === 'ENV_VAR_CAPTURE' ? (
-                                    <>
-                                      <li>Check Vercel Project Settings &rarr; Environment Variables.</li>
-                                      <li>Ensure <b>GA_SERVICE_ACCOUNT_KEY</b> is present and correctly formatted.</li>
-                                      <li>Redeploy if changes were made recently.</li>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <li>Verify the JSON format of the Service Account Key.</li>
-                                      <li>Check for hidden characters or improper escaping in Vercel ENV.</li>
-                                      <li>Confirm network egress is not restricted.</li>
-                                    </>
-                                  )}
+                             <div className="p-8 bg-slate-900/60 rounded-[2.5rem] border border-white/5 space-y-6">
+                               <p className="text-xs text-white font-black italic flex items-center gap-3">
+                                 <TerminalIcon size={14} className="text-indigo-400" /> Resolution Logic:
+                               </p>
+                               <ol className="space-y-4 text-[11px] text-slate-400 list-decimal pl-5 italic font-medium leading-relaxed">
+                                  <li>Access the <a href="https://analytics.google.com/analytics/web/#/admin" target="_blank" rel="noreferrer" className="text-indigo-400 font-bold underline">GA Admin Console</a>.</li>
+                                  <li>Check <b>Property ID</b>: It should be numeric (e.g., <code>4567890</code>), not a G-ID or UA-ID. Current: <code className="text-indigo-300 font-bold">{lastRawError?.property_id || 'UNKNOWN'}</code></li>
+                                  <li>Go to <b>Property Access Management</b>.</li>
+                                  <li>Add a new user with the <b>Service Email</b> shown on the right.</li>
+                                  <li>Assign role: <span className="text-white font-bold bg-indigo-600/20 px-2 py-0.5 rounded">Viewer</span>.</li>
+                                  <li>Verify <b>GA_SERVICE_ACCOUNT_KEY</b> in Vercel is a valid JSON string without extra wrapping quotes.</li>
                                </ol>
                              </div>
-                             <div className="space-y-4">
-                               <div className="p-6 bg-black/40 border border-indigo-500/20 rounded-[2rem] flex flex-col justify-center gap-3">
-                                  <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Target Service Account Identity</span>
-                                  <code className="text-[10px] font-mono text-indigo-300 font-bold break-all select-all leading-tight">{saEmail || 'PROBING_NODES...'}</code>
-                                  <button onClick={() => handleCopy(saEmail, 'sa_copy')} className="flex items-center gap-2 text-[9px] font-black text-white bg-indigo-600/20 px-4 py-2 rounded-full w-fit hover:bg-indigo-600/40 transition-all uppercase mt-2">
-                                    {copiedKey === 'sa_copy' ? <Check size={10} /> : <Copy size={10} />} Copy Identifier
+                             
+                             <div className="space-y-4 flex flex-col justify-center">
+                               <div className="p-8 bg-black/60 border border-indigo-500/30 rounded-[3rem] flex flex-col gap-4 relative overflow-hidden group">
+                                  <div className="absolute top-0 right-0 p-6 opacity-5"><Mail size={80} /></div>
+                                  <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic flex items-center gap-2">
+                                     <Mail size={12} /> Service Account Email
+                                  </span>
+                                  <code className="text-[12px] font-mono text-indigo-100 font-black break-all select-all leading-tight bg-white/5 p-4 rounded-2xl border border-white/5">
+                                    {lastRawError?.service_account || saEmail || 'SYNC_REQUIRED'}
+                                  </code>
+                                  <button 
+                                    onClick={() => handleCopy(lastRawError?.service_account || saEmail, 'sa_copy_err')} 
+                                    className="flex items-center gap-3 text-[10px] font-black text-white bg-indigo-600 px-6 py-4 rounded-full w-full justify-center hover:bg-indigo-500 transition-all uppercase mt-2 shadow-xl shadow-indigo-600/20 italic"
+                                  >
+                                    {copiedKey === 'sa_copy_err' ? <Check size={16} /> : <Copy size={16} />} 
+                                    {copiedKey === 'sa_copy_err' ? 'Copied' : 'Copy Service Email'}
                                   </button>
+                               </div>
+
+                               <div className="p-5 bg-slate-900/40 rounded-[2rem] border border-white/5 flex items-center justify-between px-8">
+                                  <span className="text-[9px] font-black text-slate-500 uppercase italic">Active Property ID</span>
+                                  <div className="flex items-center gap-3">
+                                    <span className={`text-xs font-mono font-black ${isProperIdFormat(lastRawError?.property_id || '') ? 'text-white' : 'text-rose-500'}`}>
+                                      {lastRawError?.property_id || 'UNDEFINED'}
+                                    </span>
+                                    {lastRawError?.property_id && !isProperIdFormat(lastRawError.property_id) && (
+                                      <div className="group relative">
+                                        <AlertTriangle size={14} className="text-rose-500 animate-pulse" />
+                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-rose-600 text-white text-[10px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-bold italic shadow-xl z-50">
+                                          Format Violation: ID must be numeric. Remove 'properties/' or 'G-' prefixes.
+                                        </div>
+                                      </div>
+                                    )}
+                                  </div>
                                </div>
                              </div>
                           </div>

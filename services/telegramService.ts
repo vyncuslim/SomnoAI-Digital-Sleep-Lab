@@ -1,7 +1,7 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v40.0
- * 核心功能：基于数据库持久化的 60 秒强力去重引擎
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v41.0
+ * 核心功能：基于数据库持久化 + 内存二级缓存的强力去重引擎
  */
 
 // @ts-ignore
@@ -11,6 +11,9 @@ const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
+// In-memory circuit breaker for rapid spam protection
+const memoryCache = new Set<string>();
+
 const EVENT_MAP: Record<string, { en: string, zh: string, icon: string }> = {
   'USER_LOGIN': { en: '👤 Access Granted', zh: '👤 受试者登录授权', icon: '🔐' },
   'SECURITY_BREACH': { en: '⚔️ SECURITY ATTACK', zh: '⚔️ 检测到越权攻击', icon: '💀' },
@@ -18,12 +21,12 @@ const EVENT_MAP: Record<string, { en: string, zh: string, icon: string }> = {
   'API_SERVICE_FAULT': { en: '🔌 API Key Expired/Fail', zh: '🔌 核心 API 链路断开', icon: '❌' },
   'RUNTIME_ERROR': { en: '🚨 System Exception', zh: '🚨 系统运行异常', icon: '🔴' },
   'USER_FEEDBACK': { en: '💬 User Report', zh: '💬 收到用户意见反馈', icon: '📩' },
-  'GA4_SYNC_FAILURE': { en: '📊 Telemetry Sync Failure', zh: '📊 数据同步链路异常', icon: '🟡' }
+  'GA4_SYNC_FAILURE': { en: '📊 Telemetry Sync Failure', zh: '📊 数据同步链路异常', icon: '🟡' },
+  'GA4_PERMISSION_DENIED': { en: '🛡️ GA4 Access Denied', zh: '🛡️ GA4 权限缺失 (403)', icon: '🚫' }
 };
 
 /**
  * Returns the current time in Malaysia Time (MYT, UTC+8)
- * Used for localized alerting in administrative logs.
  */
 export const getMYTTime = () => {
   return new Intl.DateTimeFormat('en-GB', {
@@ -34,37 +37,54 @@ export const getMYTTime = () => {
 };
 
 /**
- * 核心：数据库级防刷校验
+ * 核心：双重防刷校验
  */
 const isRecentlySent = async (action: string, fingerprint: string) => {
-  const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+  const cacheKey = `${action}:${fingerprint}`;
   
-  const { data } = await supabase
-    .from('audit_logs')
-    .select('id')
-    .eq('action', action)
-    .ilike('details', `%${fingerprint}%`)
-    .gt('created_at', oneMinuteAgo)
-    .limit(1);
+  // 1. Level 1: Memory Cache (Immediate check)
+  if (memoryCache.has(cacheKey)) return true;
 
-  return data && data.length > 0;
+  // 2. Level 2: Database Audit (Persistence check)
+  const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
+  try {
+    const { data } = await supabase
+      .from('audit_logs')
+      .select('id')
+      .eq('action', action)
+      .ilike('details', `%${fingerprint}%`)
+      .gt('created_at', oneMinuteAgo)
+      .limit(1);
+
+    if (data && data.length > 0) {
+      // Refresh memory cache from DB state
+      memoryCache.add(cacheKey);
+      setTimeout(() => memoryCache.delete(cacheKey), 60000);
+      return true;
+    }
+  } catch (e) {
+    // If DB check fails, we rely solely on memory cache to prevent bot storm
+    console.warn("Deduplication DB link unstable.");
+  }
+
+  // Record to memory cache
+  memoryCache.add(cacheKey);
+  setTimeout(() => memoryCache.delete(cacheKey), 60000);
+  return false;
 };
 
 export const notifyAdmin = async (payload: any) => {
   if (!BOT_TOKEN || !ADMIN_CHAT_ID) return false;
 
   const msgType = payload.type || 'SYSTEM_SIGNAL';
-  const rawDetails = payload.message || payload.error || 'N/A';
+  const rawDetails = typeof payload === 'string' ? payload : (payload.message || payload.error || 'N/A');
   
-  // 提取内容前50个字符作为指纹
+  // Use first 50 chars as unique fingerprint
   const contentFingerprint = rawDetails.substring(0, 50).replace(/\s/g, '');
 
-  // 1. 检查 60s 内是否已发送过相同动作和内容的告警
+  // 1. Check for duplication
   const duplicated = await isRecentlySent(msgType, contentFingerprint);
-  if (duplicated) {
-    console.debug(`[Anti-Spam] Message suppressed: ${msgType}`);
-    return false;
-  }
+  if (duplicated) return false;
 
   const mapping = EVENT_MAP[msgType] || { en: msgType, zh: msgType, icon: '📡' };
   const source = payload.source || 'INTERNAL_NODE';

@@ -1,3 +1,4 @@
+
 import React, { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
@@ -9,6 +10,8 @@ interface GlassCardProps {
   intensity?: number;
   role?: string;
   'aria-label'?: string;
+  // Added id to support anchor links for scroll-to functionality
+  id?: string;
 }
 
 const m = motion as any;
@@ -20,7 +23,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   hoverScale = false,
   intensity = 1,
   role,
-  'aria-label': ariaLabel
+  'aria-label': ariaLabel,
+  id
 }) => {
   const cardRef = useRef<HTMLDivElement>(null);
   
@@ -55,6 +59,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
 
   return (
     <m.div 
+      id={id}
       ref={cardRef}
       role={role}
       aria-label={ariaLabel}
