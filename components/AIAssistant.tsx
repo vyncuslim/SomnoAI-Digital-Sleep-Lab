@@ -169,6 +169,34 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
                 <div className="mt-1">{msg.role === 'assistant' ? <CROAvatar /> : <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500"><User size={14}/></div>}</div>
                 <div className={`p-5 rounded-[2rem] text-sm leading-relaxed shadow-xl text-left relative overflow-hidden ${msg.role === 'assistant' ? 'bg-slate-900/60 border border-white/5 text-slate-300' : 'bg-indigo-600 text-white'}`}>
                   <div className="whitespace-pre-wrap italic">{msg.content}</div>
+
+                  {/* GROUNDING SOURCES: Always extract and list URLs if Google Search is used */}
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-4 pt-4 border-t border-white/10 space-y-2">
+                      <p className="text-[10px] font-black uppercase tracking-widest text-indigo-400 flex items-center gap-2">
+                        <ExternalLink size={10} /> Grounding Signals
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {msg.sources.map((chunk, sIdx) => {
+                          const url = chunk.web?.uri || chunk.maps?.uri;
+                          const title = chunk.web?.title || chunk.maps?.title || "Neural Source";
+                          if (!url) return null;
+                          return (
+                            <a 
+                              key={sIdx} 
+                              href={url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/20 rounded-full text-[9px] font-bold text-indigo-300 flex items-center gap-1.5 transition-all group/link"
+                            >
+                              <ExternalLink size={10} className="group-hover/link:rotate-12 transition-transform" />
+                              <span className="truncate max-w-[150px]">{title}</span>
+                            </a>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

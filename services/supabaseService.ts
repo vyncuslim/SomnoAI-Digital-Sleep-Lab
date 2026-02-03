@@ -8,17 +8,14 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB NOTIFICATION SUPPRESSION PROTOCOL
+ * SOMNO LAB NEURAL AUDIT PROTOCOL
+ * 所有的系统日志都会经过此函数，它是监控的核心分发点。
  */
-let lastNotificationDispatchTime = 0;
-let lastNotificationFingerprint = '';
-const GLOBAL_NOTIFICATION_COOLDOWN = 30 * 1000; // 前端基础冷却降至 30s，依靠 TG 服务的指纹去重
-
 export const logAuditLog = async (action: string, details: string, level: string = 'INFO') => {
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
     
-    // 始终在数据库中记录
+    // 1. 始终在数据库中记录
     const { error } = await supabase.from('audit_logs').insert([{
       action,
       details,
@@ -26,33 +23,34 @@ export const logAuditLog = async (action: string, details: string, level: string
       user_id: user?.id
     }]);
     
-    // 根据动作类型映射 Telegram 事件
+    // 2. 映射通知类型
     const actionToTypeMap: Record<string, string> = {
       'USER_LOGIN': 'USER_LOGIN',
-      'USER_SIGNUP': 'USER_SIGNUP',
       'ADMIN_ROLE_UPDATE': 'ADMIN_CONFIG_CHANGE',
       'ADMIN_BLOCK_TOGGLE': 'ADMIN_CONFIG_CHANGE',
       'ADMIN_RECIPIENT_ADDED': 'ADMIN_CONFIG_CHANGE',
       'SECURITY_BREACH': 'SECURITY_BREACH',
       'FEEDBACK_SUBMITTED': 'USER_FEEDBACK',
-      'DIARY_LOG_ENTRY': 'USER_FEEDBACK'
+      'API_SERVICE_FAULT': 'API_SERVICE_FAULT',
+      'ASYNC_HANDSHAKE_VOID': 'RUNTIME_ERROR',
+      'GA4_SYNC_FAILURE': 'GA4_SYNC_FAILURE'
     };
 
-    const isPriorityEvent = level === 'CRITICAL' || level === 'WARNING' || actionToTypeMap[action];
+    const targetType = actionToTypeMap[action];
+    const isPriority = level === 'CRITICAL' || level === 'WARNING' || !!targetType;
 
-    if (isPriorityEvent) {
-      const payload = { 
-        type: actionToTypeMap[action] || 'RUNTIME_ERROR', 
+    if (isPriority) {
+      // 触发 Telegram 发送逻辑（该函数内部含有 60s 去重锁）
+      await notifyAdmin({ 
+        type: targetType || 'RUNTIME_ERROR', 
         message: details, 
-        source: user?.email || 'SYSTEM_NODE',
-        path: 'Neural_Grid_Pulse'
-      };
-      
-      // 依靠 telegramService 的 60s 指纹去重，这里直接发射
-      await Promise.allSettled([
-        notifyAdmin(payload),
-        emailService.sendAdminAlert(payload)
-      ]);
+        source: user?.email || 'GATEWAY_TERMINAL'
+      });
+
+      // 只有在 CRITICAL 级别时才发送 Email，防止邮箱爆炸
+      if (level === 'CRITICAL') {
+        await emailService.sendAdminAlert({ type: targetType || 'CRITICAL_FAULT', message: details });
+      }
     }
     
     return !error;
@@ -72,7 +70,7 @@ export const authApi = {
   signUp: async (email: string, password: string, metadata: any, captchaToken?: string) => {
     const res = await (supabase.auth as any).signUp({ email, password, options: { data: metadata, captchaToken } });
     if (!res.error) {
-      await logAuditLog('USER_SIGNUP', `Identity: ${metadata.full_name || 'Anonymous'} | Link established for ${email}`, 'INFO');
+      await logAuditLog('USER_SIGNUP', `New Identity: ${metadata.full_name || 'Anonymous'} | Registered Node: ${email}`, 'INFO');
     }
     return res;
   },
@@ -121,13 +119,13 @@ export const adminApi = {
   
   updateUserRole: async (id: string, email: string, role: string) => {
     const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
-    if (!error) await logAuditLog('ADMIN_ROLE_UPDATE', `Node ${email} escalated to ${role}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_ROLE_UPDATE', `Action: Role Escalation\nTarget: ${email}\nNew Rank: ${role}`, 'WARNING');
     return { error };
   },
   
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
     const { error } = await supabase.from('profiles').update({ is_blocked: !currentlyBlocked }).eq('id', id);
-    if (!error) await logAuditLog('ADMIN_BLOCK_TOGGLE', `${currentlyBlocked ? 'Unblocked' : 'Blocked'} node ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_BLOCK_TOGGLE', `Action: Access Management\nTarget: ${email}\nState: ${currentlyBlocked ? 'UNBLOCKED' : 'BLOCKED'}`, 'WARNING');
     return { error };
   },
   
@@ -145,13 +143,13 @@ export const adminApi = {
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `New link established: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Action: New Alert Link\nRecipient: ${email}`, 'WARNING');
     return { data, error };
   },
   
   removeNotificationRecipient: async (id: string, email: string) => {
     const { error } = await supabase.from('notification_recipients').delete().eq('id', id);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Link severed: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Action: Sever Alert Link\nRecipient: ${email}`, 'WARNING');
     return { error };
   }
 };
@@ -196,7 +194,7 @@ export const userDataApi = {
     const dataRes = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
     if (dataRes.error) throw dataRes.error;
     
-    await logAuditLog('USER_SETUP_COMPLETE', `Subject ${user?.email} initialized metrics hub.`, 'INFO');
+    await logAuditLog('USER_SETUP_COMPLETE', `Identity established for subject: ${user?.email}`, 'INFO');
     return { success: true };
   }
 };
@@ -208,7 +206,7 @@ export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (!error) {
-      await logAuditLog('FEEDBACK_SUBMITTED', `Type: ${type}\nFrom: ${email}\nContent: ${content}`, 'INFO');
+      await logAuditLog('FEEDBACK_SUBMITTED', `Source: ${email}\nCategory: ${type}\nReport: ${content}`, 'INFO');
     }
     return { success: !error, error };
   }

@@ -182,6 +182,19 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
+  const getSyncBadgeConfig = () => {
+    switch(syncState) {
+      case 'SYNCING': return { label: 'RUNNING', color: 'bg-indigo-600/20 text-indigo-400', animate: true, icon: RefreshCw };
+      case 'SYNCED': return { label: 'SYNCED', color: 'bg-emerald-600/20 text-emerald-400', animate: false, icon: Check };
+      case 'ERROR':
+      case 'FORBIDDEN':
+      case 'NOT_FOUND': return { label: 'ERRORED', color: 'bg-rose-600/20 text-rose-500', animate: true, icon: AlertTriangle };
+      case 'STALE': return { label: 'STALLED', color: 'bg-amber-600/20 text-amber-500', animate: false, icon: Clock };
+      default: return { label: 'READY', color: 'bg-white/5 text-slate-500', animate: false, icon: ShieldCheck };
+    }
+  };
+
+  const syncBadge = getSyncBadgeConfig();
   const isGlobalOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
 
   return (
@@ -274,12 +287,18 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          </div>
                          <div>
                             <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Sync</h3>
-                            <p className={`text-[10px] font-black uppercase tracking-widest mt-1 italic ${['FORBIDDEN', 'ERROR', 'NOT_FOUND'].includes(syncState) ? 'text-rose-400' : 'text-slate-500'}`}>
-                              Current Status: {syncState.replace('_', ' ')}
+                            <p className="text-[10px] font-black uppercase tracking-widest mt-1 italic text-slate-500">
+                              Active monitoring for subject traffic nodes
                             </p>
                          </div>
                       </div>
-                      <div className="w-full md:w-auto">
+                      <div className="w-full md:w-auto flex flex-col md:flex-row items-center gap-6">
+                        {/* 动态同步状态徽章 */}
+                        <div className={`px-4 py-2 rounded-full border border-white/5 flex items-center gap-3 transition-all duration-500 ${syncBadge.color} ${syncBadge.animate ? 'animate-pulse' : ''}`}>
+                           <syncBadge.icon size={12} className={syncState === 'SYNCING' ? 'animate-spin' : ''} />
+                           <span className="text-[9px] font-black uppercase tracking-[0.2em] italic">{syncBadge.label}</span>
+                        </div>
+
                         <button onClick={handleManualSync} disabled={syncState === 'SYNCING'} className="w-full md:w-auto px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 shadow-xl italic">
                           {syncState === 'SYNCING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} SYNC NOW
                         </button>
