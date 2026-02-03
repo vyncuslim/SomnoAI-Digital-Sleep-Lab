@@ -329,7 +329,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                <ol className="space-y-4 text-[11px] text-slate-400 list-decimal pl-5 italic font-medium leading-relaxed">
                                   <li>Ensure Property ID is <b>380909155</b>. UA Account IDs (e.g. 12345678) will return 403.</li>
                                   <li>Legacy UA reporting (<code>analyticsreporting</code>) is disabled. This app hits <code>analyticsdata</code>.</li>
-                                  <li>Navigate to <b>GA Admin</b> &gt; <b>Property Settings</b> &gt; <b>Property Access Management</b>.</li>
+                                  <li>Navigate to <b>GA Admin</b> {' > '} <b>Property Settings</b> {' > '} <b>Property Access Management</b>.</li>
                                   <li>Add <b>Service Email</b> shown on the right.</li>
                                   <li>Assign the <b>Viewer</b> role to authorize telemetry data read access.</li>
                                </ol>
