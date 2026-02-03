@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { 
-  ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus, Microscope, HelpCircle
+  ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus, Microscope, HelpCircle, Zap
 } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -19,7 +19,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
-      {/* 顶部操作控制桥 */}
+      {/* Top Header Controls */}
       <div className="max-w-7xl mx-auto px-4 flex items-center justify-between mb-12 md:mb-20 sticky top-4 z-[100]">
         <button 
           onClick={onBack}
@@ -53,7 +53,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             About <span className="text-indigo-400">SomnoAI Lab</span>
           </h1>
           <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-4">
-            SomnoAI Digital Sleep Lab • Neural Infrastructure v2.7
+            SomnoAI Digital Sleep Lab • Neural Infrastructure v2.8
           </p>
         </div>
       </header>
@@ -68,9 +68,26 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             <p><b>SomnoAI Digital Sleep Lab</b> is an AI-powered digital health platform focused on advanced sleep architecture analysis and personalized optimization.</p>
             <p>Unlike traditional hardware-dependent trackers, we offer a pure software solution: collect biometric data from any wearable, smart mattress, phone sensors or manual input — then use sophisticated AI models to deliver meaningful insights.</p>
           </div>
+
+          {!profile && (
+            <div className="mt-12 pt-12 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+               <button 
+                 onClick={() => onNavigate('login')}
+                 className="flex items-center justify-center gap-4 py-8 bg-white/5 border border-white/10 rounded-[2.5rem] font-black text-xs uppercase tracking-widest text-white hover:bg-white/10 transition-all italic active:scale-95"
+               >
+                 <LogIn size={20} className="text-indigo-400" /> Access Terminal
+               </button>
+               <button 
+                 onClick={() => onNavigate('signup')}
+                 className="flex items-center justify-center gap-4 py-8 bg-indigo-600 text-white rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-500 transition-all italic active:scale-95 shadow-xl shadow-indigo-600/20"
+               >
+                 <Zap size={20} fill="currentColor" /> Join Registry
+               </button>
+            </div>
+          )}
         </GlassCard>
 
-        {/* 科学与常见问题引导 */}
+        {/* Info Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            <GlassCard 
              onClick={() => onNavigate('science')}
@@ -91,36 +108,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
            </GlassCard>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-           <GlassCard className="p-10 rounded-[3.5rem] border-white/5">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><BrainCircuit size={22} /></div>
-                <h3 className="text-xl font-black italic text-white uppercase tracking-tight">AI Capabilities</h3>
-              </div>
-              <ul className="space-y-4">
-                {["Sleep stage detection (Awake/REM)", "Anomaly detection", "Clustering analysis"].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-slate-400 italic font-bold">
-                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-indigo-500" />{item}
-                  </li>
-                ))}
-              </ul>
-           </GlassCard>
-
-           <GlassCard className="p-10 rounded-[3.5rem] border-white/5">
-              <div className="flex items-center gap-4 mb-8">
-                <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400"><Lock size={22} /></div>
-                <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Privacy Policy</h3>
-              </div>
-              <ul className="space-y-4">
-                {["Zero backend persistence", "AES-256 encryption", "Secure E2E transmission"].map((item, i) => (
-                  <li key={i} className="flex items-start gap-3 text-sm text-slate-400 italic font-bold">
-                    <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-emerald-500" />{item}
-                  </li>
-                ))}
-              </ul>
-           </GlassCard>
-        </div>
-
         <GlassCard className="p-10 md:p-14 rounded-[4rem] border-white/10 bg-white/[0.01]">
           <div className="flex items-center gap-4 mb-8">
             <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400"><UserCheck size={24} /></div>
@@ -136,7 +123,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         </GlassCard>
 
         <footer className="pt-12 text-center opacity-30">
-           <p className="text-[9px] font-mono tracking-widest uppercase mb-8">SomnoAI Digital Sleep Lab • Secure Infrastructure v2.7</p>
+           <p className="text-[9px] font-mono tracking-widest uppercase mb-8">SomnoAI Digital Sleep Lab • Secure Infrastructure v2.8</p>
            <button onClick={onBack} className="px-12 py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-widest italic shadow-2xl active:scale-95 transition-all">Back to Console</button>
         </footer>
       </div>

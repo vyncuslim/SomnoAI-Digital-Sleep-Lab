@@ -3,8 +3,11 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v41.0
- * Enhanced: Returns service account identity on 403 for diagnostic resolution.
+ * SOMNO LAB GA4 SYNC GATEWAY v45.0
+ * Protocol:
+ * 1. Explicitly locked Property ID 380909155.
+ * 2. DISTRIBUTED SUPPRESSION: Checks Supabase for recent alerts. 
+ *    Only 1 Telegram message per 24h for permanent errors.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -15,42 +18,47 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false, saEmail = "
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const currentAction = isForbidden ? 'GA4_PERMISSION_DENIED' : 'GA4_SYNC_FAILURE';
   
-  const dedupTime = isForbidden ? 86400000 : 1800000;
-  const timeLimit = new Date(Date.now() - dedupTime).toISOString();
-  
-  await new Promise(r => setTimeout(r, Math.random() * 3000));
+  // Prevent parallel trigger race conditions
+  const jitter = Math.floor(Math.random() * 5000);
+  await new Promise(r => setTimeout(r, jitter));
 
+  // Check if we already alerted in the last 24 hours for this specific blockage
+  const lookback = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
   const { data: existing } = await supabase
     .from('audit_logs')
     .select('id')
     .eq('action', currentAction)
-    .gt('created_at', timeLimit)
+    .gt('created_at', lookback)
     .limit(1);
 
-  if (existing && existing.length > 0) return;
+  if (existing && existing.length > 0) {
+    console.log(`[SUPPRESSION] Alert for ${currentAction} already dispatched in last 24h.`);
+    return;
+  }
 
+  // Record log to set the distributed lock
   await supabase.from('audit_logs').insert([{
     action: currentAction,
-    details: `Checkpoint: ${checkpoint} | Email: ${saEmail} | Error: ${errorMsg}`,
+    details: `Checkpoint: ${checkpoint} | ID: ${saEmail} | Error: ${errorMsg.substring(0, 100)}`,
     level: isForbidden ? 'CRITICAL' : 'WARNING'
   }]);
 
+  // Dispatch ONE Telegram message
   try {
     const tgMsg = `🚨 <b>SOMNO LAB: SYNC INCIDENT</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `<b>Type:</b> <code>${currentAction}</code>\n` +
-      `<b>Handshake:</b> <code>GA4_DATA_API_v1</code>\n` +
       `<b>ID:</b> <code>${saEmail}</code>\n` +
-      `<b>Err:</b> <code>${errorMsg.substring(0, 100)}...</code>\n` +
+      `<b>Err:</b> <code>${errorMsg.substring(0, 150)}...</code>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📍 <b>STATUS:</b> Throttled. Add this ID to GA4 Property.`;
+      `📍 <b>STATUS:</b> Gateway throttled (24h singleton lock). Fix in Admin Bridge.`;
       
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: tgMsg, parse_mode: 'HTML' })
     });
-  } catch (e) { console.error("TG Fail:", e); }
+  } catch (e) { console.error("TG Dispatch Fail:", e); }
 }
 
 function robustParse(input) {
@@ -71,7 +79,10 @@ function robustParse(input) {
 export default async function handler(req, res) {
   let checkpoint = "INITIALIZATION";
   let currentSaEmail = "UNKNOWN";
-  const { GA_PROPERTY_ID, GA_SERVICE_ACCOUNT_KEY } = process.env;
+  const { GA_SERVICE_ACCOUNT_KEY } = process.env;
+  
+  // LOCK TARGET ID
+  const TARGET_PROPERTY_ID = "380909155"; 
 
   try {
     const secret = req.query.secret || req.body?.secret;
@@ -81,7 +92,7 @@ export default async function handler(req, res) {
 
     checkpoint = "GA_CLIENT_SETUP";
     const credentials = robustParse(GA_SERVICE_ACCOUNT_KEY);
-    if (!credentials || !credentials.private_key) throw new Error("Invalid Service Account Key Configuration");
+    if (!credentials || !credentials.private_key) throw new Error("GA_KEY_STRUCTURE_INVALID");
     
     currentSaEmail = credentials.client_email;
 
@@ -90,19 +101,14 @@ export default async function handler(req, res) {
     });
 
     checkpoint = "GA_API_HANDSHAKE";
-    const cleanId = GA_PROPERTY_ID.trim().replace(/^properties\//, '');
-    
-    // Safety: Data API only supports GA4 (Numeric IDs)
-    if (cleanId.startsWith('UA-')) throw new Error("Legacy Universal Analytics (UA) ID detected. Use numeric GA4 Property ID.");
-
     const [response] = await analyticsClient.runReport({
-      property: `properties/${cleanId}`,
+      property: `properties/${TARGET_PROPERTY_ID}`,
       dateRanges: [{ startDate: 'yesterday', endDate: 'today' }],
       dimensions: [{ name: 'date' }],
       metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
     });
 
-    checkpoint = "DATA_UPSERT";
+    checkpoint = "DB_SYNC";
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     const rows = response?.rows || [];
     for (const row of rows) {
@@ -114,18 +120,19 @@ export default async function handler(req, res) {
         updated_at: new Date().toISOString()
       }, { onConflict: 'date' });
     }
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ success: true, property: TARGET_PROPERTY_ID });
   } catch (error) {
-    const errorMsg = error?.message || "Gateway crash.";
-    const isPermissionDenied = errorMsg.includes('permission') || error.code === 7 || error.status === 403;
-    await alertAdmin(checkpoint, errorMsg, isPermissionDenied, currentSaEmail);
-    return res.status(isPermissionDenied ? 403 : 500).json({ 
+    const errorMsg = error?.message || "Internal gateway crash.";
+    const isForbidden = errorMsg.includes('permission') || error.code === 7 || error.status === 403;
+    
+    // singleton-throttled alert
+    await alertAdmin(checkpoint, errorMsg, isForbidden, currentSaEmail);
+    
+    return res.status(isForbidden ? 403 : 500).json({ 
       success: false, 
       error: errorMsg,
       service_account: currentSaEmail,
-      property_id: GA_PROPERTY_ID,
-      checkpoint,
-      is_permission_denied: isPermissionDenied
+      is_permission_denied: isForbidden
     });
   }
 }

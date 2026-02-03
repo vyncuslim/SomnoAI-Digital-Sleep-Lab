@@ -1,10 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { GlassCard } from './GlassCard.tsx';
-// Fix: Added missing Logo import to resolve compilation error
 import { Logo } from './Logo.tsx';
 import { 
-  UserCircle, Edit2, Activity, Save, Loader2, 
+  Edit2, Activity, Save, Loader2, 
   CheckCircle2, Lock, User, Info, Scale, Ruler, Brain, Heart,
   ShieldCheck, Fingerprint, ChevronRight, Mail, Sparkles,
   Zap, Database, Smartphone, AlertCircle, XCircle, Terminal,
@@ -71,7 +70,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
     displayName: formData.displayName.trim().length >= 2,
     age: formData.age > 0 && formData.age < 120,
     height: formData.height > 50 && formData.height < 300,
-    weight: formData.weight > 20 && formData.weight < 500,
+    weight: formData.weight > 10 && formData.weight < 500,
     gender: formData.gender !== 'prefer-not-to-say'
   }), [formData]);
 
@@ -92,7 +91,6 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
     try {
       const cleanName = formData.displayName.trim();
       
-      // Perform mirrored commit to Profile (Core Identity) and UserData (Biometric Stats)
       const [pRes, uRes] = await Promise.all([
         profileApi.updateProfile({ full_name: cleanName }),
         userDataApi.updateUserData({
@@ -103,13 +101,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
         })
       ]);
 
-      if (pRes.error || uRes.error) throw new Error("UPSTREAM_SYNC_VOID");
+      if (pRes.error || uRes.error) throw new Error("SYNC_FAILURE");
 
       setStatus('success');
       setProfile((prev: any) => ({ ...prev, full_name: cleanName }));
       setTimeout(() => setStatus('idle'), 4000);
     } catch (err) {
-      console.error("Commit Protocol Failure:", err);
       setStatus('error');
       setTimeout(() => setStatus('idle'), 4000);
     } finally {
@@ -131,218 +128,125 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
           <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full animate-pulse" />
           <Logo size={120} animated={true} className="relative z-10" />
         </div>
-        <div className="space-y-2">
-          <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.8em] italic animate-pulse">Synchronizing Registry Node...</p>
-          <p className="text-[8px] font-mono text-slate-700 uppercase tracking-widest">Protocol 9.2.1 • Encryption Active</p>
-        </div>
+        <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.8em] italic animate-pulse">Syncing Neural Registry...</p>
       </div>
     );
   }
 
   return (
     <m.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
+      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
       className="space-y-10 pb-40 max-w-4xl mx-auto px-4 font-sans text-left"
     >
-      {/* Dynamic Profile Header */}
-      <header className="flex flex-col lg:flex-row items-center gap-10 px-10 py-14 bg-slate-950/60 rounded-[5rem] border border-white/10 backdrop-blur-3xl shadow-[0_80px_150px_-40px_rgba(0,0,0,1)] relative overflow-hidden group">
-        <div className="absolute -right-20 -top-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px] group-hover:bg-indigo-500/15 transition-all duration-1000" />
+      <header className="flex flex-col lg:flex-row items-center gap-10 px-10 py-14 bg-slate-950/60 rounded-[5rem] border border-white/10 backdrop-blur-3xl shadow-2xl relative overflow-hidden group">
+        <div className="absolute -right-20 -top-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-[120px]" />
         
         <div className="relative shrink-0">
-          <div className="w-48 h-48 rounded-[4rem] bg-gradient-to-br from-[#0a0f25] to-[#020617] border border-white/10 flex items-center justify-center text-indigo-400 shadow-[inset_0_0_80px_rgba(0,0,0,0.8)] relative overflow-hidden group">
-            <AnimatePresence mode="wait">
-              {profile?.full_name ? (
-                <m.span key="initial" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} className="text-[8rem] font-black italic tracking-tighter relative z-10 drop-shadow-[0_10px_20px_rgba(0,0,0,0.5)]">
-                  {profile.full_name[0].toUpperCase()}
-                </m.span>
-              ) : (
-                <m.div key="icon" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-10 text-slate-800">
-                  <User size={100} strokeWidth={1} />
-                </m.div>
-              )}
-            </AnimatePresence>
-            <div className="absolute inset-0 bg-indigo-500/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+          <div className="w-44 h-44 rounded-[4rem] bg-gradient-to-br from-[#0a0f25] to-[#020617] border border-white/10 flex items-center justify-center text-indigo-400 shadow-inner relative overflow-hidden group">
+            {profile?.full_name ? (
+              <span className="text-[7rem] font-black italic tracking-tighter relative z-10">{profile.full_name[0].toUpperCase()}</span>
+            ) : (
+              <User size={80} strokeWidth={1} className="text-slate-800" />
+            )}
+            <div className="absolute inset-0 bg-indigo-500/5 group-hover:opacity-100 transition-opacity" />
           </div>
           <m.div 
-            animate={{ scale: [1, 1.1, 1], rotate: [0, 5, 0] }} 
-            transition={{ duration: 5, repeat: Infinity }} 
-            className="absolute -bottom-4 -right-4 p-6 bg-indigo-600 rounded-[2rem] text-white shadow-2xl border-4 border-[#020617] z-20"
+            animate={{ scale: [1, 1.1, 1] }} transition={{ duration: 4, repeat: Infinity }} 
+            className="absolute -bottom-2 -right-2 p-5 bg-indigo-600 rounded-[2rem] text-white shadow-2xl border-4 border-[#020617] z-20"
           >
-             <Fingerprint size={32} />
+             <Fingerprint size={28} />
           </m.div>
         </div>
         
         <div className="space-y-6 text-center lg:text-left relative z-10 flex-1">
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3 justify-center lg:justify-start">
-                 <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_rgba(16,185,129,0.8)]" />
-                 <span className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.4em] italic">Neural Identity Verified</span>
-              </div>
-              <h1 className="text-5xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">
-                {profile?.full_name || 'INITIALIZING'}
-              </h1>
+          <div className="space-y-2">
+            <div className="flex items-center gap-3 justify-center lg:justify-start">
+               <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+               <span className="text-[11px] font-black text-emerald-400 uppercase tracking-[0.4em] italic">Identity Linked</span>
             </div>
-
-            <div className="flex flex-col items-center md:items-end gap-3 bg-white/5 p-6 rounded-[2.5rem] border border-white/5">
-               <div className="flex items-center gap-3">
-                 <BarChart3 size={14} className="text-indigo-400" />
-                 <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Node Integrity</span>
-               </div>
-               <div className="flex items-center gap-4">
-                  <div className="w-32 h-2 bg-black rounded-full overflow-hidden border border-white/5">
-                    <m.div 
-                      initial={{ width: 0 }} 
-                      animate={{ width: `${integrityScore}%` }} 
-                      transition={{ duration: 1.5, ease: "circOut" }}
-                      className="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.5)]" 
-                    />
-                  </div>
-                  <span className="text-xl font-mono font-black text-white italic">{integrityScore}%</span>
-               </div>
-            </div>
+            <h1 className="text-5xl md:text-6xl font-black italic text-white uppercase tracking-tighter leading-none">
+              {profile?.full_name || 'REGISTERING'}
+            </h1>
           </div>
 
           <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4">
              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest bg-black/40 px-6 py-3 rounded-full border border-white/5 flex items-center gap-3">
-               <Database size={12} className="text-indigo-500" /> 
-               NODE_ID: <span className="text-indigo-100 font-mono">{profile?.id?.slice(0, 14).toUpperCase()}</span>
+               <Database size={12} className="text-indigo-500" /> NODE_ID: {profile?.id?.slice(0, 10).toUpperCase()}
              </span>
-             <button 
-               onClick={fetchData} 
-               className="p-3 bg-white/5 hover:bg-white/10 rounded-full text-slate-500 hover:text-white transition-all active:rotate-180"
-             >
-                <RefreshCw size={16} />
-             </button>
+             <div className="flex items-center gap-3 px-6 py-3 bg-white/5 rounded-full border border-white/5">
+                <BarChart3 size={12} className="text-indigo-400" />
+                <span className="text-[10px] font-black text-slate-500 uppercase">Integrity: {integrityScore}%</span>
+             </div>
           </div>
         </div>
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-12">
-        <GlassCard className="p-12 md:p-16 rounded-[5rem] bg-white/[0.01] border-white/5" intensity={1.5}>
+        <GlassCard className="p-12 md:p-16 rounded-[5rem] bg-white/[0.01] border-white/5" intensity={1.2}>
           <div className="space-y-20">
             {/* Identity Sector */}
-            <div className="space-y-12">
-              <div className="flex items-center justify-between border-b border-white/10 pb-10">
-                <div className="flex items-center gap-6">
-                  <div className="p-5 bg-indigo-500/10 rounded-3xl text-indigo-400 shadow-2xl border border-indigo-500/20">
-                    <Terminal size={28} />
-                  </div>
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">{t_registry.identitySector}</h2>
-                    <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Access Authorization Matrix</p>
-                  </div>
-                </div>
-                <Lock size={20} className="text-slate-800" />
+            <div className="space-y-10">
+              <div className="flex items-center gap-4 border-b border-white/10 pb-6">
+                <Terminal size={24} className="text-indigo-400" />
+                <h2 className="text-xl font-black italic text-white uppercase">{t_registry.identitySector}</h2>
               </div>
-              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                <div className="space-y-5">
-                  <label className="text-[11px] font-black uppercase text-slate-500 px-8 flex items-center gap-3 tracking-[0.5em] italic">
-                    <Mail size={14} /> {t_registry.identifier}
-                  </label>
-                  <div className="bg-[#020617] border border-white/10 rounded-[3rem] px-10 py-8 text-base text-slate-600 italic flex justify-between items-center shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] group">
-                    <span className="truncate pr-4 font-mono font-bold tracking-tight">{profile?.email}</span>
-                    <ShieldCheck size={18} className="text-emerald-500/40 group-hover:text-emerald-500 transition-colors" />
+                <div className="space-y-4 text-left">
+                  <label className="text-[11px] font-black uppercase text-slate-500 px-6 italic">{t_registry.identifier}</label>
+                  <div className="bg-[#020617] border border-white/10 rounded-[3rem] px-8 py-7 text-base text-slate-500 font-mono italic truncate shadow-inner">
+                    {profile?.email}
                   </div>
                 </div>
-
-                <div className="space-y-5">
-                  <label className="text-[11px] font-black uppercase text-indigo-400 px-8 flex items-center gap-3 tracking-[0.5em] italic">
-                    <Edit2 size={14} /> {t_registry.callsign}
-                  </label>
-                  <div className="relative group">
-                    <input 
-                      type="text"
-                      value={formData.displayName}
-                      onChange={(e) => setFormData({...formData, displayName: e.target.value})}
-                      className={`w-full bg-[#020617] border rounded-[3rem] px-10 py-8 text-base text-white focus:border-indigo-500 outline-none transition-all font-black italic placeholder:text-slate-800 shadow-[inset_0_4px_20px_rgba(0,0,0,0.5)] ${formData.displayName ? (validations.displayName ? 'border-emerald-500/30' : 'border-rose-500/30') : 'border-white/10'}`}
-                      placeholder="Input Identifier..."
-                    />
-                    <div className="absolute right-8 top-1/2 -translate-y-1/2">
-                       {formData.displayName && (validations.displayName ? <CheckCircle2 className="text-emerald-500" size={24} /> : <XCircle className="text-rose-500" size={24} />)}
-                    </div>
-                  </div>
+                <div className="space-y-4 text-left">
+                  <label className="text-[11px] font-black uppercase text-indigo-400 px-6 italic">{t_registry.callsign}</label>
+                  <input 
+                    type="text" value={formData.displayName}
+                    onChange={(e) => setFormData({...formData, displayName: e.target.value})}
+                    className={`w-full bg-[#020617] border rounded-[3rem] px-8 py-7 text-base text-white focus:border-indigo-500 outline-none transition-all font-black italic shadow-inner ${validations.displayName ? 'border-emerald-500/20' : 'border-white/10'}`}
+                    placeholder="Input Identity Label..."
+                  />
                 </div>
               </div>
             </div>
 
-            {/* Biometric Sector */}
-            <div className="space-y-12">
-              <div className="flex items-center justify-between border-b border-white/10 pb-10">
-                <div className="flex items-center gap-6">
-                  <div className="p-5 bg-indigo-500/10 rounded-3xl text-indigo-400 shadow-2xl border border-indigo-500/20">
-                    <Activity size={28} />
-                  </div>
-                  <div className="space-y-1">
-                    <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">{t_registry.biometricSector}</h2>
-                    <p className="text-[11px] font-black text-slate-600 uppercase tracking-[0.4em] italic">Biological Baseline Calibration</p>
-                  </div>
-                </div>
-                <Binary size={20} className="text-slate-800" />
+            {/* Biometric Baseline */}
+            <div className="space-y-10">
+              <div className="flex items-center gap-4 border-b border-white/10 pb-6">
+                <Activity size={24} className="text-indigo-400" />
+                <h2 className="text-xl font-black italic text-white uppercase">{t_registry.biometricSector}</h2>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-                <div className="space-y-4">
-                  <label className="text-[11px] font-black uppercase text-slate-500 px-8 flex items-center gap-3 tracking-[0.3em] italic">
-                    <Brain size={16} /> {t_settings.age}
-                  </label>
-                  <div className="relative">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
+                {[
+                  { id: 'age', label: t_settings.age, icon: Brain, type: 'number' },
+                  { id: 'height', label: t_settings.height, icon: Ruler, type: 'number', unit: 'CM' },
+                  { id: 'weight', label: t_settings.weight, icon: Scale, type: 'number', unit: 'KG' }
+                ].map((item) => (
+                  <div key={item.id} className="space-y-4 text-left">
+                    <label className="text-[10px] font-black uppercase text-slate-500 px-6 italic flex items-center gap-2">
+                       <item.icon size={12} /> {item.label}
+                    </label>
                     <input 
-                      type="number"
-                      value={formData.age || ''}
-                      onChange={(e) => setFormData({...formData, age: parseInt(e.target.value) || 0})}
-                      className={`w-full bg-[#020617] border rounded-[2.5rem] px-10 py-7 text-base text-white outline-none transition-all font-mono font-black italic shadow-[inset_0_4px_15px_rgba(0,0,0,0.5)] ${getStatusColor(validations.age, formData.age)}`}
+                      type={item.type} value={(formData as any)[item.id] || ''}
+                      onChange={(e) => setFormData({...formData, [item.id]: e.target.value})}
+                      className={`w-full bg-[#020617] border rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none transition-all font-mono font-black italic shadow-inner ${getStatusColor((validations as any)[item.id], (formData as any)[item.id])}`}
                     />
                   </div>
-                </div>
+                ))}
                 
-                <div className="space-y-4">
-                  <label className="text-[11px] font-black uppercase text-slate-500 px-8 flex items-center gap-3 tracking-[0.3em] italic">
-                    <Heart size={16} /> {t_registry.polarity}
+                <div className="space-y-4 text-left">
+                  <label className="text-[10px] font-black uppercase text-slate-500 px-6 italic flex items-center gap-2">
+                    <Heart size={12} /> {t_registry.polarity}
                   </label>
-                  <div className="relative">
-                    <select 
-                      value={formData.gender}
-                      onChange={(e) => setFormData({...formData, gender: e.target.value})}
-                      className={`w-full bg-[#020617] border rounded-[2.5rem] px-10 py-7 text-base text-white outline-none appearance-none cursor-pointer font-black italic shadow-[inset_0_4px_15px_rgba(0,0,0,0.5)] ${getStatusColor(validations.gender, formData.gender)}`}
-                    >
-                      <option value="male">{t_settings.genderMale}</option>
-                      <option value="female">{t_settings.genderFemale}</option>
-                      <option value="other">{t_settings.genderOther}</option>
-                      <option value="prefer-not-to-say">{t_settings.genderNone}</option>
-                    </select>
-                    <ChevronRight size={18} className="absolute right-8 top-1/2 -translate-y-1/2 text-indigo-500/40 rotate-90 pointer-events-none" />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[11px] font-black uppercase text-slate-500 px-8 flex items-center gap-3 tracking-[0.3em] italic">
-                    <Ruler size={16} /> {t_settings.height} (CM)
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type="number"
-                      value={formData.height || ''}
-                      onChange={(e) => setFormData({...formData, height: parseFloat(e.target.value) || 0})}
-                      className={`w-full bg-[#020617] border rounded-[2.5rem] px-10 py-7 text-base text-white outline-none transition-all font-mono font-black italic shadow-[inset_0_4px_15px_rgba(0,0,0,0.5)] ${getStatusColor(validations.height, formData.height)}`}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <label className="text-[11px] font-black uppercase text-slate-500 px-8 flex items-center gap-3 tracking-[0.3em] italic">
-                    <Scale size={16} /> {t_settings.weight} (KG)
-                  </label>
-                  <div className="relative">
-                    <input 
-                      type="number"
-                      value={formData.weight || ''}
-                      onChange={(e) => setFormData({...formData, weight: parseFloat(e.target.value) || 0})}
-                      className={`w-full bg-[#020617] border rounded-[2.5rem] px-10 py-7 text-base text-white outline-none transition-all font-mono font-black italic shadow-[inset_0_4px_15px_rgba(0,0,0,0.5)] ${getStatusColor(validations.weight, formData.weight)}`}
-                    />
-                  </div>
+                  <select 
+                    value={formData.gender}
+                    onChange={(e) => setFormData({...formData, gender: e.target.value})}
+                    className={`w-full bg-[#020617] border rounded-[2.5rem] px-8 py-6 text-sm text-white outline-none cursor-pointer font-black italic shadow-inner ${getStatusColor(validations.gender, formData.gender)}`}
+                  >
+                    <option value="male">{t_settings.genderMale}</option>
+                    <option value="female">{t_settings.genderFemale}</option>
+                    <option value="other">{t_settings.genderOther}</option>
+                    <option value="prefer-not-to-say">{t_settings.genderNone}</option>
+                  </select>
                 </div>
               </div>
             </div>
@@ -350,75 +254,37 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
 
           <div className="pt-24">
             <button 
-              type="submit"
-              disabled={isUpdating || !isFormValid}
-              className={`w-full py-10 rounded-full font-black text-base uppercase tracking-[0.6em] transition-all flex items-center justify-center gap-6 shadow-[0_40px_100px_-20px_rgba(99,102,241,0.5)] active:scale-[0.98] italic relative overflow-hidden ${
-                status === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/30' : 
-                status === 'error' ? 'bg-rose-600 text-white shadow-rose-500/30' : 
-                !isFormValid ? 'bg-slate-900 text-slate-700 cursor-not-allowed border border-white/5 opacity-40 shadow-none' : 'bg-indigo-600 text-white hover:bg-indigo-500'
+              type="submit" disabled={isUpdating || !isFormValid}
+              className={`w-full py-10 rounded-full font-black text-sm uppercase tracking-[0.6em] transition-all flex items-center justify-center gap-6 shadow-2xl active:scale-[0.98] italic ${
+                status === 'success' ? 'bg-emerald-600 text-white' : 
+                status === 'error' ? 'bg-rose-600 text-white' : 
+                !isFormValid ? 'bg-slate-900 text-slate-700 opacity-40 cursor-not-allowed' : 'bg-indigo-600 text-white hover:bg-indigo-500'
               }`}
             >
               <AnimatePresence mode="wait">
-                {isUpdating ? (
-                  <m.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-5">
-                    <Loader2 size={32} className="animate-spin" />
-                    <span>{t_registry.syncing}</span>
-                  </m.div>
-                ) : status === 'success' ? (
-                  <m.div key="success" initial={{ y: 20 }} animate={{ y: 0 }} className="flex items-center gap-5">
-                    <CheckCircle2 size={32} />
-                    <span>{t_registry.success}</span>
-                  </m.div>
-                ) : status === 'error' ? (
-                  <m.div key="error" initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-5">
-                    <AlertCircle size={32} />
-                    <span>{t_registry.failure}</span>
-                  </m.div>
-                ) : (
-                  <m.div key="idle" initial={{ scale: 0.9 }} animate={{ scale: 1 }} className="flex items-center gap-5">
-                    <Zap size={28} fill="currentColor" />
-                    <span>{t_registry.commit}</span>
-                  </m.div>
-                )}
+                {isUpdating ? <Loader2 className="animate-spin" size={28} /> : status === 'success' ? <CheckCircle2 size={28} /> : <Zap size={24} fill="currentColor" />}
               </AnimatePresence>
-              
-              {isUpdating && (
-                <m.div 
-                  initial={{ x: '-100%' }}
-                  animate={{ x: '100%' }}
-                  transition={{ duration: 1.2, repeat: Infinity, ease: 'linear' }}
-                  className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                />
-              )}
+              <span>{isUpdating ? t_registry.syncing : status === 'success' ? t_registry.success : t_registry.commit}</span>
             </button>
-            {!isFormValid && (
-               <p className="text-center text-[10px] text-rose-500 font-black uppercase tracking-widest mt-6 italic animate-pulse">
-                 <AlertCircle size={10} className="inline mr-2" /> Protocol Incomplete: Required Metrics Missing
-               </p>
-            )}
+            {!isFormValid && <p className="text-center text-[10px] text-rose-500 font-bold uppercase tracking-widest mt-6 italic">Required baseline metrics incomplete.</p>}
           </div>
         </GlassCard>
       </form>
 
-      {/* Sovereignty Protocol Note */}
       <m.div 
-        initial={{ opacity: 0 }}
-        whileInView={{ opacity: 1 }}
-        className="flex flex-col md:flex-row items-center gap-12 p-12 bg-indigo-500/[0.02] border border-indigo-500/10 rounded-[5rem] relative overflow-hidden group"
+        initial={{ opacity: 0 }} whileInView={{ opacity: 1 }}
+        className="flex flex-col md:flex-row items-center gap-10 p-12 bg-indigo-500/[0.02] border border-indigo-500/10 rounded-[5rem] relative overflow-hidden"
       >
-        <div className="p-8 bg-indigo-500/10 rounded-[3rem] text-indigo-400 relative z-10 shadow-inner group-hover:scale-110 transition-transform duration-1000">
-          <Sparkles size={48} />
+        <div className="p-8 bg-indigo-500/10 rounded-[3rem] text-indigo-400 relative z-10 shadow-inner">
+          <Sparkles size={40} />
         </div>
-        <div className="space-y-4 relative z-10 text-center md:text-left">
-          <h4 className="text-sm font-black uppercase text-white tracking-[0.4em] italic flex items-center justify-center md:justify-start gap-3">
+        <div className="space-y-3 relative z-10 text-center md:text-left flex-1">
+          <h4 className="text-sm font-black uppercase text-white tracking-[0.3em] italic flex items-center justify-center md:justify-start gap-3">
             <ShieldCheck size={16} className="text-emerald-500" /> {t_registry.sovereignty}
           </h4>
-          <p className="text-[13px] text-slate-500 italic leading-relaxed max-w-2xl">
+          <p className="text-[12px] text-slate-500 italic leading-relaxed">
             {t_registry.sovereigntyDesc}
           </p>
-        </div>
-        <div className="absolute top-0 right-0 p-12 opacity-[0.01] pointer-events-none group-hover:opacity-[0.03] transition-opacity duration-1000">
-           <Smartphone size={300} strokeWidth={0.5} />
         </div>
       </m.div>
     </m.div>

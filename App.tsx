@@ -83,7 +83,7 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
 const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
-  const [activeView, setActiveView] = useState<ViewType | 'update-password' | 'science' | 'faq'>('dashboard');
+  const [activeView, setActiveView] = useState<ViewType | 'login' | 'signup' | 'update-password' | 'science' | 'faq'>('dashboard');
   const [isSimulated, setIsSimulated] = useState(false);
 
   const handleLogout = useCallback(async () => {
@@ -95,28 +95,28 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleRouting = () => {
-      // 优先解析直接路径，例如 /assistant
-      const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-      const hash = window.location.hash.replace(/^#\/?/, '').replace(/\/+$/, '');
+      // Robust path detection from window location
+      const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0];
       const route = path || hash || 'dashboard';
 
-      if (route === 'login') { setActiveView('dashboard'); return; }
-      if (route === 'signup' || route === 'sign-in') { setActiveView('dashboard'); return; }
-      if (route === 'about') { setActiveView('about'); return; }
-      if (route === 'science') { setActiveView('science'); return; }
-      if (route === 'faq') { setActiveView('faq'); return; }
-      if (route === 'admin') { setActiveView('admin'); return; }
+      // Redirect if already authenticated and trying to reach auth pages
+      if ((profile || isSimulated) && ['login', 'signup', 'sign-in'].includes(route)) {
+        setActiveView('dashboard');
+        return;
+      }
 
       const mappings: Record<string, any> = {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
-        'registry': 'registry', 'update-password': 'update-password', 'science': 'science', 'faq': 'faq'
+        'registry': 'registry', 'update-password': 'update-password', 'science': 'science', 'faq': 'faq',
+        'login': 'login', 'signup': 'signup'
       };
 
       if (mappings[route]) {
         setActiveView(mappings[route]);
-      } else if (profile || isSimulated) {
+      } else {
         setActiveView('dashboard');
       }
       
@@ -135,28 +135,29 @@ const AppContent: React.FC = () => {
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;
 
+  // Centralized Navigation Helper
+  const navigate = (view: string) => {
+    window.history.pushState(null, '', `/${view}`);
+    setActiveView(view as any);
+  };
+
   const renderContent = () => {
-    const path = window.location.pathname.replace(/^\/+/, '');
-    
+    // PUBLIC ROUTES FOR GUESTS
     if (!profile && !isSimulated) {
-      if (path === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
-      if (path === 'signup' || path === 'sign-in') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
-      if (path === 'science') return <ScienceView lang={lang} onBack={() => window.location.href = '/'} />;
-      if (path === 'faq') return <FAQView lang={lang} onBack={() => window.location.href = '/'} />;
+      if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
+      if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('login')} onNavigate={navigate} />;
+      if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('about')} />;
+      if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('about')} />;
+      
+      // Default Guest View: Login
+      return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
     }
 
+    // AUTHENTICATED ROUTES
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => setActiveView('dashboard')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => setActiveView('support')} />;
     if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => setActiveView('dashboard')} />;
-    
-    if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView(profile || isSimulated ? 'settings' : 'dashboard')} onNavigate={(v) => {
-      if (['login', 'signup', 'science', 'faq'].includes(v)) {
-         window.history.pushState(null, '', `/${v}`);
-         setActiveView(v as any);
-      } else {
-         setActiveView(v as any);
-      }
-    }} />;
+    if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView('settings')} onNavigate={navigate} />;
 
     if (profile || isSimulated) {
       if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
@@ -175,14 +176,7 @@ const AppContent: React.FC = () => {
                 {activeView === 'registry' && <UserProfile lang={lang} />}
                 {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} />}
                 {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => setActiveView('support')} />}
-                {activeView === 'support' && <SupportView lang={lang} onBack={() => setActiveView('settings')} onNavigate={(v) => {
-                   if (v === 'faq') {
-                     window.history.pushState(null, '', '/faq');
-                     setActiveView('faq');
-                   } else {
-                     setActiveView(v);
-                   }
-                }} />}
+                {activeView === 'support' && <SupportView lang={lang} onBack={() => setActiveView('settings')} onNavigate={(v) => setActiveView(v)} />}
               </m.div>
             </AnimatePresence>
           </main>

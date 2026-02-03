@@ -12,20 +12,8 @@
     }
   ],
   "rewrites": [
-    { "source": "/api/telegram-webhook", "destination": "/api/telegram-webhook.js" },
-    { "source": "/api/monitor-pulse", "destination": "/api/monitor-pulse.js" },
-    { "source": "/api/sync-analytics", "destination": "/api/sync-analytics.js" },
-    { "source": "/api/cron-task", "destination": "/api/cron-task.js" },
-    { "source": "/api/send-system-email", "destination": "/api/send-system-email.js" },
     { "source": "/api/health-upload", "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" },
-    { "source": "/assistant", "destination": "/index.html" },
-    { "source": "/science", "destination": "/index.html" },
-    { "source": "/faq", "destination": "/index.html" },
-    { "source": "/login", "destination": "/index.html" },
-    { "source": "/signup", "destination": "/index.html" },
-    { "source": "/about", "destination": "/index.html" },
-    { "source": "/admin", "destination": "/index.html" },
-    { "source": "/dashboard", "destination": "/index.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/((?!api|favicon.ico|sw.js).*)", "destination": "/index.html" }
   ]
 }
