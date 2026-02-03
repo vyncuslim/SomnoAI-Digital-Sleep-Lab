@@ -14,7 +14,7 @@ import { adminApi, supabase } from '../services/supabaseService.ts';
 const m = motion as any;
 
 type AdminTab = 'overview' | 'automation' | 'registry' | 'explorer' | 'signals' | 'system';
-type SyncState = 'IDLE' | 'SYNCING' | 'SYNCED' | 'ERROR' | 'STALLED' | 'FORBIDDEN' | 'NOT_FOUND';
+type SyncState = 'IDLE' | 'RUNNING' | 'SYNCED' | 'ERRORED' | 'STALLED' | 'FORBIDDEN' | 'NOT_FOUND';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity, desc: 'Stores aggregated daily traffic metrics from Google Analytics.' },
@@ -72,21 +72,21 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   useEffect(() => { fetchData(); }, [fetchData]);
 
   const handleManualSync = async () => {
-    if (syncState === 'SYNCING') return;
+    if (syncState === 'RUNNING') return;
     
-    setSyncState('SYNCING');
+    setSyncState('RUNNING');
     setActionError(null);
 
-    // Watchdog timer to catch "Stalled" state
+    // Watchdog timer: If request takes > 15s, mark as STALLED
     syncTimeoutRef.current = setTimeout(() => {
-      setSyncState(prev => prev === 'SYNCING' ? 'STALLED' : prev);
+      setSyncState(prev => prev === 'RUNNING' ? 'STALLED' : prev);
     }, 15000);
 
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
       const data = await response.json();
       
-      clearTimeout(syncTimeoutRef.current);
+      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
 
       if (response.ok && data.success) {
         setSyncState('SYNCED');
@@ -95,7 +95,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       } else {
         if (response.status === 403 || data.is_permission_denied) setSyncState('FORBIDDEN');
         else if (response.status === 404) setSyncState('NOT_FOUND');
-        else setSyncState('ERROR');
+        else setSyncState('ERRORED');
         throw new Error(data.error || "Handshake violation.");
       }
     } catch (e: any) {
@@ -106,10 +106,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const getStatusDisplay = () => {
     switch(syncState) {
       case 'IDLE': return { label: 'IDLE', color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: ShieldCheck, pulse: true };
-      case 'SYNCING': return { label: 'RUNNING', color: 'text-indigo-400', bg: 'bg-indigo-600/20', icon: RefreshCw, spin: true };
+      case 'RUNNING': return { label: 'RUNNING', color: 'text-indigo-400', bg: 'bg-indigo-600/20', icon: RefreshCw, spin: true };
       case 'SYNCED': return { label: 'SYNCED', color: 'text-emerald-400', bg: 'bg-emerald-600/20', icon: Check, pulse: false };
       case 'STALLED': return { label: 'STALLED', color: 'text-amber-500', bg: 'bg-amber-600/20', icon: Clock, pulse: true };
-      case 'ERROR':
+      case 'ERRORED':
       case 'FORBIDDEN':
       case 'NOT_FOUND': return { label: 'ERRORED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: ShieldX, pulse: true };
       default: return { label: 'IDLE', color: 'text-slate-500', bg: 'bg-white/5', icon: ShieldCheck, pulse: false };
@@ -169,7 +169,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 </div>
 
                 {/* GA4 Sync Protocol Panel */}
-                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${['ERROR', 'FORBIDDEN', 'STALLED'].includes(syncState) ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
+                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${['ERRORED', 'FORBIDDEN', 'STALLED'].includes(syncState) ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
                    <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                       <div className="flex items-center gap-8 text-left">
                          <div className={`p-6 rounded-[2rem] border border-white/5 ${status.bg} ${status.color}`}>
@@ -194,10 +194,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
                         <button 
                           onClick={handleManualSync} 
-                          disabled={syncState === 'SYNCING'}
+                          disabled={syncState === 'RUNNING'}
                           className="w-full md:w-auto px-12 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95"
                         >
-                          {syncState === 'SYNCING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} 
+                          {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} 
                           EXECUTE SYNC
                         </button>
                       </div>

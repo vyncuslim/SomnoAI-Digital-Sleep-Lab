@@ -5,11 +5,10 @@ import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, Activity, Gauge, 
-  ChevronRight, FlaskConical, Brain, Heart, Waves, Info, ShieldCheck, Zap, HelpCircle
+  ChevronRight, FlaskConical, Brain, Heart, Waves, Info, ShieldCheck, Zap, HelpCircle, Smartphone
 } from 'lucide-react';
 import { AreaChart, Area, ResponsiveContainer } from 'recharts';
 import { Language, translations } from '../services/i18n.ts';
-import { Logo } from './Logo.tsx';
 import { healthConnect } from '../services/healthConnectService.ts';
 
 const m = motion as any;
@@ -29,6 +28,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [integrity, setIntegrity] = useState(94.2);
+  const [cloudActive, setCloudActive] = useState(true); // Assumed active if App API exists
   
   const t = translations[lang].dashboard;
 
@@ -40,11 +40,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
   }, []);
 
   const handleFullSync = async () => {
-    if (!onSyncHealth || syncStatus !== 'idle') return;
+    if (syncStatus !== 'idle') return;
+    
+    setSyncStatus('fetching');
     try {
-      await onSyncHealth((status) => setSyncStatus(status));
+      // 1. First try to pull data that was uploaded via App API
+      await healthConnect.syncCloudIngress();
+      
+      // 2. Then proceed with standard local sync if provided
+      if (onSyncHealth) {
+        await onSyncHealth((status) => setSyncStatus(status));
+      }
+      
+      setSyncStatus('success');
       setTimeout(() => setSyncStatus('idle'), 1500);
-    } catch (err) { setSyncStatus('error'); }
+    } catch (err) { 
+      setSyncStatus('error'); 
+      setTimeout(() => setSyncStatus('idle'), 3000);
+    }
   };
 
   const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
@@ -65,8 +78,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
                <span className="text-[8px] md:text-[9px] font-black text-emerald-400 uppercase tracking-widest">E2E Encrypted</span>
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+               <Smartphone size={10} className="text-indigo-400" />
+               <span className="text-[8px] md:text-[9px] font-black text-indigo-400 uppercase tracking-widest">App Link: Active</span>
+            </div>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
                <Zap size={10} className="text-indigo-400 animate-pulse" />
-               <span className="text-[8px] md:text-[9px] font-black text-indigo-400 uppercase tracking-widest">Link: 100%</span>
+               <span className="text-[8px] md:text-[9px] font-black text-indigo-400 uppercase tracking-widest">Neural Link: 100%</span>
             </div>
          </div>
          
@@ -79,7 +96,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* 左侧主要分析面板 */}
         <div className="lg:col-span-7 space-y-6">
           <GlassCard className="p-6 md:p-14 rounded-[3rem] md:rounded-[4rem] min-h-[500px] md:min-h-[700px] flex flex-col justify-between border-white/[0.05]" intensity={1.5}>
             <div className="flex justify-between items-start">
@@ -106,7 +122,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </div>
 
             <div className="space-y-6 md:space-y-10">
-              {/* Lab Manifesto */}
               <m.div 
                 whileHover={{ scale: 1.01 }}
                 onClick={() => onNavigate?.('experiment')}
@@ -130,7 +145,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </m.div>
               
-              {/* Bottom Insight Row */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                  {(data.aiInsights || []).slice(0, 2).map((insight, i) => (
                     <m.div 
@@ -148,7 +162,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </GlassCard>
         </div>
 
-        {/* 右侧神经映射面板 */}
         <div className="lg:col-span-5 space-y-6">
           <GlassCard className="p-8 md:p-12 rounded-[3rem] md:rounded-[4.5rem] min-h-[500px] md:min-h-[700px] flex flex-col border-white/[0.05]" intensity={1}>
             <div className="flex justify-between items-start mb-10 md:mb-16">
@@ -213,7 +226,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                </div>
                <button onClick={handleFullSync} disabled={isProcessing} className="group flex items-center gap-2 md:gap-3 px-5 md:px-8 py-3 md:py-4 rounded-full bg-indigo-600/10 border border-indigo-500/20 hover:bg-indigo-600/20 transition-all active:scale-95 shadow-xl">
                   <RefreshCw size={12} className={isProcessing ? 'animate-spin text-indigo-400' : 'text-indigo-400 group-hover:rotate-180 transition-transform duration-700'} />
-                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-indigo-100">{isProcessing ? 'Capturing...' : 'Sync'}</span>
+                  <span className="text-[8px] md:text-[10px] font-black uppercase tracking-widest text-indigo-100">{isProcessing ? (syncStatus === 'fetching' ? 'Cloud Syncing...' : 'Capturing...') : 'Sync Lab'}</span>
                </button>
             </div>
           </GlassCard>
