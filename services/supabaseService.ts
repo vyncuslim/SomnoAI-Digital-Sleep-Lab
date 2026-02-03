@@ -8,21 +8,22 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB NOTIFICATION THROTTLE
- * Prevents "Too many messages" error by enforcing a cooldown on external dispatches.
+ * SOMNO LAB NOTIFICATION SUPPRESSION SYSTEM
+ * 防止前端异常（如 403 或重试逻辑）导致的 Telegram/Email 洪泛。
  */
 let lastNotificationDispatchTime = 0;
-const GLOBAL_NOTIFICATION_COOLDOWN = 5 * 60 * 1000; // 5 Minutes
+let lastNotificationFingerprint = '';
+const GLOBAL_NOTIFICATION_COOLDOWN = 30 * 60 * 1000; // 30 Minutes forced silence
 
 /**
  * LOG_AUDIT_LOG
- * Centrally manages system audit logs and triggers dual-channel administrative alerts.
+ * 集中管理系统审计日志，并根据冷却协议触发管理员通知。
  */
 export const logAuditLog = async (action: string, details: string, level: string = 'INFO') => {
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
     
-    // Always persist to database for historical auditing
+    // 始终在数据库中记录以供审计
     const { error } = await supabase.from('audit_logs').insert([{
       action,
       details,
@@ -30,24 +31,34 @@ export const logAuditLog = async (action: string, details: string, level: string
       user_id: user?.id
     }]);
     
-    // 1. Determine if this event is priority
-    const isPriorityEvent = level === 'CRITICAL' || level === 'WARNING' || action === 'USER_LOGIN' || action === 'USER_SIGNUP';
+    // 1. 判定优先级
+    const isPriorityEvent = level === 'CRITICAL' || level === 'WARNING' || ['USER_LOGIN', 'USER_SIGNUP', 'ADMIN_RECIPIENT_ADDED'].includes(action);
 
-    // 2. Check Notification Cooldown
+    // 2. 执行指纹静默校验
     const now = Date.now();
+    const currentFingerprint = `${action}:${details.substring(0, 50)}`;
     const isCooldownActive = (now - lastNotificationDispatchTime) < GLOBAL_NOTIFICATION_COOLDOWN;
+    const isExactDuplicate = currentFingerprint === lastNotificationFingerprint;
 
-    if (isPriorityEvent && !isCooldownActive) {
+    // 抑制逻辑：如果是高频重复事件或处于冷却期，则仅记录 DB 不发通知
+    if (isPriorityEvent) {
+      if (isCooldownActive || isExactDuplicate) {
+        console.debug(`[Suppression] Protocol active. Notification throttled: ${action}`);
+        return !error;
+      }
+
+      // 更新冷却状态
       lastNotificationDispatchTime = now;
+      lastNotificationFingerprint = currentFingerprint;
       
       const payload = { 
         type: action, 
         message: details, 
-        path: 'Neural_Grid_Pulse',
+        path: 'Neural_Grid_Edge',
         source: user?.email || 'SYSTEM_NODE'
       };
       
-      // Dispatch
+      // 执行多渠道并发通知
       await Promise.allSettled([
         notifyAdmin(payload),
         emailService.sendAdminAlert(payload)
@@ -56,7 +67,7 @@ export const logAuditLog = async (action: string, details: string, level: string
     
     return !error;
   } catch (e) {
-    console.error("Audit log dispatch failed:", e);
+    console.error("Audit log failed to commit:", e);
     return false;
   }
 };
@@ -71,7 +82,7 @@ export const authApi = {
   signUp: async (email: string, password: string, metadata: any, captchaToken?: string) => {
     const res = await (supabase.auth as any).signUp({ email, password, options: { data: metadata, captchaToken } });
     if (!res.error) {
-      await logAuditLog('USER_SIGNUP', `New node registered: ${email}\nIdentity: ${metadata.full_name || 'Anonymous'}`, 'INFO');
+      await logAuditLog('USER_SIGNUP', `New subject node registry: ${email}\nIdentity: ${metadata.full_name || 'Anonymous'}`, 'INFO');
     }
     return res;
   },
@@ -144,13 +155,13 @@ export const adminApi = {
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `New link established: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Target link registered: ${email}`, 'WARNING');
     return { data, error };
   },
   
   removeNotificationRecipient: async (id: string, email: string) => {
     const { error } = await supabase.from('notification_recipients').delete().eq('id', id);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Link severed: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Target link severed: ${email}`, 'WARNING');
     return { error };
   }
 };
@@ -195,7 +206,7 @@ export const userDataApi = {
     const dataRes = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
     if (dataRes.error) throw dataRes.error;
     
-    await logAuditLog('USER_SETUP_COMPLETE', `Subject ${user?.email} initialized metrics.`, 'INFO');
+    await logAuditLog('USER_SETUP_COMPLETE', `Subject ${user?.email} initialized biological metrics.`, 'INFO');
     return { success: true };
   }
 };
@@ -228,7 +239,7 @@ export const diaryApi = {
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user.id }]).select().single();
     if (error) throw error;
     
-    await logAuditLog('DIARY_LOG_ENTRY', `Subject ${user.email} logged mood: ${mood}`, 'INFO');
+    await logAuditLog('DIARY_LOG_ENTRY', `Subject ${user.email} committed log with mood: ${mood}`, 'INFO');
     return data;
   },
   
