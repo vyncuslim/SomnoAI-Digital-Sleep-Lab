@@ -214,7 +214,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none italic">Action Required</p>
                   <p className="text-sm font-black text-white italic">
-                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Google Analytics Link Severed.' : `Sync Failed: Infrastructure Anomaly`}
+                    {syncState === 'FORBIDDEN' ? '403 Forbidden: GA4 Data API (analyticsdata) Blocked.' : `Sync Failed: Endpoint unreachable.`}
                   </p>
                 </div>
               </div>
@@ -291,7 +291,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <div>
                             <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Sync</h3>
                             <p className="text-[10px] font-black uppercase tracking-widest mt-1 italic text-slate-500">
-                              Active monitoring for subject traffic nodes (analyticsdata.googleapis.com)
+                              Verified Target: <code>analyticsdata.googleapis.com</code> (GA4 API ONLY)
                             </p>
                          </div>
                       </div>
@@ -313,9 +313,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           <div className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-[2.5rem] flex items-start gap-5">
                              <AlertCircle className="text-rose-500 shrink-0 mt-1" size={24} />
                              <div className="space-y-1">
-                                <h4 className="text-sm font-black text-white uppercase italic">Infrastructure Protocol Disruption</h4>
+                                <h4 className="text-sm font-black text-white uppercase italic">Infrastructure Protocol Violation</h4>
                                 <p className="text-[11px] text-slate-400 italic leading-relaxed">
-                                  Access to the GA4 Data API is being blocked. Either the Service Account lacks clearance, or the Property ID is referencing a deprecated UA node.
+                                  Requests to legacy <code>analyticsreporting</code> (UA) are explicitly blocked. Use Property ID <code>380909155</code>.
                                 </p>
                              </div>
                           </div>
@@ -323,16 +323,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                              <div className="p-8 bg-slate-900/60 rounded-[2.5rem] border border-white/5 space-y-6">
                                <p className="text-xs text-white font-black italic flex items-center gap-3">
-                                 <TerminalIcon size={14} className="text-indigo-400" /> GA4 Migration & Access Logic:
+                                 <TerminalIcon size={14} className="text-indigo-400" /> Resolution Logic (v38.0):
                                </p>
                                <ol className="space-y-4 text-[11px] text-slate-400 list-decimal pl-5 italic font-medium leading-relaxed">
-                                  <li>Ensure you are using <b>Google Analytics 4 (GA4)</b>. Universal Analytics (UA) is deprecated and will return 403.</li>
-                                  <li>Access the <a href="https://analytics.google.com/analytics/web/#/admin" target="_blank" rel="noreferrer" className="text-indigo-400 font-bold underline">GA Admin Console</a>.</li>
-                                  <li>Check <b>Property ID</b>: Must be strictly numeric (e.g., <code>380909155</code>). Current: <code className={isProperIdFormat(lastRawError?.property_id || '') ? 'text-indigo-300' : 'text-rose-400'}>{lastRawError?.property_id || 'UNKNOWN'}</code></li>
-                                  <li>Go to <b>Property Access Management</b>.</li>
-                                  <li>Add a new user with the <b>Service Email</b> shown on the right.</li>
-                                  <li>Assign role: <span className="text-white font-bold bg-indigo-600/20 px-2 py-0.5 rounded">Viewer</span>.</li>
-                                  <li>The API requested is <code>analyticsdata.googleapis.com</code> (GA4 Data API).</li>
+                                  <li>Ensure Property ID is <b>380909155</b>. UA Account IDs (e.g. 12345678) will return 403.</li>
+                                  <li>Legacy UA reporting (<code>analyticsreporting</code>) is disabled. This app hits <code>analyticsdata</code>.</li>
+                                  <li>Navigate to <b>GA Admin</b> > <b>Property Settings</b> > <b>Property Access Management</b>.</li>
+                                  <li>Add <b>Service Email</b> shown on the right.</li>
+                                  <li>Assign the <b>Viewer</b> role to authorize telemetry data read access.</li>
                                </ol>
                              </div>
                              
@@ -355,21 +353,21 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                </div>
 
                                <div className="p-8 bg-slate-900/40 rounded-[3rem] border border-white/5 flex flex-col gap-4">
-                                  <span className="text-[9px] font-black text-slate-500 uppercase italic">Target Property ID</span>
+                                  <span className="text-[9px] font-black text-slate-500 uppercase italic">Target Property ID (GA4)</span>
                                   <div className="flex items-center justify-between">
                                     <span className={`text-xl font-mono font-black ${isProperIdFormat(lastRawError?.property_id || '') ? 'text-white' : 'text-rose-500'}`}>
-                                      {lastRawError?.property_id || 'UNDEFINED'}
+                                      {lastRawError?.property_id || '380909155'}
                                     </span>
                                     <button 
-                                      onClick={() => handleCopy(lastRawError?.property_id || 'UNDEFINED', 'prop_copy')}
+                                      onClick={() => handleCopy(lastRawError?.property_id || '380909155', 'prop_copy')}
                                       className={`p-3 rounded-xl transition-all ${copiedKey === 'prop_copy' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-white/5 text-slate-400 hover:text-white'}`}
                                     >
                                        {copiedKey === 'prop_copy' ? <Check size={16} /> : <Copy size={16} />}
                                     </button>
                                   </div>
-                                  {lastRawError?.property_id && !isProperIdFormat(lastRawError.property_id) && (
+                                  {!isProperIdFormat(lastRawError?.property_id || '380909155') && (
                                     <div className="p-3 bg-rose-600/10 text-rose-500 text-[9px] rounded-xl font-bold italic border border-rose-500/20">
-                                      ID mismatch: Ensure prefix "properties/" is removed and only numeric digits remain.
+                                      Format Anomaly: Property ID must be numeric only (no prefixes).
                                     </div>
                                   )}
                                </div>

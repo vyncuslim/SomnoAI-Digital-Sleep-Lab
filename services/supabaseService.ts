@@ -168,7 +168,7 @@ export const profileApi = {
   },
   updateProfile: async (updates: any) => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    // Fix: Quoted the column name 'id' to resolve "Cannot find name 'id'" error
+    // Fix: Quoted the column name 'id' correctly
     return supabase.from('profiles').update(updates).eq('id', user.id);
   }
 };

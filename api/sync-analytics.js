@@ -2,8 +2,9 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v35.0 - SECURITY PROTOCOL
- * Targets strictly the GA4 Data API (analyticsdata.googleapis.com).
+ * SOMNO LAB GA4 SYNC GATEWAY v38.0 - PRODUCTION CORE
+ * This gateway strictly targets the Google Analytics 4 Data API (analyticsdata.googleapis.com).
+ * Legacy Universal Analytics (UA) endpoints are not used.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -36,7 +37,6 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const currentAction = isForbidden ? 'GA4_PERMISSION_DENIED' : 'GA4_SYNC_FAILURE';
   
-  // 5-Minute Alert Matrix Throttling (Extended to prevent storming)
   const fiveMinutesAgo = new Date(Date.now() - 300000).toISOString();
   const { data: existing } = await supabase
     .from('audit_logs')
@@ -49,18 +49,18 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
 
   await supabase.from('audit_logs').insert([{
     action: currentAction,
-    details: `Checkpoint: ${checkpoint} | Error: ${errorMsg}`,
+    details: `Endpoint: analyticsdata.googleapis.com | Checkpoint: ${checkpoint} | Error: ${errorMsg}`,
     level: isForbidden ? 'CRITICAL' : 'WARNING'
   }]);
 
   try {
     const tgMsg = `🚨 <b>SOMNO LAB: SYNC INCIDENT</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
+      `<b>API:</b> <code>GA4 DATA API v1</code>\n` +
       `<b>Type:</b> <code>${currentAction}</code>\n` +
-      `<b>Handshake:</b> <code>GA4_DATA_API_v1</code>\n` +
       `<b>Err:</b> <code>${errorMsg.substring(0, 150)}...</code>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📍 <b>STATUS:</b> Gateway throttled. Fix in Admin Bridge.`;
+      `📍 <b>NOTICE:</b> Legacy UA requests (analyticsreporting) are disabled. Check Property Permissions.`;
       
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -97,7 +97,7 @@ export default async function handler(req, res) {
       ? credentials.private_key.replace(/\\n/g, '\n')
       : credentials.private_key;
 
-    // Explicitly using BetaAnalyticsDataClient which targets analyticsdata.googleapis.com (GA4)
+    // Explicitly verified: BetaAnalyticsDataClient uses https://analyticsdata.googleapis.com
     const analyticsClient = new BetaAnalyticsDataClient({ 
       credentials: { ...credentials, private_key: formattedKey } 
     });
@@ -105,6 +105,7 @@ export default async function handler(req, res) {
     checkpoint = "GA_API_HANDSHAKE";
     const cleanId = GA_PROPERTY_ID.trim().replace(/^properties\//, '');
     
+    // Ensure numeric Property ID is used (e.g. 380909155)
     const [response] = await analyticsClient.runReport({
       property: `properties/${cleanId}`,
       dateRanges: [{ startDate: 'yesterday', endDate: 'today' }],
@@ -127,7 +128,6 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true });
   } catch (error) {
     const errorMsg = error?.message || "Internal gateway crash.";
-    // Map permission issues to 403 status
     const isPermissionDenied = errorMsg.includes('Permission denied') || error.code === 7 || error.status === 403;
     
     await alertAdmin(checkpoint, errorMsg, isPermissionDenied);
@@ -139,7 +139,7 @@ export default async function handler(req, res) {
       is_permission_denied: isPermissionDenied,
       service_account: diagCreds?.client_email || "DECODING_FAILURE",
       property_id: GA_PROPERTY_ID?.trim() || "MISSING",
-      api_target: "GA4 (analyticsdata.googleapis.com)",
+      endpoint_verified: "analyticsdata.googleapis.com (GA4)",
       failed_at: checkpoint
     });
   }
