@@ -2,7 +2,7 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v29.0 - ADVANCED DIAGNOSTICS
+ * SOMNO LAB GA4 SYNC GATEWAY v29.1 - STORM SUPPRESSION
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -13,14 +13,12 @@ function robustParse(input) {
   if (!input) return null;
   let str = input.trim();
   
-  // Recursive parsing for multi-stringified JSON (Vercel ENV quirk)
   const parseAttempt = (val) => {
     try {
       const p = JSON.parse(val);
       if (typeof p === 'object' && p !== null) return p;
       if (typeof p === 'string') return parseAttempt(p);
     } catch (e) {
-      // Manual repair for unescaped newlines
       try {
         const repaired = val.replace(/\n/g, "\\n").replace(/\r/g, "\\r");
         return JSON.parse(repaired);
@@ -29,7 +27,6 @@ function robustParse(input) {
     return null;
   };
 
-  // Strip leading/trailing quotes if they survived trim
   if (str.startsWith("'") && str.endsWith("'")) str = str.slice(1, -1);
   if (str.startsWith('"') && str.endsWith('"')) str = str.slice(1, -1);
 
@@ -40,7 +37,7 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
   const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
   const currentAction = isForbidden ? 'GA4_PERMISSION_DENIED' : 'GA4_SYNC_FAILURE';
   
-  // 60s Suppression Check
+  // 60s High-Speed Suppression Check
   const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
   const { data: existing } = await supabase
     .from('audit_logs')
@@ -49,7 +46,10 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
     .gt('created_at', oneMinuteAgo)
     .limit(1);
 
-  if (existing && existing.length > 0) return;
+  if (existing && existing.length > 0) {
+    console.log(`[ALERT_SUPPRESSED] Cluster detected for ${currentAction}`);
+    return;
+  }
 
   await supabase.from('audit_logs').insert([{
     action: currentAction,
@@ -94,10 +94,9 @@ export default async function handler(req, res) {
     checkpoint = "GA_CLIENT_SETUP";
     credentials = robustParse(GA_SERVICE_ACCOUNT_KEY);
     if (!credentials || !credentials.client_email || !credentials.private_key) {
-      throw new Error("Credential structure invalid. Ensure service account JSON is correctly pasted into GA_SERVICE_ACCOUNT_KEY.");
+      throw new Error("Credential structure invalid.");
     }
 
-    // Ensure private key is correctly formatted
     const formattedKey = credentials.private_key.includes('\\n') 
       ? credentials.private_key.replace(/\\n/g, '\n')
       : credentials.private_key;
@@ -134,8 +133,6 @@ export default async function handler(req, res) {
     const isPermissionDenied = errorMsg.includes('Permission denied') || error.code === 7;
     
     await alertAdmin(checkpoint, errorMsg, isPermissionDenied);
-    
-    // Attempt diagnostic extraction for frontend help
     const diagCreds = credentials || robustParse(GA_SERVICE_ACCOUNT_KEY);
     
     return res.status(200).json({ 

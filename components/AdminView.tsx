@@ -397,14 +397,19 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   {users.length > 0 ? users.map((user) => (
                     <GlassCard key={user.id} className="p-6 md:p-8 rounded-[2.5rem] border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 group">
                       <div className="flex items-center gap-6 w-full md:w-auto">
-                        <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center text-indigo-400 font-black italic text-xl shadow-inner">
+                        <div className="w-16 h-16 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center text-indigo-400 font-black italic text-xl shadow-inner relative">
                           {user.full_name?.[0]?.toUpperCase() || '?'}
+                          {user.is_super_owner && (
+                             <div className="absolute -top-2 -right-2 bg-amber-500 text-black p-1 rounded-lg shadow-lg">
+                                <Crown size={12} />
+                             </div>
+                          )}
                         </div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-3">
                             <h3 className="text-base font-black text-white italic">{user.full_name || 'Anonymous Node'}</h3>
-                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${user.role === 'owner' ? 'bg-amber-500/20 text-amber-500' : user.role === 'admin' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-500'}`}>
-                              {user.role}
+                            <span className={`px-2 py-0.5 rounded-md text-[8px] font-black uppercase tracking-widest ${user.is_super_owner ? 'bg-amber-500 text-black shadow-[0_0_10px_rgba(245,158,11,0.4)]' : user.role === 'owner' ? 'bg-amber-500/20 text-amber-500' : user.role === 'admin' ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-800 text-slate-500'}`}>
+                              {user.is_super_owner ? 'SUPER OWNER' : user.role}
                             </span>
                           </div>
                           <p className="text-[10px] font-mono text-slate-500 uppercase">{user.email}</p>
@@ -412,11 +417,25 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       </div>
                       <div className="flex items-center gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
                         <div className="flex gap-2">
-                           <button onClick={() => handleRoleUpdate(user.id, user.email, 'admin')} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'admin' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600 hover:text-white'}`}>ADMIN</button>
-                           <button onClick={() => handleRoleUpdate(user.id, user.email, 'user')} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600 hover:text-white'}`}>USER</button>
+                           <button 
+                             onClick={() => handleRoleUpdate(user.id, user.email, 'admin')} 
+                             disabled={user.is_super_owner}
+                             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'admin' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-white/5 text-slate-600 hover:text-white disabled:opacity-10 disabled:grayscale'}`}
+                           >ADMIN</button>
+                           <button 
+                             onClick={() => handleRoleUpdate(user.id, user.email, 'user')} 
+                             disabled={user.is_super_owner}
+                             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'user' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'bg-white/5 text-slate-600 hover:text-white disabled:opacity-10 disabled:grayscale'}`}
+                           >USER</button>
                         </div>
                         <div className="h-8 w-px bg-white/5 mx-2" />
-                        <button onClick={() => handleToggleBlock(user.id, user.email, !!user.is_blocked)} className={`p-3 rounded-xl transition-all ${user.is_blocked ? 'bg-rose-600/20 text-rose-500' : 'bg-white/5 text-slate-600 hover:text-rose-500'}`}>{user.is_blocked ? <Unlock size={18} /> : <Ban size={18} />}</button>
+                        <button 
+                          onClick={() => handleToggleBlock(user.id, user.email, !!user.is_blocked)} 
+                          disabled={user.is_super_owner}
+                          className={`p-3 rounded-xl transition-all ${user.is_blocked ? 'bg-rose-600/20 text-rose-500 shadow-lg shadow-rose-600/20' : 'bg-white/5 text-slate-600 hover:text-rose-500 disabled:opacity-10 disabled:cursor-not-allowed'}`}
+                        >
+                          {user.is_blocked ? <Unlock size={18} /> : <Ban size={18} />}
+                        </button>
                       </div>
                     </GlassCard>
                   )) : (
@@ -438,8 +457,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <div className="space-y-4">
                   {signals.length > 0 ? signals.map((sig) => (
                     <GlassCard key={sig.id} className="p-6 rounded-[2rem] border-white/5 flex gap-6 items-start group">
-                      <div className={`p-4 rounded-2xl shrink-0 ${sig.event_type.includes('FAIL') || sig.event_type.includes('ERROR') ? 'bg-rose-500/10 text-rose-500' : 'bg-indigo-500/10 text-indigo-400'}`}>
-                         {sig.event_type.includes('FAIL') ? <ShieldX size={20} /> : <Activity size={20} />}
+                      <div className={`p-4 rounded-2xl shrink-0 ${sig.event_type.includes('FAIL') || sig.event_type.includes('ERROR') || sig.event_type.includes('DENIED') ? 'bg-rose-500/10 text-rose-500' : 'bg-indigo-500/10 text-indigo-400'}`}>
+                         {sig.event_type.includes('FAIL') || sig.event_type.includes('DENIED') ? <ShieldX size={20} /> : <Activity size={20} />}
                       </div>
                       <div className="space-y-2 flex-1 text-left">
                         <div className="flex flex-col md:flex-row md:items-center justify-between gap-2">

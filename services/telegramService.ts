@@ -1,7 +1,6 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v41.0
- * 核心功能：基于数据库持久化 + 内存二级缓存的强力去重引擎
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v43.0
  */
 
 // @ts-ignore
@@ -11,8 +10,9 @@ const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
 const TELEGRAM_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
-// In-memory circuit breaker for rapid spam protection
+// In-memory circuit breaker
 const memoryCache = new Set<string>();
+const processingPayloads = new Set<string>();
 
 const EVENT_MAP: Record<string, { en: string, zh: string, icon: string }> = {
   'USER_LOGIN': { en: '👤 Access Granted', zh: '👤 受试者登录授权', icon: '🔐' },
@@ -25,9 +25,6 @@ const EVENT_MAP: Record<string, { en: string, zh: string, icon: string }> = {
   'GA4_PERMISSION_DENIED': { en: '🛡️ GA4 Access Denied', zh: '🛡️ GA4 权限缺失 (403)', icon: '🚫' }
 };
 
-/**
- * Returns the current time in Malaysia Time (MYT, UTC+8)
- */
 export const getMYTTime = () => {
   return new Intl.DateTimeFormat('en-GB', {
     timeZone: 'Asia/Kuala_Lumpur',
@@ -36,18 +33,19 @@ export const getMYTTime = () => {
   }).format(new Date());
 };
 
-/**
- * 核心：双重防刷校验
- */
 const isRecentlySent = async (action: string, fingerprint: string) => {
   const cacheKey = `${action}:${fingerprint}`;
   
-  // 1. Level 1: Memory Cache (Immediate check)
-  if (memoryCache.has(cacheKey)) return true;
+  // 1. Concurrent Lock (Prevent identical calls in the same execution wave)
+  if (processingPayloads.has(cacheKey)) return true;
+  processingPayloads.add(cacheKey);
 
-  // 2. Level 2: Database Audit (Persistence check)
-  const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
   try {
+    // 2. Immediate Memory Check (1 minute TTL)
+    if (memoryCache.has(cacheKey)) return true;
+
+    // 3. Database Audit Check (Strict 1 minute lookback)
+    const oneMinuteAgo = new Date(Date.now() - 60000).toISOString();
     const { data } = await supabase
       .from('audit_logs')
       .select('id')
@@ -57,20 +55,19 @@ const isRecentlySent = async (action: string, fingerprint: string) => {
       .limit(1);
 
     if (data && data.length > 0) {
-      // Refresh memory cache from DB state
       memoryCache.add(cacheKey);
       setTimeout(() => memoryCache.delete(cacheKey), 60000);
       return true;
     }
-  } catch (e) {
-    // If DB check fails, we rely solely on memory cache to prevent bot storm
-    console.warn("Deduplication DB link unstable.");
-  }
 
-  // Record to memory cache
-  memoryCache.add(cacheKey);
-  setTimeout(() => memoryCache.delete(cacheKey), 60000);
-  return false;
+    memoryCache.add(cacheKey);
+    setTimeout(() => memoryCache.delete(cacheKey), 60000);
+    return false;
+  } catch (e) {
+    return false;
+  } finally {
+    setTimeout(() => processingPayloads.delete(cacheKey), 2000);
+  }
 };
 
 export const notifyAdmin = async (payload: any) => {
@@ -79,11 +76,11 @@ export const notifyAdmin = async (payload: any) => {
   const msgType = payload.type || 'SYSTEM_SIGNAL';
   const rawDetails = typeof payload === 'string' ? payload : (payload.message || payload.error || 'N/A');
   
-  // Use first 50 chars as unique fingerprint
-  const contentFingerprint = rawDetails.substring(0, 50).replace(/\s/g, '');
+  // Extract specific fingerprint for GA4 errors to avoid storming
+  let fingerprint = rawDetails.substring(0, 60).replace(/\s/g, '');
+  if (msgType.includes('GA4')) fingerprint = 'GA4_PERMISSION_BLOCK_CLUSTER';
 
-  // 1. Check for duplication
-  const duplicated = await isRecentlySent(msgType, contentFingerprint);
+  const duplicated = await isRecentlySent(msgType, fingerprint);
   if (duplicated) return false;
 
   const mapping = EVENT_MAP[msgType] || { en: msgType, zh: msgType, icon: '📡' };
@@ -93,7 +90,7 @@ export const notifyAdmin = async (payload: any) => {
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `<b>Event:</b> <code>${mapping.en}</code>\n` +
     `<b>类型:</b> <code>${mapping.zh}</code>\n\n` +
-    `<b>Log:</b> <code>${rawDetails.substring(0, 400)}</code>\n` +
+    `<b>Log:</b> <code>${rawDetails.substring(0, 350)}</code>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📍 <b>ORIGIN:</b> <code>${source}</code>\n` +
     `🛡️ <b>INTERVAL:</b> <code>60s LOCK ACTIVE</code>`;
