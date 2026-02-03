@@ -1,8 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut as DisconnectIcon, ShieldCheck, 
-  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy
+  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy, Key, Eye, EyeOff, Save, Trash2
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,15 +23,35 @@ export const Settings: React.FC<SettingsProps> = ({
 }) => {
   const { isAdmin, profile } = useAuth();
   const [showExitFeedback, setShowExitFeedback] = useState(false);
+  const [customKey, setCustomKey] = useState(localStorage.getItem('somno_custom_key') || '');
+  const [showKey, setShowKey] = useState(false);
+  const [isSavingKey, setIsSavingKey] = useState(false);
 
   const t = translations[lang]?.settings || translations.en.settings;
 
   // Determine API Key active status
-  const isApiKeyActive = !!process.env.API_KEY;
+  const isApiKeyActive = !!customKey || !!process.env.API_KEY;
 
   const handleLanguageChange = (newLang: Language) => {
     localStorage.setItem('somno_lang', newLang);
     onLanguageChange(newLang);
+  };
+
+  const saveCustomKey = () => {
+    setIsSavingKey(true);
+    setTimeout(() => {
+      if (customKey.trim()) {
+        localStorage.setItem('somno_custom_key', customKey.trim());
+      } else {
+        localStorage.removeItem('somno_custom_key');
+      }
+      setIsSavingKey(false);
+    }, 1000);
+  };
+
+  const clearCustomKey = () => {
+    setCustomKey('');
+    localStorage.removeItem('somno_custom_key');
   };
 
   return (
@@ -44,8 +64,8 @@ export const Settings: React.FC<SettingsProps> = ({
       </header>
 
       <div className="flex flex-col gap-6">
-        {/* API Status Panel */}
-        <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.03]">
+        {/* API Status & Input Panel */}
+        <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.03] space-y-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <div className={`p-4 rounded-2xl ${isApiKeyActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
@@ -53,7 +73,9 @@ export const Settings: React.FC<SettingsProps> = ({
               </div>
               <div>
                 <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t.apiKey}</p>
-                <p className="text-sm font-black text-white italic">{isApiKeyActive ? 'NODE_BRIDGE_ACTIVE' : 'NODE_BRIDGE_OFFLINE'}</p>
+                <p className="text-sm font-black text-white italic">
+                  {localStorage.getItem('somno_custom_key') ? 'USER_NODE_LINKED' : isApiKeyActive ? 'DEFAULT_NODE_ACTIVE' : 'NODE_OFFLINE'}
+                </p>
               </div>
             </div>
             {isAdmin && (
@@ -64,6 +86,44 @@ export const Settings: React.FC<SettingsProps> = ({
                 <Terminal size={12} /> BRIDGE_ACCESS
               </button>
             )}
+          </div>
+
+          <div className="space-y-4 pt-4 border-t border-white/5">
+             <div className="flex items-center justify-between px-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic flex items-center gap-2">
+                  <Key size={12} /> Personal Neural Key
+                </span>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[9px] font-black text-indigo-400 hover:text-white uppercase tracking-widest underline underline-offset-4">Get Key</a>
+             </div>
+             
+             <div className="relative group">
+                <input 
+                  type={showKey ? "text" : "password"}
+                  value={customKey}
+                  onChange={(e) => setCustomKey(e.target.value)}
+                  placeholder={t.apiKeyPlaceholder}
+                  className="w-full bg-black/40 border border-white/5 rounded-full px-8 py-5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all font-bold italic shadow-inner"
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
+                  <button onClick={() => setShowKey(!showKey)} className="p-2 text-slate-600 hover:text-white transition-colors">
+                    {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                  {customKey && (
+                    <button onClick={clearCustomKey} className="p-2 text-slate-600 hover:text-rose-500 transition-colors">
+                      <Trash2 size={18} />
+                    </button>
+                  )}
+                </div>
+             </div>
+
+             <button 
+               onClick={saveCustomKey}
+               disabled={isSavingKey}
+               className="w-full py-4 rounded-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-3 italic disabled:opacity-50"
+             >
+               {isSavingKey ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+               {isSavingKey ? 'COMMITTING LINK...' : 'COMMIT NEURAL LINK'}
+             </button>
           </div>
         </GlassCard>
 
