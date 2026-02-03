@@ -184,6 +184,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   const getSyncBadgeConfig = () => {
     switch(syncState) {
+      case 'IDLE': return { label: 'READY', color: 'bg-white/5 text-slate-500', animate: false, icon: ShieldCheck };
       case 'SYNCING': return { label: 'RUNNING', color: 'bg-indigo-600/20 text-indigo-400', animate: true, icon: RefreshCw };
       case 'SYNCED': return { label: 'SYNCED', color: 'bg-emerald-600/20 text-emerald-400', animate: false, icon: Check };
       case 'ERROR':
@@ -359,21 +360,24 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                   </button>
                                </div>
 
-                               <div className="p-5 bg-slate-900/40 rounded-[2rem] border border-white/5 flex items-center justify-between px-8">
+                               <div className="p-8 bg-slate-900/40 rounded-[3rem] border border-white/5 flex flex-col gap-4">
                                   <span className="text-[9px] font-black text-slate-500 uppercase italic">Active Property ID</span>
-                                  <div className="flex items-center gap-3">
-                                    <span className={`text-xs font-mono font-black ${isProperIdFormat(lastRawError?.property_id || '') ? 'text-white' : 'text-rose-500'}`}>
+                                  <div className="flex items-center justify-between">
+                                    <span className={`text-xl font-mono font-black ${isProperIdFormat(lastRawError?.property_id || '') ? 'text-white' : 'text-rose-500'}`}>
                                       {lastRawError?.property_id || 'UNDEFINED'}
                                     </span>
-                                    {lastRawError?.property_id && !isProperIdFormat(lastRawError.property_id) && (
-                                      <div className="group relative">
-                                        <AlertTriangle size={14} className="text-rose-500 animate-pulse" />
-                                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-3 bg-rose-600 text-white text-[10px] rounded-xl opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none font-bold italic shadow-xl z-50">
-                                          Format Violation: ID must be numeric. Remove 'properties/' or 'G-' prefixes.
-                                        </div>
-                                      </div>
-                                    )}
+                                    <button 
+                                      onClick={() => handleCopy(lastRawError?.property_id || 'UNDEFINED', 'prop_copy')}
+                                      className={`p-3 rounded-xl transition-all ${copiedKey === 'prop_copy' ? 'bg-emerald-500/10 text-emerald-500' : 'bg-white/5 text-slate-400 hover:text-white'}`}
+                                    >
+                                       {copiedKey === 'prop_copy' ? <Check size={16} /> : <Copy size={16} />}
+                                    </button>
                                   </div>
+                                  {lastRawError?.property_id && !isProperIdFormat(lastRawError.property_id) && (
+                                    <div className="p-3 bg-rose-600/10 text-rose-500 text-[10px] rounded-xl font-bold italic border border-rose-500/20">
+                                      Format Violation: ID must be numeric. Current value contains invalid characters or prefixes.
+                                    </div>
+                                  )}
                                </div>
                              </div>
                           </div>
@@ -498,6 +502,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                               </div>
                            </div>
                            <div className="space-y-1">
+                              {/* FIXED: Added missing opening bracket for h3 tag */}
                               <h3 className="text-sm font-black text-white uppercase italic tracking-tight">{table.name}</h3>
                               <p className="text-[10px] text-slate-500 italic leading-relaxed">{table.desc}</p>
                            </div>
@@ -640,7 +645,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <GlassCard className="p-10 rounded-[3.5rem] border-white/5 space-y-6">
                        <div className="flex items-center gap-4">
-                         <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400"><Bug size={24} /></div>
+                         <div className="p-3 bg-emerald-500/10 rounded-2xl text-indigo-400"><Bug size={24} /></div>
                          <h3 className="text-lg font-black italic text-white uppercase tracking-widest">Diagnostics</h3>
                        </div>
                        <p className="text-[11px] text-slate-500 italic leading-relaxed">Generate an encrypted telemetry bundle for engineering review.</p>
