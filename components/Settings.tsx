@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut as DisconnectIcon, ShieldCheck, 
-  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy, Key, Eye, EyeOff, Save, Trash2, Send, X, Activity
+  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy, Key, Eye, EyeOff, Save, Trash2, Send, X, Activity, FlaskConical
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -59,17 +59,24 @@ export const Settings: React.FC<SettingsProps> = ({
     localStorage.removeItem('somno_custom_key');
   };
 
-  const handleInitiateDiagnostic = async () => {
+  const handleInitiateDiagnostic = async (isTest = false) => {
     if (diagStatus === 'running') return;
     setDiagStatus('running');
     
     try {
-      // 1. Trigger the n8n Webhook provided by the user
-      const n8nWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/cda60c28-bcdd-417a-8a71-93eae9ee6c01";
-      await fetch(n8nWebhook, { method: 'GET', mode: 'no-cors' }); // no-cors to bypass potential CORS issues for diagnostic fire-and-forget
+      // 1. Trigger the n8n Webhook provided by user
+      const prodWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/74fff973-2a0e-4a24-852b-cba12ad19fd0";
+      const testWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/74fff973-2a0e-4a24-852b-cba12ad19fd0";
       
-      // 2. Trigger the internal mirrored signal (TG + Email)
-      await systemMonitor.executeGlobalPulseCheck();
+      const targetUrl = isTest ? testWebhook : prodWebhook;
+      
+      // Using no-cors to avoid blocking on simple GET triggers for fire-and-forget diagnostics
+      await fetch(targetUrl, { method: 'GET', mode: 'no-cors' });
+      
+      // 2. Trigger internal mirror if production
+      if (!isTest) {
+        await systemMonitor.executeGlobalPulseCheck();
+      }
       
       setDiagStatus('success');
       setTimeout(() => setDiagStatus('idle'), 3000);
@@ -102,7 +109,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Activity size={18} className="text-amber-500" />
-                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Comms Diagnostic</h3>
+                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">n8n Neural Link Test</h3>
                   </div>
                   <button onClick={() => setShowDiag(false)} className="p-2 text-slate-600 hover:text-white transition-all">
                     <X size={14} />
@@ -110,28 +117,38 @@ export const Settings: React.FC<SettingsProps> = ({
                 </div>
                 
                 <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                  Trigger a mirrored test signal to verify Telegram and Email notification nodes.
+                  Trigger an external diagnostic signal to the n8n automation node.
                 </p>
 
-                <div className="flex gap-3">
-                  <button 
-                    onClick={handleInitiateDiagnostic}
-                    disabled={diagStatus === 'running'}
-                    className={`flex-1 py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all italic shadow-lg ${
-                      diagStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                      diagStatus === 'error' ? 'bg-rose-600 text-white' : 
-                      'bg-white/5 text-amber-500 border border-amber-500/30 hover:bg-white/10'
-                    }`}
-                  >
-                    {diagStatus === 'running' ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
-                    {diagStatus === 'running' ? 'EXECUTING...' : diagStatus === 'success' ? 'SIGNAL_DISPATCHED' : 'INITIATE_DIAGNOSTIC'}
-                  </button>
+                <div className="space-y-3">
+                  <div className="flex gap-3">
+                    <button 
+                      onClick={() => handleInitiateDiagnostic(false)}
+                      disabled={diagStatus === 'running'}
+                      className={`flex-1 py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all italic shadow-lg ${
+                        diagStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                        diagStatus === 'error' ? 'bg-rose-600 text-white' : 
+                        'bg-white/5 text-amber-500 border border-amber-500/30 hover:bg-white/10'
+                      }`}
+                    >
+                      {diagStatus === 'running' ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+                      {diagStatus === 'running' ? 'EXECUTING...' : diagStatus === 'success' ? 'SIGNAL_DISPATCHED' : 'INITIATE_PROD_PULSE'}
+                    </button>
+                    
+                    <button 
+                      onClick={() => handleInitiateDiagnostic(true)}
+                      disabled={diagStatus === 'running'}
+                      className="px-6 py-4 rounded-full bg-slate-900 border border-indigo-500/30 text-indigo-400 font-black text-[10px] uppercase tracking-widest hover:text-white transition-all italic flex items-center gap-2"
+                    >
+                      <FlaskConical size={14} /> VERIFY_TEST_NODE
+                    </button>
+                  </div>
                   
                   <button 
                     onClick={() => setShowDiag(false)}
-                    className="px-8 py-4 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-white transition-all italic"
+                    className="w-full py-4 rounded-full bg-slate-950 border border-white/5 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:text-slate-400 transition-all italic"
                   >
-                    关闭
+                    关闭诊断面板
                   </button>
                 </div>
               </GlassCard>
@@ -166,7 +183,7 @@ export const Settings: React.FC<SettingsProps> = ({
           <div className="space-y-4 pt-4 border-t border-white/5">
              <div className="flex items-center justify-between px-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic flex items-center gap-2">
-                  <Key size={12} /> Personal Neural Key
+                  <Key size={12} /> Custom Neural Key (Gemini)
                 </span>
                 <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[9px] font-black text-indigo-400 hover:text-white uppercase tracking-widest underline underline-offset-4">Get Key</a>
              </div>

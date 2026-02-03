@@ -23,8 +23,8 @@ const handleGeminiError = (err: any) => {
 
 /**
  * Priority Hierarchy:
- * 1. User-provided key in localStorage
- * 2. System environment key
+ * 1. User-provided key in localStorage ('somno_custom_key')
+ * 2. System environment key (process.env.API_KEY)
  */
 const getAIClient = () => {
   const customKey = localStorage.getItem('somno_custom_key');
