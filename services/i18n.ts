@@ -1,4 +1,3 @@
-
 export type Language = 'en' | 'zh' | 'es';
 
 /**
@@ -13,6 +12,10 @@ const commonEn = {
     title: "Neural Assistant",
     intro: "Welcome to the Somno Lab terminal. How can I assist your biological optimization today?",
     placeholder: "Transmit query to Neural Core..."
+  },
+  registry: {
+    title: "Neural Registry",
+    subtitle: "Biological Identity & Baseline Calibration"
   },
   settings: {
     title: 'Configuration',
@@ -84,6 +87,10 @@ const commonZh = {
     intro: "欢迎来到 Somno 实验室。今天我能如何协助您的生物优化？",
     placeholder: "向神经核心传输查询..."
   },
+  registry: {
+    title: "神经注册表",
+    subtitle: "生物身份与基准校准"
+  },
   settings: {
     title: '配置',
     language: '语言',
@@ -104,7 +111,7 @@ const commonZh = {
     title: '支持中心',
     subtitle: '实验室协助与研究资助',
     techSupport: '技术求助',
-    techDesc: '解决 403 权限问题、同步错误或报告系统异常。',
+    techDesc: '解决 403 权限问题、同步错误 or 报告系统异常。',
     funding: '赞助研究',
     fundingDesc: '资助算力成本及神经算法的持续开发。',
     faq: '常见问题',
@@ -153,6 +160,10 @@ const commonEs = {
     title: "Asistente Neural",
     intro: "Bienvenido a la terminal de Somno Lab. ¿Cómo puedo asistir su optimización biológica hoy?",
     placeholder: "Transmitir consulta al Núcleo Neural..."
+  },
+  registry: {
+    title: "Registro Neural",
+    subtitle: "Identidad Biológica y Calibración de Base"
   },
   settings: {
     title: 'Configuración',

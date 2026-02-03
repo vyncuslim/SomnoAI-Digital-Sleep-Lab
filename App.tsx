@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
   Moon, BrainCircuit, Settings as SettingsIcon, History, 
-  BookOpen, FlaskConical, RefreshCw
+  BookOpen, FlaskConical, RefreshCw, Fingerprint
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
@@ -32,6 +31,7 @@ import { SupportView } from './components/SupportView.tsx';
 import { NotFoundView } from './components/NotFoundView.tsx';
 import { AboutView } from './components/AboutView.tsx';
 import { UpdatePasswordView } from './components/UpdatePasswordView.tsx';
+import { UserProfile } from './components/UserProfile.tsx';
 
 const m = motion as any;
 
@@ -113,7 +113,7 @@ const AppContent: React.FC = () => {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
-        'admin/login': 'admin-login', 'update-password': 'update-password'
+        'registry': 'registry', 'admin/login': 'admin-login', 'update-password': 'update-password'
       };
 
       // Recovery Priority
@@ -199,6 +199,7 @@ const AppContent: React.FC = () => {
                 {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} isSandbox={isSimulated} />}
                 {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
                 {activeView === 'diary' && <DiaryView lang={lang} />}
+                {activeView === 'registry' && <UserProfile lang={lang} />}
                 {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={safeNavigate} />}
                 {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => safeNavigate('support')} />}
                 {activeView === 'support' && <SupportView lang={lang} onBack={() => safeNavigate('settings')} onNavigate={safeNavigate} />}
@@ -214,6 +215,7 @@ const AppContent: React.FC = () => {
                 { id: 'calendar', icon: History, label: 'HIST' },
                 { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
                 { id: 'experiment', icon: FlaskConical, label: 'EXP' },
+                { id: 'registry', icon: Fingerprint, label: 'REG' },
                 { id: 'diary', icon: BookOpen, label: 'LOG' },
                 { id: 'settings', icon: SettingsIcon, label: 'CFG' }
               ].map((nav) => (

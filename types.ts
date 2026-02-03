@@ -1,4 +1,3 @@
-
 export interface SleepStage {
   name: 'Deep' | 'REM' | 'Light' | 'Awake';
   duration: number; // minutes
@@ -70,6 +69,6 @@ export interface AuditLog {
   created_at: string; // Standardized
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'support' | 'not-found';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'registry' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'support' | 'not-found';
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
 export type Language = 'en' | 'zh' | 'es';
