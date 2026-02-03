@@ -18,6 +18,7 @@ import { authApi } from './services/supabaseService.ts';
 import AdminDashboard from './app/admin/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
 import UserSignupPage from './app/signup/page.tsx';
+import { LandingPage } from './components/LandingPage.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
@@ -72,7 +73,7 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
     </div>
     <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-4">Access <span className="text-rose-600">Revoked</span></h2>
     <p className="text-slate-400 text-sm font-medium italic max-w-sm mb-12 leading-relaxed">
-      Your laboratory credentials for <b>SomnoAI Digital Sleep Lab</b> have been restricted. Access to the neural grid is strictly severed.
+      Your laboratory credentials have been restricted. Access to the neural grid is strictly severed.
     </p>
     <button onClick={onLogout} className="px-12 py-5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 active:scale-95 transition-all shadow-2xl">
       <LogOut size={18} /> DISCONNECT SESSION
@@ -83,7 +84,7 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
 const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
-  const [activeView, setActiveView] = useState<ViewType | 'login' | 'signup' | 'update-password' | 'science' | 'faq'>('dashboard');
+  const [activeView, setActiveView] = useState<ViewType | 'landing' | 'login' | 'signup' | 'update-password' | 'science' | 'faq'>('landing');
   const [isSimulated, setIsSimulated] = useState(false);
 
   const handleLogout = useCallback(async () => {
@@ -93,15 +94,18 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  // Robust path-based routing logic
   useEffect(() => {
     const handleRouting = () => {
-      // Robust path detection from window location
+      // 1. Prioritize pathname for clean URLs (e.g., /signup)
       const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      // 2. Secondary fallback for legacy hash links (e.g., /#/admin)
       const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0];
-      const route = path || hash || 'dashboard';
+      
+      const route = path || hash || 'landing';
 
-      // Redirect if already authenticated and trying to reach auth pages
-      if ((profile || isSimulated) && ['login', 'signup', 'sign-in'].includes(route)) {
+      // Authentication guard for routes like /login or /signup
+      if ((profile || isSimulated) && ['login', 'signup', 'landing'].includes(route)) {
         setActiveView('dashboard');
         return;
       }
@@ -111,46 +115,44 @@ const AppContent: React.FC = () => {
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
         'registry': 'registry', 'update-password': 'update-password', 'science': 'science', 'faq': 'faq',
-        'login': 'login', 'signup': 'signup'
+        'login': 'login', 'signup': 'signup', 'landing': 'landing'
       };
 
       if (mappings[route]) {
         setActiveView(mappings[route]);
       } else {
-        setActiveView('dashboard');
+        setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
       }
       
       trackPageView(`/${route}`, `SomnoAI: ${route.toUpperCase()}`);
     };
     
     window.addEventListener('popstate', handleRouting);
-    window.addEventListener('hashchange', handleRouting);
     handleRouting();
-    return () => {
-      window.removeEventListener('popstate', handleRouting);
-      window.removeEventListener('hashchange', handleRouting);
-    };
+    return () => window.removeEventListener('popstate', handleRouting);
   }, [profile, isSimulated]);
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;
 
-  // Centralized Navigation Helper
+  // Centralized Navigation Helper with history pushState
   const navigate = (view: string) => {
-    window.history.pushState(null, '', `/${view}`);
+    window.history.pushState(null, '', `/${view === 'landing' ? '' : view}`);
     setActiveView(view as any);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const renderContent = () => {
     // PUBLIC ROUTES FOR GUESTS
     if (!profile && !isSimulated) {
       if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
-      if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('login')} onNavigate={navigate} />;
+      if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
+      if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('landing')} onNavigate={navigate} />;
       if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('about')} />;
       if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('about')} />;
       
-      // Default Guest View: Login
-      return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
+      // Default Guest View is now the result-oriented LandingPage
+      return <LandingPage lang={lang} onNavigate={navigate} />;
     }
 
     // AUTHENTICATED ROUTES
@@ -206,7 +208,7 @@ const AppContent: React.FC = () => {
       );
     }
 
-    return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
+    return <LandingPage lang={lang} onNavigate={navigate} />;
   };
 
   return <RootLayout>{renderContent()}</RootLayout>;
