@@ -19,8 +19,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
-      {/* 顶部交互栏：包含导航和入驻按钮 */}
-      <div className="max-w-7xl mx-auto px-4 flex items-center justify-between mb-12 sticky top-4 z-[100]">
+      {/* 顶部操作桥 - 纯净链接支持 */}
+      <div className="max-w-7xl mx-auto px-4 flex items-center justify-between mb-12 md:mb-20 sticky top-4 z-[100]">
         <button 
           onClick={onBack}
           className="p-4 bg-slate-950/80 backdrop-blur-3xl hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
@@ -47,13 +47,13 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
       </div>
 
       <header className="flex flex-col items-center text-center gap-6 mb-16 px-2 max-w-4xl mx-auto">
-        <Logo size={100} animated={true} />
+        <Logo size={120} animated={true} />
         <div>
           <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none">
             About <span className="text-indigo-400">SomnoAI Lab</span>
           </h1>
-          <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-3">
-            SomnoAI Digital Sleep Lab • v2026.01
+          <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-4">
+            SomnoAI Digital Sleep Lab • Neural Infrastructure v2.6
           </p>
         </div>
       </header>
@@ -64,7 +64,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Globe size={24} /></div>
             <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Project Overview</h2>
           </div>
-          <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic">
+          <div className="space-y-6 text-slate-300 text-lg md:text-xl leading-relaxed italic">
             <p>SomnoAI Digital Sleep Lab is an AI-powered digital health platform focused on advanced sleep architecture analysis and personalized optimization.</p>
             <p>Unlike traditional hardware-dependent trackers, we offer a pure software solution: collect biometric data from any wearable, smart mattress, phone sensors or manual input — then use sophisticated AI models to deliver meaningful insights.</p>
           </div>
@@ -103,10 +103,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         <GlassCard className="p-10 md:p-14 rounded-[4rem] border-white/10 bg-white/[0.01]">
           <div className="flex items-center gap-4 mb-8">
             <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400"><UserCheck size={24} /></div>
-            <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Developer</h2>
+            <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Lead Developer</h2>
           </div>
           <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic">
-            <p>Built independently by <strong>Vyncuslim</strong> (Penang, Malaysia). A build-in-public project with strong focus on privacy and usability.</p>
+            <p>Built independently by <strong>Vyncuslim</strong> (Penang, Malaysia). A build-in-public project with strong focus on data sovereignty and neural recovery.</p>
             <div className="flex flex-wrap gap-6 mt-10">
               <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="inline-flex items-center px-8 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Github size={16} className="mr-2" /> Source</a>
               <a href="mailto:ongyuze1401@gmail.com" className="inline-flex items-center px-8 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-xl"><Mail size={16} className="mr-2" /> Contact</a>
@@ -115,8 +115,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         </GlassCard>
 
         <footer className="pt-12 text-center opacity-30">
-           <p className="text-[9px] font-mono tracking-widest uppercase mb-8">SomnoAI Digital Sleep Lab • Secure Infrastructure v2.5</p>
-           <button onClick={onBack} className="px-12 py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-widest italic shadow-2xl active:scale-95 transition-all">Back to Terminal</button>
+           <p className="text-[9px] font-mono tracking-widest uppercase mb-8">SomnoAI Digital Sleep Lab • Secure Infrastructure v2.6</p>
+           <button onClick={onBack} className="px-12 py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-widest italic shadow-2xl active:scale-95 transition-all">Back to Console</button>
         </footer>
       </div>
     </div>

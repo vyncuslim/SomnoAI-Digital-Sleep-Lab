@@ -18,7 +18,8 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab = 'login' }) => {
-  const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'otp'>(initialTab);
+  // 锁定模式，防止在 /login 页面看到注册表单，反之亦然
+  const [activeTab] = useState<'login' | 'signup' | 'otp'>(initialTab);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -41,7 +42,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       }
     };
     setTimeout(initTurnstile, 500);
-  }, [activeTab]);
+  }, []);
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,7 +58,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       } else if (activeTab === 'signup') {
         const { error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, turnstileToken || undefined);
         if (signUpErr) throw signUpErr;
-        setError({ message: "Registry requested. Check your email for verification link." });
+        setError({ message: "Registry requested. Check email for verification link." });
       }
     } catch (err: any) {
       setError({ message: err.message || "Handshake Failure." });
@@ -81,12 +82,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       </m.div>
 
       <div className="w-full max-w-[400px] space-y-8 relative z-10">
+        {/* Google 专用入口 */}
         <button 
           onClick={() => authApi.signInWithGoogle()}
           className="w-full py-5 rounded-full bg-white text-black font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-200 transition-all active:scale-95"
         >
           <Chrome size={18} />
-          {isLogin ? 'Login with Google' : 'Sign in with Google'}
+          {isLogin ? 'LOGIN WITH GOOGLE' : 'INITIALIZE WITH GOOGLE'}
         </button>
 
         <div className="flex items-center gap-4 opacity-30">
@@ -112,7 +114,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
             className="w-full py-5 rounded-full bg-indigo-600 text-white font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 transition-all hover:bg-indigo-500 disabled:opacity-40"
           >
             {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} fill="currentColor" />}
-            <span>{isLogin ? 'ESTABLISH LINK' : 'INITIALIZE REGISTRY'}</span>
+            <span>{isLogin ? 'ESTABLISH LINK' : 'COMMIT REGISTRY'}</span>
           </button>
         </form>
 
@@ -120,8 +122,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
             {isLogin ? "No identity node? " : "Credentials exist? "}
             <button onClick={() => {
-              const target = isLogin ? '/signup' : '/login';
-              window.location.href = target;
+              window.location.href = isLogin ? '/signup' : '/login';
             }} className="text-indigo-400 underline underline-offset-4">{isLogin ? 'Join Lab' : 'Login'}</button>
           </p>
           <button onClick={onGuest} className="text-slate-700 text-[9px] font-black uppercase tracking-[0.4em] hover:text-slate-400 transition-colors">Sandbox Override</button>

@@ -29,7 +29,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
     }
   }, [loading, hasAccess, profile, level]);
 
-  // 如果账号已被封禁，立即在此层级进行物理切断
+  // 【物理拦截】封禁用户绝对禁止进入受保护区域
   if (profile?.is_blocked) {
      return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
@@ -37,7 +37,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
           <LockKeyhole size={48} />
         </div>
         <h2 className="text-2xl font-black text-white uppercase italic mb-4">Neural Link Severed</h2>
-        <p className="text-slate-500 text-xs italic max-w-xs mb-10 text-center">Your account status prevents access to restricted laboratory sectors. Contact the command bridge.</p>
+        <p className="text-slate-500 text-xs italic max-w-xs mb-10 text-center">Your account status prevents access to restricted sectors of SomnoAI Digital Sleep Lab. Contact the command bridge.</p>
         <button onClick={() => window.location.href = '/'} className="px-8 py-3 bg-white text-black rounded-full font-black text-[10px] uppercase tracking-widest">RE-SYNC HUB</button>
       </div>
      );

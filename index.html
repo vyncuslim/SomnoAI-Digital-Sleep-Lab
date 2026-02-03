@@ -1,11 +1,8 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <script>
-      /**
-       * SOMNO LAB - SHIELD-CORE v6.2
-       * Optimized for production: Filter noise from ad-blockers and non-critical extension errors.
-       */
       (function() {
         try {
           var s = window.self;
@@ -14,28 +11,19 @@
           Object.defineProperty(window, 'top', t);
         } catch (e) {}
 
-        var noisePatterns = [
-          'SecurityError', 'browsing-topics', 'rum-ad-auction', 
-          'ERR_BLOCKED_BY_CLIENT', 'salesmartly', 'google-analytics',
-          'Extension', 'Cloudflare'
-        ];
-
+        var noisePatterns = ['SecurityError', 'browsing-topics', 'rum-ad-auction', 'ERR_BLOCKED_BY_CLIENT', 'salesmartly', 'google-analytics', 'Extension', 'Cloudflare'];
         var wrap = function(m) {
           var orig = console[m];
           console[m] = function() {
             var args = Array.prototype.slice.call(arguments);
             var msg = args.join(' ').toLowerCase();
-            var shouldSilence = noisePatterns.some(function(p) { 
-              return msg.indexOf(p.toLowerCase()) !== -1;
-            });
+            var shouldSilence = noisePatterns.some(function(p) { return msg.indexOf(p.toLowerCase()) !== -1; });
             if (!shouldSilence && orig) orig.apply(console, arguments);
           };
         };
         ['error', 'warn', 'info'].forEach(wrap);
       })();
     </script>
-
-    <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-3F9KVPNYLR"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
@@ -43,39 +31,14 @@
       gtag('js', new Date());
       gtag('config', 'G-3F9KVPNYLR', { 'send_page_view': false });
     </script>
-
-    <!-- Google GSI SDK remains for Auth -->
     <script src="https://accounts.google.com/gsi/client" async defer></script>
-    
-    <!-- Cloudflare Turnstile for Bot Protection -->
     <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0, viewport-fit=cover">
-    
-    <!-- PRIMARY SEO: STRICT ENGLISH ONLY -->
-    <title>SomnoAI Digital Sleep Lab | AI Sleep Intelligence & Health Insights</title>
-    <meta name="description" content="SomnoAI Digital Sleep Lab: A high-performance biometric platform integrating AI-driven sleep analysis, physiological monitoring, and neural recovery insights. Optimize your biological potential with the world's most advanced digital sleep laboratory.">
-    <meta name="keywords" content="SomnoAI, Sleep Lab, AI Sleep Analysis, Biometric Tracking, Health Insights, Neural Recovery, Digital Health Ecosystem">
-    <link rel="canonical" href="https://sleepsomno.com" />
-
-    <!-- OPEN GRAPH / FACEBOOK -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sleepsomno.com">
-    <meta property="og:title" content="SomnoAI Digital Sleep Lab | AI Sleep Intelligence">
-    <meta property="og:description" content="Advanced physiological monitoring and AI-driven insights for human performance optimization.">
-    <meta property="og:image" content="https://sleepsomno.com/og-image.png">
-
-    <!-- TWITTER -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:url" content="https://sleepsomno.com">
-    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab | AI Sleep Intelligence">
-    <meta property="twitter:description" content="Advanced physiological monitoring and AI-driven insights for human performance optimization.">
-    <meta property="twitter:image" content="https://sleepsomno.com/og-image.png">
-    
+    <title>SomnoAI Digital Sleep Lab | AI Sleep Intelligence</title>
+    <meta name="description" content="SomnoAI Digital Sleep Lab: AI-driven sleep analysis, physiological monitoring, and neural recovery insights. Optimize your potential.">
     <link rel="icon" type="image/png" href="https://img.icons8.com/fluency/48/moon.png" sizes="48x48">
     <meta name="theme-color" content="#020617">
-
     <script type="importmap">
 {
   "imports": {
@@ -97,7 +60,6 @@
   }
 }
 </script>
-
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -122,7 +84,6 @@
 <body class="bg-[#020617] text-slate-200">
     <div id="root"></div>
     <script type="module" src="./index.tsx"></script>
-    <!-- Salesmartly integration script -->
     <script src="https://plugin-code.salesmartly.com/js/project_445539_520520_1761223371.js"></script>
 </body>
 </html>
