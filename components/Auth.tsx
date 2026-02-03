@@ -7,7 +7,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
 import { authApi } from '../services/supabaseService.ts';
-import { notifyAdmin } from '../services/telegramService.ts';
 
 const m = motion as any;
 

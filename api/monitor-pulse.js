@@ -1,9 +1,8 @@
-
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB INFRASTRUCTURE PULSE v13.2
- * Global try-catch protected to ensure diagnostic link integrity.
+ * SOMNO LAB INFRASTRUCTURE PULSE v13.4
+ * Secure diagnostic logic with robust JSON parsing.
  */
 
 const DEFAULT_SA_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
@@ -51,12 +50,17 @@ export default async function handler(req, res) {
     let activeSaEmail = DEFAULT_SA_EMAIL;
     try {
       if (process.env.GA_SERVICE_ACCOUNT_KEY) {
-        const sanitized = process.env.GA_SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n');
-        const keyJson = JSON.parse(sanitized);
+        let cleaned = process.env.GA_SERVICE_ACCOUNT_KEY.trim();
+        if (cleaned.startsWith('"') && cleaned.endsWith('"')) cleaned = cleaned.slice(1, -1);
+        cleaned = cleaned.replace(/\n/g, '\\n');
+        cleaned = cleaned.replace(/\\\\n/g, '\\n');
+        const keyJson = JSON.parse(cleaned);
         activeSaEmail = keyJson.client_email || activeSaEmail;
+        envStatus['GA_KEY_PARSE_STATUS'] = 'SUCCESS';
       }
     } catch (e) {
         envStatus['GA_KEY_PARSE_STATUS'] = 'FAIL';
+        envStatus['PARSE_ERROR'] = e.message;
     }
 
     let dbStatus = "OFFLINE";

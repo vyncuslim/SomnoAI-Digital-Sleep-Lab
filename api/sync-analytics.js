@@ -1,10 +1,9 @@
-
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v19.0
- * Dynamic Recipient Edition - Telegram + Email Mirroring
+ * SOMNO LAB GA4 SYNC GATEWAY v19.2
+ * Enhanced robust JSON parsing and permission-aware resolution guidance.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -16,7 +15,6 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
   const type = isForbidden ? 'GA4_ACCESS_DENIED' : 'SYNC_ENGINE_FAULT';
   const status = isForbidden ? '403 Forbidden' : '500 Internal Error';
 
-  // 1. Dispatch Telegram Signal
   try {
     const tgMsg = `🚨 <b>SOMNO LAB: ${isForbidden ? 'PERMISSION' : 'RECOVERY'} ALERT</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
@@ -25,7 +23,7 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
       `<b>Status:</b> ${status}\n` +
       `<b>Reason:</b> <code>${errorMsg.substring(0, 200)}</code>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📍 <b>ACTION:</b> Manual intervention required.`;
+      `📍 <b>ACTION:</b> ${isForbidden ? 'Grant Viewer access to the Service Account in Google Analytics Admin.' : 'Manual intervention required.'}`;
       
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -34,7 +32,6 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
     });
   } catch (e) { console.error("TG_DISPATCH_FAIL", e); }
 
-  // 2. Dispatch Email Signals to ALL active recipients
   try {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     const { data: recipients } = await supabase.from('notification_recipients').select('email').eq('is_active', true);
@@ -42,12 +39,13 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false) {
     if (recipients && recipients.length > 0) {
       const emailHtml = `
         <div style="font-family: sans-serif; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-          <h2 style="color: #ef4444;">🚨 Somno Lab Critical Alert</h2>
+          <h2 style="color: #ef4444;">🚨 Somno AI Lab Critical Alert</h2>
           <p><b>Event Type:</b> ${type}</p>
           <p><b>Checkpoint:</b> ${checkpoint}</p>
           <p><b>HTTP Status:</b> ${status}</p>
           <p><b>Error Details:</b> <code>${errorMsg}</code></p>
           <hr/>
+          <p><b>Required Action:</b> ${isForbidden ? 'Add the Service Account email to your Google Analytics Property with "Viewer" permissions.' : 'Check Vercel logs and environment variable formatting.'}</p>
           <p style="font-size: 12px; color: #666;">Generated at: ${timestamp}</p>
         </div>
       `;
@@ -83,7 +81,17 @@ export default async function handler(req, res) {
     }
 
     checkpoint = "GA_CLIENT_INIT";
-    const credentials = JSON.parse(GA_SERVICE_ACCOUNT_KEY.replace(/\\n/g, '\n'));
+    // HIGH-RESILIENCE SCRUBBING: Handles literal newlines, escaped newlines, and surrounding quotes
+    let cleanedKey = GA_SERVICE_ACCOUNT_KEY.trim();
+    if (cleanedKey.startsWith('"') && cleanedKey.endsWith('"')) cleanedKey = cleanedKey.slice(1, -1);
+    
+    // Replace actual newlines with literal '\n' for JSON.parse compatibility
+    cleanedKey = cleanedKey.replace(/\n/g, '\\n');
+    
+    // Fix common double-escaping issues from copy-paste
+    cleanedKey = cleanedKey.replace(/\\\\n/g, '\\n');
+
+    const credentials = JSON.parse(cleanedKey);
     const analyticsClient = new BetaAnalyticsDataClient({ credentials });
 
     checkpoint = "GA_API_HANDSHAKE";
@@ -110,8 +118,13 @@ export default async function handler(req, res) {
     return res.status(200).json({ success: true, processed: rows.length });
   } catch (error) {
     const errorMsg = error?.message || "Unhandled exception.";
-    const isPermissionDenied = errorMsg.includes('Permission denied') || error.code === 7;
+    const isPermissionDenied = errorMsg.includes('Permission denied') || errorMsg.includes('not have permission') || error.code === 7;
     await alertAdmin(checkpoint, errorMsg, isPermissionDenied);
-    return res.status(isPermissionDenied ? 403 : 500).json({ error: 'SYNC_CRASH', message: errorMsg, failed_at: checkpoint });
+    return res.status(isPermissionDenied ? 403 : 500).json({ 
+      error: 'SYNC_CRASH', 
+      message: errorMsg, 
+      failed_at: checkpoint,
+      is_permission_denied: isPermissionDenied
+    });
   }
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, ShieldAlert, RefreshCw, Loader2, ChevronLeft, 
@@ -10,7 +9,7 @@ import {
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
   Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle, Key,
   ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame, Activity as MonitoringIcon, Eye, ChevronDown,
-  Calendar, ShieldX, Plus, MailPlus
+  Calendar, ShieldX, Plus, MailPlus, Play
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -203,7 +202,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none italic">Ongoing Incident detected</p>
                   <p className="text-sm font-black text-white italic">
-                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Telemetry Access Denied' : `500 Server Error: Failed at ${lastRawError?.failed_at || 'Handshake'}`}
+                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Telemetry Access Denied (Permissions Required)' : `500 Server Error: Failed at ${lastRawError?.failed_at || 'Handshake'}`}
                   </p>
                 </div>
               </div>
@@ -292,34 +291,41 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           <div className="flex items-center gap-3 text-rose-400">
                              <AlertCircle size={16} />
                              <span className="text-[11px] font-black uppercase tracking-[0.2em] italic">
-                                {syncState === 'FORBIDDEN' ? 'Access Denied: 403 Forbidden' : `Diagnostic: Sync failed at ${lastRawError?.failed_at || 'Handshake'}`}
+                                {syncState === 'FORBIDDEN' ? 'Access Denied: Permission Optimization Required' : `Diagnostic: Sync failed at ${lastRawError?.failed_at || 'Handshake'}`}
                              </span>
                           </div>
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                              <div className="p-6 bg-slate-900/60 rounded-[2rem] border border-white/5 space-y-4">
                                <p className="text-xs text-slate-300 font-bold italic">Resolution Protocol:</p>
-                               <ol className="space-y-3 text-[10px] text-slate-400 list-decimal pl-5 italic font-medium">
-                                  {syncState === 'ERROR' && lastRawError?.failed_at === 'ENV_VAR_CAPTURE' ? (
+                               <ol className="space-y-3 text-[10px] text-slate-400 list-decimal pl-5 italic font-medium leading-relaxed">
+                                  {syncState === 'FORBIDDEN' ? (
+                                    <>
+                                      <li>Log into the <a href="https://analytics.google.com/" target="_blank" className="text-indigo-400 underline decoration-indigo-500/30">Google Analytics Console</a>.</li>
+                                      <li>Navigate to <b>Admin &rarr; Property Settings &rarr; Property Access Management</b>.</li>
+                                      <li>Confirm you are in Property ID: <code>{process.env.GA_PROPERTY_ID || 'UNSET'}</code></li>
+                                      <li>Add the Service Account (below) as a <span className="text-white font-black">"Viewer"</span>.</li>
+                                      <li>Ensure there are no domain restrictions blocking the service account.</li>
+                                    </>
+                                  ) : lastRawError?.failed_at === 'ENV_VAR_CAPTURE' ? (
                                     <>
                                       <li>Check Vercel Project Settings &rarr; Environment Variables.</li>
-                                      <li>Ensure <b>GA_SERVICE_ACCOUNT_KEY</b> is present and correctly pasted.</li>
+                                      <li>Ensure <b>GA_SERVICE_ACCOUNT_KEY</b> is present and correctly formatted.</li>
                                       <li>Redeploy if changes were made recently.</li>
                                     </>
                                   ) : (
                                     <>
-                                      <li>Log into <a href="https://analytics.google.com/" target="_blank" className="text-indigo-400 underline decoration-indigo-500/30">Google Analytics Console</a>.</li>
-                                      <li>Navigate to <b>Admin &rarr; Property Settings &rarr; Property Access Management</b>.</li>
-                                      <li>Ensure you are in the correct property ID shown on the right.</li>
-                                      <li>Add the Service Account identifier as a <b>"Viewer"</b> and save.</li>
+                                      <li>Verify the JSON format of the Service Account Key.</li>
+                                      <li>Check for hidden characters or improper escaping in Vercel ENV.</li>
+                                      <li>Confirm network egress is not restricted.</li>
                                     </>
                                   )}
                                </ol>
                              </div>
                              <div className="space-y-4">
                                <div className="p-6 bg-black/40 border border-indigo-500/20 rounded-[2rem] flex flex-col justify-center gap-3">
-                                  <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Service Account Identity</span>
+                                  <span className="text-[8px] font-black text-indigo-500 uppercase tracking-widest">Target Service Account Identity</span>
                                   <code className="text-[10px] font-mono text-indigo-300 font-bold break-all select-all leading-tight">{saEmail || 'PROBING_NODES...'}</code>
-                                  <button onClick={() => handleCopy(saEmail, 'sa_copy')} className="flex items-center gap-2 text-[9px] font-black text-white bg-indigo-600/20 px-4 py-2 rounded-full w-fit hover:bg-indigo-600/40 transition-all uppercase">
+                                  <button onClick={() => handleCopy(saEmail, 'sa_copy')} className="flex items-center gap-2 text-[9px] font-black text-white bg-indigo-600/20 px-4 py-2 rounded-full w-fit hover:bg-indigo-600/40 transition-all uppercase mt-2">
                                     {copiedKey === 'sa_copy' ? <Check size={10} /> : <Copy size={10} />} Copy Identifier
                                   </button>
                                </div>
@@ -600,10 +606,3 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     </div>
   );
 };
-
-// Internal sub-component for Play icon
-const Play = ({ size }: { size: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none">
-    <path d="M5 3l14 9-14 9V3z" />
-  </svg>
-);
