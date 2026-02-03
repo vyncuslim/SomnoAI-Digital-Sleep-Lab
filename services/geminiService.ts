@@ -2,6 +2,7 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
+import { logAuditLog } from "./supabaseService.ts";
 
 export interface SleepExperiment {
   hypothesis: string;
@@ -9,21 +10,10 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
-/**
- * IDENTITY_ACCESS_PROTOCOL v10.0
- * System requests (Admin/Telegram) use process.env.API_KEY.
- * Standard subjects (Users) MUST use personal local nodes for sovereignty.
- */
 const getApiKey = (isAdminContext: boolean = false) => {
   const localKey = localStorage.getItem('custom_gemini_key');
   if (localKey) return localKey;
-  
-  // Strict Isolation: Global key is restricted to administrative identities
-  if (isAdminContext) {
-    return process.env.API_KEY || "";
-  }
-  
-  // Regular users get NO fallback to developer assets
+  if (isAdminContext) return process.env.API_KEY || "";
   return "";
 };
 
@@ -31,11 +21,11 @@ const handleGeminiError = (err: any) => {
   const errMsg = err.message || "";
   console.error("Neural processing exception:", err);
   
-  if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID")) {
+  if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID") || errMsg.includes("API_KEY")) {
+    logAuditLog('API_SERVICE_FAULT', `CRITICAL: Neural Key Voided.\nError: ${errMsg}\nNode: Gemini Core`, 'CRITICAL');
     throw new Error("API_KEY_REQUIRED");
   }
   
-  if (errMsg.includes("API_KEY")) throw new Error("API_KEY_REQUIRED");
   throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 

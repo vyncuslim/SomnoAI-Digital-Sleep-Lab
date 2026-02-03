@@ -9,21 +9,16 @@ export { supabase };
 
 /**
  * SOMNO LAB NOTIFICATION SUPPRESSION PROTOCOL
- * 延长冷却时间以应对前端异常引发的循环告警。
  */
 let lastNotificationDispatchTime = 0;
 let lastNotificationFingerprint = '';
-const GLOBAL_NOTIFICATION_COOLDOWN = 60 * 60 * 1000; // 60 Minutes
+const GLOBAL_NOTIFICATION_COOLDOWN = 30 * 1000; // 前端基础冷却降至 30s，依靠 TG 服务的指纹去重
 
-/**
- * LOG_AUDIT_LOG
- * 持久化系统日志，并在冷却规则允许的情况下触发管理员通知。
- */
 export const logAuditLog = async (action: string, details: string, level: string = 'INFO') => {
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
     
-    // 始终在数据库中记录以供审计
+    // 始终在数据库中记录
     const { error } = await supabase.from('audit_logs').insert([{
       action,
       details,
@@ -31,34 +26,29 @@ export const logAuditLog = async (action: string, details: string, level: string
       user_id: user?.id
     }]);
     
-    // 1. 优先级判定
-    const isPriorityEvent = level === 'CRITICAL' || level === 'WARNING' || ['USER_LOGIN', 'USER_SIGNUP', 'ADMIN_RECIPIENT_ADDED'].includes(action);
+    // 根据动作类型映射 Telegram 事件
+    const actionToTypeMap: Record<string, string> = {
+      'USER_LOGIN': 'USER_LOGIN',
+      'USER_SIGNUP': 'USER_SIGNUP',
+      'ADMIN_ROLE_UPDATE': 'ADMIN_CONFIG_CHANGE',
+      'ADMIN_BLOCK_TOGGLE': 'ADMIN_CONFIG_CHANGE',
+      'ADMIN_RECIPIENT_ADDED': 'ADMIN_CONFIG_CHANGE',
+      'SECURITY_BREACH': 'SECURITY_BREACH',
+      'FEEDBACK_SUBMITTED': 'USER_FEEDBACK',
+      'DIARY_LOG_ENTRY': 'USER_FEEDBACK'
+    };
 
-    // 2. 指纹抑制检查
-    const now = Date.now();
-    const currentFingerprint = `${action}:${details.substring(0, 40)}`;
-    const isCooldownActive = (now - lastNotificationDispatchTime) < GLOBAL_NOTIFICATION_COOLDOWN;
-    const isExactDuplicate = currentFingerprint === lastNotificationFingerprint;
+    const isPriorityEvent = level === 'CRITICAL' || level === 'WARNING' || actionToTypeMap[action];
 
-    // 仅在非冷却期或非重复事件时发送通知
     if (isPriorityEvent) {
-      if (isCooldownActive && isExactDuplicate) {
-        console.debug(`[Suppression] Pulse identical. Dropping redundant notification: ${action}`);
-        return !error;
-      }
-
-      // 更新冷却指纹
-      lastNotificationDispatchTime = now;
-      lastNotificationFingerprint = currentFingerprint;
-      
       const payload = { 
-        type: action, 
+        type: actionToTypeMap[action] || 'RUNTIME_ERROR', 
         message: details, 
-        path: 'Neural_Grid_Edge',
-        source: user?.email || 'SYSTEM_NODE'
+        source: user?.email || 'SYSTEM_NODE',
+        path: 'Neural_Grid_Pulse'
       };
       
-      // 并发分发至所有告警渠道
+      // 依靠 telegramService 的 60s 指纹去重，这里直接发射
       await Promise.allSettled([
         notifyAdmin(payload),
         emailService.sendAdminAlert(payload)
@@ -82,7 +72,7 @@ export const authApi = {
   signUp: async (email: string, password: string, metadata: any, captchaToken?: string) => {
     const res = await (supabase.auth as any).signUp({ email, password, options: { data: metadata, captchaToken } });
     if (!res.error) {
-      await logAuditLog('USER_SIGNUP', `New subject node registry: ${email}\nIdentity: ${metadata.full_name || 'Anonymous'}`, 'INFO');
+      await logAuditLog('USER_SIGNUP', `Identity: ${metadata.full_name || 'Anonymous'} | Link established for ${email}`, 'INFO');
     }
     return res;
   },
@@ -155,13 +145,13 @@ export const adminApi = {
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Target link established: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `New link established: ${email}`, 'WARNING');
     return { data, error };
   },
   
   removeNotificationRecipient: async (id: string, email: string) => {
     const { error } = await supabase.from('notification_recipients').delete().eq('id', id);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Target link severed: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Link severed: ${email}`, 'WARNING');
     return { error };
   }
 };
