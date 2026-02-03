@@ -329,7 +329,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                <ol className="space-y-4 text-[11px] text-slate-400 list-decimal pl-5 italic font-medium leading-relaxed">
                                   <li>Ensure Property ID is <b>380909155</b>. UA Account IDs (e.g. 12345678) will return 403.</li>
                                   <li>Legacy UA reporting (<code>analyticsreporting</code>) is disabled. This app hits <code>analyticsdata</code>.</li>
-                                  <li>Navigate to <b>GA Admin</b> {' > '} <b>Property Settings</b> {' > '} <b>Property Access Management</b>.</li>
+                                  <li>Navigate to <b>GA Admin</b> > <b>Property Settings</b> > <b>Property Access Management</b>.</li>
                                   <li>Add <b>Service Email</b> shown on the right.</li>
                                   <li>Assign the <b>Viewer</b> role to authorize telemetry data read access.</li>
                                </ol>
@@ -484,6 +484,38 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Automation Engine</h2>
                     <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Background Ops Terminal</p>
                   </div>
+
+                  <GlassCard className="p-10 rounded-[4rem] border-white/5 space-y-8">
+                     <div className="flex items-center gap-4">
+                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Clock size={24} /></div>
+                        <h3 className="text-xl font-black italic text-white uppercase">External Scheduling (UptimeRobot)</h3>
+                     </div>
+                     <p className="text-xs text-slate-500 italic leading-relaxed">
+                        To maintain neural stability, configure <b>UptimeRobot</b> to ping the following gateway every 5 minutes.
+                     </p>
+                     <div className="bg-black/60 border border-white/5 rounded-[2.5rem] p-8 relative group">
+                        <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest mb-3 block">Target Monitoring URL</span>
+                        <code className="text-[11px] font-mono text-indigo-300 break-all block pr-12">
+                          {window.location.origin}/api/cron-task?secret={CRON_SECRET}
+                        </code>
+                        <button 
+                          onClick={() => handleCopy(`${window.location.origin}/api/cron-task?secret=${CRON_SECRET}`, 'uptimerobot_url')}
+                          className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-indigo-600/20 text-indigo-400 rounded-xl hover:bg-indigo-600/40 transition-all"
+                        >
+                          {copiedKey === 'uptimerobot_url' ? <Check size={18} /> : <Copy size={18} />}
+                        </button>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="p-6 bg-slate-900/40 rounded-3xl border border-white/5">
+                           <p className="text-[10px] font-black text-white uppercase mb-2">1. Monitor Type</p>
+                           <p className="text-[11px] text-slate-500 italic">Select <b>HTTP(s)</b> monitor.</p>
+                        </div>
+                        <div className="p-6 bg-slate-900/40 rounded-3xl border border-white/5">
+                           <p className="text-[10px] font-black text-white uppercase mb-2">2. Monitoring Interval</p>
+                           <p className="text-[11px] text-slate-500 italic">Set to <b>5 minutes</b> for optimal sync.</p>
+                        </div>
+                     </div>
+                  </GlassCard>
 
                   <GlassCard className="p-10 rounded-[4rem] border-emerald-500/20 bg-emerald-500/[0.02] space-y-10">
                      <div className="flex items-center justify-between">

@@ -1,7 +1,7 @@
 
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v46.0
- * Features: High-density alert suppression & 24h fingerprint cooldown for recurring errors.
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v47.0
+ * Features: Multi-pass fingerprinting & strict 24h block for permanent authorization errors.
  */
 
 // @ts-ignore
@@ -40,21 +40,19 @@ const isRecentlySent = async (action: string, fingerprint: string) => {
   const cacheKey = `${action}:${fingerprint}`;
   const now = Date.now();
 
-  // 1. 并发写保护
   if (processingPayloads.has(cacheKey)) return true;
   processingPayloads.add(cacheKey);
 
   try {
-    // 2. 内存热数据校验：GA4 权限错误执行 24 小时冷却，其他执行 10 分钟冷却
-    const isPersistentError = action === 'GA4_PERMISSION_DENIED';
-    const cooldownPeriod = isPersistentError ? 86400000 : 600000; 
+    // Cooldown: 24h for GA4 errors, 30m for others
+    const isPersistentError = action === 'GA4_PERMISSION_DENIED' || action.includes('PERMISSION_DENIED');
+    const cooldownPeriod = isPersistentError ? 86400000 : 1800000; 
     
     const lastSentTime = memoryCache.get(cacheKey);
     if (lastSentTime && (now - lastSentTime < cooldownPeriod)) {
       return true;
     }
 
-    // 3. 数据库审计校验
     const lookbackTime = new Date(now - cooldownPeriod).toISOString();
     const { data } = await supabase
       .from('audit_logs')
@@ -84,17 +82,16 @@ export const notifyAdmin = async (payload: any) => {
   const msgType = payload.type || 'SYSTEM_SIGNAL';
   const rawDetails = typeof payload === 'string' ? payload : (payload.message || payload.error || 'N/A');
   
-  // 对于特定的 GA4 错误使用固定指纹，确保 24 小时内只报警一次
   let fingerprint = 'GENERAL_SIGNAL';
   if (msgType === 'GA4_PERMISSION_DENIED' || rawDetails.includes('PERMISSION_DENIED')) {
-    fingerprint = 'GA4_AUTH_BLOCK_PROTOCOL';
+    // Use a strict fixed fingerprint for permission errors to ensure ONLY ONE notification per 24h
+    fingerprint = 'GA4_AUTH_BLOCK_PROTOCOL_V2';
   } else {
-    fingerprint = rawDetails.substring(0, 100).replace(/\s/g, '');
+    fingerprint = rawDetails.substring(0, 60).replace(/\s/g, '');
   }
 
   const duplicated = await isRecentlySent(msgType, fingerprint);
   if (duplicated) {
-    console.log(`[Alert_Suppressed] Notification throttled for ${msgType}`);
     return false;
   }
 
@@ -108,7 +105,7 @@ export const notifyAdmin = async (payload: any) => {
     `<b>Log:</b> <code>${rawDetails.substring(0, 350)}</code>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📍 <b>ORIGIN:</b> <code>${source}</code>\n` +
-    `🛡️ <b>STATUS:</b> <code>Suppression Active (24h)</code>`;
+    `🛡️ <b>STATUS:</b> <code>Suppression Active (24h Lock)</code>`;
 
   try {
     const res = await fetch(TELEGRAM_API, {
