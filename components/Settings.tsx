@@ -1,16 +1,13 @@
-
 import React, { useState } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  LogOut as DisconnectIcon, ShieldCheck, ShieldAlert,
-  Key, RefreshCw, Zap, Loader2, ChevronRight, Terminal, Server, LifeBuoy, Globe, Heart
+  LogOut as DisconnectIcon, ShieldCheck, 
+  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ExitFeedbackModal } from './ExitFeedbackModal.tsx';
-import { notifyAdmin } from '../services/telegramService.ts';
-import { emailService } from '../services/emailService.ts';
 
 const m = motion as any;
 
@@ -21,13 +18,11 @@ interface SettingsProps {
   onNavigate: (view: any) => void;
 }
 
-// Fixed: Correctly assigned FC type and ensured a return statement is present
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, onNavigate
 }) => {
   const { isAdmin, profile } = useAuth();
   const [showExitFeedback, setShowExitFeedback] = useState(false);
-  const [testStatus, setTestStatus] = useState<'idle' | 'transmitting' | 'success' | 'error'>('idle');
 
   const t = translations[lang]?.settings || translations.en.settings;
 
@@ -39,35 +34,6 @@ export const Settings: React.FC<SettingsProps> = ({
     onLanguageChange(newLang);
   };
 
-  const handleFullCommsDiagnostic = async () => {
-    if (testStatus === 'transmitting') return;
-    setTestStatus('transmitting');
-    
-    const payload = {
-      type: 'SYSTEM_SIGNAL',
-      source: 'ADMIN_DIAGNOSTIC_TERMINAL',
-      message: `🧪 FULL COMMS TEST\nSubject: ${profile?.email || 'Unknown'}\nIdentity: ${profile?.full_name || 'N/A'}\nProtocol: Mirroring TG+Email`
-    };
-
-    try {
-      const [tgRes, emailRes] = await Promise.all([
-        notifyAdmin(payload),
-        emailService.sendAdminAlert(payload)
-      ]);
-
-      if (tgRes && emailRes.success) {
-        setTestStatus('success');
-      } else {
-        setTestStatus('error');
-      }
-    } catch (e) {
-      setTestStatus('error');
-    }
-
-    setTimeout(() => setTestStatus('idle'), 4000);
-  };
-
-  // Added missing return statement to resolve "Type 'void' is not assignable to type 'ReactNode'" error
   return (
     <div className="space-y-8 pb-48 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
       <header className="flex flex-col gap-2 pt-8">
@@ -99,33 +65,6 @@ export const Settings: React.FC<SettingsProps> = ({
               </button>
             )}
           </div>
-        </GlassCard>
-
-        {/* Diagnostics Tool */}
-        <GlassCard className="p-10 rounded-[4rem] border-white/5 space-y-8">
-          <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-            <div className="p-3 bg-white/5 rounded-2xl text-indigo-400">
-              <RefreshCw size={24} className={testStatus === 'transmitting' ? 'animate-spin' : ''} />
-            </div>
-            <h3 className="text-lg font-black italic text-white uppercase tracking-tight">Comms Diagnostic</h3>
-          </div>
-          
-          <p className="text-xs text-slate-500 italic leading-relaxed">
-            Trigger a mirrored test signal to verify Telegram and Email notification nodes.
-          </p>
-
-          <button 
-            onClick={handleFullCommsDiagnostic}
-            disabled={testStatus === 'transmitting'}
-            className={`w-full py-6 rounded-full font-black text-[10px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-3 shadow-2xl active:scale-95 italic ${
-              testStatus === 'success' ? 'bg-emerald-600 text-white shadow-emerald-500/20' : 
-              testStatus === 'error' ? 'bg-rose-600 text-white shadow-rose-500/20' : 
-              'bg-white/5 text-slate-400 border border-white/10 hover:text-white'
-            }`}
-          >
-            {testStatus === 'transmitting' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />}
-            {testStatus === 'success' ? 'DIAGNOSTIC_STABLE' : testStatus === 'error' ? 'HANDSHAKE_FAILED' : 'INITIATE_DIAGNOSTIC'}
-          </button>
         </GlassCard>
 
         {/* Preferences */}

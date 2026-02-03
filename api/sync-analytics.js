@@ -3,7 +3,7 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v45.0
+ * SOMNO LAB GA4 SYNC GATEWAY v46.0
  * Protocol:
  * 1. Explicitly locked Property ID 380909155.
  * 2. DISTRIBUTED SUPPRESSION: Checks Supabase for recent alerts. 
@@ -19,7 +19,7 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false, saEmail = "
   const currentAction = isForbidden ? 'GA4_PERMISSION_DENIED' : 'GA4_SYNC_FAILURE';
   
   // Prevent parallel trigger race conditions
-  const jitter = Math.floor(Math.random() * 5000);
+  const jitter = Math.floor(Math.random() * 2000);
   await new Promise(r => setTimeout(r, jitter));
 
   // Check if we already alerted in the last 24 hours for this specific blockage
@@ -81,12 +81,13 @@ export default async function handler(req, res) {
   let currentSaEmail = "UNKNOWN";
   const { GA_SERVICE_ACCOUNT_KEY } = process.env;
   
-  // LOCK TARGET ID
   const TARGET_PROPERTY_ID = "380909155"; 
 
   try {
     const secret = req.query.secret || req.body?.secret;
-    if (secret !== (process.env.CRON_SECRET || INTERNAL_LAB_KEY)) {
+    const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
+    
+    if (secret !== serverSecret) {
       return res.status(200).json({ error: "UNAUTHORIZED_VOID" });
     }
 
@@ -125,7 +126,6 @@ export default async function handler(req, res) {
     const errorMsg = error?.message || "Internal gateway crash.";
     const isForbidden = errorMsg.includes('permission') || error.code === 7 || error.status === 403;
     
-    // singleton-throttled alert
     await alertAdmin(checkpoint, errorMsg, isForbidden, currentSaEmail);
     
     return res.status(isForbidden ? 403 : 500).json({ 

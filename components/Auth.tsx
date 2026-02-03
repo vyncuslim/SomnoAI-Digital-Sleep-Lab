@@ -1,8 +1,7 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, Zap, Eye, EyeOff, 
-  Chrome, AlertCircle, ShieldCheck, ArrowLeft, Mail, Lock, User
+  Chrome, AlertCircle, ShieldCheck, ArrowLeft, Mail, Lock, User, Link2
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { Logo } from './Logo.tsx';
@@ -43,7 +42,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         });
       }
     };
-    setTimeout(initTurnstile, 500);
+    const timer = setTimeout(initTurnstile, 500);
+    return () => clearTimeout(timer);
   }, []);
 
   const handleAuthAction = async (e: React.FormEvent) => {
@@ -60,10 +60,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       } else if (activeTab === 'signup') {
         const { error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, turnstileToken || undefined);
         if (signUpErr) throw signUpErr;
-        setError({ message: isZh ? "注册成功！请检查邮箱中的验证链接。" : "Welcome! Please check your email to verify your registry." });
+        setError({ message: isZh ? "注册成功！请检查邮箱中的验证链接。" : "Registry created! Please verify your email to activate your lab access." });
       }
     } catch (err: any) {
-      setError({ message: err.message || (isZh ? "无法建立连接，请稍后再试。" : "Connection failed. Please retry.") });
+      setError({ message: err.message || (isZh ? "发生意外错误。请稍后重试。" : "There was an unexpected error. Please finish what you were doing and try again.") });
     } finally {
       setIsProcessing(false);
     }
@@ -71,28 +71,29 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-6 bg-[#020617] font-sans relative overflow-x-hidden text-left">
-      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center mb-12 space-y-6">
+      <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center mb-10 space-y-6">
         <button onClick={() => window.location.href = '/'} className="p-3 rounded-full bg-white/5 border border-white/10 text-slate-500 hover:text-white transition-all mb-4">
            <ArrowLeft size={18} />
         </button>
         <Logo size={80} animated={true} />
-        <div>
-          <h1 className="text-4xl md:text-5xl font-black italic text-white uppercase tracking-tighter leading-none">
-            {isLogin ? (isZh ? '登录实验室' : 'Welcome Back') : (isZh ? '创建账号' : 'Join SomnoAI')}
+        <div className="space-y-4">
+          <h1 className="text-3xl md:text-5xl font-black italic text-white uppercase tracking-tighter leading-tight flex flex-col items-center">
+            <span>{isLogin ? (isZh ? '登录' : 'Login to') : (isZh ? '加入' : 'Join')}</span>
+            <span className="text-indigo-400">SomnoAI Digital Sleep Lab</span>
           </h1>
-          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] mt-4 italic">
+          <p className="text-slate-500 font-bold uppercase text-[10px] tracking-[0.4em] italic">
             {isZh ? '数字化睡眠实验室 • 安全加密访问' : 'Secure Digital Laboratory Access'}
           </p>
         </div>
       </m.div>
 
-      <div className="w-full max-w-[420px] space-y-10 relative z-10">
+      <div className="w-full max-w-[420px] space-y-8 relative z-10">
         <button 
           onClick={() => authApi.signInWithGoogle()}
           className="w-full py-6 rounded-full bg-white text-black font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-4 shadow-2xl hover:bg-slate-200 transition-all active:scale-95"
         >
           <Chrome size={20} />
-          {isLogin ? (isZh ? '使用 Google 登录' : 'Continue with Google') : (isZh ? '使用 Google 注册' : 'Sign up with Google')}
+          {isLogin ? (isZh ? '使用 Google 登录' : 'Sign in with Google') : (isZh ? '使用 Google 注册' : 'Sign up with Google')}
         </button>
 
         <div className="flex items-center gap-4 opacity-20">
@@ -104,12 +105,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
             {!isLogin && (
               <div className="relative">
                 <User className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
-                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={isZh ? "真实姓名" : "Your Full Name"} className="w-full bg-[#050a1f] border border-white/5 rounded-full pl-16 pr-10 py-6 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
+                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={isZh ? "您的真实姓名" : "Your Full Name"} className="w-full bg-[#050a1f] border border-white/5 rounded-full pl-16 pr-10 py-6 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
               </div>
             )}
             <div className="relative">
               <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={isZh ? "电子邮箱" : "Email Address"} className="w-full bg-[#050a1f] border border-white/5 rounded-full pl-16 pr-10 py-6 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={isZh ? "电子邮箱地址" : "Email Address"} className="w-full bg-[#050a1f] border border-white/5 rounded-full pl-16 pr-10 py-6 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic" required />
             </div>
             <div className="relative">
               <Lock className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={18} />
@@ -127,34 +128,44 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
             className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-[12px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 transition-all hover:bg-indigo-500 disabled:opacity-40 italic"
           >
             {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} fill="currentColor" />}
-            <span>{isLogin ? (isZh ? '进入实验室' : 'Login to Lab') : (isZh ? '完成注册' : 'Create Registry')}</span>
+            <span>{isLogin ? (isZh ? '进入实验室' : 'Login to Lab') : (isZh ? '建立注册表' : 'Create Registry')}</span>
           </button>
         </form>
 
         <div className="flex flex-col items-center gap-6 pt-4">
           <p className="text-[11px] font-bold text-slate-500 uppercase tracking-widest">
-            {isLogin ? (isZh ? "还没有账号？" : "New to SomnoAI? ") : (isZh ? "已有账号？" : "Already registered? ")}
+            {isLogin ? (isZh ? "还没有实验室账号？" : "New to the Lab? ") : (isZh ? "已有注册记录？" : "Already registered? ")}
             <button type="button" onClick={() => {
-              setActiveTab(isLogin ? 'signup' : 'login');
-              window.history.pushState(null, '', isLogin ? '/signup' : '/login');
+              const nextTab = isLogin ? 'signup' : 'login';
+              setActiveTab(nextTab);
+              window.history.pushState(null, '', `/${nextTab}`);
             }} className="text-indigo-400 underline underline-offset-4 ml-2">
-              {isLogin ? (isZh ? '立即注册' : 'Sign Up') : (isZh ? '去登录' : 'Sign In')}
+              {isLogin ? (isZh ? '立即注册' : 'Sign Up') : (isZh ? '立即登录' : 'Sign In')}
             </button>
           </p>
           <button onClick={onGuest} className="text-slate-800 text-[10px] font-black uppercase tracking-[0.5em] hover:text-slate-500 transition-colors italic">Sandbox Override</button>
         </div>
 
         {error && (
-          <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-[2.5rem] flex items-start gap-4">
+          <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-[2.5rem] flex items-start gap-4">
             <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={18} />
-            <p className="text-[10px] font-bold text-rose-400 uppercase italic leading-relaxed">{error.message}</p>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold text-rose-400 uppercase italic leading-relaxed">{error.message}</p>
+              <button onClick={() => window.location.reload()} className="text-[9px] font-black text-rose-300 underline uppercase tracking-widest">Refresh Node</button>
+            </div>
           </m.div>
         )}
       </div>
 
-      <footer className="mt-24 opacity-20 flex items-center gap-3">
-         <ShieldCheck size={14} className="text-emerald-500" />
-         <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">End-to-End Encrypted Secure Link</span>
+      <footer className="mt-20 flex flex-col items-center gap-4 text-center">
+         <div className="flex items-center gap-3 px-6 py-2 bg-emerald-500/5 border border-emerald-500/10 rounded-full">
+            <Link2 size={12} className="text-emerald-500" />
+            <span className="text-[9px] font-black uppercase tracking-widest text-emerald-500/60">{isZh ? '端到端加密安全链接' : 'End-to-End Encrypted Secure Link'}</span>
+         </div>
+         <div className="flex items-center gap-3 opacity-30">
+            <ShieldCheck size={14} className="text-slate-400" />
+            <span className="text-[9px] font-black uppercase tracking-[0.3em] text-slate-600">@2026 SomnoAI Digital Sleep Lab • Neural Infrastructure</span>
+         </div>
       </footer>
     </div>
   );

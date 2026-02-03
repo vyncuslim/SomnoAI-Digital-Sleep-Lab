@@ -1,11 +1,11 @@
-
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { 
   Users, ShieldAlert, RefreshCw, Loader2, ChevronLeft, 
   ShieldCheck, Ban, Crown, Globe, Terminal as TerminalIcon, X, Cpu,
   LayoutDashboard, Activity, ChevronRight, Send, Fingerprint, Lock, 
   List, Unlock, Mail, ExternalLink, ActivitySquare, Copy, Clock, Check, 
-  AlertTriangle, AlertCircle, Database, Search, ShieldX, Plus, MailPlus, Play
+  AlertTriangle, AlertCircle, Database, Search, ShieldX, Plus, MailPlus, Play,
+  UserCheck, UserX, Settings2, MoreHorizontal, UserCog
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -24,6 +24,13 @@ const DATABASE_SCHEMA = [
   { id: 'user_data', name: 'Biological Metrics', group: 'Core', icon: Fingerprint, desc: 'Subject-specific biometric data and physiological metadata.' }
 ];
 
+const ROLE_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
+  user: { label: 'RESEARCHER', icon: Activity, color: 'text-slate-400' },
+  editor: { label: 'ANALYST', icon: UserCog, color: 'text-indigo-400' },
+  admin: { label: 'SUPERVISOR', icon: ShieldCheck, color: 'text-emerald-400' },
+  owner: { label: 'DIRECTOR', icon: Crown, color: 'text-amber-400' }
+};
+
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
@@ -35,6 +42,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [recipients, setRecipients] = useState<any[]>([]);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
+  const [registrySearch, setRegistrySearch] = useState('');
   
   const syncTimeoutRef = useRef<any>(null);
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -71,13 +79,32 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const handleUpdateRole = async (userId: string, email: string, newRole: string) => {
+    try {
+      const { error } = await adminApi.updateUserRole(userId, email, newRole);
+      if (error) throw error;
+      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
+  const handleToggleBlock = async (userId: string, email: string, isBlocked: boolean) => {
+    try {
+      const { error } = await adminApi.toggleBlock(userId, email, isBlocked);
+      if (error) throw error;
+      setUsers(users.map(u => u.id === userId ? { ...u, is_blocked: !isBlocked } : u));
+    } catch (err: any) {
+      setActionError(err.message);
+    }
+  };
+
   const handleManualSync = async () => {
     if (syncState === 'RUNNING') return;
     
     setSyncState('RUNNING');
     setActionError(null);
 
-    // Watchdog timer: If request takes > 15s, mark as STALLED
     syncTimeoutRef.current = setTimeout(() => {
       setSyncState(prev => prev === 'RUNNING' ? 'STALLED' : prev);
     }, 15000);
@@ -116,6 +143,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
+  const filteredUsers = users.filter(u => 
+    u.email?.toLowerCase().includes(registrySearch.toLowerCase()) || 
+    u.full_name?.toLowerCase().includes(registrySearch.toLowerCase())
+  );
+
   const status = getStatusDisplay();
 
   return (
@@ -132,7 +164,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </div>
         
         <nav className="flex p-1 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
-          {['overview', 'automation', 'registry', 'explorer', 'signals', 'system'].map((tab) => (
+          {['overview', 'registry', 'automation', 'signals', 'system'].map((tab) => (
             <button 
               key={tab} 
               onClick={() => setActiveTab(tab as AdminTab)} 
@@ -152,9 +184,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           </div>
         ) : (
           <m.div key={activeTab} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="space-y-10">
+            
             {activeTab === 'overview' && (
               <div className="space-y-10">
-                {/* Stats Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {DATABASE_SCHEMA.slice(0, 4).map((stat, i) => (
                     <GlassCard key={i} className="p-8 rounded-[3rem] border-white/5">
@@ -168,7 +200,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                 </div>
 
-                {/* GA4 Sync Protocol Panel */}
                 <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${['ERRORED', 'FORBIDDEN', 'STALLED'].includes(syncState) ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
                    <div className="flex flex-col md:flex-row items-center justify-between gap-10">
                       <div className="flex items-center gap-8 text-left">
@@ -184,7 +215,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       </div>
 
                       <div className="w-full md:w-auto flex flex-col md:flex-row items-center gap-6">
-                        {/* Persistent Status Indicator */}
                         <div className={`flex items-center gap-3 px-6 py-3 rounded-full border border-white/5 ${status.bg} transition-all duration-500 min-w-[140px] justify-center shadow-lg shadow-black/20`}>
                            <div className={`w-2 h-2 rounded-full ${status.color} ${status.pulse ? 'animate-pulse' : ''} shadow-[0_0_10px_currentColor]`} />
                            <span className={`text-[10px] font-black uppercase tracking-[0.2em] italic ${status.color}`}>
@@ -202,14 +232,99 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         </button>
                       </div>
                    </div>
-
-                   {actionError && (
-                     <div className="mt-8 p-6 bg-rose-600/10 border border-rose-500/20 rounded-[2rem] flex items-center gap-4">
-                        <AlertTriangle className="text-rose-500 shrink-0" size={20} />
-                        <p className="text-[11px] font-bold text-rose-400 italic">GATEWAY_FAULT: {actionError}</p>
-                     </div>
-                   )}
                 </GlassCard>
+              </div>
+            )}
+
+            {activeTab === 'registry' && (
+              <div className="space-y-8">
+                <div className="flex flex-col md:flex-row justify-between gap-6 px-2">
+                   <div className="relative flex-1 max-w-xl">
+                      <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={20} />
+                      <input 
+                        type="text" value={registrySearch} onChange={(e) => setRegistrySearch(e.target.value)}
+                        placeholder="Search Identity, Email, or Hash..."
+                        className="w-full bg-slate-900/60 border border-white/10 rounded-full pl-16 pr-8 py-5 text-sm text-white focus:border-indigo-500/50 outline-none italic font-bold"
+                      />
+                   </div>
+                   <div className="flex items-center gap-4 bg-black/40 px-6 py-2 rounded-full border border-white/5">
+                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Nodes:</span>
+                      <span className="text-xl font-black italic text-white leading-none">{users.length}</span>
+                   </div>
+                </div>
+
+                <GlassCard className="rounded-[4rem] border-white/5 overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead>
+                        <tr className="border-b border-white/5 bg-white/[0.02]">
+                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Identity Node</th>
+                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Clearance Level</th>
+                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Node Status</th>
+                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic text-right">System Override</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {filteredUsers.map((u) => (
+                          <tr key={u.id} className="group hover:bg-white/[0.01] transition-colors">
+                            <td className="px-8 py-7">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-black italic shadow-inner">
+                                  {u.full_name?.[0] || '?'}
+                                </div>
+                                <div>
+                                  <p className="text-sm font-black italic text-white uppercase tracking-tight">{u.full_name || 'UNINITIALIZED'}</p>
+                                  <p className="text-[10px] font-mono text-slate-600">{u.email}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-8 py-7">
+                               <div className="flex items-center gap-3">
+                                  <select 
+                                    value={u.role} 
+                                    disabled={u.is_super_owner}
+                                    onChange={(e) => handleUpdateRole(u.id, u.email, e.target.value)}
+                                    className={`bg-slate-900/60 border border-white/5 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-indigo-500/50 cursor-pointer transition-all ${ROLE_CONFIG[u.role]?.color || 'text-slate-400'}`}
+                                  >
+                                    <option value="user">User</option>
+                                    <option value="editor">Editor</option>
+                                    <option value="admin">Admin</option>
+                                    {u.role === 'owner' && <option value="owner">Owner</option>}
+                                  </select>
+                                  {u.is_super_owner && <Crown size={14} className="text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" />}
+                               </div>
+                            </td>
+                            <td className="px-8 py-7">
+                               <div className="flex items-center gap-2">
+                                  <div className={`w-1.5 h-1.5 rounded-full ${u.is_blocked ? 'bg-rose-500' : 'bg-emerald-500'} animate-pulse`} />
+                                  <span className={`text-[9px] font-black uppercase tracking-widest ${u.is_blocked ? 'text-rose-500' : 'text-emerald-500'}`}>
+                                    {u.is_blocked ? 'LINK_VOIDED' : 'OPERATIONAL'}
+                                  </span>
+                               </div>
+                            </td>
+                            <td className="px-8 py-7 text-right">
+                               <button 
+                                 onClick={() => handleToggleBlock(u.id, u.email, u.is_blocked)}
+                                 disabled={u.is_super_owner || u.id === currentAdmin?.id}
+                                 className={`p-3 rounded-2xl transition-all active:scale-90 ${u.is_blocked ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'} disabled:opacity-20`}
+                               >
+                                 {u.is_blocked ? <Unlock size={18} /> : <Ban size={18} />}
+                               </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </GlassCard>
+              </div>
+            )}
+
+            {actionError && (
+              <div className="p-6 bg-rose-600/10 border border-rose-500/20 rounded-[2rem] flex items-center gap-4 mx-2">
+                 <AlertTriangle className="text-rose-500 shrink-0" size={20} />
+                 <p className="text-[11px] font-bold text-rose-400 italic">SYSTEM_SIGNAL_INTERRUPTED: {actionError}</p>
+                 <button onClick={() => setActionError(null)} className="ml-auto p-2 text-rose-400 hover:text-white transition-colors"><X size={16} /></button>
               </div>
             )}
           </m.div>

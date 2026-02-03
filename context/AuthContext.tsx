@@ -1,9 +1,8 @@
-
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient.ts';
 import { logAuditLog } from '../services/supabaseService.ts';
 
-export type UserRole = "user" | "admin" | "owner";
+export type UserRole = "user" | "editor" | "admin" | "owner";
 
 export interface Profile {
   id: string;
@@ -19,6 +18,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   isOwner: boolean;
+  isEditor: boolean;
   isSuperOwner: boolean;
   refresh: () => Promise<void>;
 }
@@ -28,6 +28,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAdmin: false,
   isOwner: false,
+  isEditor: false,
   isSuperOwner: false,
   refresh: async () => {}
 });
@@ -110,6 +111,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     profile, loading,
     isAdmin: profile?.role === "admin" || profile?.role === "owner" || profile?.is_super_owner === true,
     isOwner: profile?.role === "owner" || profile?.is_super_owner === true,
+    isEditor: profile?.role === "editor" || profile?.role === "admin" || profile?.role === "owner" || profile?.is_super_owner === true,
     isSuperOwner: profile?.is_super_owner === true,
     refresh: fetchProfile
   };
