@@ -2,12 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut as DisconnectIcon, ShieldCheck, 
-  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy, Key, Eye, EyeOff, Save, Trash2
+  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy, Key, Eye, EyeOff, Save, Trash2, Send, X, Activity
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ExitFeedbackModal } from './ExitFeedbackModal.tsx';
+import { systemMonitor } from '../services/systemMonitor.ts';
 
 const m = motion as any;
 
@@ -26,6 +27,10 @@ export const Settings: React.FC<SettingsProps> = ({
   const [customKey, setCustomKey] = useState(localStorage.getItem('somno_custom_key') || '');
   const [showKey, setShowKey] = useState(false);
   const [isSavingKey, setIsSavingKey] = useState(false);
+  
+  // Diagnostic State
+  const [diagStatus, setDiagStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
+  const [showDiag, setShowDiag] = useState(true);
 
   const t = translations[lang]?.settings || translations.en.settings;
 
@@ -54,6 +59,27 @@ export const Settings: React.FC<SettingsProps> = ({
     localStorage.removeItem('somno_custom_key');
   };
 
+  const handleInitiateDiagnostic = async () => {
+    if (diagStatus === 'running') return;
+    setDiagStatus('running');
+    
+    try {
+      // 1. Trigger the n8n Webhook provided by the user
+      const n8nWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/cda60c28-bcdd-417a-8a71-93eae9ee6c01";
+      await fetch(n8nWebhook, { method: 'GET', mode: 'no-cors' }); // no-cors to bypass potential CORS issues for diagnostic fire-and-forget
+      
+      // 2. Trigger the internal mirrored signal (TG + Email)
+      await systemMonitor.executeGlobalPulseCheck();
+      
+      setDiagStatus('success');
+      setTimeout(() => setDiagStatus('idle'), 3000);
+    } catch (err) {
+      console.error("Diagnostic Node Failure:", err);
+      setDiagStatus('error');
+      setTimeout(() => setDiagStatus('idle'), 3000);
+    }
+  };
+
   return (
     <div className="space-y-8 pb-48 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
       <header className="flex flex-col gap-2 pt-8">
@@ -64,6 +90,55 @@ export const Settings: React.FC<SettingsProps> = ({
       </header>
 
       <div className="flex flex-col gap-6">
+        {/* Comms Diagnostic Panel */}
+        <AnimatePresence>
+          {showDiag && (
+            <m.div 
+              initial={{ opacity: 0, height: 0 }} 
+              animate={{ opacity: 1, height: 'auto' }} 
+              exit={{ opacity: 0, height: 0 }}
+            >
+              <GlassCard className="p-8 rounded-[3rem] border-amber-500/20 bg-amber-500/[0.02] space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Activity size={18} className="text-amber-500" />
+                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Comms Diagnostic</h3>
+                  </div>
+                  <button onClick={() => setShowDiag(false)} className="p-2 text-slate-600 hover:text-white transition-all">
+                    <X size={14} />
+                  </button>
+                </div>
+                
+                <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                  Trigger a mirrored test signal to verify Telegram and Email notification nodes.
+                </p>
+
+                <div className="flex gap-3">
+                  <button 
+                    onClick={handleInitiateDiagnostic}
+                    disabled={diagStatus === 'running'}
+                    className={`flex-1 py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all italic shadow-lg ${
+                      diagStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                      diagStatus === 'error' ? 'bg-rose-600 text-white' : 
+                      'bg-white/5 text-amber-500 border border-amber-500/30 hover:bg-white/10'
+                    }`}
+                  >
+                    {diagStatus === 'running' ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
+                    {diagStatus === 'running' ? 'EXECUTING...' : diagStatus === 'success' ? 'SIGNAL_DISPATCHED' : 'INITIATE_DIAGNOSTIC'}
+                  </button>
+                  
+                  <button 
+                    onClick={() => setShowDiag(false)}
+                    className="px-8 py-4 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[10px] uppercase tracking-widest hover:text-white transition-all italic"
+                  >
+                    关闭
+                  </button>
+                </div>
+              </GlassCard>
+            </m.div>
+          )}
+        </AnimatePresence>
+
         {/* API Status & Input Panel */}
         <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.03] space-y-8">
           <div className="flex items-center justify-between">
