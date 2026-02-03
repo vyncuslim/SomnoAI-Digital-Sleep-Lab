@@ -10,7 +10,7 @@ import {
   HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
   Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle, Key,
   ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame, Activity as MonitoringIcon, Eye, ChevronDown,
-  Calendar, ShieldX
+  Calendar, ShieldX, Plus, MailPlus
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -40,10 +40,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   
   const [users, setUsers] = useState<any[]>([]);
   const [signals, setSignals] = useState<any[]>([]);
+  const [recipients, setRecipients] = useState<any[]>([]);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [lastRawError, setLastRawError] = useState<any>(null);
   
+  const [newEmail, setNewEmail] = useState('');
+  const [newLabel, setNewLabel] = useState('');
+  const [isAddingRecipient, setIsAddingRecipient] = useState(false);
+
   const [serverPulse, setServerPulse] = useState<any>(null);
   const [saEmail, setSaEmail] = useState<string>("");
 
@@ -70,13 +75,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const profile = await adminApi.getAdminClearance(user.id);
       setCurrentAdmin(profile);
 
-      const [sRes, uRes] = await Promise.allSettled([
+      const [sRes, uRes, rRes] = await Promise.allSettled([
         adminApi.getSecurityEvents(100),
-        adminApi.getUsers()
+        adminApi.getUsers(),
+        adminApi.getNotificationRecipients()
       ]);
 
       setSignals(sRes.status === 'fulfilled' ? sRes.value : []);
       setUsers(uRes.status === 'fulfilled' ? uRes.value : []);
+      setRecipients(rRes.status === 'fulfilled' ? rRes.value.data : []);
       
       const counts: Record<string, number> = {};
       for (const t of DATABASE_SCHEMA) {
@@ -93,6 +100,34 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   }, [fetchServerPulse]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
+
+  const handleAddRecipient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newEmail.trim() || isAddingRecipient) return;
+    setIsAddingRecipient(true);
+    try {
+      const { error } = await adminApi.addNotificationRecipient(newEmail, newLabel || 'Standard Recipient');
+      if (error) throw error;
+      setNewEmail('');
+      setNewLabel('');
+      fetchData();
+    } catch (err: any) {
+      alert(`Registration failed: ${err.message}`);
+    } finally {
+      setIsAddingRecipient(false);
+    }
+  };
+
+  const handleRemoveRecipient = async (id: string, email: string) => {
+    if (!window.confirm(`Sever notification link for ${email}?`)) return;
+    try {
+      const { error } = await adminApi.removeNotificationRecipient(id, email);
+      if (error) throw error;
+      fetchData();
+    } catch (err: any) {
+      alert(`Severance failed: ${err.message}`);
+    }
+  };
 
   const handleCopy = (text: string, id: string) => {
     navigator.clipboard.writeText(text);
@@ -130,7 +165,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
       const data = await response.json();
-      
       if (response.ok) {
         setSyncState('SYNCED');
         fetchData();
@@ -142,7 +176,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         }
         else if (response.status === 404 || data.is_not_found) setSyncState('NOT_FOUND');
         else setSyncState('ERROR');
-        
         throw new Error(data.message || data.error || "Sync gateway protocol violation.");
       }
     } catch (e: any) {
@@ -253,7 +286,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         </button>
                       </div>
                    </div>
-
                    <AnimatePresence>
                      {(syncState === 'FORBIDDEN' || syncState === 'ERROR') && (
                        <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="mt-8 pt-8 border-t border-rose-500/20 space-y-6 text-left">
@@ -263,7 +295,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 {syncState === 'FORBIDDEN' ? 'Access Denied: 403 Forbidden' : `Diagnostic: Sync failed at ${lastRawError?.failed_at || 'Handshake'}`}
                              </span>
                           </div>
-                          
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                              <div className="p-6 bg-slate-900/60 rounded-[2rem] border border-white/5 space-y-4">
                                <p className="text-xs text-slate-300 font-bold italic">Resolution Protocol:</p>
@@ -292,12 +323,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                     {copiedKey === 'sa_copy' ? <Check size={10} /> : <Copy size={10} />} Copy Identifier
                                   </button>
                                </div>
-                               <div className="p-6 bg-black/40 border border-white/5 rounded-[2rem] flex flex-col justify-center gap-3">
-                                  <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest">Current Error Payload</span>
-                                  <code className="text-[10px] font-mono text-rose-300 font-bold select-all leading-tight">
-                                    {lastRawError?.message?.substring(0, 100) || 'PROTOCOL_VIOLATION'}
-                                  </code>
-                               </div>
                              </div>
                           </div>
                        </m.div>
@@ -316,7 +341,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   </div>
                   <button onClick={fetchData} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all"><RefreshCw size={18} /></button>
                 </div>
-
                 <div className="grid grid-cols-1 gap-4">
                   {users.length > 0 ? users.map((user) => (
                     <GlassCard key={user.id} className="p-6 md:p-8 rounded-[2.5rem] border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 group">
@@ -334,27 +358,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           <p className="text-[10px] font-mono text-slate-500 uppercase">{user.email}</p>
                         </div>
                       </div>
-
                       <div className="flex items-center gap-4 w-full md:w-auto pt-4 md:pt-0 border-t md:border-t-0 border-white/5">
                         <div className="flex gap-2">
-                           <button 
-                             onClick={() => handleRoleUpdate(user.id, user.email, 'admin')}
-                             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'admin' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600 hover:text-white'}`}
-                           >ADMIN</button>
-                           <button 
-                             onClick={() => handleRoleUpdate(user.id, user.email, 'user')}
-                             className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600 hover:text-white'}`}
-                           >USER</button>
+                           <button onClick={() => handleRoleUpdate(user.id, user.email, 'admin')} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'admin' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600 hover:text-white'}`}>ADMIN</button>
+                           <button onClick={() => handleRoleUpdate(user.id, user.email, 'user')} className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest transition-all ${user.role === 'user' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-600 hover:text-white'}`}>USER</button>
                         </div>
-                        
                         <div className="h-8 w-px bg-white/5 mx-2" />
-                        
-                        <button 
-                          onClick={() => handleToggleBlock(user.id, user.email, !!user.is_blocked)}
-                          className={`p-3 rounded-xl transition-all ${user.is_blocked ? 'bg-rose-600/20 text-rose-500' : 'bg-white/5 text-slate-600 hover:text-rose-500'}`}
-                        >
-                          {user.is_blocked ? <Unlock size={18} /> : <Ban size={18} />}
-                        </button>
+                        <button onClick={() => handleToggleBlock(user.id, user.email, !!user.is_blocked)} className={`p-3 rounded-xl transition-all ${user.is_blocked ? 'bg-rose-600/20 text-rose-500' : 'bg-white/5 text-slate-600 hover:text-rose-500'}`}>{user.is_blocked ? <Unlock size={18} /> : <Ban size={18} />}</button>
                       </div>
                     </GlassCard>
                   )) : (
@@ -373,7 +383,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   </div>
                   <button onClick={fetchData} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all"><RefreshCw size={18} /></button>
                 </div>
-
                 <div className="space-y-4">
                   {signals.length > 0 ? signals.map((sig) => (
                     <GlassCard key={sig.id} className="p-6 rounded-[2rem] border-white/5 flex gap-6 items-start group">
@@ -389,9 +398,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            <span className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{sig.email || 'SYSTEM'}</span>
                         </div>
                         <div className="p-4 bg-black/40 rounded-2xl border border-white/5">
-                           <code className="text-[11px] font-mono text-slate-400 leading-relaxed block break-all whitespace-pre-wrap">
-                             {sig.event_reason || 'No detailed reason provided.'}
-                           </code>
+                           <code className="text-[11px] font-mono text-slate-400 leading-relaxed block break-all whitespace-pre-wrap">{sig.event_reason || 'No detailed reason provided.'}</code>
                         </div>
                       </div>
                     </GlassCard>
@@ -408,7 +415,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   <Database size={24} className="text-emerald-400" />
                   <h2 className="text-2xl font-black italic text-white uppercase">Data Shards</h2>
                 </div>
-
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                    {DATABASE_SCHEMA.map((table) => (
                      <GlassCard key={table.id} className="p-8 rounded-[3rem] border-white/5 space-y-6 flex flex-col justify-between hover:bg-white/[0.02] transition-all">
@@ -443,6 +449,46 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Background Ops Terminal</p>
                   </div>
 
+                  {/* Recipient Matrix Section */}
+                  <GlassCard className="p-10 rounded-[4rem] border-emerald-500/20 bg-emerald-500/[0.02] space-y-10">
+                     <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                           <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400"><MailPlus size={24} /></div>
+                           <h3 className="text-xl font-black italic text-white uppercase">Recipient Matrix</h3>
+                        </div>
+                        <div className="px-4 py-1.5 bg-emerald-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest italic">{recipients.length} ACTIVE</div>
+                     </div>
+
+                     <form onSubmit={handleAddRecipient} className="flex flex-col md:flex-row gap-4">
+                        <input 
+                          type="email" value={newEmail} onChange={(e) => setNewEmail(e.target.value)}
+                          placeholder="New Email Target..."
+                          className="flex-1 bg-black/40 border border-white/5 rounded-full px-8 py-4 text-xs text-white outline-none focus:border-emerald-500/40 transition-all font-bold italic"
+                          required
+                        />
+                        <input 
+                          type="text" value={newLabel} onChange={(e) => setNewLabel(e.target.value)}
+                          placeholder="Label (e.g. CRO)"
+                          className="md:w-40 bg-black/40 border border-white/5 rounded-full px-8 py-4 text-xs text-white outline-none focus:border-emerald-500/40 transition-all font-bold italic"
+                        />
+                        <button type="submit" disabled={isAddingRecipient} className="px-8 py-4 bg-emerald-600 text-white rounded-full font-black text-[10px] uppercase tracking-widest hover:bg-emerald-500 active:scale-95 transition-all flex items-center justify-center gap-2">
+                           {isAddingRecipient ? <Loader2 size={16} className="animate-spin" /> : <Plus size={16} />} ADD LINK
+                        </button>
+                     </form>
+
+                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {recipients.map((rec) => (
+                           <div key={rec.id} className="p-5 bg-black/20 border border-white/5 rounded-3xl flex items-center justify-between group">
+                              <div className="space-y-0.5">
+                                 <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{rec.label}</p>
+                                 <p className="text-xs font-bold text-white italic">{rec.email}</p>
+                              </div>
+                              <button onClick={() => handleRemoveRecipient(rec.id, rec.email)} className="p-2.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-xl opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                           </div>
+                        ))}
+                     </div>
+                  </GlassCard>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                      <GlassCard className="p-10 rounded-[4rem] border-white/5 space-y-8">
                         <div className="flex items-center gap-4">
@@ -457,13 +503,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                               </div>
                               <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[8px] font-black uppercase">Active</div>
                            </div>
-                           <p className="text-[10px] text-slate-600 italic leading-relaxed">The analytics synchronization gateway is currently linked to the Vercel internal cron scheduler. All signals are processed daily at 00:00 UTC.</p>
                         </div>
                         <button onClick={handleManualSync} disabled={syncState === 'SYNCING'} className="w-full py-5 bg-indigo-600 text-white rounded-full font-black text-[10px] uppercase tracking-[0.4em] transition-all hover:bg-indigo-500 flex items-center justify-center gap-3">
                            {syncState === 'SYNCING' ? <Loader2 size={16} className="animate-spin" /> : <Play size={16} />} FORCE FULL SYNC
                         </button>
                      </GlassCard>
-
                      <GlassCard className="p-10 rounded-[4rem] border-rose-500/20 bg-rose-500/[0.02] space-y-8">
                         <div className="flex items-center gap-4">
                            <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><Send size={24} /></div>
@@ -477,7 +521,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                               </div>
                               <div className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[8px] font-black uppercase">Established</div>
                            </div>
-                           <p className="text-[10px] text-slate-600 italic leading-relaxed">Incident alerts are dispatched automatically upon detecting 403, 500, or unauthorized ingress attempts. Multi-lingual mirroring active.</p>
                         </div>
                         <button onClick={() => window.open('https://t.me/somno_lab_bot')} className="w-full py-5 bg-white/5 text-slate-400 border border-white/10 rounded-full font-black text-[10px] uppercase tracking-[0.4em] transition-all hover:text-white flex items-center justify-center gap-3">
                            <ExternalLink size={16} /> VIEW BOT TERMINAL
@@ -494,18 +537,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Infrastructure Management</h2>
                     <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Root Sector Configuration</p>
                  </div>
-
                  <GlassCard className="p-10 rounded-[4rem] border-white/5">
                     <div className="flex justify-between items-center mb-8">
                        <div className="flex items-center gap-4">
                           <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Activity size={24} /></div>
                           <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Environmental Handshake</h3>
                        </div>
-                       <button onClick={fetchServerPulse} className="p-2 bg-white/5 rounded-full text-slate-500 hover:text-indigo-400 transition-all">
-                          <RefreshCw size={16} />
-                       </button>
+                       <button onClick={fetchServerPulse} className="p-2 bg-white/5 rounded-full text-slate-500 hover:text-indigo-400 transition-all"><RefreshCw size={16} /></button>
                     </div>
-
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                        {serverPulse?.env ? Object.entries(serverPulse.env).map(([key, active]) => (
                          <div key={key} className="p-5 bg-black/40 border border-white/5 rounded-3xl flex items-center justify-between">
@@ -519,7 +558,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <div className="col-span-full py-12 text-center italic text-slate-500">Node telemetry unreachable. Check CRON_SECRET.</div>
                        )}
                     </div>
-
                     <div className="mt-8 p-6 bg-indigo-500/5 rounded-[2.5rem] border border-indigo-500/10 flex flex-col md:flex-row items-center justify-between gap-4">
                        <div className="flex items-center gap-4">
                           <Database size={18} className="text-indigo-400" />
@@ -528,16 +566,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                        <p className="text-[10px] font-mono text-slate-600">Runtime: {serverPulse?.vercel_runtime || 'n/a'} • Node {serverPulse?.node_version || 'n/a'}</p>
                     </div>
                  </GlassCard>
-
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <GlassCard className="p-10 rounded-[3.5rem] border-white/5 space-y-6">
                        <div className="flex items-center gap-4">
                          <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400"><Bug size={24} /></div>
                          <h3 className="text-lg font-black italic text-white uppercase tracking-widest">Diagnostics</h3>
                        </div>
-                       <p className="text-[11px] text-slate-500 italic leading-relaxed">
-                         Generate an encrypted telemetry bundle for engineering review. Includes environment variable fingerprints.
-                       </p>
+                       <p className="text-[11px] text-slate-500 italic leading-relaxed">Generate an encrypted telemetry bundle for engineering review.</p>
                        <button onClick={() => {
                          const report = { timestamp: new Date().toISOString(), pulse: serverPulse };
                          handleCopy(JSON.stringify(report, null, 2), 'diag');
@@ -546,15 +581,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <FileJson size={16} /> {copiedKey === 'diag' ? 'COPIED TO CLIPBOARD' : 'GENERATE BUNDLE'}
                        </button>
                     </GlassCard>
-
                     <GlassCard className="p-10 rounded-[3.5rem] border-rose-500/20 bg-rose-500/[0.02] space-y-6">
                        <div className="flex items-center gap-4">
                          <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><Mail size={24} /></div>
                          <h3 className="text-lg font-black italic text-white uppercase tracking-widest">Support Portal</h3>
                        </div>
-                       <p className="text-[11px] text-slate-500 italic leading-relaxed">
-                         Direct priority link to laboratory engineering for mission-critical anomalies.
-                       </p>
+                       <p className="text-[11px] text-slate-500 italic leading-relaxed">Direct priority link to laboratory engineering for mission-critical anomalies.</p>
                        <button onClick={() => window.open('mailto:ongyuze1401@gmail.com')} className="w-full py-5 bg-rose-600/10 hover:bg-rose-600/20 border border-rose-500/20 text-rose-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3">
                          <Send size={16} /> DISPATCH MESSAGE
                        </button>
@@ -569,7 +601,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   );
 };
 
-// Internal sub-component for Play icon since it wasn't imported from lucide
+// Internal sub-component for Play icon
 const Play = ({ size }: { size: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="currentColor" stroke="none">
     <path d="M5 3l14 9-14 9V3z" />

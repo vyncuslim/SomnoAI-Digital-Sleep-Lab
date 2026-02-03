@@ -1,205 +1,149 @@
 
+// @ts-ignore
 import { supabase } from '../lib/supabaseClient.ts';
 import { notifyAdmin } from './telegramService.ts';
 import { emailService } from './emailService.ts';
 
+// Re-export supabase client for use in other components
 export { supabase };
 
 /**
- * SOMNO LAB AUDIT PROTOCOL v16.0
- * Features: Identity Synthesis and Recursion Ingress Guard.
+ * LOG_AUDIT_LOG
+ * Centrally manages system audit logs and triggers dual-channel administrative alerts
+ * for critical events or security-related actions.
  */
-export const logAuditLog = async (action: string, details: string, level: 'INFO' | 'WARNING' | 'CRITICAL' = 'INFO') => {
-  const actionKey = action.toUpperCase();
-  
-  // 核心拦截逻辑：防止告警死循环
-  // 如果错误包含 [Email_Bridge] 或 SMTP_CONFIG_VOID，我们仅写入数据库，不触发后续告警通知
-  const isEmailError = details.includes('[Email_Bridge]') || details.includes('SMTP_CONFIG_VOID');
-  
-  const sensitiveActions = [
-    'ADMIN_ROLE_CHANGE', 'ADMIN_USER_BLOCK', 'SECURITY_BREACH_ATTEMPT', 
-    'SYSTEM_EXCEPTION', 'ADMIN_MANUAL_SYNC', 'USER_LOGIN', 'USER_SIGNUP',
-    'OTP_VERIFY_SUCCESS', 'RUNTIME_ERROR', 'ASYNC_HANDSHAKE_VOID',
-    'PW_UPDATE_SUCCESS', 'PERMISSION_DENIED', 'GA4_SYNC_FAILURE', 'CONSOLE_ERROR_PROXIED'
-  ];
-  
-  const shouldNotify = (level === 'CRITICAL' || level === 'WARNING' || sensitiveActions.includes(actionKey)) && !isEmailError;
-
+export const logAuditLog = async (action: string, details: string, level: string = 'INFO') => {
   try {
-    const { data: { session } } = await (supabase.auth as any).getSession();
-    const currentPath = typeof window !== 'undefined' ? 
-      (window.location.hash.replace(/^#\/?/, '') || 'home') : 'cloud_logic';
-
-    // 1. 发送 Telegram/邮件通知
-    if (shouldNotify) {
-      const source = actionKey.startsWith('ADMIN_') || currentPath.includes('admin') 
-        ? 'ADMIN_CONSOLE' : 'USER_TERMINAL';
-
-      const alertPayload = {
-        source,
-        path: currentPath,
-        type: actionKey,
-        message: details,
-        error: level === 'CRITICAL' ? details : undefined
-      };
-
-      // 异步分发通知
-      emailService.sendAdminAlert(alertPayload).catch(() => {});
-      notifyAdmin(alertPayload).catch(() => {});
-    }
-
-    // 2. 将日志存入数据库
-    await supabase.from('audit_logs').insert([{
-      action: actionKey,
-      details: details,
-      level: level,
-      user_id: session?.user?.id || null
-    }]).select('id');
+    const { data: { user } } = await (supabase.auth as any).getUser();
+    const { error } = await supabase.from('audit_logs').insert([{
+      action,
+      details,
+      level,
+      user_id: user?.id
+    }]);
     
+    // Auto-alerting protocol for high-priority signals
+    if (level === 'CRITICAL' || level === 'WARNING' || action === 'USER_LOGIN') {
+      const payload = { type: action, message: details, path: 'System_Audit' };
+      await Promise.allSettled([
+        notifyAdmin(payload),
+        emailService.sendAdminAlert(payload)
+      ]);
+    }
+    return !error;
   } catch (e) {
-    console.debug("Audit record deferred due to link latency.");
+    console.error("Audit log dispatch failed:", e);
+    return false;
   }
 };
 
 /**
- * SECURITY PULSE INGRESS
- */
-const logSecurityEvent = async (email: string, type: string, details: string) => {
-  try {
-    const targetEmail = email.trim().toLowerCase();
-    await supabase.from('security_events').insert([{ 
-      email: targetEmail, 
-      event_type: type, 
-      event_reason: details 
-    }]);
-  } catch (e) {}
-};
-
-/**
- * AUTH API
+ * AUTH_API
+ * Manages identity lifecycle and authentication handshakes.
  */
 export const authApi = {
-  signInWithGoogle: async () => {
-    return await (supabase.auth as any).signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-        queryParams: { access_type: 'offline', prompt: 'consent' }
-      }
-    });
-  },
-  signIn: async (email: string, password: string, captchaToken?: string) => {
-    const targetEmail = email.trim().toLowerCase();
-    await logSecurityEvent(targetEmail, 'LOGIN_ATTEMPT', 'Handshake initiated');
-    
-    const res = await (supabase.auth as any).signInWithPassword({ 
-      email: targetEmail, 
-      password,
-      options: { captchaToken }
-    });
-
-    if (res.error) {
-      await logSecurityEvent(targetEmail, 'LOGIN_FAIL', `Error: ${res.error.message}`);
-      await logAuditLog('LOGIN_ATTEMPT_FAIL', `Email: ${targetEmail}, Reason: ${res.error.message}`, 'WARNING');
-    }
-    return res;
-  },
-  signUp: async (email: string, password: string, options: any, captchaToken?: string) => {
-    const targetEmail = email.trim().toLowerCase();
-    const res = await (supabase.auth as any).signUp({ 
-      email: targetEmail, 
-      password, 
-      options: { ...options, captchaToken } 
-    });
-    if (!res.error) {
-      await logAuditLog('USER_SIGNUP', `New subject node: ${targetEmail}`);
-    }
-    return res;
-  },
-  sendOTP: async (email: string, captchaToken?: string) => {
-    return await (supabase.auth as any).signInWithOtp({ 
-      email: email.trim().toLowerCase(),
-      options: { captchaToken }
-    });
-  },
-  verifyOTP: async (email: string, token: string) => {
-    const res = await (supabase.auth as any).verifyOtp({ email: email.trim().toLowerCase(), token, type: 'email' });
-    if (!res.error) {
-      await logAuditLog('OTP_VERIFY_SUCCESS', `Verified via OTP: ${email}`);
-    }
-    return res;
-  },
-  resetPassword: async (email: string) => {
-    return await (supabase.auth as any).resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/#update-password`
-    });
-  },
-  updatePassword: async (newPassword: string) => {
-    const res = await (supabase.auth as any).updateUser({ password: newPassword });
-    if (!res.error) {
-       const { data: { user } } = await (supabase.auth as any).getUser();
-       await logAuditLog('PW_UPDATE_SUCCESS', `Access key rotation: ${user?.email}`);
-    }
-    return res;
-  },
-  signOut: async () => {
-    const { data: { session } } = await (supabase.auth as any).getSession();
-    if (session?.user) {
-      await logAuditLog('USER_LOGOUT', `Session terminated: ${session.user.email}`);
-    }
-    return await (supabase.auth as any).signOut();
-  }
+  signIn: (email: string, password: string, captchaToken?: string) => 
+    (supabase.auth as any).signInWithPassword({ email, password, options: { captchaToken } }),
+  
+  signUp: (email: string, password: string, metadata: any, captchaToken?: string) => 
+    (supabase.auth as any).signUp({ email, password, options: { data: metadata, captchaToken } }),
+  
+  signOut: () => (supabase.auth as any).signOut(),
+  
+  sendOTP: (email: string, captchaToken?: string) => 
+    (supabase.auth as any).signInWithOtp({ email, options: { captchaToken } }),
+  
+  verifyOTP: (email: string, token: string) => 
+    (supabase.auth as any).verifyOtp({ email, token, type: 'email' }),
+  
+  updatePassword: (password: string) => 
+    (supabase.auth as any).updateUser({ password }),
+  
+  signInWithGoogle: () => 
+    (supabase.auth as any).signInWithOAuth({ 
+      provider: 'google', 
+      options: { redirectTo: window.location.origin } 
+    })
 };
 
+/**
+ * ADMIN_API
+ * Restricted operations for laboratory oversight and infrastructure management.
+ */
 export const adminApi = {
-  getAdminClearance: async (userId: string) => {
-    const { data } = await supabase.rpc('get_my_detailed_profile');
-    return data?.[0] || null;
+  getAdminClearance: async (id: string) => {
+    const { data } = await supabase.from('profiles').select('*').eq('id', id).single();
+    return data;
   },
-  checkAdminStatus: async (): Promise<boolean> => {
-    try {
-      const { data } = await supabase.rpc('get_my_detailed_profile');
-      if (!data || data.length === 0) return false;
-      const p = data[0];
-      return ['admin', 'owner'].includes(p.role?.toLowerCase()) || p.is_super_owner === true;
-    } catch { return false; }
-  },
-  getUsers: async () => {
-    const { data } = await supabase.rpc('admin_get_all_profiles');
-    return data || [];
-  },
-  getTableCount: async (tableName: string) => {
-    const { count, error } = await supabase.from(tableName).select('*', { count: 'exact', head: true });
-    return error ? 0 : (count || 0);
-  },
-  getSecurityEvents: async (limit = 50) => {
+  
+  getSecurityEvents: async (limit = 100) => {
     const { data } = await supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(limit);
     return data || [];
   },
-  toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
-    const newState = !currentlyBlocked;
-    const { error } = await supabase.rpc('admin_toggle_block', { target_user_id: id });
-    if (!error) {
-      await logAuditLog('ADMIN_USER_BLOCK', `${newState ? 'BLOCKED' : 'UNBLOCKED'} node: ${email}`, newState ? 'WARNING' : 'INFO');
-    }
-    return { error };
-  },
-  updateUserRole: async (id: string, email: string, newRole: string) => {
-    const { error } = await supabase.rpc('admin_update_user_role', { 
-      target_user_id: id, 
-      new_role: newRole 
-    });
-    if (!error) {
-      await logAuditLog('ADMIN_ROLE_CHANGE', `Role set to ${newRole.toUpperCase()} for node: ${email}`, 'WARNING');
-    }
-    return { error };
-  },
-  getDailyAnalytics: async (days: number = 30) => {
-    const { data } = await supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(days);
+  
+  getUsers: async () => {
+    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
     return data || [];
+  },
+  
+  getTableCount: async (table: string) => {
+    const { count } = await supabase.from(table).select('*', { count: 'exact', head: true });
+    return count || 0;
+  },
+  
+  updateUserRole: async (id: string, email: string, role: string) => {
+    const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
+    if (!error) await logAuditLog('ADMIN_ROLE_UPDATE', `Node ${email} escalated to ${role}`, 'WARNING');
+    return { error };
+  },
+  
+  toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
+    const { error } = await supabase.from('profiles').update({ is_blocked: !currentlyBlocked }).eq('id', id);
+    if (!error) await logAuditLog('ADMIN_BLOCK_TOGGLE', `${currentlyBlocked ? 'Unblocked' : 'Blocked'} node ${email}`, 'WARNING');
+    return { error };
+  },
+  
+  checkAdminStatus: async () => {
+    const { data: { user } } = await (supabase.auth as any).getUser();
+    if (!user) return false;
+    const { data } = await supabase.from('profiles').select('role').eq('id', user.id).single();
+    return data?.role === 'admin' || data?.role === 'owner';
+  },
+  
+  getNotificationRecipients: async () => {
+    const { data, error } = await supabase
+      .from('notification_recipients')
+      .select('*')
+      .order('created_at', { ascending: true });
+    return { data: data || [], error };
+  },
+  
+  addNotificationRecipient: async (email: string, label: string) => {
+    const { data, error } = await supabase
+      .from('notification_recipients')
+      .insert([{ email: email.toLowerCase().trim(), label }]);
+    if (!error) {
+      await logAuditLog('ADMIN_RECIPIENT_ADDED', `New link established: ${email}`, 'WARNING');
+    }
+    return { data, error };
+  },
+  
+  removeNotificationRecipient: async (id: string, email: string) => {
+    const { error } = await supabase
+      .from('notification_recipients')
+      .delete()
+      .eq('id', id);
+    if (!error) {
+      await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Link severed: ${email}`, 'WARNING');
+    }
+    return { error };
   }
 };
 
+/**
+ * PROFILE_API
+ * Subject identity management.
+ */
 export const profileApi = {
   getMyProfile: async () => {
     const { data: { user } } = await (supabase.auth as any).getUser();
@@ -207,12 +151,17 @@ export const profileApi = {
     const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
     return data;
   },
+  
   updateProfile: async (updates: any) => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    return await supabase.from('profiles').update(updates).eq('id', user.id);
+    return supabase.from('profiles').update(updates).eq('id', user.id);
   }
 };
 
+/**
+ * USER_DATA_API
+ * Biological metric persistence and initial subject registration.
+ */
 export const userDataApi = {
   getUserData: async () => {
     const { data: { user } } = await (supabase.auth as any).getUser();
@@ -220,54 +169,55 @@ export const userDataApi = {
     const { data } = await supabase.from('user_data').select('*').eq('id', user.id).single();
     return data;
   },
+  
   updateUserData: async (updates: any) => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    return await supabase.from('user_data').upsert({ user_id: user.id, ...updates });
+    return supabase.from('user_data').upsert({ id: user.id, ...updates });
   },
+  
   completeSetup: async (fullName: string, metrics: any) => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    await supabase.from('profiles').update({ full_name: fullName }).eq('id', user?.id);
-    await supabase.from('user_data').upsert({ user_id: user?.id, ...metrics });
+    const profileRes = await supabase.from('profiles').update({ full_name: fullName }).eq('id', user.id);
+    if (profileRes.error) throw profileRes.error;
+    const dataRes = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
+    if (dataRes.error) throw dataRes.error;
     return { success: true };
   }
 };
 
+/**
+ * FEEDBACK_API
+ * Handles user-submitted anomalies and grid improvement proposals.
+ */
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
-    if (error) return { success: false, error };
-
-    const isRating = content.includes('[RATING:');
-    const alertType = isRating ? 'USER_SESSION_EVALUATION' : `USER_FEEDBACK_${type.toUpperCase()}`;
-    
-    const alertPayload = {
-      source: 'USER_TERMINAL',
-      path: 'feedback',
-      type: alertType,
-      message: `From: ${email}\n${content}`
-    };
-    
-    // 分发通知
-    emailService.sendAdminAlert(alertPayload).catch(() => {});
-    notifyAdmin(alertPayload).catch(() => {});
-
-    return { success: true };
+    if (!error) {
+      await logAuditLog('FEEDBACK_SUBMITTED', `Type: ${type} | From: ${email}`, 'INFO');
+    }
+    return { success: !error, error };
   }
 };
 
+/**
+ * DIARY_API
+ * Manages chronological biological log entries.
+ */
 export const diaryApi = {
   getEntries: async () => {
-    const { data, error } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false }).limit(10);
-    if (error) throw error;
-    return data;
+    const { data } = await supabase.from('diary_entries').select('*').order('created_at', { ascending: false });
+    return data || [];
   },
+  
   saveEntry: async (content: string, mood: string) => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    const { data, error = null } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user?.id }]).select().single();
+    if (!user) throw new Error("UNAUTHORIZED");
+    const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user.id }]).select().single();
     if (error) throw error;
     return data;
   },
+  
   deleteEntry: async (id: string) => {
-    await supabase.from('diary_entries').delete().eq('id', id);
+    return supabase.from('diary_entries').delete().eq('id', id);
   }
 };

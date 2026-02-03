@@ -3,13 +3,15 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight, Send, Terminal, Server, ShieldAlert, MessageSquare, Info, LifeBuoy
+  Key, Bell, RefreshCw, Zap, Loader2, ChevronRight, Send, Terminal, Server, ShieldAlert, MessageSquare, Info, LifeBuoy, Mail, Check
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ExitFeedbackModal } from './ExitFeedbackModal.tsx';
+import { notifyAdmin } from '../services/telegramService.ts';
+import { emailService } from '../services/emailService.ts';
 
 const m = motion as any;
 
@@ -23,17 +25,47 @@ interface SettingsProps {
 export const Settings: React.FC<SettingsProps> = ({ 
   lang, onLanguageChange, onLogout, onNavigate
 }) => {
-  const { isAdmin } = useAuth();
+  const { isAdmin, profile } = useAuth();
   const [isSystemAiActive, setIsSystemAiActive] = useState(!!process.env.API_KEY);
   const [customKey, setCustomKey] = useState(localStorage.getItem('custom_gemini_key') || '');
   const [isPersonalAiActive, setIsPersonalAiActive] = useState(!!customKey);
   const [showExitFeedback, setShowExitFeedback] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'transmitting' | 'success' | 'error'>('idle');
 
   const t = translations[lang]?.settings || translations.en.settings;
 
   const handleLanguageChange = (newLang: Language) => {
     localStorage.setItem('somno_lang', newLang);
     onLanguageChange(newLang);
+  };
+
+  const handleFullCommsDiagnostic = async () => {
+    if (testStatus === 'transmitting') return;
+    setTestStatus('transmitting');
+    
+    const payload = {
+      type: 'SYSTEM_SIGNAL',
+      source: 'ADMIN_DIAGNOSTIC_TERMINAL',
+      message: `🧪 FULL COMMS TEST\nSubject: ${profile?.email || 'Unknown'}\nIdentity: ${profile?.full_name || 'N/A'}\nProtocol: Mirroring TG+Email`
+    };
+
+    try {
+      // Execute mirrored dispatch
+      const [tgRes, emailRes] = await Promise.all([
+        notifyAdmin(payload),
+        emailService.sendAdminAlert(payload)
+      ]);
+
+      if (tgRes && emailRes.success) {
+        setTestStatus('success');
+      } else {
+        setTestStatus('error');
+      }
+    } catch (e) {
+      setTestStatus('error');
+    }
+
+    setTimeout(() => setTestStatus('idle'), 4000);
   };
 
   return (
@@ -76,6 +108,33 @@ export const Settings: React.FC<SettingsProps> = ({
             </div>
           </GlassCard>
         </div>
+
+        {/* Unified Comms Diagnostic (Mirrored TG + Email) */}
+        {isAdmin && (
+          <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
+            <div className="space-y-6">
+              <div className="flex items-center gap-3">
+                <Radio className="text-rose-500 animate-pulse" size={18} />
+                <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Mirrored Comms Diagnostic</h3>
+              </div>
+              <p className="text-[10px] text-slate-500 italic leading-relaxed">
+                Test concurrent signal dispatch to both Telegram and Email administrative gateways.
+              </p>
+              <button 
+                onClick={handleFullCommsDiagnostic}
+                disabled={testStatus === 'transmitting'}
+                className={`w-full py-5 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all italic shadow-xl ${
+                  testStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                  testStatus === 'error' ? 'bg-rose-600 text-white' : 
+                  'bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                {testStatus === 'transmitting' ? <Loader2 size={16} className="animate-spin" /> : <Terminal size={16} />}
+                {testStatus === 'success' ? 'DUAL SIGNAL CONFIRMED' : testStatus === 'error' ? 'MIRRORING FAILURE' : 'INITIATE DUAL TEST'}
+              </button>
+            </div>
+          </GlassCard>
+        )}
 
         {/* Enhanced Support Hub Entry */}
         <GlassCard onClick={() => onNavigate('support')} className="p-8 rounded-[3rem] border-emerald-500/20 bg-emerald-500/[0.02] cursor-pointer group hover:bg-emerald-500/[0.05] transition-all">
@@ -146,3 +205,14 @@ export const Settings: React.FC<SettingsProps> = ({
     </div>
   );
 };
+
+// Internal sub-component for Radio icon since it wasn't imported from lucide properly in some contexts
+const Radio = ({ size, className }: { size: number, className?: string }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>
+    <circle cx="12" cy="12" r="2" />
+    <path d="M16.24 7.76a6 6 0 0 1 0 8.49" />
+    <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+    <path d="M7.76 16.24a6 6 0 0 1 0-8.49" />
+    <path d="M4.93 19.07a10 10 0 0 1 0-14.14" />
+  </svg>
+);
