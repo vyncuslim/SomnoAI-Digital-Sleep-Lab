@@ -1,18 +1,16 @@
 
 /**
- * SomnoAI Safe Navigation Utility (v3.1)
+ * SomnoAI Safe Navigation Utility (v3.2)
  * 严格隔离当前框架，防止在跨域沙盒中探测敏感的 Location 属性。
  */
 
 export const getSafeUrl = (): string => {
-  // 1. 最稳定的方式：document.URL 在跨域 iframe 中通常是只读且可访问的
   try {
     if (typeof document !== 'undefined' && document.URL) {
       return String(document.URL);
     }
   } catch (e) {}
 
-  // 2. 备选方案：window.origin 权限通常比 location 高
   try {
     if (typeof window !== 'undefined' && window.origin) {
       return window.origin;
@@ -44,22 +42,19 @@ export const getSafeHostname = (): string => {
 };
 
 /**
- * 安全更新 Hash。在受限环境中回退到 history API。
+ * 优先使用 Pathname 导航。在受限环境中回退。
  */
-export const safeNavigateHash = (hash: string) => {
-  let cleanPath = hash.replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
-  const target = cleanPath === '' ? '#/' : `#/${cleanPath}`;
-  
+export const safeNavigatePath = (path: string) => {
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
   try {
-    // 优先尝试直接修改 hash
-    window.location.hash = target;
+    window.history.pushState(null, '', cleanPath);
+    // 触发全局 popstate 事件以通知 App.tsx 的路由监听器
+    window.dispatchEvent(new PopStateEvent('popstate'));
   } catch (e) {
     try {
-      // 如果被禁止，尝试 pushState
-      window.history.pushState(null, '', target);
+      window.location.href = cleanPath;
     } catch (e2) {
-      // 最终降级：记录到日志，不打断 UI
-      console.debug("Navigation sync restricted.");
+      console.warn("Navigation logic restricted by host.");
     }
   }
 };

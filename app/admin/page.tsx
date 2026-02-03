@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { AdminView } from '../../components/AdminView.tsx';
-import { safeNavigateHash } from '../../services/navigation.ts';
+import { safeNavigatePath } from '../../services/navigation.ts';
 
 /**
  * FIXED: 移除 redundant get_profile_status 调用
@@ -9,7 +10,7 @@ import { safeNavigateHash } from '../../services/navigation.ts';
 export default function AdminDashboard() {
   return (
     <div className="min-h-screen bg-[#020617] p-4 md:p-12 animate-in fade-in duration-1000">
-      <AdminView onBack={() => safeNavigateHash('/')} />
+      <AdminView onBack={() => safeNavigatePath('/')} />
     </div>
   );
 }

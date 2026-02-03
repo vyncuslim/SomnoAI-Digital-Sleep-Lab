@@ -97,14 +97,11 @@ const AppContent: React.FC = () => {
   // Robust path-based routing logic
   useEffect(() => {
     const handleRouting = () => {
-      // 1. Prioritize pathname for clean URLs (e.g., /signup)
       const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
-      // 2. Secondary fallback for legacy hash links (e.g., /#/admin)
       const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0];
       
       const route = path || hash || 'landing';
 
-      // Authentication guard for routes like /login or /signup
       if ((profile || isSimulated) && ['login', 'signup', 'landing'].includes(route)) {
         setActiveView('dashboard');
         return;
@@ -151,15 +148,14 @@ const AppContent: React.FC = () => {
       if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('about')} />;
       if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('about')} />;
       
-      // Default Guest View is now the result-oriented LandingPage
       return <LandingPage lang={lang} onNavigate={navigate} />;
     }
 
     // AUTHENTICATED ROUTES
-    if (activeView === 'science') return <ScienceView lang={lang} onBack={() => setActiveView('dashboard')} />;
-    if (activeView === 'faq') return <FAQView lang={lang} onBack={() => setActiveView('support')} />;
-    if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => setActiveView('dashboard')} />;
-    if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView('settings')} onNavigate={navigate} />;
+    if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('dashboard')} />;
+    if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('support')} />;
+    if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => navigate('dashboard')} />;
+    if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('settings')} onNavigate={navigate} />;
 
     if (profile || isSimulated) {
       if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
@@ -170,15 +166,15 @@ const AppContent: React.FC = () => {
           <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-6 md:pt-10 pb-48">
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
-                {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={setActiveView} />}
+                {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={navigate} />}
                 {activeView === 'calendar' && <Trends history={[MOCK_RECORD]} lang={lang} />}
                 {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} isSandbox={isSimulated} />}
                 {activeView === 'experiment' && <ExperimentView data={MOCK_RECORD} lang={lang} />}
                 {activeView === 'diary' && <DiaryView lang={lang} />}
                 {activeView === 'registry' && <UserProfile lang={lang} />}
-                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} />}
-                {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => setActiveView('support')} />}
-                {activeView === 'support' && <SupportView lang={lang} onBack={() => setActiveView('settings')} onNavigate={(v) => setActiveView(v)} />}
+                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={navigate} />}
+                {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => navigate('support')} />}
+                {activeView === 'support' && <SupportView lang={lang} onBack={() => navigate('settings')} onNavigate={navigate} />}
               </m.div>
             </AnimatePresence>
           </main>
@@ -194,10 +190,7 @@ const AppContent: React.FC = () => {
                 { id: 'diary', icon: BookOpen, label: 'LOG' },
                 { id: 'settings', icon: SettingsIcon, label: 'CFG' }
               ].map((nav) => (
-                <button key={nav.id} onClick={() => {
-                  window.history.pushState(null, '', `/${nav.id}`);
-                  setActiveView(nav.id as any);
-                }} className={`relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-full transition-all duration-500 shrink-0 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
+                <button key={nav.id} onClick={() => navigate(nav.id)} className={`relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-full transition-all duration-500 shrink-0 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
                   <nav.icon size={16} />
                   {activeView === nav.id && <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest whitespace-nowrap">{nav.label}</span>}
                 </button>

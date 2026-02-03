@@ -4,7 +4,8 @@ import { motion } from 'framer-motion';
 import { Home, RefreshCw, ShieldX, Radio, Terminal, Search, Cpu } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { GlassCard } from './GlassCard.tsx';
-import { safeNavigateHash, safeReload, getSafeHash } from '../services/navigation.ts';
+// Fix: safeNavigateHash does not exist in navigation.ts, replacing with safeNavigatePath
+import { safeNavigatePath, safeReload, getSafeHash } from '../services/navigation.ts';
 import { trackPageView } from '../services/analytics.ts';
 
 const m = motion as any;
@@ -91,7 +92,8 @@ export const NotFoundView: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row gap-5 pt-8 max-w-sm mx-auto">
               <button 
-                onClick={() => safeNavigateHash('dashboard')}
+                // Fix: replacing safeNavigateHash with safeNavigatePath
+                onClick={() => safeNavigatePath('dashboard')}
                 className="group flex-1 py-7 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-3 italic"
               >
                 <Home size={18} /> Restore Hub
