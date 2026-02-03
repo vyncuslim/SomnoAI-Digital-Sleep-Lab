@@ -1,4 +1,3 @@
-
 // @ts-ignore
 import { supabase } from '../lib/supabaseClient.ts';
 import { notifyAdmin } from './telegramService.ts';
@@ -9,12 +8,13 @@ export { supabase };
 
 /**
  * SOMNO LAB NEURAL AUDIT PROTOCOL
+ * Centralized logging and notification hub for administrative oversight.
  */
 export const logAuditLog = async (action: string, details: string, level: string = 'INFO') => {
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
     
-    // 1. Always record in DB
+    // 1. Record in DB Audit Archive
     const { error } = await supabase.from('audit_logs').insert([{
       action,
       details,
@@ -22,7 +22,7 @@ export const logAuditLog = async (action: string, details: string, level: string
       user_id: user?.id
     }]);
     
-    // 2. Map notification types
+    // 2. Notification Dispatch Logic
     const actionToTypeMap: Record<string, string> = {
       'USER_LOGIN': 'USER_LOGIN',
       'ADMIN_ROLE_UPDATE': 'ADMIN_CONFIG_CHANGE',
@@ -31,7 +31,6 @@ export const logAuditLog = async (action: string, details: string, level: string
       'SECURITY_BREACH': 'SECURITY_BREACH',
       'FEEDBACK_SUBMITTED': 'USER_FEEDBACK',
       'API_SERVICE_FAULT': 'API_SERVICE_FAULT',
-      'ASYNC_HANDSHAKE_VOID': 'RUNTIME_ERROR',
       'GA4_SYNC_FAILURE': 'GA4_SYNC_FAILURE',
       'GA4_PERMISSION_DENIED': 'GA4_PERMISSION_DENIED'
     };
@@ -40,14 +39,26 @@ export const logAuditLog = async (action: string, details: string, level: string
     const isPriority = level === 'CRITICAL' || level === 'WARNING' || !!targetType;
 
     if (isPriority) {
+      // Mirrored Alert: Telegram Admin Bot
       await notifyAdmin({ 
-        type: targetType || 'RUNTIME_ERROR', 
+        type: targetType || 'SYSTEM_SIGNAL', 
         message: details, 
         source: user?.email || 'GATEWAY_TERMINAL'
       });
 
-      if (level === 'CRITICAL') {
-        await emailService.sendAdminAlert({ type: targetType || 'CRITICAL_FAULT', message: details });
+      // Mirrored Alert: Email Dispatch
+      // TRIGGERS ON: User Login, Critical Errors, or Security Breaches
+      const shouldEmail = 
+        level === 'CRITICAL' || 
+        action === 'USER_LOGIN' || 
+        action === 'GA4_PERMISSION_DENIED' || 
+        action === 'SECURITY_BREACH';
+
+      if (shouldEmail) {
+        await emailService.sendAdminAlert({ 
+          type: targetType || 'SYSTEM_SIGNAL', 
+          message: details 
+        });
       }
     }
     
@@ -59,7 +70,7 @@ export const logAuditLog = async (action: string, details: string, level: string
 };
 
 /**
- * ADMIN_API - Enhanced with Super Owner Protection
+ * ADMIN_API - Clearance and Node Management
  */
 export const adminApi = {
   getAdminClearance: async (id: string) => {
@@ -83,28 +94,25 @@ export const adminApi = {
   },
   
   updateUserRole: async (id: string, email: string, role: string) => {
-    // PROTECT SUPER OWNER: Cannot downgrade a super owner
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
     if (target?.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH', `UNAUTHORIZED_DOWNGRADE: Admin attempted to alter clearance of Super Owner ${email}. Request denied.`, 'CRITICAL');
-      throw new Error("IMMUTABLE_IDENTITY: Super Owner clearance level is fixed.");
+      await logAuditLog('SECURITY_BREACH', `UNAUTHORIZED_UPGRADE_ATTEMPT: Subject ${email} level is fixed.`, 'CRITICAL');
+      throw new Error("ACCESS_DENIED: Super Owner identity is immutable.");
     }
 
     const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
-    if (!error) await logAuditLog('ADMIN_ROLE_UPDATE', `Action: Role Modification\nTarget: ${email}\nNew Level: ${role}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_ROLE_UPDATE', `Action: Role Escalation\nTarget: ${email}\nLevel: ${role}`, 'WARNING');
     return { error };
   },
   
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
-    // PROTECT SUPER OWNER: Cannot block a super owner
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
     if (target?.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH', `INTRUSION_ALERT: Admin attempted to block Super Owner ${email}. Signal intercepted.`, 'CRITICAL');
       throw new Error("ACCESS_DENIED: Super Owner nodes cannot be blocked.");
     }
 
     const { error } = await supabase.from('profiles').update({ is_blocked: !currentlyBlocked }).eq('id', id);
-    if (!error) await logAuditLog('ADMIN_BLOCK_TOGGLE', `Action: Access Management\nTarget: ${email}\nState: ${currentlyBlocked ? 'UNBLOCKED' : 'BLOCKED'}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_BLOCK_TOGGLE', `Action: Traffic Management\nTarget: ${email}\nState: ${currentlyBlocked ? 'UNBLOCKED' : 'BLOCKED'}`, 'WARNING');
     return { error };
   },
   
@@ -122,13 +130,13 @@ export const adminApi = {
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Action: New Alert Node\nRecipient: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Action: Alert Matrix Expansion\nNode: ${email}`, 'WARNING');
     return { data, error };
   },
   
   removeNotificationRecipient: async (id: string, email: string) => {
     const { error } = await supabase.from('notification_recipients').delete().eq('id', id);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Action: Node De-registration\nRecipient: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Action: Alert Matrix Severed\nNode: ${email}`, 'WARNING');
     return { error };
   }
 };
@@ -160,6 +168,7 @@ export const profileApi = {
   },
   updateProfile: async (updates: any) => {
     const { data: { user } } = await (supabase.auth as any).getUser();
+    // Fix: Quoted the column name 'id' to resolve "Cannot find name 'id'" error
     return supabase.from('profiles').update(updates).eq('id', user.id);
   }
 };
@@ -181,7 +190,7 @@ export const userDataApi = {
     if (profileRes.error) throw profileRes.error;
     const dataRes = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
     if (dataRes.error) throw dataRes.error;
-    await logAuditLog('USER_SETUP_COMPLETE', `Registry Updated: ${user?.email}`, 'INFO');
+    await logAuditLog('USER_SETUP_COMPLETE', `Initialization: ${user?.email}`, 'INFO');
     return { success: true };
   }
 };
@@ -204,7 +213,7 @@ export const diaryApi = {
     if (!user) throw new Error("UNAUTHORIZED");
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user.id }]).select().single();
     if (error) throw error;
-    await logAuditLog('DIARY_LOG_ENTRY', `Log: ${user.email} committed ${mood}`, 'INFO');
+    await logAuditLog('DIARY_LOG_ENTRY', `Diary Entry: ${user.email} | Mood: ${mood}`, 'INFO');
     return data;
   },
   deleteEntry: async (id: string) => {

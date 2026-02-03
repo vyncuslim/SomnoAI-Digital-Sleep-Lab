@@ -1,19 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, ShieldAlert, RefreshCw, Loader2, ChevronLeft, 
-  ShieldCheck, Ban, Crown, KeyRound, Zap, Globe, 
-  Monitor, Terminal as TerminalIcon, X, Cpu,
-  LayoutDashboard, Radio, Activity, ChevronRight, 
-  Send, Fingerprint, Lock, Table, List, 
-  Unlock, Mail, ExternalLink, ActivitySquare,
-  HeartPulse, Copy, Clock, Settings2, Check, AlertTriangle, Info,
-  Rocket, MousePointer2, Trash2, Database, Search, Shield, AlertCircle, Key,
-  ExternalLink as LinkIcon, HelpCircle, Bug, FileJson, User, Flame, Activity as MonitoringIcon, Eye, ChevronDown,
-  Calendar, ShieldX, Plus, MailPlus, Play
+  ShieldCheck, Ban, Crown, Globe, Terminal as TerminalIcon, X, Cpu,
+  LayoutDashboard, Activity, ChevronRight, Send, Fingerprint, Lock, 
+  List, Unlock, Mail, ExternalLink, ActivitySquare, Copy, Clock, Check, 
+  AlertTriangle, AlertCircle, Database, Search, ShieldX, Plus, MailPlus, Play
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
-import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
+import { adminApi, supabase } from '../services/supabaseService.ts';
 
 const m = motion as any;
 
@@ -47,7 +42,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [newEmail, setNewEmail] = useState('');
   const [newLabel, setNewLabel] = useState('');
   const [isAddingRecipient, setIsAddingRecipient] = useState(false);
-
   const [serverPulse, setServerPulse] = useState<any>(null);
   const [saEmail, setSaEmail] = useState<string>("");
 
@@ -198,10 +192,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const syncBadge = getSyncBadgeConfig();
   const isGlobalOwner = currentAdmin?.role === 'owner' || currentAdmin?.is_super_owner;
 
-  // Validate Property ID format (Should be a string of digits, e.g. 345678901)
   const isProperIdFormat = (id: string) => {
-    const cleanId = id.replace(/^properties\//, '');
-    return /^\d+$/.test(cleanId);
+    const cleanId = id.trim();
+    return /^\d+$/.test(cleanId) && cleanId.length > 5;
   };
 
   return (
@@ -221,7 +214,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <div className="space-y-0.5">
                   <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest leading-none italic">Action Required</p>
                   <p className="text-sm font-black text-white italic">
-                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Google Analytics Link Severed.' : `Sync Failed: ${lastRawError?.failed_at || 'Handshake Error'}`}
+                    {syncState === 'FORBIDDEN' ? '403 Forbidden: Google Analytics Link Severed.' : `Sync Failed: Infrastructure Anomaly`}
                   </p>
                 </div>
               </div>
@@ -298,7 +291,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <div>
                             <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Sync</h3>
                             <p className="text-[10px] font-black uppercase tracking-widest mt-1 italic text-slate-500">
-                              Active monitoring for subject traffic nodes
+                              Active monitoring for subject traffic nodes (analyticsdata.googleapis.com)
                             </p>
                          </div>
                       </div>
@@ -322,7 +315,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              <div className="space-y-1">
                                 <h4 className="text-sm font-black text-white uppercase italic">Infrastructure Protocol Disruption</h4>
                                 <p className="text-[11px] text-slate-400 italic leading-relaxed">
-                                  Access to Google Analytics is being blocked. Either the Service Account is not authorized, or the Property ID format is incorrect.
+                                  Access to the GA4 Data API is being blocked. Either the Service Account lacks clearance, or the Property ID is referencing a deprecated UA node.
                                 </p>
                              </div>
                           </div>
@@ -330,15 +323,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                              <div className="p-8 bg-slate-900/60 rounded-[2.5rem] border border-white/5 space-y-6">
                                <p className="text-xs text-white font-black italic flex items-center gap-3">
-                                 <TerminalIcon size={14} className="text-indigo-400" /> Resolution Logic:
+                                 <TerminalIcon size={14} className="text-indigo-400" /> GA4 Migration & Access Logic:
                                </p>
                                <ol className="space-y-4 text-[11px] text-slate-400 list-decimal pl-5 italic font-medium leading-relaxed">
+                                  <li>Ensure you are using <b>Google Analytics 4 (GA4)</b>. Universal Analytics (UA) is deprecated and will return 403.</li>
                                   <li>Access the <a href="https://analytics.google.com/analytics/web/#/admin" target="_blank" rel="noreferrer" className="text-indigo-400 font-bold underline">GA Admin Console</a>.</li>
-                                  <li>Check <b>Property ID</b>: It should be numeric (e.g., <code>4567890</code>), not a G-ID or UA-ID. Current: <code className="text-indigo-300 font-bold">{lastRawError?.property_id || 'UNKNOWN'}</code></li>
+                                  <li>Check <b>Property ID</b>: Must be strictly numeric (e.g., <code>380909155</code>). Current: <code className={isProperIdFormat(lastRawError?.property_id || '') ? 'text-indigo-300' : 'text-rose-400'}>{lastRawError?.property_id || 'UNKNOWN'}</code></li>
                                   <li>Go to <b>Property Access Management</b>.</li>
                                   <li>Add a new user with the <b>Service Email</b> shown on the right.</li>
                                   <li>Assign role: <span className="text-white font-bold bg-indigo-600/20 px-2 py-0.5 rounded">Viewer</span>.</li>
-                                  <li>Verify <b>GA_SERVICE_ACCOUNT_KEY</b> in Vercel is a valid JSON string without extra wrapping quotes.</li>
+                                  <li>The API requested is <code>analyticsdata.googleapis.com</code> (GA4 Data API).</li>
                                </ol>
                              </div>
                              
@@ -346,22 +340,22 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                <div className="p-8 bg-black/60 border border-indigo-500/30 rounded-[3rem] flex flex-col gap-4 relative overflow-hidden group">
                                   <div className="absolute top-0 right-0 p-6 opacity-5"><Mail size={80} /></div>
                                   <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest italic flex items-center gap-2">
-                                     <Mail size={12} /> Service Account Email
+                                     <Mail size={12} /> Service Account Identity
                                   </span>
-                                  <code className="text-[12px] font-mono text-indigo-100 font-black break-all select-all leading-tight bg-white/5 p-4 rounded-2xl border border-white/5">
-                                    {lastRawError?.service_account || saEmail || 'SYNC_REQUIRED'}
+                                  <code className="text-[11px] font-mono text-indigo-100 font-black break-all select-all leading-tight bg-white/5 p-4 rounded-2xl border border-white/5">
+                                    {lastRawError?.service_account || saEmail || 'AWAITING_INPUT'}
                                   </code>
                                   <button 
                                     onClick={() => handleCopy(lastRawError?.service_account || saEmail, 'sa_copy_err')} 
                                     className="flex items-center gap-3 text-[10px] font-black text-white bg-indigo-600 px-6 py-4 rounded-full w-full justify-center hover:bg-indigo-500 transition-all uppercase mt-2 shadow-xl shadow-indigo-600/20 italic"
                                   >
                                     {copiedKey === 'sa_copy_err' ? <Check size={16} /> : <Copy size={16} />} 
-                                    {copiedKey === 'sa_copy_err' ? 'Copied' : 'Copy Service Email'}
+                                    {copiedKey === 'sa_copy_err' ? 'Identity Copied' : 'Copy Service Email'}
                                   </button>
                                </div>
 
                                <div className="p-8 bg-slate-900/40 rounded-[3rem] border border-white/5 flex flex-col gap-4">
-                                  <span className="text-[9px] font-black text-slate-500 uppercase italic">Active Property ID</span>
+                                  <span className="text-[9px] font-black text-slate-500 uppercase italic">Target Property ID</span>
                                   <div className="flex items-center justify-between">
                                     <span className={`text-xl font-mono font-black ${isProperIdFormat(lastRawError?.property_id || '') ? 'text-white' : 'text-rose-500'}`}>
                                       {lastRawError?.property_id || 'UNDEFINED'}
@@ -374,8 +368,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                     </button>
                                   </div>
                                   {lastRawError?.property_id && !isProperIdFormat(lastRawError.property_id) && (
-                                    <div className="p-3 bg-rose-600/10 text-rose-500 text-[10px] rounded-xl font-bold italic border border-rose-500/20">
-                                      Format Violation: ID must be numeric. Current value contains invalid characters or prefixes.
+                                    <div className="p-3 bg-rose-600/10 text-rose-500 text-[9px] rounded-xl font-bold italic border border-rose-500/20">
+                                      ID mismatch: Ensure prefix "properties/" is removed and only numeric digits remain.
                                     </div>
                                   )}
                                </div>
@@ -453,7 +447,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               <div className="space-y-8 animate-in fade-in duration-500">
                 <div className="flex items-center justify-between px-4">
                   <div className="flex items-center gap-4">
-                    <MonitoringIcon size={24} className="text-rose-500" />
+                    <Activity size={24} className="text-rose-500" />
                     <h2 className="text-2xl font-black italic text-white uppercase">Security Signals</h2>
                   </div>
                   <button onClick={fetchData} className="p-3 bg-white/5 rounded-full text-slate-500 hover:text-white transition-all"><RefreshCw size={18} /></button>
@@ -484,48 +478,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               </div>
             )}
 
-            {activeTab === 'explorer' && (
-              <div className="space-y-10 animate-in fade-in duration-500">
-                <div className="flex items-center gap-4 px-4">
-                  <Database size={24} className="text-emerald-400" />
-                  <h2 className="text-2xl font-black italic text-white uppercase">Data Shards</h2>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                   {DATABASE_SCHEMA.map((table) => (
-                     <GlassCard key={table.id} className="p-8 rounded-[3rem] border-white/5 space-y-6 flex flex-col justify-between hover:bg-white/[0.02] transition-all">
-                        <div className="space-y-4">
-                           <div className="flex justify-between items-start">
-                              <div className="p-3 bg-white/5 rounded-2xl text-emerald-400"><table.icon size={20} /></div>
-                              <div className="text-right">
-                                 <p className="text-3xl font-black text-white italic">{tableCounts[table.id] || 0}</p>
-                                 <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">TOTAL_RECORDS</p>
-                              </div>
-                           </div>
-                           <div className="space-y-1">
-                              {/* FIXED: Added missing opening bracket for h3 tag */}
-                              <h3 className="text-sm font-black text-white uppercase italic tracking-tight">{table.name}</h3>
-                              <p className="text-[10px] text-slate-500 italic leading-relaxed">{table.desc}</p>
-                           </div>
-                        </div>
-                        <div className="pt-4 border-t border-white/5 flex justify-between items-center">
-                           <span className="text-[8px] font-mono text-slate-700 uppercase tracking-widest">ID: {table.id}</span>
-                           <Search size={14} className="text-slate-800" />
-                        </div>
-                     </GlassCard>
-                   ))}
-                </div>
-              </div>
-            )}
-
             {activeTab === 'automation' && (
                <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in duration-500">
                   <div className="text-center space-y-4">
-                    <div className="w-20 h-20 bg-indigo-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto text-indigo-400 border border-indigo-500/20 shadow-2xl"><Zap size={36} /></div>
+                    <div className="w-20 h-20 bg-indigo-500/10 rounded-[2.5rem] flex items-center justify-center mx-auto text-indigo-400 border border-indigo-500/20 shadow-2xl"><Cpu size={36} /></div>
                     <h2 className="text-2xl font-black italic text-white uppercase tracking-tighter leading-none">Automation Engine</h2>
                     <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.8em] italic">Background Ops Terminal</p>
                   </div>
 
-                  {/* Recipient Matrix Section */}
                   <GlassCard className="p-10 rounded-[4rem] border-emerald-500/20 bg-emerald-500/[0.02] space-y-10">
                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
@@ -559,7 +519,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                  <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest">{rec.label}</p>
                                  <p className="text-xs font-bold text-white italic">{rec.email}</p>
                               </div>
-                              <button onClick={() => handleRemoveRecipient(rec.id, rec.email)} className="p-2.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-xl opacity-0 group-hover:opacity-100"><Trash2 size={14} /></button>
+                              <button onClick={() => handleRemoveRecipient(rec.id, rec.email)} className="p-2.5 text-slate-700 hover:text-rose-500 transition-colors bg-white/5 rounded-xl opacity-0 group-hover:opacity-100"><X size={14} /></button>
                            </div>
                         ))}
                      </div>
@@ -634,40 +594,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                          <div className="col-span-full py-12 text-center italic text-slate-500">Node telemetry unreachable. Check CRON_SECRET.</div>
                        )}
                     </div>
-                    <div className="mt-8 p-6 bg-indigo-500/5 rounded-[2.5rem] border border-indigo-500/10 flex flex-col md:flex-row items-center justify-between gap-4">
-                       <div className="flex items-center gap-4">
-                          <Database size={18} className="text-indigo-400" />
-                          <p className="text-xs font-bold text-white uppercase italic">DB Link: <span className={serverPulse?.db === 'ONLINE' ? 'text-emerald-500' : 'text-rose-500'}>{serverPulse?.db || 'UNKNOWN'}</span></p>
-                       </div>
-                       <p className="text-[10px] font-mono text-slate-600">Runtime: {serverPulse?.vercel_runtime || 'n/a'} • Node {serverPulse?.node_version || 'n/a'}</p>
-                    </div>
                  </GlassCard>
-                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                    <GlassCard className="p-10 rounded-[3.5rem] border-white/5 space-y-6">
-                       <div className="flex items-center gap-4">
-                         <div className="p-3 bg-emerald-500/10 rounded-2xl text-indigo-400"><Bug size={24} /></div>
-                         <h3 className="text-lg font-black italic text-white uppercase tracking-widest">Diagnostics</h3>
-                       </div>
-                       <p className="text-[11px] text-slate-500 italic leading-relaxed">Generate an encrypted telemetry bundle for engineering review.</p>
-                       <button onClick={() => {
-                         const report = { timestamp: new Date().toISOString(), pulse: serverPulse };
-                         handleCopy(JSON.stringify(report, null, 2), 'diag');
-                         alert("Diagnostic bundle ready for dispatch.");
-                       }} className="w-full py-5 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3">
-                         <FileJson size={16} /> {copiedKey === 'diag' ? 'COPIED TO CLIPBOARD' : 'GENERATE BUNDLE'}
-                       </button>
-                    </GlassCard>
-                    <GlassCard className="p-10 rounded-[3.5rem] border-rose-500/20 bg-rose-500/[0.02] space-y-6">
-                       <div className="flex items-center gap-4">
-                         <div className="p-3 bg-rose-500/10 rounded-2xl text-rose-400"><Mail size={24} /></div>
-                         <h3 className="text-lg font-black italic text-white uppercase tracking-widest">Support Portal</h3>
-                       </div>
-                       <p className="text-[11px] text-slate-500 italic leading-relaxed">Direct priority link to laboratory engineering for mission-critical anomalies.</p>
-                       <button onClick={() => window.open('mailto:ongyuze1401@gmail.com')} className="w-full py-5 bg-rose-600/10 hover:bg-rose-600/20 border border-rose-500/20 text-rose-400 rounded-2xl font-black text-[10px] uppercase tracking-[0.3em] transition-all flex items-center justify-center gap-3">
-                         <Send size={16} /> DISPATCH MESSAGE
-                       </button>
-                    </GlassCard>
-                 </div>
               </div>
             )}
           </m.div>

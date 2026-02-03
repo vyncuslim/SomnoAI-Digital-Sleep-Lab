@@ -1,10 +1,9 @@
-
 import { getMYTTime } from './telegramService.ts';
 import { supabase } from './supabaseService.ts';
 
 /**
- * SOMNO LAB EMAIL BRIDGE v14.0
- * Dynamic Recipient Matrix Edition.
+ * SOMNO LAB EMAIL BRIDGE v15.0
+ * Synchronized Recipient Matrix.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -14,8 +13,8 @@ const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: stri
   'RUNTIME_ERROR': { en: '🚨 System Exception', es: '🚨 Excepción del Sistema', zh: '🚨 系统运行异常', icon: '🔴' },
   'USER_SIGNUP': { en: '✨ New Subject Node Registered', es: '✨ Nuevo Nodo de Sujeto', zh: '✨ 新受试者注册', icon: '🟢' },
   'GA4_SYNC_FAILURE': { en: '📊 Telemetry Sync Failure', es: '📊 Fallo de Sincronización', zh: '📊 GA4 同步失败', icon: '🟡' },
-  'GA4_PERMISSION_DENIED_403': { en: '🛡️ GA4 Access Denied (403)', es: '🛡️ GA4 Acceso Denegado', zh: '🛡️ GA4 访问被拒绝 (403)', icon: '🚫' },
-  'SECURITY_BREACH_ATTEMPT': { en: '🛡️ Unauthorized Ingress', es: '🛡️ Ingreso No Autorizado', zh: '🛡️ 未经授权的入侵尝试', icon: '⛔' },
+  'GA4_PERMISSION_DENIED': { en: '🛡️ GA4 Access Denied (403)', es: '🛡️ GA4 Acceso Denegado', zh: '🛡️ GA4 访问被拒绝 (403)', icon: '🚫' },
+  'SECURITY_BREACH': { en: '🛡️ Unauthorized Ingress Attempt', es: '🛡️ Ingreso No Autorizado', zh: '🛡️ 未经授权的入侵尝试', icon: '⛔' },
   'SYSTEM_SIGNAL': { en: '📡 System Signal', es: '📡 Señal del Sistema', zh: '📡 系统信号', icon: '📡' },
   'DIARY_LOG_ENTRY': { en: '📝 Biological Log Entry', es: '📝 Nuevo Diario', zh: '📝 新生物节律日志', icon: '📗' }
 };
@@ -41,7 +40,7 @@ export const emailService = {
     
     const mapping = EVENT_MAP[eventType] || { en: eventType, es: eventType, zh: eventType, icon: '📡' };
     const isLogin = eventType === 'USER_LOGIN';
-    const isIncident = eventType.includes('FAILURE') || eventType.includes('DENIED') || eventType.includes('ERROR');
+    const isIncident = eventType.includes('FAILURE') || eventType.includes('DENIED') || eventType.includes('ERROR') || eventType.includes('BREACH');
     
     const subjectPrefix = isLogin ? '🔑 [ACCESS_GRANTED]' : isIncident ? '🚨 [INCIDENT_ALERT]' : '🛡️ [SYSTEM_SIGNAL]';
     const subject = `${subjectPrefix} ${mapping.en}`;
