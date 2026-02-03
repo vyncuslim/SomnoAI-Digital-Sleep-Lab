@@ -4,13 +4,13 @@ import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
   Moon, BrainCircuit, Settings as SettingsIcon, History, 
-  BookOpen, FlaskConical, RefreshCw, Fingerprint, LockKeyhole, LogOut, ShieldAlert
+  BookOpen, FlaskConical, RefreshCw, Fingerprint, LockKeyhole, LogOut, 
+  ShieldAlert, Info, HelpCircle, Microscope
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
-import { getSafeHash } from './services/navigation.ts';
 import { trackPageView } from './services/analytics.ts';
 import { authApi } from './services/supabaseService.ts';
 
@@ -29,6 +29,8 @@ import { FeedbackView } from './components/FeedbackView.tsx';
 import { ExperimentView } from './components/ExperimentView.tsx';
 import { SupportView } from './components/SupportView.tsx';
 import { AboutView } from './components/AboutView.tsx';
+import { ScienceView } from './components/ScienceView.tsx';
+import { FAQView } from './components/FAQView.tsx';
 import { UpdatePasswordView } from './components/UpdatePasswordView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 
@@ -62,7 +64,6 @@ const DecisionLoading = () => (
   </div>
 );
 
-// 彻底切断封禁用户的访问终端
 const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
   <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 text-center relative overflow-hidden">
     <div className="absolute inset-0 bg-rose-600/10 blur-[120px] rounded-full animate-pulse" />
@@ -71,7 +72,7 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
     </div>
     <h2 className="text-5xl font-black italic text-white uppercase tracking-tighter mb-4">Access <span className="text-rose-600">Revoked</span></h2>
     <p className="text-slate-400 text-sm font-medium italic max-w-sm mb-12 leading-relaxed">
-      Your credentials for <b>SomnoAI Digital Sleep Lab</b> have been restricted by the command bridge. Access to laboratory sectors is prohibited.
+      Your laboratory credentials for <b>SomnoAI Digital Sleep Lab</b> have been restricted. Access to the neural grid is strictly severed.
     </p>
     <button onClick={onLogout} className="px-12 py-5 bg-white text-slate-950 rounded-full font-black text-xs uppercase tracking-widest flex items-center gap-3 active:scale-95 transition-all shadow-2xl">
       <LogOut size={18} /> DISCONNECT SESSION
@@ -82,7 +83,7 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
 const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
-  const [activeView, setActiveView] = useState<ViewType | 'update-password'>('dashboard');
+  const [activeView, setActiveView] = useState<ViewType | 'update-password' | 'science' | 'faq'>('dashboard');
   const [isSimulated, setIsSimulated] = useState(false);
 
   const handleLogout = useCallback(async () => {
@@ -93,22 +94,24 @@ const AppContent: React.FC = () => {
   }, []);
 
   useEffect(() => {
-    const bridgeRouting = () => {
-      // 解析路径名 (Clean URL)
+    const handleRouting = () => {
+      // 优先解析直接路径，例如 /assistant
       const path = window.location.pathname.replace(/^\/+/, '').replace(/\/+$/, '');
-      const hash = getSafeHash().replace(/^#+/, '').replace(/^\/+/, '').replace(/\/+$/, '');
+      const hash = window.location.hash.replace(/^#\/?/, '').replace(/\/+$/, '');
       const route = path || hash || 'dashboard';
 
       if (route === 'login') { setActiveView('dashboard'); return; }
       if (route === 'signup' || route === 'sign-in') { setActiveView('dashboard'); return; }
       if (route === 'about') { setActiveView('about'); return; }
+      if (route === 'science') { setActiveView('science'); return; }
+      if (route === 'faq') { setActiveView('faq'); return; }
       if (route === 'admin') { setActiveView('admin'); return; }
 
-      const mappings: Record<string, ViewType | 'update-password'> = {
+      const mappings: Record<string, any> = {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
-        'registry': 'registry', 'update-password': 'update-password'
+        'registry': 'registry', 'update-password': 'update-password', 'science': 'science', 'faq': 'faq'
       };
 
       if (mappings[route]) {
@@ -120,32 +123,36 @@ const AppContent: React.FC = () => {
       trackPageView(`/${route}`, `SomnoAI: ${route.toUpperCase()}`);
     };
     
-    window.addEventListener('hashchange', bridgeRouting);
-    window.addEventListener('popstate', bridgeRouting);
-    bridgeRouting();
+    window.addEventListener('popstate', handleRouting);
+    window.addEventListener('hashchange', handleRouting);
+    handleRouting();
     return () => {
-      window.removeEventListener('hashchange', bridgeRouting);
-      window.removeEventListener('popstate', bridgeRouting);
+      window.removeEventListener('popstate', handleRouting);
+      window.removeEventListener('hashchange', handleRouting);
     };
-  }, [profile, loading, isSimulated]);
+  }, [profile, isSimulated]);
 
-  // 全域封禁拦截补丁
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
     const path = window.location.pathname.replace(/^\/+/, '');
     
-    // 强制专用登录/注册页面
     if (!profile && !isSimulated) {
       if (path === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
       if (path === 'signup' || path === 'sign-in') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
+      if (path === 'science') return <ScienceView lang={lang} onBack={() => window.location.href = '/'} />;
+      if (path === 'faq') return <FAQView lang={lang} onBack={() => window.location.href = '/'} />;
     }
 
+    if (activeView === 'science') return <ScienceView lang={lang} onBack={() => setActiveView('dashboard')} />;
+    if (activeView === 'faq') return <FAQView lang={lang} onBack={() => setActiveView('support')} />;
     if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => setActiveView('dashboard')} />;
+    
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => setActiveView(profile || isSimulated ? 'settings' : 'dashboard')} onNavigate={(v) => {
-      if (v === 'login' || v === 'signup') {
-         window.location.href = `/${v}`;
+      if (['login', 'signup', 'science', 'faq'].includes(v)) {
+         window.history.pushState(null, '', `/${v}`);
+         setActiveView(v as any);
       } else {
          setActiveView(v as any);
       }
@@ -168,7 +175,14 @@ const AppContent: React.FC = () => {
                 {activeView === 'registry' && <UserProfile lang={lang} />}
                 {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={handleLogout} onNavigate={setActiveView} />}
                 {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => setActiveView('support')} />}
-                {activeView === 'support' && <SupportView lang={lang} onBack={() => setActiveView('settings')} onNavigate={setActiveView} />}
+                {activeView === 'support' && <SupportView lang={lang} onBack={() => setActiveView('settings')} onNavigate={(v) => {
+                   if (v === 'faq') {
+                     window.history.pushState(null, '', '/faq');
+                     setActiveView('faq');
+                   } else {
+                     setActiveView(v);
+                   }
+                }} />}
               </m.div>
             </AnimatePresence>
           </main>
@@ -198,7 +212,6 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 默认进入官方登录
     return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
   };
 

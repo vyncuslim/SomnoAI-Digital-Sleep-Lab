@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { 
-  ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus
+  ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus, Microscope, HelpCircle
 } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -69,6 +69,27 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             <p>Unlike traditional hardware-dependent trackers, we offer a pure software solution: collect biometric data from any wearable, smart mattress, phone sensors or manual input — then use sophisticated AI models to deliver meaningful insights.</p>
           </div>
         </GlassCard>
+
+        {/* 科学与常见问题引导 */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+           <GlassCard 
+             onClick={() => onNavigate('science')}
+             className="p-10 rounded-[3.5rem] border-indigo-500/20 bg-indigo-500/[0.02] cursor-pointer group hover:bg-indigo-600/[0.05] transition-all"
+           >
+              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 w-fit mb-6"><Microscope size={28} /></div>
+              <h3 className="text-xl font-black italic text-white uppercase tracking-tight mb-4">Scientific Protocol</h3>
+              <p className="text-slate-500 text-xs italic leading-relaxed">Deep dive into how our neural engine processes biometric telemetry and sleep staging.</p>
+           </GlassCard>
+
+           <GlassCard 
+             onClick={() => onNavigate('faq')}
+             className="p-10 rounded-[3.5rem] border-white/5 bg-white/[0.01] cursor-pointer group hover:bg-white/[0.03] transition-all"
+           >
+              <div className="p-3 bg-white/5 rounded-2xl text-slate-400 w-fit mb-6"><HelpCircle size={28} /></div>
+              <h3 className="text-xl font-black italic text-white uppercase tracking-tight mb-4">Laboratory FAQ</h3>
+              <p className="text-slate-500 text-xs italic leading-relaxed">Resolving common doubts regarding hardware compatibility, privacy, and AI precision.</p>
+           </GlassCard>
+        </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
            <GlassCard className="p-10 rounded-[3.5rem] border-white/5">

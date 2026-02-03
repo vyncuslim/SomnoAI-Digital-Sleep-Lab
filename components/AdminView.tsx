@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   Users, ShieldAlert, RefreshCw, Loader2, ChevronLeft, 
@@ -328,7 +329,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                <ol className="space-y-4 text-[11px] text-slate-400 list-decimal pl-5 italic font-medium leading-relaxed">
                                   <li>Ensure Property ID is <b>380909155</b>. UA Account IDs (e.g. 12345678) will return 403.</li>
                                   <li>Legacy UA reporting (<code>analyticsreporting</code>) is disabled. This app hits <code>analyticsdata</code>.</li>
-                                  <li>Navigate to <b>GA Admin</b> > <b>Property Settings</b> > <b>Property Access Management</b>.</li>
+                                  <li>Navigate to <b>GA Admin</b> &gt; <b>Property Settings</b> &gt; <b>Property Access Management</b>.</li>
                                   <li>Add <b>Service Email</b> shown on the right.</li>
                                   <li>Assign the <b>Viewer</b> role to authorize telemetry data read access.</li>
                                </ol>
@@ -488,7 +489,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                      <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4">
                            <div className="p-3 bg-emerald-500/10 rounded-2xl text-emerald-400"><MailPlus size={24} /></div>
-                           <h3 className="text-xl font-black italic text-white uppercase">Recipient Matrix</h3>
+                           <h3 className="xl font-black italic text-white uppercase">Recipient Matrix</h3>
                         </div>
                         <div className="px-4 py-1.5 bg-emerald-500 text-white rounded-full text-[9px] font-black uppercase tracking-widest italic">{recipients.length} ACTIVE</div>
                      </div>
@@ -565,7 +566,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             )}
 
             {activeTab === 'system' && (
-              <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-in-from-bottom-2 duration-500">
+              <div className="max-w-4xl mx-auto space-y-12 animate-in fade-in slide-from-bottom-2 duration-500">
                  <div className="text-center space-y-4">
                     <div className="w-24 h-24 bg-indigo-500/10 rounded-[3rem] flex items-center justify-center mx-auto text-indigo-400 border border-indigo-500/20 shadow-2xl"><Cpu size={48} /></div>
                     <h2 className="text-3xl font-black italic text-white uppercase tracking-tighter">Infrastructure Management</h2>
