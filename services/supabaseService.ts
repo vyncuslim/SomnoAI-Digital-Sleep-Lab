@@ -8,16 +8,16 @@ import { emailService } from './emailService.ts';
 export { supabase };
 
 /**
- * SOMNO LAB NOTIFICATION SUPPRESSION SYSTEM
- * 防止前端异常（如 403 或重试逻辑）导致的 Telegram/Email 洪泛。
+ * SOMNO LAB NOTIFICATION SUPPRESSION PROTOCOL
+ * 延长冷却时间以应对前端异常引发的循环告警。
  */
 let lastNotificationDispatchTime = 0;
 let lastNotificationFingerprint = '';
-const GLOBAL_NOTIFICATION_COOLDOWN = 30 * 60 * 1000; // 30 Minutes forced silence
+const GLOBAL_NOTIFICATION_COOLDOWN = 60 * 60 * 1000; // 60 Minutes
 
 /**
  * LOG_AUDIT_LOG
- * 集中管理系统审计日志，并根据冷却协议触发管理员通知。
+ * 持久化系统日志，并在冷却规则允许的情况下触发管理员通知。
  */
 export const logAuditLog = async (action: string, details: string, level: string = 'INFO') => {
   try {
@@ -31,23 +31,23 @@ export const logAuditLog = async (action: string, details: string, level: string
       user_id: user?.id
     }]);
     
-    // 1. 判定优先级
+    // 1. 优先级判定
     const isPriorityEvent = level === 'CRITICAL' || level === 'WARNING' || ['USER_LOGIN', 'USER_SIGNUP', 'ADMIN_RECIPIENT_ADDED'].includes(action);
 
-    // 2. 执行指纹静默校验
+    // 2. 指纹抑制检查
     const now = Date.now();
-    const currentFingerprint = `${action}:${details.substring(0, 50)}`;
+    const currentFingerprint = `${action}:${details.substring(0, 40)}`;
     const isCooldownActive = (now - lastNotificationDispatchTime) < GLOBAL_NOTIFICATION_COOLDOWN;
     const isExactDuplicate = currentFingerprint === lastNotificationFingerprint;
 
-    // 抑制逻辑：如果是高频重复事件或处于冷却期，则仅记录 DB 不发通知
+    // 仅在非冷却期或非重复事件时发送通知
     if (isPriorityEvent) {
-      if (isCooldownActive || isExactDuplicate) {
-        console.debug(`[Suppression] Protocol active. Notification throttled: ${action}`);
+      if (isCooldownActive && isExactDuplicate) {
+        console.debug(`[Suppression] Pulse identical. Dropping redundant notification: ${action}`);
         return !error;
       }
 
-      // 更新冷却状态
+      // 更新冷却指纹
       lastNotificationDispatchTime = now;
       lastNotificationFingerprint = currentFingerprint;
       
@@ -58,7 +58,7 @@ export const logAuditLog = async (action: string, details: string, level: string
         source: user?.email || 'SYSTEM_NODE'
       };
       
-      // 执行多渠道并发通知
+      // 并发分发至所有告警渠道
       await Promise.allSettled([
         notifyAdmin(payload),
         emailService.sendAdminAlert(payload)
@@ -67,7 +67,7 @@ export const logAuditLog = async (action: string, details: string, level: string
     
     return !error;
   } catch (e) {
-    console.error("Audit log failed to commit:", e);
+    console.error("Audit registry failure:", e);
     return false;
   }
 };
@@ -155,7 +155,7 @@ export const adminApi = {
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Target link registered: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Target link established: ${email}`, 'WARNING');
     return { data, error };
   },
   
@@ -206,7 +206,7 @@ export const userDataApi = {
     const dataRes = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
     if (dataRes.error) throw dataRes.error;
     
-    await logAuditLog('USER_SETUP_COMPLETE', `Subject ${user?.email} initialized biological metrics.`, 'INFO');
+    await logAuditLog('USER_SETUP_COMPLETE', `Subject ${user?.email} initialized metrics hub.`, 'INFO');
     return { success: true };
   }
 };
@@ -239,7 +239,7 @@ export const diaryApi = {
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user.id }]).select().single();
     if (error) throw error;
     
-    await logAuditLog('DIARY_LOG_ENTRY', `Subject ${user.email} committed log with mood: ${mood}`, 'INFO');
+    await logAuditLog('DIARY_LOG_ENTRY', `Subject ${user.email} committed mood: ${mood}`, 'INFO');
     return data;
   },
   
