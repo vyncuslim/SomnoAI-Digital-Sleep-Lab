@@ -29,11 +29,11 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
         <div className="flex items-center gap-4">
           <Logo size={48} animated={true} />
           <div>
-            <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
-              About <span className="text-indigo-400">SomnoAI</span>
+            <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
+              About <span className="text-indigo-400">SomnoAI Digital Sleep Lab</span>
             </h1>
             <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-2">
-              Digital Sleep Lab • v2026.01
+              Digital Health Ecosystem • v2026.01
             </p>
           </div>
         </div>
@@ -50,7 +50,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack }) => {
           </div>
           <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic text-left">
             <p>
-              SomnoAI Digital Sleep Lab is an AI-powered digital health platform focused on advanced sleep analysis and personalized optimization.
+              SomnoAI Digital Sleep Lab is an AI-powered digital health platform focused on advanced sleep architecture analysis and personalized optimization.
             </p>
             <p>
               Unlike traditional hardware-dependent trackers, we offer a pure software solution: collect biometric data from any wearable, smart mattress, phone sensors or manual input — then use sophisticated AI models to deliver meaningful insights without storing sensitive data long-term on servers.

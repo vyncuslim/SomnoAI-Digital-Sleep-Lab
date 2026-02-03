@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, ShieldAlert, Zap, Lock, Eye, EyeOff, User, 
@@ -102,9 +101,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   return (
     <div className="flex flex-col items-center justify-center min-h-screen p-4 md:p-6 bg-[#020617] font-sans relative overflow-x-hidden">
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="flex flex-col items-center text-center mb-8 md:mb-12 space-y-4 md:space-y-6">
-        <Logo size={60} md:size={80} animated={true} />
+        <Logo size={60} animated={true} />
         <div className="space-y-1">
-          <h1 className="text-3xl md:text-4xl font-black italic text-white uppercase tracking-tighter leading-none">SomnoAI <span className="text-indigo-500">Lab</span></h1>
+          <h1 className="text-2xl md:text-3xl font-black italic text-white uppercase tracking-tighter leading-none">SomnoAI Digital Sleep <span className="text-indigo-500">Lab</span></h1>
           <p className="text-slate-600 font-mono font-bold uppercase text-[7px] md:text-[9px] tracking-[0.6em] md:tracking-[0.8em] italic">SECURE ACCESS TERMINAL</p>
         </div>
       </m.div>
@@ -117,7 +116,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                 onClick={() => authApi.signInWithGoogle()} disabled={isGoogleLoading}
                 className="w-full py-4 md:py-5 rounded-full bg-white text-black font-black text-[10px] md:text-[11px] uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-center gap-3 shadow-2xl hover:bg-slate-200 transition-all active:scale-95 disabled:opacity-50"
               >
-                {isGoogleLoading ? <Loader2 className="animate-spin" size={16} /> : <Chrome size={16} md:size={18} />}
+                {isGoogleLoading ? <Loader2 className="animate-spin" size={16} /> : <Chrome size={16} />}
                 Continue with Google
               </button>
 
@@ -157,14 +156,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                     type="submit" disabled={isSubmitDisabled}
                     className="w-full py-4 md:py-5 rounded-full bg-indigo-600 text-white font-black text-[10px] md:text-[11px] uppercase tracking-[0.3em] md:tracking-[0.4em] shadow-2xl flex items-center justify-center gap-3 md:gap-4 transition-all hover:bg-indigo-500 disabled:opacity-40 active:scale-95"
                   >
-                    {isProcessing ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} md:size={18} fill="currentColor" />}
+                    {isProcessing ? <Loader2 className="animate-spin" size={16} /> : <Zap size={16} fill="currentColor" />}
                     <span>{isProcessing ? "SYNCHRONIZING" : "ESTABLISH LINK"}</span>
                   </button>
 
                   <AnimatePresence>
                     {error && (
                       <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="p-3 md:p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl md:rounded-3xl flex items-start gap-2 md:gap-3">
-                        <AlertCircle className="text-rose-500 shrink-0" size={14} md:size={16} />
+                        <AlertCircle className="text-rose-500 shrink-0" size={14} />
                         <p className="text-[9px] md:text-[10px] font-bold text-rose-400 uppercase leading-relaxed italic">{error.message}</p>
                       </m.div>
                     )}
@@ -178,12 +177,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                   <button onClick={() => setActiveTab(activeTab === 'login' ? 'join' : 'login')} className="text-indigo-400 hover:text-white underline underline-offset-4">{activeTab === 'login' ? 'Create one' : 'Sign in'}</button>
                 </p>
                 <button onClick={onGuest} className="w-full py-3.5 border border-white/5 text-slate-500 rounded-full font-black text-[8px] md:text-[9px] uppercase tracking-[0.2em] md:tracking-[0.3em] flex items-center justify-center gap-2 hover:bg-white/5 transition-all mt-2">
-                  <FlaskConical size={12} md:size={14} /> Sandbox Mode
+                  <FlaskConical size={12} /> Sandbox Mode
                 </button>
               </div>
             </m.div>
           ) : (
-            /* Verify & Recovery steps similarly optimized... */
             <div className="text-white text-center">Protocol Branch Transition...</div>
           )}
         </AnimatePresence>

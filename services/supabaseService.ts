@@ -22,9 +22,22 @@ export const logAuditLog = async (action: string, details: string, level: string
       user_id: user?.id
     }]);
     
-    // Auto-alerting protocol for high-priority signals
-    if (level === 'CRITICAL' || level === 'WARNING' || action === 'USER_LOGIN') {
-      const payload = { type: action, message: details, path: 'System_Audit' };
+    // AUTO-ALERT PROTOCOL v15.0
+    // Trigger notification if:
+    // 1. Level is Warning/Critical
+    // 2. Action is a 'Subject Dynamic' (Login, Signup, Feedback, Diary)
+    const isDynamicEvent = ['USER_LOGIN', 'USER_SIGNUP', 'FEEDBACK_SUBMITTED', 'DIARY_LOG_ENTRY', 'ADMIN_RECIPIENT_ADDED'].includes(action);
+    const isPriorityError = level === 'CRITICAL' || level === 'WARNING';
+
+    if (isPriorityError || isDynamicEvent) {
+      const payload = { 
+        type: action, 
+        message: details, 
+        path: 'Neural_Grid_Pulse',
+        source: user?.email || 'SYSTEM_NODE'
+      };
+      
+      // Concurrent dispatch to Telegram Bot and SMTP Gateway
       await Promise.allSettled([
         notifyAdmin(payload),
         emailService.sendAdminAlert(payload)
@@ -45,8 +58,13 @@ export const authApi = {
   signIn: (email: string, password: string, captchaToken?: string) => 
     (supabase.auth as any).signInWithPassword({ email, password, options: { captchaToken } }),
   
-  signUp: (email: string, password: string, metadata: any, captchaToken?: string) => 
-    (supabase.auth as any).signUp({ email, password, options: { data: metadata, captchaToken } }),
+  signUp: async (email: string, password: string, metadata: any, captchaToken?: string) => {
+    const res = await (supabase.auth as any).signUp({ email, password, options: { data: metadata, captchaToken } });
+    if (!res.error) {
+      await logAuditLog('USER_SIGNUP', `New node registered: ${email}\nIdentity: ${metadata.full_name || 'Anonymous'}`, 'INFO');
+    }
+    return res;
+  },
   
   signOut: () => (supabase.auth as any).signOut(),
   
@@ -68,7 +86,6 @@ export const authApi = {
 
 /**
  * ADMIN_API
- * Restricted operations for laboratory oversight and infrastructure management.
  */
 export const adminApi = {
   getAdminClearance: async (id: string) => {
@@ -142,7 +159,6 @@ export const adminApi = {
 
 /**
  * PROFILE_API
- * Subject identity management.
  */
 export const profileApi = {
   getMyProfile: async () => {
@@ -160,7 +176,6 @@ export const profileApi = {
 
 /**
  * USER_DATA_API
- * Biological metric persistence and initial subject registration.
  */
 export const userDataApi = {
   getUserData: async () => {
@@ -181,19 +196,20 @@ export const userDataApi = {
     if (profileRes.error) throw profileRes.error;
     const dataRes = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
     if (dataRes.error) throw dataRes.error;
+    
+    await logAuditLog('USER_SETUP_COMPLETE', `Subject ${user?.email} initialized biological metrics.`, 'INFO');
     return { success: true };
   }
 };
 
 /**
  * FEEDBACK_API
- * Handles user-submitted anomalies and grid improvement proposals.
  */
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
     if (!error) {
-      await logAuditLog('FEEDBACK_SUBMITTED', `Type: ${type} | From: ${email}`, 'INFO');
+      await logAuditLog('FEEDBACK_SUBMITTED', `Type: ${type}\nFrom: ${email}\nContent: ${content}`, 'INFO');
     }
     return { success: !error, error };
   }
@@ -201,7 +217,6 @@ export const feedbackApi = {
 
 /**
  * DIARY_API
- * Manages chronological biological log entries.
  */
 export const diaryApi = {
   getEntries: async () => {
@@ -214,6 +229,8 @@ export const diaryApi = {
     if (!user) throw new Error("UNAUTHORIZED");
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user.id }]).select().single();
     if (error) throw error;
+    
+    await logAuditLog('DIARY_LOG_ENTRY', `Subject ${user.email} logged mood: ${mood}\nEntry: ${content.substring(0, 300)}${content.length > 300 ? '...' : ''}`, 'INFO');
     return data;
   },
   

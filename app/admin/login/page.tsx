@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   ShieldAlert, Loader2, ChevronLeft, Mail, ShieldCheck, 
@@ -49,7 +48,6 @@ export default function AdminLoginPage() {
 
     const targetEmail = email.trim().toLowerCase();
     
-    // 防御性跳转：即便请求失败，我们也尝试进入下一步，因为验证码可能之前已经发过
     const transitionTimer = setTimeout(() => {
       setStep('verify');
       setIsProcessing(false);
@@ -62,7 +60,6 @@ export default function AdminLoginPage() {
         if (otpErr.status === 429 || otpErr.message?.toLowerCase().includes('rate limit')) {
            setCooldown(60);
            setError({ message: "EMAIL_THROTTLED: Waiting 60s. Moving to entry terminal anyway...", isRateLimit: true });
-           // 不抛出错误，而是让 transitionTimer 正常工作
            return;
         }
         throw otpErr;
@@ -125,7 +122,7 @@ export default function AdminLoginPage() {
 
       <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="text-center mb-16 space-y-6 relative z-10">
         <Logo size={100} animated={true} />
-        <h1 className="text-4xl font-black tracking-tighter text-white italic uppercase leading-none">SomnoAI <span className="text-indigo-400">Lab</span></h1>
+        <h1 className="text-3xl md:text-4xl font-black tracking-tighter text-white italic uppercase leading-none">SomnoAI Digital Sleep <span className="text-indigo-400">Lab</span></h1>
         <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.8em] mt-3 opacity-60 italic">RESTRICTED COMMAND INTERFACE</p>
       </m.div>
 

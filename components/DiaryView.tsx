@@ -3,12 +3,10 @@ import React, { useState, useEffect } from 'react';
 import { Book, PenTool, Trash2, Calendar, Sparkles, Send, Loader2, BookOpen, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
-import { diaryApi, supabase } from '../services/supabaseService.ts';
+import { diaryApi } from '../services/supabaseService.ts';
 import { DiaryEntry, Language } from '../types.ts';
 import { translations } from '../services/i18n.ts';
 import { notificationService } from '../services/notificationService.ts';
-import { notifyAdmin } from '../services/telegramService.ts';
-import { emailService } from '../services/emailService.ts';
 
 const m = motion as any;
 
@@ -43,21 +41,11 @@ export const DiaryView: React.FC<{ lang: Language }> = ({ lang }) => {
       const newEntry = await diaryApi.saveEntry(content, mood);
       setEntries([newEntry as DiaryEntry, ...entries]);
       
-      // 1. Browser Notification
+      // Browser Local Feedback
       notificationService.sendNotification("Diary Saved", `Mood: ${mood} • Your biological log has been archived.`);
       
-      // 2. Multi-channel Admin Alerting
-      const { data: { user } } = await (supabase.auth as any).getUser();
-      const alertPayload = {
-        type: 'DIARY_LOG_ENTRY',
-        message: `📝 NEW BIOLOGICAL LOG\nSubject: ${user?.email}\nMood: ${mood}\nEntry: ${content.slice(0, 200)}${content.length > 200 ? '...' : ''}`
-      };
-
-      // Concurrent Dual-channel Mirroring
-      await Promise.allSettled([
-        notifyAdmin(alertPayload),
-        emailService.sendAdminAlert(alertPayload)
-      ]);
+      // NOTE: Multi-channel Admin Alerting (Email/TG) is now handled 
+      // automatically by diaryApi.saveEntry -> logAuditLog internally.
 
       setContent('');
       setMood('Neutral');

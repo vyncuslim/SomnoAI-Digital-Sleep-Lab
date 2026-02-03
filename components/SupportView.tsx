@@ -74,7 +74,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           >
             <div className="flex items-center justify-between mb-6 md:mb-8">
                <div className="p-3 md:p-4 bg-indigo-500/10 rounded-xl md:rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform">
-                  <LifeBuoy size={24} md:size={32} />
+                  {/* Fix: Removed non-existent md:size prop */}
+                  <LifeBuoy size={24} />
                </div>
                <ChevronRight size={18} className="text-slate-700 group-hover:text-indigo-400 transition-colors" />
             </div>
@@ -90,7 +91,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           >
             <div className="flex items-center justify-between mb-6 md:mb-8">
                <div className="p-3 md:p-4 bg-rose-500/10 rounded-xl md:rounded-2xl text-rose-400 group-hover:scale-110 transition-transform">
-                  <Heart size={24} md:size={32} fill="currentColor" className="opacity-80" />
+                  {/* Fix: Removed non-existent md:size prop */}
+                  <Heart size={24} fill="currentColor" className="opacity-80" />
                </div>
                <ChevronRight size={18} className="text-rose-500/40 group-hover:text-rose-400 transition-colors" />
             </div>
@@ -148,7 +150,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
         <div className="p-6 md:p-10 bg-slate-900/40 border border-white/5 rounded-[2.5rem] md:rounded-[4rem] flex flex-col md:flex-row items-center justify-between gap-6 md:gap-10">
            <div className="flex items-center gap-4 md:gap-6">
               <div className="p-3 md:p-4 bg-emerald-500/10 rounded-xl md:rounded-2xl text-emerald-400">
-                 <Mail size={20} md:size={24} />
+                 {/* Fix: Removed non-existent md:size prop */}
+                 <Mail size={20} />
               </div>
               <div className="space-y-0.5 md:space-y-1 text-center md:text-left">
                  <p className="text-[8px] md:text-[9px] font-black text-slate-600 uppercase tracking-widest">Developer Network</p>
@@ -182,7 +185,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
                 <div className="pt-4">
                   <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-16 h-16 md:w-24 md:h-24 rounded-full bg-[#f43f5e] flex items-center justify-center text-white shadow-[0_0_50px_rgba(244,63,94,0.5)] mx-auto mb-6">
-                     <Coffee size={32} md:size={48} fill="white" strokeWidth={1} />
+                     {/* Fix: Removed non-existent md:size prop */}
+                     <Coffee size={32} fill="white" strokeWidth={1} />
                   </m.div>
                   <div className="space-y-2 md:space-y-4">
                      <h2 className="text-3xl md:text-5xl font-black italic text-white uppercase tracking-tighter leading-none">{t.donateTitle}</h2>
