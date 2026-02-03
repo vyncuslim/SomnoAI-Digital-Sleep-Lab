@@ -1,7 +1,7 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v4.6
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v4.8
  */
 
 const commonEn = {
@@ -15,7 +15,18 @@ const commonEn = {
   },
   registry: {
     title: "Neural Registry",
-    subtitle: "Biological Identity & Baseline Calibration"
+    subtitle: "Biological Identity & Baseline Calibration",
+    syncing: "Synchronizing Registry...",
+    success: "Signal Optimized",
+    failure: "Sync Link Failure",
+    commit: "Commit Neural Registry",
+    identitySector: "Access Credentials",
+    biometricSector: "Biological Metrics",
+    callsign: "Callsign (Full Name)",
+    identifier: "Email Identifier",
+    polarity: "Neural Polarity",
+    sovereignty: "Biometric Sovereignty Protocol",
+    sovereigntyDesc: "Your laboratory profile is processed at the edge. Physiological baselines are used exclusively for synthetic analysis and circadian shift simulation. Data remains sovereign to this node."
   },
   settings: {
     title: 'Configuration',
@@ -89,7 +100,18 @@ const commonZh = {
   },
   registry: {
     title: "神经注册表",
-    subtitle: "生物身份与基准校准"
+    subtitle: "生物身份与基准校准",
+    syncing: "正在同步注册表...",
+    success: "信号已优化",
+    failure: "同步链路故障",
+    commit: "提交神经注册表",
+    identitySector: "访问凭据",
+    biometricSector: "生物特征指标",
+    callsign: "代号 (全名)",
+    identifier: "电子邮件标识符",
+    polarity: "神经极性",
+    sovereignty: "生物识别主权协议",
+    sovereigntyDesc: "您的实验室个人资料在边缘进行处理。生理基准仅用于合成分析和昼夜节律偏移模拟。数据主权仍归此节点所有。"
   },
   settings: {
     title: '配置',
@@ -163,7 +185,18 @@ const commonEs = {
   },
   registry: {
     title: "Registro Neural",
-    subtitle: "Identidad Biológica y Calibración de Base"
+    subtitle: "Identidad Biológica y Calibración de Base",
+    syncing: "Sincronizando Registro...",
+    success: "Señal Optimizada",
+    failure: "Fallo de Enlace de Sincronización",
+    commit: "Comprometer Registro Neural",
+    identitySector: "Credenciales de Acceso",
+    biometricSector: "Métricas Biológicas",
+    callsign: "Nombre de Usuario (Nombre Completo)",
+    identifier: "Identificador de Correo",
+    polarity: "Polaridad Neural",
+    sovereignty: "Protocolo de Soberanía Biométrica",
+    sovereigntyDesc: "Su perfil de laboratorio se procesa en el borde. Las líneas de base fisiológicas se utilizan exclusivamente para análisis sintéticos y simulación de cambios circadianos. Los datos permanecen soberanos en este nodo."
   },
   settings: {
     title: 'Configuración',

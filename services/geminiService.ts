@@ -10,11 +10,6 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
-// FIX: Always use API_KEY from process.env as per mandatory security guidelines
-const getApiKey = () => {
-  return process.env.API_KEY || "";
-};
-
 const handleGeminiError = (err: any) => {
   const errMsg = err.message || "";
   console.error("Neural processing exception:", err);
@@ -27,18 +22,17 @@ const handleGeminiError = (err: any) => {
   throw new Error("CORE_PROCESSING_EXCEPTION");
 };
 
-// Selection of recommended models based on task complexity
-const MODEL_FLASH = 'gemini-3-flash-preview'; 
-const MODEL_PRO = 'gemini-3-pro-preview'; 
+// Selection of recommended models based on task complexity and project instructions.
+// Gemini 2.5 Pro is preferred for logic, while preview models are avoided in production paths.
+const MODEL_FLASH = 'gemini-2.5-flash'; 
+const MODEL_PRO = 'gemini-2.5-pro'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const prompt = `You are a digital sleep scientist. Perform deep neural analysis. Return JSON array with 3 insights. Data: Score ${data.score}, Deep ${data.deepRatio}%. Language: ${lang}`;
   try {
-    const key = getApiKey();
-    if (!key) throw new Error("API_KEY_REQUIRED");
-
-    const ai = new GoogleGenAI({ apiKey: key });
+    // Strictly follow named parameter for initialization and use process.env.API_KEY directly
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: prompt,
@@ -50,7 +44,7 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
         }
       }
     });
-    // Properly access text property on GenerateContentResponse
+    // Directly access text property on GenerateContentResponse
     return JSON.parse(response.text?.trim() || "[]");
   } catch (err) {
     handleGeminiError(err);
@@ -67,10 +61,7 @@ export const chatWithCoach = async (
   const systemInstruction = `You are the Somno Chief Research Officer (CRO). ${bio} Answer in ${lang}.`;
 
   try {
-    const key = getApiKey();
-    if (!key) throw new Error("API_KEY_REQUIRED");
-
-    const ai = new GoogleGenAI({ apiKey: key });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const contents = history.map(m => {
       const parts: any[] = [{ text: m.content }];
       if (m.image) {
@@ -89,7 +80,7 @@ export const chatWithCoach = async (
         tools: [{ googleSearch: {} }]
       }
     });
-    // Correctly using text property and extracting grounding chunks
+    // Extract text and grounding chunks correctly
     return { 
       text: response.text, 
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] 
@@ -101,10 +92,7 @@ export const chatWithCoach = async (
 
 export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
   try {
-    const key = getApiKey();
-    if (!key) throw new Error("API_KEY_REQUIRED");
-
-    const ai = new GoogleGenAI({ apiKey: key });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: `Design a sleep experiment based on the current score of ${data.score}. Return in ${lang}.`,
@@ -130,10 +118,7 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
 
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
   try {
-    const key = getApiKey();
-    if (!key) throw new Error("API_KEY_REQUIRED");
-
-    const ai = new GoogleGenAI({ apiKey: key });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
       contents: `Weekly trend report: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}. Language: ${lang}`,
@@ -147,10 +132,7 @@ export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 
 
 export const generateNeuralLullaby = async (data: SleepRecord): Promise<string | undefined> => {
   try {
-    const key = getApiKey();
-    if (!key) return undefined;
-
-    const ai = new GoogleGenAI({ apiKey: key });
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const response = await ai.models.generateContent({
       model: MODEL_TTS,
       contents: [{ parts: [{ text: `Say cheerfully: Calibration complete for recovery score ${data.score}.` }] }],
@@ -159,7 +141,6 @@ export const generateNeuralLullaby = async (data: SleepRecord): Promise<string |
         speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
       },
     });
-    // Raw PCM data is returned in candidates part inlineData
     return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
   } catch (err) { 
     return undefined; 
