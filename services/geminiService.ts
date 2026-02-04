@@ -1,13 +1,34 @@
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
-import { logAuditLog } from "./supabaseService.ts";
+import { logAuditLog, supabase } from "./supabaseService.ts";
 
 export interface SleepExperiment {
   hypothesis: string;
   protocol: string[];
   expectedImpact: string;
 }
+
+const N8N_WEBHOOK_URL = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/74fff973-2a0e-4a24-852b-cba12ad19fd0";
+
+/**
+ * Pipes AI activity to the n8n neural automation bridge.
+ */
+const notifyN8NBridge = async (event: string, type: string) => {
+  try {
+    const { data: { user } } = await (supabase.auth as any).getUser();
+    const url = new URL(N8N_WEBHOOK_URL);
+    url.searchParams.append('event', event);
+    url.searchParams.append('node', 'ai_service');
+    url.searchParams.append('type', type);
+    url.searchParams.append('subject', user?.email || 'anonymous');
+    
+    // Using no-cors as it's a fire-and-forget signal to a GET webhook
+    await fetch(url.toString(), { method: 'GET', mode: 'no-cors' });
+  } catch (e) {
+    // Silent fail to maintain AI service availability
+  }
+};
 
 const handleGeminiError = (err: any) => {
   const errMsg = err.message || "";
@@ -52,7 +73,10 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
         }
       }
     });
-    return JSON.parse(response.text?.trim() || "[]");
+    
+    const result = JSON.parse(response.text?.trim() || "[]");
+    notifyN8NBridge('insight_generated', 'flash_model');
+    return result;
   } catch (err) {
     handleGeminiError(err);
     return ["Recalibrating neural nodes."];
@@ -87,6 +111,9 @@ export const chatWithCoach = async (
         tools: [{ googleSearch: {} }]
       }
     });
+    
+    notifyN8NBridge('chat_message', 'pro_model');
+    
     return { 
       text: response.text, 
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] 
@@ -115,6 +142,8 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
         }
       }
     });
+    
+    notifyN8NBridge('experiment_designed', 'pro_model');
     return JSON.parse(response.text?.trim() || "{}");
   } catch (err) { 
     handleGeminiError(err); 

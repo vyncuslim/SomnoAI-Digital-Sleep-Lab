@@ -146,7 +146,7 @@ export const Settings: React.FC<SettingsProps> = ({
                   
                   <button 
                     onClick={() => setShowDiag(false)}
-                    className="w-full py-4 rounded-full bg-slate-950 border border-white/5 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:text-slate-400 transition-all italic"
+                    className="w-full py-4 rounded-full bg-slate-955 border border-white/5 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:text-slate-400 transition-all italic"
                   >
                     关闭诊断面板
                   </button>
