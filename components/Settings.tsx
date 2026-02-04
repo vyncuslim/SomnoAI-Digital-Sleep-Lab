@@ -2,13 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   LogOut as DisconnectIcon, ShieldCheck, 
-  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy, Key, Eye, EyeOff, Save, Trash2, Send, X, Activity, FlaskConical
+  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy, Key, Eye, EyeOff, Save, Trash2, Send, X, Activity, FlaskConical,
+  Box, CheckCircle2, AlertCircle, Loader2
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext.tsx';
 import { ExitFeedbackModal } from './ExitFeedbackModal.tsx';
 import { systemMonitor } from '../services/systemMonitor.ts';
+import { hfService } from '../services/hfService.ts';
 
 const m = motion as any;
 
@@ -28,8 +30,9 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showKey, setShowKey] = useState(false);
   const [isSavingKey, setIsSavingKey] = useState(false);
   
-  // Diagnostic State
+  // Diagnostic States
   const [diagStatus, setDiagStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
+  const [hfDiagStatus, setHfDiagStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
   const [showDiag, setShowDiag] = useState(true);
 
   const t = translations[lang]?.settings || translations.en.settings;
@@ -64,19 +67,15 @@ export const Settings: React.FC<SettingsProps> = ({
     setDiagStatus('running');
     
     try {
-      // 1. Trigger the n8n Webhook provided by user
       const prodWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/debda1be-d725-4f68-b02a-1b1dac5ee136";
       const testWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/a205efcc-7c98-44c7-aad9-5815e0ac5ab";
-      
       const targetUrl = isTest ? testWebhook : prodWebhook;
       
-      // Updated to PATCH as per user instruction. Removing no-cors to allow PATCH.
       await fetch(targetUrl, { 
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' }
       });
       
-      // 2. Trigger internal mirror if production
       if (!isTest) {
         await systemMonitor.executeGlobalPulseCheck();
       }
@@ -84,9 +83,22 @@ export const Settings: React.FC<SettingsProps> = ({
       setDiagStatus('success');
       setTimeout(() => setDiagStatus('idle'), 3000);
     } catch (err) {
-      console.error("Diagnostic Node Failure:", err);
       setDiagStatus('error');
       setTimeout(() => setDiagStatus('idle'), 3000);
+    }
+  };
+
+  const handleHfDiagnostic = async () => {
+    if (hfDiagStatus === 'running') return;
+    setHfDiagStatus('running');
+    try {
+      // Basic ping test to HF node
+      await hfService.chat("Ping test for laboratory diagnostic pulse.");
+      setHfDiagStatus('success');
+    } catch (e) {
+      setHfDiagStatus('error');
+    } finally {
+      setTimeout(() => setHfDiagStatus('idle'), 4000);
     }
   };
 
@@ -107,45 +119,51 @@ export const Settings: React.FC<SettingsProps> = ({
               initial={{ opacity: 0, height: 0 }} 
               animate={{ opacity: 1, height: 'auto' }} 
               exit={{ opacity: 0, height: 0 }}
+              className="space-y-4"
             >
               <GlassCard className="p-8 rounded-[3rem] border-amber-500/20 bg-amber-500/[0.02] space-y-6">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Activity size={18} className="text-amber-500" />
-                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">n8n Neural Link Test (PATCH)</h3>
+                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Laboratory Node Integrity</h3>
                   </div>
                   <button onClick={() => setShowDiag(false)} className="p-2 text-slate-600 hover:text-white transition-all">
                     <X size={14} />
                   </button>
                 </div>
                 
-                <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                  Trigger an external diagnostic signal to the n8n automation node via <b>PATCH</b> protocol.
-                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="p-5 bg-white/5 rounded-[2rem] border border-white/5 space-y-4">
+                      <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Automation Hub (n8n)</p>
+                      <button 
+                        onClick={() => handleInitiateDiagnostic(false)}
+                        disabled={diagStatus === 'running'}
+                        className={`w-full py-3 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
+                          diagStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                          diagStatus === 'error' ? 'bg-rose-600 text-white' : 
+                          'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
+                        }`}
+                      >
+                        {diagStatus === 'running' ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
+                        TEST_LINK
+                      </button>
+                   </div>
 
-                <div className="space-y-3">
-                  <div className="flex gap-3">
-                    <button 
-                      onClick={() => handleInitiateDiagnostic(false)}
-                      disabled={diagStatus === 'running'}
-                      className={`flex-1 py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-3 transition-all italic shadow-lg ${
-                        diagStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                        diagStatus === 'error' ? 'bg-rose-600 text-white' : 
-                        'bg-white/5 text-amber-500 border border-amber-500/30 hover:bg-white/10'
-                      }`}
-                    >
-                      {diagStatus === 'running' ? <RefreshCw size={14} className="animate-spin" /> : <Zap size={14} />}
-                      {diagStatus === 'running' ? 'EXECUTING...' : diagStatus === 'success' ? 'SIGNAL_DISPATCHED' : 'INITIATE_PROD_PULSE'}
-                    </button>
-                    
-                    <button 
-                      onClick={() => handleInitiateDiagnostic(true)}
-                      disabled={diagStatus === 'running'}
-                      className="px-6 py-4 rounded-full bg-slate-900 border border-indigo-500/30 text-indigo-400 font-black text-[10px] uppercase tracking-widest hover:text-white transition-all italic flex items-center gap-2"
-                    >
-                      <FlaskConical size={14} /> VERIFY_TEST_NODE
-                    </button>
-                  </div>
+                   <div className="p-5 bg-white/5 rounded-[2rem] border border-white/5 space-y-4">
+                      <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">External AI (HF Node)</p>
+                      <button 
+                        onClick={handleHfDiagnostic}
+                        disabled={hfDiagStatus === 'running'}
+                        className={`w-full py-3 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
+                          hfDiagStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                          hfDiagStatus === 'error' ? 'bg-rose-600 text-white' : 
+                          'bg-amber-600/20 text-amber-500 border border-amber-500/30'
+                        }`}
+                      >
+                        {hfDiagStatus === 'running' ? <RefreshCw size={12} className="animate-spin" /> : <Box size={12} />}
+                        {hfDiagStatus === 'success' ? 'STABLE' : hfDiagStatus === 'error' ? 'VOID' : 'PROBE_NODE'}
+                      </button>
+                   </div>
                 </div>
               </GlassCard>
             </m.div>
@@ -171,6 +189,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 onClick={() => onNavigate('admin')}
                 className="px-6 py-2.5 bg-indigo-600/20 text-indigo-400 rounded-full text-[9px] font-black uppercase tracking-widest border border-indigo-500/30 hover:bg-indigo-600/30 transition-all flex items-center gap-2"
               >
+                {/* Fixed TerminalIcon to Terminal */}
                 <Terminal size={12} /> BRIDGE_ACCESS
               </button>
             )}
@@ -209,7 +228,8 @@ export const Settings: React.FC<SettingsProps> = ({
                disabled={isSavingKey}
                className="w-full py-4 rounded-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-3 italic disabled:opacity-50"
              >
-               {isSavingKey ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+               {/* Added missing Loader2 import to Lucide icons */}
+               {isSavingKey ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
                {isSavingKey ? 'COMMITTING LINK...' : 'COMMIT NEURAL LINK'}
              </button>
           </div>
