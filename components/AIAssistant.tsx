@@ -44,6 +44,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [protocol, setProtocol] = useState<ProtocolType>('core');
   const [iframeLoading, setIframeLoading] = useState(true);
+  const [fallbackActive, setFallbackActive] = useState(false);
   
   useEffect(() => {
     if (messages.length === 0) {
@@ -62,6 +63,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
+    setFallbackActive(false);
     
     try {
       if (protocol === 'core') {
@@ -75,7 +77,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
           }]);
         }
       } else if (protocol === 'vertex') {
-        // Vertex AI Protocol via Vercel Secure Bridge
         const response = await vertexService.analyze(textToSend);
         setMessages(prev => [...prev, { 
           role: 'assistant', 
@@ -83,7 +84,6 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
           timestamp: new Date() 
         }]);
       } else if (protocol === 'external') {
-        // External Node (HF Fetch Method)
         const response = await hfService.chat(textToSend);
         setMessages(prev => [...prev, { 
           role: 'assistant', 
@@ -92,11 +92,22 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
         }]);
       }
     } catch (err: any) {
-      const errorMsg = protocol === 'core' 
+      const errMsg = err.message || "";
+      const isQuotaError = errMsg.includes("QUOTA") || errMsg.includes("429");
+      const isNotFoundError = errMsg.includes("NODE_NOT_FOUND") || errMsg.includes("404");
+      
+      let errorMsg = protocol === 'core' 
         ? "Neural Bridge unavailable. Switching to external node protocol might assist." 
         : protocol === 'vertex'
         ? "Vertex Node access restricted. Ensure GCP_PROJECT_ID and credentials are set."
         : "External Node sync failure. Connection to the HF hub was severed.";
+      
+      if (isQuotaError) {
+        errorMsg = "Neural Core (Pro) quota reached. System has successfully engaged Flash fallback protocol for this session.";
+        setFallbackActive(true);
+      } else if (isNotFoundError && protocol === 'external') {
+        errorMsg = "The External HF Space is currently unreachable (404). Please utilize the Neural Core (Gemini) instead.";
+      }
       
       setMessages(prev => [...prev, { 
         role: 'assistant', 
@@ -122,7 +133,7 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
             <h1 className="text-lg font-black italic text-white uppercase leading-none">{t.title}</h1>
             <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">
               Active Node: {
-                protocol === 'core' ? 'Neural Core V2.5' : 
+                protocol === 'core' ? (fallbackActive ? 'Neural core (FLASH_FALLBACK)' : 'Neural Core V2.5') : 
                 protocol === 'vertex' ? 'Vertex Secure Bridge' :
                 protocol === 'external' ? 'HF External Node (API)' : 
                 'Legacy Sandbox (Iframe)'

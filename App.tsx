@@ -97,21 +97,27 @@ const AppContent: React.FC = () => {
   // Centralized Navigation Helper (Path-Based)
   const navigate = (view: string) => {
     safeNavigatePath(view === 'landing' ? '/' : view);
-    // Routing logic in useEffect will pick this up via popstate/event
   };
 
-  // Updated Routing Logic for Clean URLs
+  // Physical URL Support & Global Routing Matrix
   useEffect(() => {
     const handleRouting = () => {
+      // 1. Detect physical path (e.g., /settings)
       const pathname = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      
+      // 2. Detect hash fallback (e.g., /#/settings)
       const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0];
       
-      // Physical path has priority in professional architectures
+      // Physical path always takes priority for Modern Browsers
       const route = pathname || hash || 'landing';
 
-      // Redirection logic for authenticated users at public entry points
-      if ((profile || isSimulated) && ['login', 'signup', 'landing'].includes(route)) {
+      // Access Control: Redirect authenticated nodes at public entry sectors
+      if ((profile || isSimulated) && (route === 'landing' || route === 'login' || route === 'signup' || route === '')) {
         setActiveView('dashboard');
+        // Update URL to match view if we are on root
+        if (window.location.pathname === '/' || window.location.pathname === '/landing') {
+           window.history.replaceState(null, '', '/dashboard');
+        }
         return;
       }
 
@@ -126,6 +132,7 @@ const AppContent: React.FC = () => {
       if (mappings[route]) {
         setActiveView(mappings[route]);
       } else {
+        // Safe fallback for undefined sectors
         setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
       }
       
@@ -134,6 +141,8 @@ const AppContent: React.FC = () => {
     
     window.addEventListener('popstate', handleRouting);
     window.addEventListener('hashchange', handleRouting);
+    
+    // Initial Sector Pulse
     handleRouting();
     
     return () => {

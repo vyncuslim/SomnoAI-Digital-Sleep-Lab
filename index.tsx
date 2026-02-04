@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import { logAuditLog } from './services/supabaseService.ts';
 
 /**
- * SOMNO LAB NEURAL TELEMETRY GUARD v8.0
+ * SOMNO LAB NEURAL TELEMETRY GUARD v8.1
  * Monitors full-stack anomalies with dual-channel (Telegram + Email) fallback alert protocol.
  */
 
@@ -17,7 +16,7 @@ const isNoise = (msg: string) => {
     'reading \'query\'', 'content.js', 'chrome-extension', 'Object.defineProperty',
     'reading \'postMessage\'', 'chrome.tabs.query', 'signal is aborted',
     'AbortError', 'user_app_status', 'Failed to initialize current tab',
-    'initializeCurrentTab', 'Script error'
+    'initializeCurrentTab', 'Script error', 'E353: csPostMessage', 'timeout 60000 ms'
   ];
   return noise.some(n => msg.includes(n));
 };

@@ -1,43 +1,42 @@
 /**
- * SOMNO LAB EXTERNAL NODE SERVICE v1.0
- * Handles communication with Hugging Face Spaces via Fetch API.
- * Target: nomic-ai/gpt4all-j
+ * SOMNO LAB EXTERNAL NODE SERVICE v1.1
+ * Handles communication with Hugging Face Spaces via internal secure proxy.
  */
 
 export const hfService = {
   /**
-   * Dispatches a prediction request to the HF external node.
-   * Uses the Gradio /run/predict protocol.
+   * Dispatches a prediction request to the internal HF proxy.
    */
   chat: async (prompt: string): Promise<string> => {
     try {
-      // NOTE: Using the primary Gradio API endpoint for nomic-ai/gpt4all-j
-      // This is the "Advanced Method" described in laboratory documentation.
-      const response = await fetch('https://nomic-ai-gpt4all-j.hf.space/run/predict', {
+      const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
+      
+      const response = await fetch('/api/hf-proxy', {
         method: 'POST',
         headers: { 
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({ 
-          data: [prompt],
-          session_hash: Math.random().toString(36).substring(2)
+          prompt,
+          secret: INTERNAL_LAB_KEY
         })
       });
 
-      if (!response.ok) throw new Error("NODE_HANDSHAKE_FAILED");
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        throw new Error(errData.error || "GATEWAY_HANDSHAKE_VOID");
+      }
 
       const result = await response.json();
       
-      // Gradio usually returns an object with a 'data' array.
-      // The response is typically at index 0.
+      // Extract data from standard Gradio array response
       if (result && result.data && result.data[0]) {
         return result.data[0];
       }
 
-      throw new Error("NODE_RESPONSE_EMPTY");
+      throw new Error("NODE_SIGNAL_EMPTY");
     } catch (error) {
-      console.error("[External Node Connection Severed]:", error);
+      console.error("[External Node Protocol Breach]:", error);
       throw error;
     }
   }

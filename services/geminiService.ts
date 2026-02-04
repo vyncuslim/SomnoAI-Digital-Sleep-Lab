@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -23,7 +24,6 @@ const notifyN8NBridge = async (event: string, type: string) => {
     url.searchParams.append('type', type);
     url.searchParams.append('subject', user?.email || 'anonymous');
     
-    // Updated to PATCH as per user instruction
     await fetch(url.toString(), { 
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' }
@@ -37,12 +37,16 @@ const handleGeminiError = (err: any) => {
   const errMsg = err.message || "";
   console.error("Neural processing exception:", err);
   
+  if (errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("RESOURCE_EXHAUSTED")) {
+    return "QUOTA_EXHAUSTED";
+  }
+
   if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID") || errMsg.includes("API_KEY")) {
     logAuditLog('API_SERVICE_FAULT', `CRITICAL: Neural Key Voided.\nError: ${errMsg}\nNode: Gemini Core`, 'CRITICAL');
-    throw new Error("API_KEY_REQUIRED");
+    return "API_KEY_REQUIRED";
   }
   
-  throw new Error("CORE_PROCESSING_EXCEPTION");
+  return "CORE_PROCESSING_EXCEPTION";
 };
 
 /**
@@ -89,12 +93,13 @@ export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'):
 export const chatWithCoach = async (
   history: { role: string; content: string; image?: string }[], 
   lang: Language = 'en', 
-  contextData?: SleepRecord | null
+  contextData?: SleepRecord | null,
+  forceModel?: string
 ) => {
   const bio = contextData ? `\nTELEMETRY_CONTEXT: Score: ${contextData.score}/100.` : "";
   const systemInstruction = `You are the Somno Chief Research Officer (CRO). ${bio} Answer in ${lang}.`;
-
-  try {
+  
+  const attemptRequest = async (modelName: string) => {
     const ai = getAIClient();
     const contents = history.map(m => {
       const parts: any[] = [{ text: m.content }];
@@ -107,22 +112,40 @@ export const chatWithCoach = async (
     });
 
     const response = await ai.models.generateContent({
-      model: MODEL_PRO,
+      model: modelName,
       contents: contents,
       config: { 
         systemInstruction, 
-        tools: [{ googleSearch: {} }]
+        tools: modelName.includes('pro') ? [{ googleSearch: {} }] : undefined
       }
     });
     
-    notifyN8NBridge('chat_message', 'pro_model');
+    notifyN8NBridge('chat_message', modelName);
     
     return { 
       text: response.text, 
       sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] 
     };
-  } catch (err) { 
-    handleGeminiError(err); 
+  };
+
+  try {
+    // Attempt primary model
+    return await attemptRequest(forceModel || MODEL_PRO);
+  } catch (err: any) { 
+    const errorType = handleGeminiError(err);
+    
+    // Auto-fallback protocol for quota exhaustion
+    if (errorType === "QUOTA_EXHAUSTED" && !forceModel) {
+      console.warn("Pro model saturated. Initiating Flash fallback sync...");
+      try {
+        return await attemptRequest(MODEL_FLASH);
+      } catch (fallbackErr) {
+        handleGeminiError(fallbackErr);
+        throw new Error("NEURAL_GRID_SATURATED");
+      }
+    }
+    
+    throw new Error(errorType); 
   }
 };
 
@@ -149,39 +172,39 @@ export const designExperiment = async (data: SleepRecord, lang: Language = 'en')
     notifyN8NBridge('experiment_designed', 'pro_model');
     return JSON.parse(response.text?.trim() || "{}");
   } catch (err) { 
-    handleGeminiError(err); 
+    const errorType = handleGeminiError(err);
+    if (errorType === "QUOTA_EXHAUSTED") {
+       const ai = getAIClient();
+       const response = await ai.models.generateContent({
+         model: MODEL_FLASH,
+         contents: `Design a sleep experiment for score ${data.score}. Return JSON object. Language: ${lang}`,
+         config: { responseMimeType: "application/json" }
+       });
+       return JSON.parse(response.text?.trim() || "{}");
+    }
     throw err; 
   }
 };
 
+/**
+ * Performs a weekly sleep telemetry analysis and returns an executive summary.
+ */
 export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
+  const telemetryData = history.map(h => ({ date: h.date, score: h.score }));
+  const prompt = `Perform a weekly sleep telemetry analysis. Data: ${JSON.stringify(telemetryData)}. Return a concise executive summary focused on trends and optimization in ${lang}.`;
+  
   try {
     const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: MODEL_FLASH,
-      contents: `Weekly trend report: ${JSON.stringify(history.map(h => ({ d: h.date, s: h.score })))}. Language: ${lang}`,
+      contents: prompt,
     });
-    return response.text || "Summary failed.";
-  } catch (err) { 
+    
+    notifyN8NBridge('weekly_summary_generated', 'flash_model');
+    return response.text || "Neural analysis stream empty.";
+  } catch (err) {
     handleGeminiError(err);
-    return "Synthesis error occurred."; 
-  }
-};
-
-export const generateNeuralLullaby = async (data: SleepRecord): Promise<string | undefined> => {
-  try {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: MODEL_TTS,
-      contents: [{ parts: [{ text: `Say cheerfully: Calibration complete for recovery score ${data.score}.` }] }],
-      config: { 
-        responseModalities: [Modality.AUDIO], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
-      },
-    });
-    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  } catch (err) { 
-    return undefined; 
+    return "The neural grid is currently recalibrating its summary engines.";
   }
 };
 
@@ -202,4 +225,21 @@ export const decodeAudioData = async (data: Uint8Array, ctx: AudioContext, sampl
     for (let i = 0; i < frameCount; i++) channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
   }
   return buffer;
+};
+
+export const generateNeuralLullaby = async (data: SleepRecord): Promise<string | undefined> => {
+  try {
+    const ai = getAIClient();
+    const response = await ai.models.generateContent({
+      model: MODEL_TTS,
+      contents: [{ parts: [{ text: `Say cheerfully: Calibration complete for recovery score ${data.score}.` }] }],
+      config: { 
+        responseModalities: [Modality.AUDIO], 
+        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
+      },
+    });
+    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+  } catch (err) { 
+    return undefined; 
+  }
 };
