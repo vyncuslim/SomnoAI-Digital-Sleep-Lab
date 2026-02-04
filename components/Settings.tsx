@@ -66,7 +66,8 @@ export const Settings: React.FC<SettingsProps> = ({
     try {
       // 1. Trigger the n8n Webhook provided by user
       const prodWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/debda1be-d725-4f68-b02a-1b1dac5ee136";
-      const testWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/debda1be-d725-4f68-b02a-1b1dac5ee136";
+      // UPDATED TEST WEBHOOK URL
+      const testWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/a205efcc-7c98-44c7-aad9-5815e0ac5ab";
       
       const targetUrl = isTest ? testWebhook : prodWebhook;
       
@@ -143,13 +144,6 @@ export const Settings: React.FC<SettingsProps> = ({
                       <FlaskConical size={14} /> VERIFY_TEST_NODE
                     </button>
                   </div>
-                  
-                  <button 
-                    onClick={() => setShowDiag(false)}
-                    className="w-full py-4 rounded-full bg-slate-955 border border-white/5 text-slate-700 font-black text-[10px] uppercase tracking-widest hover:text-slate-400 transition-all italic"
-                  >
-                    关闭诊断面板
-                  </button>
                 </div>
               </GlassCard>
             </m.div>

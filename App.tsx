@@ -12,6 +12,7 @@ import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { trackPageView } from './services/analytics.ts';
 import { authApi } from './services/supabaseService.ts';
+import { safeNavigatePath } from './services/navigation.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
@@ -93,6 +94,12 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
+  // Centralized Navigation Helper (Path-Based)
+  const navigate = (view: string) => {
+    safeNavigatePath(view === 'landing' ? '/' : view);
+    // Routing logic in useEffect will pick this up via popstate/event
+  };
+
   // Updated Routing Logic for Clean URLs
   useEffect(() => {
     const handleRouting = () => {
@@ -137,14 +144,6 @@ const AppContent: React.FC = () => {
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;
-
-  // Centralized Navigation Helper (Path-Based)
-  const navigate = (view: string) => {
-    const targetPath = view === 'landing' ? '/' : `/${view}`;
-    window.history.pushState(null, '', targetPath);
-    setActiveView(view as any);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   const renderContent = () => {
     if (!profile && !isSimulated) {

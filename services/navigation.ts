@@ -1,5 +1,5 @@
 /**
- * SomnoAI Safe Navigation Utility (v4.0)
+ * SomnoAI Safe Navigation Utility (v4.2)
  * Handles physical path-based routing for a cleaner UX.
  */
 
@@ -58,6 +58,18 @@ export const safeNavigatePath = (path: string) => {
     } catch (e2) {
       console.warn("Navigation protocol interrupted by environment constraints.");
     }
+  }
+};
+
+/**
+ * Legacy support for hash-based navigation if needed by specific components.
+ */
+export const safeNavigateHash = (view: string) => {
+  const hashPath = `#/${view.replace(/^#?\/?/, '')}`;
+  try {
+    window.location.hash = hashPath;
+  } catch (e) {
+    window.history.pushState(null, '', `/${view}`);
   }
 };
 
