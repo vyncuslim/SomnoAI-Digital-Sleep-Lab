@@ -184,7 +184,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            <div className="space-y-4">
                               <p className="text-xs font-bold text-slate-300 italic leading-relaxed">
                                 1. Copy the Service Account email below.<br/>
-                                2. In GA4, go to <b>Admin > Property Access Management</b>.<br/>
+                                2. In GA4, go to <b>Admin &gt; Property Access Management</b>.<br/>
                                 3. Add this email with <b>Viewer</b> permissions.
                               </p>
                               <div className="relative group">
