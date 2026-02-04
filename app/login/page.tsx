@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Auth } from '../../components/Auth.tsx';
 import { Language } from '../../services/i18n.ts';
@@ -15,7 +14,6 @@ export default function UserLoginPage({
   onSuccess: () => void, 
   onSandbox: () => void, 
   lang?: Language,
-  // Fixed: Changed 'join' to 'signup' to match Auth component requirements
   mode?: 'login' | 'signup' | 'otp'
 }) {
   return (
@@ -23,9 +21,8 @@ export default function UserLoginPage({
       <Auth 
         lang={lang} 
         onLogin={() => {
-            // 物理路径清洗：在通知上层 onSuccess 之前，
-            // 强制将 sleepsomno.com/login 改为 sleepsomno.com/#dashboard
-            window.history.replaceState(null, '', '/#dashboard');
+            // Path purification: Enforce /dashboard sector transition
+            window.history.replaceState(null, '', '/dashboard');
             onSuccess();
         }} 
         onGuest={onSandbox}

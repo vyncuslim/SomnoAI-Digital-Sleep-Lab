@@ -103,7 +103,8 @@ export default function AdminLoginPage() {
         throw new Error("ACCESS_DENIED: Identity lacks ADMIN clearance.");
       }
       
-      window.location.replace('/#admin');
+      // Clean URL: redirect to physical /admin path
+      window.location.replace('/admin');
     } catch (err: any) {
       setError({ message: err.message || "Authorization failed." });
       setOtp(['', '', '', '', '', '']);

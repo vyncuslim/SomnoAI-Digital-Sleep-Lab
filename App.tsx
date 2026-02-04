@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
@@ -94,14 +93,16 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // Robust path-based routing logic
+  // Updated Routing Logic for Clean URLs
   useEffect(() => {
     const handleRouting = () => {
-      const path = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      const pathname = window.location.pathname.replace(/^\/+/, '').split('/')[0];
       const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0];
       
-      const route = path || hash || 'landing';
+      // Physical path has priority in professional architectures
+      const route = pathname || hash || 'landing';
 
+      // Redirection logic for authenticated users at public entry points
       if ((profile || isSimulated) && ['login', 'signup', 'landing'].includes(route)) {
         setActiveView('dashboard');
         return;
@@ -125,22 +126,27 @@ const AppContent: React.FC = () => {
     };
     
     window.addEventListener('popstate', handleRouting);
+    window.addEventListener('hashchange', handleRouting);
     handleRouting();
-    return () => window.removeEventListener('popstate', handleRouting);
+    
+    return () => {
+      window.removeEventListener('popstate', handleRouting);
+      window.removeEventListener('hashchange', handleRouting);
+    };
   }, [profile, isSimulated]);
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;
 
-  // Centralized Navigation Helper with history pushState
+  // Centralized Navigation Helper (Path-Based)
   const navigate = (view: string) => {
-    window.history.pushState(null, '', `/${view === 'landing' ? '' : view}`);
+    const targetPath = view === 'landing' ? '/' : `/${view}`;
+    window.history.pushState(null, '', targetPath);
     setActiveView(view as any);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const renderContent = () => {
-    // PUBLIC ROUTES FOR GUESTS
     if (!profile && !isSimulated) {
       if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
       if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
@@ -151,7 +157,6 @@ const AppContent: React.FC = () => {
       return <LandingPage lang={lang} onNavigate={navigate} />;
     }
 
-    // AUTHENTICATED ROUTES
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('dashboard')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('support')} />;
     if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => navigate('dashboard')} />;

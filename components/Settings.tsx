@@ -65,8 +65,8 @@ export const Settings: React.FC<SettingsProps> = ({
     
     try {
       // 1. Trigger the n8n Webhook provided by user
-      const prodWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/74fff973-2a0e-4a24-852b-cba12ad19fd0";
-      const testWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/74fff973-2a0e-4a24-852b-cba12ad19fd0";
+      const prodWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/debda1be-d725-4f68-b02a-1b1dac5ee136";
+      const testWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/debda1be-d725-4f68-b02a-1b1dac5ee136";
       
       const targetUrl = isTest ? testWebhook : prodWebhook;
       

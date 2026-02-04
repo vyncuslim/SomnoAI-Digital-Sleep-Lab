@@ -5,8 +5,9 @@ import {
   LayoutDashboard, Activity, ChevronRight, Send, Fingerprint, Lock, 
   List, Unlock, Mail, ExternalLink, ActivitySquare, Copy, Clock, Check, 
   AlertTriangle, AlertCircle, Database, Search, ShieldX, Plus, MailPlus, Play,
-  UserCheck, UserX, Settings2, MoreHorizontal, UserCog
+  UserCheck, UserX, Settings2, MoreHorizontal, UserCog, TrendingUp, BarChart3, Key, ExternalLink as LinkIcon
 } from 'lucide-react';
+import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase } from '../services/supabaseService.ts';
@@ -39,10 +40,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   
   const [users, setUsers] = useState<any[]>([]);
   const [signals, setSignals] = useState<any[]>([]);
-  const [recipients, setRecipients] = useState<any[]>([]);
+  const [trafficData, setTrafficData] = useState<any[]>([]);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [registrySearch, setRegistrySearch] = useState('');
+  const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null);
+  const [copiedEmail, setCopiedEmail] = useState(false);
   
   const syncTimeoutRef = useRef<any>(null);
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -55,15 +58,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const profile = await adminApi.getAdminClearance(user.id);
       setCurrentAdmin(profile);
 
-      const [sRes, uRes, rRes] = await Promise.allSettled([
+      const [sRes, uRes, tRes] = await Promise.allSettled([
         adminApi.getSecurityEvents(100),
         adminApi.getUsers(),
-        adminApi.getNotificationRecipients()
+        supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(14)
       ]);
 
       setSignals(sRes.status === 'fulfilled' ? sRes.value : []);
       setUsers(uRes.status === 'fulfilled' ? uRes.value : []);
-      setRecipients(rRes.status === 'fulfilled' ? rRes.value.data : []);
+      setTrafficData(tRes.status === 'fulfilled' && tRes.value.data ? tRes.value.data : []);
       
       const counts: Record<string, number> = {};
       for (const t of DATABASE_SCHEMA) {
@@ -104,6 +107,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     
     setSyncState('RUNNING');
     setActionError(null);
+    setServiceAccountEmail(null);
 
     syncTimeoutRef.current = setTimeout(() => {
       setSyncState(prev => prev === 'RUNNING' ? 'STALLED' : prev);
@@ -117,12 +121,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
       if (response.ok && data.success) {
         setSyncState('SYNCED');
-        fetchData();
+        await fetchData(); 
         setTimeout(() => setSyncState('IDLE'), 4000);
       } else {
-        if (response.status === 403 || data.is_permission_denied) setSyncState('FORBIDDEN');
+        if (data.service_account) setServiceAccountEmail(data.service_account);
+        
+        if (response.status === 403 || data.error?.includes('PERMISSION_DENIED')) setSyncState('FORBIDDEN');
         else if (response.status === 404) setSyncState('NOT_FOUND');
         else setSyncState('ERRORED');
+        
         throw new Error(data.error || "Handshake violation.");
       }
     } catch (e: any) {
@@ -130,15 +137,23 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
+  const handleCopyEmail = () => {
+    if (serviceAccountEmail) {
+      navigator.clipboard.writeText(serviceAccountEmail);
+      setCopiedEmail(true);
+      setTimeout(() => setCopiedEmail(false), 2000);
+    }
+  };
+
   const getStatusDisplay = () => {
     switch(syncState) {
-      case 'IDLE': return { label: 'IDLE', color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: ShieldCheck, pulse: true };
-      case 'RUNNING': return { label: 'RUNNING', color: 'text-indigo-400', bg: 'bg-indigo-600/20', icon: RefreshCw, spin: true };
-      case 'SYNCED': return { label: 'SYNCED', color: 'text-emerald-400', bg: 'bg-emerald-600/20', icon: Check, pulse: false };
+      case 'IDLE': return { label: 'CONNECTED', color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: ShieldCheck, pulse: true };
+      case 'RUNNING': return { label: 'SYNCHRONIZING', color: 'text-indigo-400', bg: 'bg-indigo-600/20', icon: RefreshCw, spin: true };
+      case 'SYNCED': return { label: 'UP TO DATE', color: 'text-emerald-400', bg: 'bg-emerald-600/20', icon: Check, pulse: false };
       case 'STALLED': return { label: 'STALLED', color: 'text-amber-500', bg: 'bg-amber-600/20', icon: Clock, pulse: true };
       case 'ERRORED':
       case 'FORBIDDEN':
-      case 'NOT_FOUND': return { label: 'ERRORED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: ShieldX, pulse: true };
+      case 'NOT_FOUND': return { label: 'LINK SEVERED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: ShieldX, pulse: true };
       default: return { label: 'IDLE', color: 'text-slate-500', bg: 'bg-white/5', icon: ShieldCheck, pulse: false };
     }
   };
@@ -159,7 +174,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
           <div className="space-y-1 md:space-y-2 text-left">
             <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase leading-none">Command <span className="text-indigo-500">Bridge</span></h1>
-            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Telemetry Active</p>
+            <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Telemetry Active • Secure Node</p>
           </div>
         </div>
         
@@ -200,39 +215,158 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   ))}
                 </div>
 
-                <GlassCard className={`p-10 rounded-[4rem] border-white/5 transition-all duration-700 ${['ERRORED', 'FORBIDDEN', 'STALLED'].includes(syncState) ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
-                   <div className="flex flex-col md:flex-row items-center justify-between gap-10">
-                      <div className="flex items-center gap-8 text-left">
-                         <div className={`p-6 rounded-[2rem] border border-white/5 ${status.bg} ${status.color}`}>
-                            <ActivitySquare size={32} className={status.spin ? 'animate-spin' : ''} />
-                         </div>
-                         <div>
-                            <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Telemetry Hub</h3>
-                            <p className="text-[10px] font-black uppercase tracking-widest mt-1 italic text-slate-500">
-                              Target Property: <code>380909155</code>
-                            </p>
-                         </div>
-                      </div>
-
-                      <div className="w-full md:w-auto flex flex-col md:flex-row items-center gap-6">
-                        <div className={`flex items-center gap-3 px-6 py-3 rounded-full border border-white/5 ${status.bg} transition-all duration-500 min-w-[140px] justify-center shadow-lg shadow-black/20`}>
-                           <div className={`w-2 h-2 rounded-full ${status.color} ${status.pulse ? 'animate-pulse' : ''} shadow-[0_0_10px_currentColor]`} />
-                           <span className={`text-[10px] font-black uppercase tracking-[0.2em] italic ${status.color}`}>
-                             {status.label}
-                           </span>
+                <AnimatePresence>
+                  {syncState === 'FORBIDDEN' && serviceAccountEmail && (
+                    <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
+                      <GlassCard className="p-10 rounded-[3.5rem] border-rose-500/40 bg-rose-500/[0.03] space-y-8 shadow-[0_0_80px_rgba(225,29,72,0.1)]">
+                        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                          <div className="flex items-center gap-5">
+                            <div className="p-4 bg-rose-500 text-white rounded-3xl shadow-lg shadow-rose-500/20"><ShieldX size={32} /></div>
+                            <div>
+                               <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Action Required: GA4 Authorization</h3>
+                               <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1 italic">Handshake Error: 7 PERMISSION_DENIED</p>
+                            </div>
+                          </div>
+                          <a 
+                            href="https://analytics.google.com/analytics/web/" 
+                            target="_blank" 
+                            className="flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all shadow-xl italic"
+                          >
+                             Open GA4 Console <LinkIcon size={16} />
+                          </a>
                         </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-6 border-t border-rose-500/10">
+                           <div className="space-y-4">
+                              <p className="text-xs font-bold text-slate-300 italic leading-relaxed">
+                                The Service Account below is currently blocked from accessing GA4 Property <code>380909155</code>. You must add this email as a <b>Viewer</b> in the Property Access Management panel.
+                              </p>
+                              <div className="relative group">
+                                 <input 
+                                   readOnly 
+                                   value={serviceAccountEmail} 
+                                   className="w-full bg-black/60 border border-white/5 rounded-full px-8 py-5 text-xs text-indigo-400 font-mono font-bold shadow-inner outline-none"
+                                 />
+                                 <button 
+                                   onClick={handleCopyEmail}
+                                   className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-white/5 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-2xl transition-all"
+                                 >
+                                   {copiedEmail ? <Check size={16} /> : <Copy size={16} />}
+                                 </button>
+                              </div>
+                           </div>
+                           <div className="bg-black/20 rounded-[2.5rem] p-8 border border-white/5 space-y-4">
+                              <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
+                                <List size={14} className="text-indigo-400" /> Resolution Protocol
+                              </h4>
+                              <ul className="space-y-3">
+                                 {[
+                                   'Copy the Service Account email address.',
+                                   'Go to Admin > Property Access Management.',
+                                   'Add this email with at least "Viewer" role.',
+                                   'Retry the synchronization sequence.'
+                                 ].map((step, idx) => (
+                                   <li key={idx} className="flex items-start gap-3">
+                                      <span className="text-[10px] font-mono text-rose-500 font-bold mt-0.5">0{idx+1}</span>
+                                      <span className="text-[11px] text-slate-400 font-medium italic">{step}</span>
+                                   </li>
+                                 ))}
+                              </ul>
+                           </div>
+                        </div>
+                      </GlassCard>
+                    </m.div>
+                  )}
+                </AnimatePresence>
 
-                        <button 
-                          onClick={handleManualSync} 
-                          disabled={syncState === 'RUNNING'}
-                          className="w-full md:w-auto px-12 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95"
-                        >
-                          {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} 
-                          EXECUTE SYNC
-                        </button>
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                  {/* GA4 Real-time Visualizer */}
+                  <div className="lg:col-span-8">
+                    <GlassCard className="p-10 rounded-[4rem] border-white/5 h-full">
+                      <div className="flex justify-between items-start mb-12">
+                         <div className="space-y-1">
+                            <div className="flex items-center gap-3">
+                               <TrendingUp size={18} className="text-indigo-400" />
+                               <h3 className="text-xl font-black italic text-white uppercase tracking-tight">GA4 Analytics Traffic</h3>
+                            </div>
+                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Historical Engagement Node</p>
+                         </div>
+                         <div className="flex gap-4">
+                            <div className="flex items-center gap-2">
+                               <div className="w-2 h-2 rounded-full bg-indigo-500" />
+                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Active Users</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                               <div className="w-2 h-2 rounded-full bg-emerald-500" />
+                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Sessions</span>
+                            </div>
+                         </div>
                       </div>
-                   </div>
-                </GlassCard>
+
+                      <div className="h-[300px] w-full">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <AreaChart data={trafficData}>
+                            <defs>
+                              <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
+                            <XAxis 
+                              dataKey="date" 
+                              axisLine={false} 
+                              tickLine={false} 
+                              tick={{ fill: 'rgba(148, 163, 184, 0.4)', fontSize: 9, fontWeight: 900 }}
+                              dy={15}
+                            />
+                            <YAxis hide />
+                            <Tooltip 
+                              contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', fontSize: '10px' }}
+                              itemStyle={{ fontWeight: 800, color: '#fff' }}
+                            />
+                            <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#userGrad)" />
+                            <Area type="monotone" dataKey="sessions" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" fill="none" />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </GlassCard>
+                  </div>
+
+                  {/* Sync Control Node */}
+                  <div className="lg:col-span-4">
+                    <GlassCard className={`p-10 rounded-[4rem] border-white/5 h-full transition-all duration-700 ${['ERRORED', 'FORBIDDEN', 'STALLED'].includes(syncState) ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
+                       <div className="flex flex-col h-full justify-between gap-10">
+                          <div className="space-y-6">
+                             <div className={`w-16 h-16 rounded-3xl border border-white/5 flex items-center justify-center ${status.bg} ${status.color}`}>
+                                <ActivitySquare size={28} className={status.spin ? 'animate-spin' : ''} />
+                             </div>
+                             <div>
+                                <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Sync Gateway</h3>
+                                <div className={`inline-flex items-center gap-2 mt-2 px-4 py-1.5 rounded-full border border-white/5 ${status.bg}`}>
+                                   <div className={`w-1.5 h-1.5 rounded-full ${status.color} ${status.pulse ? 'animate-pulse' : ''} shadow-[0_0_8px_currentColor]`} />
+                                   <span className={`text-[9px] font-black uppercase tracking-widest ${status.color}`}>
+                                     {status.label}
+                                   </span>
+                                </div>
+                             </div>
+                             <p className="text-[11px] text-slate-500 leading-relaxed italic">
+                                Manual override for GA4 property <code>380909155</code>. Sync typically executes via cron every 5 minutes.
+                             </p>
+                          </div>
+
+                          <button 
+                            onClick={handleManualSync} 
+                            disabled={syncState === 'RUNNING'}
+                            className="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95 disabled:opacity-30"
+                          >
+                            {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} 
+                            EXECUTE SYNC
+                          </button>
+                       </div>
+                    </GlassCard>
+                  </div>
+                </div>
               </div>
             )}
 

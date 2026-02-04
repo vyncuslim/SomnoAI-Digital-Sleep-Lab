@@ -9,7 +9,7 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
-const N8N_WEBHOOK_URL = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/74fff973-2a0e-4a24-852b-cba12ad19fd0";
+const N8N_WEBHOOK_URL = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/debda1be-d725-4f68-b02a-1b1dac5ee136";
 
 /**
  * Pipes AI activity to the n8n neural automation bridge.

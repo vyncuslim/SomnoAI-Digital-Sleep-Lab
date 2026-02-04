@@ -1,64 +1,62 @@
-
 import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v46.0
- * Protocol:
- * 1. Explicitly locked Property ID 380909155.
- * 2. DISTRIBUTED SUPPRESSION: Checks Supabase for recent alerts. 
- *    Only 1 Telegram message per 24h for permanent errors.
+ * SOMNO LAB GA4 SYNC GATEWAY v48.2
+ * Features:
+ * - Direct numeric Property ID enforcement.
+ * - Distributed Incident Lock (24h singleton).
+ * - Enhanced Diagnostic Payload for Permission Denied errors.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
+const TARGET_PROPERTY_ID = "380909155"; 
 
 async function alertAdmin(checkpoint, errorMsg, isForbidden = false, saEmail = "") {
-  const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
-  const currentAction = isForbidden ? 'GA4_PERMISSION_DENIED' : 'GA4_SYNC_FAILURE';
-  
-  // Prevent parallel trigger race conditions
-  const jitter = Math.floor(Math.random() * 2000);
-  await new Promise(r => setTimeout(r, jitter));
-
-  // Check if we already alerted in the last 24 hours for this specific blockage
-  const lookback = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-  const { data: existing } = await supabase
-    .from('audit_logs')
-    .select('id')
-    .eq('action', currentAction)
-    .gt('created_at', lookback)
-    .limit(1);
-
-  if (existing && existing.length > 0) {
-    console.log(`[SUPPRESSION] Alert for ${currentAction} already dispatched in last 24h.`);
-    return;
-  }
-
-  // Record log to set the distributed lock
-  await supabase.from('audit_logs').insert([{
-    action: currentAction,
-    details: `Checkpoint: ${checkpoint} | ID: ${saEmail} | Error: ${errorMsg.substring(0, 100)}`,
-    level: isForbidden ? 'CRITICAL' : 'WARNING'
-  }]);
-
-  // Dispatch ONE Telegram message
   try {
-    const tgMsg = `🚨 <b>SOMNO LAB: SYNC INCIDENT</b>\n` +
+    const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
+    const currentAction = isForbidden ? 'GA4_PERMISSION_DENIED' : 'GA4_SYNC_FAILURE';
+    
+    // Staggered check to handle concurrency
+    const jitter = Math.floor(Math.random() * 3000);
+    await new Promise(r => setTimeout(r, jitter));
+
+    const lookback = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+    const { data: existing } = await supabase
+      .from('audit_logs')
+      .select('id')
+      .eq('action', currentAction)
+      .gt('created_at', lookback)
+      .limit(1);
+
+    if (existing && existing.length > 0) return;
+
+    await supabase.from('audit_logs').insert([{
+      action: currentAction,
+      details: `Checkpoint: ${checkpoint} | ID: ${saEmail} | Property: ${TARGET_PROPERTY_ID} | Error: ${errorMsg.substring(0, 150)}`,
+      level: isForbidden ? 'CRITICAL' : 'WARNING'
+    }]);
+
+    const mapping = isForbidden 
+      ? { en: 'GA4 Access Denied', zh: '🛡️ GA4 权限缺失 (403)', icon: '🚫' }
+      : { en: 'Telemetry Sync Failure', zh: '📊 数据同步链路异常', icon: '🟡' };
+
+    const tgMsg = `${mapping.icon} <b>SOMNO LAB: SYNC INCIDENT</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `<b>Type:</b> <code>${currentAction}</code>\n` +
-      `<b>ID:</b> <code>${saEmail}</code>\n` +
+      `<b>Type:</b> <code>${mapping.en}</code>\n` +
+      `<b>Step:</b> <code>${checkpoint}</code>\n` +
       `<b>Err:</b> <code>${errorMsg.substring(0, 150)}...</code>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📍 <b>STATUS:</b> Gateway throttled (24h singleton lock). Fix in Admin Bridge.`;
+      `📍 <b>STATUS:</b> Gateway auto-throttled. Fix in Admin Bridge.`;
       
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ chat_id: ADMIN_CHAT_ID, text: tgMsg, parse_mode: 'HTML' })
     });
-  } catch (e) { console.error("TG Dispatch Fail:", e); }
+  } catch (e) { console.error("Admin Signaling Failed:", e); }
 }
 
 function robustParse(input) {
@@ -80,8 +78,6 @@ export default async function handler(req, res) {
   let checkpoint = "INITIALIZATION";
   let currentSaEmail = "UNKNOWN";
   const { GA_SERVICE_ACCOUNT_KEY } = process.env;
-  
-  const TARGET_PROPERTY_ID = "380909155"; 
 
   try {
     const secret = req.query.secret || req.body?.secret;
@@ -91,11 +87,11 @@ export default async function handler(req, res) {
       return res.status(200).json({ error: "UNAUTHORIZED_VOID" });
     }
 
-    checkpoint = "GA_CLIENT_SETUP";
+    checkpoint = "GA_CLIENT_INIT";
     const credentials = robustParse(GA_SERVICE_ACCOUNT_KEY);
     if (!credentials || !credentials.private_key) throw new Error("GA_KEY_STRUCTURE_INVALID");
     
-    currentSaEmail = credentials.client_email;
+    currentSaEmail = credentials.client_email || "KEY_PARSE_FAILURE";
 
     const analyticsClient = new BetaAnalyticsDataClient({ 
       credentials: { ...credentials, private_key: credentials.private_key.replace(/\\n/g, '\n') } 
@@ -104,35 +100,43 @@ export default async function handler(req, res) {
     checkpoint = "GA_API_HANDSHAKE";
     const [response] = await analyticsClient.runReport({
       property: `properties/${TARGET_PROPERTY_ID}`,
-      dateRanges: [{ startDate: 'yesterday', endDate: 'today' }],
+      dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
       dimensions: [{ name: 'date' }],
       metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
     });
 
-    checkpoint = "DB_SYNC";
+    checkpoint = "DB_UPSERT";
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     const rows = response?.rows || [];
     for (const row of rows) {
-      const date = row.dimensionValues[0].value;
+      const dateStr = row.dimensionValues[0].value;
       await supabase.from('analytics_daily').upsert({
-        date: `${date.slice(0, 4)}-${date.slice(4, 6)}-${date.slice(6, 8)}`,
+        date: `${dateStr.slice(0, 4)}-${dateStr.slice(4, 6)}-${dateStr.slice(6, 8)}`,
         users: parseInt(row.metricValues?.[0]?.value || '0'),
         sessions: parseInt(row.metricValues?.[1]?.value || '0'),
         updated_at: new Date().toISOString()
       }, { onConflict: 'date' });
     }
-    return res.status(200).json({ success: true, property: TARGET_PROPERTY_ID });
+    
+    return res.status(200).json({ success: true, property: TARGET_PROPERTY_ID, service_account: currentSaEmail });
   } catch (error) {
-    const errorMsg = error?.message || "Internal gateway crash.";
+    const errorMsg = error?.message || "Infrastructure timeout.";
     const isForbidden = errorMsg.includes('permission') || error.code === 7 || error.status === 403;
     
+    // Try to extract email from raw ENV if checkpoint failed early
+    if (currentSaEmail === "UNKNOWN" && GA_SERVICE_ACCOUNT_KEY) {
+       const creds = robustParse(GA_SERVICE_ACCOUNT_KEY);
+       if (creds) currentSaEmail = creds.client_email;
+    }
+
     await alertAdmin(checkpoint, errorMsg, isForbidden, currentSaEmail);
     
-    return res.status(isForbidden ? 403 : 500).json({ 
+    return res.status(200).json({ 
       success: false, 
       error: errorMsg,
+      checkpoint,
       service_account: currentSaEmail,
-      is_permission_denied: isForbidden
+      property: TARGET_PROPERTY_ID
     });
   }
 }
