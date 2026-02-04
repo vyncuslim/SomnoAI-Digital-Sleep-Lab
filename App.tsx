@@ -94,34 +94,39 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // 中央导航调度中心 (基于物理路径)
   const navigate = (view: string) => {
     safeNavigatePath(view === 'landing' ? '/' : view);
   };
 
-  // SPA History Mode 核心路由监听矩阵
   useEffect(() => {
     const handleRouting = () => {
-      // 1. 优先提取物理路径 (例如 /settings -> settings)
-      const pathname = window.location.pathname.replace(/^\/+/, '').split('/')[0];
+      // 1. 彻底标准化路径解析逻辑
+      const fullPath = window.location.pathname.toLowerCase();
+      const segments = fullPath.split('/').filter(Boolean);
+      const pathname = segments[0] || '';
       
-      // 2. 兼容性提取哈希 (例如 /#/settings -> settings)
-      const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0];
+      const hashRaw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
+      const hash = hashRaw.split('/')[0];
       
-      // 物理路径为最高优先级，实现 Clean URL
-      const route = pathname || hash || 'landing';
+      // 自动物理化纠偏：将 /#/login 转换为 /login
+      if (hashRaw && !pathname) {
+        window.history.replaceState({ somno_route: true }, '', `/${hashRaw}`);
+        handleRouting();
+        return;
+      }
 
-      // 自动鉴权重定向：已登录用户访问首页或登录页时，自动切入 Dashboard
-      if ((profile || isSimulated) && (route === 'landing' || route === 'login' || route === 'signup' || route === '')) {
+      const currentRoute = pathname || hash || 'landing';
+
+      // 自动鉴权与重定向逻辑
+      if ((profile || isSimulated) && (currentRoute === 'landing' || currentRoute === 'login' || currentRoute === 'signup' || currentRoute === '')) {
         setActiveView('dashboard');
-        // 将地址栏物理更新为 /dashboard
         if (window.location.pathname !== '/dashboard') {
            window.history.replaceState({ somno_route: true }, '', '/dashboard');
         }
         return;
       }
 
-      const mappings: Record<string, any> = {
+      const validRoutes: Record<string, any> = {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
@@ -129,21 +134,18 @@ const AppContent: React.FC = () => {
         'login': 'login', 'signup': 'signup', 'landing': 'landing'
       };
 
-      if (mappings[route]) {
-        setActiveView(mappings[route]);
+      if (validRoutes[currentRoute]) {
+        setActiveView(validRoutes[currentRoute]);
       } else {
-        // 未匹配路径的降级逻辑
+        // 未匹配路径降级
         setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
       }
       
-      trackPageView(`/${route}`, `SomnoAI: ${route.toUpperCase()}`);
+      trackPageView(`/${currentRoute}`, `SomnoAI: ${currentRoute.toUpperCase()}`);
     };
     
-    // 监听前进/后退及 safeNavigatePath 的触发
     window.addEventListener('popstate', handleRouting);
     window.addEventListener('hashchange', handleRouting);
-    
-    // 启动初始路由脉冲
     handleRouting();
     
     return () => {

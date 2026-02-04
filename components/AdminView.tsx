@@ -5,7 +5,8 @@ import {
   LayoutDashboard, Activity, ChevronRight, Send, Fingerprint, Lock, 
   List, Unlock, Mail, ExternalLink, ActivitySquare, Copy, Clock, Check, 
   AlertTriangle, AlertCircle, Database, Search, ShieldX, Plus, MailPlus, Play,
-  UserCheck, UserX, Settings2, MoreHorizontal, UserCog, TrendingUp, BarChart3, Key, ExternalLink as LinkIcon
+  UserCheck, UserX, Settings2, MoreHorizontal, UserCog, TrendingUp, BarChart3, Key, ExternalLink as LinkIcon,
+  HelpCircle, Info, Link
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -38,6 +39,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [registrySearch, setRegistrySearch] = useState('');
   const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null);
   const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
+  const [gcpProjectId, setGcpProjectId] = useState<string | null>(null);
+  const [isApiDisabled, setIsApiDisabled] = useState(false);
   const [copiedEmail, setCopiedEmail] = useState(false);
   
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -76,6 +79,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (syncState === 'RUNNING') return;
     setSyncState('RUNNING');
     setActionError(null);
+    setIsApiDisabled(false);
 
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
@@ -83,6 +87,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       
       if (data.service_account) setServiceAccountEmail(data.service_account);
       if (data.property) setActivePropertyId(data.property);
+      if (data.project_id) setGcpProjectId(data.project_id);
 
       if (response.ok && data.success) {
         setSyncState('SYNCED');
@@ -92,7 +97,8 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         const isPermissionError = response.status === 403 || data.error?.includes('PERMISSION_DENIED');
         if (isPermissionError) {
           setSyncState('FORBIDDEN');
-          setActionError("7 PERMISSION_DENIED: Access Refused by GA4 Node.");
+          setIsApiDisabled(!!data.is_api_disabled);
+          setActionError(data.is_api_disabled ? "API_NOT_ENABLED: Google Analytics Data API is restricted." : "7 PERMISSION_DENIED: Access Refused by GA4 Node.");
         } else {
           setSyncState('ERRORED');
           throw new Error(data.error || "Handshake violation.");
@@ -166,40 +172,71 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 <AnimatePresence>
                   {syncState === 'FORBIDDEN' && (
                     <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
-                      <GlassCard className="p-10 rounded-[3.5rem] border-rose-500/40 bg-rose-500/[0.03] space-y-8 shadow-[0_0_80px_rgba(225,29,72,0.1)]">
+                      <GlassCard className="p-10 rounded-[3.5rem] border-rose-500/40 bg-rose-500/[0.03] space-y-10 shadow-[0_0_80px_rgba(225,29,72,0.1)]">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                           <div className="flex items-center gap-5">
                             <div className="p-4 bg-rose-500 text-white rounded-3xl shadow-lg shadow-rose-500/20"><ShieldX size={32} /></div>
                             <div>
-                               <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Authorization Missing</h3>
+                               <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Authorization Persistent Failure</h3>
                                <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1 italic leading-relaxed">
-                                 The Google Cloud Identity is not authorized for Property: <code>{activePropertyId || 'UNKNOWN'}</code>
+                                 The link is active but rejected by Google Cloud Node: <code>{activePropertyId || '380909155'}</code>
                                </p>
                             </div>
                           </div>
-                          <a href="https://analytics.google.com/analytics/web/" target="_blank" className="flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all shadow-xl italic">Open Console <LinkIcon size={16} /></a>
+                          <div className="flex gap-3">
+                            <a href={`https://console.cloud.google.com/apis/library/analyticsdata.googleapis.com?project=${gcpProjectId || ''}`} target="_blank" className="flex items-center gap-3 px-8 py-4 bg-rose-600 text-white rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-rose-500 transition-all shadow-xl italic">Enable Data API <Activity size={16} /></a>
+                            <a href="https://analytics.google.com/analytics/web/" target="_blank" className="flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all shadow-xl italic">Open GA4 Console <LinkIcon size={16} /></a>
+                          </div>
                         </div>
                         
-                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-6 border-t border-rose-500/10">
-                           <div className="space-y-4">
-                              <p className="text-xs font-bold text-slate-300 italic leading-relaxed">
-                                1. Copy the Service Account email below.<br/>
-                                2. In GA4, go to <b>Admin &gt; Property Access Management</b>.<br/>
-                                3. Add this email with <b>Viewer</b> permissions.
-                              </p>
-                              <div className="relative group">
-                                 <input readOnly value={serviceAccountEmail || 'Extracting identity...'} className="w-full bg-black/60 border border-white/5 rounded-full px-8 py-5 text-xs text-indigo-400 font-mono font-bold shadow-inner outline-none" />
-                                 <button 
-                                   onClick={() => { navigator.clipboard.writeText(serviceAccountEmail || ''); setCopiedEmail(true); setTimeout(()=>setCopiedEmail(false), 2000); }}
-                                   className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-white/5 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-2xl transition-all"
-                                 >
-                                   {copiedEmail ? <Check size={16} /> : <Copy size={16} />}
-                                 </button>
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 pt-8 border-t border-rose-500/10">
+                           <div className="space-y-6">
+                              <h4 className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-3 italic"><HelpCircle size={14} className="text-indigo-400" /> Resolution Checklist</h4>
+                              <div className="space-y-4">
+                                 {[
+                                   { label: "Check API Activation", desc: "Visit Google Cloud Console and ensure 'Google Analytics Data API' is enabled for this project." },
+                                   { label: "Verify Property Level", desc: "Ensure the email was added at the PROPERTY level, not just the account level." },
+                                   { label: "Propagation Time", desc: "Google Analytics permissions can take up to 60 minutes to take effect." },
+                                   { label: "Clean Property ID", desc: "Ensure GA_PROPERTY_ID in Vercel has no spaces or extra characters." }
+                                 ].map((item, i) => (
+                                   <div key={i} className="flex gap-4 items-start group">
+                                      <div className="w-5 h-5 rounded-full bg-white/5 border border-white/10 flex items-center justify-center shrink-0 mt-0.5 font-mono text-[9px] text-slate-500">0{i+1}</div>
+                                      <div className="space-y-1">
+                                         <p className="text-[11px] font-black text-slate-300 uppercase tracking-tight italic group-hover:text-white transition-colors">{item.label}</p>
+                                         <p className="text-[10px] text-slate-500 leading-relaxed">{item.desc}</p>
+                                      </div>
+                                   </div>
+                                 ))}
                               </div>
                            </div>
-                           <div className="bg-black/20 rounded-[2.5rem] p-8 border border-white/5 space-y-3">
-                              <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2 italic"><Database size={14} className="text-indigo-400" /> Environment Check</h4>
-                              <p className="text-[11px] text-slate-500 italic">Target Property ID: <span className="text-white font-mono">{activePropertyId || 'NOT_LOADED'}</span></p>
+
+                           <div className="space-y-6">
+                              <h4 className="text-[11px] font-black text-white uppercase tracking-widest flex items-center gap-3 italic"><Fingerprint size={14} className="text-indigo-400" /> Identity Matrix</h4>
+                              <div className="bg-black/40 rounded-[2.5rem] p-8 border border-white/5 space-y-6">
+                                 <div className="space-y-2">
+                                    <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Service Account (Email)</p>
+                                    <div className="relative group">
+                                       <input readOnly value={serviceAccountEmail || 'Extracting...'} className="w-full bg-black/60 border border-white/5 rounded-2xl px-6 py-4 text-xs text-indigo-400 font-mono font-bold shadow-inner outline-none truncate" />
+                                       <button 
+                                         onClick={() => { navigator.clipboard.writeText(serviceAccountEmail || ''); setCopiedEmail(true); setTimeout(()=>setCopiedEmail(false), 2000); }}
+                                         className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/5 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-xl transition-all"
+                                       >
+                                         {copiedEmail ? <Check size={14} /> : <Copy size={14} />}
+                                       </button>
+                                    </div>
+                                 </div>
+                                 <div className="grid grid-cols-2 gap-4">
+                                    <div className="space-y-1">
+                                       <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Project ID</p>
+                                       <p className="text-xs font-mono font-bold text-slate-300 truncate">{gcpProjectId || 'N/A'}</p>
+                                    </div>
+                                    <div className="space-y-1">
+                                       <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Property ID</p>
+                                       <p className="text-xs font-mono font-bold text-slate-300">{activePropertyId || 'N/A'}</p>
+                                    </div>
+                                 </div>
+                              </div>
+                              <p className="text-[9px] text-slate-600 italic px-4">If issues persist after 1 hour, trigger a fresh "Redeploy" on Vercel to clear edge caches.</p>
                            </div>
                         </div>
                       </GlassCard>

@@ -2,10 +2,8 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v55.0
- * Features:
- * - Robust identity fingerprinting.
- * - Guaranteed Metadata on 403/429 errors.
+ * SOMNO LAB GA4 SYNC GATEWAY v56.0
+ * Optimized for diagnostic clarity on 403/Permission errors.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -30,11 +28,15 @@ export default async function handler(req, res) {
   let currentSaEmail = "UNKNOWN";
   const rawPropertyId = process.env.GA_PROPERTY_ID || FALLBACK_PROPERTY_ID;
   const targetPropertyId = String(rawPropertyId).replace(/\D/g, ''); 
+  let gcpProjectId = "UNKNOWN";
 
   // Pre-emptive extraction for troubleshooting
   if (process.env.GA_SERVICE_ACCOUNT_KEY) {
     const creds = robustParse(process.env.GA_SERVICE_ACCOUNT_KEY);
-    if (creds) currentSaEmail = creds.client_email || "KEY_INVALID";
+    if (creds) {
+      currentSaEmail = creds.client_email || "KEY_INVALID";
+      gcpProjectId = creds.project_id || "UNKNOWN";
+    }
   }
 
   try {
@@ -71,16 +73,26 @@ export default async function handler(req, res) {
       }, { onConflict: 'date' });
     }
     
-    return res.status(200).json({ success: true, property: targetPropertyId, service_account: currentSaEmail });
+    return res.status(200).json({ 
+      success: true, 
+      property: targetPropertyId, 
+      service_account: currentSaEmail,
+      project_id: gcpProjectId
+    });
   } catch (error) {
     const errorMsg = error?.message || "Infrastructure timeout.";
     const isForbidden = errorMsg.toLowerCase().includes('permission') || error.code === 7;
     
+    // Check if it's explicitly an API not enabled error
+    const isApiNotEnabled = errorMsg.includes('Google Analytics Data API has not been used');
+
     return res.status(isForbidden ? 403 : 500).json({ 
       success: false, 
       error: errorMsg,
+      is_api_disabled: isApiNotEnabled,
       service_account: currentSaEmail,
-      property: targetPropertyId
+      property: targetPropertyId,
+      project_id: gcpProjectId
     });
   }
 }

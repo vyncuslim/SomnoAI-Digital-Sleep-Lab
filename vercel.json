@@ -28,7 +28,7 @@
       "destination": "/terms.html"
     },
     {
-      "source": "/((?!api|favicon.ico|manifest.json|sw.js|assets/|_next).*)",
+      "source": "/((?!.*\\.).*)",
       "destination": "/index.html"
     }
   ]
