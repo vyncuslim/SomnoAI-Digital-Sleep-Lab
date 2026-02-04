@@ -2,27 +2,26 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v48.2
+ * SOMNO LAB GA4 SYNC GATEWAY v50.0
  * Features:
- * - Direct numeric Property ID enforcement.
- * - Distributed Incident Lock (24h singleton).
- * - Enhanced Diagnostic Payload for Permission Denied errors.
+ * - Dynamic Property ID injection from environment.
+ * - Strict numeric ID sanitization & validation.
+ * - Detailed error surface for easier debugging.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';
-const TARGET_PROPERTY_ID = "380909155"; 
 
-async function alertAdmin(checkpoint, errorMsg, isForbidden = false, saEmail = "") {
+// Prioritize ENV, fallback to default researcher property
+const FALLBACK_PROPERTY_ID = "380909155"; 
+
+async function alertAdmin(checkpoint, errorMsg, isForbidden = false, saEmail = "", propId = "") {
   try {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     const currentAction = isForbidden ? 'GA4_PERMISSION_DENIED' : 'GA4_SYNC_FAILURE';
     
-    // Staggered check to handle concurrency
-    const jitter = Math.floor(Math.random() * 3000);
-    await new Promise(r => setTimeout(r, jitter));
-
+    // Check if a similar incident was logged in the last 24h to prevent spam
     const lookback = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
     const { data: existing } = await supabase
       .from('audit_logs')
@@ -35,7 +34,7 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false, saEmail = "
 
     await supabase.from('audit_logs').insert([{
       action: currentAction,
-      details: `Checkpoint: ${checkpoint} | ID: ${saEmail} | Property: ${TARGET_PROPERTY_ID} | Error: ${errorMsg.substring(0, 150)}`,
+      details: `Checkpoint: ${checkpoint} | ID: ${saEmail} | Property: ${propId} | Error: ${errorMsg.substring(0, 150)}`,
       level: isForbidden ? 'CRITICAL' : 'WARNING'
     }]);
 
@@ -46,10 +45,11 @@ async function alertAdmin(checkpoint, errorMsg, isForbidden = false, saEmail = "
     const tgMsg = `${mapping.icon} <b>SOMNO LAB: SYNC INCIDENT</b>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
       `<b>Type:</b> <code>${mapping.en}</code>\n` +
+      `<b>Property ID:</b> <code>${propId}</code>\n` +
       `<b>Step:</b> <code>${checkpoint}</code>\n` +
       `<b>Err:</b> <code>${errorMsg.substring(0, 150)}...</code>\n` +
       `━━━━━━━━━━━━━━━━━━━━\n` +
-      `📍 <b>STATUS:</b> Gateway auto-throttled. Fix in Admin Bridge.`;
+      `📍 <b>STATUS:</b> Check Admin Bridge for service account email.`;
       
     await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
       method: 'POST',
@@ -77,7 +77,10 @@ function robustParse(input) {
 export default async function handler(req, res) {
   let checkpoint = "INITIALIZATION";
   let currentSaEmail = "UNKNOWN";
-  const { GA_SERVICE_ACCOUNT_KEY } = process.env;
+  
+  // Sanitize Property ID: Remove any non-digit characters (like "properties/")
+  const rawPropertyId = process.env.GA_PROPERTY_ID || FALLBACK_PROPERTY_ID;
+  const targetPropertyId = String(rawPropertyId).replace(/\D/g, ''); 
 
   try {
     const secret = req.query.secret || req.body?.secret;
@@ -87,8 +90,12 @@ export default async function handler(req, res) {
       return res.status(200).json({ error: "UNAUTHORIZED_VOID" });
     }
 
+    if (!targetPropertyId) {
+      throw new Error("GA_PROPERTY_ID_MALFORMED: Expected numeric ID.");
+    }
+
     checkpoint = "GA_CLIENT_INIT";
-    const credentials = robustParse(GA_SERVICE_ACCOUNT_KEY);
+    const credentials = robustParse(process.env.GA_SERVICE_ACCOUNT_KEY);
     if (!credentials || !credentials.private_key) throw new Error("GA_KEY_STRUCTURE_INVALID");
     
     currentSaEmail = credentials.client_email || "KEY_PARSE_FAILURE";
@@ -99,7 +106,7 @@ export default async function handler(req, res) {
 
     checkpoint = "GA_API_HANDSHAKE";
     const [response] = await analyticsClient.runReport({
-      property: `properties/${TARGET_PROPERTY_ID}`,
+      property: `properties/${targetPropertyId}`,
       dateRanges: [{ startDate: '7daysAgo', endDate: 'today' }],
       dimensions: [{ name: 'date' }],
       metrics: [{ name: 'activeUsers' }, { name: 'sessions' }],
@@ -118,25 +125,25 @@ export default async function handler(req, res) {
       }, { onConflict: 'date' });
     }
     
-    return res.status(200).json({ success: true, property: TARGET_PROPERTY_ID, service_account: currentSaEmail });
+    return res.status(200).json({ success: true, property: targetPropertyId, service_account: currentSaEmail });
   } catch (error) {
     const errorMsg = error?.message || "Infrastructure timeout.";
     const isForbidden = errorMsg.includes('permission') || error.code === 7 || error.status === 403;
     
     // Try to extract email from raw ENV if checkpoint failed early
-    if (currentSaEmail === "UNKNOWN" && GA_SERVICE_ACCOUNT_KEY) {
-       const creds = robustParse(GA_SERVICE_ACCOUNT_KEY);
+    if (currentSaEmail === "UNKNOWN" && process.env.GA_SERVICE_ACCOUNT_KEY) {
+       const creds = robustParse(process.env.GA_SERVICE_ACCOUNT_KEY);
        if (creds) currentSaEmail = creds.client_email;
     }
 
-    await alertAdmin(checkpoint, errorMsg, isForbidden, currentSaEmail);
+    await alertAdmin(checkpoint, errorMsg, isForbidden, currentSaEmail, targetPropertyId);
     
     return res.status(200).json({ 
       success: false, 
       error: errorMsg,
       checkpoint,
       service_account: currentSaEmail,
-      property: TARGET_PROPERTY_ID
+      property: targetPropertyId
     });
   }
 }

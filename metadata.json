@@ -1,6 +1,6 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
-  "description": "SomnoAI Digital Sleep Lab integrates clinical-grade physiological monitoring, neural insights, and AI optimization to deliver a comprehensive biometric sleep analysis experience.",
+  "description": "It integrates physiological monitoring, AI deep insights, and health recommendations to provide users with a comprehensive digital sleep laboratory experience.",
   "requestFramePermissions": [
     "microphone",
     "camera"

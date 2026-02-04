@@ -143,7 +143,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
               </h1>
               <p className="text-lg md:text-2xl text-slate-400 font-medium italic max-w-3xl mx-auto leading-relaxed px-4">
                 {isZh 
-                  ? 'SomnoAI 数字化睡眠实验室。融合生理指标监控、AI 深度洞察与科学健康建议，为您揭示数据背后的睡眠真相。' 
+                  ? 'SomnoAI 数字化睡眠实验室。它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验体验。' 
                   : 'Experience clinical-grade sleep architecture analysis. SomnoAI integrates physiological monitoring with Google Gemini AI to reconstruct your recovery architecture.'}
               </p>
             </div>

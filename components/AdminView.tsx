@@ -45,10 +45,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [actionError, setActionError] = useState<string | null>(null);
   const [registrySearch, setRegistrySearch] = useState('');
   const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null);
+  const [targetPropertyId, setTargetPropertyId] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
   
   const syncTimeoutRef = useRef<any>(null);
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
+
+  // Safe access to injected env variables
+  const fallbackPropertyId = (typeof process !== 'undefined' && process.env?.GA_PROPERTY_ID) || '380909155';
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -108,6 +112,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     setSyncState('RUNNING');
     setActionError(null);
     setServiceAccountEmail(null);
+    setTargetPropertyId(null);
 
     syncTimeoutRef.current = setTimeout(() => {
       setSyncState(prev => prev === 'RUNNING' ? 'STALLED' : prev);
@@ -125,6 +130,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setTimeout(() => setSyncState('IDLE'), 4000);
       } else {
         if (data.service_account) setServiceAccountEmail(data.service_account);
+        if (data.property) setTargetPropertyId(data.property);
         
         if (response.status === 403 || data.error?.includes('PERMISSION_DENIED')) setSyncState('FORBIDDEN');
         else if (response.status === 404) setSyncState('NOT_FOUND');
@@ -239,7 +245,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-6 border-t border-rose-500/10">
                            <div className="space-y-4">
                               <p className="text-xs font-bold text-slate-300 italic leading-relaxed">
-                                The Service Account below is currently blocked from accessing GA4 Property <code>380909155</code>. You must add this email as a <b>Viewer</b> in the Property Access Management panel.
+                                The Service Account below is currently blocked from accessing GA4 Property <code>{targetPropertyId || fallbackPropertyId}</code>. You must add this email as a <b>Viewer</b> in the Property Access Management panel.
                               </p>
                               <div className="relative group">
                                  <input 
@@ -264,6 +270,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                    'Copy the Service Account email address.',
                                    'Go to Admin > Property Access Management.',
                                    'Add this email with at least "Viewer" role.',
+                                   'Ensure the role is applied to the correct Property ID.',
                                    'Retry the synchronization sequence.'
                                  ].map((step, idx) => (
                                    <li key={idx} className="flex items-start gap-3">
@@ -322,7 +329,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                             />
                             <YAxis hide />
                             <Tooltip 
-                              contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1.5rem', fontSize: '10px' }}
+                              contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '1.5rem', fontSize: '10px' }}
                               itemStyle={{ fontWeight: 800, color: '#fff' }}
                             />
                             <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#userGrad)" />
@@ -351,7 +358,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 </div>
                              </div>
                              <p className="text-[11px] text-slate-500 leading-relaxed italic">
-                                Manual override for GA4 property <code>380909155</code>. Sync typically executes via cron every 5 minutes.
+                                Manual override for GA4 property <code>{targetPropertyId || fallbackPropertyId}</code>. Sync typically executes via cron every 5 minutes.
                              </p>
                           </div>
 
