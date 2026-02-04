@@ -94,29 +94,29 @@ const AppContent: React.FC = () => {
     }
   }, []);
 
-  // Centralized Navigation Helper (Path-Based)
+  // 中央导航调度中心 (基于物理路径)
   const navigate = (view: string) => {
     safeNavigatePath(view === 'landing' ? '/' : view);
   };
 
-  // Physical URL Support & Global Routing Matrix
+  // SPA History Mode 核心路由监听矩阵
   useEffect(() => {
     const handleRouting = () => {
-      // 1. Detect physical path (e.g., /settings)
+      // 1. 优先提取物理路径 (例如 /settings -> settings)
       const pathname = window.location.pathname.replace(/^\/+/, '').split('/')[0];
       
-      // 2. Detect hash fallback (e.g., /#/settings)
+      // 2. 兼容性提取哈希 (例如 /#/settings -> settings)
       const hash = window.location.hash.replace(/^#\/?/, '').split('/')[0];
       
-      // Physical path always takes priority for Modern Browsers
+      // 物理路径为最高优先级，实现 Clean URL
       const route = pathname || hash || 'landing';
 
-      // Access Control: Redirect authenticated nodes at public entry sectors
+      // 自动鉴权重定向：已登录用户访问首页或登录页时，自动切入 Dashboard
       if ((profile || isSimulated) && (route === 'landing' || route === 'login' || route === 'signup' || route === '')) {
         setActiveView('dashboard');
-        // Update URL to match view if we are on root
-        if (window.location.pathname === '/' || window.location.pathname === '/landing') {
-           window.history.replaceState(null, '', '/dashboard');
+        // 将地址栏物理更新为 /dashboard
+        if (window.location.pathname !== '/dashboard') {
+           window.history.replaceState({ somno_route: true }, '', '/dashboard');
         }
         return;
       }
@@ -132,17 +132,18 @@ const AppContent: React.FC = () => {
       if (mappings[route]) {
         setActiveView(mappings[route]);
       } else {
-        // Safe fallback for undefined sectors
+        // 未匹配路径的降级逻辑
         setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
       }
       
       trackPageView(`/${route}`, `SomnoAI: ${route.toUpperCase()}`);
     };
     
+    // 监听前进/后退及 safeNavigatePath 的触发
     window.addEventListener('popstate', handleRouting);
     window.addEventListener('hashchange', handleRouting);
     
-    // Initial Sector Pulse
+    // 启动初始路由脉冲
     handleRouting();
     
     return () => {

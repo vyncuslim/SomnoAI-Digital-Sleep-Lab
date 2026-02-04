@@ -1,7 +1,6 @@
 /**
- * SomnoAI Safe Navigation Utility (v4.3)
- * Handles physical path-based routing for a cleaner UX.
- * Optimized for Vercel History Mode.
+ * SomnoAI Safe Navigation Utility (v4.6)
+ * 专门针对 Vercel History Mode 优化的导航工具。
  */
 
 export const getSafeUrl = (): string => {
@@ -17,7 +16,7 @@ export const getSafeUrl = (): string => {
     }
   } catch (e) {}
 
-  return 'https://sleepsomno.com/virtual-node';
+  return 'https://sleepsomno.com/';
 };
 
 export const getSafeHash = (): string => {
@@ -42,41 +41,23 @@ export const getSafeHostname = (): string => {
 };
 
 /**
- * Standard path-based navigation with History API support.
- * This is the primary method for Clean URLs.
+ * 核心导航协议：执行物理路径跳转
+ * 使用浏览器 History API 保持 URL 整洁且不刷新页面。
  */
 export const safeNavigatePath = (path: string) => {
-  // Ensure path starts with / but doesn't have double //
+  // 路径标准化
   let cleanPath = path.startsWith('/') ? path : `/${path}`;
   if (cleanPath === '/landing') cleanPath = '/';
 
   try {
-    // 1. Push state to browser history
+    // 1. 物理更新浏览器地址栏
     window.history.pushState({ somno_route: true }, '', cleanPath);
     
-    // 2. Explicitly trigger routing logic in App.tsx
-    // We dispatch both events for maximum compatibility with current listeners
+    // 2. 调度 popstate 事件，强制 App.tsx 的路由监听器感知变化
     window.dispatchEvent(new PopStateEvent('popstate', { state: { somno_route: true } }));
   } catch (e) {
-    try {
-      // Hard navigation fallback if History API fails
-      window.location.href = cleanPath;
-    } catch (e2) {
-      console.warn("Navigation protocol interrupted by environment constraints.");
-    }
-  }
-};
-
-/**
- * Legacy support for hash-based navigation.
- * While we prefer Clean URLs, we maintain this for backward compatibility.
- */
-export const safeNavigateHash = (view: string) => {
-  const hashPath = `#/${view.replace(/^#?\/?/, '')}`;
-  try {
-    window.location.hash = hashPath;
-  } catch (e) {
-    safeNavigatePath(view);
+    // 降级处理：若 History API 异常，执行硬跳转
+    window.location.href = cleanPath;
   }
 };
 
@@ -85,10 +66,6 @@ export const safeReload = () => {
     window.location.reload();
   } catch (e) {
     const baseUrl = getSafeUrl().split('#')[0];
-    try {
-      window.location.replace(baseUrl);
-    } catch (e2) {
-      console.warn("Manual node synchronization blocked.");
-    }
+    window.location.replace(baseUrl);
   }
 };

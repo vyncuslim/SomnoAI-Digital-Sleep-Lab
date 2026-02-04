@@ -28,7 +28,7 @@
       "destination": "/terms.html"
     },
     {
-      "source": "/((?!api|favicon.ico|manifest.json|sw.js|assets/|.*\\..*).*)",
+      "source": "/((?!api|favicon.ico|manifest.json|sw.js|assets/|_next).*)",
       "destination": "/index.html"
     }
   ]
