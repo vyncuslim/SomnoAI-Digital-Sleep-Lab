@@ -9,10 +9,10 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
-const N8N_WEBHOOK_URL = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/debda1be-d725-4f68-b02a-1b1dac5ee136";
+const N8N_WEBHOOK_URL = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/a205efcc-7c98-44c7-aad9-5815e0ac5ab";
 
 /**
- * Pipes AI activity to the n8n neural automation bridge.
+ * Pipes AI activity to the n8n neural automation bridge using PATCH method.
  */
 const notifyN8NBridge = async (event: string, type: string) => {
   try {
@@ -23,8 +23,11 @@ const notifyN8NBridge = async (event: string, type: string) => {
     url.searchParams.append('type', type);
     url.searchParams.append('subject', user?.email || 'anonymous');
     
-    // Using no-cors as it's a fire-and-forget signal to a GET webhook
-    await fetch(url.toString(), { method: 'GET', mode: 'no-cors' });
+    // Updated to PATCH as per user instruction
+    await fetch(url.toString(), { 
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' }
+    });
   } catch (e) {
     // Silent fail to maintain AI service availability
   }

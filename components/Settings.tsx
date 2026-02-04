@@ -66,13 +66,15 @@ export const Settings: React.FC<SettingsProps> = ({
     try {
       // 1. Trigger the n8n Webhook provided by user
       const prodWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/debda1be-d725-4f68-b02a-1b1dac5ee136";
-      // UPDATED TEST WEBHOOK URL
       const testWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/a205efcc-7c98-44c7-aad9-5815e0ac5ab";
       
       const targetUrl = isTest ? testWebhook : prodWebhook;
       
-      // Using no-cors to avoid blocking on simple GET triggers for fire-and-forget diagnostics
-      await fetch(targetUrl, { method: 'GET', mode: 'no-cors' });
+      // Updated to PATCH as per user instruction. Removing no-cors to allow PATCH.
+      await fetch(targetUrl, { 
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' }
+      });
       
       // 2. Trigger internal mirror if production
       if (!isTest) {
@@ -110,7 +112,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <Activity size={18} className="text-amber-500" />
-                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">n8n Neural Link Test</h3>
+                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">n8n Neural Link Test (PATCH)</h3>
                   </div>
                   <button onClick={() => setShowDiag(false)} className="p-2 text-slate-600 hover:text-white transition-all">
                     <X size={14} />
@@ -118,7 +120,7 @@ export const Settings: React.FC<SettingsProps> = ({
                 </div>
                 
                 <p className="text-[10px] text-slate-500 italic leading-relaxed">
-                  Trigger an external diagnostic signal to the n8n automation node.
+                  Trigger an external diagnostic signal to the n8n automation node via <b>PATCH</b> protocol.
                 </p>
 
                 <div className="space-y-3">

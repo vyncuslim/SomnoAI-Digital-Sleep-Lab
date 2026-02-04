@@ -15,7 +15,7 @@ import { adminApi, supabase } from '../services/supabaseService.ts';
 const m = motion as any;
 
 type AdminTab = 'overview' | 'automation' | 'registry' | 'explorer' | 'signals' | 'system';
-type SyncState = 'IDLE' | 'RUNNING' | 'SYNCED' | 'ERRORED' | 'STALLED' | 'FORBIDDEN' | 'NOT_FOUND';
+type SyncState = 'IDLE' | 'RUNNING' | 'SYNCED' | 'ERRORED' | 'STALLED' | 'FORBIDDEN';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity, desc: 'Stores aggregated daily traffic metrics from Google Analytics.' },
@@ -25,13 +25,6 @@ const DATABASE_SCHEMA = [
   { id: 'user_data', name: 'Biological Metrics', group: 'Core', icon: Fingerprint, desc: 'Subject-specific biometric data and physiological metadata.' }
 ];
 
-const ROLE_CONFIG: Record<string, { label: string; icon: any; color: string }> = {
-  user: { label: 'RESEARCHER', icon: Activity, color: 'text-slate-400' },
-  editor: { label: 'ANALYST', icon: UserCog, color: 'text-indigo-400' },
-  admin: { label: 'SUPERVISOR', icon: ShieldCheck, color: 'text-emerald-400' },
-  owner: { label: 'DIRECTOR', icon: Crown, color: 'text-amber-400' }
-};
-
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [loading, setLoading] = useState(true);
@@ -39,20 +32,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [syncState, setSyncState] = useState<SyncState>('IDLE');
   
   const [users, setUsers] = useState<any[]>([]);
-  const [signals, setSignals] = useState<any[]>([]);
   const [trafficData, setTrafficData] = useState<any[]>([]);
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [registrySearch, setRegistrySearch] = useState('');
   const [serviceAccountEmail, setServiceAccountEmail] = useState<string | null>(null);
-  const [targetPropertyId, setTargetPropertyId] = useState<string | null>(null);
+  const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
   const [copiedEmail, setCopiedEmail] = useState(false);
   
-  const syncTimeoutRef = useRef<any>(null);
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
-
-  // Safe access to injected env variables
-  const fallbackPropertyId = (typeof process !== 'undefined' && process.env?.GA_PROPERTY_ID) || '380909155';
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -62,13 +50,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const profile = await adminApi.getAdminClearance(user.id);
       setCurrentAdmin(profile);
 
-      const [sRes, uRes, tRes] = await Promise.allSettled([
-        adminApi.getSecurityEvents(100),
+      const [uRes, tRes] = await Promise.allSettled([
         adminApi.getUsers(),
         supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(14)
       ]);
 
-      setSignals(sRes.status === 'fulfilled' ? sRes.value : []);
       setUsers(uRes.status === 'fulfilled' ? uRes.value : []);
       setTrafficData(tRes.status === 'fulfilled' && tRes.value.data ? tRes.value.data : []);
       
@@ -86,90 +72,46 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  const handleUpdateRole = async (userId: string, email: string, newRole: string) => {
-    try {
-      const { error } = await adminApi.updateUserRole(userId, email, newRole);
-      if (error) throw error;
-      setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-    } catch (err: any) {
-      setActionError(err.message);
-    }
-  };
-
-  const handleToggleBlock = async (userId: string, email: string, isBlocked: boolean) => {
-    try {
-      const { error } = await adminApi.toggleBlock(userId, email, isBlocked);
-      if (error) throw error;
-      setUsers(users.map(u => u.id === userId ? { ...u, is_blocked: !isBlocked } : u));
-    } catch (err: any) {
-      setActionError(err.message);
-    }
-  };
-
   const handleManualSync = async () => {
     if (syncState === 'RUNNING') return;
-    
     setSyncState('RUNNING');
     setActionError(null);
-    setServiceAccountEmail(null);
-    setTargetPropertyId(null);
-
-    syncTimeoutRef.current = setTimeout(() => {
-      setSyncState(prev => prev === 'RUNNING' ? 'STALLED' : prev);
-    }, 15000);
 
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
       const data = await response.json();
       
-      if (syncTimeoutRef.current) clearTimeout(syncTimeoutRef.current);
+      if (data.service_account) setServiceAccountEmail(data.service_account);
+      if (data.property) setActivePropertyId(data.property);
 
       if (response.ok && data.success) {
         setSyncState('SYNCED');
         await fetchData(); 
         setTimeout(() => setSyncState('IDLE'), 4000);
       } else {
-        if (data.service_account) setServiceAccountEmail(data.service_account);
-        if (data.property) setTargetPropertyId(data.property);
-        
-        if (response.status === 403 || data.error?.includes('PERMISSION_DENIED')) setSyncState('FORBIDDEN');
-        else if (response.status === 404) setSyncState('NOT_FOUND');
-        else setSyncState('ERRORED');
-        
-        throw new Error(data.error || "Handshake violation.");
+        const isPermissionError = response.status === 403 || data.error?.includes('PERMISSION_DENIED');
+        if (isPermissionError) {
+          setSyncState('FORBIDDEN');
+          setActionError("7 PERMISSION_DENIED: Access Refused by GA4 Node.");
+        } else {
+          setSyncState('ERRORED');
+          throw new Error(data.error || "Handshake violation.");
+        }
       }
     } catch (e: any) {
-      setActionError(e.message);
+      if (syncState !== 'FORBIDDEN') setActionError(e.message);
     }
   };
 
-  const handleCopyEmail = () => {
-    if (serviceAccountEmail) {
-      navigator.clipboard.writeText(serviceAccountEmail);
-      setCopiedEmail(true);
-      setTimeout(() => setCopiedEmail(false), 2000);
-    }
-  };
-
-  const getStatusDisplay = () => {
+  const status = (() => {
     switch(syncState) {
       case 'IDLE': return { label: 'CONNECTED', color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: ShieldCheck, pulse: true };
       case 'RUNNING': return { label: 'SYNCHRONIZING', color: 'text-indigo-400', bg: 'bg-indigo-600/20', icon: RefreshCw, spin: true };
-      case 'SYNCED': return { label: 'UP TO DATE', color: 'text-emerald-400', bg: 'bg-emerald-600/20', icon: Check, pulse: false };
-      case 'STALLED': return { label: 'STALLED', color: 'text-amber-500', bg: 'bg-amber-600/20', icon: Clock, pulse: true };
-      case 'ERRORED':
-      case 'FORBIDDEN':
-      case 'NOT_FOUND': return { label: 'LINK SEVERED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: ShieldX, pulse: true };
-      default: return { label: 'IDLE', color: 'text-slate-500', bg: 'bg-white/5', icon: ShieldCheck, pulse: false };
+      case 'SYNCED': return { label: 'UP TO DATE', color: 'text-emerald-400', bg: 'bg-emerald-600/20', icon: Check };
+      case 'FORBIDDEN': return { label: 'ACCESS DENIED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: ShieldX, pulse: true };
+      default: return { label: 'LINK SEVERED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: ShieldX };
     }
-  };
-
-  const filteredUsers = users.filter(u => 
-    u.email?.toLowerCase().includes(registrySearch.toLowerCase()) || 
-    u.full_name?.toLowerCase().includes(registrySearch.toLowerCase())
-  );
-
-  const status = getStatusDisplay();
+  })();
 
   return (
     <div className="space-y-8 md:space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left relative">
@@ -185,7 +127,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         </div>
         
         <nav className="flex p-1 bg-slate-950/80 rounded-full border border-white/5 backdrop-blur-3xl shadow-2xl overflow-x-auto no-scrollbar">
-          {['overview', 'registry', 'automation', 'signals', 'system'].map((tab) => (
+          {['overview', 'registry', 'signals', 'system'].map((tab) => (
             <button 
               key={tab} 
               onClick={() => setActiveTab(tab as AdminTab)} 
@@ -222,63 +164,42 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 </div>
 
                 <AnimatePresence>
-                  {syncState === 'FORBIDDEN' && serviceAccountEmail && (
+                  {syncState === 'FORBIDDEN' && (
                     <m.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}>
                       <GlassCard className="p-10 rounded-[3.5rem] border-rose-500/40 bg-rose-500/[0.03] space-y-8 shadow-[0_0_80px_rgba(225,29,72,0.1)]">
                         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
                           <div className="flex items-center gap-5">
                             <div className="p-4 bg-rose-500 text-white rounded-3xl shadow-lg shadow-rose-500/20"><ShieldX size={32} /></div>
                             <div>
-                               <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Action Required: GA4 Authorization</h3>
-                               <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1 italic">Handshake Error: 7 PERMISSION_DENIED</p>
+                               <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">GA4 Authorization Missing</h3>
+                               <p className="text-[10px] font-black text-rose-400 uppercase tracking-widest mt-1 italic leading-relaxed">
+                                 The Google Cloud Identity is not authorized for Property: <code>{activePropertyId || 'UNKNOWN'}</code>
+                               </p>
                             </div>
                           </div>
-                          <a 
-                            href="https://analytics.google.com/analytics/web/" 
-                            target="_blank" 
-                            className="flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all shadow-xl italic"
-                          >
-                             Open GA4 Console <LinkIcon size={16} />
-                          </a>
+                          <a href="https://analytics.google.com/analytics/web/" target="_blank" className="flex items-center gap-3 px-8 py-4 bg-white text-slate-950 rounded-full font-black text-[11px] uppercase tracking-widest hover:bg-slate-200 transition-all shadow-xl italic">Open Console <LinkIcon size={16} /></a>
                         </div>
                         
                         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 pt-6 border-t border-rose-500/10">
                            <div className="space-y-4">
                               <p className="text-xs font-bold text-slate-300 italic leading-relaxed">
-                                The Service Account below is currently blocked from accessing GA4 Property <code>{targetPropertyId || fallbackPropertyId}</code>. You must add this email as a <b>Viewer</b> in the Property Access Management panel.
+                                1. Copy the Service Account email below.<br/>
+                                2. In GA4, go to <b>Admin > Property Access Management</b>.<br/>
+                                3. Add this email with <b>Viewer</b> permissions.
                               </p>
                               <div className="relative group">
-                                 <input 
-                                   readOnly 
-                                   value={serviceAccountEmail} 
-                                   className="w-full bg-black/60 border border-white/5 rounded-full px-8 py-5 text-xs text-indigo-400 font-mono font-bold shadow-inner outline-none"
-                                 />
+                                 <input readOnly value={serviceAccountEmail || 'Extracting identity...'} className="w-full bg-black/60 border border-white/5 rounded-full px-8 py-5 text-xs text-indigo-400 font-mono font-bold shadow-inner outline-none" />
                                  <button 
-                                   onClick={handleCopyEmail}
+                                   onClick={() => { navigator.clipboard.writeText(serviceAccountEmail || ''); setCopiedEmail(true); setTimeout(()=>setCopiedEmail(false), 2000); }}
                                    className="absolute right-3 top-1/2 -translate-y-1/2 p-3 bg-white/5 hover:bg-indigo-600 text-slate-400 hover:text-white rounded-2xl transition-all"
                                  >
                                    {copiedEmail ? <Check size={16} /> : <Copy size={16} />}
                                  </button>
                               </div>
                            </div>
-                           <div className="bg-black/20 rounded-[2.5rem] p-8 border border-white/5 space-y-4">
-                              <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2">
-                                <List size={14} className="text-indigo-400" /> Resolution Protocol
-                              </h4>
-                              <ul className="space-y-3">
-                                 {[
-                                   'Copy the Service Account email address.',
-                                   'Go to Admin > Property Access Management.',
-                                   'Add this email with at least "Viewer" role.',
-                                   'Ensure the role is applied to the correct Property ID.',
-                                   'Retry the synchronization sequence.'
-                                 ].map((step, idx) => (
-                                   <li key={idx} className="flex items-start gap-3">
-                                      <span className="text-[10px] font-mono text-rose-500 font-bold mt-0.5">0{idx+1}</span>
-                                      <span className="text-[11px] text-slate-400 font-medium italic">{step}</span>
-                                   </li>
-                                 ))}
-                              </ul>
+                           <div className="bg-black/20 rounded-[2.5rem] p-8 border border-white/5 space-y-3">
+                              <h4 className="text-[10px] font-black text-white uppercase tracking-widest flex items-center gap-2 italic"><Database size={14} className="text-indigo-400" /> Environment Check</h4>
+                              <p className="text-[11px] text-slate-500 italic">Target Property ID: <span className="text-white font-mono">{activePropertyId || 'NOT_LOADED'}</span></p>
                            </div>
                         </div>
                       </GlassCard>
@@ -287,88 +208,47 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                 </AnimatePresence>
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-                  {/* GA4 Real-time Visualizer */}
                   <div className="lg:col-span-8">
                     <GlassCard className="p-10 rounded-[4rem] border-white/5 h-full">
                       <div className="flex justify-between items-start mb-12">
                          <div className="space-y-1">
                             <div className="flex items-center gap-3">
                                <TrendingUp size={18} className="text-indigo-400" />
-                               <h3 className="text-xl font-black italic text-white uppercase tracking-tight">GA4 Analytics Traffic</h3>
-                            </div>
-                            <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Historical Engagement Node</p>
-                         </div>
-                         <div className="flex gap-4">
-                            <div className="flex items-center gap-2">
-                               <div className="w-2 h-2 rounded-full bg-indigo-500" />
-                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Active Users</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                               <div className="w-2 h-2 rounded-full bg-emerald-500" />
-                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Sessions</span>
+                               <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Analytics Mesh</h3>
                             </div>
                          </div>
                       </div>
-
                       <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={trafficData}>
-                            <defs>
-                              <linearGradient id="userGrad" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
-                            <XAxis 
-                              dataKey="date" 
-                              axisLine={false} 
-                              tickLine={false} 
-                              tick={{ fill: 'rgba(148, 163, 184, 0.4)', fontSize: 9, fontWeight: 900 }}
-                              dy={15}
-                            />
+                            <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'rgba(148, 163, 184, 0.4)', fontSize: 9, fontWeight: 900 }} dy={15} />
                             <YAxis hide />
-                            <Tooltip 
-                              contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255, 255, 255, 0.1)', borderRadius: '1.5rem', fontSize: '10px' }}
-                              itemStyle={{ fontWeight: 800, color: '#fff' }}
-                            />
-                            <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="url(#userGrad)" />
-                            <Area type="monotone" dataKey="sessions" stroke="#10b981" strokeWidth={2} strokeDasharray="5 5" fill="none" />
+                            <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="rgba(99,102,241,0.1)" />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
                     </GlassCard>
                   </div>
 
-                  {/* Sync Control Node */}
                   <div className="lg:col-span-4">
-                    <GlassCard className={`p-10 rounded-[4rem] border-white/5 h-full transition-all duration-700 ${['ERRORED', 'FORBIDDEN', 'STALLED'].includes(syncState) ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
+                    <GlassCard className={`p-10 rounded-[4rem] border-white/5 h-full transition-all duration-700 ${syncState === 'FORBIDDEN' ? 'border-rose-500/30 bg-rose-500/[0.02]' : ''}`}>
                        <div className="flex flex-col h-full justify-between gap-10">
                           <div className="space-y-6">
                              <div className={`w-16 h-16 rounded-3xl border border-white/5 flex items-center justify-center ${status.bg} ${status.color}`}>
                                 <ActivitySquare size={28} className={status.spin ? 'animate-spin' : ''} />
                              </div>
                              <div>
-                                <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Sync Gateway</h3>
+                                <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Sync Sequence</h3>
                                 <div className={`inline-flex items-center gap-2 mt-2 px-4 py-1.5 rounded-full border border-white/5 ${status.bg}`}>
                                    <div className={`w-1.5 h-1.5 rounded-full ${status.color} ${status.pulse ? 'animate-pulse' : ''} shadow-[0_0_8px_currentColor]`} />
-                                   <span className={`text-[9px] font-black uppercase tracking-widest ${status.color}`}>
-                                     {status.label}
-                                   </span>
+                                   <span className={`text-[9px] font-black uppercase tracking-widest ${status.color}`}>{status.label}</span>
                                 </div>
                              </div>
-                             <p className="text-[11px] text-slate-500 leading-relaxed italic">
-                                Manual override for GA4 property <code>{targetPropertyId || fallbackPropertyId}</code>. Sync typically executes via cron every 5 minutes.
-                             </p>
+                             <p className="text-[11px] text-slate-500 leading-relaxed italic">Manual heartbeat for GA4 data ingestion. Synchronizes visitors to the lab database.</p>
                           </div>
-
-                          <button 
-                            onClick={handleManualSync} 
-                            disabled={syncState === 'RUNNING'}
-                            className="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95 disabled:opacity-30"
-                          >
-                            {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} 
-                            EXECUTE SYNC
+                          <button onClick={handleManualSync} disabled={syncState === 'RUNNING'} className="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95 disabled:opacity-30">
+                            {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} EXECUTE HEARTBEAT
                           </button>
                        </div>
                     </GlassCard>
@@ -379,78 +259,31 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
             {activeTab === 'registry' && (
               <div className="space-y-8">
-                <div className="flex flex-col md:flex-row justify-between gap-6 px-2">
-                   <div className="relative flex-1 max-w-xl">
-                      <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={20} />
-                      <input 
-                        type="text" value={registrySearch} onChange={(e) => setRegistrySearch(e.target.value)}
-                        placeholder="Search Identity, Email, or Hash..."
-                        className="w-full bg-slate-900/60 border border-white/10 rounded-full pl-16 pr-8 py-5 text-sm text-white focus:border-indigo-500/50 outline-none italic font-bold"
-                      />
-                   </div>
-                   <div className="flex items-center gap-4 bg-black/40 px-6 py-2 rounded-full border border-white/5">
-                      <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Total Nodes:</span>
-                      <span className="text-xl font-black italic text-white leading-none">{users.length}</span>
-                   </div>
+                <div className="relative max-w-xl mx-2">
+                   <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-700" size={20} />
+                   <input type="text" value={registrySearch} onChange={(e) => setRegistrySearch(e.target.value)} placeholder="Search Identity Node..." className="w-full bg-slate-900/60 border border-white/10 rounded-full pl-16 pr-8 py-5 text-sm text-white focus:border-indigo-500/50 outline-none italic font-bold" />
                 </div>
-
-                <GlassCard className="rounded-[4rem] border-white/5 overflow-hidden">
+                <GlassCard className="rounded-[4rem] border-white/5 overflow-hidden mx-2">
                   <div className="overflow-x-auto">
                     <table className="w-full text-left">
                       <thead>
                         <tr className="border-b border-white/5 bg-white/[0.02]">
                           <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Identity Node</th>
-                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Clearance Level</th>
-                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Node Status</th>
-                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic text-right">System Override</th>
+                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
-                        {filteredUsers.map((u) => (
-                          <tr key={u.id} className="group hover:bg-white/[0.01] transition-colors">
+                        {users.filter(u => u.email?.includes(registrySearch)).map((u) => (
+                          <tr key={u.id}>
                             <td className="px-8 py-7">
-                              <div className="flex items-center gap-4">
-                                <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400 font-black italic shadow-inner">
-                                  {u.full_name?.[0] || '?'}
-                                </div>
-                                <div>
-                                  <p className="text-sm font-black italic text-white uppercase tracking-tight">{u.full_name || 'UNINITIALIZED'}</p>
-                                  <p className="text-[10px] font-mono text-slate-600">{u.email}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-8 py-7">
-                               <div className="flex items-center gap-3">
-                                  <select 
-                                    value={u.role} 
-                                    disabled={u.is_super_owner}
-                                    onChange={(e) => handleUpdateRole(u.id, u.email, e.target.value)}
-                                    className={`bg-slate-900/60 border border-white/5 rounded-xl px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-indigo-500/50 cursor-pointer transition-all ${ROLE_CONFIG[u.role]?.color || 'text-slate-400'}`}
-                                  >
-                                    <option value="user">User</option>
-                                    <option value="editor">Editor</option>
-                                    <option value="admin">Admin</option>
-                                    {u.role === 'owner' && <option value="owner">Owner</option>}
-                                  </select>
-                                  {u.is_super_owner && <Crown size={14} className="text-amber-500 drop-shadow-[0_0_8px_rgba(245,158,11,0.4)]" />}
-                               </div>
+                              <p className="text-sm font-black italic text-white uppercase tracking-tight">{u.full_name || 'UNNAMED'}</p>
+                              <p className="text-[10px] font-mono text-slate-600">{u.email}</p>
                             </td>
                             <td className="px-8 py-7">
                                <div className="flex items-center gap-2">
                                   <div className={`w-1.5 h-1.5 rounded-full ${u.is_blocked ? 'bg-rose-500' : 'bg-emerald-500'} animate-pulse`} />
-                                  <span className={`text-[9px] font-black uppercase tracking-widest ${u.is_blocked ? 'text-rose-500' : 'text-emerald-500'}`}>
-                                    {u.is_blocked ? 'LINK_VOIDED' : 'OPERATIONAL'}
-                                  </span>
+                                  <span className={`text-[9px] font-black uppercase tracking-widest ${u.is_blocked ? 'text-rose-500' : 'text-emerald-400'}`}>{u.is_blocked ? 'LINK_VOIDED' : 'OPERATIONAL'}</span>
                                </div>
-                            </td>
-                            <td className="px-8 py-7 text-right">
-                               <button 
-                                 onClick={() => handleToggleBlock(u.id, u.email, u.is_blocked)}
-                                 disabled={u.is_super_owner || u.id === currentAdmin?.id}
-                                 className={`p-3 rounded-2xl transition-all active:scale-90 ${u.is_blocked ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20' : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'} disabled:opacity-20`}
-                               >
-                                 {u.is_blocked ? <Unlock size={18} /> : <Ban size={18} />}
-                               </button>
                             </td>
                           </tr>
                         ))}

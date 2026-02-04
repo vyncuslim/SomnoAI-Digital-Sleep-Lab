@@ -1,9 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, Zap, Eye, EyeOff, 
-  Chrome, AlertCircle, ShieldCheck, ArrowLeft, Mail, Lock, User, Link2
+  Chrome, AlertCircle, ShieldCheck, ArrowLeft, Mail, Lock, User, Link2, Clock
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
 import { authApi } from '../services/supabaseService.ts';
 
@@ -22,14 +22,23 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [error, setError] = useState<{message: string} | null>(null);
+  const [error, setError] = useState<{message: string; isRateLimit?: boolean} | null>(null);
   const [showPassword, setShowPassword] = useState(false);
+  const [cooldown, setCooldown] = useState(0);
   
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
 
   const isZh = lang === 'zh';
   const isLogin = activeTab === 'login';
+
+  // Cooldown Timer Logic
+  useEffect(() => {
+    if (cooldown > 0) {
+      const timer = setTimeout(() => setCooldown(cooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [cooldown]);
 
   useEffect(() => {
     const SITE_KEY = '0x4AAAAAACNi1FM3bbfW_VsI'; 
@@ -48,7 +57,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isProcessing) return;
+    if (isProcessing || cooldown > 0) return;
     setError(null);
     setIsProcessing(true);
 
@@ -63,7 +72,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         setError({ message: isZh ? "注册成功！请检查邮箱中的验证链接。" : "Registry created! Please verify your email to activate your lab access." });
       }
     } catch (err: any) {
-      setError({ message: err.message || (isZh ? "发生意外错误。请稍后重试。" : "There was an unexpected error. Please finish what you were doing and try again.") });
+      const msg = err.message || "";
+      const isRateLimit = msg.toLowerCase().includes('rate limit') || err.status === 429;
+      
+      if (isRateLimit) {
+        setCooldown(60);
+        setError({ 
+          message: isZh 
+            ? "请求过于频繁。为确保实验室安全，系统已进入冷却状态。请 60 秒后再试。" 
+            : "Rate limit exceeded. For laboratory security, the protocol is locked. Please retry in 60 seconds.",
+          isRateLimit: true 
+        });
+      } else {
+        setError({ message: msg || (isZh ? "发生意外错误。请稍后重试。" : "There was an unexpected error. Please finish what you were doing and try again.") });
+      }
     } finally {
       setIsProcessing(false);
     }
@@ -124,11 +146,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
           <div ref={turnstileRef} className="flex justify-center min-h-[65px]"></div>
 
           <button 
-            type="submit" disabled={isProcessing}
-            className="w-full py-6 rounded-full bg-indigo-600 text-white font-black text-[12px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 transition-all hover:bg-indigo-500 disabled:opacity-40 italic"
+            type="submit" disabled={isProcessing || cooldown > 0}
+            className={`w-full py-6 rounded-full font-black text-[12px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-4 transition-all italic ${cooldown > 0 ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-500 disabled:opacity-40'}`}
           >
-            {isProcessing ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} fill="currentColor" />}
-            <span>{isLogin ? (isZh ? '进入实验室' : 'Login to Lab') : (isZh ? '建立注册表' : 'Create Registry')}</span>
+            {isProcessing ? <Loader2 className="animate-spin" size={20} /> : cooldown > 0 ? <Clock size={20} /> : <Zap size={20} fill="currentColor" />}
+            <span>
+              {cooldown > 0 
+                ? (isZh ? `限制中 (${cooldown}S)` : `LOCKED (${cooldown}S)`)
+                : isLogin ? (isZh ? '进入实验室' : 'Login to Lab') : (isZh ? '建立注册表' : 'Create Registry')
+              }
+            </span>
           </button>
         </form>
 
@@ -138,6 +165,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
             <button type="button" onClick={() => {
               const nextTab = isLogin ? 'signup' : 'login';
               setActiveTab(nextTab);
+              setError(null);
               window.history.pushState(null, '', `/${nextTab}`);
             }} className="text-indigo-400 underline underline-offset-4 ml-2">
               {isLogin ? (isZh ? '立即注册' : 'Sign Up') : (isZh ? '立即登录' : 'Sign In')}
@@ -146,15 +174,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
           <button onClick={onGuest} className="text-slate-800 text-[10px] font-black uppercase tracking-[0.5em] hover:text-slate-500 transition-colors italic">Sandbox Override</button>
         </div>
 
-        {error && (
-          <m.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="p-6 bg-rose-500/5 border border-rose-500/20 rounded-[2.5rem] flex items-start gap-4">
-            <AlertCircle className="text-rose-500 shrink-0 mt-0.5" size={18} />
-            <div className="space-y-1">
-              <p className="text-[10px] font-bold text-rose-400 uppercase italic leading-relaxed">{error.message}</p>
-              <button onClick={() => window.location.reload()} className="text-[9px] font-black text-rose-300 underline uppercase tracking-widest">Refresh Node</button>
-            </div>
-          </m.div>
-        )}
+        <AnimatePresence>
+          {error && (
+            <m.div 
+              initial={{ opacity: 0, y: 10 }} 
+              animate={{ opacity: 1, y: 0 }} 
+              exit={{ opacity: 0, y: -10 }}
+              className={`p-6 border rounded-[2.5rem] flex items-start gap-4 ${error.isRateLimit ? 'bg-amber-500/5 border-amber-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}
+            >
+              <AlertCircle className={error.isRateLimit ? 'text-amber-500 shrink-0 mt-0.5' : 'text-rose-500 shrink-0 mt-0.5'} size={18} />
+              <div className="space-y-1">
+                <p className={`text-[10px] font-bold uppercase italic leading-relaxed ${error.isRateLimit ? 'text-amber-400' : 'text-rose-400'}`}>{error.message}</p>
+                <button onClick={() => window.location.reload()} className={`text-[9px] font-black underline uppercase tracking-widest ${error.isRateLimit ? 'text-amber-300' : 'text-rose-300'}`}>Refresh Node</button>
+              </div>
+            </m.div>
+          )}
+        </AnimatePresence>
       </div>
 
       <footer className="mt-20 flex flex-col items-center gap-4 text-center">
