@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  LogOut as DisconnectIcon, ShieldCheck, 
-  RefreshCw, Zap, ChevronRight, Terminal, Globe, Heart, LifeBuoy, Key, Eye, EyeOff, Save, Trash2, Send, X, Activity, FlaskConical,
-  Box, CheckCircle2, AlertCircle, Loader2
+  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
+  Terminal, Key, Info, Bell, RefreshCw, Smartphone, Zap, MessageSquare, Send, Activity, Box, Database, Loader2
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../context/AuthContext.tsx';
-import { ExitFeedbackModal } from './ExitFeedbackModal.tsx';
-import { systemMonitor } from '../services/systemMonitor.ts';
+import { notificationService } from '../services/notificationService.ts';
+import { notifyAdmin } from '../services/telegramService.ts';
+import { getSafeHostname } from '../services/navigation.ts';
 import { hfService } from '../services/hfService.ts';
+import { vertexService } from '../services/vertexService.ts';
 
 const m = motion as any;
 
@@ -22,274 +22,237 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
-  lang, onLanguageChange, onLogout, onNavigate
+  lang, onLanguageChange, onLogout
 }) => {
-  const { isAdmin, profile } = useAuth();
-  const [showExitFeedback, setShowExitFeedback] = useState(false);
-  const [customKey, setCustomKey] = useState(localStorage.getItem('somno_custom_key') || '');
-  const [showKey, setShowKey] = useState(false);
-  const [isSavingKey, setIsSavingKey] = useState(false);
-  
-  // Diagnostic States
-  const [diagStatus, setDiagStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
-  const [hfDiagStatus, setHfDiagStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
-  const [showDiag, setShowDiag] = useState(true);
+  const [showDonation, setShowDonation] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [isAiActive, setIsAiActive] = useState(false);
+  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
+  const [hfStatus, setHfStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
+  const [vertexStatus, setVertexStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
+  const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
 
   const t = translations[lang]?.settings || translations.en.settings;
 
-  // Determine API Key active status
-  const isApiKeyActive = !!customKey || !!process.env.API_KEY;
-
-  const handleLanguageChange = (newLang: Language) => {
-    localStorage.setItem('somno_lang', newLang);
-    onLanguageChange(newLang);
-  };
-
-  const saveCustomKey = () => {
-    setIsSavingKey(true);
-    setTimeout(() => {
-      if (customKey.trim()) {
-        localStorage.setItem('somno_custom_key', customKey.trim());
+  useEffect(() => {
+    const checkAiStatus = async () => {
+      if ((window as any).aistudio?.hasSelectedApiKey) {
+        try {
+          const hasKey = await (window as any).aistudio.hasSelectedApiKey();
+          setIsAiActive(hasKey || !!process.env.API_KEY);
+        } catch (e) {
+          setIsAiActive(!!process.env.API_KEY);
+        }
       } else {
-        localStorage.removeItem('somno_custom_key');
+        setIsAiActive(!!process.env.API_KEY);
       }
-      setIsSavingKey(false);
-    }, 1000);
-  };
+    };
+    checkAiStatus();
+  }, []);
 
-  const clearCustomKey = () => {
-    setCustomKey('');
-    localStorage.removeItem('somno_custom_key');
-  };
-
-  const handleInitiateDiagnostic = async (isTest = false) => {
-    if (diagStatus === 'running') return;
-    setDiagStatus('running');
-    
-    try {
-      const prodWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook/debda1be-d725-4f68-b02a-1b1dac5ee136";
-      const testWebhook = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/a205efcc-7c98-44c7-aad9-5815e0ac5ab";
-      const targetUrl = isTest ? testWebhook : prodWebhook;
-      
-      await fetch(targetUrl, { 
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' }
-      });
-      
-      if (!isTest) {
-        await systemMonitor.executeGlobalPulseCheck();
-      }
-      
-      setDiagStatus('success');
-      setTimeout(() => setDiagStatus('idle'), 3000);
-    } catch (err) {
-      setDiagStatus('error');
-      setTimeout(() => setDiagStatus('idle'), 3000);
-    }
+  const handleTestTelegram = async () => {
+    setTestStatus('sending');
+    const nodeIdentity = getSafeHostname();
+    const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nSubject: Admin Console Test\nStatus: Operational`);
+    setTestStatus(success ? 'success' : 'error');
+    setTimeout(() => setTestStatus('idle'), 3000);
   };
 
   const handleHfDiagnostic = async () => {
-    if (hfDiagStatus === 'running') return;
-    setHfDiagStatus('running');
+    if (hfStatus === 'running') return;
+    setHfStatus('running');
     try {
-      // Basic ping test to HF node
-      await hfService.chat("Ping test for laboratory diagnostic pulse.");
-      setHfDiagStatus('success');
+      await hfService.chat("Pulse probe check.");
+      setHfStatus('success');
     } catch (e) {
-      setHfDiagStatus('error');
+      setHfStatus('error');
     } finally {
-      setTimeout(() => setHfDiagStatus('idle'), 4000);
+      setTimeout(() => setHfStatus('idle'), 4000);
     }
+  };
+
+  const handleVertexDiagnostic = async () => {
+    if (vertexStatus === 'running') return;
+    setVertexStatus('running');
+    try {
+      await vertexService.analyze("Handshake probe for secure bridge.");
+      setVertexStatus('success');
+    } catch (e) {
+      setVertexStatus('error');
+    } finally {
+      setTimeout(() => setVertexStatus('idle'), 4000);
+    }
+  };
+
+  const handleRequestNotif = async () => {
+    const granted = await notificationService.requestPermission();
+    setNotifPermission(Notification.permission);
+    if (granted) {
+      notificationService.sendNotification("SomnoAI Connected", "Neural bridge active. System notifications enabled.");
+    }
+  };
+
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
   };
 
   return (
     <div className="space-y-8 pb-48 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
       <header className="flex flex-col gap-2 pt-8">
-        <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">
-          {t.title}
-        </h1>
+        <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">{t.title}</h1>
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">System Preferences & Node Diagnostics</p>
       </header>
 
       <div className="flex flex-col gap-6">
-        {/* Comms Diagnostic Panel */}
-        <AnimatePresence>
-          {showDiag && (
-            <m.div 
-              initial={{ opacity: 0, height: 0 }} 
-              animate={{ opacity: 1, height: 'auto' }} 
-              exit={{ opacity: 0, height: 0 }}
-              className="space-y-4"
-            >
-              <GlassCard className="p-8 rounded-[3rem] border-amber-500/20 bg-amber-500/[0.02] space-y-6">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Activity size={18} className="text-amber-500" />
-                    <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Laboratory Node Integrity</h3>
-                  </div>
-                  <button onClick={() => setShowDiag(false)} className="p-2 text-slate-600 hover:text-white transition-all">
-                    <X size={14} />
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                   <div className="p-5 bg-white/5 rounded-[2rem] border border-white/5 space-y-4">
-                      <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Automation Hub (n8n)</p>
-                      <button 
-                        onClick={() => handleInitiateDiagnostic(false)}
-                        disabled={diagStatus === 'running'}
-                        className={`w-full py-3 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
-                          diagStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                          diagStatus === 'error' ? 'bg-rose-600 text-white' : 
-                          'bg-indigo-600/20 text-indigo-400 border border-indigo-500/30'
-                        }`}
-                      >
-                        {diagStatus === 'running' ? <RefreshCw size={12} className="animate-spin" /> : <Zap size={12} />}
-                        TEST_LINK
-                      </button>
-                   </div>
-
-                   <div className="p-5 bg-white/5 rounded-[2rem] border border-white/5 space-y-4">
-                      <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">External AI (HF Node)</p>
-                      <button 
-                        onClick={handleHfDiagnostic}
-                        disabled={hfDiagStatus === 'running'}
-                        className={`w-full py-3 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
-                          hfDiagStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                          hfDiagStatus === 'error' ? 'bg-rose-600 text-white' : 
-                          'bg-amber-600/20 text-amber-500 border border-amber-500/30'
-                        }`}
-                      >
-                        {hfDiagStatus === 'running' ? <RefreshCw size={12} className="animate-spin" /> : <Box size={12} />}
-                        {hfDiagStatus === 'success' ? 'STABLE' : hfDiagStatus === 'error' ? 'VOID' : 'PROBE_NODE'}
-                      </button>
-                   </div>
-                </div>
-              </GlassCard>
-            </m.div>
-          )}
-        </AnimatePresence>
-
-        {/* API Status & Input Panel */}
-        <GlassCard className="p-8 rounded-[3rem] border-indigo-500/20 bg-indigo-500/[0.03] space-y-8">
-          <div className="flex items-center justify-between">
+        {/* AI & Notification Status Panel */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <GlassCard className="p-6 rounded-[2.5rem] border-indigo-500/20 bg-indigo-500/5">
             <div className="flex items-center gap-4">
-              <div className={`p-4 rounded-2xl ${isApiKeyActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
-                <Zap size={24} className={isApiKeyActive ? 'animate-pulse' : ''} />
+              <div className={`p-3 rounded-2xl ${isAiActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                <Zap size={20} className={isAiActive ? 'animate-pulse' : ''} />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">{t.apiKey}</p>
-                <p className="text-sm font-black text-white italic">
-                  {localStorage.getItem('somno_custom_key') ? 'USER_NODE_LINKED' : isApiKeyActive ? 'DEFAULT_NODE_ACTIVE' : 'NODE_OFFLINE'}
-                </p>
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Neural Bridge (Gemini)</p>
+                <p className="text-sm font-black text-white italic">{isAiActive ? 'ACTIVE' : 'OFFLINE'}</p>
               </div>
             </div>
-            {isAdmin && (
-              <button 
-                onClick={() => onNavigate('admin')}
-                className="px-6 py-2.5 bg-indigo-600/20 text-indigo-400 rounded-full text-[9px] font-black uppercase tracking-widest border border-indigo-500/30 hover:bg-indigo-600/30 transition-all flex items-center gap-2"
-              >
-                {/* Fixed TerminalIcon to Terminal */}
-                <Terminal size={12} /> BRIDGE_ACCESS
-              </button>
-            )}
-          </div>
+          </GlassCard>
 
-          <div className="space-y-4 pt-4 border-t border-white/5">
-             <div className="flex items-center justify-between px-2">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic flex items-center gap-2">
-                  <Key size={12} /> Custom Neural Key (Gemini)
-                </span>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" className="text-[9px] font-black text-indigo-400 hover:text-white uppercase tracking-widest underline underline-offset-4">Get Key</a>
-             </div>
-             
-             <div className="relative group">
-                <input 
-                  type={showKey ? "text" : "password"}
-                  value={customKey}
-                  onChange={(e) => setCustomKey(e.target.value)}
-                  placeholder={t.apiKeyPlaceholder}
-                  className="w-full bg-black/40 border border-white/5 rounded-full px-8 py-5 text-sm text-white focus:border-indigo-500/50 outline-none transition-all font-bold italic shadow-inner"
-                />
-                <div className="absolute right-4 top-1/2 -translate-y-1/2 flex items-center gap-2">
-                  <button onClick={() => setShowKey(!showKey)} className="p-2 text-slate-600 hover:text-white transition-colors">
-                    {showKey ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                  {customKey && (
-                    <button onClick={clearCustomKey} className="p-2 text-slate-600 hover:text-rose-500 transition-colors">
-                      <Trash2 size={18} />
-                    </button>
-                  )}
+          <GlassCard className="p-6 rounded-[2.5rem] border-white/5">
+             <div className="flex items-center justify-between">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-2xl ${notifPermission === 'granted' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-slate-900 text-slate-600'}`}>
+                    <Bell size={20} />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Notifications</p>
+                    <p className="text-sm font-black text-white italic">{notifPermission.toUpperCase()}</p>
+                  </div>
                 </div>
+                {notifPermission !== 'granted' && (
+                  <button onClick={handleRequestNotif} className="p-2 text-indigo-400 hover:bg-indigo-500/10 rounded-xl transition-all">
+                    <RefreshCw size={16} />
+                  </button>
+                )}
              </div>
+          </GlassCard>
+        </div>
 
-             <button 
-               onClick={saveCustomKey}
-               disabled={isSavingKey}
-               className="w-full py-4 rounded-full bg-indigo-600 text-white font-black text-[10px] uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 transition-all active:scale-95 flex items-center justify-center gap-3 italic disabled:opacity-50"
-             >
-               {/* Added missing Loader2 import to Lucide icons */}
-               {isSavingKey ? <Loader2 size={14} className="animate-spin" /> : <Save size={14} />}
-               {isSavingKey ? 'COMMITTING LINK...' : 'COMMIT NEURAL LINK'}
-             </button>
+        {/* Neural Signal Diagnostics */}
+        <GlassCard className="p-8 rounded-[3rem] border-amber-500/20 bg-amber-500/[0.02] space-y-6">
+           <div className="flex items-center gap-3">
+              <Activity size={18} className="text-amber-500" />
+              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Node Integrity Probes</h3>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4">
+                <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">External Node (HF)</p>
+                <button 
+                  onClick={handleHfDiagnostic}
+                  disabled={hfStatus === 'running'}
+                  className={`w-full py-4 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
+                    hfStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                    hfStatus === 'error' ? 'bg-rose-600 text-white' : 
+                    'bg-amber-600/20 text-amber-500 border border-amber-500/30'
+                  }`}
+                >
+                  {hfStatus === 'running' ? <RefreshCw size={12} className="animate-spin" /> : <Box size={12} />}
+                  {hfStatus === 'success' ? 'HF_SIGNAL_STABLE' : hfStatus === 'error' ? 'HF_NODE_VOID' : 'PROBE_HF_NODE'}
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Secure Bridge (Vertex)</p>
+                <button 
+                  onClick={handleVertexDiagnostic}
+                  disabled={vertexStatus === 'running'}
+                  className={`w-full py-4 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
+                    vertexStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                    vertexStatus === 'error' ? 'bg-rose-600 text-white' : 
+                    'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
+                  }`}
+                >
+                  {vertexStatus === 'running' ? <RefreshCw size={12} className="animate-spin" /> : <Database size={12} />}
+                  {vertexStatus === 'success' ? 'VRTX_SIGNAL_STABLE' : vertexStatus === 'error' ? 'VRTX_LINK_VOID' : 'PROBE_VRTX_NODE'}
+                </button>
+              </div>
+           </div>
+        </GlassCard>
+
+        {/* Telegram Diagnostic Tool */}
+        <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <Send size={18} className="text-rose-500" />
+              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms Diagnostic</h3>
+            </div>
+            <p className="text-[10px] text-slate-500 italic">Verify the link between your node and the Telegram administrative gateway.</p>
+            <button 
+              onClick={handleTestTelegram}
+              disabled={testStatus === 'sending'}
+              className={`w-full py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all ${
+                testStatus === 'success' ? 'bg-emerald-600 text-white' : 
+                testStatus === 'error' ? 'bg-rose-600 text-white' : 
+                'bg-white/5 text-rose-500 border border-rose-500/30'
+              }`}
+            >
+              {testStatus === 'sending' ? <RefreshCw size={14} className="animate-spin" /> : <Terminal size={14} />}
+              {testStatus === 'success' ? 'SIGNAL CONFIRMED' : testStatus === 'error' ? 'LINK FAILED' : 'SEND TEST SIGNAL'}
+            </button>
           </div>
         </GlassCard>
 
-        {/* Preferences */}
-        <GlassCard className="p-10 rounded-[4rem] border-white/10 bg-white/[0.01] space-y-12">
-          <div className="space-y-6">
-             <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2 flex items-center gap-2">
-               <Globe size={12} /> {t.language}
-             </span>
-             <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
-                {(['en', 'zh', 'es'] as Language[]).map((l) => (
-                  <button 
-                    key={l} 
-                    onClick={() => handleLanguageChange(l)} 
-                    className={`flex-1 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-                  >
-                    {l === 'en' ? 'ENGLISH' : l === 'zh' ? '中文简体' : 'ESPAÑOL'}
-                  </button>
-                ))}
-             </div>
-          </div>
+        {/* Core Settings */}
+        <GlassCard className="p-10 rounded-[4rem] border-white/10 bg-white/[0.01]">
+          <div className="space-y-12">
+            <div className="space-y-4">
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
+               <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
+                  {['en', 'zh'].map((l) => (
+                    <button key={l} onClick={() => onLanguageChange(l as Language)} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{l === 'en' ? 'ENGLISH' : l === 'zh' ? '中文简体' : 'ESPAÑOL'}</button>
+                  ))}
+               </div>
+            </div>
 
-          <div className="space-y-4 pt-8 border-t border-white/5">
-             <button 
-               onClick={() => onNavigate('support')} 
-               className="w-full py-6 rounded-full bg-white/5 border border-white/10 text-slate-300 font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 hover:bg-white/10 transition-all italic"
-             >
-               <LifeBuoy size={20} /> Support
-             </button>
-             <button 
-               onClick={() => setShowExitFeedback(true)} 
-               className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 italic"
-             >
-               <DisconnectIcon size={18} /> {t.logout}
-             </button>
+            <div className="space-y-4 pt-4 border-t border-white/5">
+               <button onClick={() => setShowDonation(true)} className="w-full py-6 rounded-full bg-[#f43f5e]/5 border border-[#f43f5e]/20 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/10 hover:bg-[#f43f5e]/10"><Heart size={20} fill="currentColor" /> {t.coffee}</button>
+               <button onClick={onLogout} className="w-full py-6 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20"><DisconnectIcon size={18} /> {t.logout}</button>
+            </div>
           </div>
         </GlassCard>
       </div>
 
       <AnimatePresence>
-        {showExitFeedback && (
-          <ExitFeedbackModal 
-            isOpen={showExitFeedback} 
-            lang={lang} 
-            onConfirmLogout={onLogout} 
-          />
+        {showDonation && (
+          <div className="fixed inset-0 z-[2000] flex items-center justify-center p-6 bg-[#020617]/95 backdrop-blur-3xl" onClick={() => setShowDonation(false)}>
+            <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} onClick={(e: React.MouseEvent) => e.stopPropagation()} className="w-full max-w-2xl text-center space-y-10">
+              <m.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="w-24 h-24 rounded-full bg-[#f43f5e] flex items-center justify-center text-white shadow-[0_0_50px_rgba(244,63,94,0.5)] mx-auto"><Heart size={48} fill="white" strokeWidth={0} /></m.div>
+              <div className="space-y-4"><h2 className="text-5xl font-black italic text-white uppercase tracking-tighter leading-none">CONTRIBUTION<br />ACKNOWLEDGED</h2><p className="text-[13px] text-slate-400 italic max-w-md mx-auto leading-relaxed">Your support fuels lab processing and research development.</p></div>
+              <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
+                <div className="md:col-span-2 p-8 bg-slate-900/80 border border-white/5 rounded-[3rem] flex flex-col items-center gap-6">
+                   <div className="bg-white p-5 rounded-[2.5rem] shadow-sm"><img src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=020617&bgcolor=ffffff`} alt="QR" className="w-36 h-36 md:w-44 md:h-44" /></div>
+                   <p className="text-[10px] font-black text-[#f43f5e] uppercase tracking-[0.3em] flex items-center gap-2"><QrCode size={14} /> SCAN TO PAYPAL</p>
+                </div>
+                <div className="md:col-span-3 space-y-4 text-left">
+                  {[{ id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' }, { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' }].map((item) => (
+                    <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
+                      <div className="space-y-1">
+                        <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
+                        <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>
+                      </div>
+                      <button onClick={() => handleCopy(item.id, item.value)} className={`p-4 rounded-2xl transition-all ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-600 hover:text-white bg-white/5'}`}><Copy size={20} /></button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <button onClick={() => window.open('https://paypal.me/vyncuslim', '_blank')} className="w-full py-6 rounded-full bg-[#4f46e5] text-white font-black text-sm uppercase tracking-[0.4em] flex items-center justify-center gap-4 shadow-2xl transition-transform active:scale-95"><ArrowUpRight size={20} /> GO TO PAYPAL PAGE</button>
+            </m.div>
+          </div>
         )}
       </AnimatePresence>
-
-      <footer className="pt-12 text-center opacity-30">
-        <div className="flex items-center justify-center gap-3 text-indigo-400 mb-2">
-           <ShieldCheck size={14} />
-           <span className="text-[9px] font-black uppercase tracking-widest">End-to-End Encrypted Session</span>
-        </div>
-        <p className="text-[8px] font-mono uppercase tracking-[0.5em] text-slate-600">
-          NODE: {profile?.email || 'GUEST_GATEWAY'} • REV: 2026.1.4
-        </p>
-      </footer>
     </div>
   );
 };

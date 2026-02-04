@@ -1,27 +1,28 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, User, Loader2, Trash2, Moon, ExternalLink, Cpu, LayoutGrid, Zap, Globe, Sparkles, ShieldCheck, Terminal as TerminalIcon, 
-  Layers, AlertCircle, RefreshCw
+  Layers, AlertCircle, RefreshCw, Database
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
 import { chatWithCoach } from '../services/geminiService.ts';
 import { hfService } from '../services/hfService.ts';
+import { vertexService } from '../services/vertexService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
 
 const m = motion as any;
 
-const CROAvatar = ({ isProcessing = false, size = 32, theme = 'indigo' }: { isProcessing?: boolean, size?: number, theme?: 'indigo' | 'amber' }) => (
+const CROAvatar = ({ isProcessing = false, size = 32, theme = 'indigo' }: { isProcessing?: boolean, size?: number, theme?: 'indigo' | 'amber' | 'emerald' }) => (
   <m.div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
     <div className="absolute inset-0 bg-slate-900 rounded-2xl border border-white/5 shadow-inner" />
-    <Logo size={size * 0.7} animated={isProcessing} className={theme === 'amber' ? 'grayscale brightness-150' : ''} />
+    <Logo size={size * 0.7} animated={isProcessing} className={theme === 'amber' ? 'grayscale brightness-150' : theme === 'emerald' ? 'hue-rotate-90' : ''} />
     {isProcessing && (
        <m.div 
          animate={{ scale: [1, 1.4, 1], opacity: [0, 0.2, 0] }}
          transition={{ duration: 2, repeat: Infinity }}
-         className={`absolute inset-0 rounded-full blur-2xl ${theme === 'amber' ? 'bg-amber-500' : 'bg-indigo-500'}`}
+         className={`absolute inset-0 rounded-full blur-2xl ${theme === 'amber' ? 'bg-amber-500' : theme === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}`}
        />
     )}
   </m.div>
@@ -34,7 +35,7 @@ interface AIAssistantProps {
   isSandbox?: boolean;
 }
 
-type ProtocolType = 'core' | 'external' | 'legacy';
+type ProtocolType = 'core' | 'vertex' | 'external' | 'legacy';
 
 export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
   const t = translations[lang].assistant;
@@ -73,7 +74,15 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
             timestamp: new Date() 
           }]);
         }
-      } else {
+      } else if (protocol === 'vertex') {
+        // Vertex AI Protocol via Vercel Secure Bridge
+        const response = await vertexService.analyze(textToSend);
+        setMessages(prev => [...prev, { 
+          role: 'assistant', 
+          content: response || "Vertex node returned empty signal.", 
+          timestamp: new Date() 
+        }]);
+      } else if (protocol === 'external') {
         // External Node (HF Fetch Method)
         const response = await hfService.chat(textToSend);
         setMessages(prev => [...prev, { 
@@ -85,6 +94,8 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
     } catch (err: any) {
       const errorMsg = protocol === 'core' 
         ? "Neural Bridge unavailable. Switching to external node protocol might assist." 
+        : protocol === 'vertex'
+        ? "Vertex Node access restricted. Ensure GCP_PROJECT_ID and credentials are set."
         : "External Node sync failure. Connection to the HF hub was severed.";
       
       setMessages(prev => [...prev, { 
@@ -110,17 +121,25 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
           <div>
             <h1 className="text-lg font-black italic text-white uppercase leading-none">{t.title}</h1>
             <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">
-              Active Node: {protocol === 'core' ? 'Neural Core V2.5' : protocol === 'external' ? 'HF External Node (API)' : 'Legacy Sandbox (Iframe)'}
+              Active Node: {
+                protocol === 'core' ? 'Neural Core V2.5' : 
+                protocol === 'vertex' ? 'Vertex Secure Bridge' :
+                protocol === 'external' ? 'HF External Node (API)' : 
+                'Legacy Sandbox (Iframe)'
+              }
             </p>
           </div>
         </div>
 
         <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-white/5 shadow-xl overflow-x-auto no-scrollbar max-w-full">
            <button onClick={() => setProtocol('core')} className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${protocol === 'core' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
-             <Zap size={10} fill={protocol === 'core' ? "currentColor" : "none"} /> Neural Core
+             <Zap size={10} fill={protocol === 'core' ? "currentColor" : "none"} /> Core
+           </button>
+           <button onClick={() => setProtocol('vertex')} className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${protocol === 'vertex' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
+             <Database size={10} /> Vertex
            </button>
            <button onClick={() => setProtocol('external')} className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${protocol === 'external' ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
-             <Globe size={10} /> Ext. Node
+             <Globe size={10} /> HF
            </button>
            <button onClick={() => setProtocol('legacy')} className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${protocol === 'legacy' ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
              <Layers size={10} /> Legacy
@@ -138,9 +157,17 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
                     <div className={`flex flex-col gap-2 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                       <div className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
                         <div className="mt-1">
-                          {msg.role === 'assistant' ? <CROAvatar theme={protocol === 'external' ? 'amber' : 'indigo'} /> : <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500"><User size={14}/></div>}
+                          {msg.role === 'assistant' ? (
+                            <CROAvatar theme={protocol === 'external' ? 'amber' : protocol === 'vertex' ? 'emerald' : 'indigo'} />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500"><User size={14}/></div>
+                          )}
                         </div>
-                        <div className={`p-5 rounded-[2rem] text-sm leading-relaxed shadow-xl text-left relative overflow-hidden ${msg.role === 'assistant' ? (protocol === 'external' ? 'bg-amber-950/20 border border-amber-500/20 text-amber-200' : 'bg-slate-900/60 border border-white/5 text-slate-300') : 'bg-indigo-600 text-white'}`}>
+                        <div className={`p-5 rounded-[2rem] text-sm leading-relaxed shadow-xl text-left relative overflow-hidden ${
+                          msg.role === 'assistant' 
+                            ? (protocol === 'external' ? 'bg-amber-950/20 border border-amber-500/20 text-amber-200' : protocol === 'vertex' ? 'bg-emerald-950/20 border border-emerald-500/20 text-emerald-200' : 'bg-slate-900/60 border border-white/5 text-slate-300') 
+                            : 'bg-indigo-600 text-white'
+                        }`}>
                           <div className="whitespace-pre-wrap italic">{msg.content}</div>
                           {msg.sources && msg.sources.length > 0 && (
                             <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap gap-2">
@@ -156,18 +183,18 @@ export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
                 ))}
                 {isTyping && (
                   <div className="flex justify-start gap-3">
-                    <CROAvatar isProcessing={true} theme={protocol === 'external' ? 'amber' : 'indigo'} />
-                    <div className={`px-6 py-4 rounded-full border flex items-center gap-3 ${protocol === 'external' ? 'bg-amber-950/20 border-amber-500/20' : 'bg-slate-900/40 border-white/5'}`}>
-                      <m.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className={`w-1.5 h-1.5 rounded-full ${protocol === 'external' ? 'bg-amber-500' : 'bg-indigo-500'}`} />
+                    <CROAvatar isProcessing={true} theme={protocol === 'external' ? 'amber' : protocol === 'vertex' ? 'emerald' : 'indigo'} />
+                    <div className={`px-6 py-4 rounded-full border flex items-center gap-3 ${protocol === 'external' ? 'bg-amber-950/20 border-amber-500/20' : protocol === 'vertex' ? 'bg-emerald-950/20 border-emerald-500/20' : 'bg-slate-900/40 border-white/5'}`}>
+                      <m.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className={`w-1.5 h-1.5 rounded-full ${protocol === 'external' ? 'bg-amber-500' : protocol === 'vertex' ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
                       <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest italic">Synthesizing...</span>
                     </div>
                   </div>
                 )}
               </div>
               <div className="px-4">
-                <GlassCard className={`p-1.5 rounded-full flex items-center gap-2 border-white/10 ${protocol === 'external' ? 'border-amber-500/20' : ''}`}>
+                <GlassCard className={`p-1.5 rounded-full flex items-center gap-2 border-white/10 ${protocol === 'external' ? 'border-amber-500/20' : protocol === 'vertex' ? 'border-emerald-500/20' : ''}`}>
                   <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder={t.placeholder} className="flex-1 bg-transparent outline-none px-6 py-3 text-sm text-slate-200 placeholder:text-slate-700 font-medium italic" />
-                  <button onClick={handleSend} disabled={!input.trim() || isTyping} className={`w-12 h-12 flex items-center justify-center rounded-full text-white shadow-lg active:scale-90 transition-all disabled:bg-slate-800 disabled:text-slate-600 ${protocol === 'external' ? 'bg-amber-600 hover:bg-amber-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}>
+                  <button onClick={handleSend} disabled={!input.trim() || isTyping} className={`w-12 h-12 flex items-center justify-center rounded-full text-white shadow-lg active:scale-90 transition-all disabled:bg-slate-800 disabled:text-slate-600 ${protocol === 'external' ? 'bg-amber-600 hover:bg-amber-500' : protocol === 'vertex' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}>
                     <Send size={18} />
                   </button>
                 </GlassCard>
