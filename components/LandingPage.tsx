@@ -246,16 +246,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       <footer className="bg-slate-950 border-t border-white/5 pt-32 pb-20 px-6" role="contentinfo">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-20">
           <div className="col-span-1 md:col-span-2 space-y-10">
-             <div className="flex items-center gap-4">
+             <div className="flex items-center gap-4 text-left">
                 <Logo size={48} animated={true} />
                 <div className="flex flex-col">
                   <span className="text-3xl font-black italic tracking-tighter uppercase text-white leading-none">SomnoAI</span>
                   <span className="text-[9px] font-bold tracking-[0.4em] uppercase text-indigo-500">Digital Sleep Lab</span>
                 </div>
              </div>
-             <p className="text-slate-500 text-sm italic font-medium max-w-md leading-relaxed">
+             <p className="text-slate-500 text-sm italic font-medium max-w-md leading-relaxed text-left">
                 Dedicated to the pursuit of optimal human recovery through advanced biometric science and generative intelligence.
              </p>
+             
+             {/* Trustpilot Widget Section */}
+             <div className="pt-4">
+                <div className="trustpilot-widget" data-locale="en-US" data-template-id="56278e9abfbbba0bdcd568bc" data-businessunit-id="69833e2dce0741757faefd77" data-style-height="52px" data-style-width="100%" data-token="f41f5010-5119-4fcc-9ea3-278ab80c4f18">
+                  <a href="https://www.trustpilot.com/review/sleepsomno.com" target="_blank" rel="noopener" className="text-[10px] text-slate-600 hover:text-indigo-400 transition-colors uppercase font-bold tracking-widest">Verify on Trustpilot</a>
+                </div>
+             </div>
+
              <div className="flex gap-6">
                 <a href="https://github.com/vyncuslim" target="_blank" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Follow on GitHub"><Github size={20} /></a>
                 <a href="https://linkedin.com" target="_blank" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Connect on LinkedIn"><Linkedin size={20} /></a>
@@ -263,7 +271,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
              </div>
           </div>
 
-          <div className="space-y-10">
+          <div className="space-y-10 text-left">
              <h4 className="text-white font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '实验室' : 'LABORATORY'}</h4>
              <nav className="flex flex-col gap-6">
                 {navLinks.map((link) => (
@@ -272,7 +280,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
              </nav>
           </div>
 
-          <div className="space-y-10">
+          <div className="space-y-10 text-left">
              <h4 className="text-white font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '法律与合规' : 'LEGAL & NODES'}</h4>
              <nav className="flex flex-col gap-6">
                 <button onClick={() => onNavigate('privacy')} className="text-slate-500 hover:text-white text-left text-sm italic font-medium transition-all">{isZh ? '隐私政策' : 'Privacy Policy'}</button>

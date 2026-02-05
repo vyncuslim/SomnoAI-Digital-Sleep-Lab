@@ -1,10 +1,10 @@
-
 import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * SOMNOAI NATIVE SMTP DISPATCHER v1.7
+ * SOMNOAI NATIVE SMTP DISPATCHER v1.8
  * Optimized: Enforces a 5-minute cooldown per target recipient to prevent flooding.
+ * Trustpilot AFS: Includes BCC support for automated feedback invitations.
  */
 
 const supabase = createClient(
@@ -13,13 +13,14 @@ const supabase = createClient(
 );
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
+const TRUSTPILOT_BCC = "sleepsomno.com+2ad3019e65@invite.trustpilot.com";
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
   }
 
-  const { to, subject, html, secret } = req.body;
+  const { to, subject, html, secret, isHighValueEvent } = req.body;
 
   // 1. 安全握手
   const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
@@ -64,10 +65,11 @@ export default async function handler(req, res) {
   });
 
   try {
-    // 5. 执行发送
+    // 5. 执行发送 (Include Trustpilot BCC for high value events like Signup)
     const info = await transporter.sendMail({
       from: `"SomnoAI Digital Lab" <${smtpUser}>`,
       to,
+      bcc: isHighValueEvent ? TRUSTPILOT_BCC : undefined,
       subject: `[SOMNO-LAB] ${subject}`,
       html,
     });
@@ -75,7 +77,7 @@ export default async function handler(req, res) {
     // 6. 异步审计
     supabase.from('audit_logs').insert([{
       action: 'EMAIL_DISPATCH_SUCCESS',
-      details: `Target: ${to}, ID: ${info.messageId}`,
+      details: `Target: ${to}, ID: ${info.messageId}, AFS_Invited: ${!!isHighValueEvent}`,
       level: 'INFO'
     }]).then(() => {}).catch(() => {});
 

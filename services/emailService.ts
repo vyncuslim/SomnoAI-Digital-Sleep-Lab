@@ -2,8 +2,8 @@ import { getMYTTime } from './telegramService.ts';
 import { supabase } from './supabaseService.ts';
 
 /**
- * SOMNO LAB EMAIL BRIDGE v15.0
- * Synchronized Recipient Matrix.
+ * SOMNO LAB EMAIL BRIDGE v16.0
+ * Synchronized Recipient Matrix & Trustpilot AFS Support.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -40,6 +40,7 @@ export const emailService = {
     
     const mapping = EVENT_MAP[eventType] || { en: eventType, es: eventType, zh: eventType, icon: '📡' };
     const isLogin = eventType === 'USER_LOGIN';
+    const isSignup = eventType === 'USER_SIGNUP';
     const isIncident = eventType.includes('FAILURE') || eventType.includes('DENIED') || eventType.includes('ERROR') || eventType.includes('BREACH');
     
     const subjectPrefix = isLogin ? '🔑 [ACCESS_GRANTED]' : isIncident ? '🚨 [INCIDENT_ALERT]' : '🛡️ [SYSTEM_SIGNAL]';
@@ -74,19 +75,20 @@ export const emailService = {
     `;
 
     // 2. Dispatch to all recipients
-    const promises = recipients.map(r => emailService.sendSystemEmail(r.email, subject, html));
+    // Flag signup as High Value to trigger Trustpilot AFS
+    const promises = recipients.map(r => emailService.sendSystemEmail(r.email, subject, html, undefined, isSignup));
     const results = await Promise.all(promises);
     
     return { success: results.some(r => r.success) };
   },
 
-  sendSystemEmail: async (to: string, subject: string, html: string, secret?: string) => {
+  sendSystemEmail: async (to: string, subject: string, html: string, secret?: string, isHighValueEvent?: boolean) => {
     const finalSecret = secret || INTERNAL_LAB_KEY;
     try {
       const response = await fetch('/api/send-system-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, subject, html, secret: finalSecret }),
+        body: JSON.stringify({ to, subject, html, secret: finalSecret, isHighValueEvent }),
       });
       const data = await response.json();
       if (!response.ok) return { success: false, error: data.error };

@@ -4,11 +4,9 @@ import App from './App.tsx';
 import { logAuditLog } from './services/supabaseService.ts';
 
 /**
- * SOMNO LAB NEURAL TELEMETRY GUARD v8.1
- * Monitors full-stack anomalies with dual-channel (Telegram + Email) fallback alert protocol.
+ * SOMNO LAB NEURAL TELEMETRY GUARD v8.5
  */
 
-// Error Noise Filter: Prevents alerting on harmless client-side plugins
 const isNoise = (msg: string) => {
   const noise = [
     'ERR_BLOCKED_BY_CLIENT', 'Extension', 'Salesmartly', 
@@ -21,28 +19,29 @@ const isNoise = (msg: string) => {
   return noise.some(n => msg.includes(n));
 };
 
-// Application State Capture
 const getAppState = () => {
-  return {
-    path: window.location.hash || window.location.pathname,
-    agent: navigator.userAgent,
-    timestamp: new Date().toISOString()
-  };
+  try {
+    return {
+      path: window.location.pathname || '/',
+      agent: navigator.userAgent,
+      timestamp: new Date().toISOString()
+    };
+  } catch (e) {
+    return { path: 'UNKNOWN', agent: 'UNKNOWN', timestamp: new Date().toISOString() };
+  }
 };
 
-// 1. Intercept Uncaught Runtime Exceptions
 window.onerror = (message, source, lineno, colno, error) => {
   const msgStr = String(message);
   if (isNoise(msgStr)) return true; 
   
   const state = getAppState();
-  const report = `CRITICAL_EXCEPTION: ${msgStr} | AT: ${source}:${lineno}:${colno} | PATH: ${state.path} | AGENT: ${state.agent}`;
+  const report = `CRITICAL_EXCEPTION: ${msgStr} | AT: ${source}:${lineno}:${colno} | PATH: ${state.path}`;
   
   logAuditLog('RUNTIME_ERROR', report, 'CRITICAL');
   return false;
 };
 
-// 2. Intercept Unhandled Promise Rejections (Async Handshakes)
 window.onunhandledrejection = (event) => {
   const reason = event.reason?.message || event.reason;
   if (isNoise(String(reason))) {
@@ -51,32 +50,31 @@ window.onunhandledrejection = (event) => {
   }
   
   const state = getAppState();
-  const report = `ASYNC_EXCEPTION: ${reason} | PATH: ${state.path} | AGENT: ${state.agent}`;
+  const report = `ASYNC_EXCEPTION: ${reason} | PATH: ${state.path}`;
   
   logAuditLog('ASYNC_HANDSHAKE_VOID', report, 'CRITICAL');
 };
 
-// 3. Intercept Console Error (Monkeypatch for database logging)
 const originalConsoleError = console.error;
 console.error = (...args) => {
-  const message = args
-    .map(arg => typeof arg === 'object' ? JSON.stringify(arg, null, 2) : String(arg))
-    .join(' ');
-    
-  if (!isNoise(message)) {
-    logAuditLog('CONSOLE_ERROR_PROXIED', `LOG: ${message.slice(0, 500)}`, 'WARNING');
-  }
+  try {
+    const message = args
+      .map(arg => {
+        try {
+          return typeof arg === 'object' ? JSON.stringify(arg) : String(arg);
+        } catch (e) { return "[Circular/Non-Stringifiable Object]"; }
+      })
+      .join(' ');
+      
+    if (!isNoise(message)) {
+      logAuditLog('CONSOLE_ERROR_PROXIED', `LOG: ${message.slice(0, 500)}`, 'WARNING');
+    }
+  } catch (err) {}
   originalConsoleError.apply(console, args);
 };
 
 const rootElement = document.getElementById('root');
-if (!rootElement) {
-  throw new Error("Could not find root element to mount to");
+if (rootElement) {
+  const root = createRoot(rootElement);
+  root.render(<React.StrictMode><App /></React.StrictMode>);
 }
-
-const root = createRoot(rootElement);
-root.render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
-);

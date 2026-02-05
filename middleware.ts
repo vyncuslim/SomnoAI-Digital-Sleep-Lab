@@ -1,6 +1,8 @@
+import { NextResponse } from 'next/server';
+
 /**
  * SOMNO LAB ROUTE TRANSPARENCY PROTOCOL
- * Ensures middleware does not block Vercel rewrites for SPA clean URLs.
+ * Ensures middleware correctly passes through to Vercel rewrites for SPA clean URLs.
  */
 
 export const config = {
@@ -10,6 +12,6 @@ export const config = {
 };
 
 export default function middleware() {
-  // 仅作为通行证，确保 Vercel 的 rewrite 规则能够正常接管请求
-  return;
+  // 返回 NextResponse.next() 确保路由继续传递给 vercel.json 中的 rewrites
+  return NextResponse.next();
 }
