@@ -28,7 +28,7 @@
       "destination": "/terms.html"
     },
     {
-      "source": "/((?!.*\\.).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]

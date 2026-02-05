@@ -47,7 +47,6 @@ export const logAuditLog = async (action: string, details: string, level: string
       });
 
       // Mirrored Alert: Email Dispatch
-      // TRIGGERS ON: User Login, Critical Errors, or Security Breaches
       const shouldEmail = 
         level === 'CRITICAL' || 
         action === 'USER_LOGIN' || 
@@ -168,7 +167,6 @@ export const profileApi = {
   },
   updateProfile: async (updates: any) => {
     const { data: { user } } = await (supabase.auth as any).getUser();
-    // Fix: Quoted the column name 'id' correctly
     return supabase.from('profiles').update(updates).eq('id', user.id);
   }
 };

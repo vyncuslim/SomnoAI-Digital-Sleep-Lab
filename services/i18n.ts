@@ -95,7 +95,7 @@ const commonEn = {
 
 const commonZh = {
   brand: {
-    name: "SomnoAI 数字化睡眠实验室",
+    name: BRAND_NAME,
     sublabel: "数字化睡眠实验室"
   },
   dashboard: {
@@ -172,7 +172,7 @@ const commonZh = {
   feedback: {
     exitTitle: '会话终止',
     exitSubtitle: '断开连接前请提供恢复反馈。',
-    success: '反馈已存档',
+    success: 'Feedback Archived',
     commentPlaceholder: '记录您的睡眠质量或系统性能...',
     submitAndLogout: '提交并退出',
     skipAndLogout: '跳过并退出'
