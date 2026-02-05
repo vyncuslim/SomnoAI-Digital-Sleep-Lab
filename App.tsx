@@ -100,14 +100,14 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleRouting = () => {
-      // 深度解析 pathname 以支持直接输入网址访问
+      // 深度解析路径，支持直接输入 URL
       const pathRaw = window.location.pathname.toLowerCase();
       const hashRaw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
       
       const pathSegments = pathRaw.split('/').filter(Boolean);
       const currentPath = pathSegments[0] || hashRaw.split('/')[0] || 'landing';
 
-      // 自动重定向逻辑：已认证用户访问根路径/登录/注册，强制导向 Dashboard
+      // 自动重定向逻辑：已认证用户尝试访问注册/登录页时强制送入 Dashboard
       if ((profile || isSimulated) && (currentPath === 'landing' || currentPath === 'login' || currentPath === 'signup')) {
         setActiveView('dashboard');
         if (window.location.pathname !== '/dashboard') {
@@ -127,7 +127,6 @@ const AppContent: React.FC = () => {
       if (validRoutes[currentPath]) {
         setActiveView(validRoutes[currentPath]);
       } else {
-        // 路径降级逻辑
         setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
       }
       
@@ -136,7 +135,7 @@ const AppContent: React.FC = () => {
     
     window.addEventListener('popstate', handleRouting);
     window.addEventListener('hashchange', handleRouting);
-    handleRouting(); // 初始化执行一次
+    handleRouting();
     
     return () => {
       window.removeEventListener('popstate', handleRouting);
@@ -148,7 +147,7 @@ const AppContent: React.FC = () => {
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    // 访客/未认证 路由映射
+    // 访客态路由
     if (!profile && !isSimulated) {
       if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
       if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
@@ -159,7 +158,7 @@ const AppContent: React.FC = () => {
       return <LandingPage lang={lang} onNavigate={navigate} />;
     }
 
-    // 实验室内部 路由映射
+    // 登录态公共路由
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('dashboard')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('support')} />;
     if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => navigate('dashboard')} />;
