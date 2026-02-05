@@ -120,40 +120,38 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   };
 
   /**
-   * 严格权限层级判定 (Authority Isolation)
+   * 核心权限判定逻辑 (Clearance Hierarchy Protocol)
    */
   const getActionPermission = (target: any) => {
-    if (!currentAdmin) return { canAction: false, reason: 'SYNC_PENDING' };
+    if (!currentAdmin) return { canAction: false, reason: 'PENDING_AUTH' };
     
-    // Super Owner 免疫协议：任何人（包括自己）不能封禁 Super Owner
-    if (target.is_super_owner) return { canAction: false, reason: 'ROOT_IMMUNITY' };
+    // 任何人不能封禁 Super Owner
+    if (target.is_super_owner) return { canAction: false, reason: 'SUPER_OWNER_IMMUNITY' };
     
-    // 无法封禁自己
-    if (target.id === currentAdmin.id) return { canAction: false, reason: 'SELF_PRESERVATION' };
+    // 不能自残（封禁自己）
+    if (target.id === currentAdmin.id) return { canAction: false, reason: 'SELF_PROTECTION' };
 
     const myRole = currentAdmin.is_super_owner ? 'super' : currentAdmin.role;
     const targetRole = target.role;
 
-    // 1. Super Owner: 众神之王，可以封禁除自己以外的所有人
+    // 1. Super Owner: 拥有全域管理权
     if (myRole === 'super') return { canAction: true };
 
-    // 2. Owner: 黄金权限
+    // 2. Owner: 可封禁 Admin 和 User
     if (myRole === 'owner') {
-      // Owner 不能封禁其他 Owner
+      // 不能封禁其他 Owner
       if (targetRole === 'owner') return { canAction: false, reason: 'RANK_PARITY' };
-      // Owner 可以封禁 Admin 和 User
       return { canAction: true };
     }
 
-    // 3. Admin: 白银权限
+    // 3. Admin: 仅可封禁 User
     if (myRole === 'admin') {
-      // Admin 不能封禁 Owner 或其他 Admin
+      // 无法封禁 Owner 或其他 Admin
       if (targetRole === 'owner' || targetRole === 'admin') return { canAction: false, reason: 'RANK_INSUFFICIENT' };
-      // Admin 只能封禁普通 User
       return { canAction: true };
     }
 
-    return { canAction: false, reason: 'NO_AUTHORITY' };
+    return { canAction: false, reason: 'NO_ADMIN_CLEARANCE' };
   };
 
   const status = (() => {
@@ -174,11 +172,11 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             <button onClick={onBack} className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-lg active:scale-95"><ChevronLeft size={24} /></button>
           )}
           <div className="space-y-1 md:space-y-2 text-left">
-            <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase leading-none">Bridge <span className="text-indigo-500">Center</span></h1>
+            <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase leading-none">Bridge <span className="text-indigo-500">Terminal</span></h1>
             <div className="flex items-center gap-3">
-              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Identity:</span>
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.5em] italic">Access:</span>
               <div className={`px-3 py-1 rounded-full border text-[8px] font-black uppercase tracking-widest ${currentAdmin?.is_super_owner ? 'bg-amber-500/20 border-amber-500/40 text-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : currentAdmin?.role === 'owner' ? 'bg-amber-400/10 border-amber-400/30 text-amber-400' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'}`}>
-                {currentAdmin?.is_super_owner ? 'ROOT_SUPER_OWNER' : currentAdmin?.role?.toUpperCase() || 'SYNCHRONIZING'}
+                {currentAdmin?.is_super_owner ? 'ROOT_ACCESS' : currentAdmin?.role?.toUpperCase() || 'SYNCING'}
               </div>
             </div>
           </div>
@@ -201,7 +199,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         {loading ? (
           <div key="loading" className="flex flex-col items-center justify-center py-48 gap-8">
             <Loader2 className="animate-spin text-indigo-500" size={60} />
-            <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Syncing Authority Matrix...</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Decoding Authority Matrix...</p>
           </div>
         ) : (
           <m.div key={activeTab} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="space-y-10">
@@ -216,7 +214,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest italic">DB_ENTRY</span>
                       </div>
                       <p className="text-4xl font-black text-white italic tracking-tighter leading-none">{tableCounts[stat.id] || 0}</p>
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-3">{stat.group || 'System Data'}</p>
+                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-3">{stat.group || 'System Link'}</p>
                     </GlassCard>
                   ))}
                 </div>
@@ -226,14 +224,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <GlassCard className="p-10 rounded-[4rem] border-white/5 h-full">
                       <div className="flex items-center gap-3 mb-12">
                          <TrendingUp size={18} className="text-indigo-400" />
-                         <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Traffic Telemetry</h3>
+                         <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Telemetry Pulse</h3>
                       </div>
                       <div className="h-[300px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
                           <AreaChart data={trafficData}>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                             <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'rgba(148, 163, 184, 0.4)', fontSize: 9, fontWeight: 900 }} dy={15} />
-                            <YAxis hide />
                             <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={3} fillOpacity={1} fill="rgba(99,102,241,0.1)" />
                           </AreaChart>
                         </ResponsiveContainer>
@@ -248,16 +245,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              <ActivitySquare size={28} className={status.spin ? 'animate-spin' : ''} />
                           </div>
                           <div>
-                             <h3 className="text-xl font-black italic text-white uppercase tracking-tight">GA4 Sync Bridge</h3>
+                             <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Sync Handshake</h3>
                              <div className={`inline-flex items-center gap-2 mt-2 px-4 py-1.5 rounded-full border border-white/5 ${status.bg}`}>
                                 <div className={`w-1.5 h-1.5 rounded-full ${status.color} ${status.pulse ? 'animate-pulse' : ''}`} />
                                 <span className={`text-[9px] font-black uppercase tracking-widest ${status.color}`}>{status.label}</span>
                              </div>
                           </div>
-                          <p className="text-[11px] text-slate-500 leading-relaxed italic">Synchronize global laboratory records with GA4 cloud telemetry node.</p>
+                          <p className="text-[11px] text-slate-500 leading-relaxed italic">Direct satellite synchronization between GA4 nodes and Laboratory registry.</p>
                        </div>
                        <button onClick={handleManualSync} disabled={syncState === 'RUNNING'} className="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95 disabled:opacity-30">
-                         {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} REFRESH NODES
+                         {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} RECALIBRATE PULSE
                        </button>
                     </GlassCard>
                   </div>
@@ -276,9 +273,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <table className="w-full text-left">
                       <thead>
                         <tr className="border-b border-white/5 bg-white/[0.02]">
-                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Identity</th>
-                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Node Authority</th>
-                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Status & Lock</th>
+                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic whitespace-nowrap">Subject Identity</th>
+                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic whitespace-nowrap">Node Authority</th>
+                          <th className="px-8 py-6 text-[9px] font-black text-slate-500 uppercase tracking-widest italic whitespace-nowrap">Channel Protocol</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -286,14 +283,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           const { canAction, reason } = getActionPermission(u);
                           const canEditRole = !u.is_super_owner && (currentAdmin?.is_super_owner || currentAdmin?.role === 'owner');
 
-                          // Role Style Matrix
-                          const roleStyle = u.is_super_owner 
+                          // 角色视觉配置
+                          const roleConfig = u.is_super_owner 
                             ? { label: 'ROOT', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' }
                             : u.role === 'owner'
-                            ? { label: 'OWNER', color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20' }
+                            ? { label: 'OWNER', color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/30' }
                             : u.role === 'admin'
-                            ? { label: 'ADMIN', color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' }
-                            : { label: 'USER', color: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/5' };
+                            ? { label: 'ADMIN', color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/30' }
+                            : { label: 'USER', color: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/10' };
 
                           return (
                             <tr key={u.id} className={`hover:bg-white/[0.01] transition-colors group ${u.is_blocked ? 'bg-rose-500/[0.02]' : ''}`}>
@@ -304,7 +301,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                   </div>
                                   <div>
                                     <p className="text-sm font-black italic text-white uppercase tracking-tight flex items-center gap-2">
-                                      {u.full_name || 'ANONYMOUS'}
+                                      {u.full_name || 'ANONYMOUS_NODE'}
                                       {u.is_super_owner && <Crown size={12} className="text-amber-500" />}
                                     </p>
                                     <p className="text-[10px] font-mono text-slate-600">{u.email}</p>
@@ -318,15 +315,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                         disabled={modifyingUserId === u.id}
                                         value={u.role}
                                         onChange={(e) => handleRoleChange(u.id, u.email, e.target.value)}
-                                        className={`w-full bg-slate-950 border rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-indigo-500/50 appearance-none cursor-pointer hover:text-white transition-all italic ${roleStyle.color} ${roleStyle.border}`}
+                                        className={`w-full bg-slate-950 border rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-indigo-500/50 appearance-none cursor-pointer hover:text-white transition-all italic ${roleConfig.color} ${roleConfig.border}`}
                                       >
-                                        <option value="user" className="text-slate-500">User</option>
+                                        <option value="user" className="text-slate-400">User</option>
                                         <option value="admin" className="text-indigo-400">Admin</option>
                                         <option value="owner" className="text-amber-400">Owner</option>
                                       </select>
                                     ) : (
-                                      <div className={`px-4 py-2 rounded-full border text-[10px] font-black uppercase text-center italic ${roleStyle.color} ${roleStyle.bg} ${roleStyle.border}`}>
-                                        {roleStyle.label}
+                                      <div className={`px-4 py-2 rounded-full border text-[10px] font-black uppercase text-center italic ${roleConfig.color} ${roleConfig.bg} ${roleConfig.border}`}>
+                                        {roleConfig.label}
                                       </div>
                                     )}
                                     {modifyingUserId === u.id && (
@@ -338,22 +335,22 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                  <div className="flex items-center gap-6">
                                     <div className="flex items-center gap-2 min-w-[100px]">
                                       <div className={`w-1.5 h-1.5 rounded-full ${u.is_blocked ? 'bg-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.5)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'} animate-pulse`} />
-                                      <span className={`text-[9px] font-black uppercase tracking-widest ${u.is_blocked ? 'text-rose-500' : 'text-emerald-400'}`}>{u.is_blocked ? 'VOID_LINK' : 'OPERATIONAL'}</span>
+                                      <span className={`text-[9px] font-black uppercase tracking-widest ${u.is_blocked ? 'text-rose-500' : 'text-emerald-400'}`}>{u.is_blocked ? 'LINK_VOIDED' : 'OPERATIONAL'}</span>
                                     </div>
                                     
                                     <button 
                                       disabled={!canAction || modifyingUserId === u.id}
                                       onClick={() => handleToggleBlock(u.id, u.email, !!u.is_blocked)}
-                                      title={!canAction ? `Denied: ${reason}` : (u.is_blocked ? 'Activate Node' : 'Sever Node')}
+                                      title={!canAction ? `Restricted: ${reason}` : (u.is_blocked ? 'Restore Link' : 'Sever Link')}
                                       className={`p-2.5 rounded-xl border transition-all active:scale-90 ${
                                         !canAction 
                                           ? 'bg-slate-900 border-white/5 text-slate-800 cursor-not-allowed opacity-40' 
                                           : u.is_blocked 
-                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20' 
+                                            ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20 shadow-lg shadow-emerald-950/20' 
                                             : 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 shadow-lg shadow-rose-950/20'
                                       }`}
                                     >
-                                      {!canAction ? <Lock size={16} /> : u.is_blocked ? <Unlock size={16} /> : <Ban size={16} />}
+                                      {!canAction ? <Lock size={16} /> : modifyingUserId === u.id ? <Loader2 size={16} className="animate-spin" /> : u.is_blocked ? <Unlock size={16} /> : <Ban size={16} />}
                                     </button>
                                  </div>
                               </td>
@@ -370,7 +367,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             {actionError && (
               <div className="p-6 bg-rose-600/10 border border-rose-500/20 rounded-[2rem] flex items-center gap-4 mx-2">
                  <AlertTriangle className="text-rose-500 shrink-0" size={20} />
-                 <p className="text-[11px] font-bold text-rose-400 italic uppercase tracking-wider">Exception Detection Cluster: {actionError}</p>
+                 <p className="text-[11px] font-bold text-rose-400 italic uppercase tracking-wider">Exception Protocol: {actionError}</p>
                  <button onClick={() => setActionError(null)} className="ml-auto p-2 text-rose-400 hover:text-white transition-colors"><X size={16} /></button>
               </div>
             )}

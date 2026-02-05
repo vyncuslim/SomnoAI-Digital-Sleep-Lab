@@ -93,25 +93,27 @@ export const adminApi = {
   },
   
   updateUserRole: async (id: string, email: string, role: string) => {
+    // 权限预检
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
     if (target?.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH', `UNAUTHORIZED_UPGRADE_ATTEMPT: Subject ${email} level is fixed.`, 'CRITICAL');
-      throw new Error("ACCESS_DENIED: Super Owner identity is immutable.");
+      await logAuditLog('SECURITY_BREACH', `UNAUTHORIZED_UPGRADE_ATTEMPT: Root identity ${email} is immutable.`, 'CRITICAL');
+      throw new Error("ACCESS_DENIED: Super Owner identity cannot be modified.");
     }
 
     const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
-    if (!error) await logAuditLog('ADMIN_ROLE_UPDATE', `Action: Role Escalation\nTarget: ${email}\nLevel: ${role}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_ROLE_UPDATE', `Action: Node Escalation\nTarget: ${email}\nLevel: ${role}`, 'WARNING');
     return { error };
   },
   
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
+    // 权限预检
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
     if (target?.is_super_owner) {
-      throw new Error("ACCESS_DENIED: Super Owner nodes cannot be blocked.");
+      throw new Error("ACCESS_DENIED: Super Owner nodes are physically unblockable.");
     }
 
     const { error } = await supabase.from('profiles').update({ is_blocked: !currentlyBlocked }).eq('id', id);
-    if (!error) await logAuditLog('ADMIN_BLOCK_TOGGLE', `Action: Traffic Management\nTarget: ${email}\nState: ${currentlyBlocked ? 'UNBLOCKED' : 'BLOCKED'}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_BLOCK_TOGGLE', `Action: Signal Severance\nTarget: ${email}\nState: ${currentlyBlocked ? 'RESTORED' : 'SEVERED'}`, 'WARNING');
     return { error };
   },
   
@@ -129,13 +131,13 @@ export const adminApi = {
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Action: Alert Matrix Expansion\nNode: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Action: Matrix Expansion\nNode: ${email}`, 'WARNING');
     return { data, error };
   },
   
   removeNotificationRecipient: async (id: string, email: string) => {
     const { error } = await supabase.from('notification_recipients').delete().eq('id', id);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Action: Alert Matrix Severed\nNode: ${email}`, 'WARNING');
+    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Action: Matrix Contraction\nNode: ${email}`, 'WARNING');
     return { error };
   }
 };
