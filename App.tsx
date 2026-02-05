@@ -100,28 +100,18 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleRouting = () => {
-      // 1. 彻底标准化路径解析逻辑
-      const fullPath = window.location.pathname.toLowerCase();
-      const segments = fullPath.split('/').filter(Boolean);
-      const pathname = segments[0] || '';
-      
+      // 深度解析 pathname 以支持直接输入网址访问
+      const pathRaw = window.location.pathname.toLowerCase();
       const hashRaw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-      const hash = hashRaw.split('/')[0];
       
-      // 自动物理化纠偏：将 /#/login 转换为 /login
-      if (hashRaw && !pathname) {
-        window.history.replaceState({ somno_route: true }, '', `/${hashRaw}`);
-        handleRouting();
-        return;
-      }
+      const pathSegments = pathRaw.split('/').filter(Boolean);
+      const currentPath = pathSegments[0] || hashRaw.split('/')[0] || 'landing';
 
-      const currentRoute = pathname || hash || 'landing';
-
-      // 自动鉴权与重定向逻辑
-      if ((profile || isSimulated) && (currentRoute === 'landing' || currentRoute === 'login' || currentRoute === 'signup' || currentRoute === '')) {
+      // 自动重定向逻辑：已认证用户访问根路径/登录/注册，强制导向 Dashboard
+      if ((profile || isSimulated) && (currentPath === 'landing' || currentPath === 'login' || currentPath === 'signup')) {
         setActiveView('dashboard');
         if (window.location.pathname !== '/dashboard') {
-           window.history.replaceState({ somno_route: true }, '', '/dashboard');
+          window.history.replaceState({ somno_route: true }, '', '/dashboard');
         }
         return;
       }
@@ -134,19 +124,19 @@ const AppContent: React.FC = () => {
         'login': 'login', 'signup': 'signup', 'landing': 'landing'
       };
 
-      if (validRoutes[currentRoute]) {
-        setActiveView(validRoutes[currentRoute]);
+      if (validRoutes[currentPath]) {
+        setActiveView(validRoutes[currentPath]);
       } else {
-        // 未匹配路径降级
+        // 路径降级逻辑
         setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
       }
       
-      trackPageView(`/${currentRoute}`, `SomnoAI: ${currentRoute.toUpperCase()}`);
+      trackPageView(`/${currentPath}`, `SomnoAI: ${currentPath.toUpperCase()}`);
     };
     
     window.addEventListener('popstate', handleRouting);
     window.addEventListener('hashchange', handleRouting);
-    handleRouting();
+    handleRouting(); // 初始化执行一次
     
     return () => {
       window.removeEventListener('popstate', handleRouting);
@@ -158,6 +148,7 @@ const AppContent: React.FC = () => {
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
+    // 访客/未认证 路由映射
     if (!profile && !isSimulated) {
       if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
       if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
@@ -168,6 +159,7 @@ const AppContent: React.FC = () => {
       return <LandingPage lang={lang} onNavigate={navigate} />;
     }
 
+    // 实验室内部 路由映射
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('dashboard')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('support')} />;
     if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => navigate('dashboard')} />;

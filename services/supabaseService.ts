@@ -93,11 +93,11 @@ export const adminApi = {
   },
   
   updateUserRole: async (id: string, email: string, role: string) => {
-    // 权限预检
+    // 强制层级校验
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
     if (target?.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH', `UNAUTHORIZED_UPGRADE_ATTEMPT: Root identity ${email} is immutable.`, 'CRITICAL');
-      throw new Error("ACCESS_DENIED: Super Owner identity cannot be modified.");
+      await logAuditLog('SECURITY_BREACH', `ROOT_MODIFICATION_DENIED: Attempted role change for ${email}.`, 'CRITICAL');
+      throw new Error("ACCESS_DENIED: Super Owner identity is physically immutable.");
     }
 
     const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
@@ -106,10 +106,10 @@ export const adminApi = {
   },
   
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
-    // 权限预检
+    // 强制豁免校验
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
     if (target?.is_super_owner) {
-      throw new Error("ACCESS_DENIED: Super Owner nodes are physically unblockable.");
+      throw new Error("ACCESS_DENIED: Root Super Owner nodes cannot be blocked.");
     }
 
     const { error } = await supabase.from('profiles').update({ is_blocked: !currentlyBlocked }).eq('id', id);

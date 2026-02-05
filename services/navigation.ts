@@ -1,6 +1,6 @@
 /**
- * SomnoAI Safe Navigation Utility (v5.5)
- * 专门针对 Vercel History Mode (Clean URLs) 优化的路由引擎。
+ * SomnoAI Safe Navigation Utility (v5.6)
+ * Optimized for Vercel Clean URLs and History API.
  */
 
 export const getSafeUrl = (): string => {
@@ -41,8 +41,7 @@ export const getSafeHostname = (): string => {
 };
 
 /**
- * 现代物理路径导航核心协议
- * 使用 History API 更新地址栏而不刷新页面。
+ * 物理路径导航协议
  */
 export const safeNavigatePath = (path: string) => {
   // 路径清洗与标准化
@@ -56,14 +55,13 @@ export const safeNavigatePath = (path: string) => {
     // 2. 调度信号通知 App 状态机执行 UI 切换
     window.dispatchEvent(new PopStateEvent('popstate', { state: { somno_route: true } }));
   } catch (e) {
-    // 降级：如果 History API 受限，执行硬跳转
+    // 降级：如果 History API 受限，执行重定向
     window.location.href = cleanPath;
   }
 };
 
 /**
- * 遗留哈希兼容代理 (Legacy Support)
- * 自动将旧版 # 链接重定向至物理路径。
+ * 遗留哈希兼容代理
  */
 export const safeNavigateHash = (view: string) => {
   const cleanView = view.replace(/^#?\/?/, '');
