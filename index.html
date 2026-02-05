@@ -55,25 +55,68 @@
     <meta property="twitter:description" content="Integrate your wearable data with high-performance AI neural insights. Experience the next generation of digital sleep research.">
     <meta property="twitter:image" content="https://sleepsomno.com/og-preview.png">
 
-    <!-- STRUCTURED DATA (JSON-LD) -->
+    <!-- STRUCTURED DATA (JSON-LD) - KNOWLEDGE GRAPH ARCHITECTURE -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
-      "name": "SomnoAI Digital Sleep Lab",
-      "operatingSystem": "Web, Android, iOS",
-      "applicationCategory": "HealthApplication",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
-      },
-      "description": "AI-powered digital sleep lab for physiological metrics monitoring and personalized health insights using Google Gemini AI.",
-      "aggregateRating": {
-        "@type": "AggregateRating",
-        "ratingValue": "4.9",
-        "ratingCount": "120"
-      }
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://sleepsomno.com/#organization",
+          "name": "SomnoAI Digital Sleep Lab",
+          "alternateName": "SomnoAI Lab",
+          "url": "https://sleepsomno.com/",
+          "logo": {
+            "@type": "ImageObject",
+            "url": "https://img.icons8.com/fluency/512/moon.png",
+            "width": 512,
+            "height": 512
+          },
+          "foundingDate": "2026",
+          "founder": {
+            "@type": "Person",
+            "name": "Vyncuslim"
+          },
+          "description": "SomnoAI is a specialized digital laboratory integrating physiological monitoring with generative AI for deep sleep architecture analysis.",
+          "sameAs": [
+            "https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab",
+            "https://www.linkedin.com/in/vyncus-lim-761300375/",
+            "https://share.google/r71Eapdw1ZSgxO7RE"
+          ],
+          "contactPoint": {
+            "@type": "ContactPoint",
+            "email": "ongyuze1401@gmail.com",
+            "contactType": "technical support"
+          }
+        },
+        {
+          "@type": "SoftwareApplication",
+          "@id": "https://sleepsomno.com/#software",
+          "name": "SomnoAI Digital Sleep Lab",
+          "url": "https://sleepsomno.com/",
+          "publisher": { "@id": "https://sleepsomno.com/#organization" },
+          "operatingSystem": "Web, Android, iOS",
+          "applicationCategory": "HealthApplication",
+          "offers": {
+            "@type": "Offer",
+            "price": "0",
+            "priceCurrency": "USD"
+          },
+          "description": "Advanced AI-powered sleep lab for real-time biometric analysis and neural recovery protocols.",
+          "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": "4.9",
+            "ratingCount": "120"
+          }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://sleepsomno.com/#website",
+          "url": "https://sleepsomno.com/",
+          "name": "SomnoAI Digital Sleep Lab",
+          "publisher": { "@id": "https://sleepsomno.com/#organization" }
+        }
+      ]
     }
     </script>
 
