@@ -117,7 +117,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
         <footer className="pt-12 border-t border-white/5 flex flex-col items-center gap-4 opacity-40">
           <div className="flex items-center gap-2 text-indigo-400">
             <Mail size={12} />
-            <span className="text-[10px] font-bold">ongyuze1401@gmail.com</span>
+            <span className="text-[10px] font-bold">contact@sleepsomno.com</span>
           </div>
           <p className="text-[9px] font-black uppercase tracking-widest">© 2026 SOMNO LAB • Compliance Update: 2026.01.04</p>
         </footer>

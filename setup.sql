@@ -1,4 +1,3 @@
-
 -- ==========================================
 -- SOMNO LAB CORE SCHEMA (V10.5)
 -- ==========================================
@@ -51,7 +50,7 @@ CREATE TABLE IF NOT EXISTS public.notification_recipients (
 
 -- Initialize default recipient
 INSERT INTO public.notification_recipients (email, label) 
-VALUES ('ongyuze1401@gmail.com', 'Primary Lab Admin')
+VALUES ('contact@sleepsomno.com', 'Primary Lab Admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- ==========================================

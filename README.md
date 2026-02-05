@@ -35,5 +35,5 @@ SomnoAI adheres to strict data minimization principles:
 
 ---
 
-**Developer**: [ongyuze1401@gmail.com](mailto:ongyuze1401@gmail.com)  
+**Developer**: [contact@sleepsomno.com](mailto:contact@sleepsomno.com)  
 **Domain**: [https://sleepsomno.com](https://sleepsomno.com)

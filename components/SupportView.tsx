@@ -19,7 +19,7 @@ interface SupportViewProps {
 
 export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNavigate }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showDonation, setShowDonation] = useState(false);
+  const [showDonation, setshowDonation] = useState(false);
   const t = translations[lang].support;
 
   const handleCopy = (id: string, text: string) => {
@@ -81,7 +81,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           </GlassCard>
 
           <GlassCard 
-            onClick={() => setShowDonation(true)}
+            onClick={() => setshowDonation(true)}
             className="p-6 md:p-10 rounded-[2.5rem] md:rounded-[3.5rem] border-rose-500/20 bg-rose-500/[0.02] cursor-pointer group hover:bg-rose-500/[0.05] transition-all"
             intensity={1.2}
           >
@@ -122,14 +122,14 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
         <AnimatePresence>
           {showDonation && (
-            <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 md:p-6 bg-[#020617]/98 backdrop-blur-3xl overflow-y-auto" onClick={() => setShowDonation(false)}>
+            <div className="fixed inset-0 z-[3000] flex items-center justify-center p-4 md:p-6 bg-[#020617]/98 backdrop-blur-3xl overflow-y-auto" onClick={() => setshowDonation(false)}>
               <m.div 
                 initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} 
                 onClick={(e: React.MouseEvent) => e.stopPropagation()} 
                 className="w-full max-w-2xl text-center space-y-10 relative bg-[#020617] p-8 md:p-14 rounded-[4rem] border border-white/10 shadow-[0_0_120px_rgba(0,0,0,1)]"
               >
                 <button 
-                  onClick={() => setShowDonation(false)}
+                  onClick={() => setshowDonation(false)}
                   className="absolute top-8 right-8 p-3 bg-white/5 hover:bg-rose-500/20 rounded-2xl text-slate-500 hover:text-rose-500 transition-all active:scale-90"
                 >
                   <X size={20} />

@@ -259,7 +259,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
              <div className="flex gap-6">
                 <a href="https://github.com/vyncuslim" target="_blank" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Follow on GitHub"><Github size={20} /></a>
                 <a href="https://linkedin.com" target="_blank" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Connect on LinkedIn"><Linkedin size={20} /></a>
-                <a href="mailto:ongyuze1401@gmail.com" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Contact Technical Support"><Mail size={20} /></a>
+                <a href="mailto:contact@sleepsomno.com" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Contact Technical Support"><Mail size={20} /></a>
              </div>
           </div>
 

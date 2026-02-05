@@ -6,7 +6,7 @@ import {
   List, Unlock, Mail, ExternalLink, ActivitySquare, Copy, Check, 
   AlertTriangle, Database, Search, ShieldX, 
   TrendingUp, LinkIcon, HelpCircle, Info, ShieldHalf, UserMinus, Shield,
-  LockKeyhole, UserCog, UserSearch, Ghost
+  LockKeyhole, UserCog, UserSearch, Ghost, Trash2, Plus, Clock, Terminal, Server
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -33,10 +33,19 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   
   const [users, setUsers] = useState<any[]>([]);
   const [trafficData, setTrafficData] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [recipients, setRecipients] = useState<any[]>([]);
+  const [pulseData, setPulseData] = useState<any | null>(null);
+  
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [registrySearch, setRegistrySearch] = useState('');
   const [modifyingUserId, setModifyingUserId] = useState<string | null>(null);
+  
+  // System Tab Local State
+  const [newRecipientEmail, setNewRecipientEmail] = useState('');
+  const [newRecipientLabel, setNewRecipientLabel] = useState('');
+  const [isAddingRecipient, setIsAddingRecipient] = useState(false);
   
   const CRON_SECRET = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
 
@@ -48,19 +57,28 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const profile = await adminApi.getAdminClearance(user.id);
       setCurrentAdmin(profile);
 
-      const [uRes, tRes] = await Promise.allSettled([
+      const [uRes, tRes, aRes, rRes] = await Promise.allSettled([
         adminApi.getUsers(),
-        supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(14)
+        supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(14),
+        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
+        adminApi.getNotificationRecipients()
       ]);
 
       setUsers(uRes.status === 'fulfilled' ? (uRes as any).value : []);
       setTrafficData(tRes.status === 'fulfilled' && (tRes as any).value.data ? (tRes as any).value.data : []);
+      setAuditLogs(aRes.status === 'fulfilled' && (aRes as any).value.data ? (aRes as any).value.data : []);
+      setRecipients(rRes.status === 'fulfilled' ? (rRes as any).value.data : []);
       
       const counts: Record<string, number> = {};
       for (const t of DATABASE_SCHEMA) {
         try { counts[t.id] = await adminApi.getTableCount(t.id); } catch(e) { counts[t.id] = 0; }
       }
       setTableCounts(counts);
+
+      // Fetch System Pulse
+      const pRes = await fetch(`/api/monitor-pulse?secret=${CRON_SECRET}`);
+      if (pRes.ok) setPulseData(await pRes.json());
+
     } catch (err: any) {
       setActionError(err.message);
     } finally {
@@ -70,7 +88,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
-  // Robust Search Implementation (useMemo for performance)
   const filteredUsers = useMemo(() => {
     const term = registrySearch.toLowerCase().trim();
     if (!term) return users;
@@ -85,11 +102,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     if (syncState === 'RUNNING') return;
     setSyncState('RUNNING');
     setActionError(null);
-
     try {
       const response = await fetch(`/api/sync-analytics?secret=${CRON_SECRET}`);
       const data = await response.json();
-      
       if (response.ok && data.success) {
         setSyncState('SYNCED');
         await fetchData(); 
@@ -110,11 +125,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const { error } = await adminApi.updateUserRole(userId, email, newRole);
       if (error) throw error;
       setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
-    } catch (e: any) {
-      setActionError(e.message);
-    } finally {
-      setModifyingUserId(null);
-    }
+    } catch (e: any) { setActionError(e.message); } finally { setModifyingUserId(null); }
   };
 
   const handleToggleBlock = async (userId: string, email: string, currentlyBlocked: boolean) => {
@@ -123,21 +134,37 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const { error } = await adminApi.toggleBlock(userId, email, currentlyBlocked);
       if (error) throw error;
       setUsers(users.map(u => u.id === userId ? { ...u, is_blocked: !currentlyBlocked } : u));
-    } catch (e: any) {
-      setActionError(e.message);
-    } finally {
-      setModifyingUserId(null);
-    }
+    } catch (e: any) { setActionError(e.message); } finally { setModifyingUserId(null); }
+  };
+
+  const handleAddRecipient = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newRecipientEmail.trim() || isAddingRecipient) return;
+    setIsAddingRecipient(true);
+    try {
+      const { error } = await adminApi.addNotificationRecipient(newRecipientEmail, newRecipientLabel || 'Custom Node');
+      if (error) throw error;
+      setNewRecipientEmail('');
+      setNewRecipientLabel('');
+      const rRes = await adminApi.getNotificationRecipients();
+      setRecipients(rRes.data);
+    } catch (e: any) { setActionError(e.message); } finally { setIsAddingRecipient(false); }
+  };
+
+  const handleRemoveRecipient = async (id: string, email: string) => {
+    if (!confirm(`Sever alert link for ${email}?`)) return;
+    try {
+      await adminApi.removeNotificationRecipient(id, email);
+      setRecipients(recipients.filter(r => r.id !== id));
+    } catch (e: any) { setActionError(e.message); }
   };
 
   const getActionPermission = (target: any) => {
     if (!currentAdmin) return { canAction: false, reason: 'PENDING_AUTH' };
     if (target.is_super_owner) return { canAction: false, reason: 'ROOT_IMMUNITY' };
     if (target.id === currentAdmin.id) return { canAction: false, reason: 'SELF_PRESERVATION' };
-
     const myRole = currentAdmin.is_super_owner ? 'super' : currentAdmin.role;
     const targetRole = target.role;
-
     if (myRole === 'super') return { canAction: true };
     if (myRole === 'owner') {
       if (targetRole === 'owner') return { canAction: false, reason: 'RANK_PARITY' };
@@ -270,12 +297,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       className="w-full bg-slate-900/60 border border-white/10 rounded-full pl-16 pr-14 py-5 text-sm text-white focus:border-indigo-500/50 outline-none italic font-bold placeholder:text-slate-700 transition-all shadow-inner" 
                    />
                    {registrySearch && (
-                     <button 
-                       onClick={() => setRegistrySearch('')}
-                       className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"
-                     >
-                       <X size={18} />
-                     </button>
+                     <button onClick={() => setRegistrySearch('')} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-500 hover:text-white transition-colors"><X size={18} /></button>
                    )}
                 </div>
 
@@ -294,15 +316,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                           {filteredUsers.map((u) => {
                             const { canAction, reason } = getActionPermission(u);
                             const canEditRole = !u.is_super_owner && (currentAdmin?.is_super_owner || currentAdmin?.role === 'owner');
-
-                            const roleStyle = u.is_super_owner 
-                              ? { label: 'ROOT', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' }
-                              : u.role === 'owner'
-                              ? { label: 'OWNER', color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20' }
-                              : u.role === 'admin'
-                              ? { label: 'ADMIN', color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' }
-                              : { label: 'USER', color: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/5' };
-
+                            const roleStyle = u.is_super_owner ? { label: 'ROOT', color: 'text-amber-500', bg: 'bg-amber-500/10', border: 'border-amber-500/30 shadow-[0_0_15px_rgba(245,158,11,0.2)]' } : u.role === 'owner' ? { label: 'OWNER', color: 'text-amber-400', bg: 'bg-amber-400/10', border: 'border-amber-400/20' } : u.role === 'admin' ? { label: 'ADMIN', color: 'text-indigo-400', bg: 'bg-indigo-500/10', border: 'border-indigo-500/20' } : { label: 'USER', color: 'text-slate-400', bg: 'bg-white/5', border: 'border-white/5' };
                             return (
                               <tr key={u.id} className={`hover:bg-white/[0.01] transition-colors group ${u.is_blocked ? 'bg-rose-500/[0.02]' : ''}`}>
                                 <td className="px-8 py-7">
@@ -311,10 +325,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                       {(u.full_name || u.email || '?')[0].toUpperCase()}
                                     </div>
                                     <div>
-                                      <p className="text-sm font-black italic text-white uppercase tracking-tight flex items-center gap-2">
-                                        {u.full_name || 'ANONYMOUS'}
-                                        {u.is_super_owner && <Crown size={12} className="text-amber-500" />}
-                                      </p>
+                                      <p className="text-sm font-black italic text-white uppercase tracking-tight flex items-center gap-2">{u.full_name || 'ANONYMOUS'}{u.is_super_owner && <Crown size={12} className="text-amber-500" />}</p>
                                       <p className="text-[10px] font-mono text-slate-600">{u.email}</p>
                                     </div>
                                   </div>
@@ -322,24 +333,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 <td className="px-8 py-7">
                                   <div className="relative w-32">
                                       {canEditRole ? (
-                                        <select 
-                                          disabled={modifyingUserId === u.id}
-                                          value={u.role}
-                                          onChange={(e) => handleRoleChange(u.id, u.email, e.target.value)}
-                                          className={`w-full bg-slate-950 border rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-indigo-500/50 appearance-none cursor-pointer hover:text-white transition-all italic ${roleStyle.color} ${roleStyle.border}`}
-                                        >
+                                        <select disabled={modifyingUserId === u.id} value={u.role} onChange={(e) => handleRoleChange(u.id, u.email, e.target.value)} className={`w-full bg-slate-950 border rounded-full px-4 py-2 text-[10px] font-black uppercase tracking-widest outline-none focus:border-indigo-500/50 appearance-none cursor-pointer hover:text-white transition-all italic ${roleStyle.color} ${roleStyle.border}`}>
                                           <option value="user" className="text-slate-400">User</option>
                                           <option value="admin" className="text-indigo-400">Admin</option>
                                           <option value="owner" className="text-amber-400">Owner</option>
                                         </select>
-                                      ) : (
-                                        <div className={`px-4 py-2 rounded-full border text-[10px] font-black uppercase text-center italic ${roleStyle.color} ${roleStyle.bg} ${roleStyle.border}`}>
-                                          {roleStyle.label}
-                                        </div>
-                                      )}
-                                      {modifyingUserId === u.id && (
-                                        <div className="absolute right-[-20px] top-1/2 -translate-y-1/2"><Loader2 size={12} className="animate-spin text-indigo-400" /></div>
-                                      )}
+                                      ) : ( <div className={`px-4 py-2 rounded-full border text-[10px] font-black uppercase text-center italic ${roleStyle.color} ${roleStyle.bg} ${roleStyle.border}`}>{roleStyle.label}</div> )}
+                                      {modifyingUserId === u.id && ( <div className="absolute right-[-20px] top-1/2 -translate-y-1/2"><Loader2 size={12} className="animate-spin text-indigo-400" /></div> )}
                                   </div>
                                 </td>
                                 <td className="px-8 py-7">
@@ -348,19 +348,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                         <div className={`w-1.5 h-1.5 rounded-full ${u.is_blocked ? 'bg-rose-500 shadow-[0_0_10px_rgba(225,29,72,0.5)]' : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'} animate-pulse`} />
                                         <span className={`text-[9px] font-black uppercase tracking-widest ${u.is_blocked ? 'text-rose-500' : 'text-emerald-400'}`}>{u.is_blocked ? 'VOID_LINK' : 'OPERATIONAL'}</span>
                                       </div>
-                                      
-                                      <button 
-                                        disabled={!canAction || modifyingUserId === u.id}
-                                        onClick={() => handleToggleBlock(u.id, u.email, !!u.is_blocked)}
-                                        title={!canAction ? `Denied: ${reason}` : (u.is_blocked ? 'Activate Node' : 'Sever Node')}
-                                        className={`p-2.5 rounded-xl border transition-all active:scale-90 ${
-                                          !canAction 
-                                            ? 'bg-slate-900 border-white/5 text-slate-800 cursor-not-allowed opacity-40' 
-                                            : u.is_blocked 
-                                              ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20' 
-                                              : 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 shadow-lg shadow-rose-950/20'
-                                        }`}
-                                      >
+                                      <button disabled={!canAction || modifyingUserId === u.id} onClick={() => handleToggleBlock(u.id, u.email, !!u.is_blocked)} title={!canAction ? `Denied: ${reason}` : (u.is_blocked ? 'Activate Node' : 'Sever Node')} className={`p-2.5 rounded-xl border transition-all active:scale-90 ${!canAction ? 'bg-slate-900 border-white/5 text-slate-800 cursor-not-allowed opacity-40' : u.is_blocked ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400 hover:bg-emerald-500/20' : 'bg-rose-500/10 border-rose-500/20 text-rose-400 hover:bg-rose-500/20 shadow-lg shadow-rose-950/20'}`}>
                                         {!canAction ? <Lock size={16} /> : u.is_blocked ? <Unlock size={16} /> : <Ban size={16} />}
                                       </button>
                                   </div>
@@ -381,6 +369,128 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     )}
                   </div>
                 </GlassCard>
+              </div>
+            )}
+
+            {activeTab === 'signals' && (
+              <div className="space-y-8 px-2">
+                <div className="flex items-center gap-4 px-2">
+                   <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20"><Activity size={24} /></div>
+                   <div className="text-left">
+                     <h2 className="text-xl font-black italic text-white uppercase tracking-tight">Security Pulse Archive</h2>
+                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Monitoring Neural Grid Integrity & Subject Entry Points</p>
+                   </div>
+                </div>
+                
+                <div className="space-y-4">
+                  {auditLogs.map((log, idx) => (
+                    <GlassCard key={log.id} className="p-8 rounded-[3rem] border-white/5 hover:bg-white/[0.01] transition-all group">
+                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                        <div className="flex items-start gap-6">
+                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border ${log.level === 'CRITICAL' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : log.level === 'WARNING' ? 'bg-amber-500/10 border-amber-500/30 text-amber-500' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'}`}>
+                             {log.level === 'CRITICAL' ? <ShieldAlert size={20} className="animate-pulse" /> : <List size={20} />}
+                          </div>
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-3 flex-wrap">
+                               <span className={`px-3 py-0.5 rounded-full text-[9px] font-black uppercase border ${log.level === 'CRITICAL' ? 'bg-rose-500/20 border-rose-500/40 text-rose-400' : 'bg-slate-800 border-white/5 text-slate-500'}`}>{log.action}</span>
+                               <span className="text-[9px] font-mono text-slate-600 flex items-center gap-2"><Clock size={10} /> {new Date(log.created_at).toLocaleString()}</span>
+                            </div>
+                            <p className="text-sm font-medium italic text-slate-300 leading-relaxed">{log.details}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                           <span className="text-[8px] font-black text-slate-700 uppercase tracking-widest italic">NODE_SIG: {log.id.slice(0, 8).toUpperCase()}</span>
+                        </div>
+                      </div>
+                    </GlassCard>
+                  ))}
+                  {auditLogs.length === 0 && (
+                    <div className="py-40 text-center opacity-30 italic uppercase tracking-widest text-sm">Synchronizing Signal Archive...</div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'system' && (
+              <div className="space-y-12 px-2">
+                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                    <div className="lg:col-span-7 space-y-10">
+                       <GlassCard className="p-10 rounded-[4rem] border-white/5 bg-slate-900/10">
+                          <div className="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
+                             <Mail size={20} className="text-indigo-400" />
+                             <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Alert Recipient Matrix</h3>
+                          </div>
+                          
+                          <div className="space-y-6">
+                             <form onSubmit={handleAddRecipient} className="flex flex-col sm:flex-row gap-4 bg-black/40 p-2 rounded-[2.5rem] border border-white/5 shadow-inner">
+                                <input type="email" value={newRecipientEmail} onChange={(e) => setNewRecipientEmail(e.target.value)} placeholder="Recipient Email..." className="flex-1 bg-transparent px-8 py-4 outline-none text-sm text-white font-bold italic" required />
+                                <input type="text" value={newRecipientLabel} onChange={(e) => setNewRecipientLabel(e.target.value)} placeholder="Node Label (e.g. CRO)" className="w-full sm:w-40 bg-transparent px-8 py-4 outline-none text-sm text-slate-500 font-bold italic" />
+                                <button type="submit" disabled={isAddingRecipient} className="bg-indigo-600 hover:bg-indigo-500 text-white px-8 py-4 rounded-full font-black text-[10px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
+                                   {isAddingRecipient ? <Loader2 size={14} className="animate-spin" /> : <Plus size={14} />} BIND NODE
+                                </button>
+                             </form>
+
+                             <div className="grid grid-cols-1 gap-4 pt-4">
+                                {recipients.map((r) => (
+                                  <div key={r.id} className="flex items-center justify-between p-6 bg-white/[0.02] border border-white/5 rounded-3xl hover:border-indigo-500/20 transition-all group">
+                                     <div className="flex items-center gap-5">
+                                        <div className="w-10 h-10 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400"><Server size={18} /></div>
+                                        <div>
+                                           <p className="text-sm font-black italic text-white leading-none mb-1">{r.email}</p>
+                                           <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">{r.label}</p>
+                                        </div>
+                                     </div>
+                                     <button onClick={() => handleRemoveRecipient(r.id, r.email)} className="p-3 text-slate-700 hover:text-rose-500 hover:bg-rose-500/10 rounded-xl transition-all opacity-0 group-hover:opacity-100"><Trash2 size={18} /></button>
+                                  </div>
+                                ))}
+                             </div>
+                          </div>
+                       </GlassCard>
+                    </div>
+
+                    <div className="lg:col-span-5 space-y-10">
+                       <GlassCard className="p-10 rounded-[4rem] border-indigo-500/20 h-full relative overflow-hidden" intensity={1.5}>
+                          <div className="absolute top-0 right-0 p-10 opacity-[0.03] pointer-events-none"><Terminal size={200} /></div>
+                          <div className="flex items-center gap-4 mb-10 border-b border-white/5 pb-6">
+                             <Cpu size={20} className="text-indigo-400" />
+                             <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Node Diagnostics</h3>
+                          </div>
+
+                          <div className="space-y-8 relative z-10">
+                             <div className="space-y-4">
+                                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest">Environment Variables [SHA-256]</p>
+                                {pulseData ? (
+                                  <div className="space-y-2">
+                                     {Object.entries(pulseData.fingerprints || {}).map(([k, v]: [any, any]) => (
+                                       <div key={k} className="flex justify-between items-center px-5 py-4 bg-black/40 rounded-2xl border border-white/5">
+                                          <span className="text-[10px] font-bold text-slate-500 font-mono">{k}</span>
+                                          <span className="text-[10px] font-black text-indigo-400 italic uppercase">{v}</span>
+                                       </div>
+                                     ))}
+                                  </div>
+                                ) : (
+                                  <div className="py-12 flex justify-center"><Loader2 size={24} className="animate-spin text-slate-800" /></div>
+                                )}
+                             </div>
+
+                             <div className="pt-6 border-t border-white/5 space-y-4">
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[10px] font-black text-slate-500 uppercase">Database Link</span>
+                                   <span className="px-3 py-1 bg-emerald-500/10 text-emerald-500 rounded-full text-[9px] font-black uppercase">Active</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[10px] font-black text-slate-500 uppercase">Runtime Env</span>
+                                   <span className="px-3 py-1 bg-indigo-500/10 text-indigo-400 rounded-full text-[9px] font-black uppercase italic">{pulseData?.vercel_runtime || 'Production'}</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                   <span className="text-[10px] font-black text-slate-500 uppercase">Node Heartbeat</span>
+                                   <span className="text-[10px] font-mono text-slate-700">{new Date().toISOString()}</span>
+                                </div>
+                             </div>
+                          </div>
+                       </GlassCard>
+                    </div>
+                 </div>
               </div>
             )}
 
