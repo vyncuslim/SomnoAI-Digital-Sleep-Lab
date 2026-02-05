@@ -1,16 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, Moon, ShieldCheck,
-  Terminal, Key, Info, Bell, RefreshCw, Smartphone, Zap, MessageSquare, Send, Activity, Box, Database, Loader2
+  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, 
+  Bell, RefreshCw, Zap, MessageSquare, Mail
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
-import { notifyAdmin } from '../services/telegramService.ts';
-import { getSafeHostname } from '../services/navigation.ts';
-import { hfService } from '../services/hfService.ts';
-import { vertexService } from '../services/vertexService.ts';
 
 const m = motion as any;
 
@@ -22,14 +18,11 @@ interface SettingsProps {
 }
 
 export const Settings: React.FC<SettingsProps> = ({ 
-  lang, onLanguageChange, onLogout
+  lang, onLanguageChange, onLogout, onNavigate
 }) => {
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [isAiActive, setIsAiActive] = useState(false);
-  const [testStatus, setTestStatus] = useState<'idle' | 'sending' | 'success' | 'error'>('idle');
-  const [hfStatus, setHfStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
-  const [vertexStatus, setVertexStatus] = useState<'idle' | 'running' | 'success' | 'error'>('idle');
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
 
   const t = translations[lang]?.settings || translations.en.settings;
@@ -50,40 +43,6 @@ export const Settings: React.FC<SettingsProps> = ({
     checkAiStatus();
   }, []);
 
-  const handleTestTelegram = async () => {
-    setTestStatus('sending');
-    const nodeIdentity = getSafeHostname();
-    const success = await notifyAdmin(`🧪 DIAGNOSTIC TEST\nNode: ${nodeIdentity}\nSubject: Admin Console Test\nStatus: Operational`);
-    setTestStatus(success ? 'success' : 'error');
-    setTimeout(() => setTestStatus('idle'), 3000);
-  };
-
-  const handleHfDiagnostic = async () => {
-    if (hfStatus === 'running') return;
-    setHfStatus('running');
-    try {
-      await hfService.chat("Pulse probe check.");
-      setHfStatus('success');
-    } catch (e) {
-      setHfStatus('error');
-    } finally {
-      setTimeout(() => setHfStatus('idle'), 4000);
-    }
-  };
-
-  const handleVertexDiagnostic = async () => {
-    if (vertexStatus === 'running') return;
-    setVertexStatus('running');
-    try {
-      await vertexService.analyze("Handshake probe for secure bridge.");
-      setVertexStatus('success');
-    } catch (e) {
-      setVertexStatus('error');
-    } finally {
-      setTimeout(() => setVertexStatus('idle'), 4000);
-    }
-  };
-
   const handleRequestNotif = async () => {
     const granted = await notificationService.requestPermission();
     setNotifPermission(Notification.permission);
@@ -102,11 +61,11 @@ export const Settings: React.FC<SettingsProps> = ({
     <div className="space-y-8 pb-48 max-w-2xl mx-auto px-4 font-sans text-left relative overflow-hidden">
       <header className="flex flex-col gap-2 pt-8">
         <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter leading-none">{t.title}</h1>
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">System Preferences & Node Diagnostics</p>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">System Preferences & Node Configuration</p>
       </header>
 
       <div className="flex flex-col gap-6">
-        {/* AI & Notification Status Panel */}
+        {/* Status Indicators */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <GlassCard className="p-6 rounded-[2.5rem] border-indigo-500/20 bg-indigo-500/5">
             <div className="flex items-center gap-4">
@@ -140,71 +99,6 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
-        {/* Neural Signal Diagnostics */}
-        <GlassCard className="p-8 rounded-[3rem] border-amber-500/20 bg-amber-500/[0.02] space-y-6">
-           <div className="flex items-center gap-3">
-              <Activity size={18} className="text-amber-500" />
-              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Node Integrity Probes</h3>
-           </div>
-           
-           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4">
-                <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">External Node (HF)</p>
-                <button 
-                  onClick={handleHfDiagnostic}
-                  disabled={hfStatus === 'running'}
-                  className={`w-full py-4 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
-                    hfStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                    hfStatus === 'error' ? 'bg-rose-600 text-white' : 
-                    'bg-amber-600/20 text-amber-500 border border-amber-500/30'
-                  }`}
-                >
-                  {hfStatus === 'running' ? <RefreshCw size={12} className="animate-spin" /> : <Box size={12} />}
-                  {hfStatus === 'success' ? 'HF_SIGNAL_STABLE' : hfStatus === 'error' ? 'HF_NODE_VOID' : 'PROBE_HF_NODE'}
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-[9px] text-slate-500 font-black uppercase tracking-widest">Secure Bridge (Vertex)</p>
-                <button 
-                  onClick={handleVertexDiagnostic}
-                  disabled={vertexStatus === 'running'}
-                  className={`w-full py-4 rounded-full font-black text-[9px] uppercase tracking-widest flex items-center justify-center gap-2 transition-all italic ${
-                    vertexStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                    vertexStatus === 'error' ? 'bg-rose-600 text-white' : 
-                    'bg-emerald-600/20 text-emerald-400 border border-emerald-500/30'
-                  }`}
-                >
-                  {vertexStatus === 'running' ? <RefreshCw size={12} className="animate-spin" /> : <Database size={12} />}
-                  {vertexStatus === 'success' ? 'VRTX_SIGNAL_STABLE' : vertexStatus === 'error' ? 'VRTX_LINK_VOID' : 'PROBE_VRTX_NODE'}
-                </button>
-              </div>
-           </div>
-        </GlassCard>
-
-        {/* Telegram Diagnostic Tool */}
-        <GlassCard className="p-8 rounded-[3rem] border-rose-500/20 bg-rose-500/[0.02]">
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <Send size={18} className="text-rose-500" />
-              <h3 className="text-[11px] font-black uppercase text-white tracking-widest italic">Telegram Comms Diagnostic</h3>
-            </div>
-            <p className="text-[10px] text-slate-500 italic">Verify the link between your node and the Telegram administrative gateway.</p>
-            <button 
-              onClick={handleTestTelegram}
-              disabled={testStatus === 'sending'}
-              className={`w-full py-4 rounded-full font-black text-[10px] uppercase tracking-[0.3em] flex items-center justify-center gap-2 transition-all ${
-                testStatus === 'success' ? 'bg-emerald-600 text-white' : 
-                testStatus === 'error' ? 'bg-rose-600 text-white' : 
-                'bg-white/5 text-rose-500 border border-rose-500/30'
-              }`}
-            >
-              {testStatus === 'sending' ? <RefreshCw size={14} className="animate-spin" /> : <Terminal size={14} />}
-              {testStatus === 'success' ? 'SIGNAL CONFIRMED' : testStatus === 'error' ? 'LINK FAILED' : 'SEND TEST SIGNAL'}
-            </button>
-          </div>
-        </GlassCard>
-
         {/* Core Settings */}
         <GlassCard className="p-10 rounded-[4rem] border-white/10 bg-white/[0.01]">
           <div className="space-y-12">
@@ -212,7 +106,7 @@ export const Settings: React.FC<SettingsProps> = ({
                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
                <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
                   {['en', 'zh'].map((l) => (
-                    <button key={l} onClick={() => onLanguageChange(l as Language)} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{l === 'en' ? 'ENGLISH' : l === 'zh' ? '中文简体' : 'ESPAÑOL'}</button>
+                    <button key={l} onClick={() => onLanguageChange(l as Language)} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{l === 'en' ? 'ENGLISH' : l === 'zh' ? '中文简体'}</button>
                   ))}
                </div>
             </div>
@@ -237,13 +131,23 @@ export const Settings: React.FC<SettingsProps> = ({
                    <p className="text-[10px] font-black text-[#f43f5e] uppercase tracking-[0.3em] flex items-center gap-2"><QrCode size={14} /> SCAN TO PAYPAL</p>
                 </div>
                 <div className="md:col-span-3 space-y-4 text-left">
-                  {[{ id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' }, { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' }].map((item) => (
+                  {[
+                    { id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388', icon: Copy }, 
+                    { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim', icon: Copy },
+                    { id: 'email', label: lang === 'zh' ? '邮件支持' : 'EMAIL SUPPORT', value: 'contact@sleepsomno.com', icon: Mail, action: () => window.location.href = 'mailto:contact@sleepsomno.com' },
+                    { id: 'feedback', label: lang === 'zh' ? '反馈建议' : 'SYSTEM FEEDBACK', value: lang === 'zh' ? '提交异常报告' : 'Submit Anomalies', icon: MessageSquare, action: () => { setShowDonation(false); onNavigate('feedback'); } }
+                  ].map((item) => (
                     <div key={item.id} className="p-6 bg-slate-900/50 border border-white/5 rounded-[2.2rem] flex items-center justify-between group hover:border-indigo-500/30 transition-all">
                       <div className="space-y-1">
                         <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
-                        <p className="text-base font-black text-white italic tracking-tight">{item.value}</p>
+                        <p className="text-base font-black text-white italic tracking-tight leading-none truncate max-w-[180px]">{item.value}</p>
                       </div>
-                      <button onClick={() => handleCopy(item.id, item.value)} className={`p-4 rounded-2xl transition-all ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-600 hover:text-white bg-white/5'}`}><Copy size={20} /></button>
+                      <button 
+                        onClick={() => item.action ? item.action() : handleCopy(item.id, item.value)} 
+                        className={`p-4 rounded-2xl transition-all active:scale-90 ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-600 hover:text-white bg-white/5'}`}
+                      >
+                        {item.id === 'email' || item.id === 'feedback' ? <ArrowUpRight size={20} /> : (copiedId === item.id ? <Copy size={20} /> : <Copy size={20} />)}
+                      </button>
                     </div>
                   ))}
                 </div>

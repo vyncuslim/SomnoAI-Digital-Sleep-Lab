@@ -151,7 +151,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
                        <span className="text-indigo-400">ACKNOWLEDGED</span>
                      </h2>
                      <p className="text-[12px] md:text-[14px] text-slate-400 italic max-w-md mx-auto leading-relaxed font-medium">
-                       Your support fuels lab processing. Payment details follow <span className="text-white">(English Default)</span>:
+                       Your support fuels lab processing. Connection nodes below:
                      </p>
                   </div>
 
@@ -172,18 +172,20 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
                     <div className="md:col-span-3 space-y-4 text-left">
                       {[
                         { id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' }, 
-                        { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' }
+                        { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' },
+                        { id: 'email', label: lang === 'zh' ? '邮件支持' : 'EMAIL SUPPORT', value: 'contact@sleepsomno.com', icon: Mail, action: () => window.location.href = 'mailto:contact@sleepsomno.com' },
+                        { id: 'feedback', label: lang === 'zh' ? '反馈建议' : 'SYSTEM FEEDBACK', value: lang === 'zh' ? '提交异常报告' : 'Submit Anomalies', icon: MessageSquare, action: () => { setshowDonation(false); onNavigate('feedback'); } }
                       ].map((item) => (
                         <div key={item.id} className="p-6 bg-slate-900/60 border border-white/10 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/40 transition-all shadow-xl">
                           <div className="space-y-1">
                             <p className="text-[9px] font-black text-slate-500 uppercase tracking-widest">{item.label}</p>
-                            <p className="text-lg font-black text-white italic tracking-tight leading-none">{item.value}</p>
+                            <p className="text-lg font-black text-white italic tracking-tight leading-none truncate max-w-[180px]">{item.value}</p>
                           </div>
                           <button 
-                            onClick={() => handleCopy(item.id, item.value)} 
+                            onClick={() => item.action ? item.action() : handleCopy(item.id, item.value)} 
                             className={`p-4 rounded-2xl transition-all active:scale-90 ${copiedId === item.id ? 'text-emerald-400 bg-emerald-400/10' : 'text-slate-600 hover:text-white bg-white/5'}`}
                           >
-                             {copiedId === item.id ? <Check size={20} /> : <Copy size={20} />}
+                             {item.id === 'email' || item.id === 'feedback' ? <ArrowUpRight size={20} /> : (copiedId === item.id ? <Check size={20} /> : <Copy size={20} />)}
                           </button>
                         </div>
                       ))}

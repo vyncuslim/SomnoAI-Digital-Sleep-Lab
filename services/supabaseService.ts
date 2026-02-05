@@ -1,3 +1,4 @@
+
 // @ts-ignore
 import { supabase } from '../lib/supabaseClient.ts';
 import { notifyAdmin } from './telegramService.ts';
@@ -83,7 +84,12 @@ export const adminApi = {
   },
   
   getUsers: async () => {
-    const { data } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    // 明确获取受试者注册表数据
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
     return data || [];
   },
   
@@ -93,11 +99,13 @@ export const adminApi = {
   },
   
   updateUserRole: async (id: string, email: string, role: string) => {
-    // 强制层级校验
+    // 强制层级校验：获取目标当前的 is_super_owner 状态
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
+    
+    // 物理免疫：任何人（包括其他 Super Owner）都不可以更改 Super Owner 的东西
     if (target?.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH', `ROOT_MODIFICATION_DENIED: Attempted role change for ${email}.`, 'CRITICAL');
-      throw new Error("ACCESS_DENIED: Super Owner identity is physically immutable.");
+      await logAuditLog('SECURITY_BREACH', `ROOT_IMMUNITY_VIOLATION: Attempted role change for Super Owner (${email}).`, 'CRITICAL');
+      throw new Error("ACCESS_DENIED: Super Owner identity is physically immutable and globally supreme.");
     }
 
     const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
@@ -108,8 +116,10 @@ export const adminApi = {
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
     // 强制豁免校验
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
+    
     if (target?.is_super_owner) {
-      throw new Error("ACCESS_DENIED: Root Super Owner nodes cannot be blocked.");
+      await logAuditLog('SECURITY_BREACH', `ROOT_IMMUNITY_VIOLATION: Attempted to block Super Owner (${email}).`, 'CRITICAL');
+      throw new Error("ACCESS_DENIED: Super Owner nodes cannot be blocked or restricted by any authority.");
     }
 
     const { error } = await supabase.from('profiles').update({ is_blocked: !currentlyBlocked }).eq('id', id);
@@ -162,9 +172,9 @@ export const authApi = {
 
 export const profileApi = {
   getMyProfile: async () => {
-    const { data: { user } } = await (supabase.auth as any).getSession().then(({data}: any) => ({data: {user: data.session?.user}}));
-    if (!user) return null;
-    const { data } = await supabase.from('profiles').select('*').eq('id', user.id).single();
+    const { data: { session } } = await (supabase.auth as any).getSession();
+    if (!session?.user) return null;
+    const { data } = await supabase.from('profiles').select('*').eq('id', session.user.id).single();
     return data;
   },
   updateProfile: async (updates: any) => {

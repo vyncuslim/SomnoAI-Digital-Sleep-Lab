@@ -1,4 +1,5 @@
 
+
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -61,8 +62,9 @@ const getAIClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-const MODEL_FLASH = 'gemini-2.5-flash'; 
-const MODEL_PRO = 'gemini-2.5-pro'; 
+// Updated model constants based on GenAI SDK guidelines
+const MODEL_FLASH = 'gemini-3-flash-preview'; 
+const MODEL_PRO = 'gemini-3-pro-preview'; 
 const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
 
 export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
