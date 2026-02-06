@@ -2,7 +2,7 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v56.0
+ * SOMNO LAB GA4 SYNC GATEWAY v57.0
  * Optimized for diagnostic clarity on 403/Permission errors.
  */
 
@@ -27,8 +27,13 @@ function robustParse(input) {
 export default async function handler(req, res) {
   let currentSaEmail = "UNKNOWN";
   const rawPropertyId = process.env.GA_PROPERTY_ID || FALLBACK_PROPERTY_ID;
-  const targetPropertyId = String(rawPropertyId).replace(/\D/g, ''); 
+  // Ensure the Property ID is strictly numeric and stripped of any accidental artifacts
+  const targetPropertyId = String(rawPropertyId).trim().replace(/\D/g, ''); 
   let gcpProjectId = "UNKNOWN";
+
+  if (!targetPropertyId) {
+    return res.status(400).json({ success: false, error: "INVALID_PROPERTY_ID_FORMAT" });
+  }
 
   // Pre-emptive extraction for troubleshooting
   if (process.env.GA_SERVICE_ACCOUNT_KEY) {
@@ -44,7 +49,7 @@ export default async function handler(req, res) {
     const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
     
     if (secret !== serverSecret) {
-      return res.status(200).json({ error: "UNAUTHORIZED_VOID" });
+      return res.status(401).json({ error: "UNAUTHORIZED_VOID" });
     }
 
     const credentials = robustParse(process.env.GA_SERVICE_ACCOUNT_KEY);

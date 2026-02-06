@@ -13,6 +13,7 @@
         var noisePatterns = ['SecurityError', 'browsing-topics', 'rum-ad-auction', 'ERR_BLOCKED_BY_CLIENT', 'salesmartly', 'google-analytics', 'Extension', 'Cloudflare'];
         var wrap = function(m) {
           var orig = console[m];
+          if (!orig) return;
           console[m] = function() {
             var args = Array.prototype.slice.call(arguments);
             var msg = args.join(' ').toLowerCase();
@@ -32,23 +33,15 @@
       gtag('config', 'G-3F9KVPNYLR', { 'send_page_view': false });
     </script>
     
-    <!-- TrustBox script -->
     <script type="text/javascript" src="//widget.trustpilot.com/bootstrap/v5/tp.widget.bootstrap.min.js" async></script>
-    <!-- End TrustBox script -->
 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0, viewport-fit=cover">
-    
-    <!-- PRIMARY SEO -->
     <title>SomnoAI Digital Sleep Lab | AI-Powered Biometric Analysis</title>
-    <meta name="description" content="SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health recommendations to provide users with a comprehensive digital sleep laboratory experience.">
-    <meta name="keywords" content="SomnoAI, AI sleep analysis, biometric recovery, neural sleep architecture, HRV monitoring, digital sleep lab">
-    <link rel="canonical" href="https://sleepsomno.com/" />
-    
+    <meta name="description" content="SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health recommendations.">
     <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/favicon.png">
-    
     <meta name="theme-color" content="#020617">
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
       tailwind.config = {
@@ -56,11 +49,11 @@
           extend: {
             fontFamily: {
               sans: ['Plus Jakarta Sans', 'system-ui', 'sans-serif'],
-              mono: ['JetBrains Mono', 'monospace'],
-            },
+              mono: ['JetBrains Mono', 'monospace']
+            }
           }
         }
-      }
+      };
     </script>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
     <style>
@@ -68,7 +61,6 @@
       #root:empty { background: #020617; height: 100vh; }
       .no-scrollbar::-webkit-scrollbar { display: none; }
       .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-      ::selection { background: rgba(16, 185, 129, 0.3); color: #fff; }
     </style>
 <script type="importmap">
 {
@@ -77,12 +69,12 @@
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
     "react/": "https://esm.sh/react@^19.2.4/",
     "@google/genai": "https://esm.sh/@google/genai@^1.40.0",
-    "framer-motion": "https://esm.sh/framer-motion@^12.31.1",
+    "framer-motion": "https://esm.sh/framer-motion@^12.33.0",
     "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
     "recharts": "https://esm.sh/recharts@^3.7.0",
     "vite": "https://esm.sh/vite@^7.3.1",
     "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.3",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.94.1",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@^2.95.2",
     "next/": "https://esm.sh/next@^16.1.6/",
     "@google-analytics/data": "https://esm.sh/@google-analytics/data@^5.2.1",
     "nodemailer": "https://esm.sh/nodemailer@^8.0.0",

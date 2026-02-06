@@ -1,6 +1,5 @@
-
 /**
- * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v47.0
+ * SOMNO LAB - INTELLIGENT TELEGRAM GATEWAY v48.0
  * Features: Multi-pass fingerprinting & strict 24h block for permanent authorization errors.
  */
 
@@ -98,11 +97,14 @@ export const notifyAdmin = async (payload: any) => {
   const mapping = EVENT_MAP[msgType] || { en: msgType, zh: msgType, icon: '📡' };
   const source = payload.source || 'INTERNAL_NODE';
 
+  const isGA4Error = msgType === 'GA4_PERMISSION_DENIED' || msgType === 'GA4_SYNC_FAILURE';
+
   const finalMessage = `${mapping.icon} <b>SOMNO LAB ALERT</b>\n` +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `<b>Event:</b> <code>${mapping.en}</code>\n` +
     `<b>类型:</b> <code>${mapping.zh}</code>\n\n` +
     `<b>Log:</b> <code>${rawDetails.substring(0, 350)}</code>\n` +
+    (isGA4Error ? `\n⚠️ <b>ACTION REQUIRED:</b>\n<i>Verify Property Permissions in GA Console.</i>\n` : '') +
     `━━━━━━━━━━━━━━━━━━━━\n` +
     `📍 <b>ORIGIN:</b> <code>${source}</code>\n` +
     `🛡️ <b>STATUS:</b> <code>Suppression Active (24h Lock)</code>`;

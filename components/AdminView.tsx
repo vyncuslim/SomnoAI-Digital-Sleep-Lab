@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, ShieldAlert, RefreshCw, Loader2, ChevronLeft, 
@@ -6,7 +5,7 @@ import {
   Activity, Fingerprint, Lock, CheckCircle2,
   List, Unlock, Mail, ActivitySquare, 
   AlertTriangle, Database, Search, ShieldX, 
-  TrendingUp, Server, Plus, Clock, Terminal, ChevronDown
+  TrendingUp, Server, Plus, Clock, Terminal, ChevronDown, Copy, Check
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,6 +31,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
   const [currentAdmin, setCurrentAdmin] = useState<any | null>(null);
   const [syncState, setSyncState] = useState<SyncState>('IDLE');
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   
   const [users, setUsers] = useState<any[]>([]);
   const [trafficData, setTrafficData] = useState<any[]>([]);
@@ -109,9 +109,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         await fetchData(); 
         setTimeout(() => setSyncState('IDLE'), 4000);
       } else {
-        const is403 = response.status === 403 || (data.error && data.error.includes('PERMISSION_DENIED'));
+        const is403 = response.status === 403 || (data.error && data.error.includes('permission'));
         setSyncState(is403 ? 'FORBIDDEN' : 'ERRORED');
         setActionError(data.error || "Sync protocol violation.");
+        
+        // If forbidden, update pulse data to ensure we have the SA email in the error card
+        if (data.service_account) {
+          setPulseData((prev: any) => ({ ...prev, service_account_email: data.service_account, property_id: data.property }));
+        }
       }
     } catch (e: any) {
       setSyncState('ERRORED');
@@ -119,20 +124,15 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     }
   };
 
-  /**
-   * 严格权限校验逻辑
-   * 任何人不得更改 Super Owner。
-   * Admin 只能改 User。
-   * Owner 只能改 Admin/User。
-   */
-  // Unified return type for permission checks to avoid union type errors
+  const handleCopy = (id: string, text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
+
   const getActionPermission = (target: any): { canAction: boolean; reason?: string } => {
     if (!currentAdmin) return { canAction: false, reason: 'PENDING_AUTH' };
-    
-    // 物理免疫：Super Owner 不可被任何人更改
     if (target.is_super_owner) return { canAction: false, reason: 'ROOT_IMMUNITY' };
-    
-    // 自我保护：不可操作自己
     if (target.id === currentAdmin.id) return { canAction: false, reason: 'SELF_PRESERVATION' };
 
     const myRole = currentAdmin.is_super_owner ? 'super' : currentAdmin.role;
@@ -187,7 +187,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       case 'IDLE': return { label: 'CONNECTED', color: 'text-emerald-500', bg: 'bg-emerald-500/10', icon: ShieldCheck, pulse: true };
       case 'RUNNING': return { label: 'SYNCHRONIZING', color: 'text-indigo-400', bg: 'bg-indigo-600/20', icon: RefreshCw, spin: true };
       case 'SYNCED': return { label: 'UP TO DATE', color: 'text-emerald-400', bg: 'bg-emerald-600/20', icon: CheckCircle2 };
-      case 'FORBIDDEN': return { label: 'GA4_ACCESS_DENIED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: ShieldX, pulse: true };
+      case 'FORBIDDEN': return { label: 'ACCESS_DENIED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: ShieldX, pulse: true };
       default: return { label: 'ERRORED', color: 'text-rose-500', bg: 'bg-rose-600/20', icon: AlertTriangle };
     }
   })();
@@ -292,11 +292,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                 <span className={`text-[9px] font-black uppercase tracking-widest ${status.color}`}>{status.label}</span>
                              </div>
                           </div>
-                          {syncState === 'FORBIDDEN' && (
-                            <div className="p-4 bg-rose-500/10 border border-rose-500/30 rounded-2xl space-y-2">
-                               <p className="text-[10px] font-bold text-rose-400 uppercase italic leading-relaxed">Action Required: Add service account email (available in System tab) to GA4 Property Permissions.</p>
-                            </div>
-                          )}
                        </div>
                        <button onClick={handleManualSync} disabled={syncState === 'RUNNING'} className="w-full py-6 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95 disabled:opacity-30">
                          {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} REFRESH GRID
@@ -304,6 +299,64 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     </GlassCard>
                   </div>
                 </div>
+
+                <AnimatePresence>
+                  {syncState === 'FORBIDDEN' && (
+                    <m.div 
+                      initial={{ opacity: 0, scale: 0.95 }} 
+                      animate={{ opacity: 1, scale: 1 }} 
+                      className="mx-2"
+                    >
+                      <GlassCard className="p-10 rounded-[4rem] border-rose-500/30 bg-rose-500/[0.03] space-y-8">
+                         <div className="flex items-center gap-4 text-rose-500">
+                           <AlertTriangle size={28} />
+                           <h3 className="text-2xl font-black italic uppercase tracking-tight">GA4 Authorization Protocol Required</h3>
+                         </div>
+                         
+                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
+                            <div className="space-y-6">
+                               <p className="text-slate-300 text-sm leading-relaxed italic">The Service Account node lacks read permissions for the specified GA4 Property. To restore the link, add the following email to your Google Analytics dashboard:</p>
+                               <div className="bg-black/60 rounded-[2.5rem] border border-white/5 p-8 space-y-4 relative group">
+                                  <div className="space-y-2">
+                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Service Account Identifier</p>
+                                     <p className="text-sm font-mono text-indigo-400 break-all pr-12 font-bold italic leading-relaxed">
+                                       {pulseData?.service_account_email || 'REFRESHING...'}
+                                     </p>
+                                  </div>
+                                  <button 
+                                    onClick={() => handleCopy('sa_email', pulseData?.service_account_email)}
+                                    className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-indigo-600/10 text-indigo-400 rounded-2xl hover:bg-indigo-600/20 transition-all active:scale-90"
+                                  >
+                                    {copiedId === 'sa_email' ? <Check size={18} /> : <Copy size={18} />}
+                                  </button>
+                               </div>
+                               <div className="flex items-center gap-2 px-6 py-4 bg-slate-950/60 rounded-3xl border border-white/5 w-fit">
+                                  <span className="text-[10px] font-black text-slate-500 uppercase italic">Target Property ID:</span>
+                                  <span className="text-sm font-black text-white italic">{pulseData?.property_id || '380909155'}</span>
+                               </div>
+                            </div>
+                            
+                            <div className="space-y-6">
+                               <h4 className="text-[11px] font-black uppercase text-indigo-400 tracking-widest px-4 italic">Execution Steps:</h4>
+                               <ul className="space-y-4 px-2">
+                                  {[
+                                    'Access Google Analytics Console',
+                                    'Navigate to: Admin -> Property Settings',
+                                    'Open: Property Access Management',
+                                    'Add the ID above with "Viewer" clearance'
+                                  ].map((step, i) => (
+                                    <li key={i} className="flex gap-4 items-center">
+                                       <div className="w-6 h-6 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-[10px] font-black text-rose-500 font-mono italic">0{i+1}</div>
+                                       <span className="text-[13px] font-bold text-slate-400 italic">{step}</span>
+                                    </li>
+                                  ))}
+                               </ul>
+                            </div>
+                         </div>
+                      </GlassCard>
+                    </m.div>
+                  )}
+                </AnimatePresence>
               </div>
             )}
 
