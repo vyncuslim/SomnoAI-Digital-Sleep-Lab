@@ -1,6 +1,6 @@
 /**
- * SomnoAI Safe Navigation Utility (v5.6)
- * Optimized for Vercel Clean URLs and History API.
+ * SomnoAI Safe Navigation Utility (v6.0)
+ * Optimized for clean URLs and robust SPA routing.
  */
 
 export const getSafeUrl = (): string => {
@@ -41,27 +41,30 @@ export const getSafeHostname = (): string => {
 };
 
 /**
- * 物理路径导航协议
+ * Executes a clean URL transition using the History API.
+ * This simulates the behavior of BrowserRouter.
  */
 export const safeNavigatePath = (path: string) => {
-  // 路径清洗与标准化
   let cleanPath = path.startsWith('/') ? path : `/${path}`;
-  if (cleanPath === '/landing') cleanPath = '/';
+  if (cleanPath === '/landing' || cleanPath === '/index.html') cleanPath = '/';
 
   try {
-    // 1. 物理推送状态到浏览器历史堆栈
+    // Prevent redundant navigation
+    if (window.location.pathname === cleanPath && !window.location.hash) return;
+
+    // 1. Update browser history stack
     window.history.pushState({ somno_route: true, timestamp: Date.now() }, '', cleanPath);
     
-    // 2. 调度信号通知 App 状态机执行 UI 切换
+    // 2. Dispatch event to notify App component
     window.dispatchEvent(new PopStateEvent('popstate', { state: { somno_route: true } }));
   } catch (e) {
-    // 降级：如果 History API 受限，执行重定向
+    // Fallback for restricted environments
     window.location.href = cleanPath;
   }
 };
 
 /**
- * 遗留哈希兼容代理
+ * Legacy support for hash-based navigation if explicitly required.
  */
 export const safeNavigateHash = (view: string) => {
   const cleanView = view.replace(/^#?\/?/, '');

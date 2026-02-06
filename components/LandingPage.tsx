@@ -24,17 +24,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
     {
       icon: Activity,
       title: isZh ? '1. 智能数据同步' : '1. Biometric Ingress',
-      desc: isZh ? '通过 Health Connect 自动同步手环、手表数据，或手动记录生理感受。' : 'Sync wearable telemetry via Health Connect or log subjective recovery metrics manually.'
+      desc: isZh ? '通过 Health Connect 自动同步穿戴设备数据，或手动注入生理感受。' : 'Sync wearable telemetry via Health Connect or log subjective recovery metrics manually.'
     },
     {
       icon: BrainCircuit,
       title: isZh ? '2. AI 神经建模' : '2. Neural Synthesis',
-      desc: isZh ? '利用 Google Gemini 尖端模型，识别您的深睡效率、REM 阶段及作息规律。' : 'Leverage Google Gemini models to reconstruct sleep stages and identify recovery architecture.'
+      desc: isZh ? '利用 Google Gemini 尖端模型，识别深睡效率、REM 阶段及作息规律。' : 'Leverage Google Gemini models to reconstruct sleep stages and identify recovery architecture.'
     },
     {
       icon: Sparkles,
-      title: isZh ? '3. 获得专属处方' : '3. Precision Protocol',
-      desc: isZh ? '根据您的生物基准，定制化改善建议，锁定破坏睡眠的隐藏因素。' : 'Receive tailored optimization protocols to eliminate disruptors and maximize deep sleep.'
+      title: isZh ? '3. 获得精准协议' : '3. Precision Protocol',
+      desc: isZh ? '根据生物基准定制化改善建议，锁定破坏睡眠的隐藏因素。' : 'Receive tailored optimization protocols to eliminate disruptors and maximize deep sleep.'
     }
   ];
 
@@ -50,7 +50,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       {/* PROFESSIONAL HEADER */}
       <header className="fixed top-0 left-0 right-0 z-[100] backdrop-blur-xl border-b border-white/5 px-6 py-4" role="banner">
         <div className="max-w-7xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})} title="SomnoAI Home">
+          <div className="flex items-center gap-3 cursor-pointer" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
              <Logo size={32} animated={true} />
              <div className="flex flex-col">
                <span className="text-xl font-black italic tracking-tighter uppercase text-white leading-none">SomnoAI</span>
@@ -64,7 +64,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                 key={link.view} 
                 onClick={() => onNavigate(link.view)} 
                 className="text-[11px] font-black uppercase tracking-widest text-slate-400 hover:text-indigo-400 transition-colors"
-                aria-label={`Navigate to ${link.label}`}
               >
                 {link.label}
               </button>
@@ -75,11 +74,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             <button 
               onClick={() => onNavigate('login')}
               className="hidden sm:block px-8 py-2.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 transition-all"
-              aria-label="Enter Laboratory Console"
             >
               {isZh ? '实验室入口' : 'Enter Lab'}
             </button>
-            <button className="md:hidden p-2 text-slate-400" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} aria-label="Toggle Mobile Menu">
+            <button className="md:hidden p-2 text-slate-400" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -94,8 +92,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             animate={{ opacity: 1, y: 0 }} 
             exit={{ opacity: 0, y: -20 }}
             className="fixed inset-0 z-[90] bg-[#020617] pt-24 px-6 md:hidden"
-            role="dialog"
-            aria-modal="true"
           >
             <div className="flex flex-col gap-8">
               {navLinks.map((link) => (
@@ -119,8 +115,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       </AnimatePresence>
 
       {/* HERO SECTION */}
-      <main id="main-content">
-        <section className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-20 pb-32">
+      <main>
+        <section className="relative min-h-screen flex flex-col items-center justify-center px-4 pt-20 pb-32 text-left">
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
             <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[120vw] h-[120vw] bg-indigo-600/10 blur-[200px] rounded-full animate-pulse" />
             <div className="absolute bottom-0 left-0 w-full h-1/2 bg-gradient-to-t from-[#020617] to-transparent" />
@@ -133,7 +129,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           >
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-4">
                <div className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">SomnoAI Digital Sleep Lab • Clinical Intelligence</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.2em] text-indigo-300">SomnoAI Digital Sleep Lab • Neural Intelligence</span>
             </div>
 
             <div className="space-y-8">
@@ -141,9 +137,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                 {isZh ? '让每一次睡眠' : 'ENGINEER YOUR'} <br/>
                 <span className="text-indigo-500">{isZh ? '都成为能量补给' : 'NIGHT POTENTIAL'}</span>
               </h1>
-              <p className="text-lg md:text-2xl text-slate-400 font-medium italic max-w-3xl mx-auto leading-relaxed px-4">
+              <p className="text-lg md:text-2xl text-slate-400 font-medium italic max-w-4xl mx-auto leading-relaxed px-4">
                 {isZh 
-                  ? '它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验体验。' 
+                  ? 'SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。' 
                   : 'Experience clinical-grade sleep architecture analysis. SomnoAI integrates physiological monitoring with AI deep insights to reconstruct your recovery architecture.'}
               </p>
             </div>
@@ -159,144 +155,86 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                 onClick={() => onNavigate('login')}
                 className="w-full sm:w-auto px-10 py-7 bg-white/5 hover:bg-white/10 text-slate-300 rounded-full font-black text-xs uppercase tracking-[0.3em] border border-white/10 transition-all active:scale-95 italic flex items-center justify-center gap-3"
               >
-                <LogIn size={18} /> {isZh ? '登录账号' : 'ENTER LABORATORY'}
+                <LogIn size={18} /> {isZh ? '登录实验室' : 'ENTER LABORATORY'}
               </button>
             </div>
           </m.div>
-
-          <m.div 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1 }}
-            className="absolute bottom-8 left-1/2 -translate-x-1/2 flex flex-col items-center gap-4 opacity-20"
-          >
-            <div className="w-px h-12 bg-gradient-to-b from-white to-transparent" />
-          </m.div>
         </section>
 
-        {/* SERVICES SECTION */}
-        <section className="py-32 px-4 max-w-7xl mx-auto" aria-labelledby="protocol-heading">
-          <div className="text-center mb-24 space-y-4">
-             <span className="text-emerald-400 font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '核心流程' : 'THE PROTOCOL'}</span>
-             <h2 id="protocol-heading" className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">{isZh ? '科学闭环，深度重塑' : 'PRECISION ANALYSIS'}</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            {steps.map((step, i) => (
-              <GlassCard key={i} className="p-12 rounded-[4rem] border-white/5 bg-slate-900/20 group hover:bg-emerald-600/[0.03]">
-                <div className="w-20 h-20 bg-indigo-600/10 rounded-[2rem] flex items-center justify-center text-indigo-400 mb-10 border border-indigo-500/20 shadow-2xl group-hover:scale-110 transition-transform">
-                   <step.icon size={36} aria-hidden="true" />
-                </div>
-                <h3 className="text-2xl font-black italic text-white uppercase mb-4 tracking-tight leading-none">{step.title}</h3>
-                <p className="text-slate-500 text-[15px] leading-relaxed italic font-medium">{step.desc}</p>
-              </GlassCard>
-            ))}
-          </div>
-        </section>
-
-        {/* CASE STUDY / TRUST SECTION */}
-        <section className="py-32 px-4 bg-indigo-600/[0.01] border-y border-white/5" aria-labelledby="data-sovereignty-heading">
-          <div className="max-w-7xl mx-auto">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-24 items-center">
-              <div className="space-y-12 text-left">
-                 <div className="space-y-4">
-                    <span className="text-indigo-400 font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '隐私与安全' : 'PRIVACY & INFRASTRUCTURE'}</span>
-                    <h2 id="data-sovereignty-heading" className="text-4xl md:text-8xl font-black italic text-white uppercase tracking-tighter leading-[0.85]">
-                      {isZh ? '数据主权' : 'DATA'} <br/> <span className="text-indigo-500">{isZh ? '由你掌控' : 'SOVEREIGNTY'}</span>
-                    </h2>
-                 </div>
-                 <p className="text-xl text-slate-400 font-medium italic leading-relaxed">
-                    {isZh 
-                      ? 'SomnoAI 数字化睡眠实验室采用“边缘计算”架构，您的生理数据仅存储在浏览器会话中，绝不上传到后台服务器，且在退出登录后立即永久抹除。' 
-                      : 'Utilizing Edge Processing architecture, SomnoAI Digital Sleep Lab ensures your biometric telemetry is stored exclusively in-browser and purged immediately upon session termination.'}
-                 </p>
-                 <div className="flex flex-wrap gap-4">
-                    {['Bank-Level Encryption', 'No Server Persistence', '100% Anonymous'].map((t, i) => (
-                      <div key={i} className="flex items-center gap-2 px-6 py-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
-                         <CheckCircle2 size={12} className="text-emerald-500" />
-                         <span className="text-[10px] font-black uppercase text-emerald-400 tracking-widest">{t}</span>
-                      </div>
-                    ))}
-                 </div>
-              </div>
-
-              <GlassCard className="p-10 md:p-16 rounded-[5rem] border-white/10 bg-black/40 relative overflow-hidden">
-                 <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
-                    <HelpCircle size={400} />
-                 </div>
-                 <div className="space-y-8 relative z-10">
-                    <div className="flex items-center gap-4">
-                       <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white"><Microscope size={24} /></div>
-                       <h3 className="text-xl font-black italic uppercase text-white tracking-tight">{isZh ? '研究方向' : 'RESEARCH FOCUS'}</h3>
-                    </div>
-                    <div className="space-y-6">
-                      <p className="text-sm text-slate-500 italic leading-relaxed">
-                        {isZh ? '我们致力于通过心率变异性（HRV）与深度学习模型，探索睡眠架构与认知表现之间的直接关联。' : 'SomnoAI Digital Sleep Lab explores the direct correlation between heart rate variability (HRV), neural sleep architecture, and executive cognitive performance.'}
-                      </p>
-                      <button onClick={() => onNavigate('science')} className="flex items-center gap-3 text-indigo-400 font-black uppercase text-[10px] tracking-[0.3em] hover:text-white transition-all italic" aria-label="Read our scientific sleep protocols">
-                         {isZh ? '阅读科学协议' : 'READ SCIENTIFIC PROTOCOL'} <ExternalLink size={14} />
-                      </button>
-                    </div>
-                 </div>
-              </GlassCard>
-            </div>
-          </div>
+        {/* WORKFLOW SECTION */}
+        <section className="py-32 px-4 max-w-7xl mx-auto">
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              {steps.map((step, i) => (
+                <GlassCard key={i} className="p-10 rounded-[3rem] border-white/5 hover:border-indigo-500/20 transition-all duration-700">
+                   <div className="p-4 bg-indigo-500/10 rounded-2xl w-fit mb-8 text-indigo-400">
+                      <step.icon size={32} />
+                   </div>
+                   <h3 className="text-xl font-black italic text-white uppercase mb-4">{step.title}</h3>
+                   <p className="text-slate-400 text-sm leading-relaxed italic">{step.desc}</p>
+                </GlassCard>
+              ))}
+           </div>
         </section>
       </main>
 
-      {/* WORLD CLASS FOOTER */}
-      <footer className="bg-slate-950 border-t border-white/5 pt-32 pb-20 px-6" role="contentinfo">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-20">
-          <div className="col-span-1 md:col-span-2 space-y-10">
-             <div className="flex items-center gap-4 text-left">
-                <Logo size={48} animated={true} />
-                <div className="flex flex-col">
-                  <span className="text-3xl font-black italic tracking-tighter uppercase text-white leading-none">SomnoAI</span>
-                  <span className="text-[9px] font-bold tracking-[0.4em] uppercase text-indigo-500">Digital Sleep Lab</span>
-                </div>
-             </div>
-             <p className="text-slate-500 text-sm italic font-medium max-w-md leading-relaxed text-left">
-                Dedicated to the pursuit of optimal human recovery through advanced biometric science and generative intelligence.
-             </p>
-             
-             {/* Trustpilot Widget Section */}
-             <div className="pt-4">
-                <div className="trustpilot-widget" data-locale="en-US" data-template-id="56278e9abfbbba0bdcd568bc" data-businessunit-id="69833e2dce0741757faefd77" data-style-height="52px" data-style-width="100%" data-token="f41f5010-5119-4fcc-9ea3-278ab80c4f18">
-                  <a href="https://www.trustpilot.com/review/sleepsomno.com" target="_blank" rel="noopener" className="text-[10px] text-slate-600 hover:text-indigo-400 transition-colors uppercase font-bold tracking-widest">Verify on Trustpilot</a>
-                </div>
-             </div>
+      {/* REFINED FOOTER */}
+      <footer className="bg-black/40 border-t border-white/5 pt-24 pb-12 px-6">
+        <div className="max-w-7xl mx-auto space-y-16">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
+            <div className="col-span-1 md:col-span-1 space-y-6">
+               <div className="flex items-center gap-3">
+                  <Logo size={28} />
+                  <span className="text-xl font-black italic tracking-tighter text-white uppercase">SomnoAI</span>
+               </div>
+               <p className="text-xs text-slate-500 italic leading-relaxed">
+                 Dedicated to the science of recovery and the architecture of high-performance sleep.
+               </p>
+            </div>
+            
+            <div className="space-y-6">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Connectivity</h4>
+               <ul className="space-y-3 text-xs font-bold text-slate-400 italic">
+                 <li><a href="mailto:admin@sleepsomno.com" className="hover:text-white transition-colors">admin@sleepsomno.com</a></li>
+                 <li><a href="mailto:contact@sleepsomno.com" className="hover:text-white transition-colors">contact@sleepsomno.com</a></li>
+                 <li><a href="mailto:info@sleepsomno.com" className="hover:text-white transition-colors">info@sleepsomno.com</a></li>
+                 <li><a href="mailto:support@sleepsomno.com" className="hover:text-white transition-colors">support@sleepsomno.com</a></li>
+               </ul>
+            </div>
 
-             <div className="flex gap-6">
-                <a href="https://github.com/vyncuslim" target="_blank" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Follow on GitHub"><Github size={20} /></a>
-                <a href="https://linkedin.com" target="_blank" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Connect on LinkedIn"><Linkedin size={20} /></a>
-                <a href="mailto:contact@sleepsomno.com" className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-white transition-all" title="Contact Technical Support"><Mail size={20} /></a>
-             </div>
+            <div className="space-y-6">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Resources</h4>
+               <ul className="space-y-3 text-xs font-bold text-slate-400 italic">
+                 <li><button onClick={() => onNavigate('science')} className="hover:text-white transition-colors uppercase">Neural Science</button></li>
+                 <li><button onClick={() => onNavigate('faq')} className="hover:text-white transition-colors uppercase">Laboratory FAQ</button></li>
+                 <li><button onClick={() => onNavigate('contact')} className="hover:text-white transition-colors uppercase">Connectivity Hub</button></li>
+                 <li><a href="/privacy" className="hover:text-white transition-colors uppercase">Privacy Protocol</a></li>
+                 <li><a href="/terms" className="hover:text-white transition-colors uppercase">Terms of Service</a></li>
+               </ul>
+            </div>
+
+            <div className="space-y-6">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Global Network</h4>
+               <div className="flex gap-4">
+                  <a href="https://www.linkedin.com/company/somnoai-digital-sleep-lab/" target="_blank" className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-600 transition-all">
+                    <Linkedin size={18} />
+                  </a>
+                  <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-all">
+                    <Github size={18} />
+                  </a>
+                  <a href="mailto:contact@sleepsomno.com" className="p-3 bg-white/5 rounded-xl text-slate-400 hover:text-white hover:bg-indigo-600 transition-all">
+                    <Mail size={18} />
+                  </a>
+               </div>
+            </div>
           </div>
 
-          <div className="space-y-10 text-left">
-             <h4 className="text-white font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '实验室' : 'LABORATORY'}</h4>
-             <nav className="flex flex-col gap-6">
-                {navLinks.map((link) => (
-                  <button key={link.view} onClick={() => onNavigate(link.view)} className="text-slate-500 hover:text-white text-left text-sm italic font-medium transition-all">{link.label}</button>
-                ))}
-             </nav>
+          <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-6 opacity-40">
+             <p className="text-[9px] font-mono uppercase tracking-[0.5em]">@2026 SomnoAI Digital Sleep Lab • Neural Infrastructure</p>
+             <div className="flex items-center gap-2 text-indigo-400">
+                <ShieldCheck size={12} />
+                <span className="text-[9px] font-black uppercase tracking-widest italic">HIPAA/GDPR Alignment Matrix active</span>
+             </div>
           </div>
-
-          <div className="space-y-10 text-left">
-             <h4 className="text-white font-black uppercase tracking-[0.4em] text-[10px] italic">{isZh ? '法律与合规' : 'LEGAL & NODES'}</h4>
-             <nav className="flex flex-col gap-6">
-                <button onClick={() => onNavigate('privacy')} className="text-slate-500 hover:text-white text-left text-sm italic font-medium transition-all">{isZh ? '隐私政策' : 'Privacy Policy'}</button>
-                <button onClick={() => onNavigate('terms')} className="text-slate-500 hover:text-white text-left text-sm italic font-medium transition-all">{isZh ? '服务条款' : 'Terms of Service'}</button>
-                <div className="pt-4 space-y-1">
-                   <p className="text-[9px] font-mono text-slate-700 uppercase tracking-widest">Version: 2.8.4-STABLE</p>
-                   <p className="text-[9px] font-mono text-indigo-900 uppercase tracking-widest">Network: Neural-Grid-Alpha</p>
-                </div>
-             </nav>
-          </div>
-        </div>
-
-        <div className="max-w-7xl mx-auto pt-32 text-center">
-           <p className="text-[10px] font-mono uppercase tracking-[0.6em] text-slate-800">
-             © 2026 SomnoAI Digital Sleep Lab • SECURING YOUR NIGHT POTENTIAL
-           </p>
         </div>
       </footer>
     </div>

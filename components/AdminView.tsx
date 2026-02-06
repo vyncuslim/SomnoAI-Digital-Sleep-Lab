@@ -341,7 +341,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                <ul className="space-y-4 px-2">
                                   {[
                                     'Access Google Analytics Console',
-                                    'Navigate to: Admin -> Property Settings',
+                                    'Navigate to: Admin &rarr; Property Settings',
                                     'Open: Property Access Management',
                                     'Add the ID above with "Viewer" clearance'
                                   ].map((step, i) => (
@@ -523,7 +523,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                     {pulseData?.service_account_email || 'PROBING...'}
                                   </p>
                                 </div>
-                                <p className="text-[9px] text-slate-500 italic px-2">Requirement: This email must be added to GA4 -> Property Settings -> Property Access Management with 'Viewer' role.</p>
+                                <p className="text-[9px] text-slate-500 italic px-2">Requirement: This email must be added to GA4 &rarr; Property Settings &rarr; Property Access Management with 'Viewer' role.</p>
                              </div>
 
                              <div className="pt-10 border-t border-white/5 space-y-5">

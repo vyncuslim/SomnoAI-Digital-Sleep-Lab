@@ -20,7 +20,7 @@
       "destination": "/api/$1" 
     },
     {
-      "source": "/((?!api|favicon\\.png|sw\\.js|manifest\\.json|.*\\..*).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]

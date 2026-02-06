@@ -32,6 +32,7 @@ import { SupportView } from './components/SupportView.tsx';
 import { AboutView } from './components/AboutView.tsx';
 import { ScienceView } from './components/ScienceView.tsx';
 import { FAQView } from './components/FAQView.tsx';
+import { ContactView } from './components/ContactView.tsx';
 import { UpdatePasswordView } from './components/UpdatePasswordView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 
@@ -100,14 +101,15 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleRouting = () => {
-      // 深度解析路径，支持直接输入 URL
       const pathRaw = window.location.pathname.toLowerCase();
       const hashRaw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
       
       const pathSegments = pathRaw.split('/').filter(Boolean);
-      const currentPath = pathSegments[0] || hashRaw.split('/')[0] || 'landing';
+      // Clean path segment extraction: ignore file extensions to handle SPA fallbacks correctly
+      const cleanPathSegment = pathSegments[0] ? pathSegments[0].split('.')[0] : null;
+      const currentPath = cleanPathSegment || hashRaw.split('/')[0] || 'landing';
 
-      // 自动重定向逻辑：已认证用户尝试访问注册/登录页时强制送入 Dashboard
+      // Redirection logic for authenticated users
       if ((profile || isSimulated) && (currentPath === 'landing' || currentPath === 'login' || currentPath === 'signup')) {
         setActiveView('dashboard');
         if (window.location.pathname !== '/dashboard') {
@@ -121,12 +123,13 @@ const AppContent: React.FC = () => {
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
         'registry': 'registry', 'update-password': 'update-password', 'science': 'science', 'faq': 'faq',
-        'login': 'login', 'signup': 'signup', 'landing': 'landing'
+        'contact': 'contact', 'login': 'login', 'signup': 'signup', 'landing': 'landing'
       };
 
       if (validRoutes[currentPath]) {
         setActiveView(validRoutes[currentPath]);
       } else {
+        // Safe fallback
         setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
       }
       
@@ -147,20 +150,22 @@ const AppContent: React.FC = () => {
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    // 访客态路由
+    // Visitor Routes
     if (!profile && !isSimulated) {
       if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
       if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
       if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('landing')} onNavigate={navigate} />;
       if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('about')} />;
       if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('about')} />;
+      if (activeView === 'contact') return <ContactView lang={lang} onBack={() => navigate('landing')} />;
       
       return <LandingPage lang={lang} onNavigate={navigate} />;
     }
 
-    // 登录态公共路由
+    // Authenticated Public Routes
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('dashboard')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('support')} />;
+    if (activeView === 'contact') return <ContactView lang={lang} onBack={() => navigate('dashboard')} />;
     if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => navigate('dashboard')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('settings')} onNavigate={navigate} />;
 

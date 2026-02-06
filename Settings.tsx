@@ -134,7 +134,9 @@ export const Settings: React.FC<SettingsProps> = ({
                <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
                <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
                   {['en', 'zh'].map((l) => (
-                    <button key={l} onClick={() => onLanguageChange(l as Language)} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>{l === 'en' ? 'ENGLISH' : '中文简体'}</button>
+                    <button key={l} onClick={() => onLanguageChange(l as Language)} className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
+                      {l === 'en' ? 'ENGLISH' : l === 'zh' ? '中文简体' : 'CASTELLANO'}
+                    </button>
                   ))}
                </div>
             </div>
