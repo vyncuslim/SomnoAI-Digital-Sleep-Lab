@@ -5,7 +5,7 @@ import {
   Activity, Fingerprint, Lock, CheckCircle2,
   List, Unlock, Mail, ActivitySquare, 
   AlertTriangle, Database, Search, ShieldX, 
-  TrendingUp, Server, Plus, Clock, Terminal, ChevronDown, Copy, Check, Radio, Shield, Key
+  TrendingUp, Server, Plus, Clock, Terminal, ChevronDown, Copy, Check, Radio, Shield, Key, Smartphone, Monitor, Globe
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -25,6 +25,20 @@ const DATABASE_SCHEMA = [
 ];
 
 const ROLES = ['user', 'admin', 'owner'];
+
+// Helper to parse the standardized login metadata string
+const parseLoginTelemetry = (details: string) => {
+  if (!details || !details.includes('[ACCESS_GRANTED]')) return null;
+  const data: Record<string, string> = {};
+  const lines = details.split('\n');
+  lines.forEach(line => {
+    if (line.includes(': ')) {
+      const [key, ...rest] = line.split(': ');
+      data[key.trim().toLowerCase()] = rest.join(': ').trim();
+    }
+  });
+  return data;
+};
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
@@ -121,12 +135,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       setSyncState('ERRORED');
       setActionError(e.message);
     }
-  };
-
-  const handleCopy = (id: string, text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedId(id);
-    setTimeout(() => setCopiedId(null), 2000);
   };
 
   const getActionPermission = (target: any): { canAction: boolean; reason?: string } => {
@@ -404,10 +412,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                    </div>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 gap-6">
                   {auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH').length > 0 ? (
                     auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH').map((log) => {
                       const isLogin = log.action === 'USER_LOGIN';
+                      const parsed = isLogin ? parseLoginTelemetry(log.details) : null;
+                      
                       return (
                         <GlassCard key={log.id} className="p-8 rounded-[3rem] border-white/5 hover:bg-white/[0.02] transition-all group overflow-hidden relative">
                           {log.level === 'CRITICAL' && <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-600 animate-pulse shadow-[0_0_15px_rgba(225,29,72,0.5)]" />}
@@ -417,26 +427,72 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                             <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 border ${log.level === 'CRITICAL' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-400'} shadow-inner`}>
                                {log.level === 'CRITICAL' ? <ShieldAlert size={28} className="animate-pulse" /> : isLogin ? <Key size={28} /> : <List size={28} />}
                             </div>
-                            <div className="space-y-4 flex-1">
-                              <div className="flex flex-wrap items-center gap-3">
-                                 <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border italic ${isLogin ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300' : 'bg-slate-950 border-white/10 text-slate-500'}`}>
-                                   {log.action.replace('_', ' ')}
-                                 </span>
-                                 <span className="text-[10px] font-mono text-slate-600 flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5">
-                                   <Clock size={12} className="text-slate-700" /> {new Date(log.created_at).toLocaleString()}
-                                 </span>
-                                 {log.level === 'CRITICAL' && <span className="px-3 py-1 bg-rose-600 text-white text-[8px] font-black uppercase rounded-full tracking-widest animate-pulse">Critical Alert</span>}
+                            
+                            <div className="flex-1 space-y-6">
+                              <div className="flex flex-wrap items-center justify-between">
+                                 <div className="flex flex-wrap items-center gap-3">
+                                   <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border italic ${isLogin ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300' : 'bg-slate-950 border-white/10 text-slate-500'}`}>
+                                     {log.action.replace('_', ' ')}
+                                   </span>
+                                   <span className="text-[10px] font-mono text-slate-600 flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5">
+                                     <Clock size={12} className="text-slate-700" /> {new Date(log.created_at).toLocaleString()}
+                                   </span>
+                                   {log.level === 'CRITICAL' && <span className="px-3 py-1 bg-rose-600 text-white text-[8px] font-black uppercase rounded-full tracking-widest animate-pulse">Critical Alert</span>}
+                                 </div>
                               </div>
                               
-                              <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 group-hover:border-white/10 transition-colors">
-                                 <p className="text-sm font-bold italic text-slate-300 leading-relaxed whitespace-pre-wrap font-mono">
-                                   {log.details}
-                                 </p>
+                              <div className="bg-black/40 p-8 rounded-[2.5rem] border border-white/5 group-hover:border-white/10 transition-colors">
+                                 {isLogin && parsed ? (
+                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                                      <div className="space-y-5">
+                                         <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400"><Fingerprint size={18} /></div>
+                                            <div className="space-y-0.5">
+                                               <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Target Node</p>
+                                               <p className="text-sm font-bold text-white italic truncate max-w-[200px]">{parsed.subject || 'UNREGISTERED'}</p>
+                                               <p className="text-[10px] font-mono text-slate-500">{parsed.identity}</p>
+                                            </div>
+                                         </div>
+                                         <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500"><Crown size={18} /></div>
+                                            <div className="space-y-0.5">
+                                               <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Clearance Level</p>
+                                               <p className="text-xs font-black text-amber-400 uppercase italic tracking-widest">{parsed.clearance}</p>
+                                            </div>
+                                         </div>
+                                      </div>
+                                      <div className="space-y-5">
+                                         <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+                                               {(parsed.device || '').toLowerCase().includes('mobile') ? <Smartphone size={18} /> : <Monitor size={18} />}
+                                            </div>
+                                            <div className="space-y-0.5 flex-1 min-w-0">
+                                               <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Origin Terminal</p>
+                                               <p className="text-[10px] font-mono text-emerald-400/80 break-all leading-tight italic line-clamp-2">{parsed.device || 'Inferred Client'}</p>
+                                            </div>
+                                         </div>
+                                         <div className="flex items-center gap-4">
+                                            <div className="w-10 h-10 rounded-2xl bg-blue-500/10 flex items-center justify-center text-blue-400"><Globe size={18} /></div>
+                                            <div className="space-y-0.5">
+                                               <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Channel Status</p>
+                                               <div className="flex items-center gap-2">
+                                                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
+                                                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Handshake Verified</span>
+                                               </div>
+                                            </div>
+                                         </div>
+                                      </div>
+                                   </div>
+                                 ) : (
+                                   <p className="text-sm font-bold italic text-slate-300 leading-relaxed whitespace-pre-wrap font-mono">
+                                     {log.details}
+                                   </p>
+                                 )}
                               </div>
 
                               <div className="flex items-center gap-3 opacity-40 group-hover:opacity-100 transition-opacity">
-                                 <Fingerprint size={12} className="text-slate-500" />
-                                 <span className="text-[8px] font-mono text-slate-600 uppercase tracking-[0.2em]">Signal ID: {log.id.slice(0, 12)}...</span>
+                                 <Terminal size={12} className="text-slate-500" />
+                                 <span className="text-[8px] font-mono text-slate-600 uppercase tracking-[0.2em]">Signal Reference: {log.id.slice(0, 16).toUpperCase()}</span>
                               </div>
                             </div>
                           </div>
@@ -444,7 +500,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                       );
                     })
                   ) : (
-                    <div className="py-32 flex flex-col items-center justify-center opacity-20 gap-6">
+                    <div className="py-32 flex flex-col items-center justify-center opacity-20 gap-6 border-2 border-dashed border-white/5 rounded-[4rem]">
                        <Radio size={48} className="text-slate-500" />
                        <p className="text-[11px] font-black uppercase tracking-[0.5em] italic">No active security signals detected</p>
                     </div>

@@ -19,6 +19,7 @@
         const path = window.location.pathname;
         if (path !== '/' && !path.includes('.')) {
           console.warn("SPA Route Sync Failure. Attempting recovery...");
+          // Ensure the path is correctly translated for the client-side router
           window.location.replace('/#' + path.substring(1));
         }
       })();
