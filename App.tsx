@@ -86,7 +86,7 @@ const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   
-  // URL-First state initialization: capture current path immediately on load
+  // URL-First initialization: Directly map URL to state on mount
   const [activeView, setActiveView] = useState<ViewType | 'landing' | 'login' | 'signup' | 'update-password' | 'science' | 'faq' | 'contact' | 'about'>(() => {
     if (typeof window === 'undefined') return 'landing';
     const path = window.location.pathname.toLowerCase().split('/').filter(Boolean)[0];
@@ -109,26 +109,36 @@ const AppContent: React.FC = () => {
   }, []);
 
   const navigate = (view: string) => {
-    // Uses the History API to update URL without reload
+    // Physical URL synchronization
     safeNavigatePath(view === 'landing' ? '/' : view);
   };
 
   useEffect(() => {
     const handleRouting = () => {
-      // Do not interrupt with routing logic while authentication protocol is initializing
       if (loading) return;
 
       const pathRaw = window.location.pathname.toLowerCase();
       const pathSegments = pathRaw.split('/').filter(Boolean);
       const currentPath = pathSegments[0] || 'landing';
 
-      // Access Protocol: Authenticated nodes bypass public entries
-      const isPublicEntryPoint = currentPath === 'landing' || currentPath === 'login' || currentPath === 'signup';
-      if ((profile || isSimulated) && (isPublicEntryPoint || pathRaw === '/')) {
+      const isLoggedIn = !!profile || isSimulated;
+      const protectedRoutes = ['dashboard', 'calendar', 'assistant', 'experiment', 'diary', 'settings', 'registry', 'admin'];
+      const isProtectedPath = protectedRoutes.includes(currentPath);
+
+      // Force view-to-url synchronization for authenticated nodes
+      if (isLoggedIn && (currentPath === 'login' || currentPath === 'signup' || pathRaw === '/')) {
         setActiveView('dashboard');
-        // Synchronize browser address bar with internal state
         if (window.location.pathname !== '/dashboard') {
           window.history.replaceState({ somno_route: true }, '', '/dashboard');
+        }
+        return;
+      }
+
+      // Guest node restriction
+      if (!isLoggedIn && isProtectedPath) {
+        setActiveView('landing');
+        if (window.location.pathname !== '/') {
+          window.history.replaceState({ somno_route: true }, '', '/');
         }
         return;
       }
@@ -144,14 +154,16 @@ const AppContent: React.FC = () => {
       if (routeRegistry[currentPath]) {
         setActiveView(routeRegistry[currentPath]);
       } else {
-        // Intelligence Fallback: Determine path based on authorization status
-        setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
+        const fallback = isLoggedIn ? 'dashboard' : 'landing';
+        setActiveView(fallback);
+        if (pathRaw !== '/' && !routeRegistry[currentPath]) {
+           window.history.replaceState({ somno_route: true }, '', isLoggedIn ? '/dashboard' : '/');
+        }
       }
       
       trackPageView(`/${currentPath}`, `SomnoAI: ${currentPath.toUpperCase()}`);
     };
     
-    // Listen for History API / Browser back-forward events
     window.addEventListener('popstate', handleRouting);
     handleRouting();
     
@@ -162,17 +174,16 @@ const AppContent: React.FC = () => {
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   
-  // Show synchronization sequence while auth resolves
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    // Shared Public Access Areas
+    // Shared Public Access Nodes
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate(profile || isSimulated ? 'support' : 'about')} />;
     if (activeView === 'contact') return <ContactView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate(profile || isSimulated ? 'settings' : 'landing')} onNavigate={navigate} />;
 
-    // Authenticated Laboratory Operations
+    // Authenticated Lab Operations
     if (profile || isSimulated) {
       if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
       if (activeView === 'admin') return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
@@ -218,7 +229,7 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // Registry & Entry Interface
+    // Guest Portal
     if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
     

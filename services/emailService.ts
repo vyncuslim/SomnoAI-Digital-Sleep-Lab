@@ -21,65 +21,68 @@ const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: stri
 
 export const emailService = {
   sendAdminAlert: async (payload: { type: string; message: string; source?: string; error?: string }) => {
-    // 1. Fetch current recipient matrix
-    const { data: recipients } = await supabase
-      .from('notification_recipients')
-      .select('email')
-      .eq('is_active', true);
+    try {
+      // 1. Fetch current recipient matrix
+      const { data: recipients, error: rError } = await supabase
+        .from('notification_recipients')
+        .select('email')
+        .eq('is_active', true);
 
-    if (!recipients || recipients.length === 0) {
-      console.warn("[Email_Bridge] No active recipients found in registry.");
-      return { success: false, error: 'NO_RECIPIENTS' };
+      // If registry is empty or inaccessible, skip silently to prevent console clutter
+      if (rError || !recipients || recipients.length === 0) {
+        return { success: false, error: 'NO_RECIPIENTS_LINKED' };
+      }
+
+      const mytTime = getMYTTime();
+      const isoTime = new Date().toISOString();
+      const nodeIdentity = 'sleepsomno.com';
+      const rawDetails = payload.message || payload.error || 'N/A';
+      const eventType = payload.type || 'SYSTEM_SIGNAL';
+      
+      const mapping = EVENT_MAP[eventType] || { en: eventType, es: eventType, zh: eventType, icon: '📡' };
+      const isLogin = eventType === 'USER_LOGIN';
+      const isSignup = eventType === 'USER_SIGNUP';
+      const isIncident = eventType.includes('FAILURE') || eventType.includes('DENIED') || eventType.includes('ERROR') || eventType.includes('BREACH');
+      
+      const subjectPrefix = isLogin ? '🔑 [ACCESS_GRANTED]' : isIncident ? '🚨 [INCIDENT_ALERT]' : '🛡️ [SYSTEM_SIGNAL]';
+      const subject = `${subjectPrefix} ${mapping.en}`;
+
+      const html = `
+        <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
+          <div style="text-align: center; margin-bottom: 40px;">
+            <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">${mapping.icon} SOMNO LAB</h2>
+            <p style="font-size: 10px; color: #6366f1; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">${isLogin ? 'Identity Pulse' : 'Incident Protocol'}</p>
+          </div>
+          <div style="background: rgba(99, 102, 241, 0.03); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(99, 102, 241, 0.1);">
+            <div style="font-size: 13px; line-height: 1.8; color: #cbd5e1;">
+              <p style="margin: 0 0 12px 0; font-size: 11px; color: #818cf8; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">🇬🇧 [ENGLISH]</p>
+              <b>Event:</b> ${mapping.en}<br/>
+              <b>Details:</b> <code style="color: #818cf8; font-family: monospace;">${rawDetails.replace(/\n/g, '<br/>')}</code><br/>
+              <b>UTC Timestamp:</b> ${isoTime}
+            </div>
+          </div>
+          <div style="background: rgba(99, 102, 241, 0.03); padding: 24px; border-radius: 20px; border: 1px solid rgba(99, 102, 241, 0.1);">
+            <div style="font-size: 13px; line-height: 1.8; color: #cbd5e1;">
+              <p style="margin: 0 0 12px 0; font-size: 11px; color: #818cf8; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">🇨🇳 [中文]</p>
+              <b>事件类型:</b> ${mapping.zh}<br/>
+              <b>详细日志:</b> <code style="color: #818cf8; font-family: monospace;">${rawDetails.replace(/\n/g, '<br/>')}</code><br/>
+              <b>当地时间:</b> ${mytTime}
+            </div>
+          </div>
+          <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
+            SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: ${nodeIdentity}
+          </div>
+        </div>
+      `;
+
+      // 2. Dispatch to all recipients
+      const promises = recipients.map(r => emailService.sendSystemEmail(r.email, subject, html, undefined, isSignup));
+      const results = await Promise.all(promises);
+      
+      return { success: results.some(r => r.success) };
+    } catch (err) {
+      return { success: false, error: 'DISPATCH_CRASHED' };
     }
-
-    const mytTime = getMYTTime();
-    const isoTime = new Date().toISOString();
-    const nodeIdentity = 'sleepsomno.com';
-    const rawDetails = payload.message || payload.error || 'N/A';
-    const eventType = payload.type || 'SYSTEM_SIGNAL';
-    
-    const mapping = EVENT_MAP[eventType] || { en: eventType, es: eventType, zh: eventType, icon: '📡' };
-    const isLogin = eventType === 'USER_LOGIN';
-    const isSignup = eventType === 'USER_SIGNUP';
-    const isIncident = eventType.includes('FAILURE') || eventType.includes('DENIED') || eventType.includes('ERROR') || eventType.includes('BREACH');
-    
-    const subjectPrefix = isLogin ? '🔑 [ACCESS_GRANTED]' : isIncident ? '🚨 [INCIDENT_ALERT]' : '🛡️ [SYSTEM_SIGNAL]';
-    const subject = `${subjectPrefix} ${mapping.en}`;
-
-    const html = `
-      <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
-        <div style="text-align: center; margin-bottom: 40px;">
-          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">${mapping.icon} SOMNO LAB</h2>
-          <p style="font-size: 10px; color: #6366f1; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">${isLogin ? 'Identity Pulse' : 'Incident Protocol'}</p>
-        </div>
-        <div style="background: rgba(99, 102, 241, 0.03); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(99, 102, 241, 0.1);">
-          <div style="font-size: 13px; line-height: 1.8; color: #cbd5e1;">
-            <p style="margin: 0 0 12px 0; font-size: 11px; color: #818cf8; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">🇬🇧 [ENGLISH]</p>
-            <b>Event:</b> ${mapping.en}<br/>
-            <b>Details:</b> <code style="color: #818cf8; font-family: monospace;">${rawDetails.replace(/\n/g, '<br/>')}</code><br/>
-            <b>UTC Timestamp:</b> ${isoTime}
-          </div>
-        </div>
-        <div style="background: rgba(99, 102, 241, 0.03); padding: 24px; border-radius: 20px; border: 1px solid rgba(99, 102, 241, 0.1);">
-          <div style="font-size: 13px; line-height: 1.8; color: #cbd5e1;">
-            <p style="margin: 0 0 12px 0; font-size: 11px; color: #818cf8; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">🇨🇳 [中文]</p>
-            <b>事件类型:</b> ${mapping.zh}<br/>
-            <b>详细日志:</b> <code style="color: #818cf8; font-family: monospace;">${rawDetails.replace(/\n/g, '<br/>')}</code><br/>
-            <b>当地时间:</b> ${mytTime}
-          </div>
-        </div>
-        <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
-          SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: ${nodeIdentity}
-        </div>
-      </div>
-    `;
-
-    // 2. Dispatch to all recipients
-    // Flag signup as High Value to trigger Trustpilot AFS
-    const promises = recipients.map(r => emailService.sendSystemEmail(r.email, subject, html, undefined, isSignup));
-    const results = await Promise.all(promises);
-    
-    return { success: results.some(r => r.success) };
   },
 
   sendSystemEmail: async (to: string, subject: string, html: string, secret?: string, isHighValueEvent?: boolean) => {
