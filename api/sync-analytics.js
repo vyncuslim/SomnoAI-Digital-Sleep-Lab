@@ -2,8 +2,8 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v57.0
- * Optimized for diagnostic clarity on 403/Permission errors.
+ * SOMNO LAB GA4 SYNC GATEWAY v60.0
+ * Optimized for diagnostic clarity and robust environment key extraction.
  */
 
 const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
@@ -12,6 +12,7 @@ const FALLBACK_PROPERTY_ID = "380909155";
 function robustParse(input) {
   if (!input) return null;
   let str = input.trim();
+  // Remove wrapping quotes if they exist (common Vercel/Node environment artifact)
   while ((str.startsWith("'") && str.endsWith("'")) || (str.startsWith('"') && str.endsWith('"'))) {
     str = str.slice(1, -1).trim();
   }
@@ -19,28 +20,37 @@ function robustParse(input) {
     return JSON.parse(str);
   } catch (e) {
     try {
-      return JSON.parse(str.replace(/\n/g, "\\n"));
-    } catch (e2) { return null; }
+      // Attempt repair for escaped characters and newlines
+      const repaired = str.replace(/\\n/g, '\n').replace(/\n/g, '\\n');
+      return JSON.parse(repaired);
+    } catch (e2) { 
+      // Last resort: simple string cleaning
+      try {
+        return JSON.parse(str.replace(/[\u0000-\u001F]+/g, ""));
+      } catch (e3) { return null; }
+    }
   }
 }
 
 export default async function handler(req, res) {
   let currentSaEmail = "UNKNOWN";
   const rawPropertyId = process.env.GA_PROPERTY_ID || FALLBACK_PROPERTY_ID;
-  // Ensure the Property ID is strictly numeric and stripped of any accidental artifacts
+  
+  // Requirement: Enforce strict numeric string format for Property ID
   const targetPropertyId = String(rawPropertyId).trim().replace(/\D/g, ''); 
+  
   let gcpProjectId = "UNKNOWN";
 
-  if (!targetPropertyId) {
+  if (!targetPropertyId || targetPropertyId.length < 5) {
     return res.status(400).json({ success: false, error: "INVALID_PROPERTY_ID_FORMAT" });
   }
 
-  // Pre-emptive extraction for troubleshooting
+  // Diagnostic metadata extraction for logging
   if (process.env.GA_SERVICE_ACCOUNT_KEY) {
     const creds = robustParse(process.env.GA_SERVICE_ACCOUNT_KEY);
     if (creds) {
-      currentSaEmail = creds.client_email || "KEY_INVALID";
-      gcpProjectId = creds.project_id || "UNKNOWN";
+      currentSaEmail = creds.client_email || "KEY_PARTIAL_VALID";
+      gcpProjectId = creds.project_id || "MISSING_PROJECT_ID";
     }
   }
 
@@ -53,10 +63,17 @@ export default async function handler(req, res) {
     }
 
     const credentials = robustParse(process.env.GA_SERVICE_ACCOUNT_KEY);
-    if (!credentials || !credentials.private_key) throw new Error("GA_KEY_STRUCTURE_INVALID");
+    if (!credentials || !credentials.private_key) {
+       throw new Error("GA_KEY_STRUCTURE_INVALID: Ensure private_key is present in GA_SERVICE_ACCOUNT_KEY environment variable.");
+    }
     
+    // Explicitly handle newline characters in the private key which are often corrupted in environment strings
+    const sanitizedKey = credentials.private_key.includes('\\n') 
+      ? credentials.private_key.replace(/\\n/g, '\n') 
+      : credentials.private_key;
+
     const analyticsClient = new BetaAnalyticsDataClient({ 
-      credentials: { ...credentials, private_key: credentials.private_key.replace(/\\n/g, '\n') } 
+      credentials: { ...credentials, private_key: sanitizedKey } 
     });
 
     const [response] = await analyticsClient.runReport({
@@ -68,6 +85,7 @@ export default async function handler(req, res) {
 
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     const rows = response?.rows || [];
+    
     for (const row of rows) {
       const dateStr = row.dimensionValues[0].value;
       await supabase.from('analytics_daily').upsert({
@@ -82,22 +100,27 @@ export default async function handler(req, res) {
       success: true, 
       property: targetPropertyId, 
       service_account: currentSaEmail,
-      project_id: gcpProjectId
+      project_id: gcpProjectId,
+      rows_synced: rows.length
     });
   } catch (error) {
-    const errorMsg = error?.message || "Infrastructure timeout.";
+    const errorMsg = error?.message || "Infrastructure connectivity fault.";
     const isForbidden = errorMsg.toLowerCase().includes('permission') || error.code === 7;
     
-    // Check if it's explicitly an API not enabled error
-    const isApiNotEnabled = errorMsg.includes('Google Analytics Data API has not been used');
+    // Enhanced error logging for laboratory diagnostics
+    console.error(`[GA4_HANDSHAKE_ERROR] Source: ${currentSaEmail} | TargetProp: ${targetPropertyId} | Error: ${errorMsg}`);
 
     return res.status(isForbidden ? 403 : 500).json({ 
       success: false, 
       error: errorMsg,
-      is_api_disabled: isApiNotEnabled,
-      service_account: currentSaEmail,
-      property: targetPropertyId,
-      project_id: gcpProjectId
+      diagnostic: {
+        service_account: currentSaEmail,
+        property_id: targetPropertyId,
+        project_id: gcpProjectId,
+        suggestion: isForbidden 
+          ? "The service account email must be added as a 'Viewer' to the GA4 Property (not just the GCP project)." 
+          : "Verify the Google Analytics Data API is enabled in the Google Cloud Console."
+      }
     });
   }
 }

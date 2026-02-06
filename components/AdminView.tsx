@@ -26,9 +26,9 @@ const DATABASE_SCHEMA = [
 
 const ROLES = ['user', 'admin', 'owner'];
 
-// Helper to parse the standardized login metadata string
-const parseLoginTelemetry = (details: string) => {
-  if (!details || !details.includes('[ACCESS_GRANTED]')) return null;
+// Helper to parse security telemetry strings for structured display
+const parseSecurityTelemetry = (details: string) => {
+  if (!details) return null;
   const data: Record<string, string> = {};
   const lines = details.split('\n');
   lines.forEach(line => {
@@ -37,7 +37,7 @@ const parseLoginTelemetry = (details: string) => {
       data[key.trim().toLowerCase()] = rest.join(': ').trim();
     }
   });
-  return data;
+  return Object.keys(data).length > 0 ? data : null;
 };
 
 export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
@@ -127,8 +127,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setSyncState(is403 ? 'FORBIDDEN' : 'ERRORED');
         setActionError(data.error || "Sync protocol violation.");
         
-        if (data.service_account) {
-          setPulseData((prev: any) => ({ ...prev, service_account_email: data.service_account, property_id: data.property }));
+        if (data.diagnostic) {
+          setPulseData((prev: any) => ({ 
+            ...prev, 
+            service_account_email: data.diagnostic.service_account, 
+            property_id: data.diagnostic.property_id 
+          }));
         }
       }
     } catch (e: any) {
@@ -236,7 +240,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       <AnimatePresence mode="wait">
         {loading ? (
           <div key="loading" className="flex flex-col items-center justify-center py-48 gap-8">
-            <Loader2 className="animate-spin text-indigo-500" size={64} />
+            <div className="relative">
+              <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
+              <Loader2 className="animate-spin text-indigo-500 relative z-10" size={64} />
+            </div>
             <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Syncing Authority Matrix...</p>
           </div>
         ) : (
@@ -416,7 +423,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                   {auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH').length > 0 ? (
                     auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH').map((log) => {
                       const isLogin = log.action === 'USER_LOGIN';
-                      const parsed = isLogin ? parseLoginTelemetry(log.details) : null;
+                      const parsed = isLogin ? parseSecurityTelemetry(log.details) : null;
+                      const deviceType = parsed?.device?.toLowerCase();
+                      const isMobile = deviceType?.includes('mobile') || deviceType?.includes('android') || deviceType?.includes('iphone');
                       
                       return (
                         <GlassCard key={log.id} className="p-8 rounded-[3rem] border-white/5 hover:bg-white/[0.02] transition-all group overflow-hidden relative">
@@ -464,7 +473,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                       <div className="space-y-5">
                                          <div className="flex items-center gap-4">
                                             <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
-                                               {(parsed.device || '').toLowerCase().includes('mobile') ? <Smartphone size={18} /> : <Monitor size={18} />}
+                                               {isMobile ? <Smartphone size={18} /> : <Monitor size={18} />}
                                             </div>
                                             <div className="space-y-0.5 flex-1 min-w-0">
                                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Origin Terminal</p>
@@ -477,7 +486,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                                <p className="text-[8px] font-black text-slate-600 uppercase tracking-widest">Channel Status</p>
                                                <div className="flex items-center gap-2">
                                                   <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.5)]" />
-                                                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Handshake Verified</span>
+                                                  <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Access Verified</span>
                                                </div>
                                             </div>
                                          </div>
