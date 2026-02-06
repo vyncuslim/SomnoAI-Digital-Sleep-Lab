@@ -4,11 +4,11 @@ import App from './App.tsx';
 import { logAuditLog } from './services/supabaseService.ts';
 
 /**
- * SOMNO LAB NEURAL TELEMETRY GUARD v19.0
- * Verified syntactic safety protocol.
+ * SOMNO LAB NEURAL TELEMETRY GUARD v21.0
+ * Structural integrity verified.
  */
 
-const NOISE = [
+const NOISE_LIST = [
   'ERR_BLOCKED_BY_CLIENT', 'Extension', 'Salesmartly', 
   'Google is not defined', 'Permissions-Policy', 'browsing-topics',
   'reading \'query\'', 'content.js', 'chrome-extension', 'Object.defineProperty',
@@ -18,71 +18,62 @@ const NOISE = [
 ];
 
 const isNoise = (msg: string): boolean => {
-  for (let i = 0; i < NOISE.length; i++) {
-    if (msg.includes(NOISE[i])) {
-      return true;
-    }
+  for (let i = 0; i < NOISE_LIST.length; i++) {
+    if (msg.includes(NOISE_LIST[i])) return true;
   }
   return false;
 };
 
 window.onerror = (msg, src, line, col, err) => {
   const m = String(msg || 'EXCEPTION_GENERIC');
-  if (isNoise(m)) {
-    return true;
+  if (!isNoise(m)) {
+    logAuditLog('RUNTIME_ERROR', `TRACE: ${m.slice(0, 150)}`, 'CRITICAL').catch(() => {});
   }
-  logAuditLog('RUNTIME_ERROR', `TRACE: ${m.slice(0, 150)}`, 'CRITICAL').catch(() => {});
   return false;
 };
 
 window.onunhandledrejection = (e) => {
   const r = e.reason?.message || e.reason;
   const rStr = String(r || 'REJECTION_VOID');
-  if (isNoise(rStr)) {
+  if (!isNoise(rStr)) {
+    logAuditLog('ASYNC_FAULT', `VOID: ${rStr.slice(0, 150)}`, 'CRITICAL').catch(() => {});
+  } else {
     e.preventDefault();
-    return;
   }
-  logAuditLog('ASYNC_FAULT', `VOID: ${rStr.slice(0, 150)}`, 'CRITICAL').catch(() => {});
 };
 
 const originalError = console.error;
-let isLogging = false;
+let isProxyLogging = false;
 
 console.error = function(...args: any[]) {
-  if (!isLogging) {
+  if (!isProxyLogging) {
     try {
-      let combined = "";
+      let combinedText = "";
       for (let j = 0; j < args.length; j++) {
-        const a = args[j];
-        if (typeof a === 'object' && a !== null) {
-          try {
-            combined += JSON.stringify(a);
-          } catch (e) {
-            combined += "[OBJ]";
-          }
+        const val = args[j];
+        if (typeof val === 'object' && val !== null) {
+          try { combinedText += JSON.stringify(val); } catch (e) { combinedText += "[OBJ]"; }
         } else {
-          combined += String(a);
+          combinedText += String(val);
         }
-        combined += " ";
+        combinedText += " ";
       }
 
-      if (combined.length > 5 && !isNoise(combined)) {
-        isLogging = true;
-        logAuditLog('CONSOLE_PROXY', combined.slice(0, 200), 'WARNING')
-          .then(() => { isLogging = false; })
-          .catch(() => { isLogging = false; });
+      if (combinedText.length > 5 && !isNoise(combinedText)) {
+        isProxyLogging = true;
+        logAuditLog('CONSOLE_PROXY', combinedText.slice(0, 200), 'WARNING')
+          .finally(() => { isProxyLogging = false; });
       }
     } catch (err) {
-      isLogging = false;
+      isProxyLogging = false;
     }
   }
   originalError.apply(console, args);
 };
 
-const container = document.getElementById('root');
-if (container) {
-  const root = createRoot(container);
-  root.render(
+const rootElement = document.getElementById('root');
+if (rootElement) {
+  createRoot(rootElement).render(
     <React.StrictMode>
       <App />
     </React.StrictMode>
