@@ -85,7 +85,15 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
 const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
-  const [activeView, setActiveView] = useState<ViewType | 'landing' | 'login' | 'signup' | 'update-password' | 'science' | 'faq'>('landing');
+  
+  // URL-First initialization for robust deep linking on refresh
+  const [activeView, setActiveView] = useState<ViewType | 'landing' | 'login' | 'signup' | 'update-password' | 'science' | 'faq'>(() => {
+    const path = window.location.pathname.toLowerCase().split('/').filter(Boolean)[0];
+    const validBaseRoutes = ['dashboard', 'calendar', 'assistant', 'experiment', 'diary', 'settings', 'feedback', 'about', 'admin', 'support', 'registry', 'update-password', 'science', 'faq', 'contact', 'login', 'signup'];
+    if (path && validBaseRoutes.includes(path)) return path as any;
+    return 'landing';
+  });
+  
   const [isSimulated, setIsSimulated] = useState(false);
 
   const handleLogout = useCallback(async () => {
@@ -101,18 +109,14 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleRouting = () => {
-      // 路由同步逻辑不应在身份验证加载时阻塞，但关键的重定向逻辑需要等待 profile 确定
-      const pathRaw = window.location.pathname.toLowerCase();
-      const hashRaw = window.location.hash.replace(/^#\/?/, '').toLowerCase();
-      
-      const pathSegments = pathRaw.split('/').filter(Boolean);
-      const firstSegment = pathSegments[0] || '';
-      const cleanPathSegment = (firstSegment.includes('.') || firstSegment === 'index.html') ? null : firstSegment;
-      
-      const currentPath = cleanPathSegment || hashRaw.split('/')[0] || 'landing';
+      if (loading) return; // Wait for identity grid sync before executing routing logic
 
-      // 自动导航保护：如果已登录且尝试访问登录/落地页，则强制进入仪表盘
-      if (!loading && (profile || isSimulated) && (currentPath === 'landing' || currentPath === 'login' || currentPath === 'signup' || currentPath === '/')) {
+      const pathRaw = window.location.pathname.toLowerCase();
+      const pathSegments = pathRaw.split('/').filter(Boolean);
+      const currentPath = pathSegments[0] || 'landing';
+
+      // Global Access Protection: Authenticated nodes bypass public landing/login
+      if ((profile || isSimulated) && (currentPath === 'landing' || currentPath === 'login' || currentPath === 'signup' || currentPath === '/')) {
         setActiveView('dashboard');
         if (window.location.pathname !== '/dashboard') {
           window.history.replaceState({ somno_route: true }, '', '/dashboard');
@@ -130,8 +134,8 @@ const AppContent: React.FC = () => {
 
       if (validRoutes[currentPath]) {
         setActiveView(validRoutes[currentPath]);
-      } else if (!loading) {
-        // 如果路径无效且不再加载，根据登录状态决定回退位置
+      } else {
+        // Fallback protocol based on node status
         setActiveView(profile || isSimulated ? 'dashboard' : 'landing');
       }
       
@@ -139,33 +143,26 @@ const AppContent: React.FC = () => {
     };
     
     window.addEventListener('popstate', handleRouting);
-    window.addEventListener('hashchange', handleRouting);
     handleRouting();
     
     return () => {
       window.removeEventListener('popstate', handleRouting);
-      window.removeEventListener('hashchange', handleRouting);
     };
   }, [profile, isSimulated, loading]);
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   
-  // 保持同步动画显示，直到身份验证完成
+  // Display synchronization sequence until auth protocol resolves
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    // 公共路由 (无需登录)
+    // Shared Public Routes
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate(profile || isSimulated ? 'support' : 'about')} />;
     if (activeView === 'contact') return <ContactView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate(profile || isSimulated ? 'settings' : 'landing')} onNavigate={navigate} />;
 
-    if (!profile && !isSimulated) {
-      if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
-      if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
-      return <LandingPage lang={lang} onNavigate={navigate} />;
-    }
-
+    // Authenticated User Flow
     if (profile || isSimulated) {
       if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
       if (activeView === 'admin') return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
@@ -211,6 +208,10 @@ const AppContent: React.FC = () => {
       );
     }
 
+    // Guest / Anonymous Flow
+    if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
+    if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
+    
     return <LandingPage lang={lang} onNavigate={navigate} />;
   };
 
