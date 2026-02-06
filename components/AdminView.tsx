@@ -5,7 +5,7 @@ import {
   Activity, Fingerprint, Lock, CheckCircle2,
   List, Unlock, Mail, ActivitySquare, 
   AlertTriangle, Database, Search, ShieldX, 
-  TrendingUp, Server, Plus, Clock, Terminal, ChevronDown, Copy, Check
+  TrendingUp, Server, Plus, Clock, Terminal, ChevronDown, Copy, Check, Radio, Shield, Key
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -60,7 +60,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const [uRes, tRes, aRes, rRes] = await Promise.allSettled([
         adminApi.getUsers(),
         supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(14),
-        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(50),
+        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100),
         adminApi.getNotificationRecipients()
       ]);
 
@@ -113,7 +113,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
         setSyncState(is403 ? 'FORBIDDEN' : 'ERRORED');
         setActionError(data.error || "Sync protocol violation.");
         
-        // If forbidden, update pulse data to ensure we have the SA email in the error card
         if (data.service_account) {
           setPulseData((prev: any) => ({ ...prev, service_account_email: data.service_account, property_id: data.property }));
         }
@@ -220,7 +219,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               onClick={() => setActiveTab(tab as AdminTab)} 
               className={`flex items-center gap-3 px-6 py-3.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
             >
-               {tab.toUpperCase()}
+               {tab === 'signals' ? 'Security Signals' : tab.toUpperCase()}
             </button>
           ))}
         </nav>
@@ -299,64 +298,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     </GlassCard>
                   </div>
                 </div>
-
-                <AnimatePresence>
-                  {syncState === 'FORBIDDEN' && (
-                    <m.div 
-                      initial={{ opacity: 0, scale: 0.95 }} 
-                      animate={{ opacity: 1, scale: 1 }} 
-                      className="mx-2"
-                    >
-                      <GlassCard className="p-10 rounded-[4rem] border-rose-500/30 bg-rose-500/[0.03] space-y-8">
-                         <div className="flex items-center gap-4 text-rose-500">
-                           <AlertTriangle size={28} />
-                           <h3 className="text-2xl font-black italic uppercase tracking-tight">GA4 Authorization Protocol Required</h3>
-                         </div>
-                         
-                         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 items-start">
-                            <div className="space-y-6">
-                               <p className="text-slate-300 text-sm leading-relaxed italic">The Service Account node lacks read permissions for the specified GA4 Property. To restore the link, add the following email to your Google Analytics dashboard:</p>
-                               <div className="bg-black/60 rounded-[2.5rem] border border-white/5 p-8 space-y-4 relative group">
-                                  <div className="space-y-2">
-                                     <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Service Account Identifier</p>
-                                     <p className="text-sm font-mono text-indigo-400 break-all pr-12 font-bold italic leading-relaxed">
-                                       {pulseData?.service_account_email || 'REFRESHING...'}
-                                     </p>
-                                  </div>
-                                  <button 
-                                    onClick={() => handleCopy('sa_email', pulseData?.service_account_email)}
-                                    className="absolute right-6 top-1/2 -translate-y-1/2 p-3 bg-indigo-600/10 text-indigo-400 rounded-2xl hover:bg-indigo-600/20 transition-all active:scale-90"
-                                  >
-                                    {copiedId === 'sa_email' ? <Check size={18} /> : <Copy size={18} />}
-                                  </button>
-                               </div>
-                               <div className="flex items-center gap-2 px-6 py-4 bg-slate-950/60 rounded-3xl border border-white/5 w-fit">
-                                  <span className="text-[10px] font-black text-slate-500 uppercase italic">Target Property ID:</span>
-                                  <span className="text-sm font-black text-white italic">{pulseData?.property_id || '380909155'}</span>
-                               </div>
-                            </div>
-                            
-                            <div className="space-y-6">
-                               <h4 className="text-[11px] font-black uppercase text-indigo-400 tracking-widest px-4 italic">Execution Steps:</h4>
-                               <ul className="space-y-4 px-2">
-                                  {[
-                                    'Access Google Analytics Console',
-                                    'Navigate to: Admin &rarr; Property Settings',
-                                    'Open: Property Access Management',
-                                    'Add the ID above with "Viewer" clearance'
-                                  ].map((step, i) => (
-                                    <li key={i} className="flex gap-4 items-center">
-                                       <div className="w-6 h-6 rounded-full bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-[10px] font-black text-rose-500 font-mono italic">0{i+1}</div>
-                                       <span className="text-[13px] font-bold text-slate-400 italic">{step}</span>
-                                    </li>
-                                  ))}
-                               </ul>
-                            </div>
-                         </div>
-                      </GlassCard>
-                    </m.div>
-                  )}
-                </AnimatePresence>
               </div>
             )}
 
@@ -444,32 +385,70 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
             )}
 
             {activeTab === 'signals' && (
-              <div className="space-y-8 px-2 max-w-4xl mx-auto">
-                <div className="flex items-center gap-5 px-2 text-left">
-                   <div className="p-4 bg-indigo-500/10 rounded-3xl text-indigo-400 border border-indigo-500/20"><Activity size={28} /></div>
-                   <div>
-                     <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Security Pulse Archive</h2>
+              <div className="space-y-8 px-2 max-w-5xl mx-auto">
+                <div className="flex items-center justify-between px-2 text-left">
+                   <div className="flex items-center gap-5">
+                      <div className="p-4 bg-indigo-500/10 rounded-3xl text-indigo-400 border border-indigo-500/20 shadow-xl shadow-indigo-900/10">
+                        <Shield size={28} />
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Security Signal Archive</h2>
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold italic mt-1">Telemetry Monitoring: Active Node</p>
+                      </div>
+                   </div>
+                   <div className="flex gap-4">
+                      <div className="flex items-center gap-2 px-5 py-2 bg-rose-500/10 border border-rose-500/20 rounded-full text-rose-500">
+                         <Radio size={10} className="animate-pulse" />
+                         <span className="text-[8px] font-black uppercase tracking-widest">Real-time Feed</span>
+                      </div>
                    </div>
                 </div>
                 
-                <div className="space-y-4">
-                  {auditLogs.map((log) => (
-                    <GlassCard key={log.id} className="p-8 rounded-[2.5rem] border-white/5 hover:bg-white/[0.01] transition-all group overflow-hidden relative">
-                      {log.level === 'CRITICAL' && <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-600 animate-pulse" />}
-                      <div className="flex items-start gap-6">
-                        <div className={`w-14 h-14 rounded-2xl flex items-center justify-center shrink-0 border ${log.level === 'CRITICAL' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'}`}>
-                           {log.level === 'CRITICAL' ? <ShieldAlert size={24} className="animate-pulse" /> : <List size={24} />}
-                        </div>
-                        <div className="space-y-3">
-                          <div className="flex items-center gap-4">
-                             <span className="px-4 py-1 rounded-full text-[9px] font-black uppercase border bg-slate-950 border-white/5 text-slate-500 italic">{log.action}</span>
-                             <span className="text-[10px] font-mono text-slate-700 flex items-center gap-2"><Clock size={12} /> {new Date(log.created_at).toLocaleString()}</span>
+                <div className="grid grid-cols-1 gap-4">
+                  {auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH').length > 0 ? (
+                    auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH').map((log) => {
+                      const isLogin = log.action === 'USER_LOGIN';
+                      return (
+                        <GlassCard key={log.id} className="p-8 rounded-[3rem] border-white/5 hover:bg-white/[0.02] transition-all group overflow-hidden relative">
+                          {log.level === 'CRITICAL' && <div className="absolute top-0 left-0 w-1.5 h-full bg-rose-600 animate-pulse shadow-[0_0_15px_rgba(225,29,72,0.5)]" />}
+                          {isLogin && <div className="absolute top-0 left-0 w-1 h-full bg-indigo-500/40" />}
+                          
+                          <div className="flex items-start gap-8">
+                            <div className={`w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 border ${log.level === 'CRITICAL' ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-400'} shadow-inner`}>
+                               {log.level === 'CRITICAL' ? <ShieldAlert size={28} className="animate-pulse" /> : isLogin ? <Key size={28} /> : <List size={28} />}
+                            </div>
+                            <div className="space-y-4 flex-1">
+                              <div className="flex flex-wrap items-center gap-3">
+                                 <span className={`px-4 py-1.5 rounded-full text-[9px] font-black uppercase border italic ${isLogin ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300' : 'bg-slate-950 border-white/10 text-slate-500'}`}>
+                                   {log.action.replace('_', ' ')}
+                                 </span>
+                                 <span className="text-[10px] font-mono text-slate-600 flex items-center gap-2 bg-black/40 px-3 py-1 rounded-lg border border-white/5">
+                                   <Clock size={12} className="text-slate-700" /> {new Date(log.created_at).toLocaleString()}
+                                 </span>
+                                 {log.level === 'CRITICAL' && <span className="px-3 py-1 bg-rose-600 text-white text-[8px] font-black uppercase rounded-full tracking-widest animate-pulse">Critical Alert</span>}
+                              </div>
+                              
+                              <div className="bg-black/40 p-6 rounded-[2rem] border border-white/5 group-hover:border-white/10 transition-colors">
+                                 <p className="text-sm font-bold italic text-slate-300 leading-relaxed whitespace-pre-wrap font-mono">
+                                   {log.details}
+                                 </p>
+                              </div>
+
+                              <div className="flex items-center gap-3 opacity-40 group-hover:opacity-100 transition-opacity">
+                                 <Fingerprint size={12} className="text-slate-500" />
+                                 <span className="text-[8px] font-mono text-slate-600 uppercase tracking-[0.2em]">Signal ID: {log.id.slice(0, 12)}...</span>
+                              </div>
+                            </div>
                           </div>
-                          <p className="text-base font-bold italic text-slate-300 leading-relaxed max-w-2xl">{log.details}</p>
-                        </div>
-                      </div>
-                    </GlassCard>
-                  ))}
+                        </GlassCard>
+                      );
+                    })
+                  ) : (
+                    <div className="py-32 flex flex-col items-center justify-center opacity-20 gap-6">
+                       <Radio size={48} className="text-slate-500" />
+                       <p className="text-[11px] font-black uppercase tracking-[0.5em] italic">No active security signals detected</p>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
@@ -523,7 +502,6 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                     {pulseData?.service_account_email || 'PROBING...'}
                                   </p>
                                 </div>
-                                <p className="text-[9px] text-slate-500 italic px-2">Requirement: This email must be added to GA4 &rarr; Property Settings &rarr; Property Access Management with 'Viewer' role.</p>
                              </div>
 
                              <div className="pt-10 border-t border-white/5 space-y-5">
