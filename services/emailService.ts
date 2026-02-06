@@ -2,7 +2,7 @@ import { getMYTTime } from './telegramService.ts';
 import { supabase } from './supabaseService.ts';
 
 /**
- * SOMNO LAB EMAIL BRIDGE v16.0
+ * SOMNO LAB EMAIL BRIDGE v16.1
  * Synchronized Recipient Matrix & Trustpilot AFS Support.
  */
 
@@ -28,7 +28,7 @@ export const emailService = {
         .select('email')
         .eq('is_active', true);
 
-      // If registry is empty or inaccessible, skip silently to prevent console clutter
+      // Graceful degradation: if registry is empty, skip silently
       if (rError || !recipients || recipients.length === 0) {
         return { success: false, error: 'NO_RECIPIENTS_LINKED' };
       }
@@ -75,7 +75,7 @@ export const emailService = {
         </div>
       `;
 
-      // 2. Dispatch to all recipients
+      // 2. Dispatch to all active recipients in the matrix
       const promises = recipients.map(r => emailService.sendSystemEmail(r.email, subject, html, undefined, isSignup));
       const results = await Promise.all(promises);
       

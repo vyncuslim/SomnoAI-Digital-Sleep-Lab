@@ -86,7 +86,7 @@ const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   
-  // URL-First initialization: Directly map URL to state on mount
+  // URL-First initialization: Directly map the starting URL to the view state
   const [activeView, setActiveView] = useState<ViewType | 'landing' | 'login' | 'signup' | 'update-password' | 'science' | 'faq' | 'contact' | 'about'>(() => {
     if (typeof window === 'undefined') return 'landing';
     const path = window.location.pathname.toLowerCase().split('/').filter(Boolean)[0];
@@ -115,6 +115,7 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleRouting = () => {
+      // Do not attempt route modification while authentication is in progress
       if (loading) return;
 
       const pathRaw = window.location.pathname.toLowerCase();
@@ -134,7 +135,7 @@ const AppContent: React.FC = () => {
         return;
       }
 
-      // Guest node restriction
+      // Guest node restriction and redirection to landing
       if (!isLoggedIn && isProtectedPath) {
         setActiveView('landing');
         if (window.location.pathname !== '/') {
@@ -154,6 +155,7 @@ const AppContent: React.FC = () => {
       if (routeRegistry[currentPath]) {
         setActiveView(routeRegistry[currentPath]);
       } else {
+        // Handle invalid paths with fallback logic
         const fallback = isLoggedIn ? 'dashboard' : 'landing';
         setActiveView(fallback);
         if (pathRaw !== '/' && !routeRegistry[currentPath]) {
@@ -183,7 +185,7 @@ const AppContent: React.FC = () => {
     if (activeView === 'contact') return <ContactView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate(profile || isSimulated ? 'settings' : 'landing')} onNavigate={navigate} />;
 
-    // Authenticated Lab Operations
+    // Authenticated Lab Logic
     if (profile || isSimulated) {
       if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
       if (activeView === 'admin') return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
@@ -229,7 +231,7 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // Guest Portal
+    // Guest Gateway Logic
     if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
     
