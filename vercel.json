@@ -23,7 +23,23 @@
       "destination": "/api/$1" 
     },
     {
-      "source": "/((?!api|_next|static|favicon\\.ico|sw\\.js|manifest\\.json|favicon.png|privacy\\.html|terms\\.html|google-services\\.json|sitemap\\.xml|robots\\.txt|privacy/|terms/).*)",
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/admin",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/admin/(.*)",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/((?!api|static|favicon|robots|sitemap|sw\\.js|manifest\\.json|google-services|favicon\\.svg|favicon\\.png|.*\\.).*)",
       "destination": "/index.html"
     }
   ]

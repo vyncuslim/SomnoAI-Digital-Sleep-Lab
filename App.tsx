@@ -16,6 +16,7 @@ import { safeNavigatePath } from './services/navigation.ts';
 
 // Components
 import AdminDashboard from './app/admin/page.tsx';
+import AdminLoginPage from './app/admin/login/page.tsx';
 import UserLoginPage from './app/login/page.tsx';
 import UserSignupPage from './app/signup/page.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
@@ -83,23 +84,28 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
 );
 
 const AppContent: React.FC = () => {
-  const { profile, loading, refresh } = useAuth();
+  const { profile, loading, refresh, isAdmin } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
+  const [isSimulated, setIsSimulated] = useState(false);
   
-  // URL-First initialization: Directly map the starting URL to the view state
-  const [activeView, setActiveView] = useState<ViewType | 'landing' | 'login' | 'signup' | 'update-password' | 'science' | 'faq' | 'contact' | 'about'>(() => {
+  const [activeView, setActiveView] = useState<any>(() => {
     if (typeof window === 'undefined') return 'landing';
-    const path = window.location.pathname.toLowerCase().split('/').filter(Boolean)[0];
+    const pathSegments = window.location.pathname.toLowerCase().split('/').filter(Boolean);
+    
+    if (pathSegments[0] === 'admin') {
+      if (pathSegments[1] === 'login') return 'admin-login';
+      return 'admin';
+    }
+
+    const path = pathSegments[0];
     const validBaseRoutes = [
       'dashboard', 'calendar', 'assistant', 'experiment', 'diary', 'settings', 
       'feedback', 'about', 'admin', 'support', 'registry', 'update-password', 
       'science', 'faq', 'contact', 'login', 'signup'
     ];
-    if (path && validBaseRoutes.includes(path)) return path as any;
+    if (path && validBaseRoutes.includes(path)) return path;
     return 'landing';
   });
-  
-  const [isSimulated, setIsSimulated] = useState(false);
 
   const handleLogout = useCallback(async () => {
     try { await authApi.signOut(); } finally {
@@ -109,38 +115,46 @@ const AppContent: React.FC = () => {
   }, []);
 
   const navigate = (view: string) => {
-    // Physical URL synchronization
-    safeNavigatePath(view === 'landing' ? '/' : view);
+    safeNavigatePath(view === 'landing' ? '/' : view === 'admin-login' ? '/admin/login' : view);
   };
 
   useEffect(() => {
     const handleRouting = () => {
-      // Do not attempt route modification while authentication is in progress
+      // CRITICAL: Prevent routing logic from executing while profile is proccessing
       if (loading) return;
 
       const pathRaw = window.location.pathname.toLowerCase();
       const pathSegments = pathRaw.split('/').filter(Boolean);
-      const currentPath = pathSegments[0] || 'landing';
+      
+      let currentPath: any = 'landing';
+      if (pathSegments[0] === 'admin') {
+        currentPath = pathSegments[1] === 'login' ? 'admin-login' : 'admin';
+      } else {
+        currentPath = pathSegments[0] || 'landing';
+      }
 
       const isLoggedIn = !!profile || isSimulated;
       const protectedRoutes = ['dashboard', 'calendar', 'assistant', 'experiment', 'diary', 'settings', 'registry', 'admin'];
       const isProtectedPath = protectedRoutes.includes(currentPath);
 
-      // Force view-to-url synchronization for authenticated nodes
-      if (isLoggedIn && (currentPath === 'login' || currentPath === 'signup' || pathRaw === '/')) {
-        setActiveView('dashboard');
-        if (window.location.pathname !== '/dashboard') {
-          window.history.replaceState({ somno_route: true }, '', '/dashboard');
+      // Handle restricted access for unauthenticated admin attempts
+      if (!isLoggedIn && isProtectedPath) {
+        if (currentPath === 'admin') {
+          setActiveView('admin-login');
+          window.history.replaceState({ somno_route: true }, '', '/admin/login');
+        } else {
+          setActiveView('landing');
+          if (window.location.pathname !== '/') {
+            window.history.replaceState({ somno_route: true }, '', '/');
+          }
         }
         return;
       }
 
-      // Guest node restriction and redirection to landing
-      if (!isLoggedIn && isProtectedPath) {
-        setActiveView('landing');
-        if (window.location.pathname !== '/') {
-          window.history.replaceState({ somno_route: true }, '', '/');
-        }
+      // Role check: If logged in as non-admin but trying to access admin, fallback to dashboard
+      if (isLoggedIn && currentPath === 'admin' && !isAdmin && !isSimulated) {
+        setActiveView('dashboard');
+        window.history.replaceState({ somno_route: true }, '', '/dashboard');
         return;
       }
 
@@ -149,13 +163,13 @@ const AppContent: React.FC = () => {
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
         'registry': 'registry', 'update-password': 'update-password', 'science': 'science', 'faq': 'faq',
-        'contact': 'contact', 'login': 'login', 'signup': 'signup', 'landing': 'landing'
+        'contact': 'contact', 'login': 'login', 'signup': 'signup', 'landing': 'landing',
+        'admin-login': 'admin-login'
       };
 
       if (routeRegistry[currentPath]) {
         setActiveView(routeRegistry[currentPath]);
       } else {
-        // Handle invalid paths with fallback logic
         const fallback = isLoggedIn ? 'dashboard' : 'landing';
         setActiveView(fallback);
         if (pathRaw !== '/' && !routeRegistry[currentPath]) {
@@ -172,23 +186,28 @@ const AppContent: React.FC = () => {
     return () => {
       window.removeEventListener('popstate', handleRouting);
     };
-  }, [profile, isSimulated, loading]);
+  }, [profile, isSimulated, loading, isAdmin]);
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    // Shared Public Access Nodes
+    // 1. PUBLIC GATEWAYS
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate(profile || isSimulated ? 'support' : 'about')} />;
     if (activeView === 'contact') return <ContactView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate(profile || isSimulated ? 'settings' : 'landing')} onNavigate={navigate} />;
+    if (activeView === 'admin-login') return <AdminLoginPage />;
 
-    // Authenticated Lab Logic
+    // 2. ADMIN COMMAND SECTOR (Isolated from standard layout)
+    if (activeView === 'admin' && (profile || isSimulated)) {
+      return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
+    }
+
+    // 3. AUTHENTICATED USER LAB (Standard Layout)
     if (profile || isSimulated) {
       if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
-      if (activeView === 'admin') return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
       if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => navigate('dashboard')} />;
 
       return (
@@ -231,7 +250,7 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // Guest Gateway Logic
+    // 4. GUEST GATES
     if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
     

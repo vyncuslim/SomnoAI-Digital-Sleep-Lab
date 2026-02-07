@@ -2,7 +2,7 @@ import { BetaAnalyticsDataClient } from "@google-analytics/data";
 import { createClient } from "@supabase/supabase-js";
 
 /**
- * SOMNO LAB GA4 SYNC GATEWAY v60.0
+ * SOMNO LAB GA4 SYNC GATEWAY v63.0
  * Optimized for diagnostic clarity and robust environment key extraction.
  */
 
@@ -67,7 +67,7 @@ export default async function handler(req, res) {
        throw new Error("GA_KEY_STRUCTURE_INVALID: Ensure private_key is present in GA_SERVICE_ACCOUNT_KEY environment variable.");
     }
     
-    // Explicitly handle newline characters in the private key which are often corrupted in environment strings
+    // Explicitly handle newline characters in the private key
     const sanitizedKey = credentials.private_key.includes('\\n') 
       ? credentials.private_key.replace(/\\n/g, '\n') 
       : credentials.private_key;
@@ -96,6 +96,8 @@ export default async function handler(req, res) {
       }, { onConflict: 'date' });
     }
     
+    console.log(`[GA4_SYNC_SUCCESS] Property: ${targetPropertyId} | Rows: ${rows.length}`);
+
     return res.status(200).json({ 
       success: true, 
       property: targetPropertyId, 
@@ -107,7 +109,6 @@ export default async function handler(req, res) {
     const errorMsg = error?.message || "Infrastructure connectivity fault.";
     const isForbidden = errorMsg.toLowerCase().includes('permission') || error.code === 7;
     
-    // Enhanced error logging for laboratory diagnostics
     console.error(`[GA4_HANDSHAKE_ERROR] Source: ${currentSaEmail} | TargetProp: ${targetPropertyId} | Error: ${errorMsg}`);
 
     return res.status(isForbidden ? 403 : 500).json({ 
@@ -118,8 +119,8 @@ export default async function handler(req, res) {
         property_id: targetPropertyId,
         project_id: gcpProjectId,
         suggestion: isForbidden 
-          ? "The service account email must be added as a 'Viewer' to the GA4 Property (not just the GCP project)." 
-          : "Verify the Google Analytics Data API is enabled in the Google Cloud Console."
+          ? "Ensure service account email has 'Viewer' access to the GA4 Property ID." 
+          : "Verify API enablement and key formatting in Vercel."
       }
     });
   }
