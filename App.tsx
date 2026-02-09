@@ -88,24 +88,27 @@ const AppContent: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [isSimulated, setIsSimulated] = useState(false);
   
-  const [activeView, setActiveView] = useState<any>(() => {
+  const getInitialView = () => {
     if (typeof window === 'undefined') return 'landing';
-    const pathSegments = window.location.pathname.toLowerCase().split('/').filter(Boolean);
+    const path = window.location.pathname.toLowerCase();
+    const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
     
-    if (pathSegments[0] === 'admin') {
-      if (pathSegments[1] === 'login') return 'admin-login';
-      return 'admin';
-    }
+    // Core Router Priority Logic
+    if (path === '/admin/login' || hash === 'admin/login') return 'admin-login';
+    if (path.startsWith('/admin') || hash === 'admin') return 'admin';
+    if (path === '/signup' || hash === 'signup') return 'signup';
+    if (path === '/login' || hash === 'login') return 'login';
 
-    const path = pathSegments[0];
-    const validBaseRoutes = [
+    const cleanPath = path.split('/').filter(Boolean)[0] || hash || 'landing';
+    const validRoutes = [
       'dashboard', 'calendar', 'assistant', 'experiment', 'diary', 'settings', 
-      'feedback', 'about', 'admin', 'support', 'registry', 'update-password', 
+      'feedback', 'about', 'support', 'registry', 'update-password', 
       'science', 'faq', 'contact', 'login', 'signup'
     ];
-    if (path && validBaseRoutes.includes(path)) return path;
-    return 'landing';
-  });
+    return validRoutes.includes(cleanPath) ? cleanPath : 'landing';
+  };
+
+  const [activeView, setActiveView] = useState<any>(getInitialView());
 
   const handleLogout = useCallback(async () => {
     try { await authApi.signOut(); } finally {
@@ -120,44 +123,47 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleRouting = () => {
-      // CRITICAL: Prevent routing logic from executing while profile is proccessing
       if (loading) return;
 
-      const pathRaw = window.location.pathname.toLowerCase();
-      const pathSegments = pathRaw.split('/').filter(Boolean);
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
       
       let currentPath: any = 'landing';
-      if (pathSegments[0] === 'admin') {
-        currentPath = pathSegments[1] === 'login' ? 'admin-login' : 'admin';
+      if (path === '/admin/login' || hash === 'admin/login') {
+        currentPath = 'admin-login';
+      } else if (path.startsWith('/admin') || hash === 'admin') {
+        currentPath = 'admin';
+      } else if (path === '/login' || hash === 'login') {
+        currentPath = 'login';
+      } else if (path === '/signup' || hash === 'signup') {
+        currentPath = 'signup';
       } else {
-        currentPath = pathSegments[0] || 'landing';
+        currentPath = path.split('/').filter(Boolean)[0] || hash || 'landing';
       }
 
       const isLoggedIn = !!profile || isSimulated;
       const protectedRoutes = ['dashboard', 'calendar', 'assistant', 'experiment', 'diary', 'settings', 'registry', 'admin'];
       const isProtectedPath = protectedRoutes.includes(currentPath);
 
-      // Handle restricted access for unauthenticated admin attempts
+      // Audited Protection Policy
       if (!isLoggedIn && isProtectedPath) {
         if (currentPath === 'admin') {
           setActiveView('admin-login');
-          window.history.replaceState({ somno_route: true }, '', '/admin/login');
+          if (window.location.pathname !== '/admin/login') window.history.replaceState(null, '', '/admin/login');
         } else {
           setActiveView('landing');
-          if (window.location.pathname !== '/') {
-            window.history.replaceState({ somno_route: true }, '', '/');
-          }
+          if (window.location.pathname !== '/') window.history.replaceState(null, '', '/');
         }
         return;
       }
 
-      // Role check: If logged in as non-admin but trying to access admin, fallback to dashboard
       if (isLoggedIn && currentPath === 'admin' && !isAdmin && !isSimulated) {
         setActiveView('dashboard');
-        window.history.replaceState({ somno_route: true }, '', '/dashboard');
+        window.history.replaceState(null, '', '/dashboard');
         return;
       }
 
+      // Public and Internal registry resolution
       const routeRegistry: Record<string, any> = {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
@@ -170,11 +176,7 @@ const AppContent: React.FC = () => {
       if (routeRegistry[currentPath]) {
         setActiveView(routeRegistry[currentPath]);
       } else {
-        const fallback = isLoggedIn ? 'dashboard' : 'landing';
-        setActiveView(fallback);
-        if (pathRaw !== '/' && !routeRegistry[currentPath]) {
-           window.history.replaceState({ somno_route: true }, '', isLoggedIn ? '/dashboard' : '/');
-        }
+        setActiveView(isLoggedIn ? 'dashboard' : 'landing');
       }
       
       trackPageView(`/${currentPath}`, `SomnoAI: ${currentPath.toUpperCase()}`);
@@ -182,14 +184,10 @@ const AppContent: React.FC = () => {
     
     window.addEventListener('popstate', handleRouting);
     handleRouting();
-    
-    return () => {
-      window.removeEventListener('popstate', handleRouting);
-    };
+    return () => window.removeEventListener('popstate', handleRouting);
   }, [profile, isSimulated, loading, isAdmin]);
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
-  
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
@@ -200,21 +198,19 @@ const AppContent: React.FC = () => {
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate(profile || isSimulated ? 'settings' : 'landing')} onNavigate={navigate} />;
     if (activeView === 'admin-login') return <AdminLoginPage />;
 
-    // 2. ADMIN COMMAND SECTOR (Isolated from standard layout)
-    if (activeView === 'admin' && (profile || isSimulated)) {
-      return <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>;
-    }
-
-    // 3. AUTHENTICATED USER LAB (Standard Layout)
+    // 2. AUTHENTICATED LAB
     if (profile || isSimulated) {
       if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
       if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => navigate('dashboard')} />;
 
+      const showNav = activeView !== 'admin';
+
       return (
         <div className="w-full flex flex-col min-h-screen">
-          <main className="flex-1 w-full max-w-7xl mx-auto p-4 pt-6 md:pt-10 pb-48">
+          <main className={`flex-1 w-full max-w-7xl mx-auto p-4 pt-6 md:pt-10 ${showNav ? 'pb-48' : 'pb-10'}`}>
             <AnimatePresence mode="wait">
               <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}>
+                {activeView === 'admin' && <ProtectedRoute level="admin"><AdminDashboard /></ProtectedRoute>}
                 {activeView === 'dashboard' && <Dashboard data={MOCK_RECORD} lang={lang} onNavigate={navigate} />}
                 {activeView === 'calendar' && <Trends history={[MOCK_RECORD]} lang={lang} />}
                 {activeView === 'assistant' && <AIAssistant lang={lang} data={MOCK_RECORD} isSandbox={isSimulated} />}
@@ -228,29 +224,31 @@ const AppContent: React.FC = () => {
             </AnimatePresence>
           </main>
           
-          <div className="fixed bottom-6 md:bottom-12 left-0 right-0 z-[60] px-4 md:px-6 flex justify-center pointer-events-none pb-safe">
-            <m.nav initial={{ y: 100 }} animate={{ y: 0 }} className="bg-[#0a0f25]/90 backdrop-blur-3xl border border-white/5 rounded-full p-1.5 md:p-2 flex gap-1 pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar">
-              {[
-                { id: 'dashboard', icon: Moon, label: 'LAB' },
-                { id: 'calendar', icon: History, label: 'HIST' },
-                { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
-                { id: 'experiment', icon: FlaskConical, label: 'EXP' },
-                { id: 'registry', icon: Fingerprint, label: 'REG' },
-                { id: 'diary', icon: BookOpen, label: 'LOG' },
-                { id: 'settings', icon: SettingsIcon, label: 'CFG' }
-              ].map((nav) => (
-                <button key={nav.id} onClick={() => navigate(nav.id)} className={`relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-full transition-all duration-500 shrink-0 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
-                  <nav.icon size={16} />
-                  {activeView === nav.id && <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest whitespace-nowrap">{nav.label}</span>}
-                </button>
-              ))}
-            </m.nav>
-          </div>
+          {showNav && (
+            <div className="fixed bottom-6 md:bottom-12 left-0 right-0 z-[60] px-4 md:px-6 flex justify-center pointer-events-none pb-safe">
+              <m.nav initial={{ y: 100 }} animate={{ y: 0 }} className="bg-[#0a0f25]/90 backdrop-blur-3xl border border-white/5 rounded-full p-1.5 md:p-2 flex gap-1 pointer-events-auto shadow-2xl overflow-x-auto no-scrollbar">
+                {[
+                  { id: 'dashboard', icon: Moon, label: 'LAB' },
+                  { id: 'calendar', icon: History, label: 'HIST' },
+                  { id: 'assistant', icon: BrainCircuit, label: 'CORE' },
+                  { id: 'experiment', icon: FlaskConical, label: 'EXP' },
+                  { id: 'registry', icon: Fingerprint, label: 'REG' },
+                  { id: 'diary', icon: BookOpen, label: 'LOG' },
+                  { id: 'settings', icon: SettingsIcon, label: 'CFG' }
+                ].map((nav) => (
+                  <button key={nav.id} onClick={() => navigate(nav.id)} className={`relative flex items-center gap-2 md:gap-3 px-4 md:px-6 py-3 md:py-4 rounded-full transition-all duration-500 shrink-0 ${activeView === nav.id ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-600 hover:text-slate-300'}`}>
+                    <nav.icon size={16} />
+                    {activeView === nav.id && <span className="text-[8px] md:text-[9px] font-black uppercase tracking-widest whitespace-nowrap">{nav.label}</span>}
+                  </button>
+                ))}
+              </m.nav>
+            </div>
+          )}
         </div>
       );
     }
 
-    // 4. GUEST GATES
+    // 3. GUEST GATES
     if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
     

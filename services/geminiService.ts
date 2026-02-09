@@ -1,5 +1,3 @@
-
-
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -52,12 +50,13 @@ const handleGeminiError = (err: any) => {
 
 /**
  * Priority Hierarchy:
- * 1. User-provided key in localStorage ('somno_custom_key')
- * 2. System environment key (process.env.API_KEY)
+ * 1. System environment key (process.env.API_KEY)
+ * 
+ * Note: Guidelines strictly prohibit user-provided keys or managing keys in UI/localStorage.
  */
 const getAIClient = () => {
-  const customKey = localStorage.getItem('somno_custom_key');
-  const apiKey = customKey || process.env.API_KEY;
+  // API key must be obtained exclusively from process.env.API_KEY per guidelines
+  const apiKey = process.env.API_KEY;
   if (!apiKey) throw new Error("API_KEY_VOID");
   return new GoogleGenAI({ apiKey });
 };

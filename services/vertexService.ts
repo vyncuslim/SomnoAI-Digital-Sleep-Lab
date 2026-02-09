@@ -25,7 +25,9 @@ export const vertexService = {
 
       if (!response.ok) {
         const errData = await response.json().catch(() => ({}));
-        throw new Error(errData.error || "VERTEX_BRIDGE_UNREACHABLE");
+        const statusText = `HTTP_${response.status}`;
+        const errorMsg = errData.error || errData.message || "VERTEX_BRIDGE_UNREACHABLE";
+        throw new Error(`[${statusText}] ${errorMsg}`);
       }
 
       const json = await response.json();

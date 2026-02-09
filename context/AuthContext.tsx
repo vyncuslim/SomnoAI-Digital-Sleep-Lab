@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient.ts';
 import { logAuditLog } from '../services/supabaseService.ts';
@@ -44,9 +45,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isSyncing.current = true;
     
     try {
-      const { data: { session } } = await (supabase.auth as any).getSession();
+      // Explicitly check for session error to handle 'refresh_token_not_found'
+      const { data: { session }, error: sessionError } = await (supabase.auth as any).getSession();
 
-      if (!session || !session.user) {
+      if (sessionError || !session || !session.user) {
+        if (sessionError) {
+          console.debug("AuthContext: Active session voided.", sessionError.message);
+        }
         setProfile(null);
         setLoading(false);
         isSyncing.current = false;

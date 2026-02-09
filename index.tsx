@@ -4,8 +4,8 @@ import App from './App.tsx';
 import { logAuditLog } from './services/supabaseService.ts';
 
 /**
- * SOMNO LAB NEURAL TELEMETRY GUARD v21.0
- * Structural integrity verified.
+ * SOMNO LAB NEURAL TELEMETRY GUARD v21.2
+ * Structural integrity verified. Optimized for Error object serialization.
  */
 
 const NOISE_LIST = [
@@ -14,7 +14,8 @@ const NOISE_LIST = [
   'reading \'query\'', 'content.js', 'chrome-extension', 'Object.defineProperty',
   'reading \'postMessage\'', 'chrome.tabs.query', 'signal is aborted',
   'AbortError', 'user_app_status', 'Failed to initialize current tab',
-  'initializeCurrentTab', 'Script error', 'E353: csPostMessage'
+  'initializeCurrentTab', 'Script error', 'E353: csPostMessage',
+  'refresh_token_not_found', 'AuthApiError', 'session_not_found'
 ];
 
 const isNoise = (msg: string): boolean => {
@@ -51,7 +52,9 @@ console.error = function(...args: any[]) {
       let combinedText = "";
       for (let j = 0; j < args.length; j++) {
         const val = args[j];
-        if (typeof val === 'object' && val !== null) {
+        if (val instanceof Error) {
+          combinedText += `[Error: ${val.message}] ${val.stack || ''}`;
+        } else if (typeof val === 'object' && val !== null) {
           try { combinedText += JSON.stringify(val); } catch (e) { combinedText += "[OBJ]"; }
         } else {
           combinedText += String(val);
@@ -61,7 +64,7 @@ console.error = function(...args: any[]) {
 
       if (combinedText.length > 5 && !isNoise(combinedText)) {
         isProxyLogging = true;
-        logAuditLog('CONSOLE_PROXY', combinedText.slice(0, 200), 'WARNING')
+        logAuditLog('CONSOLE_PROXY', combinedText.slice(0, 400), 'WARNING')
           .finally(() => { isProxyLogging = false; });
       }
     } catch (err) {
