@@ -8,31 +8,24 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(self), microphone=(self), geolocation=()" }
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
       ]
     }
   ],
   "rewrites": [
     { 
-      "source": "/api/health-upload", 
+      "source": "/api/(.*)", 
       "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" 
     },
+    { "source": "/privacy", "destination": "/privacy.html" },
+    { "source": "/terms", "destination": "/terms.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/signup", "destination": "/index.html" },
+    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/dashboard", "destination": "/index.html" },
     { 
-      "source": "/api/(.*)", 
-      "destination": "/api/$1" 
-    },
-    {
-      "source": "/privacy",
-      "destination": "/privacy.html"
-    },
-    {
-      "source": "/terms",
-      "destination": "/terms.html"
-    },
-    {
-      "source": "/((?!api|favicon|robots|sitemap|sw\\.js|manifest\\.json|google-services|favicon\\.svg|favicon\\.png|.*\\.).*)",
-      "destination": "/index.html"
+      "source": "/((?!api|privacy|terms|.*\\.).*)", 
+      "destination": "/index.html" 
     }
   ]
 }

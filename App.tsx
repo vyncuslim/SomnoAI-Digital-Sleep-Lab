@@ -36,6 +36,7 @@ import { FAQView } from './components/FAQView.tsx';
 import { ContactView } from './components/ContactView.tsx';
 import { UpdatePasswordView } from './components/UpdatePasswordView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
+import { NotFoundView } from './components/NotFoundView.tsx';
 
 const m = motion as any;
 
@@ -84,31 +85,41 @@ const BlockedTerminal = ({ onLogout }: { onLogout: () => void }) => (
 );
 
 const AppContent: React.FC = () => {
-  const { profile, loading, refresh, isAdmin } = useAuth();
+  const { profile, loading, refresh } = useAuth();
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [isSimulated, setIsSimulated] = useState(false);
   
-  const getInitialView = () => {
+  const getInitialView = useCallback(() => {
     if (typeof window === 'undefined') return 'landing';
-    const path = window.location.pathname.toLowerCase();
+    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
     const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
     
-    // Core Router Priority Logic
-    if (path === '/admin/login' || hash === 'admin/login') return 'admin-login';
-    if (path.startsWith('/admin') || hash === 'admin') return 'admin';
-    if (path === '/signup' || hash === 'signup') return 'signup';
-    if (path === '/login' || hash === 'login') return 'login';
+    // Virtual Path Detection (Priority Order)
+    const virtualPath = path !== '/' ? path.slice(1) : (hash || 'landing');
 
-    const cleanPath = path.split('/').filter(Boolean)[0] || hash || 'landing';
-    const validRoutes = [
-      'dashboard', 'calendar', 'assistant', 'experiment', 'diary', 'settings', 
-      'feedback', 'about', 'support', 'registry', 'update-password', 
-      'science', 'faq', 'contact', 'login', 'signup'
-    ];
-    return validRoutes.includes(cleanPath) ? cleanPath : 'landing';
-  };
+    const routeMap: Record<string, ViewType> = {
+      'admin/login': 'admin-login',
+      'admin': 'admin',
+      'signup': 'signup',
+      'login': 'login',
+      'dashboard': 'dashboard',
+      'assistant': 'assistant',
+      'science': 'science',
+      'faq': 'faq',
+      'about': 'about',
+      'contact': 'contact',
+      'support': 'support',
+      'experiment': 'experiment',
+      'registry': 'registry',
+      'diary': 'diary',
+      'settings': 'settings',
+      'calendar': 'calendar'
+    };
 
-  const [activeView, setActiveView] = useState<any>(getInitialView());
+    return routeMap[virtualPath] || routeMap[hash] || 'landing';
+  }, []);
+
+  const [activeView, setActiveView] = useState<ViewType>(getInitialView());
 
   const handleLogout = useCallback(async () => {
     try { await authApi.signOut(); } finally {
@@ -118,14 +129,15 @@ const AppContent: React.FC = () => {
   }, []);
 
   const navigate = (view: string) => {
-    safeNavigatePath(view === 'landing' ? '/' : view === 'admin-login' ? '/admin/login' : view);
+    const path = view === 'landing' ? '/' : `/${view}`;
+    safeNavigatePath(path);
   };
 
   useEffect(() => {
     const handleRouting = () => {
       if (loading) return;
 
-      const path = window.location.pathname.toLowerCase();
+      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
       const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
       
       let currentPath: any = 'landing';
@@ -137,34 +149,28 @@ const AppContent: React.FC = () => {
         currentPath = 'login';
       } else if (path === '/signup' || hash === 'signup') {
         currentPath = 'signup';
+      } else if (path === '/') {
+        currentPath = hash || 'landing';
       } else {
-        currentPath = path.split('/').filter(Boolean)[0] || hash || 'landing';
+        const segments = path.split('/').filter(Boolean);
+        currentPath = segments[0] || hash || 'landing';
       }
 
       const isLoggedIn = !!profile || isSimulated;
-      const protectedRoutes = ['dashboard', 'calendar', 'assistant', 'experiment', 'diary', 'settings', 'registry', 'admin'];
-      const isProtectedPath = protectedRoutes.includes(currentPath);
+      const isGuestGate = ['login', 'signup', 'landing', 'science', 'faq', 'about', 'contact'].includes(currentPath);
 
-      // Audited Protection Policy
-      if (!isLoggedIn && isProtectedPath) {
+      if (!isLoggedIn && !isGuestGate) {
         if (currentPath === 'admin') {
           setActiveView('admin-login');
           if (window.location.pathname !== '/admin/login') window.history.replaceState(null, '', '/admin/login');
         } else {
           setActiveView('landing');
-          if (window.location.pathname !== '/') window.history.replaceState(null, '', '/');
+          if (window.location.pathname !== '/' && !window.location.hash) window.history.replaceState(null, '', '/');
         }
         return;
       }
 
-      if (isLoggedIn && currentPath === 'admin' && !isAdmin && !isSimulated) {
-        setActiveView('dashboard');
-        window.history.replaceState(null, '', '/dashboard');
-        return;
-      }
-
-      // Public and Internal registry resolution
-      const routeRegistry: Record<string, any> = {
+      const routeRegistry: Record<string, ViewType> = {
         'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
         'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
         'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
@@ -179,13 +185,13 @@ const AppContent: React.FC = () => {
         setActiveView(isLoggedIn ? 'dashboard' : 'landing');
       }
       
-      trackPageView(`/${currentPath}`, `SomnoAI: ${currentPath.toUpperCase()}`);
+      trackPageView(window.location.pathname, `SomnoAI: ${currentPath.toUpperCase()}`);
     };
     
     window.addEventListener('popstate', handleRouting);
     handleRouting();
     return () => window.removeEventListener('popstate', handleRouting);
-  }, [profile, isSimulated, loading, isAdmin]);
+  }, [profile, isSimulated, loading]);
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;

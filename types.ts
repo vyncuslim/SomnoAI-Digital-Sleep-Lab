@@ -69,6 +69,7 @@ export interface AuditLog {
   created_at: string; // Standardized
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'registry' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'support' | 'contact' | 'not-found';
+// Added missing view types: 'signup', 'login', 'science', 'faq'
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'registry' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'support' | 'contact' | 'not-found' | 'signup' | 'login' | 'science' | 'faq';
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
 export type Language = 'en' | 'zh' | 'es';

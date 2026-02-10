@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -15,7 +16,7 @@
           var orig = console[m];
           if (!orig) return;
           console[m] = function() {
-            var args = Array.prototype.slice.call(arguments);
+            var args = Array.prototype.call(arguments);
             var msg = args.join(' ').toLowerCase();
             var shouldSilence = noisePatterns.some(function(p) { return msg.indexOf(p.toLowerCase()) !== -1; });
             if (!shouldSilence && orig) orig.apply(console, arguments);
@@ -49,51 +50,60 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=0, viewport-fit=cover">
     
-    <!-- SEO Core -->
-    <title>SomnoAI Digital Sleep Lab | AI-Powered Sleep Architecture Analysis</title>
-    <meta name="description" content="SomnoAI Digital Sleep Lab utilizes Google Gemini AI to analyze wearable data, reconstruct sleep architecture, and provide personalized recovery protocols. Privacy-focused with edge processing.">
-    <meta name="keywords" content="SomnoAI, Sleep Analysis AI, Gemini Sleep Coach, Sleep Architecture, Health Telemetry, Wearable Optimization, Digital Health Lab">
+    <!-- SEO Standardization -->
+    <title>SomnoAI | AI-Powered Sleep Architecture Lab</title>
+    <meta name="description" content="SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health recommendations. 它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。">
+    <meta name="keywords" content="SomnoAI, Sleep Analysis, AI Sleep Coach, Sleep Architecture, Health Telemetry, Wearable Optimization, Digital Health Lab, 睡眠分析, AI 睡眠">
     <meta name="author" content="Vyncuslim">
-    <meta name="google-site-verification" content="kW_HOyflyzV-wI6c2mQLNbhrClAPYR-FYtUZR3BSt_w" />
+    <link rel="canonical" href="https://sleepsomno.com/" />
     
-    <!-- Open Graph / Social -->
+    <!-- Google Search Console Verification -->
+    <meta name="google-site-verification" content="kW_HOyflyzV-wI6c2mQLNbhrClAPYR-FYtUZR3BSt_w" />
+    <meta name="google-site-verification" content="googlee47ef5d2eacdf45a" />
+    
+    <!-- Open Graph / Social Authority -->
     <meta property="og:type" content="website">
     <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="SomnoAI Digital Sleep Lab | AI-Powered Analysis">
-    <meta property="og:description" content="Clinical-grade sleep architecture analysis powered by Google Gemini. Privacy-focused, sensor-agnostic, and science-driven.">
+    <meta property="og:title" content="SomnoAI Digital Sleep Lab | Official Node">
+    <meta property="og:description" content="Clinical-grade sleep analysis powered by neural intelligence. Privacy-focused and sensor-agnostic. 它将生理指标监控与AI洞察融为一体。">
     <meta property="og:image" content="https://sleepsomno.com/favicon.png">
+    <meta property="og:site_name" content="SomnoAI">
 
-    <!-- Twitter -->
+    <!-- Twitter Authority -->
     <meta property="twitter:card" content="summary_large_image">
     <meta property="twitter:url" content="https://sleepsomno.com/">
-    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab">
-    <meta property="twitter:description" content="AI-powered digital sleep lab for physiological monitoring and personalized health protocols.">
+    <meta property="twitter:title" content="SomnoAI | AI-Powered Sleep Lab">
     <meta property="twitter:image" content="https://sleepsomno.com/favicon.png">
 
-    <!-- Structured Data (Schema.org) -->
+    <!-- Structured Data: Organization & Brand Authority -->
     <script type="application/ld+json">
     {
       "@context": "https://schema.org",
-      "@type": "SoftwareApplication",
+      "@type": "Organization",
       "name": "SomnoAI Digital Sleep Lab",
-      "operatingSystem": "Web",
-      "applicationCategory": "HealthApplication",
-      "description": "AI-powered digital health platform for advanced sleep architecture analysis and personalized optimization protocols.",
+      "alternateName": "SomnoAI",
       "url": "https://sleepsomno.com",
-      "offers": {
-        "@type": "Offer",
-        "price": "0",
-        "priceCurrency": "USD"
+      "logo": "https://sleepsomno.com/favicon.png",
+      "description": "A digital health infrastructure specializing in AI-driven sleep architecture analysis and physiological recovery protocols.",
+      "email": "contact@sleepsomno.com",
+      "address": {
+        "@type": "PostalAddress",
+        "addressLocality": "Penang",
+        "addressCountry": "Malaysia"
       },
-      "author": {
-        "@type": "Organization",
-        "name": "SomnoAI",
-        "url": "https://sleepsomno.com"
-      }
+      "sameAs": [
+        "https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab",
+        "https://www.linkedin.com/company/somnoai-digital-sleep-lab/"
+      ],
+      "founder": {
+        "@type": "Person",
+        "name": "Vyncuslim"
+      },
+      "knowsAbout": ["Sleep Science", "Artificial Intelligence", "Biometric Telemetry", "Neural Recovery"]
     }
     </script>
 
-    <!-- Favicon -->
+    <!-- Favicon Set -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="/favicon.png">

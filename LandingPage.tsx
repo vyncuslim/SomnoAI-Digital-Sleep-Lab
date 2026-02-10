@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -41,6 +42,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
   const isZh = lang === 'zh';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  const handleNav = (e: React.MouseEvent, view: string) => {
+    e.preventDefault();
+    onNavigate(view);
+  };
+
   const navLinks = [
     { label: isZh ? '科学原理' : 'Scientific Protocol', view: 'science' },
     { label: isZh ? '实验室 FAQ' : 'Laboratory FAQ', view: 'faq' },
@@ -63,30 +69,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           
           <nav className="hidden lg:flex items-center gap-12" role="navigation">
             {navLinks.map((link) => (
-              <button 
+              <a 
                 key={link.view} 
-                onClick={() => onNavigate(link.view)} 
+                href={`/${link.view}`}
+                onClick={(e) => handleNav(e, link.view)} 
                 className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 hover:text-white transition-all relative group"
               >
                 {link.label}
                 <span className="absolute -bottom-1 left-0 w-0 h-[1px] bg-indigo-500 group-hover:w-full transition-all duration-300" />
-              </button>
+              </a>
             ))}
           </nav>
 
           <div className="flex items-center gap-3 md:gap-4">
-            <button 
-              onClick={() => onNavigate('login')}
+            <a 
+              href="/login"
+              onClick={(e) => handleNav(e, 'login')}
               className="px-6 py-3 rounded-full bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-white hover:bg-white/10 hover:border-white/20 transition-all active:scale-95 flex items-center gap-2"
             >
               <LogIn size={14} className="text-indigo-400" /> {isZh ? '登录' : 'Enter'}
-            </button>
-            <button 
-              onClick={() => onNavigate('signup')}
+            </a>
+            <a 
+              href="/signup"
+              onClick={(e) => handleNav(e, 'signup')}
               className="hidden sm:flex px-6 py-3 rounded-full bg-indigo-600 text-[10px] font-black uppercase tracking-widest text-white hover:bg-indigo-500 transition-all active:scale-95 items-center gap-2 shadow-lg shadow-indigo-600/20"
             >
               <UserPlus size={14} /> {isZh ? '注册' : 'Link'}
-            </button>
+            </a>
             <button className="lg:hidden p-2 text-slate-400 hover:text-white transition-colors" aria-label="Toggle Menu" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
               {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
             </button>
@@ -112,21 +121,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             </div>
             <div className="flex flex-col gap-10 flex-1">
               {navLinks.map((link) => (
-                <button 
+                <a 
                   key={link.view} 
-                  onClick={() => { onNavigate(link.view); setMobileMenuOpen(false); }} 
+                  href={`/${link.view}`}
+                  onClick={(e) => { handleNav(e, link.view); setMobileMenuOpen(false); }} 
                   className="text-4xl font-black uppercase italic text-left text-white tracking-tighter"
                 >
                   {link.label}
-                </button>
+                </a>
               ))}
             </div>
-            <button 
-              onClick={() => { onNavigate('signup'); setMobileMenuOpen(false); }}
-              className="w-full py-7 rounded-[2.5rem] bg-indigo-600 text-white font-black uppercase tracking-widest text-sm shadow-[0_20px_50px_rgba(79,70,229,0.3)] active:scale-95 transition-all"
+            <a 
+              href="/signup"
+              onClick={(e) => { handleNav(e, 'signup'); setMobileMenuOpen(false); }}
+              className="w-full py-7 rounded-[2.5rem] bg-indigo-600 text-white font-black uppercase tracking-widest text-sm shadow-[0_20px_50px_rgba(79,70,229,0.3)] active:scale-95 transition-all text-center"
             >
               {isZh ? '初始化神经链路' : 'Initialize Neural Link'}
-            </button>
+            </a>
           </m.nav>
         )}
       </AnimatePresence>
@@ -158,7 +169,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
               </h1>
               <p className="text-xl md:text-3xl text-slate-400 font-medium italic max-w-4xl mx-auto leading-relaxed px-4 opacity-80">
                 {isZh 
-                  ? 'SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验室体验。' 
+                  ? '它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。' 
                   : 'Advanced sleep architecture analysis. SomnoAI integrates wearable telemetry with Google Gemini AI models to reconstruct your restoration window.'}
               </p>
             </div>
@@ -171,16 +182,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                 >
                   <Chrome size={20} /> {isZh ? '使用 Google 登录' : 'Sign in with Google'}
                 </button>
-                <button 
-                  onClick={() => onNavigate('login')}
-                  className="w-full sm:w-auto px-12 py-8 bg-white/5 hover:bg-white/10 text-slate-300 rounded-full font-black text-[12px] uppercase tracking-[0.3em] border border-white/10 transition-all active:scale-95 italic flex items-center justify-center gap-3"
+                <a 
+                  href="/login"
+                  onClick={(e) => handleNav(e, 'login')}
+                  className="w-full sm:w-auto px-12 py-8 bg-white/5 hover:bg-white/10 text-slate-300 rounded-full font-black text-[12px] uppercase tracking-[0.4em] border border-white/10 transition-all active:scale-95 italic flex items-center justify-center gap-3"
                 >
                   <LogIn size={18} /> {isZh ? '进入实验室' : 'ENTER LABORATORY'}
-                </button>
+                </a>
               </div>
               
               <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">
-                New to the Lab? <button onClick={() => onNavigate('signup')} className="text-indigo-400 underline underline-offset-4">Initialize Registry</button>
+                New to the Lab? <a href="/signup" onClick={(e) => handleNav(e, 'signup')} className="text-indigo-400 underline underline-offset-4">Initialize Registry</a>
               </p>
             </div>
 
@@ -350,12 +362,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
            >
               <h2 className="text-5xl md:text-8xl font-black italic tracking-tighter text-white uppercase leading-none">Ready to <br/><span className="text-indigo-500">Reconstruct?</span></h2>
               <div className="flex justify-center">
-                 <button 
-                   onClick={() => onNavigate('signup')}
-                   className="px-20 py-8 bg-white text-indigo-950 rounded-full font-black text-[12px] uppercase tracking-[0.5em] shadow-[0_30px_70px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all italic flex items-center gap-4"
+                 <a 
+                   href="/signup"
+                   onClick={(e) => handleNav(e, 'signup')}
+                   className="px-20 py-8 bg-white text-indigo-950 rounded-full font-black text-[12px] uppercase tracking-[0.5em] shadow-[0_30px_70px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all italic flex items-center gap-4 text-center"
                  >
                    Establish Link <ArrowRight size={20} />
-                 </button>
+                 </a>
               </div>
            </m.div>
         </section>
@@ -390,7 +403,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Lab Navigation</h4>
                <ul className="space-y-4 text-xs font-bold text-slate-500 italic">
                  {navLinks.map(link => (
-                   <li key={link.view}><button onClick={() => onNavigate(link.view)} className="hover:text-white transition-colors uppercase tracking-widest">{link.label}</button></li>
+                   <li key={link.view}><a href={`/${link.view}`} onClick={(e) => handleNav(e, link.view)} className="hover:text-white transition-colors uppercase tracking-widest">{link.label}</a></li>
                  ))}
                </ul>
             </div>
@@ -400,7 +413,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                <ul className="space-y-4 text-xs font-bold text-slate-500 italic">
                  <li><a href="/privacy" className="hover:text-white transition-colors uppercase tracking-widest">Privacy Policy</a></li>
                  <li><a href="/terms" className="hover:text-white transition-colors uppercase tracking-widest">Terms of Service</a></li>
-                 <li><button onClick={() => onNavigate('science')} className="hover:text-white transition-colors uppercase tracking-widest">Scientific Disclaimer</button></li>
+                 <li><a href="/science" onClick={(e) => handleNav(e, 'science')} className="hover:text-white transition-colors uppercase tracking-widest">Scientific Disclaimer</a></li>
                  <li><a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" className="hover:text-white transition-colors uppercase tracking-widest flex items-center gap-2">Google API Policy <ExternalLink size={10} /></a></li>
                </ul>
             </div>
