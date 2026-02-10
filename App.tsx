@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
 import { 
@@ -36,7 +36,6 @@ import { FAQView } from './components/FAQView.tsx';
 import { ContactView } from './components/ContactView.tsx';
 import { UpdatePasswordView } from './components/UpdatePasswordView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
-import { NotFoundView } from './components/NotFoundView.tsx';
 
 const m = motion as any;
 
@@ -89,122 +88,91 @@ const AppContent: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [isSimulated, setIsSimulated] = useState(false);
   
-  const getInitialView = useCallback(() => {
+  const resolveViewFromLocation = useCallback((): ViewType => {
     if (typeof window === 'undefined') return 'landing';
-    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-    const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
     
-    // Virtual Path Detection (Priority Order)
-    const virtualPath = path !== '/' ? path.slice(1) : (hash || 'landing');
-
-    const routeMap: Record<string, ViewType> = {
-      'admin/login': 'admin-login',
-      'admin': 'admin',
-      'signup': 'signup',
-      'login': 'login',
-      'dashboard': 'dashboard',
-      'assistant': 'assistant',
-      'science': 'science',
-      'faq': 'faq',
-      'about': 'about',
-      'contact': 'contact',
-      'support': 'support',
-      'experiment': 'experiment',
-      'registry': 'registry',
-      'diary': 'diary',
-      'settings': 'settings',
-      'calendar': 'calendar'
-    };
-
-    return routeMap[virtualPath] || routeMap[hash] || 'landing';
+    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+    
+    if (path === '/admin/login') return 'admin-login';
+    if (path === '/admin') return 'admin';
+    if (path === '/login') return 'login';
+    if (path === '/signup') return 'signup';
+    if (path === '/dashboard') return 'dashboard';
+    if (path === '/assistant') return 'assistant';
+    if (path === '/science') return 'science';
+    if (path === '/faq') return 'faq';
+    if (path === '/about') return 'about';
+    if (path === '/contact') return 'contact';
+    if (path === '/support') return 'support';
+    if (path === '/experiment') return 'experiment';
+    if (path === '/diary') return 'diary';
+    if (path === '/registry') return 'registry';
+    if (path === '/settings') return 'settings';
+    if (path === '/calendar') return 'calendar';
+    if (path === '/feedback') return 'feedback';
+    if (path === '/update-password') return 'update-password';
+    
+    return 'landing';
   }, []);
 
-  const [activeView, setActiveView] = useState<ViewType>(getInitialView());
+  const [activeView, setActiveView] = useState<ViewType>(resolveViewFromLocation());
 
   const handleLogout = useCallback(async () => {
     try { await authApi.signOut(); } finally {
       setIsSimulated(false);
-      window.location.href = '/login';
+      safeNavigatePath('/');
     }
   }, []);
 
-  const navigate = (view: string) => {
+  const navigate = useCallback((view: string) => {
     const path = view === 'landing' ? '/' : `/${view}`;
     safeNavigatePath(path);
-  };
+  }, []);
 
   useEffect(() => {
     const handleRouting = () => {
       if (loading) return;
 
-      const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-      const hash = window.location.hash.toLowerCase().replace('#/', '').replace('#', '');
+      const nextView = resolveViewFromLocation();
+      const isLoggedIn = !!profile || isSimulated;
       
-      let currentPath: any = 'landing';
-      if (path === '/admin/login' || hash === 'admin/login') {
-        currentPath = 'admin-login';
-      } else if (path.startsWith('/admin') || hash === 'admin') {
-        currentPath = 'admin';
-      } else if (path === '/login' || hash === 'login') {
-        currentPath = 'login';
-      } else if (path === '/signup' || hash === 'signup') {
-        currentPath = 'signup';
-      } else if (path === '/') {
-        currentPath = hash || 'landing';
-      } else {
-        const segments = path.split('/').filter(Boolean);
-        currentPath = segments[0] || hash || 'landing';
+      const isPublicSector = ['landing', 'science', 'faq', 'about', 'contact', 'login', 'signup'].includes(nextView);
+
+      if (!isLoggedIn && !isPublicSector) {
+        setActiveView(nextView === 'admin' ? 'admin-login' : 'landing');
+        return;
       }
 
-      const isLoggedIn = !!profile || isSimulated;
-      const isGuestGate = ['login', 'signup', 'landing', 'science', 'faq', 'about', 'contact'].includes(currentPath);
-
-      if (!isLoggedIn && !isGuestGate) {
-        if (currentPath === 'admin') {
-          setActiveView('admin-login');
-          if (window.location.pathname !== '/admin/login') window.history.replaceState(null, '', '/admin/login');
-        } else {
-          setActiveView('landing');
-          if (window.location.pathname !== '/' && !window.location.hash) window.history.replaceState(null, '', '/');
+      if (isLoggedIn && (nextView === 'login' || nextView === 'signup' || nextView === 'landing')) {
+        setActiveView('dashboard');
+        // Purify URL
+        if (window.location.pathname !== '/dashboard') {
+          window.history.replaceState(null, '', '/dashboard');
         }
         return;
       }
 
-      const routeRegistry: Record<string, ViewType> = {
-        'dashboard': 'dashboard', 'calendar': 'calendar', 'assistant': 'assistant',
-        'experiment': 'experiment', 'diary': 'diary', 'settings': 'settings',
-        'feedback': 'feedback', 'about': 'about', 'admin': 'admin', 'support': 'support',
-        'registry': 'registry', 'update-password': 'update-password', 'science': 'science', 'faq': 'faq',
-        'contact': 'contact', 'login': 'login', 'signup': 'signup', 'landing': 'landing',
-        'admin-login': 'admin-login'
-      };
-
-      if (routeRegistry[currentPath]) {
-        setActiveView(routeRegistry[currentPath]);
-      } else {
-        setActiveView(isLoggedIn ? 'dashboard' : 'landing');
-      }
-      
-      trackPageView(window.location.pathname, `SomnoAI: ${currentPath.toUpperCase()}`);
+      setActiveView(nextView);
+      trackPageView(window.location.pathname, `SomnoAI: ${nextView.toUpperCase()}`);
     };
     
     window.addEventListener('popstate', handleRouting);
     handleRouting();
     return () => window.removeEventListener('popstate', handleRouting);
-  }, [profile, isSimulated, loading]);
+  }, [profile, isSimulated, loading, resolveViewFromLocation]);
 
   if (profile?.is_blocked) return <BlockedTerminal onLogout={handleLogout} />;
   if (loading) return <DecisionLoading />;
 
   const renderContent = () => {
-    // 1. PUBLIC GATEWAYS
+    // 1. PUBLIC NODES
     if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate(profile || isSimulated ? 'support' : 'about')} />;
     if (activeView === 'contact') return <ContactView lang={lang} onBack={() => navigate(profile || isSimulated ? 'dashboard' : 'landing')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate(profile || isSimulated ? 'settings' : 'landing')} onNavigate={navigate} />;
     if (activeView === 'admin-login') return <AdminLoginPage />;
 
-    // 2. AUTHENTICATED LAB
+    // 2. AUTHENTICATED CORE
     if (profile || isSimulated) {
       if (profile?.role === 'user' && !profile.full_name) return <FirstTimeSetup onComplete={() => refresh()} />;
       if (activeView === 'update-password') return <UpdatePasswordView onSuccess={() => navigate('dashboard')} />;
@@ -254,7 +222,7 @@ const AppContent: React.FC = () => {
       );
     }
 
-    // 3. GUEST GATES
+    // 3. GUEST ENTRY
     if (activeView === 'signup') return <UserSignupPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={() => refresh()} onSandbox={() => setIsSimulated(true)} lang={lang} mode="login" />;
     

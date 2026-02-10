@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
@@ -61,9 +60,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         <div className="max-w-7xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
              <Logo size={36} animated={true} />
-             <div className="flex flex-col">
+             <div className="flex flex-col text-left">
                <span className="text-xl md:text-2xl font-black italic tracking-tighter uppercase text-white leading-none group-hover:text-indigo-400 transition-colors">SomnoAI</span>
-               <span className="text-[7px] font-bold tracking-[0.4em] uppercase text-indigo-400/60">Digital Sleep Lab</span>
+               <span className="text-[7px] font-bold tracking-[0.4em] uppercase text-indigo-400/60">{isZh ? '数字化睡眠实验室' : 'Digital Sleep Lab'}</span>
              </div>
           </div>
           
@@ -159,7 +158,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           >
             <div className="inline-flex items-center gap-3 px-6 py-2 bg-indigo-500/10 border border-indigo-500/20 rounded-full mb-4 group cursor-default">
                <div className="w-2 h-2 rounded-full bg-indigo-400 animate-ping" />
-               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">Neural Intelligence v2.8 Active</span>
+               <span className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-300">
+                 {isZh ? '神经智能 v2.8 运行中' : 'Neural Intelligence v2.8 Active'}
+               </span>
             </div>
 
             <div className="space-y-10">
@@ -191,9 +192,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                 </a>
               </div>
               
-              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">
-                New to the Lab? <a href="/signup" onClick={(e) => handleNav(e, 'signup')} className="text-indigo-400 underline underline-offset-4">Initialize Registry</a>
-              </p>
+              <div className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">
+                {isZh ? '初次来到实验室？' : 'New to the Lab? '} 
+                <a href="/signup" onClick={(e) => handleNav(e, 'signup')} className="text-indigo-400 underline underline-offset-4">
+                  {isZh ? '初始化注册' : 'Initialize Registry'}
+                </a>
+              </div>
             </div>
 
             {/* TRUST BADGE */}
@@ -204,11 +208,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                </div>
                <div className="flex items-center gap-3">
                   <ShieldCheck size={20} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em]">Official Node</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em]">{isZh ? '官方节点' : 'Official Node'}</span>
                </div>
                <div className="flex items-center gap-3">
                   <Fingerprint size={20} />
-                  <span className="text-[10px] font-black uppercase tracking-[0.4em]">Privacy First</span>
+                  <span className="text-[10px] font-black uppercase tracking-[0.4em]">{isZh ? '隐私优先' : 'Privacy First'}</span>
                </div>
             </div>
           </m.div>
@@ -229,7 +233,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                  <div className="bg-black/40 rounded-[3rem] px-10 py-6 mb-2 flex items-center justify-between border border-white/5">
                     <div className="flex items-center gap-6">
                        <div className="w-3 h-3 rounded-full bg-indigo-500 animate-pulse shadow-[0_0_15px_#6366f1]" />
-                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 italic">Neural Sync: Connected</span>
+                       <span className="text-[10px] font-black uppercase tracking-[0.4em] text-slate-500 italic">
+                         {isZh ? '神经同步：已连接' : 'Neural Sync: Connected'}
+                       </span>
                     </div>
                     <div className="flex gap-4">
                        <div className="w-8 h-8 rounded-xl bg-white/5 flex items-center justify-center text-slate-700"><Monitor size={14} /></div>
@@ -251,23 +257,31 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                        </div>
                     </div>
 
-                    <div className="lg:col-span-9 space-y-2">
+                    <div className="lg:col-span-9 space-y-2 text-left">
                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
                           <div className="bg-slate-900/60 rounded-[3rem] p-12 border border-white/5 min-h-[400px] flex flex-col justify-between">
-                             <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 italic">Recovery Score</span>
+                             <span className="text-[9px] font-black uppercase tracking-widest text-indigo-400 italic">
+                               {isZh ? '恢复评分' : 'Recovery Score'}
+                             </span>
                              <div className="text-[120px] font-black italic tracking-tighter text-white leading-none">88</div>
                              <div className="flex items-center gap-3">
                                 <CheckCircle2 size={16} className="text-emerald-500" />
-                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Optimal Restoration</span>
+                                <span className="text-[10px] font-black uppercase text-slate-500 tracking-widest">
+                                  {isZh ? '最佳修复状态' : 'Optimal Restoration'}
+                                </span>
                              </div>
                           </div>
                           <div className="bg-slate-900/60 rounded-[3rem] p-12 border border-white/5 min-h-[400px] space-y-10">
                              <div className="flex justify-between items-center">
-                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 italic">Neural Staging</span>
+                                <span className="text-[9px] font-black uppercase tracking-widest text-slate-500 italic">
+                                  {isZh ? '神经分期' : 'Neural Staging'}
+                                </span>
                                 <Activity size={18} className="text-indigo-500" />
                              </div>
                              <p className="text-[11px] text-slate-500 italic leading-relaxed pt-4 border-t border-white/5">
-                                "Our AI reconstructs sleep cycles (Deep, REM, Light) using Google Gemini's advanced reasoning models."
+                                {isZh 
+                                  ? '"我们的 AI 利用 Google Gemini 的高级推理模型，精准重构您的睡眠周期（深睡、REM、浅睡）。"' 
+                                  : '"Our AI reconstructs sleep cycles (Deep, REM, Light) using Google Gemini\'s advanced reasoning models."'}
                              </p>
                           </div>
                        </div>
@@ -277,14 +291,85 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
            </m.div>
         </section>
 
-        {/* 5. PROTOCOL STEPS SECTION */}
+        {/* 5. WHY SOMNOAI? Section */}
+        <section className="py-32 bg-indigo-600/[0.02] border-y border-white/5">
+           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
+              <div className="space-y-12 text-left">
+                 <h2 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter leading-none">
+                   {isZh ? '为何选择' : 'Why'} <span className="text-indigo-500">SomnoAI?</span>
+                 </h2>
+                 <p className="text-slate-400 text-lg font-medium italic leading-relaxed">
+                   {isZh 
+                     ? '传统追踪器通常只提供数据而缺乏背景。SomnoAI 提供一种科学的实验室体验，AI 在其中担任您的首席研究员。' 
+                     : 'Traditional trackers often provide data without context. SomnoAI provides a scientific laboratory experience where AI acts as your primary investigator.'}
+                 </p>
+                 <div className="space-y-8">
+                    {[
+                      { 
+                        icon: Lock, 
+                        title: isZh ? "边缘优先隐私" : "Edge-First Privacy", 
+                        desc: isZh ? "没有任何生物数据会触及我们的永久云服务器。一切都在本地处理。" : "No biological data touches our permanent cloud servers. Everything is processed locally." 
+                      },
+                      { 
+                        icon: Zap, 
+                        title: isZh ? "Gemini 强力驱动" : "Gemini-Powered", 
+                        desc: isZh ? "深刻理解您睡眠模式背后的“为什么”，而不仅仅是“是什么”。" : "Advanced reasoning that understands the 'Why' behind your sleep patterns, not just 'What'." 
+                      },
+                      { 
+                        icon: Globe, 
+                        title: isZh ? "开放链接" : "Open Link", 
+                        desc: isZh ? "从任何来源同步数据：Oura、Apple、Garmin 或手动输入。完全的数据自主权。" : "Sync data from any source: Oura, Apple, Garmin, or manual entry. Total data sovereignty." 
+                      }
+                    ].map((item, i) => (
+                      <div key={i} className="flex gap-6 items-start group">
+                         <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all"><item.icon size={20} /></div>
+                         <div>
+                            <h4 className="text-white font-black italic uppercase tracking-tight">{item.title}</h4>
+                            <p className="text-slate-500 text-sm italic font-medium">{item.desc}</p>
+                         </div>
+                      </div>
+                    ))}
+                 </div>
+              </div>
+              
+              <GlassCard className="p-12 rounded-[4rem] border-white/5 bg-black/40 overflow-hidden" intensity={1.5}>
+                 <div className="space-y-10 relative z-10 text-left">
+                    <div className="flex items-center gap-3">
+                       <Microscope size={20} className="text-indigo-400" />
+                       <h3 className="text-[11px] font-black uppercase text-white tracking-[0.3em] italic">
+                         {isZh ? '受试者证言' : 'Lab Testimonial'}
+                       </h3>
+                    </div>
+                    <p className="text-2xl font-black italic text-indigo-300 leading-snug">
+                      {isZh 
+                        ? '"这是第一个真正向我解释为什么我的深睡会支离破碎的平台，而不仅仅是给我一个普通的分数。"' 
+                        : '"The first platform that actually explained why my deep sleep was fragmented instead of just giving me a generic score."'}
+                    </p>
+                    <div className="flex items-center gap-5">
+                       <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white font-black italic shadow-xl">S</div>
+                       <div>
+                          <p className="text-sm font-black text-white uppercase tracking-widest italic">{isZh ? '受试者 #2481' : 'Subject #2481'}</p>
+                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">{isZh ? '早期访问受试者' : 'Early Access User'}</p>
+                       </div>
+                    </div>
+                 </div>
+                 <div className="absolute -bottom-10 -right-10 opacity-[0.03] text-white"><Moon size={240} strokeWidth={0.5} /></div>
+              </GlassCard>
+           </div>
+        </section>
+
+        {/* 6. PROTOCOL STEPS SECTION */}
         <section className="py-32 px-4 max-w-7xl mx-auto space-y-20">
            <div className="text-center space-y-4">
-              <h2 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter">The Laboratory <span className="text-indigo-500">Protocol</span></h2>
-              <p className="text-slate-500 uppercase tracking-[0.4em] font-black text-[10px] italic">From Biometric Telemetry to Human Transformation</p>
+              <h2 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter">
+                {isZh ? '实验室' : 'The Laboratory'} <span className="text-indigo-500">{isZh ? '协议' : 'Protocol'}</span>
+              </h2>
+              <p className="text-slate-500 uppercase tracking-[0.4em] font-black text-[10px] italic">
+                {isZh ? '从生物特征遥测到人类潜能转化' : 'From Biometric Telemetry to Human Transformation'}
+              </p>
            </div>
            
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-left">
               <FeatureCard 
                 icon={Activity}
                 title={isZh ? "1. 生物特征接入" : "1. Biometric Ingress"}
@@ -306,51 +391,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
            </div>
         </section>
 
-        {/* 6. TRUST & BRAND AUTHORITY */}
-        <section className="py-32 bg-indigo-600/5 border-y border-white/5">
-           <div className="max-w-7xl mx-auto px-6 grid grid-cols-1 lg:grid-cols-2 gap-20 items-center">
-              <div className="space-y-12">
-                 <h2 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter leading-none">Official <span className="text-indigo-500">Infrastructure</span></h2>
-                 <p className="text-slate-400 text-lg font-medium italic leading-relaxed">
-                   SomnoAI Digital Sleep Lab is a specialized research environment dedicated to the intersection of data sovereignty and recovery science.
-                 </p>
-                 <div className="space-y-8">
-                    {[
-                      { icon: Lock, title: "Edge Processing", desc: "No biometric data persistence on our cloud nodes. Total privacy by design." },
-                      { icon: Database, title: "Open Data Access", desc: "Integrates with Google Fit, Oura, and manual inputs via secure APIs." },
-                      { icon: Globe, title: "Global Lab Dispatch", desc: "Dedicated support nodes across Penang, Malaysia for infrastructure maintenance." }
-                    ].map((item, i) => (
-                      <div key={i} className="flex gap-6 items-start group">
-                         <div className="p-3 bg-indigo-500/10 rounded-xl text-indigo-400 group-hover:bg-indigo-600 group-hover:text-white transition-all"><item.icon size={20} /></div>
-                         <div>
-                            <h4 className="text-white font-black italic uppercase tracking-tight">{item.title}</h4>
-                            <p className="text-slate-500 text-sm italic font-medium">{item.desc}</p>
-                         </div>
-                      </div>
-                    ))}
-                 </div>
-              </div>
-              
-              <GlassCard className="p-12 rounded-[4rem] border-white/5 bg-black/40 overflow-hidden" intensity={1.5}>
-                 <div className="space-y-10 relative z-10">
-                    <div className="flex items-center gap-3">
-                       <Microscope size={20} className="text-indigo-400" />
-                       <h3 className="text-[11px] font-black uppercase text-white tracking-[0.3em] italic">Identity Registry</h3>
-                    </div>
-                    <p className="text-2xl font-black italic text-indigo-300 leading-snug">"The first lab environment where I actually own the insights, not just the data charts."</p>
-                    <div className="flex items-center gap-5">
-                       <div className="w-12 h-12 rounded-full bg-indigo-600 flex items-center justify-center text-white font-black italic shadow-xl">S</div>
-                       <div>
-                          <p className="text-sm font-black text-white uppercase tracking-widest italic">Subject #2481</p>
-                          <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">Verified Researcher</p>
-                       </div>
-                    </div>
-                 </div>
-                 <div className="absolute -bottom-10 -right-10 opacity-[0.03] text-white"><Moon size={240} strokeWidth={0.5} /></div>
-              </GlassCard>
-           </div>
-        </section>
-
         {/* 7. CTA */}
         <section className="py-40 text-center px-4 relative overflow-hidden">
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80vw] h-[80vw] bg-indigo-500/5 blur-[120px] rounded-full" />
@@ -360,14 +400,21 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
              viewport={{ once: true }}
              className="space-y-14 relative z-10"
            >
-              <h2 className="text-5xl md:text-8xl font-black italic tracking-tighter text-white uppercase leading-none">Ready to <br/><span className="text-indigo-500">Reconstruct?</span></h2>
+              <div className="space-y-4">
+                <h2 className="text-5xl md:text-8xl font-black italic tracking-tighter text-white uppercase leading-none">
+                  {isZh ? '准备好' : 'Ready to'} <br/><span className="text-indigo-500">{isZh ? '重构了吗？' : 'Reconstruct?'}</span>
+                </h2>
+                <p className="text-[10px] md:text-[12px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] italic">
+                   No Hardware Required • AI Neural Core Ready
+                </p>
+              </div>
               <div className="flex justify-center">
                  <a 
                    href="/signup"
                    onClick={(e) => handleNav(e, 'signup')}
                    className="px-20 py-8 bg-white text-indigo-950 rounded-full font-black text-[12px] uppercase tracking-[0.5em] shadow-[0_30px_70px_rgba(255,255,255,0.1)] hover:scale-105 active:scale-95 transition-all italic flex items-center gap-4 text-center"
                  >
-                   Establish Link <ArrowRight size={20} />
+                   {isZh ? '启动实验室终端' : 'Launch Lab Terminal'} <ArrowRight size={20} />
                  </a>
               </div>
            </m.div>
@@ -375,7 +422,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       </main>
 
       {/* 8. INSTITUTIONAL FOOTER */}
-      <footer className="bg-black/60 border-t border-white/5 pt-32 pb-16 px-6" role="contentinfo">
+      <footer className="bg-black/60 border-t border-white/5 pt-32 pb-16 px-6 text-left" role="contentinfo">
         <div className="max-w-7xl mx-auto space-y-24">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-16">
             <div className="space-y-8">
@@ -384,7 +431,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                   <span className="text-2xl font-black italic tracking-tighter text-white uppercase">SomnoAI</span>
                </div>
                <p className="text-xs text-slate-500 italic font-medium leading-relaxed max-w-xs">
-                 Dedicated to the science of recovery and high-performance restoration. Built with neural precision in Penang, Malaysia.
+                 {isZh 
+                   ? '致力于修复科学与高性能状态重建。采用神经精密技术，诞生于马来西亚槟城。' 
+                   : 'Dedicated to the science of recovery and high-performance restoration. Built with neural precision in Penang, Malaysia.'}
                </p>
                <div className="flex gap-4">
                   {[
@@ -400,7 +449,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             </div>
             
             <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Lab Navigation</h4>
+               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">{isZh ? '实验室导航' : 'Lab Navigation'}</h4>
                <ul className="space-y-4 text-xs font-bold text-slate-500 italic">
                  {navLinks.map(link => (
                    <li key={link.view}><a href={`/${link.view}`} onClick={(e) => handleNav(e, link.view)} className="hover:text-white transition-colors uppercase tracking-widest">{link.label}</a></li>
@@ -409,27 +458,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             </div>
 
             <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">Identity & Compliance</h4>
+               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">{isZh ? '身份与合规' : 'Identity & Compliance'}</h4>
                <ul className="space-y-4 text-xs font-bold text-slate-500 italic">
-                 <li><a href="/privacy" className="hover:text-white transition-colors uppercase tracking-widest">Privacy Policy</a></li>
-                 <li><a href="/terms" className="hover:text-white transition-colors uppercase tracking-widest">Terms of Service</a></li>
-                 <li><a href="/science" onClick={(e) => handleNav(e, 'science')} className="hover:text-white transition-colors uppercase tracking-widest">Scientific Disclaimer</a></li>
+                 <li><a href="/privacy" className="hover:text-white transition-colors uppercase tracking-widest">{isZh ? '隐私权政策' : 'Privacy Policy'}</a></li>
+                 <li><a href="/terms" className="hover:text-white transition-colors uppercase tracking-widest">{isZh ? '服务条款' : 'Terms of Service'}</a></li>
+                 <li><a href="/science" onClick={(e) => handleNav(e, 'science')} className="hover:text-white transition-colors uppercase tracking-widest">{isZh ? '科学免责声明' : 'Scientific Disclaimer'}</a></li>
                  <li><a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" className="hover:text-white transition-colors uppercase tracking-widest flex items-center gap-2">Google API Policy <ExternalLink size={10} /></a></li>
                </ul>
             </div>
 
             <div className="space-y-8">
-               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">System Pulse</h4>
+               <h4 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400">{isZh ? '系统脉冲' : 'System Pulse'}</h4>
                <div className="p-6 bg-white/[0.02] border border-white/5 rounded-[2rem] space-y-4">
                   <div className="flex items-center justify-between">
-                     <span className="text-[9px] font-black text-slate-600 uppercase">Neural Core</span>
+                     <span className="text-[9px] font-black text-slate-600 uppercase">{isZh ? '神经核心' : 'Neural Core'}</span>
                      <span className="text-[9px] font-black text-emerald-500 uppercase flex items-center gap-2">
-                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" /> Nominal
+                        <div className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" /> {isZh ? '正常' : 'Nominal'}
                      </span>
                   </div>
                   <div className="flex items-center justify-between">
-                     <span className="text-[9px] font-black text-slate-600 uppercase">Edge Gate</span>
-                     <span className="text-[9px] font-black text-indigo-400 uppercase">Stable v2.8</span>
+                     <span className="text-[9px] font-black text-slate-600 uppercase">{isZh ? '边缘网关' : 'Edge Gate'}</span>
+                     <span className="text-[9px] font-black text-indigo-400 uppercase">{isZh ? '稳定 v2.8' : 'Stable v2.8'}</span>
                   </div>
                </div>
             </div>
@@ -442,7 +491,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
              </div>
              <div className="flex items-center gap-2 text-indigo-400 px-6 py-2 bg-indigo-500/5 rounded-full border border-indigo-500/10">
                 <ShieldCheck size={12} />
-                <span className="text-[9px] font-black uppercase tracking-widest italic">Identity Verification Active</span>
+                <span className="text-[9px] font-black uppercase tracking-widest italic">{isZh ? '身份验证已激活' : 'Identity Verification Active'}</span>
              </div>
           </div>
         </div>
