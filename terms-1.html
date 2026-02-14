@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en-US">
+<head>
+    <!-- Google tag (gtag.js) -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-1WM4RE66ER"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+
+      var safeLocation = 'https://sleepsomno.com/terms';
+      try {
+        safeLocation = String(window.location);
+      } catch (e) {
+        try { safeLocation = document.URL || 'https://sleepsomno.com/opaque-terms'; } catch (e2) {}
+      }
+
+      gtag('config', 'G-1WM4RE66ER', {
+        page_location: safeLocation,
+        page_referrer: ''
+      });
+    </script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Terms of Service - SomnoAI Digital Sleep Lab</title>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #020617;
+            color: #f1f5f9;
+            background-image: 
+                radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.1) 0%, transparent 70%),
+                linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+            background-size: 100% 100%, 40px 40px, 40px 40px;
+            line-height: 1.6;
+        }
+        .container { max-width: 850px; margin: 0 auto; padding: 4rem 1.5rem; }
+        .glass { background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(24px); border: 1px solid rgba(255, 255, 255, 0.08); border-radius: 2.5rem; padding: 3.5rem; box-shadow: 0 40px 100px -20px rgba(0,0,0,0.8); }
+        h1 { font-size: 2.5rem; font-weight: 800; letter-spacing: -0.05em; margin-bottom: 2rem; color: #fff; font-style: italic; }
+        h2 { font-size: 1.25rem; font-weight: 700; color: #818cf8; margin-top: 2.5rem; margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.15em; }
+        p, li { color: #94a3b8; font-size: 0.95rem; margin-bottom: 1.2rem; }
+        .footer { margin-top: 4rem; text-align: center; font-size: 0.75rem; color: #475569; text-transform: uppercase; letter-spacing: 0.3em; }
+        .disclaimer-box { border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); padding: 2rem; border-radius: 1.5rem; margin-bottom: 2.5rem; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="glass">
+            <h1 class="italic">SomnoAI <span style="color: #818cf8;">Digital Sleep Lab</span></h1>
+            <p style="font-weight: 700; color: #fff;">Last Updated: January 4, 2026</p>
+
+            <div class="disclaimer-box">
+                <h2 style="color: #ef4444; margin-top: 0; font-size: 0.9rem;">Medical Disclaimer</h2>
+                <p style="color: #fca5a5; font-weight: bold; margin-bottom: 0.5rem;">SomnoAI Digital Sleep Lab is not a medical diagnostic tool or clinical advice platform.</p>
+                <p style="color: #f8fafc; font-size: 0.85rem; opacity: 0.8;">The AI-generated sleep insights, health recommendations, and physiological scores provided by this application are for informational purposes only. The analysis results do not constitute professional medical advice. Always consult a qualified physician before changing your health regimen.</p>
+            </div>
+
+            <section>
+                <h2>1. Acceptance of Terms</h2>
+                <p>By accessing or using SomnoAI Digital Sleep Lab, you agree to be bound by these Terms of Service, our Privacy Policy, and all applicable data service terms.</p>
+            </section>
+
+            <section>
+                <h2>2. Data Authorization</h2>
+                <p>For the service to function correctly, you need to authorize us to access your health data (via the Health Connect bridge). You warrant that you are the lawful owner of this data and understand that it will be used for AI analysis.</p>
+            </section>
+
+            <section>
+                <h2>3. User Responsibility</h2>
+                <p>This service utilizes a zero-backend storage architecture. SomnoAI is not liable for any local cache data leakage resulting from your failure to log out on public devices.</p>
+            </section>
+
+            <section>
+                <h2>4. Contact Us</h2>
+                <p>For any questions regarding these terms, please contact us at: <a href="mailto:contact@sleepsomno.com" style="color:#818cf8; text-decoration: none;">contact@sleepsomno.com</a></p>
+            </section>
+
+            <div style="margin-top: 3rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem;">
+                <a href="/" style="text-decoration: none; font-size: 0.8rem; color: #475569;">← Return to SomnoAI Laboratory Hub</a>
+            </div>
+        </div>
+        <p class="footer">© 2026 SomnoAI Digital Sleep Lab • Digital Health Lab</p>
+    </div>
+</body>
+</html>

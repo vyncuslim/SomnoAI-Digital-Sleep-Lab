@@ -1,0 +1,8 @@
+{
+  "name": "SomnoAI Digital Sleep Lab",
+  "description": "Advanced sleep architecture analysis. Decipher your biological telemetry using Google Gemini AI within a secure edge-first environment.",
+  "requestFramePermissions": [
+    "microphone",
+    "camera"
+  ]
+}
