@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   ArrowLeft, Brain, Activity, Waves, Info, ShieldAlert, Microscope, 
@@ -49,8 +48,8 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
           
           <p className="text-xl md:text-3xl text-slate-400 font-bold italic max-w-4xl leading-relaxed border-l-4 border-indigo-600/30 pl-10">
             {isZh 
-              ? "SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验室体验。" 
-              : "Integrating physiological monitoring, deep AI insights, and tailored health protocols into a unified digital sleep laboratory environment."}
+              ? "SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验室体验。" 
+              : "SomnoAI Digital Sleep Lab integrates physiological monitoring, deep AI insights, and tailored health protocols into a unified digital sleep laboratory environment."}
           </p>
         </div>
 
@@ -85,7 +84,7 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
         <footer className="pt-20 text-center space-y-12">
            <div className="flex items-center justify-center gap-4 opacity-30">
               <BarChart3 size={16} />
-              <p className="text-[10px] font-mono tracking-[0.5em] uppercase">SomnoAI Research Node • v2.8.5</p>
+              <p className="text-[10px] font-mono tracking-[0.5em] uppercase">SomnoAI Digital Sleep Lab Node • v2.8.5</p>
            </div>
            <button 
              onClick={onBack}

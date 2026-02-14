@@ -37,7 +37,7 @@ export const GlassCard: React.FC<GlassCardProps> = ({
 
   const background = useTransform(
     [mouseXSpring, mouseYSpring],
-    ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(99, 102, 241, 0.05) 0%, transparent 70%)`
+    ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(99, 102, 241, 0.08) 0%, transparent 70%)`
   );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -71,8 +71,8 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       whileTap={onClick ? { scale: 0.98 } : {}}
       onClick={onClick}
       className={`
-        backdrop-blur-2xl bg-white/60 border border-slate-200 rounded-[2.5rem] 
-        shadow-[0_20px_50px_rgba(0,0,0,0.03)] transition-all duration-500
+        backdrop-blur-3xl bg-slate-950/40 border border-white/5 rounded-[2.5rem] 
+        shadow-[0_40px_100px_rgba(0,0,0,0.5)] transition-all duration-500
         relative overflow-hidden group
         ${className}
       `}

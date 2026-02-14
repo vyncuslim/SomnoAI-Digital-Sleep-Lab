@@ -90,7 +90,7 @@ const AppContent: React.FC = () => {
   }, [resolveViewFromLocation]);
 
   if (loading) return (
-    <div className="h-screen w-screen flex items-center justify-center bg-white">
+    <div className="h-screen w-screen flex items-center justify-center bg-[#01040a]">
       <Logo size={80} animated={true} />
     </div>
   );
@@ -118,14 +118,14 @@ const AppContent: React.FC = () => {
   ];
 
   return (
-    <div className="flex flex-col min-h-screen bg-white text-slate-900">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-xl border-b border-slate-200 px-6 h-20 flex items-center justify-between">
+    <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200">
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#01040a]/80 backdrop-blur-xl border-b border-white/5 px-6 h-20 flex items-center justify-between">
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('dashboard')}>
             <Logo size={34} animated={true} />
             <div className="flex flex-col">
-              <span className="text-xl font-black italic tracking-tighter uppercase leading-none text-slate-900">Somno<span className="text-indigo-600">AI</span></span>
-              <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-400 mt-1">Laboratory Hub</span>
+              <span className="text-xl font-black italic tracking-tighter uppercase leading-none text-white">Somno<span className="text-indigo-400">AI</span></span>
+              <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Sleep Lab</span>
             </div>
           </div>
           <nav className="hidden lg:flex items-center gap-8">
@@ -133,7 +133,7 @@ const AppContent: React.FC = () => {
               <button 
                 key={item.id} 
                 onClick={() => navigate(item.id)}
-                className={`text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 italic ${activeView === item.id ? 'text-indigo-600' : 'text-slate-400 hover:text-slate-900'}`}
+                className={`text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 italic ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
               >
                 <item.icon size={14} /> {item.label}
               </button>
@@ -142,13 +142,13 @@ const AppContent: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-5">
-          <button onClick={() => navigate('registry')} className={`p-3 rounded-2xl transition-all ${activeView === 'registry' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400 hover:text-slate-900'}`}>
+          <button onClick={() => navigate('registry')} className={`p-3 rounded-2xl transition-all ${activeView === 'registry' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-white/5 text-slate-500 hover:text-white'}`}>
             <User size={20} />
           </button>
-          <button onClick={() => navigate('settings')} className={`p-3 rounded-2xl transition-all ${activeView === 'settings' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400 hover:text-slate-900'}`}>
+          <button onClick={() => navigate('settings')} className={`p-3 rounded-2xl transition-all ${activeView === 'settings' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-white/5 text-slate-500 hover:text-white'}`}>
             <SettingsIcon size={20} />
           </button>
-          <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all">
+          <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
             <LogOut size={20} />
           </button>
         </div>

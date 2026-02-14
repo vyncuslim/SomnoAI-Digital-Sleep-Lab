@@ -1,6 +1,6 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
-  "description": "SomnoAI Digital Sleep Lab uses Google Gemini AI to analyze wearable sleep data, reconstruct architecture, and deliver personalized recovery protocols. Privacy-first, no backend storage.",
+  "description": "SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep lab experience.",
   "requestFramePermissions": [
     "microphone",
     "camera"

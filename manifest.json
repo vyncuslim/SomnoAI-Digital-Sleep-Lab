@@ -1,11 +1,11 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
   "short_name": "SomnoAI",
-  "description": "SomnoAI Digital Sleep Lab uses Google Gemini AI to analyze wearable sleep data, reconstruct architecture, and deliver personalized recovery protocols.",
+  "description": "Integrating physiological monitoring, AI deep insights, and health advice into a comprehensive digital sleep lab experience.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#ffffff",
+  "background_color": "#01040a",
   "theme_color": "#4f46e5",
   "icons": [
     {
@@ -27,17 +27,5 @@
       "purpose": "maskable"
     }
   ],
-  "categories": ["health", "productivity"],
-  "shortcuts": [
-    {
-      "name": "Open Lab",
-      "url": "/",
-      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
-    },
-    {
-      "name": "Neural Core",
-      "url": "/assistant",
-      "icons": [{ "src": "/favicon.svg", "sizes": "96x96" }]
-    }
-  ]
+  "categories": ["health", "productivity"]
 }

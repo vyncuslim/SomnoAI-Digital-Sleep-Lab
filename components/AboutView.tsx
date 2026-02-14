@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { 
-  ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus, Microscope, HelpCircle, Zap, Linkedin
+  ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus, Microscope, HelpCircle, Zap, Linkedin, ShieldCheck
 } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -18,124 +17,80 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
   const { profile } = useAuth();
   const isZh = lang === 'zh';
 
+  const mailNodes = [
+    { label: 'General', email: 'contact@sleepsomno.com' },
+    { label: 'Support', email: 'support@sleepsomno.com' },
+    { label: 'Admin', email: 'admin@sleepsomno.com' }
+  ];
+
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
-      {/* Top Header Controls */}
-      <div className="max-w-7xl mx-auto px-4 flex items-center justify-between mb-12 md:mb-20 sticky top-4 z-[100]">
-        <button 
-          onClick={onBack}
-          className="p-4 bg-slate-950/80 backdrop-blur-3xl hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
-        >
-          <ArrowLeft size={24} />
-        </button>
-
-        {!profile && (
-          <div className="flex gap-3 bg-slate-950/80 backdrop-blur-3xl p-2 rounded-full border border-white/5 shadow-2xl">
-             <button 
-               onClick={() => onNavigate('login')}
-               className="flex items-center gap-2 px-6 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white transition-all"
-             >
-                <LogIn size={14} /> LOGIN
-             </button>
-             <button 
-               onClick={() => onNavigate('signup')}
-               className="flex items-center gap-2 px-6 py-2.5 bg-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest text-white shadow-lg shadow-indigo-600/20 active:scale-95 transition-all"
-             >
-                <UserPlus size={14} /> JOIN LAB
-             </button>
-          </div>
-        )}
-      </div>
-
-      <header className="flex flex-col items-center text-center gap-6 mb-16 px-2 max-w-4xl mx-auto">
-        <Logo size={120} animated={true} />
-        <div>
-          <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter text-white uppercase leading-none">
-            About <span className="text-indigo-400">SomnoAI Lab</span>
+      <header className="flex flex-col items-center text-center gap-8 mb-16 px-4 max-w-4xl mx-auto pt-20">
+        <div className="relative inline-block">
+          <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full" />
+          <Logo size={140} animated={true} className="relative z-10" />
+        </div>
+        <div className="space-y-4">
+          <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter text-white uppercase leading-none">
+            About <span className="text-indigo-400">SomnoAI</span>
           </h1>
-          <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-4">
-            SomnoAI Digital Sleep Lab • Neural Infrastructure v2.8
+          <p className="text-[10px] text-slate-600 font-mono font-bold uppercase tracking-[0.6em] italic">
+            SomnoAI Digital Sleep Lab • Infrastructure v2.8
           </p>
         </div>
       </header>
 
-      <div className="max-w-4xl mx-auto space-y-12 px-2">
-        <GlassCard className="p-10 md:p-14 rounded-[4rem] border-white/10">
-          <div className="flex items-center gap-4 mb-8">
-            <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Globe size={24} /></div>
-            <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">{isZh ? '项目概述' : 'Project Overview'}</h2>
+      <div className="max-w-4xl mx-auto space-y-12 px-4">
+        <GlassCard className="p-12 md:p-16 rounded-[4rem] border-white/5 bg-slate-900/40" intensity={1.2}>
+          <div className="flex items-center gap-4 mb-10">
+            <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 shadow-inner"><Globe size={28} /></div>
+            <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{isZh ? '项目概述' : 'Project Mission'}</h2>
           </div>
-          <div className="space-y-6 text-slate-300 text-lg md:text-xl leading-relaxed italic font-medium">
-            <p>
+          <div className="space-y-8 text-slate-300 text-lg md:text-xl leading-relaxed italic font-bold">
+            <p className="border-l-4 border-indigo-500/30 pl-8">
               {isZh 
-                ? "SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。" 
-                : "SomnoAI integrates physiological monitoring, deep AI insights, and tailored health protocols into a unified digital sleep laboratory experience."}
+                ? "SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。" 
+                : "SomnoAI Digital Sleep Lab integrates physiological monitoring, deep AI insights, and tailored health protocols into a unified digital sleep laboratory."}
             </p>
-            <p className="text-base text-slate-400">
+            <p className="text-base text-slate-500 font-medium">
               {isZh 
-                ? "不同于传统的硬件依赖型追踪器，我们提供纯软件解决方案：从任何穿戴设备、智能床垫、手机传感器或手动输入中收集生物识别数据，然后利用复杂的 AI 模型提供具有实际指导意义的见解。" 
-                : "Unlike traditional hardware-dependent trackers, we offer a pure software solution: collect biometric data from any wearable, smart mattress, phone sensors, or manual input — then use sophisticated AI models to deliver meaningful insights."}
+                ? "核心由 Google Gemini AI 驱动，我们的引擎能够解构复杂的生物遥测流，将其转化为可操作的神经恢复协议。" 
+                : "Powered by Google Gemini AI, our engine decodes complex biometric telemetry into actionable neurological restoration protocols."}
             </p>
           </div>
-
-          {!profile && (
-            <div className="mt-12 pt-12 border-t border-white/5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-               <button 
-                 onClick={() => onNavigate('login')}
-                 className="flex items-center justify-center gap-4 py-8 bg-white/5 border border-white/10 rounded-[2.5rem] font-black text-xs uppercase tracking-widest text-white hover:bg-white/10 transition-all italic active:scale-95"
-               >
-                 <LogIn size={20} className="text-indigo-400" /> Access Terminal
-               </button>
-               <button 
-                 onClick={() => onNavigate('signup')}
-                 className="flex items-center justify-center gap-4 py-8 bg-indigo-600 text-white rounded-[2.5rem] font-black text-xs uppercase tracking-widest hover:bg-indigo-500 transition-all italic active:scale-95 shadow-xl shadow-indigo-600/20"
-               >
-                 <Zap size={20} fill="currentColor" /> Join Registry
-               </button>
-            </div>
-          )}
         </GlassCard>
 
-        {/* Info Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-           <GlassCard 
-             onClick={() => onNavigate('science')}
-             className="p-10 rounded-[3.5rem] border-indigo-500/20 bg-indigo-500/[0.02] cursor-pointer group hover:bg-indigo-600/[0.05] transition-all"
-           >
-              <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 w-fit mb-6"><Microscope size={28} /></div>
-              <h3 className="text-xl font-black italic text-white uppercase tracking-tight mb-4">Scientific Protocol</h3>
-              <p className="text-slate-500 text-xs italic leading-relaxed">Deep dive into how our neural engine processes biometric telemetry and sleep staging.</p>
-           </GlassCard>
-
-           <GlassCard 
-             onClick={() => onNavigate('faq')}
-             className="p-10 rounded-[3.5rem] border-white/5 bg-white/[0.01] cursor-pointer group hover:bg-white/[0.03] transition-all"
-           >
-              <div className="p-3 bg-white/5 rounded-2xl text-slate-400 w-fit mb-6"><HelpCircle size={28} /></div>
-              <h3 className="text-xl font-black italic text-white uppercase tracking-tight mb-4">Laboratory FAQ</h3>
-              <p className="text-slate-500 text-xs italic leading-relaxed">Resolving common doubts regarding hardware compatibility, privacy, and AI precision.</p>
-           </GlassCard>
+        {/* Contact Links Block */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+           {mailNodes.map((node) => (
+             <GlassCard key={node.label} className="p-8 rounded-[2.5rem] border-white/5 bg-black/40 text-center space-y-2">
+                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{node.label} Node</p>
+                <a href={`mailto:${node.email}`} className="text-sm font-black text-white italic hover:text-indigo-400 transition-colors">{node.email}</a>
+             </GlassCard>
+           ))}
         </div>
 
-        <GlassCard className="p-10 md:p-14 rounded-[4rem] border-white/10 bg-white/[0.01]">
+        <GlassCard className="p-12 md:p-16 rounded-[4rem] border-white/5 bg-black/40">
           <div className="flex items-center gap-4 mb-8">
-            <div className="p-3 bg-slate-500/10 rounded-2xl text-slate-400"><UserCheck size={24} /></div>
-            <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Lead Developer</h2>
+            <div className="p-3 bg-slate-900 rounded-2xl text-slate-600 shadow-inner"><UserCheck size={24} /></div>
+            <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Project Architect</h2>
           </div>
-          <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic">
-            <p>Built independently by <b>Vyncuslim</b> (Penang, Malaysia). A build-in-public project with strong focus on data sovereignty and neural recovery.</p>
-            <div className="flex flex-wrap gap-4 mt-10">
-              <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="inline-flex items-center px-6 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Github size={16} className="mr-2" /> GitHub</a>
-              <a href="https://www.linkedin.com/company/somnoai-digital-sleep-lab/" target="_blank" className="inline-flex items-center px-6 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Linkedin size={16} className="mr-2" /> Company Page</a>
-              <a href="https://share.google/r71Eapdw1ZSgxO7RE" target="_blank" className="inline-flex items-center px-6 py-4 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic"><Globe size={16} className="mr-2" /> Google Profile</a>
-              <a href="mailto:contact@sleepsomno.com" className="inline-flex items-center px-6 py-4 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-xl"><Mail size={16} className="mr-2" /> Contact</a>
+          <div className="space-y-10 text-slate-400 text-lg leading-relaxed italic font-bold">
+            <p>Developed independently by <b>Vyncuslim</b>. A focused exploration into personal data sovereignty and biological optimization.</p>
+            
+            <div className="flex flex-wrap gap-4">
+              <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="flex items-center px-8 py-5 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic shadow-xl"><Github size={18} className="mr-3" /> Source Code</a>
+              <a href="mailto:info@sleepsomno.com" className="flex items-center px-8 py-5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-2xl hover:bg-indigo-500"><Mail size={18} className="mr-3" /> Dispatch Info</a>
             </div>
           </div>
         </GlassCard>
 
-        <footer className="pt-12 text-center opacity-30">
-           <p className="text-[9px] font-mono tracking-widest uppercase mb-8">SomnoAI Digital Sleep Lab • Secure Infrastructure v2.8</p>
-           <button onClick={onBack} className="px-12 py-5 bg-indigo-600 text-white rounded-full font-black text-xs uppercase tracking-widest italic shadow-2xl active:scale-95 transition-all">Back to Console</button>
+        <footer className="pt-20 text-center space-y-12">
+           <div className="flex flex-col items-center gap-4 opacity-20">
+              <ShieldCheck size={24} className="text-indigo-500" />
+              <p className="text-[9px] font-mono tracking-[0.6em] uppercase">@2026 SomnoAI Digital Sleep Lab • SECURE_NODE_ALPHA</p>
+           </div>
+           <button onClick={onBack} className="px-16 py-6 bg-slate-900 border border-white/5 text-slate-500 rounded-full font-black text-xs uppercase tracking-[0.3em] italic shadow-2xl active:scale-95 transition-all hover:bg-slate-800">Return to Console</button>
         </footer>
       </div>
     </div>
