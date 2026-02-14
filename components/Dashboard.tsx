@@ -29,13 +29,13 @@ export const Dashboard: React.FC<DashboardProps> = ({
     const fetchInsights = async () => {
       try {
         const res = await getQuickInsight(data, lang);
-        // Robustness: Force values to string to avoid React Error #31
+        // FORCE TYPE: Ensure everything in the array is a string to avoid React Error #31
         const processed = Array.isArray(res) 
           ? res.map(item => (typeof item === 'string' ? item : JSON.stringify(item)))
-          : [typeof res === 'string' ? res : "Protocol established."];
+          : [typeof res === 'string' ? res : "Laboratory linked."];
         setInsights(processed);
       } catch (e) {
-        setInsights(["Neural link active. Syncing telemetry..."]);
+        setInsights(["Neural link active. Synchronizing telemetry..."]);
       }
     };
     fetchInsights();
@@ -58,7 +58,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-12 pb-40 animate-in fade-in duration-1000">
-      {/* Narrative Section */}
       <m.div 
         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden p-10 md:p-14 bg-slate-50 border border-slate-100 rounded-[3.5rem] group shadow-sm"
@@ -100,7 +99,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </m.div>
 
-      {/* Metrics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 text-left">
         <div className="lg:col-span-8">
           <GlassCard className="p-10 md:p-14 rounded-[4rem] border-slate-100 bg-white/80 h-full flex flex-col" intensity={0.8}>

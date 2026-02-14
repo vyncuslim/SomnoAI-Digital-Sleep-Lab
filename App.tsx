@@ -26,6 +26,8 @@ import { UserProfile } from './components/UserProfile.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
 import UserLoginPage from './app/login/page.tsx';
 import UserSignupPage from './app/signup/page.tsx';
+import { AboutView } from './components/AboutView.tsx';
+import { FeedbackView } from './components/FeedbackView.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
 
@@ -46,7 +48,7 @@ const INITIAL_MOCK_RECORD: SleepRecord = {
 
 const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
-  // Changed default lang to 'en'
+  // Changed default to 'en'
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [currentRecord] = useState<SleepRecord>(INITIAL_MOCK_RECORD);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
@@ -65,7 +67,9 @@ const AppContent: React.FC = () => {
       '/signup': 'signup',
       '/science': 'science',
       '/faq': 'faq',
-      '/support': 'support'
+      '/about': 'about',
+      '/support': 'support',
+      '/feedback': 'feedback'
     };
     return views[path] || 'landing';
   }, []);
@@ -73,17 +77,18 @@ const AppContent: React.FC = () => {
   const [activeView, setActiveView] = useState<ViewType>(resolveViewFromLocation());
 
   const navigate = (view: string) => {
-    safeNavigatePath(`/${view}`);
-    setActiveView(view as ViewType);
+    const cleanView = view.startsWith('/') ? view : `/${view}`;
+    safeNavigatePath(cleanView);
+    setActiveView(resolveViewFromLocation());
   };
 
   useEffect(() => {
     const handleRouting = () => {
-      if (!loading) setActiveView(resolveViewFromLocation());
+      setActiveView(resolveViewFromLocation());
     };
     window.addEventListener('popstate', handleRouting);
     return () => window.removeEventListener('popstate', handleRouting);
-  }, [loading, resolveViewFromLocation]);
+  }, [resolveViewFromLocation]);
 
   if (loading) return (
     <div className="h-screen w-screen flex items-center justify-center bg-white">
@@ -91,12 +96,18 @@ const AppContent: React.FC = () => {
     </div>
   );
 
+  // Unauthenticated routing
   if (!profile) {
     if (activeView === 'signup') return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
+    if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('/')} />;
+    if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('/')} />;
+    if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
+    if (activeView === 'support') return <SupportView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
+  // Profile setup flow
   if (!profile.full_name) return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [
@@ -157,6 +168,8 @@ const AppContent: React.FC = () => {
             {activeView === 'science' && <ScienceView lang={lang} onBack={() => navigate('dashboard')} />}
             {activeView === 'faq' && <FAQView lang={lang} onBack={() => navigate('dashboard')} />}
             {activeView === 'support' && <SupportView lang={lang} onBack={() => navigate('dashboard')} onNavigate={navigate} />}
+            {activeView === 'about' && <AboutView lang={lang} onBack={() => navigate('dashboard')} onNavigate={navigate} />}
+            {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => navigate('support')} />}
           </m.div>
         </AnimatePresence>
       </main>
