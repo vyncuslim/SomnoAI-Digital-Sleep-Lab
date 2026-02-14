@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, LogIn, UserPlus, Microscope, HelpCircle, Zap, Linkedin
@@ -15,6 +16,7 @@ interface AboutViewProps {
 
 export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }) => {
   const { profile } = useAuth();
+  const isZh = lang === 'zh';
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
@@ -61,11 +63,19 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         <GlassCard className="p-10 md:p-14 rounded-[4rem] border-white/10">
           <div className="flex items-center gap-4 mb-8">
             <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Globe size={24} /></div>
-            <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Project Overview</h2>
+            <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">{isZh ? '项目概述' : 'Project Overview'}</h2>
           </div>
-          <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic">
-            <p><b>SomnoAI Digital Sleep Lab</b> is an AI-powered digital health platform focused on advanced sleep architecture analysis and personalized optimization.</p>
-            <p>Unlike traditional hardware-dependent trackers, we offer a pure software solution: collect biometric data from any wearable, smart mattress, phone sensors or manual input — then use sophisticated AI models to deliver meaningful insights.</p>
+          <div className="space-y-6 text-slate-300 text-lg md:text-xl leading-relaxed italic font-medium">
+            <p>
+              {isZh 
+                ? "SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。" 
+                : "SomnoAI integrates physiological monitoring, deep AI insights, and tailored health protocols into a unified digital sleep laboratory experience."}
+            </p>
+            <p className="text-base text-slate-400">
+              {isZh 
+                ? "不同于传统的硬件依赖型追踪器，我们提供纯软件解决方案：从任何穿戴设备、智能床垫、手机传感器或手动输入中收集生物识别数据，然后利用复杂的 AI 模型提供具有实际指导意义的见解。" 
+                : "Unlike traditional hardware-dependent trackers, we offer a pure software solution: collect biometric data from any wearable, smart mattress, phone sensors, or manual input — then use sophisticated AI models to deliver meaningful insights."}
+            </p>
           </div>
 
           {!profile && (

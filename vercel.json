@@ -1,3 +1,4 @@
+
 {
   "cleanUrls": true,
   "trailingSlash": false,
@@ -19,22 +20,6 @@
     },
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/login", "destination": "/index.html" },
-    { "source": "/signup", "destination": "/index.html" },
-    { "source": "/dashboard", "destination": "/index.html" },
-    { "source": "/assistant", "destination": "/index.html" },
-    { "source": "/calendar", "destination": "/index.html" },
-    { "source": "/registry", "destination": "/index.html" },
-    { "source": "/settings", "destination": "/index.html" },
-    { "source": "/about", "destination": "/index.html" },
-    { "source": "/science", "destination": "/index.html" },
-    { "source": "/faq", "destination": "/index.html" },
-    { "source": "/support", "destination": "/index.html" },
-    { "source": "/experiment", "destination": "/index.html" },
-    { "source": "/admin", "destination": "/index.html" },
-    { 
-      "source": "/((?!api|privacy|terms|.*\\.).*)", 
-      "destination": "/index.html" 
-    }
+    { "source": "/((?!api|privacy|terms|.*\\.).*)", "destination": "/index.html" }
   ]
 }

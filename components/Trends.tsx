@@ -1,13 +1,15 @@
 
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-// Fix: Removed missing TimeRange import to resolve compilation error
 import { SleepRecord } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { COLORS } from '../constants.tsx';
-import { Award, Activity, Database, BrainCircuit, Loader2, Sparkles, ChevronRight, Binary } from 'lucide-react';
-import { getWeeklySummary } from '../services/geminiService.ts';
-import { motion } from 'framer-motion';
+import { 
+  Award, Activity, Database, BrainCircuit, Loader2, 
+  Sparkles, ChevronRight, Binary, ListChecks, Target
+} from 'lucide-react';
+import { analyzeBiologicalTrends, BiologicalReport } from '../services/geminiService.ts';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from '../services/i18n.ts';
 
 const m = motion as any;
@@ -28,11 +30,10 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 };
 
 export const Trends: React.FC<{ history: SleepRecord[]; lang: Language }> = ({ history, lang }) => {
-  const [summary, setSummary] = useState<string | null>(null);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [report, setReport] = useState<BiologicalReport | null>(null);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  const chartData = history.slice(0, 7).reverse().map(item => {
-    // 增强日期处理，在中文下提取"月日"，英文下提取第一项
+  const chartData = history.slice(0, 14).reverse().map(item => {
     let dateLabel = item.date;
     if (lang === 'zh') {
       const match = item.date.match(/(\d+月\d+日)/);
@@ -40,107 +41,154 @@ export const Trends: React.FC<{ history: SleepRecord[]; lang: Language }> = ({ h
     } else {
       dateLabel = item.date.split(',')[0].split(' ').slice(0, 2).join(' ');
     }
-    
-    return {
-      date: dateLabel,
-      score: item.score
-    };
+    return { date: dateLabel, score: item.score };
   });
 
-  const handleGenerate = async () => {
-    if (isGenerating || history.length < 2) return;
-    setIsGenerating(true);
+  const handleDeepAnalyze = async () => {
+    if (isAnalyzing || history.length < 3) return;
+    setIsAnalyzing(true);
     try {
-      const report = await getWeeklySummary(history, lang);
-      setSummary(report);
+      const result = await analyzeBiologicalTrends(history, lang);
+      setReport(result);
     } catch (e) {
       console.error(e);
     } finally {
-      setIsGenerating(false);
+      setIsAnalyzing(false);
     }
   };
 
   if (history.length < 2) {
     return (
-      <div className="flex flex-col items-center justify-center h-[60vh] gap-6 text-center">
-        <div className="w-24 h-24 rounded-full bg-slate-900 flex items-center justify-center text-slate-700">
-          <Database size={40} />
+      <div className="flex flex-col items-center justify-center h-[60vh] gap-8 text-center px-6">
+        <div className="w-24 h-24 rounded-[2rem] bg-slate-900 flex items-center justify-center text-slate-700">
+          <Database size={44} />
         </div>
-        <h2 className="text-xl font-black italic text-white uppercase">Insufficient Data</h2>
+        <h2 className="text-xl font-black italic text-white uppercase tracking-tight">Insufficient Telemetry Data</h2>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 pb-32 max-w-2xl mx-auto">
-      <header className="px-4 flex justify-between items-center">
+    <div className="space-y-10 pb-40 max-w-4xl mx-auto px-4 font-sans text-left">
+      <header className="flex justify-between items-end px-4 pt-8">
         <div>
-          <h1 className="text-2xl font-black italic text-white uppercase">Trend Atlas</h1>
-          <p className="text-[9px] font-black text-slate-500 uppercase tracking-[0.4em]">Historical Mapping</p>
+          <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter">Trend <span className="text-indigo-400">Atlas</span></h1>
+          <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.4em] mt-2 italic">Historical Biometric Mapping</p>
         </div>
+        <button 
+          onClick={handleDeepAnalyze}
+          disabled={isAnalyzing}
+          className="px-8 py-3.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full text-[10px] font-black uppercase tracking-widest transition-all flex items-center gap-3 shadow-xl shadow-indigo-900/20 active:scale-95 disabled:opacity-30 italic"
+        >
+          {isAnalyzing ? <Loader2 size={14} className="animate-spin" /> : <BrainCircuit size={14} />}
+          Deep Pattern Sync
+        </button>
       </header>
 
-      {!summary ? (
-        <GlassCard onClick={handleGenerate} className="p-8 rounded-full border-indigo-500/20 bg-indigo-500/[0.03] cursor-pointer group" hoverScale={true}>
-          <div className="flex items-center justify-between px-2">
-            <div className="flex items-center gap-5">
-              <div className="w-12 h-12 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400">
-                {isGenerating ? <Loader2 size={24} className="animate-spin" /> : <BrainCircuit size={24} />}
+      <AnimatePresence>
+        {report && (
+          <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-6">
+            <GlassCard className="p-12 rounded-[4rem] border-indigo-500/20 bg-indigo-600/[0.02]" intensity={1.5}>
+              <div className="flex items-center gap-3 text-indigo-400 mb-8 border-b border-white/5 pb-6">
+                <Sparkles size={20} />
+                <h3 className="text-xl font-black italic uppercase tracking-tight">Executive Pattern Brief</h3>
               </div>
-              <span className="text-sm font-black italic text-white uppercase tracking-tight">Synthesize Analysis</span>
-            </div>
-            <ChevronRight size={20} className="text-indigo-400 opacity-50 group-hover:opacity-100 group-hover:translate-x-1 transition-all" />
-          </div>
-        </GlassCard>
-      ) : (
-        <GlassCard className="p-10 rounded-[4rem] border-indigo-500/30 space-y-4">
-          <div className="flex items-center gap-3 text-indigo-400">
-            <Sparkles size={16} />
-            <h3 className="text-[10px] font-black uppercase tracking-widest">Executive Conclusion</h3>
-          </div>
-          <p className="text-sm text-slate-300 leading-relaxed font-medium italic">"{summary}"</p>
-        </GlassCard>
-      )}
+              
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+                <div className="lg:col-span-7 space-y-10">
+                   <div className="space-y-3">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Synthesis Summary</p>
+                      <p className="text-lg font-bold italic text-slate-200 leading-relaxed">"{report.summary}"</p>
+                   </div>
+                   
+                   <div className="space-y-4">
+                      <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Target size={12} /> Protocol Adjustments</p>
+                      <div className="grid grid-cols-1 gap-3">
+                        {report.protocolChanges.map((p, i) => (
+                          <div key={i} className="px-6 py-4 bg-white/5 rounded-2xl border border-white/5 text-sm italic font-medium text-slate-300">
+                             {p}
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+                </div>
+                
+                <div className="lg:col-span-5">
+                   <div className="bg-black/40 rounded-[3rem] p-8 border border-white/5 h-full space-y-6">
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Identified Patterns</p>
+                      <div className="space-y-4">
+                        {report.patterns.map((p, i) => (
+                          <div key={i} className="flex gap-4 items-start">
+                             <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
+                             <p className="text-xs font-bold text-slate-400 italic leading-relaxed">{p}</p>
+                          </div>
+                        ))}
+                      </div>
+                   </div>
+                </div>
+              </div>
+            </GlassCard>
+          </m.div>
+        )}
+      </AnimatePresence>
 
-      <GlassCard className="p-10 rounded-[4rem] relative overflow-hidden" intensity={1.1}>
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-3">
-            <Binary size={18} className="text-indigo-400" />
-            <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Neural Signal</span>
+      <GlassCard className="p-12 rounded-[4.5rem] relative overflow-hidden" intensity={1.1}>
+        <div className="flex items-center justify-between mb-12">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400"><Binary size={20} /></div>
+            <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">Neural Restoration Index</span>
           </div>
-          <span className="text-[10px] font-mono text-emerald-500 uppercase font-black">Link Stable</span>
+          <div className="flex items-center gap-2 px-4 py-1.5 bg-emerald-500/5 rounded-full border border-emerald-500/20">
+             <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+             <span className="text-[9px] font-black text-emerald-500 uppercase italic">Signal Stable</span>
+          </div>
         </div>
 
-        <div className="h-64 w-full">
+        <div className="h-[340px] w-full">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.02)" vertical={false} />
-              <XAxis dataKey="date" hide />
+              <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.03)" vertical={false} />
+              <XAxis 
+                dataKey="date" 
+                axisLine={false} 
+                tickLine={false} 
+                tick={{ fill: 'rgba(148, 163, 184, 0.4)', fontSize: 10, fontWeight: 900 }} 
+                dy={15} 
+              />
               <YAxis domain={[0, 100]} hide />
-              <Tooltip content={<CustomTooltip />} />
-              <Area type="monotone" dataKey="score" stroke="#818cf8" strokeWidth={3} fillOpacity={1} fill="url(#colorScore)" />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(99, 102, 241, 0.2)', strokeWidth: 2 }} />
+              <Area 
+                type="monotone" 
+                dataKey="score" 
+                stroke="#6366f1" 
+                strokeWidth={4} 
+                fillOpacity={1} 
+                fill="url(#colorScore)" 
+                animationDuration={2000}
+              />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </GlassCard>
 
-      <div className="grid grid-cols-2 gap-6 px-2">
-        <GlassCard className="p-8 rounded-full flex flex-col items-center gap-2" hoverScale={true}>
-          <Award className="text-amber-500/40" size={24} />
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Peak Efficiency</p>
-          <p className="text-2xl font-black italic text-white">{Math.max(...history.map(h => h.score))}%</p>
-        </GlassCard>
-        <GlassCard className="p-8 rounded-full flex flex-col items-center gap-2" hoverScale={true}>
-          <Activity className="text-indigo-500/40" size={24} />
-          <p className="text-[9px] font-black uppercase tracking-widest text-slate-500">Data Density</p>
-          <p className="text-2xl font-black italic text-white">{history.length}</p>
-        </GlassCard>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[
+          { icon: Award, label: 'Peak Efficiency', value: `${Math.max(...history.map(h => h.score))}%`, color: 'text-amber-500' },
+          { icon: Activity, label: 'Avg Restoration', value: `${Math.round(history.reduce((a, b) => a + b.score, 0) / history.length)}%`, color: 'text-emerald-500' },
+          { icon: History, label: 'Data Points', value: history.length, color: 'text-indigo-400' }
+        ].map((item, i) => (
+          <GlassCard key={i} className="p-8 rounded-[2.5rem] flex flex-col items-center gap-3" hoverScale={true}>
+            <item.icon className={`${item.color}/40`} size={28} />
+            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">{item.label}</p>
+            <p className="text-3xl font-black italic text-white leading-none">{item.value}</p>
+          </GlassCard>
+        ))}
       </div>
     </div>
   );

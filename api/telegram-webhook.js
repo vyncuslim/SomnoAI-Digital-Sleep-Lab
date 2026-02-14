@@ -1,5 +1,4 @@
 
-
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
@@ -43,8 +42,8 @@ export default async function handler(req, res) {
     - ALWAYS prefix the response with source tag: 📍 <b>SOURCE:</b> <code>🤖 AI Webhook | 机器人交互</code>`;
 
     const response = await ai.models.generateContent({
-        // Updated model name to gemini-3-pro-preview based on guidelines for complex text tasks
-        model: "gemini-3-pro-preview",
+        // FIX: Updated model name to gemini-2.5-pro for production stability as per project requirements
+        model: "gemini-2.5-pro",
         contents: [{ parts: [{ text: `Admin Input: ${text}` }] }],
         config: { systemInstruction }
     });

@@ -1,246 +1,185 @@
-import { GoogleGenAI, Type, Modality } from "@google/genai";
+
+import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
-import { logAuditLog, supabase } from "./supabaseService.ts";
 
+export interface BiologicalReport {
+  summary: string;
+  patterns: string[];
+  protocolChanges: string[];
+}
+
+const getAIClient = () => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) throw new Error("API_KEY_VOID");
+  return new GoogleGenAI({ apiKey });
+};
+
+const MODEL_PRO = 'gemini-2.5-pro';
+const MODEL_FLASH = 'gemini-2.5-flash';
+
+/**
+ * 核心功能：对多日睡眠数据进行深度趋势分析
+ */
+export const analyzeBiologicalTrends = async (
+  history: SleepRecord[], 
+  lang: Language = 'zh'
+): Promise<BiologicalReport> => {
+  const ai = getAIClient();
+  const dataSummary = history.map(h => 
+    `Date:${h.date}, Score:${h.score}, Deep:${h.deepRatio}%, RHR:${h.heartRate.resting}bpm`
+  ).join('\n');
+
+  const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。分析受试者的多日生物遥测数据。
+  识别异常模式，并提供基于神经科学的建议。
+  输出必须为 JSON 格式。`;
+
+  const prompt = `分析以下受试者数据流：
+  ${dataSummary}
+  
+  请提供：
+  1. 概括性总结 (summary)
+  2. 识别出的 3 个模式 (patterns)
+  3. 建议的协议调整 (protocolChanges)
+  语言：${lang === 'zh' ? '中文' : 'English'}`;
+
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_PRO,
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        systemInstruction,
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            summary: { type: Type.STRING },
+            patterns: { type: Type.ARRAY, items: { type: Type.STRING } },
+            protocolChanges: { type: Type.ARRAY, items: { type: Type.STRING } }
+          },
+          required: ["summary", "patterns", "protocolChanges"]
+        }
+      }
+    });
+    return JSON.parse(response.text || "{}") as BiologicalReport;
+  } catch (err) {
+    console.error("Neural Analysis Failed:", err);
+    throw err;
+  }
+};
+
+/**
+ * 增强型流式教练：注入历史数据作为长期上下文
+ */
+export const startContextualCoach = async (
+  history: { role: string; content: string }[], 
+  records: SleepRecord[],
+  lang: Language = 'zh'
+) => {
+  const ai = getAIClient();
+  
+  const bioBrief = records.slice(0, 5).map(r => 
+    `${r.date}: Score ${r.score}, Deep ${r.deepRatio}%`
+  ).join(' | ');
+
+  const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。
+  已知受试者近期数据: ${bioBrief}
+  你拥有访问最新睡眠研究的权限（使用 Google 搜索）。
+  语气：高度专业、冷静、具有预见性。
+  回复语言：${lang}。`;
+
+  try {
+    const contents = history.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.content }]
+    }));
+
+    return await ai.models.generateContentStream({
+      model: MODEL_PRO,
+      contents,
+      config: { 
+        systemInstruction,
+        tools: [{ googleSearch: {} }] 
+      }
+    });
+  } catch (err: any) {
+    console.error("Neural Handshake Failure:", err);
+    throw err;
+  }
+};
+
+/**
+ * 快速生成实验协议 (基于单日数据)
+ */
+export const getQuickInsight = async (data: SleepRecord, lang: Language = 'zh'): Promise<string[]> => {
+  const ai = getAIClient();
+  const prompt = `分析数据：分数 ${data.score}, RHR ${data.heartRate.resting}bpm。给出3条极其精简的优化方案（JSON 数组）。`;
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_FLASH,
+      contents: prompt,
+      config: { 
+        responseMimeType: "application/json",
+        responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
+      }
+    });
+    return JSON.parse(response.text || "[]");
+  } catch {
+    return ["正在同步神经链路..."];
+  }
+};
+
+// Added comment above fix: Export SleepExperiment interface and designExperiment function for ExperimentView.tsx
 export interface SleepExperiment {
   hypothesis: string;
   protocol: string[];
   expectedImpact: string;
 }
 
-const N8N_WEBHOOK_URL = "https://somnoaidigitalsleeplab.app.n8n.cloud/webhook-test/a205efcc-7c98-44c7-aad9-5815e0ac5ab";
-
 /**
- * Pipes AI activity to the n8n neural automation bridge using PATCH method.
+ * 实验协议生成：基于受试者生理基准设计干预实验
  */
-const notifyN8NBridge = async (event: string, type: string) => {
-  try {
-    const { data: { user } } = await (supabase.auth as any).getUser();
-    const url = new URL(N8N_WEBHOOK_URL);
-    url.searchParams.append('event', event);
-    url.searchParams.append('node', 'ai_service');
-    url.searchParams.append('type', type);
-    url.searchParams.append('subject', user?.email || 'anonymous');
-    
-    await fetch(url.toString(), { 
-      method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' }
-    });
-  } catch (e) {
-    // Silent fail to maintain AI service availability
-  }
-};
-
-const handleGeminiError = (err: any) => {
-  const errMsg = err.message || "";
-  console.error("Neural processing exception:", err);
+export const designExperiment = async (
+  data: SleepRecord,
+  lang: Language = 'zh'
+): Promise<SleepExperiment> => {
+  const ai = getAIClient();
+  const prompt = `基于以下受试者数据设计一个为期 3 天的睡眠优化实验：
+  分数: ${data.score}, 
+  总时长: ${data.totalDuration} 分钟, 
+  深睡比例: ${data.deepRatio}%, 
+  静息心率: ${data.heartRate.resting}bpm。
   
-  if (errMsg.includes("429") || errMsg.includes("quota") || errMsg.includes("RESOURCE_EXHAUSTED")) {
-    return "QUOTA_EXHAUSTED";
-  }
+  请提供：
+  1. 神经科学假设 (hypothesis)
+  2. 3 步实验协议 (protocol)
+  3. 预期的恢复影响 (expectedImpact)
+  语言：${lang === 'zh' ? '中文' : 'English'}`;
 
-  if (errMsg.includes("Requested entity was not found") || errMsg.includes("API_KEY_INVALID") || errMsg.includes("API_KEY")) {
-    logAuditLog('API_SERVICE_FAULT', `CRITICAL: Neural Key Voided.\nError: ${errMsg}\nNode: Gemini Core`, 'CRITICAL');
-    return "API_KEY_REQUIRED";
-  }
-  
-  return "CORE_PROCESSING_EXCEPTION";
-};
-
-/**
- * Priority Hierarchy:
- * 1. System environment key (process.env.API_KEY)
- * 
- * Note: Guidelines strictly prohibit user-provided keys or managing keys in UI/localStorage.
- */
-const getAIClient = () => {
-  // API key must be obtained exclusively from process.env.API_KEY per guidelines
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) throw new Error("API_KEY_VOID");
-  return new GoogleGenAI({ apiKey });
-};
-
-// Updated model constants based on GenAI SDK guidelines
-const MODEL_FLASH = 'gemini-3-flash-preview'; 
-const MODEL_PRO = 'gemini-3-pro-preview'; 
-const MODEL_TTS = 'gemini-2.5-flash-preview-tts';
-
-export const getSleepInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
-  const prompt = `You are a digital sleep scientist. Perform deep neural analysis. Return JSON array with 3 insights. Data: Score ${data.score}, Deep ${data.deepRatio}%. Language: ${lang}`;
-  try {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: MODEL_FLASH,
-      contents: prompt,
-      config: { 
-        responseMimeType: "application/json",
-        responseSchema: { 
-          type: Type.ARRAY, 
-          items: { type: Type.STRING } 
-        }
-      }
-    });
-    
-    const result = JSON.parse(response.text?.trim() || "[]");
-    notifyN8NBridge('insight_generated', 'flash_model');
-    return result;
-  } catch (err) {
-    handleGeminiError(err);
-    return ["Recalibrating neural nodes."];
-  }
-};
-
-export const chatWithCoach = async (
-  history: { role: string; content: string; image?: string }[], 
-  lang: Language = 'en', 
-  contextData?: SleepRecord | null,
-  forceModel?: string
-) => {
-  const bio = contextData ? `\nTELEMETRY_CONTEXT: Score: ${contextData.score}/100.` : "";
-  const systemInstruction = `You are the Somno Chief Research Officer (CRO). ${bio} Answer in ${lang}.`;
-  
-  const attemptRequest = async (modelName: string) => {
-    const ai = getAIClient();
-    const contents = history.map(m => {
-      const parts: any[] = [{ text: m.content }];
-      if (m.image) {
-        parts.push({
-          inlineData: { mimeType: 'image/jpeg', data: m.image.split(',')[1] },
-        });
-      }
-      return { role: m.role === 'user' ? 'user' : 'model', parts };
-    });
-
-    const response = await ai.models.generateContent({
-      model: modelName,
-      contents: contents,
-      config: { 
-        systemInstruction, 
-        tools: modelName.includes('pro') ? [{ googleSearch: {} }] : undefined
-      }
-    });
-    
-    notifyN8NBridge('chat_message', modelName);
-    
-    return { 
-      text: response.text, 
-      sources: response.candidates?.[0]?.groundingMetadata?.groundingChunks || [] 
-    };
-  };
+  const systemInstruction = "你是 SomnoAI 首席研究官 (CRO)。你擅长基于生理数据设计精密的神经科学实验。输出必须为 JSON 格式。";
 
   try {
-    // Attempt primary model
-    return await attemptRequest(forceModel || MODEL_PRO);
-  } catch (err: any) { 
-    const errorType = handleGeminiError(err);
-    
-    // Auto-fallback protocol for quota exhaustion
-    if (errorType === "QUOTA_EXHAUSTED" && !forceModel) {
-      console.warn("Pro model saturated. Initiating Flash fallback sync...");
-      try {
-        return await attemptRequest(MODEL_FLASH);
-      } catch (fallbackErr) {
-        handleGeminiError(fallbackErr);
-        throw new Error("NEURAL_GRID_SATURATED");
-      }
-    }
-    
-    throw new Error(errorType); 
-  }
-};
-
-export const designExperiment = async (data: SleepRecord, lang: Language = 'en'): Promise<SleepExperiment> => {
-  try {
-    const ai = getAIClient();
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
-      contents: `Design a sleep experiment based on the current score of ${data.score}. Return in ${lang}.`,
-      config: { 
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      config: {
+        systemInstruction,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
-          properties: { 
-            hypothesis: { type: Type.STRING }, 
-            protocol: { type: Type.ARRAY, items: { type: Type.STRING } }, 
-            expectedImpact: { type: Type.STRING } 
+          properties: {
+            hypothesis: { type: Type.STRING },
+            protocol: { type: Type.ARRAY, items: { type: Type.STRING } },
+            expectedImpact: { type: Type.STRING }
           },
           required: ["hypothesis", "protocol", "expectedImpact"]
         }
       }
     });
-    
-    notifyN8NBridge('experiment_designed', 'pro_model');
-    return JSON.parse(response.text?.trim() || "{}");
-  } catch (err) { 
-    const errorType = handleGeminiError(err);
-    if (errorType === "QUOTA_EXHAUSTED") {
-       const ai = getAIClient();
-       const response = await ai.models.generateContent({
-         model: MODEL_FLASH,
-         contents: `Design a sleep experiment for score ${data.score}. Return JSON object. Language: ${lang}`,
-         config: { responseMimeType: "application/json" }
-       });
-       return JSON.parse(response.text?.trim() || "{}");
-    }
-    throw err; 
-  }
-};
-
-/**
- * Performs a weekly sleep telemetry analysis and returns an executive summary.
- */
-export const getWeeklySummary = async (history: SleepRecord[], lang: Language = 'en'): Promise<string> => {
-  const telemetryData = history.map(h => ({ date: h.date, score: h.score }));
-  const prompt = `Perform a weekly sleep telemetry analysis. Data: ${JSON.stringify(telemetryData)}. Return a concise executive summary focused on trends and optimization in ${lang}.`;
-  
-  try {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: MODEL_FLASH,
-      contents: prompt,
-    });
-    
-    notifyN8NBridge('weekly_summary_generated', 'flash_model');
-    return response.text || "Neural analysis stream empty.";
+    return JSON.parse(response.text || "{}") as SleepExperiment;
   } catch (err) {
-    handleGeminiError(err);
-    return "The neural grid is currently recalibrating its summary engines.";
-  }
-};
-
-export const decodeBase64Audio = (base64: string) => {
-  const binaryString = atob(base64);
-  const len = binaryString.length;
-  const bytes = new Uint8Array(len);
-  for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-  return bytes;
-};
-
-export const decodeAudioData = async (data: Uint8Array, ctx: AudioContext, sampleRate: number = 24000, numChannels: number = 1): Promise<AudioBuffer> => {
-  const dataInt16 = new Int16Array(data.buffer);
-  const frameCount = dataInt16.length / numChannels;
-  const buffer = ctx.createBuffer(numChannels, frameCount, sampleRate);
-  for (let channel = 0; channel < numChannels; channel++) {
-    const channelData = buffer.getChannelData(channel);
-    for (let i = 0; i < frameCount; i++) channelData[i] = dataInt16[i * numChannels + channel] / 32768.0;
-  }
-  return buffer;
-};
-
-export const generateNeuralLullaby = async (data: SleepRecord): Promise<string | undefined> => {
-  try {
-    const ai = getAIClient();
-    const response = await ai.models.generateContent({
-      model: MODEL_TTS,
-      contents: [{ parts: [{ text: `Say cheerfully: Calibration complete for recovery score ${data.score}.` }] }],
-      config: { 
-        responseModalities: [Modality.AUDIO], 
-        speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: 'Kore' } } } 
-      },
-    });
-    return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-  } catch (err) { 
-    return undefined; 
+    console.error("Experiment Synthesis Failure:", err);
+    throw err;
   }
 };

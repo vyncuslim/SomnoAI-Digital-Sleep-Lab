@@ -1,6 +1,6 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
-  "description": "It integrates physiological monitoring, AI deep insights, and health recommendations to provide users with a comprehensive digital sleep laboratory experience.",
+  "description": "Advanced sleep architecture analysis. Decipher your biological telemetry using Google Gemini AI within a secure edge-first environment.",
   "requestFramePermissions": [
     "microphone",
     "camera"

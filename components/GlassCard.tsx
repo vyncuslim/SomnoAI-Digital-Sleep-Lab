@@ -1,4 +1,3 @@
-
 import React, { useRef } from 'react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 
@@ -10,7 +9,6 @@ interface GlassCardProps {
   intensity?: number;
   role?: string;
   'aria-label'?: string;
-  // Added id to support anchor links for scroll-to functionality
   id?: string;
 }
 
@@ -37,10 +35,9 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [`${8 * intensity}deg`, `${-8 * intensity}deg`]);
   const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [`${-8 * intensity}deg`, `${8 * intensity}deg`]);
 
-  // Refactored: Moved hook call out of the return statement
   const background = useTransform(
     [mouseXSpring, mouseYSpring],
-    ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(129, 140, 248, 0.15) 0%, transparent 70%)`
+    ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(99, 102, 241, 0.12) 0%, transparent 75%)`
   );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -70,28 +67,23 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      whileHover={hoverScale ? { scale: 1.02 } : {}}
-      whileTap={onClick ? { scale: 0.97 } : {}}
+      whileHover={hoverScale ? { scale: 1.02, y: -5 } : {}}
+      whileTap={onClick ? { scale: 0.98 } : {}}
       onClick={onClick}
       className={`
-        backdrop-blur-[80px] bg-slate-950/40 border border-white/[0.08] rounded-[4.5rem] 
-        shadow-[0_60px_100px_-20px_rgba(0,0,0,0.6)] transition-all duration-1000
+        backdrop-blur-[60px] bg-slate-900/40 border border-white/5 rounded-[4.5rem] 
+        shadow-[0_40px_80px_-15px_rgba(0,0,0,0.4)] transition-all duration-700
         relative overflow-hidden group
         ${className}
       `}
     >
-      {/* 液态高光流转 */}
       <m.div 
         style={{ background }}
         className="absolute inset-0 pointer-events-none z-0"
       />
-
-      {/* 内容层 */}
       <div className="relative z-10 h-full">
         {children}
       </div>
-      
-      {/* 生物发光边缘 */}
       <div className="absolute inset-0 rounded-[4.5rem] border-[1.5px] border-white/5 group-hover:border-indigo-500/20 pointer-events-none transition-colors duration-700" />
     </m.div>
   );

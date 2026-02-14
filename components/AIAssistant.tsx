@@ -1,259 +1,223 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
-  Send, User, Loader2, Trash2, Moon, ExternalLink, Cpu, LayoutGrid, Zap, Globe, Sparkles, ShieldCheck, Terminal as TerminalIcon, 
-  Layers, AlertCircle, RefreshCw, Database
+  Send, User, Loader2, Sparkles, BrainCircuit, 
+  Terminal as TerminalIcon, Globe, Cpu, Zap, History,
+  LayoutGrid, Activity, ChevronRight, BarChart3
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
-import { chatWithCoach } from '../services/geminiService.ts';
-import { hfService } from '../services/hfService.ts';
-import { vertexService } from '../services/vertexService.ts';
+import { startContextualCoach } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
 
 const m = motion as any;
 
-const CROAvatar = ({ isProcessing = false, size = 32, theme = 'indigo' }: { isProcessing?: boolean, size?: number, theme?: 'indigo' | 'amber' | 'emerald' }) => (
-  <m.div className="relative flex items-center justify-center shrink-0" style={{ width: size, height: size }}>
-    <div className="absolute inset-0 bg-slate-900 rounded-2xl border border-white/5 shadow-inner" />
-    <Logo size={size * 0.7} animated={isProcessing} className={theme === 'amber' ? 'grayscale brightness-150' : theme === 'emerald' ? 'hue-rotate-90' : ''} />
-    {isProcessing && (
-       <m.div 
-         animate={{ scale: [1, 1.4, 1], opacity: [0, 0.2, 0] }}
-         transition={{ duration: 2, repeat: Infinity }}
-         className={`absolute inset-0 rounded-full blur-2xl ${theme === 'amber' ? 'bg-amber-500' : theme === 'emerald' ? 'bg-emerald-500' : 'bg-indigo-500'}`}
-       />
-    )}
-  </m.div>
+const NeuralSignal = () => (
+  <div className="flex gap-1.5 h-3 items-end">
+    {[0, 0.4, 0.2, 0.8, 0.5].map((h, i) => (
+      <m.div 
+        key={i}
+        animate={{ height: ['20%', '100%', '20%'] }}
+        transition={{ duration: 1.5, repeat: Infinity, delay: i * 0.1 }}
+        className="w-0.5 bg-indigo-500/60"
+      />
+    ))}
+  </div>
 );
 
-interface AIAssistantProps {
-  lang: Language;
-  data: SleepRecord | null;
-  onNavigate?: (view: any) => void;
-  isSandbox?: boolean;
-}
-
-type ProtocolType = 'core' | 'vertex' | 'external' | 'legacy';
-
-export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data }) => {
+export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; history?: SleepRecord[] }> = ({ lang, data, history = [] }) => {
   const t = translations[lang].assistant;
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
-  const [protocol, setProtocol] = useState<ProtocolType>('core');
-  const [iframeLoading, setIframeLoading] = useState(true);
-  const [fallbackActive, setFallbackActive] = useState(false);
-  
+  const scrollRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (messages.length === 0) {
-      const welcome = data 
-        ? `${t.intro}\n\nI see your current sleep score is ${data.score}/100.`
-        : t.intro;
-      setMessages([{ role: 'assistant', content: welcome, timestamp: new Date() }]);
+      setMessages([{ role: 'assistant', content: String(t.intro || ''), timestamp: new Date() }]);
     }
-  }, [data, t.intro]);
+  }, [t.intro]);
 
-  const handleSend = async () => {
-    const textToSend = input.trim();
-    if (!textToSend || isTyping) return;
+  useEffect(() => {
+    if (scrollRef.current) scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+  }, [messages, isTyping]);
+
+  const handleSend = async (overrideInput?: string) => {
+    const text = overrideInput || input;
+    if (!text.trim() || isTyping) return;
     
-    const userMsg: ChatMessage = { role: 'user', content: textToSend, timestamp: new Date() };
+    const userMsg: ChatMessage = { role: 'user', content: text, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
     setIsTyping(true);
-    setFallbackActive(false);
     
+    let aiContent = "";
+    let aiSources: any[] = [];
+    
+    setMessages(prev => [...prev, { role: 'assistant', content: "", timestamp: new Date() }]);
+
     try {
-      if (protocol === 'core') {
-        const response = await chatWithCoach(messages.concat(userMsg).map(m => ({ role: m.role, content: m.content })), lang, data);
-        if (response) {
-          setMessages(prev => [...prev, { 
-            role: 'assistant', 
-            content: response.text || "Handshake Timeout", 
-            sources: response.sources, 
-            timestamp: new Date() 
-          }]);
+      const stream = await startContextualCoach(
+        messages.concat(userMsg).map(m => ({ role: m.role, content: String(m.content) })),
+        history.length > 0 ? history : (data ? [data] : []),
+        lang
+      );
+
+      for await (const chunk of stream) {
+        const chunkText = chunk.text;
+        const sources = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+        if (chunkText) {
+          aiContent += chunkText;
+          if (sources.length > 0) aiSources = sources;
+          setMessages(prev => {
+            const newMsgs = [...prev];
+            const last = newMsgs[newMsgs.length - 1];
+            last.content = String(aiContent);
+            last.sources = aiSources;
+            return newMsgs;
+          });
         }
-      } else if (protocol === 'vertex') {
-        const response = await vertexService.analyze(textToSend);
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: response || "Vertex node returned empty signal.", 
-          timestamp: new Date() 
-        }]);
-      } else if (protocol === 'external') {
-        const response = await hfService.chat(textToSend);
-        setMessages(prev => [...prev, { 
-          role: 'assistant', 
-          content: response || "External node returned empty signal.", 
-          timestamp: new Date() 
-        }]);
       }
-    } catch (err: any) {
-      const errMsg = err.message || "";
-      const isQuotaError = errMsg.includes("QUOTA") || errMsg.includes("429");
-      const isNotFoundError = errMsg.includes("NODE_NOT_FOUND") || errMsg.includes("404");
-      
-      let errorMsg = protocol === 'core' 
-        ? "Neural Bridge unavailable. Switching to external node protocol might assist." 
-        : protocol === 'vertex'
-        ? "Vertex Node access restricted. Ensure GCP_PROJECT_ID and credentials are set."
-        : "External Node sync failure. Connection to the HF hub was severed.";
-      
-      if (isQuotaError) {
-        errorMsg = "Neural Core (Pro) quota reached. System has successfully engaged Flash fallback protocol for this session.";
-        setFallbackActive(true);
-      } else if (isNotFoundError && protocol === 'external') {
-        errorMsg = "The External HF Space is currently unreachable (404). Please utilize the Neural Core (Gemini) instead.";
-      }
-      
-      setMessages(prev => [...prev, { 
-        role: 'assistant', 
-        content: errorMsg, 
-        timestamp: new Date() 
-      }]);
+    } catch (err) {
+      setMessages(prev => {
+        const newMsgs = [...prev];
+        newMsgs[newMsgs.length - 1].content = "神经链路通信中断，请检查 API 节点。";
+        return newMsgs;
+      });
     } finally {
       setIsTyping(false);
     }
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-160px)] max-w-4xl mx-auto font-sans relative">
-      <header className="flex flex-col md:flex-row items-center justify-between gap-6 mb-8 px-4 pt-10">
-        <div className="flex items-center gap-4 text-left">
-          <div className="w-12 h-12 rounded-2xl bg-slate-900 border border-white/5 flex items-center justify-center shadow-inner relative">
-            <Logo size={24} animated={true} />
-            <div className="absolute -top-1 -right-1">
-               <Moon size={12} className="text-indigo-400 fill-indigo-400/20" />
+    <div className="flex flex-col h-[calc(100vh-160px)] max-w-5xl mx-auto font-sans">
+      <header className="flex items-center justify-between mb-8 px-6 pt-4">
+        <div className="flex items-center gap-6">
+          <div className="p-4 bg-indigo-600/10 rounded-2xl border border-indigo-500/20 text-indigo-400">
+            <BrainCircuit size={28} />
+          </div>
+          <div className="text-left">
+            <h1 className="text-2xl font-black italic text-white uppercase tracking-tighter">Neuro Assistant</h1>
+            <div className="flex items-center gap-3 mt-1">
+               <NeuralSignal />
+               <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Neural Pro v2.8 Active</span>
             </div>
           </div>
-          <div>
-            <h1 className="text-lg font-black italic text-white uppercase leading-none">{t.title}</h1>
-            <p className="text-[8px] font-black text-slate-500 uppercase tracking-widest mt-1 italic">
-              Active Node: {
-                protocol === 'core' ? (fallbackActive ? 'Neural core (FLASH_FALLBACK)' : 'Neural Core V2.5') : 
-                protocol === 'vertex' ? 'Vertex Secure Bridge' :
-                protocol === 'external' ? 'HF External Node (API)' : 
-                'Legacy Sandbox (Iframe)'
-              }
-            </p>
-          </div>
         </div>
-
-        <div className="flex bg-slate-950/80 p-1.5 rounded-full border border-white/5 shadow-xl overflow-x-auto no-scrollbar max-w-full">
-           <button onClick={() => setProtocol('core')} className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${protocol === 'core' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
-             <Zap size={10} fill={protocol === 'core' ? "currentColor" : "none"} /> Core
-           </button>
-           <button onClick={() => setProtocol('vertex')} className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${protocol === 'vertex' ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
-             <Database size={10} /> Vertex
-           </button>
-           <button onClick={() => setProtocol('external')} className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${protocol === 'external' ? 'bg-amber-600 text-white shadow-lg shadow-amber-600/20' : 'text-slate-500 hover:text-slate-300'}`}>
-             <Globe size={10} /> HF
-           </button>
-           <button onClick={() => setProtocol('legacy')} className={`px-5 py-2.5 rounded-full text-[9px] font-black uppercase tracking-widest transition-all flex items-center gap-2 whitespace-nowrap ${protocol === 'legacy' ? 'bg-slate-700 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}>
-             <Layers size={10} /> Legacy
-           </button>
+        
+        <div className="hidden md:flex gap-3">
+           {[
+             { label: 'TREND ANALYSIS', icon: BarChart3, cmd: '分析我过去一周的睡眠趋势' },
+             { label: 'RHR SCAN', icon: Activity, cmd: '分析我最近的心率变化' }
+           ].map((p, i) => (
+             <button 
+               key={i}
+               onClick={() => handleSend(p.cmd)}
+               className="px-6 py-3 bg-white/5 border border-white/5 rounded-2xl text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:bg-white/10 transition-all flex items-center gap-3 italic"
+             >
+               <p.icon size={12} /> {p.label}
+             </button>
+           ))}
         </div>
       </header>
 
-      <div className="flex-1 overflow-hidden px-2 mb-4">
-        <AnimatePresence mode="wait">
-          {protocol !== 'legacy' ? (
-            <m.div key="chat" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.98 }} className="h-full flex flex-col">
-              <div className="flex-1 overflow-y-auto space-y-6 px-4 mb-6 scrollbar-hide">
-                {messages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`flex flex-col gap-2 max-w-[85%] ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
-                      <div className={`flex gap-3 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                        <div className="mt-1">
-                          {msg.role === 'assistant' ? (
-                            <CROAvatar theme={protocol === 'external' ? 'amber' : protocol === 'vertex' ? 'emerald' : 'indigo'} />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-slate-500"><User size={14}/></div>
-                          )}
-                        </div>
-                        <div className={`p-5 rounded-[2rem] text-sm leading-relaxed shadow-xl text-left relative overflow-hidden ${
-                          msg.role === 'assistant' 
-                            ? (protocol === 'external' ? 'bg-amber-950/20 border border-amber-500/20 text-amber-200' : protocol === 'vertex' ? 'bg-emerald-950/20 border border-emerald-500/20 text-emerald-200' : 'bg-slate-900/60 border border-white/5 text-slate-300') 
-                            : 'bg-indigo-600 text-white'
-                        }`}>
-                          <div className="whitespace-pre-wrap italic">{msg.content}</div>
-                          {msg.sources && msg.sources.length > 0 && (
-                            <div className="mt-4 pt-4 border-t border-white/10 flex flex-wrap gap-2">
-                              {msg.sources.map((chunk, sIdx) => (
-                                <a key={sIdx} href={chunk.web?.uri || chunk.maps?.uri} target="_blank" className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full text-[9px] font-bold text-indigo-300 flex items-center gap-1.5 transition-all hover:bg-indigo-500/20"><ExternalLink size={10} /> {chunk.web?.title || "Signal Source"}</a>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                {isTyping && (
-                  <div className="flex justify-start gap-3">
-                    <CROAvatar isProcessing={true} theme={protocol === 'external' ? 'amber' : protocol === 'vertex' ? 'emerald' : 'indigo'} />
-                    <div className={`px-6 py-4 rounded-full border flex items-center gap-3 ${protocol === 'external' ? 'bg-amber-950/20 border-amber-500/20' : protocol === 'vertex' ? 'bg-emerald-950/20 border-emerald-500/20' : 'bg-slate-900/40 border-white/5'}`}>
-                      <m.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1 }} className={`w-1.5 h-1.5 rounded-full ${protocol === 'external' ? 'bg-amber-500' : protocol === 'vertex' ? 'bg-emerald-500' : 'bg-indigo-500'}`} />
-                      <span className="text-[9px] font-black uppercase text-slate-500 tracking-widest italic">Synthesizing...</span>
-                    </div>
-                  </div>
-                )}
+      <GlassCard className="flex-1 flex flex-col mb-6 overflow-hidden rounded-[4rem] border-white/5 bg-slate-950/40">
+        <div ref={scrollRef} className="flex-1 overflow-y-auto p-10 space-y-10 scrollbar-hide">
+          {messages.map((msg, idx) => (
+            <m.div 
+              key={idx}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className={`flex gap-6 ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}
+            >
+              <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 border transition-all ${
+                msg.role === 'assistant' 
+                  ? 'bg-indigo-600/10 border-indigo-500/30 text-indigo-400' 
+                  : 'bg-slate-900 border-white/5 text-slate-500'
+              }`}>
+                {msg.role === 'assistant' ? <Logo size={24} animated={isTyping && idx === messages.length - 1} /> : <User size={24} />}
               </div>
-              <div className="px-4">
-                <GlassCard className={`p-1.5 rounded-full flex items-center gap-2 border-white/10 ${protocol === 'external' ? 'border-amber-500/20' : protocol === 'vertex' ? 'border-emerald-500/20' : ''}`}>
-                  <input type="text" value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && handleSend()} placeholder={t.placeholder} className="flex-1 bg-transparent outline-none px-6 py-3 text-sm text-slate-200 placeholder:text-slate-700 font-medium italic" />
-                  <button onClick={handleSend} disabled={!input.trim() || isTyping} className={`w-12 h-12 flex items-center justify-center rounded-full text-white shadow-lg active:scale-90 transition-all disabled:bg-slate-800 disabled:text-slate-600 ${protocol === 'external' ? 'bg-amber-600 hover:bg-amber-500' : protocol === 'vertex' ? 'bg-emerald-600 hover:bg-emerald-500' : 'bg-indigo-600 hover:bg-indigo-500'}`}>
-                    <Send size={18} />
-                  </button>
-                </GlassCard>
+              
+              <div className={`space-y-4 max-w-[80%] ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>
+                <div className={`p-8 rounded-[2.5rem] text-sm md:text-base leading-relaxed shadow-2xl relative overflow-hidden ${
+                  msg.role === 'assistant' 
+                    ? 'bg-slate-900/60 border border-white/5 text-slate-300' 
+                    : 'bg-indigo-600 text-white border border-indigo-500'
+                }`}>
+                  <div className="whitespace-pre-wrap italic font-medium">{String(msg.content || "正在进行神经元特征提取...")}</div>
+                  
+                  {msg.sources && msg.sources.length > 0 && (
+                    <div className="mt-6 pt-6 border-t border-white/10 flex flex-wrap gap-2">
+                      {msg.sources.map((src, sIdx) => (
+                        <a 
+                          key={sIdx}
+                          href={String(src.web?.uri || '')} 
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="px-4 py-1.5 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-[10px] font-bold text-indigo-400 flex items-center gap-2 transition-all"
+                        >
+                          <Globe size={11} /> {String(src.web?.title || 'Source')}
+                        </a>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="text-[9px] font-black text-slate-600 uppercase tracking-widest px-4">
+                  {msg.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} • SOMNO_TERMINAL
+                </p>
               </div>
             </m.div>
-          ) : (
-            <m.div key="sandbox" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }} className="h-full flex flex-col bg-black/40 rounded-[3rem] border border-white/5 relative overflow-hidden group">
-               <div className="absolute inset-0 pointer-events-none z-20 mix-blend-overlay opacity-20 bg-gradient-to-tr from-indigo-500/20 via-transparent to-amber-500/20" />
-               
-               <div className="p-4 bg-slate-900/40 border-b border-white/5 flex items-center justify-between relative z-30">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-amber-500/10 rounded-lg text-amber-500"><Globe size={14} /></div>
-                    <span className="text-[10px] font-black text-white uppercase tracking-widest italic">Legacy HF Sandbox (Iframe Protocol)</span>
-                  </div>
-                  <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 rounded-full border border-emerald-500/20">
-                    <ShieldCheck size={10} className="text-emerald-400" />
-                    <span className="text-[8px] font-black text-emerald-400 uppercase">External Frame</span>
-                  </div>
-               </div>
-               
-               <div className="flex-1 relative z-10 overflow-hidden">
-                 {iframeLoading && (
-                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-[#020617] gap-4">
-                      <Loader2 className="animate-spin text-amber-500" size={32} />
-                      <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest italic">Initializing Remote Frame...</p>
-                   </div>
-                 )}
-                 <iframe 
-                   src="https://hf.space/embed/nomic-ai/gpt4all-j"
-                   className={`w-full h-full border-none rounded-b-[3rem] transition-opacity duration-1000 ${iframeLoading ? 'opacity-0' : 'opacity-100'} grayscale invert hue-rotate-180 opacity-90 contrast-125 brightness-110`}
-                   title="Sandbox AI Interface"
-                   onLoad={() => setIframeLoading(false)}
-                 />
-               </div>
-
-               <div className="absolute bottom-4 left-0 right-0 px-8 flex justify-center z-30 opacity-0 group-hover:opacity-40 transition-opacity">
-                  <p className="text-[8px] font-bold text-slate-400 italic">IFRAME PERSISTENCE: Best for when API calls are rate-limited.</p>
-               </div>
+          ))}
+          
+          {isTyping && (
+            <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-6">
+              <div className="w-12 h-12 rounded-2xl bg-indigo-600/10 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <Logo size={24} animated={true} />
+              </div>
+              <div className="bg-slate-900/40 border border-white/5 px-8 py-5 rounded-full flex items-center gap-3">
+                 <m.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5 }} className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                 <m.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }} className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                 <m.div animate={{ opacity: [0.3, 1, 0.3] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.4 }} className="w-1.5 h-1.5 rounded-full bg-indigo-500" />
+                 <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest ml-2 italic">Synthesizing Context...</span>
+              </div>
             </m.div>
           )}
-        </AnimatePresence>
-      </div>
+        </div>
 
-      <div className="flex justify-center pb-6 opacity-30">
-        <p className="text-[8px] font-mono uppercase tracking-[0.5em] text-slate-500 italic flex items-center gap-4">
-          <TerminalIcon size={10} /> {protocol === 'core' ? 'NEURAL_LINK_ENCRYPTED' : 'EXTERNAL_SIGNAL_ACTIVE'} • REV: 2026.2
-        </p>
-      </div>
+        <div className="p-8 bg-black/20 border-t border-white/5">
+          <div className="relative group">
+            <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-800">
+              <TerminalIcon size={20} />
+            </div>
+            <input 
+              type="text"
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder={String(t.placeholder || '')}
+              className="w-full bg-slate-900 border border-white/10 rounded-full pl-16 pr-24 py-7 text-sm text-white focus:border-indigo-500/50 outline-none transition-all italic font-bold placeholder:text-slate-800"
+            />
+            <button 
+              onClick={() => handleSend()}
+              disabled={!input.trim() || isTyping}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-5 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 transition-all active:scale-95 disabled:opacity-20 disabled:grayscale"
+            >
+              <Send size={20} />
+            </button>
+          </div>
+        </div>
+      </GlassCard>
+
+      <footer className="px-10 flex justify-center opacity-30 gap-12">
+         <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] italic flex items-center gap-2">
+           <Cpu size={12} /> Edge Processing Ingress: Active
+         </p>
+         <p className="text-[9px] font-black text-slate-600 uppercase tracking-[0.4em] italic flex items-center gap-2">
+           <History size={12} /> Registry Context: Linked
+         </p>
+      </footer>
     </div>
   );
 };
