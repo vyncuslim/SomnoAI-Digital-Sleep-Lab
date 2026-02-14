@@ -171,7 +171,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
                     <div className="md:col-span-3 space-y-4 text-left">
                       {[
-                        { id: 'duitnow', label: 'DUITNOW / TNG', value: '+60 187807388' }, 
+                        { id: 'duitnow', label: 'TNG / DUITNOW', value: '+60 187807388' }, 
+                        { id: 'duitnow_acc', label: 'DUITNOW ACCOUNT', value: '100819712653' }, 
                         { id: 'paypal', label: 'PAYPAL', value: 'Vyncuslim vyncuslim' },
                         { id: 'email', label: lang === 'zh' ? '邮件支持' : 'EMAIL SUPPORT', value: 'contact@sleepsomno.com', icon: Mail, action: () => window.location.href = 'mailto:contact@sleepsomno.com' },
                         { id: 'feedback', label: lang === 'zh' ? '反馈建议' : 'SYSTEM FEEDBACK', value: lang === 'zh' ? '提交异常报告' : 'Submit Anomalies', icon: MessageSquare, action: () => { setshowDonation(false); onNavigate('feedback'); } }
