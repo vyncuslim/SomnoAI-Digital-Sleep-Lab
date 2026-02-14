@@ -1,7 +1,7 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
   "short_name": "SomnoAI",
-  "description": "AI-powered digital sleep lab for physiological metrics monitoring and personalized health insights.",
+  "description": "SomnoAI Digital Sleep Lab uses Google Gemini AI to analyze wearable sleep data, reconstruct architecture, and deliver personalized recovery protocols.",
   "start_url": "/",
   "display": "standalone",
   "orientation": "portrait",

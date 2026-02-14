@@ -1,9 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, ShieldCheck, Activity, 
-  ArrowRight, LogIn, Command, BrainCircuit, Cpu, X, Menu, Target
+  ArrowRight, LogIn, Command, BrainCircuit, Cpu, X, Menu, Target,
+  Microscope, Sparkles, Database, Lock
 } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { Language, translations } from '../services/i18n.ts';
@@ -129,6 +129,52 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             </button>
           </div>
         </m.div>
+      </section>
+
+      {/* SEO Content Section: Why SomnoAI */}
+      <section className="py-32 px-6 relative z-10 bg-black/20">
+        <div className="max-w-5xl mx-auto text-center space-y-16">
+          <div className="space-y-6">
+            <h2 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter">
+              Why <span className="text-indigo-500">SomnoAI</span>?
+            </h2>
+            <p className="text-slate-400 text-lg md:text-xl font-medium italic max-w-3xl mx-auto leading-relaxed">
+              Biological restoration isn't a passive process—it's an engineered outcome. 
+              SomnoAI provides the clinical-grade tools needed to master your recovery.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 text-left">
+            <div className="space-y-6 p-8 bg-white/5 border border-white/10 rounded-[3rem]">
+              <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 w-fit"><Sparkles size={28} /></div>
+              <h3 className="text-2xl font-black italic text-white uppercase">AI-Powered Synthesis</h3>
+              <p className="text-slate-400 text-sm leading-relaxed italic">
+                By leveraging <strong>Google Gemini AI</strong>, we process complex sleep data—including REM cycles, deep sleep density, and resting heart rate stability—to generate a high-fidelity reconstruction of your sleep architecture. No simple averages, just pure biological insight.
+              </p>
+            </div>
+            <div className="space-y-6 p-8 bg-white/5 border border-white/10 rounded-[3rem]">
+              <div className="p-4 bg-emerald-500/10 rounded-2xl text-emerald-400 w-fit"><Lock size={28} /></div>
+              <h3 className="text-2xl font-black italic text-white uppercase">Privacy-First Architecture</h3>
+              <p className="text-slate-400 text-sm leading-relaxed italic">
+                Your physiological data is your sovereign property. SomnoAI utilizes a <strong>zero-backend storage</strong> policy. All telemetry is processed on the secure edge of your browser and purged immediately upon session termination. Your identity and biology remain decoupled from our servers.
+              </p>
+            </div>
+            <div className="space-y-6 p-8 bg-white/5 border border-white/10 rounded-[3rem]">
+              <div className="p-4 bg-amber-500/10 rounded-2xl text-amber-400 w-fit"><Activity size={28} /></div>
+              <h3 className="text-2xl font-black italic text-white uppercase">Universal Telemetry Ingress</h3>
+              <p className="text-slate-400 text-sm leading-relaxed italic">
+                Whether you use <strong>Android Health Connect</strong>, Google Fit, or manual terminal input, SomnoAI normalizes varied data streams into a unified restoration protocol. We support data from smartwatches, rings, and even clinical sleep study exports.
+              </p>
+            </div>
+            <div className="space-y-6 p-8 bg-white/5 border border-white/10 rounded-[3rem]">
+              <div className="p-4 bg-purple-500/10 rounded-2xl text-purple-400 w-fit"><Microscope size={28} /></div>
+              <h3 className="text-2xl font-black italic text-white uppercase">Neuro-Science Protocols</h3>
+              <p className="text-slate-400 text-sm leading-relaxed italic">
+                Our recommendation engine is grounded in latest <strong>circadian rhythm research</strong> and neural recovery models. Receive experimental protocols designed to optimize metabolic load, neurotransmitter balancing, and cognitive performance via improved rest.
+              </p>
+            </div>
+          </div>
+        </div>
       </section>
 
       <section className="py-48 px-6 relative z-10">
