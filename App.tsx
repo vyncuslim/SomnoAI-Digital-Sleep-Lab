@@ -48,7 +48,6 @@ const INITIAL_MOCK_RECORD: SleepRecord = {
 
 const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
-  // Changed default to 'en'
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [currentRecord] = useState<SleepRecord>(INITIAL_MOCK_RECORD);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
@@ -104,10 +103,10 @@ const AppContent: React.FC = () => {
     if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('/')} />;
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
     if (activeView === 'support') return <SupportView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
+    if (activeView === 'feedback') return <FeedbackView lang={lang} onBack={() => navigate('/')} />;
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
-  // Profile setup flow
   if (!profile.full_name) return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [

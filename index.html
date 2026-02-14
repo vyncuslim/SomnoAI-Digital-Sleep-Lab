@@ -4,32 +4,30 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
     <title>SomnoAI | Digital Sleep Lab</title>
-    <meta name="description" content="SomnoAI integrates physiological monitoring, deep AI insights, and tailored health protocols.">
+    <meta name="description" content="SomnoAI Digital Sleep Lab uses Google Gemini AI to analyze wearable sleep data, reconstruct architecture, and deliver personalized recovery protocols. Privacy-first, no backend storage.">
+    
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://sleepsomno.com/">
+    <meta property="og:title" content="SomnoAI Digital Sleep Lab | AI-Powered Sleep Analysis">
+    <meta property="og:description" content="Advanced sleep architecture analysis using physiological telemetry and Google Gemini AI.">
+    <meta property="og:image" content="https://sleepsomno.com/favicon.svg">
 
-    <style>
-      :root { --lab-bg: #ffffff; --lab-text: #0f172a; --lab-accent: #4f46e5; }
-      html, body { 
-        background-color: var(--lab-bg) !important; 
-        color: var(--lab-text) !important; 
-        margin: 0; padding: 0; min-height: 100vh;
-        font-family: 'Inter', system-ui, -apple-system, sans-serif;
-      }
-      .lab-preloader {
-        position: fixed; inset: 0; background: #ffffff;
-        display: flex; flex-direction: column; align-items: center; justify-content: center;
-        z-index: 9999; transition: opacity 0.5s ease-out;
-      }
-      .loader-moon {
-        width: 48px; height: 48px; border-radius: 50%;
-        box-shadow: inset 12px 0 0 0 var(--lab-accent);
-        animation: spin 1.8s infinite linear;
-      }
-      @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
-      .loading-text {
-        margin-top: 24px; font-size: 11px; font-weight: 900; 
-        color: #94a3b8; text-transform: uppercase; letter-spacing: 0.3em; font-style: italic;
-      }
-    </style>
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://sleepsomno.com/">
+    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab">
+    <meta property="twitter:description" content="Engineer your recovery with AI-powered biological insights.">
+
+    <!-- Identity Assets -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+    <link rel="alternate icon" href="/favicon.svg">
+    <link rel="apple-touch-icon" href="/favicon.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#ffffff">
+
+    <!-- Core Styles -->
+    <link rel="stylesheet" href="/index.css">
 
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -56,12 +54,12 @@
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
-    "vite": "https://esm.sh/vite@^7.3.1",
     "react/": "https://esm.sh/react@^19.2.4/",
-    "google-auth-library": "https://esm.sh/google-auth-library@^10.5.0",
+    "vite": "https://esm.sh/vite@^7.3.1",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
+    "@google-analytics/data": "https://esm.sh/@google-analytics/data@^5.2.1",
     "nodemailer": "https://esm.sh/nodemailer@^8.0.1",
-    "@google-analytics/data": "https://esm.sh/@google-analytics/data@^5.2.1"
+    "google-auth-library": "https://esm.sh/google-auth-library@^10.5.0"
   }
 }
 </script>

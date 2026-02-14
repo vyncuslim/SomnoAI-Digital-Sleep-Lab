@@ -1,0 +1,49 @@
+:root {
+  --lab-bg: #ffffff;
+  --lab-text: #0f172a;
+  --lab-accent: #4f46e5;
+}
+
+html, body { 
+  background-color: var(--lab-bg) !important; 
+  color: var(--lab-text) !important; 
+  margin: 0; 
+  padding: 0; 
+  min-height: 100vh;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+.lab-preloader {
+  position: fixed; 
+  inset: 0; 
+  background: #ffffff;
+  display: flex; 
+  flex-direction: column; 
+  align-items: center; 
+  justify-content: center;
+  z-index: 9999; 
+  transition: opacity 0.5s ease-out;
+}
+
+.loader-moon {
+  width: 48px; 
+  height: 48px; 
+  border-radius: 50%;
+  box-shadow: inset 12px 0 0 0 var(--lab-accent);
+  animation: spin 1.8s infinite linear;
+}
+
+@keyframes spin { 
+  from { transform: rotate(0deg); } 
+  to { transform: rotate(360deg); } 
+}
+
+.loading-text {
+  margin-top: 24px; 
+  font-size: 11px; 
+  font-weight: 900; 
+  color: #94a3b8; 
+  text-transform: uppercase; 
+  letter-spacing: 0.3em; 
+  font-style: italic;
+}
