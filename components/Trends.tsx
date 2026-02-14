@@ -1,12 +1,10 @@
-
 import React, { useState } from 'react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { SleepRecord } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
-import { COLORS } from '../constants.tsx';
 import { 
   Award, Activity, Database, BrainCircuit, Loader2, 
-  Sparkles, ChevronRight, Binary, ListChecks, Target
+  Sparkles, ChevronRight, Binary, Target, History
 } from 'lucide-react';
 import { analyzeBiologicalTrends, BiologicalReport } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -18,7 +16,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
       <m.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="bg-slate-950/95 backdrop-blur-2xl border border-white/10 p-6 rounded-[3rem] shadow-2xl min-w-[200px]">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">{label}</p>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3">{String(label)}</p>
         <div className="flex items-end gap-2">
           <span className="text-3xl font-black text-white italic leading-none">{payload[0].value}</span>
           <span className="text-[10px] font-black text-indigo-400 uppercase mb-1">Score</span>
@@ -98,15 +96,15 @@ export const Trends: React.FC<{ history: SleepRecord[]; lang: Language }> = ({ h
                 <div className="lg:col-span-7 space-y-10">
                    <div className="space-y-3">
                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest">Synthesis Summary</p>
-                      <p className="text-lg font-bold italic text-slate-200 leading-relaxed">"{report.summary}"</p>
+                      <p className="text-lg font-bold italic text-slate-200 leading-relaxed">"{String(report.summary)}"</p>
                    </div>
                    
                    <div className="space-y-4">
                       <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2"><Target size={12} /> Protocol Adjustments</p>
                       <div className="grid grid-cols-1 gap-3">
-                        {report.protocolChanges.map((p, i) => (
+                        {Array.isArray(report.protocolChanges) && report.protocolChanges.map((p, i) => (
                           <div key={i} className="px-6 py-4 bg-white/5 rounded-2xl border border-white/5 text-sm italic font-medium text-slate-300">
-                             {p}
+                             {String(p)}
                           </div>
                         ))}
                       </div>
@@ -117,10 +115,10 @@ export const Trends: React.FC<{ history: SleepRecord[]; lang: Language }> = ({ h
                    <div className="bg-black/40 rounded-[3rem] p-8 border border-white/5 h-full space-y-6">
                       <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest">Identified Patterns</p>
                       <div className="space-y-4">
-                        {report.patterns.map((p, i) => (
+                        {Array.isArray(report.patterns) && report.patterns.map((p, i) => (
                           <div key={i} className="flex gap-4 items-start">
                              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 mt-1.5 shrink-0" />
-                             <p className="text-xs font-bold text-slate-400 italic leading-relaxed">{p}</p>
+                             <p className="text-xs font-bold text-slate-400 italic leading-relaxed">{String(p)}</p>
                           </div>
                         ))}
                       </div>
@@ -149,47 +147,19 @@ export const Trends: React.FC<{ history: SleepRecord[]; lang: Language }> = ({ h
             <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.2}/>
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#4f46e5" stopOpacity={0.2}/>
+                  <stop offset="95%" stopColor="#4f46e5" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="4 4" stroke="rgba(255,255,255,0.03)" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: 'rgba(148, 163, 184, 0.4)', fontSize: 10, fontWeight: 900 }} 
-                dy={15} 
-              />
+              <CartesianGrid strokeDasharray="4 4" stroke="rgba(0,0,0,0.03)" vertical={false} />
+              <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: 900 }} dy={15} />
               <YAxis domain={[0, 100]} hide />
-              <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(99, 102, 241, 0.2)', strokeWidth: 2 }} />
-              <Area 
-                type="monotone" 
-                dataKey="score" 
-                stroke="#6366f1" 
-                strokeWidth={4} 
-                fillOpacity={1} 
-                fill="url(#colorScore)" 
-                animationDuration={2000}
-              />
+              <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#4f46e5', strokeWidth: 2 }} />
+              <Area type="monotone" dataKey="score" stroke="#4f46e5" strokeWidth={4} fillOpacity={1} fill="url(#colorScore)" animationDuration={2000} />
             </AreaChart>
           </ResponsiveContainer>
         </div>
       </GlassCard>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {[
-          { icon: Award, label: 'Peak Efficiency', value: `${Math.max(...history.map(h => h.score))}%`, color: 'text-amber-500' },
-          { icon: Activity, label: 'Avg Restoration', value: `${Math.round(history.reduce((a, b) => a + b.score, 0) / history.length)}%`, color: 'text-emerald-500' },
-          { icon: History, label: 'Data Points', value: history.length, color: 'text-indigo-400' }
-        ].map((item, i) => (
-          <GlassCard key={i} className="p-8 rounded-[2.5rem] flex flex-col items-center gap-3" hoverScale={true}>
-            <item.icon className={`${item.color}/40`} size={28} />
-            <p className="text-[10px] font-black uppercase tracking-widest text-slate-600">{item.label}</p>
-            <p className="text-3xl font-black italic text-white leading-none">{item.value}</p>
-          </GlassCard>
-        ))}
-      </div>
     </div>
   );
 };

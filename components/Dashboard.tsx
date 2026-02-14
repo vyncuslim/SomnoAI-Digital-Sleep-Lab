@@ -3,7 +3,7 @@ import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { motion } from 'framer-motion';
 import { 
-  RefreshCw, Brain, Heart, ShieldCheck, Zap, Sparkles, Microscope, Binary, Cpu,
+  RefreshCw, Brain, Heart, Zap, Sparkles, Microscope, Binary, 
   ArrowRight, Activity, Waves
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
@@ -23,16 +23,19 @@ export const Dashboard: React.FC<DashboardProps> = ({
 }) => {
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [insights, setInsights] = useState<string[]>([]);
-  const isZh = lang === 'zh';
   const t = translations[lang].dashboard;
 
   useEffect(() => {
     const fetchInsights = async () => {
       try {
         const res = await getQuickInsight(data, lang);
-        setInsights(Array.isArray(res) ? res.map(String) : []);
+        // Robustness: Force values to string to avoid React Error #31
+        const processed = Array.isArray(res) 
+          ? res.map(item => (typeof item === 'string' ? item : JSON.stringify(item)))
+          : [typeof res === 'string' ? res : "Protocol established."];
+        setInsights(processed);
       } catch (e) {
-        setInsights(["神经链路已建立。正在同步脑电波模型..."]);
+        setInsights(["Neural link active. Syncing telemetry..."]);
       }
     };
     fetchInsights();
@@ -55,7 +58,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   return (
     <div className="space-y-12 pb-40 animate-in fade-in duration-1000">
-      {/* 顶部宣贯区 */}
+      {/* Narrative Section */}
       <m.div 
         initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }}
         className="relative overflow-hidden p-10 md:p-14 bg-slate-50 border border-slate-100 rounded-[3.5rem] group shadow-sm"
@@ -70,7 +73,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                  <div className="p-3 bg-indigo-50 rounded-xl text-indigo-600 border border-indigo-100">
                     <Sparkles size={20} className="animate-pulse" />
                  </div>
-                 <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-500 italic">{t.executiveBrief}</h2>
+                 <h2 className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-500 italic">{String(t.executiveBrief)}</h2>
               </div>
               
               <h1 className="text-5xl md:text-7xl font-black italic text-slate-900 uppercase tracking-tighter leading-[0.9]">
@@ -78,7 +81,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </h1>
               
               <p className="text-lg md:text-xl text-slate-500 leading-relaxed italic font-medium max-w-2xl border-l-2 border-indigo-200 pl-6">
-                 "{t.manifesto}"
+                 "{String(t.manifesto)}"
               </p>
            </div>
 
@@ -86,8 +89,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <div className="p-10 bg-white border border-slate-100 rounded-[2.5rem] flex flex-col justify-between min-h-[220px] shadow-sm relative overflow-hidden">
                  <p className="text-[10px] font-black uppercase text-slate-400 tracking-[0.3em] italic">System Core Status</p>
                  <div className="space-y-1">
-                    <p className="text-5xl font-black italic text-emerald-500 tracking-tighter uppercase">{t.statusActive}</p>
-                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">{t.protocolLabel}</p>
+                    <p className="text-5xl font-black italic text-emerald-500 tracking-tighter uppercase">{String(t.statusActive)}</p>
+                    <p className="text-[9px] font-bold text-slate-300 uppercase tracking-widest italic">{String(t.protocolLabel)}</p>
                  </div>
                  <div className="absolute -bottom-4 -right-4 opacity-5">
                    <Zap size={100} className="text-emerald-500" />
@@ -97,7 +100,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
         </div>
       </m.div>
 
-      {/* 核心指标区 */}
+      {/* Metrics Section */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 text-left">
         <div className="lg:col-span-8">
           <GlassCard className="p-10 md:p-14 rounded-[4rem] border-slate-100 bg-white/80 h-full flex flex-col" intensity={0.8}>
@@ -109,7 +112,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                      <span className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.4em] italic">Recovery Index</span>
                   </div>
                   <div className="flex items-baseline gap-4">
-                    <h1 className="text-[10rem] md:text-[12rem] font-black italic tracking-tighter text-slate-900 leading-[0.8]">{data.score}</h1>
+                    <h1 className="text-[10rem] md:text-[12rem] font-black italic tracking-tighter text-slate-900 leading-[0.8]">{Number(data.score)}</h1>
                     <span className="text-4xl font-black text-slate-200 italic block leading-none">/100</span>
                   </div>
                 </div>
@@ -123,9 +126,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
                    ].map((metric, i) => (
                      <div key={i} className="space-y-1">
                         <p className="text-[9px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
-                          <metric.icon size={10} className="text-indigo-600" /> {metric.label}
+                          <metric.icon size={10} className="text-indigo-600" /> {String(metric.label)}
                         </p>
-                        <p className="text-2xl font-black italic text-slate-900 tracking-tight uppercase">{metric.val}</p>
+                        <p className="text-2xl font-black italic text-slate-900 tracking-tight uppercase">{String(metric.val)}</p>
                      </div>
                    ))}
                 </div>
@@ -138,7 +141,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                     <Sparkles size={14} className="text-indigo-500 animate-pulse" />
                   </div>
                   <p className="text-xl font-bold text-slate-700 leading-relaxed italic border-l-2 border-indigo-400 pl-6 relative z-10">
-                    "{insights[0] || "正在同步神经数据..."}"
+                    "{String(insights[0] || "Synchronizing...")}"
                   </p>
                   <button 
                     onClick={() => onNavigate?.('assistant')}
@@ -161,8 +164,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </div>
               </div>
               <div className="space-y-4">
-                <h3 className="text-5xl font-black italic uppercase tracking-tighter leading-[0.85]">{t.signalInjection}</h3>
-                <p className="text-indigo-100 text-lg font-medium italic leading-relaxed">{t.syncData}</p>
+                <h3 className="text-5xl font-black italic uppercase tracking-tighter leading-[0.85]">{String(t.signalInjection)}</h3>
+                <p className="text-indigo-100 text-lg font-medium italic leading-relaxed">{String(t.syncData)}</p>
               </div>
             </div>
             <button 
@@ -170,7 +173,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
               disabled={isProcessing}
               className="w-full py-8 bg-white text-indigo-950 rounded-full font-black text-[12px] uppercase tracking-[0.4em] shadow-lg transition-all hover:scale-[1.02] active:scale-98 disabled:opacity-50 italic relative z-10"
             >
-              {isProcessing ? t.syncingButton : t.syncButton}
+              {isProcessing ? String(t.syncingButton) : String(t.syncButton)}
             </button>
           </GlassCard>
         </div>

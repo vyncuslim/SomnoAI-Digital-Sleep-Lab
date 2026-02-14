@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord } from './types.ts';
-import { 
-  LayoutDashboard, TrendingUp, Sparkles, FlaskConical, 
-  Settings as SettingsIcon, LogOut, User
+import {
+  LayoutDashboard, TrendingUp, Sparkles, FlaskConical,
+  User, Settings as SettingsIcon, LogOut, BookOpen
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
@@ -12,23 +12,22 @@ import { Logo } from './components/Logo.tsx';
 import { authApi } from './services/supabaseService.ts';
 import { safeNavigatePath } from './services/navigation.ts';
 
-// Components
-import AdminDashboard from './app/admin/page.tsx';
-import UserLoginPage from './app/login/page.tsx';
-import UserSignupPage from './app/signup/page.tsx';
-import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
+// Core Views
 import { Dashboard } from './components/Dashboard.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
 import { Settings } from './components/Settings.tsx';
 import { Trends } from './components/Trends.tsx';
+import { DiaryView } from './components/DiaryView.tsx';
 import { ExperimentView } from './components/ExperimentView.tsx';
 import { SupportView } from './components/SupportView.tsx';
 import { ScienceView } from './components/ScienceView.tsx';
 import { FAQView } from './components/FAQView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
+import { LandingPage } from './components/LandingPage.tsx';
+import UserLoginPage from './app/login/page.tsx';
+import UserSignupPage from './app/signup/page.tsx';
+import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
-import { AboutView } from './components/AboutView.tsx';
-import { LandingPage } from './LandingPage.tsx';
 
 const m = motion as any;
 
@@ -42,43 +41,33 @@ const INITIAL_MOCK_RECORD: SleepRecord = {
   efficiency: 89,
   stages: [],
   heartRate: { resting: 58, max: 75, min: 48, average: 62, history: [] },
-  aiInsights: ["神经链路同步正常。", "数字化实验室环境已就绪。"]
+  aiInsights: ["Neural link synced.", "Laboratory environment ready."]
 };
 
 const AppContent: React.FC = () => {
   const { profile, loading, refresh } = useAuth();
-  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'zh'); 
-  const [currentRecord, setCurrentRecord] = useState<SleepRecord>(INITIAL_MOCK_RECORD);
+  // Changed default lang to 'en'
+  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
+  const [currentRecord] = useState<SleepRecord>(INITIAL_MOCK_RECORD);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
-  
-  // 处理预加载层移除
-  useEffect(() => {
-    if (!loading) {
-      const preloader = document.getElementById('preloader');
-      if (preloader) {
-        preloader.style.opacity = '0';
-        setTimeout(() => preloader.remove(), 500);
-      }
-    }
-  }, [loading]);
 
   const resolveViewFromLocation = useCallback((): ViewType => {
-    if (typeof window === 'undefined') return 'landing';
     const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
-    if (path === '' || path === '/' || path === '/landing') return 'landing';
-    if (path === '/dashboard') return 'dashboard';
-    if (path === '/assistant') return 'assistant';
-    if (path === '/calendar') return 'calendar';
-    if (path === '/experiment') return 'experiment';
-    if (path === '/settings') return 'settings';
-    if (path === '/registry') return 'registry';
-    if (path === '/login') return 'login';
-    if (path === '/signup') return 'signup';
-    if (path === '/science') return 'science';
-    if (path === '/faq') return 'faq';
-    if (path === '/support') return 'support';
-    if (path === '/about') return 'about';
-    return 'landing';
+    const views: Record<string, ViewType> = {
+      '/dashboard': 'dashboard',
+      '/assistant': 'assistant',
+      '/calendar': 'calendar',
+      '/experiment': 'experiment',
+      '/settings': 'settings',
+      '/diary': 'diary',
+      '/registry': 'registry',
+      '/login': 'login',
+      '/signup': 'signup',
+      '/science': 'science',
+      '/faq': 'faq',
+      '/support': 'support'
+    };
+    return views[path] || 'landing';
   }, []);
 
   const [activeView, setActiveView] = useState<ViewType>(resolveViewFromLocation());
@@ -90,18 +79,11 @@ const AppContent: React.FC = () => {
 
   useEffect(() => {
     const handleRouting = () => {
-      if (loading) return;
-      setActiveView(resolveViewFromLocation());
+      if (!loading) setActiveView(resolveViewFromLocation());
     };
     window.addEventListener('popstate', handleRouting);
     return () => window.removeEventListener('popstate', handleRouting);
   }, [loading, resolveViewFromLocation]);
-
-  const confirmLogout = async () => {
-    await authApi.signOut();
-    setIsExitModalOpen(false);
-    window.location.href = '/';
-  };
 
   if (loading) return (
     <div className="h-screen w-screen flex items-center justify-center bg-white">
@@ -112,10 +94,6 @@ const AppContent: React.FC = () => {
   if (!profile) {
     if (activeView === 'signup') return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
-    if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('landing')} />;
-    if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('landing')} />;
-    if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('landing')} onNavigate={navigate} />;
-    if (activeView === 'support') return <SupportView lang={lang} onBack={() => navigate('landing')} onNavigate={navigate} />;
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
@@ -126,6 +104,7 @@ const AppContent: React.FC = () => {
     { id: 'calendar', icon: TrendingUp, label: lang === 'zh' ? '趋势' : 'Trends' },
     { id: 'assistant', icon: Sparkles, label: lang === 'zh' ? 'AI 教练' : 'AI Coach' },
     { id: 'experiment', icon: FlaskConical, label: lang === 'zh' ? '实验室' : 'Lab' },
+    { id: 'diary', icon: BookOpen, label: lang === 'zh' ? '日志' : 'Logs' },
   ];
 
   return (
@@ -156,6 +135,9 @@ const AppContent: React.FC = () => {
           <button onClick={() => navigate('registry')} className={`p-3 rounded-2xl transition-all ${activeView === 'registry' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400 hover:text-slate-900'}`}>
             <User size={20} />
           </button>
+          <button onClick={() => navigate('settings')} className={`p-3 rounded-2xl transition-all ${activeView === 'settings' ? 'bg-indigo-50 text-indigo-600' : 'bg-slate-50 text-slate-400 hover:text-slate-900'}`}>
+            <SettingsIcon size={20} />
+          </button>
           <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-slate-50 rounded-2xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-all">
             <LogOut size={20} />
           </button>
@@ -169,13 +151,12 @@ const AppContent: React.FC = () => {
             {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
             {activeView === 'experiment' && <ExperimentView data={currentRecord} lang={lang} />}
+            {activeView === 'diary' && <DiaryView lang={lang} />}
             {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => setIsExitModalOpen(true)} onNavigate={navigate} />}
             {activeView === 'registry' && <UserProfile lang={lang} />}
             {activeView === 'science' && <ScienceView lang={lang} onBack={() => navigate('dashboard')} />}
             {activeView === 'faq' && <FAQView lang={lang} onBack={() => navigate('dashboard')} />}
             {activeView === 'support' && <SupportView lang={lang} onBack={() => navigate('dashboard')} onNavigate={navigate} />}
-            {activeView === 'about' && <AboutView lang={lang} onBack={() => navigate('dashboard')} onNavigate={navigate} />}
-            {activeView === 'admin' && <AdminDashboard />}
           </m.div>
         </AnimatePresence>
       </main>
@@ -183,7 +164,10 @@ const AppContent: React.FC = () => {
       <ExitFeedbackModal 
         isOpen={isExitModalOpen} 
         lang={lang} 
-        onConfirmLogout={confirmLogout} 
+        onConfirmLogout={async () => {
+           await authApi.signOut();
+           window.location.href = '/';
+        }} 
       />
     </div>
   );
