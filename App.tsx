@@ -51,6 +51,17 @@ const AppContent: React.FC = () => {
   const [currentRecord, setCurrentRecord] = useState<SleepRecord>(INITIAL_MOCK_RECORD);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
   
+  // 处理预加载层移除
+  useEffect(() => {
+    if (!loading) {
+      const preloader = document.getElementById('preloader');
+      if (preloader) {
+        preloader.style.opacity = '0';
+        setTimeout(() => preloader.remove(), 500);
+      }
+    }
+  }, [loading]);
+
   const resolveViewFromLocation = useCallback((): ViewType => {
     if (typeof window === 'undefined') return 'landing';
     const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';

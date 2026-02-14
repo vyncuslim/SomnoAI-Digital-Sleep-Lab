@@ -1,4 +1,3 @@
-
 // @ts-ignore
 import { supabase } from '../lib/supabaseClient.ts';
 import { notifyAdmin } from './telegramService.ts';
@@ -15,7 +14,7 @@ export const logAuditLog = async (action: string, details: string, level: string
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
     
-    // 1. Record in DB Audit Archive
+    // 1. Record in DB Audit Archive (Blocking)
     const { error } = await supabase.from('audit_logs').insert([{
       action,
       details,
@@ -23,7 +22,7 @@ export const logAuditLog = async (action: string, details: string, level: string
       user_id: user?.id
     }]);
     
-    // 2. Notification Dispatch Logic
+    // 2. Notification Dispatch Logic (Non-blocking to prevent UI hangs)
     const actionToTypeMap: Record<string, string> = {
       'USER_LOGIN': 'USER_LOGIN',
       'ADMIN_ROLE_UPDATE': 'ADMIN_CONFIG_CHANGE',
@@ -40,26 +39,29 @@ export const logAuditLog = async (action: string, details: string, level: string
     const isPriority = level === 'CRITICAL' || level === 'WARNING' || !!targetType;
 
     if (isPriority) {
-      // Mirrored Alert: Telegram Admin Bot
-      await notifyAdmin({ 
-        type: targetType || 'SYSTEM_SIGNAL', 
-        message: details, 
-        source: user?.email || 'GATEWAY_TERMINAL'
-      });
-
-      // Mirrored Alert: Email Dispatch
-      const shouldEmail = 
-        level === 'CRITICAL' || 
-        action === 'USER_LOGIN' || 
-        action === 'GA4_PERMISSION_DENIED' || 
-        action === 'SECURITY_BREACH';
-
-      if (shouldEmail) {
-        await emailService.sendAdminAlert({ 
+      // Execute notifications asynchronously to ensure UI does not hang waiting for Telegram/Email responders
+      (async () => {
+        // Mirrored Alert: Telegram Admin Bot
+        notifyAdmin({ 
           type: targetType || 'SYSTEM_SIGNAL', 
-          message: details 
-        });
-      }
+          message: details, 
+          source: user?.email || 'GATEWAY_TERMINAL'
+        }).catch(err => console.debug('TG_ALERT_THROTTLED'));
+
+        // Mirrored Alert: Email Dispatch
+        const shouldEmail = 
+          level === 'CRITICAL' || 
+          action === 'USER_LOGIN' || 
+          action === 'GA4_PERMISSION_DENIED' || 
+          action === 'SECURITY_BREACH';
+
+        if (shouldEmail) {
+          emailService.sendAdminAlert({ 
+            type: targetType || 'SYSTEM_SIGNAL', 
+            message: details 
+          }).catch(err => console.debug('EMAIL_ALERT_THROTTLED'));
+        }
+      })();
     }
     
     return !error;
@@ -84,7 +86,6 @@ export const adminApi = {
   },
   
   getUsers: async () => {
-    // 明确获取受试者注册表数据
     const { data, error } = await supabase
       .from('profiles')
       .select('*')
@@ -99,31 +100,28 @@ export const adminApi = {
   },
   
   updateUserRole: async (id: string, email: string, role: string) => {
-    // 强制层级校验：获取目标当前的 is_super_owner 状态
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
     
-    // 物理免疫：任何人（包括其他 Super Owner）都不可以更改 Super Owner 的东西
     if (target?.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH', `ROOT_IMMUNITY_VIOLATION: Attempted role change for Super Owner (${email}).`, 'CRITICAL');
-      throw new Error("ACCESS_DENIED: Super Owner identity is physically immutable and globally supreme.");
+      logAuditLog('SECURITY_BREACH', `ROOT_IMMUNITY_VIOLATION: Attempted role change for Super Owner (${email}).`, 'CRITICAL');
+      throw new Error("ACCESS_DENIED: Super Owner identity is physically immutable.");
     }
 
     const { error } = await supabase.from('profiles').update({ role }).eq('id', id);
-    if (!error) await logAuditLog('ADMIN_ROLE_UPDATE', `Action: Node Escalation\nTarget: ${email}\nLevel: ${role}`, 'WARNING');
+    if (!error) logAuditLog('ADMIN_ROLE_UPDATE', `Action: Node Escalation\nTarget: ${email}\nLevel: ${role}`, 'WARNING');
     return { error };
   },
   
   toggleBlock: async (id: string, email: string, currentlyBlocked: boolean) => {
-    // 强制豁免校验
     const { data: target } = await supabase.from('profiles').select('is_super_owner').eq('id', id).single();
     
     if (target?.is_super_owner) {
-      await logAuditLog('SECURITY_BREACH', `ROOT_IMMUNITY_VIOLATION: Attempted to block Super Owner (${email}).`, 'CRITICAL');
-      throw new Error("ACCESS_DENIED: Super Owner nodes cannot be blocked or restricted by any authority.");
+      logAuditLog('SECURITY_BREACH', `ROOT_IMMUNITY_VIOLATION: Attempted to block Super Owner (${email}).`, 'CRITICAL');
+      throw new Error("ACCESS_DENIED: Super Owner nodes cannot be blocked.");
     }
 
     const { error } = await supabase.from('profiles').update({ is_blocked: !currentlyBlocked }).eq('id', id);
-    if (!error) await logAuditLog('ADMIN_BLOCK_TOGGLE', `Action: Signal Severance\nTarget: ${email}\nState: ${currentlyBlocked ? 'RESTORED' : 'SEVERED'}`, 'WARNING');
+    if (!error) logAuditLog('ADMIN_BLOCK_TOGGLE', `Action: Signal Severance\nTarget: ${email}\nState: ${currentlyBlocked ? 'RESTORED' : 'SEVERED'}`, 'WARNING');
     return { error };
   },
   
@@ -141,13 +139,13 @@ export const adminApi = {
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_ADDED', `Action: Matrix Expansion\nNode: ${email}`, 'WARNING');
+    if (!error) logAuditLog('ADMIN_RECIPIENT_ADDED', `Action: Matrix Expansion\nNode: ${email}`, 'WARNING');
     return { data, error };
   },
   
   removeNotificationRecipient: async (id: string, email: string) => {
     const { error } = await supabase.from('notification_recipients').delete().eq('id', id);
-    if (!error) await logAuditLog('ADMIN_RECIPIENT_REMOVED', `Action: Matrix Contraction\nNode: ${email}`, 'WARNING');
+    if (!error) logAuditLog('ADMIN_RECIPIENT_REMOVED', `Action: Matrix Contraction\nNode: ${email}`, 'WARNING');
     return { error };
   }
 };
@@ -164,7 +162,7 @@ export const authApi = {
     (supabase.auth as any).updateUser({ password }),
   signUp: async (email: string, password: string, metadata: any, captchaToken?: string) => {
     const res = await (supabase.auth as any).signUp({ email, password, options: { data: metadata, captchaToken } });
-    if (!res.error) await logAuditLog('USER_SIGNUP', `New Identity: ${metadata.full_name} | Node: ${email}`, 'INFO');
+    if (!res.error) logAuditLog('USER_SIGNUP', `New Identity: ${metadata.full_name} | Node: ${email}`, 'INFO');
     return res;
   },
   signInWithGoogle: () => (supabase.auth as any).signInWithOAuth({ provider: 'google', options: { redirectTo: window.location.origin } })
@@ -200,7 +198,7 @@ export const userDataApi = {
     if (profileRes.error) throw profileRes.error;
     const dataRes = await supabase.from('user_data').upsert({ id: user.id, ...metrics });
     if (dataRes.error) throw dataRes.error;
-    await logAuditLog('USER_SETUP_COMPLETE', `Initialization: ${user?.email}`, 'INFO');
+    logAuditLog('USER_SETUP_COMPLETE', `Initialization: ${user?.email}`, 'INFO');
     return { success: true };
   }
 };
@@ -208,7 +206,7 @@ export const userDataApi = {
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
-    if (!error) await logAuditLog('FEEDBACK_SUBMITTED', `Source: ${email}\nReport: ${content}`, 'INFO');
+    if (!error) logAuditLog('FEEDBACK_SUBMITTED', `Source: ${email}\nReport: ${content}`, 'INFO');
     return { success: !error, error };
   }
 };
@@ -223,7 +221,7 @@ export const diaryApi = {
     if (!user) throw new Error("UNAUTHORIZED");
     const { data, error } = await supabase.from('diary_entries').insert([{ content, mood, user_id: user.id }]).select().single();
     if (error) throw error;
-    await logAuditLog('DIARY_LOG_ENTRY', `Diary Entry: ${user.email} | Mood: ${mood}`, 'INFO');
+    logAuditLog('DIARY_LOG_ENTRY', `Diary Entry: ${user.email} | Mood: ${mood}`, 'INFO');
     return data;
   },
   deleteEntry: async (id: string) => {
