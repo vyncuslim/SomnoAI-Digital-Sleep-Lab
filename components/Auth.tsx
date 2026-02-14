@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, Zap, Eye, EyeOff, 
@@ -105,7 +104,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         <div className="space-y-10 w-full">
           <Logo size={100} animated={true} className="mx-auto" />
           
-          {/* Mission Brief Card - Redesigned for impact */}
           <div className="bg-slate-950/60 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-12 space-y-10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] relative overflow-hidden group text-left">
             <div className="absolute top-0 right-0 p-10 opacity-[0.03] text-indigo-400 group-hover:rotate-12 transition-transform duration-1000">
               <Microscope size={180} />
@@ -153,13 +151,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         </div>
       </m.div>
 
-      {/* Auth Entry Interface */}
       <div className="w-full max-w-[440px] space-y-12 relative z-10">
         <button 
           onClick={() => authApi.signInWithGoogle()}
-          className="w-full py-7 rounded-full bg-white text-black font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-5 shadow-[0_30px_60px_rgba(255,255,255,0.1)] hover:scale-[1.02] active:scale-95 transition-all italic"
+          className="w-full py-7 rounded-full bg-slate-900 border border-white/10 text-white font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-5 shadow-2xl hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all italic"
         >
-          <Chrome size={24} />
+          <Chrome size={24} className="text-indigo-400" />
           {isLogin ? (isZh ? '使用 Google 登录' : 'Sign in with Google') : (isZh ? '使用 Google 注册' : 'Sign up with Google')}
         </button>
 

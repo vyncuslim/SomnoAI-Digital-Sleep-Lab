@@ -31,7 +31,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
       id: 'contact',
       email: 'contact@sleepsomno.com',
       label: isZh ? '实验室联络处' : 'Laboratory Dispatch',
-      desc: isZh ? '商务合作、品牌交流与通用业务查询。' : 'General business inquiries, partnerships, and brand communications.',
+      desc: isZh ? '通用业务查询、商务合作与品牌交流。' : 'General business inquiries, partnerships, and brand communications.',
       icon: Globe,
       color: 'text-emerald-400'
     },
@@ -41,21 +41,21 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
       label: isZh ? '信息集成部' : 'Information Matrix',
       desc: isZh ? '数据协议说明、隐私合规性查询与媒体资料。' : 'Data protocol documentation, privacy compliance queries, and media assets.',
       icon: MessageSquare,
-      color: 'text-indigo-400'
+      color: 'text-blue-400'
     },
     {
       id: 'support',
       email: 'support@sleepsomno.com',
       label: isZh ? '技术支持中心' : 'Technical Support',
-      desc: isZh ? '穿戴设备同步故障、账户恢复与 Bug 提交。' : 'Wearable sync troubleshooting, account recovery, and bug reporting.',
+      desc: isZh ? '神经链路同步故障排除、账户恢复与错误报告。' : 'Neural link troubleshooting, account recovery, and bug reporting.',
       icon: LifeBuoy,
-      color: 'text-amber-400'
+      color: 'text-indigo-400'
     },
     {
       id: 'admin',
       email: 'admin@sleepsomno.com',
-      label: isZh ? '核心管理节点' : 'Administrative Core',
-      desc: isZh ? '系统级配置、安全审计与基础设施查询。' : 'System-level configuration, security audits, and infrastructure inquiries.',
+      label: isZh ? '管理终端' : 'Administrative Terminal',
+      desc: isZh ? '核心权限、系统级配置与基础设施安全查询。' : 'Core permissions, system-level configuration, and infrastructure inquiries.',
       icon: ShieldCheck,
       color: 'text-rose-400'
     }
@@ -81,7 +81,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
           </div>
           <div className="space-y-4">
             <h1 className="text-5xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">
-              Connectivity <span className="text-indigo-500">Nodes</span>
+              Connectivity <span className="text-indigo-500">Hub</span>
             </h1>
             <p className="text-[10px] md:text-[12px] text-slate-600 font-mono font-bold uppercase tracking-[0.6em] italic max-w-2xl mx-auto leading-relaxed">
               SomnoAI Network Dispatch • SECURE_INGRESS_PROTOCOL_V4

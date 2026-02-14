@@ -18,7 +18,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
   const isZh = lang === 'zh';
 
   const mailNodes = [
-    { label: 'General', email: 'contact@sleepsomno.com' },
+    { label: 'Dispatch', email: 'contact@sleepsomno.com' },
+    { label: 'Archive', email: 'info@sleepsomno.com' },
     { label: 'Support', email: 'support@sleepsomno.com' },
     { label: 'Admin', email: 'admin@sleepsomno.com' }
   ];
@@ -61,11 +62,11 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         </GlassCard>
 
         {/* Contact Links Block */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
            {mailNodes.map((node) => (
-             <GlassCard key={node.label} className="p-8 rounded-[2.5rem] border-white/5 bg-black/40 text-center space-y-2">
-                <p className="text-[9px] font-black text-indigo-400 uppercase tracking-widest">{node.label} Node</p>
-                <a href={`mailto:${node.email}`} className="text-sm font-black text-white italic hover:text-indigo-400 transition-colors">{node.email}</a>
+             <GlassCard key={node.label} className="p-6 rounded-[2rem] border-white/5 bg-black/40 text-center space-y-2">
+                <p className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">{node.label} Node</p>
+                <a href={`mailto:${node.email}`} className="text-[10px] font-black text-white italic hover:text-indigo-400 transition-colors break-all leading-tight">{node.email}</a>
              </GlassCard>
            ))}
         </div>
@@ -80,7 +81,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             
             <div className="flex flex-wrap gap-4">
               <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="flex items-center px-8 py-5 bg-white/5 rounded-2xl text-slate-400 hover:text-white transition-all border border-white/5 font-black text-[10px] uppercase tracking-widest italic shadow-xl"><Github size={18} className="mr-3" /> Source Code</a>
-              <a href="mailto:info@sleepsomno.com" className="flex items-center px-8 py-5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-2xl hover:bg-indigo-500"><Mail size={18} className="mr-3" /> Dispatch Info</a>
+              <button onClick={() => onNavigate('contact')} className="flex items-center px-8 py-5 bg-indigo-600 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all italic shadow-2xl hover:bg-indigo-500"><Mail size={18} className="mr-3" /> Connectivity Hub</button>
             </div>
           </div>
         </GlassCard>

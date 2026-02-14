@@ -16,7 +16,6 @@ CREATE TABLE IF NOT EXISTS public.profiles (
 );
 
 -- 2. 权限助手函数 (SECURITY DEFINER 以防止 RLS 递归)
--- 该函数在内部查询 profiles 表时会跳过 RLS，从而打破死循环
 CREATE OR REPLACE FUNCTION public.is_admin_check(uid uuid)
 RETURNS boolean AS $$
 BEGIN
@@ -28,7 +27,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- RPC: 前端通过此函数获取自身资料，完全避开递归策略风险
+-- RPC: 前端通过此函数获取自身资料
 CREATE OR REPLACE FUNCTION public.get_my_detailed_profile()
 RETURNS SETOF public.profiles AS $$
 BEGIN
@@ -36,7 +35,7 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 3. 身份触发器 (新受试者接入时自动注册)
+-- 3. 身份触发器
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
@@ -83,8 +82,6 @@ ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.audit_logs ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.notification_recipients ENABLE ROW LEVEL SECURITY;
 
--- 【Profiles 策略】
--- FIX: 使用 is_admin_check() 助手函数避免 42P17 无限递归
 DROP POLICY IF EXISTS "Profiles visibility" ON public.profiles;
 CREATE POLICY "Profiles visibility" ON public.profiles
 FOR SELECT TO authenticated
@@ -99,8 +96,6 @@ FOR UPDATE TO authenticated
 USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
--- 【Audit Logs 策略】
--- 允许所有已认证用户写入日志（以便上报异常），但只有管理员可查看和管理
 DROP POLICY IF EXISTS "Admin audit access" ON public.audit_logs;
 CREATE POLICY "Anyone can insert logs" ON public.audit_logs
 FOR INSERT TO authenticated
@@ -114,7 +109,6 @@ CREATE POLICY "Admin delete logs" ON public.audit_logs
 FOR DELETE TO authenticated
 USING (public.is_admin_check(auth.uid()));
 
--- 【Recipients 策略】
 DROP POLICY IF EXISTS "Admin recipient management" ON public.notification_recipients;
 CREATE POLICY "Admin recipient management" ON public.notification_recipients
 FOR ALL TO authenticated

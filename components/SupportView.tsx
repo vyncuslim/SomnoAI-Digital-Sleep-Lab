@@ -158,8 +158,9 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
                       {[
                         { id: 'duitnow', label: 'TNG / DUITNOW', value: '+60 187807388' }, 
                         { id: 'paypal', label: 'PAYPAL DISPATCH', value: 'Vyncuslim vyncuslim' },
-                        { id: 'support', label: 'TECH SUPPORT', value: 'support@sleepsomno.com' },
-                        { id: 'admin', label: 'ADMIN HUB', value: 'admin@sleepsomno.com' }
+                        { id: 'support_email', label: 'SUPPORT NODE', value: 'support@sleepsomno.com' },
+                        { id: 'info_email', label: 'INFO NODE', value: 'info@sleepsomno.com' },
+                        { id: 'admin_email', label: 'ADMIN NODE', value: 'admin@sleepsomno.com' }
                       ].map((item) => (
                         <div key={item.id} className="p-6 bg-slate-900 border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/40 transition-all shadow-inner">
                           <div className="space-y-1">

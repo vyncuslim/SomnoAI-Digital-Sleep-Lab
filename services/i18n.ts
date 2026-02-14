@@ -1,8 +1,8 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v11.8
- * Production Hardened.
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v11.9
+ * Synchronized with official mailbox matrix.
  */
 
 const BRAND_NAME = "SomnoAI Digital Sleep Lab";
