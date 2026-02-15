@@ -47,23 +47,23 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
       id: 'support',
       email: 'support@sleepsomno.com',
       label: isZh ? '技术支持中心' : 'Technical Support',
-      desc: isZh ? '神经链路同步故障排除、账户恢复与错误报告。' : 'Neural link troubleshooting, account recovery, and bug reporting.',
+      desc: isZh ? '神经链路同步故障排除、账户恢复与 Bug 提交。' : 'Neural link synchronization troubleshooting and bug reporting.',
       icon: LifeBuoy,
-      color: 'text-indigo-400'
+      color: 'text-amber-400'
     },
     {
       id: 'admin',
       email: 'admin@sleepsomno.com',
       label: isZh ? '管理终端' : 'Administrative Terminal',
-      desc: isZh ? '核心权限、系统级配置与基础设施安全查询。' : 'Core permissions, system-level configuration, and infrastructure inquiries.',
+      desc: isZh ? '核心权限、系统级配置与基础设施安全查询。' : 'Core permissions and system-level configuration inquiries.',
       icon: ShieldCheck,
-      color: 'text-rose-400'
+      color: 'text-indigo-400'
     }
   ];
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-700 font-sans text-left">
-      <header className="max-w-7xl mx-auto px-4 mb-12 md:mb-20">
+      <header className="max-w-7xl mx-auto px-6 mb-12 md:mb-20">
         <button 
           onClick={onBack}
           className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
@@ -72,34 +72,32 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
         </button>
       </header>
 
-      <div className="max-w-5xl mx-auto px-4 space-y-24">
-        {/* Hero Section */}
+      <div className="max-w-5xl mx-auto px-6 space-y-24">
         <div className="text-center space-y-8">
           <div className="relative inline-block">
              <div className="absolute inset-0 bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" />
              <Logo size={140} animated={true} className="mx-auto relative z-10" />
           </div>
           <div className="space-y-4">
-            <h1 className="text-5xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">
+            <h1 className="text-6xl md:text-[5rem] font-black italic text-white uppercase tracking-tighter leading-none">
               Connectivity <span className="text-indigo-500">Hub</span>
             </h1>
-            <p className="text-[10px] md:text-[12px] text-slate-600 font-mono font-bold uppercase tracking-[0.6em] italic max-w-2xl mx-auto leading-relaxed">
-              SomnoAI Network Dispatch • SECURE_INGRESS_PROTOCOL_V4
+            <p className="text-[10px] md:text-[12px] text-slate-500 font-mono font-bold uppercase tracking-[0.6em] italic max-w-2xl mx-auto leading-relaxed">
+              SomnoAI Network Dispatch • SECURE COMMUNICATION PROTOCOL v4.2
             </p>
           </div>
         </div>
 
-        {/* Contact Matrix */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {contacts.map((node) => (
             <GlassCard key={node.id} className="p-10 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all duration-500 group relative overflow-hidden bg-slate-900/40">
                <div className="flex justify-between items-start mb-10 relative z-10">
-                  <div className={`p-4 bg-black/40 rounded-2xl ${node.color} group-hover:scale-110 transition-transform shadow-inner border border-white/5`}>
+                  <div className={`p-4 bg-white/5 rounded-2xl ${node.color} group-hover:scale-110 transition-transform shadow-inner border border-white/5`}>
                     <node.icon size={32} />
                   </div>
                   <button 
                     onClick={() => handleCopy(node.id, node.email)}
-                    className={`p-3 rounded-xl transition-all active:scale-90 ${copiedId === node.id ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-700 hover:text-slate-300'}`}
+                    className={`p-3 rounded-xl transition-all active:scale-90 ${copiedId === node.id ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-600 hover:text-white'}`}
                   >
                     {copiedId === node.id ? <Check size={20} /> : <Copy size={20} />}
                   </button>
@@ -109,33 +107,32 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
                   <h3 className="text-white font-black italic uppercase text-lg tracking-tight flex items-center gap-3">
                     {node.label}
                     <div className="w-1 h-1 rounded-full bg-slate-800" />
-                    <span className="text-[9px] font-mono text-slate-700 tracking-widest">{node.id.toUpperCase()}_DISPATCH</span>
+                    <span className="text-[9px] font-mono text-slate-600 tracking-widest">{node.id.toUpperCase()}_NODE</span>
                   </h3>
                   <a 
                     href={`mailto:${node.email}`}
-                    className={`block text-2xl font-black italic ${node.color} hover:opacity-80 transition-opacity tracking-tighter leading-none truncate`}
+                    className="block text-2xl md:text-3xl font-black italic text-indigo-400 hover:text-indigo-300 transition-colors tracking-tighter leading-none truncate"
                   >
                     {node.email}
                   </a>
-                  <p className="text-slate-500 text-xs leading-relaxed italic font-bold pt-2 opacity-80">
+                  <p className="text-slate-500 text-xs leading-relaxed italic font-medium pt-2 opacity-80">
                     {node.desc}
                   </p>
                </div>
 
-               {/* Background detail */}
                <div className="absolute -bottom-4 -right-4 opacity-[0.02] text-white pointer-events-none group-hover:rotate-12 transition-transform duration-1000">
-                  <node.icon size={200} strokeWidth={0.5} />
+                  <node.icon size={180} strokeWidth={0.5} />
                </div>
             </GlassCard>
           ))}
         </div>
 
-        <footer className="pt-20 text-center space-y-10">
-           <div className="flex items-center justify-center gap-4 opacity-20">
+        <footer className="pt-20 text-center space-y-12">
+           <div className="flex items-center justify-center gap-4 opacity-30">
               <ShieldCheck size={16} className="text-slate-500" />
-              <p className="text-[9px] font-mono tracking-[0.5em] uppercase">SomnoAI Digital Sleep Lab • Matrix v4.2</p>
+              <p className="text-[9px] font-mono tracking-[0.5em] uppercase">SomnoAI Connectivity Matrix • v4.2.5</p>
            </div>
-           <button onClick={onBack} className="px-20 py-7 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-xs uppercase tracking-[0.4em] italic shadow-[0_40px_100px_rgba(0,0,0,0.5)] active:scale-95 transition-all">TERMINATE DISPATCH SESSION</button>
+           <button onClick={onBack} className="px-20 py-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-xs uppercase tracking-[0.4em] italic shadow-[0_30px_70px_rgba(79,70,229,0.3)] active:scale-95 transition-all">TERMINATE DISPATCH SESSION</button>
         </footer>
       </div>
     </div>

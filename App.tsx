@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
-import { ViewType, SleepRecord } from './types.ts';
+import { ViewType, SleepRecord, Article } from './types.ts';
 import {
   LayoutDashboard, TrendingUp, Sparkles, FlaskConical,
-  User, Settings as SettingsIcon, LogOut, BookOpen
+  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from './services/i18n.ts';
@@ -30,6 +31,8 @@ import { AboutView } from './components/AboutView.tsx';
 import { FeedbackView } from './components/FeedbackView.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
+import { NewsHub } from './components/NewsHub.tsx';
+import { ArticleView } from './components/ArticleView.tsx';
 
 const m = motion as any;
 
@@ -51,6 +54,7 @@ const AppContent: React.FC = () => {
   const [lang, setLang] = useState<Language>(() => (localStorage.getItem('somno_lang') as Language) || 'en'); 
   const [currentRecord] = useState<SleepRecord>(INITIAL_MOCK_RECORD);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
+  const [activeArticle, setActiveArticle] = useState<Article | null>(null);
 
   const resolveViewFromLocation = useCallback((): ViewType => {
     const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
@@ -68,7 +72,9 @@ const AppContent: React.FC = () => {
       '/faq': 'faq',
       '/about': 'about',
       '/support': 'support',
-      '/feedback': 'feedback'
+      '/feedback': 'feedback',
+      '/news': 'news',
+      '/article': 'article'
     };
     return views[path] || 'landing';
   }, []);
@@ -104,6 +110,8 @@ const AppContent: React.FC = () => {
     if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
     if (activeView === 'support') return <SupportView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
     if (activeView === 'feedback') return <FeedbackView lang={lang} onBack={() => navigate('/')} />;
+    if (activeView === 'news') return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />;
+    if (activeView === 'article' && activeArticle) return <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} />;
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
@@ -113,7 +121,7 @@ const AppContent: React.FC = () => {
     { id: 'dashboard', icon: LayoutDashboard, label: lang === 'zh' ? '仪表盘' : 'Overview' },
     { id: 'calendar', icon: TrendingUp, label: lang === 'zh' ? '趋势' : 'Trends' },
     { id: 'assistant', icon: Sparkles, label: lang === 'zh' ? 'AI 教练' : 'AI Coach' },
-    { id: 'experiment', icon: FlaskConical, label: lang === 'zh' ? '实验室' : 'Lab' },
+    { id: 'news', icon: Newspaper, label: lang === 'zh' ? '研究' : 'Research' },
     { id: 'diary', icon: BookOpen, label: lang === 'zh' ? '日志' : 'Logs' },
   ];
 
@@ -169,6 +177,8 @@ const AppContent: React.FC = () => {
             {activeView === 'support' && <SupportView lang={lang} onBack={() => navigate('dashboard')} onNavigate={navigate} />}
             {activeView === 'about' && <AboutView lang={lang} onBack={() => navigate('dashboard')} onNavigate={navigate} />}
             {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => navigate('support')} />}
+            {activeView === 'news' && <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />}
+            {activeView === 'article' && activeArticle && <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} />}
           </m.div>
         </AnimatePresence>
       </main>

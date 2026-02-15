@@ -1,38 +1,38 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
   <url>
     <loc>https://sleepsomno.com/</loc>
-    <lastmod>2026-02-09</lastmod>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://sleepsomno.com/about</loc>
-    <lastmod>2026-02-09</lastmod>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://sleepsomno.com/science</loc>
-    <lastmod>2026-02-09</lastmod>
+    <loc>https://sleepsomno.com/news</loc>
+    <lastmod>2026-02-15</lastmod>
+    <changefreq>daily</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://sleepsomno.com/faq</loc>
-    <lastmod>2026-02-09</lastmod>
-    <priority>0.7</priority>
+    <loc>https://sleepsomno.com/article/ai-driven-sleep-optimization-2026</loc>
+    <news:news>
+      <news:publication>
+        <news:name>SomnoAI Digital Sleep Lab</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-15T10:00:00+08:00</news:publication_date>
+      <news:title>How Gemini AI Decodes Sleep Architecture in 2026</news:title>
+    </news:news>
   </url>
   <url>
-    <loc>https://sleepsomno.com/support</loc>
-    <lastmod>2026-02-09</lastmod>
-    <priority>0.6</priority>
-  </url>
-  <url>
-    <loc>https://sleepsomno.com/privacy</loc>
-    <lastmod>2026-02-09</lastmod>
-    <priority>0.5</priority>
-  </url>
-  <url>
-    <loc>https://sleepsomno.com/terms</loc>
-    <lastmod>2026-02-09</lastmod>
-    <priority>0.5</priority>
+    <loc>https://sleepsomno.com/article/deep-sleep-rem-recovery-2026</loc>
+    <news:news>
+      <news:publication>
+        <news:name>SomnoAI Digital Sleep Lab</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-02-10T14:30:00+08:00</news:publication_date>
+      <news:title>Neurological Recovery: Deep Sleep vs. REM Paradox</news:title>
+    </news:news>
   </url>
 </urlset>

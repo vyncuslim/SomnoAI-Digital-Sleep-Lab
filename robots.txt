@@ -1,7 +1,8 @@
 User-agent: *
 Allow: /
-Allow: /favicon.ico
-Allow: /favicon.png
+Allow: /news
+Allow: /article/*
+Allow: /rss.xml
 Allow: /sitemap.xml
 Disallow: /admin
 Disallow: /login

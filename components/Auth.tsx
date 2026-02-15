@@ -99,49 +99,45 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       <m.div 
         initial={{ opacity: 0, y: 20 }} 
         animate={{ opacity: 1, y: 0 }} 
-        className="flex flex-col items-center mb-10 space-y-12 max-w-xl relative z-10 w-full"
+        className="flex flex-col items-center mb-14 space-y-12 max-w-xl relative z-10 w-full"
       >
-        <div className="space-y-10 w-full">
-          <Logo size={100} animated={true} className="mx-auto" />
+        <div className="space-y-12 w-full">
+          <Logo size={110} animated={true} className="mx-auto" />
           
-          <div className="bg-slate-950/60 backdrop-blur-3xl border border-white/5 rounded-[4rem] p-12 space-y-10 shadow-[0_40px_100px_-20px_rgba(0,0,0,0.8)] relative overflow-hidden group text-left">
-            <div className="absolute top-0 right-0 p-10 opacity-[0.03] text-indigo-400 group-hover:rotate-12 transition-transform duration-1000">
-              <Microscope size={180} />
+          <div className="bg-slate-950/60 backdrop-blur-3xl border border-white/5 rounded-[5rem] p-14 space-y-12 shadow-[0_40px_100px_-20px_rgba(0,0,0,1)] relative overflow-hidden group text-left">
+            <div className="absolute top-0 right-0 p-12 opacity-[0.03] text-indigo-400 group-hover:rotate-12 transition-transform duration-1000 pointer-events-none">
+              <Microscope size={220} />
             </div>
             
-            <div className="space-y-8">
-              <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                 <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-500 shadow-inner">
-                    <Cpu size={18} className="animate-pulse" />
+            <div className="space-y-10">
+              <div className="flex items-center gap-5 border-b border-white/5 pb-8">
+                 <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-500 shadow-inner border border-white/5">
+                    <Cpu size={22} className="animate-pulse" />
                  </div>
-                 <h3 className="text-[12px] font-black uppercase text-white tracking-[0.4em] italic">{isZh ? '实验室使命' : 'Mission Brief'}</h3>
+                 <h3 className="text-[13px] font-black uppercase text-white tracking-[0.4em] italic leading-none">{isZh ? '实验室准则' : 'Lab Mission'}</h3>
               </div>
-              <p className="text-2xl md:text-3xl text-slate-200 italic leading-[1.2] font-black uppercase tracking-tighter drop-shadow-xl">
+              <p className="text-3xl md:text-4xl text-slate-200 italic leading-[1.1] font-black uppercase tracking-tighter drop-shadow-2xl">
                 {isZh 
                   ? "它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验室体验。" 
                   : "Integrating physiological monitoring, deep AI insights, and tailored health protocols into a unified digital laboratory."}
               </p>
-              <div className="flex items-center gap-3">
-                 <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_12px_#10b981]" />
-                 <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">Neural Ingress Protocol: Nominal</span>
-              </div>
             </div>
 
-            <div className="pt-8 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-6">
-               <div className="flex items-center gap-8">
-                  <div className="flex items-center gap-2">
-                    <ShieldCheck size={16} className="text-emerald-500" />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Secure Ingress</span>
+            <div className="pt-10 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-8">
+               <div className="flex items-center gap-10">
+                  <div className="flex items-center gap-3">
+                    <ShieldCheck size={18} className="text-emerald-500" />
+                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest italic">SECURE_AUTH</span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Zap size={16} className="text-indigo-400" />
-                    <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">Neural Link</span>
+                  <div className="flex items-center gap-3">
+                    <Zap size={18} className="text-indigo-400" />
+                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-widest italic">NEURAL_LINK</span>
                   </div>
                </div>
                
                <button 
                 onClick={() => safeNavigatePath('about')}
-                className="group/btn flex items-center gap-2 px-8 py-3.5 rounded-full bg-white/5 border border-white/10 text-[10px] font-black text-slate-400 hover:text-white uppercase tracking-widest hover:bg-white/10 transition-all italic shadow-2xl"
+                className="group/btn flex items-center gap-3 px-10 py-4 rounded-full bg-white/5 border border-white/10 text-[11px] font-black text-slate-400 hover:text-white uppercase tracking-widest transition-all italic shadow-2xl"
               >
                 <Info size={16} className="text-indigo-400 group-hover/btn:rotate-12 transition-transform" />
                 {isZh ? '查看文档' : 'Documentation'}
@@ -151,66 +147,67 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         </div>
       </m.div>
 
-      <div className="w-full max-w-[440px] space-y-12 relative z-10">
+      <div className="w-full max-w-[460px] space-y-12 relative z-10">
+        {/* Dark Themed Google Button */}
         <button 
           onClick={() => authApi.signInWithGoogle()}
-          className="w-full py-7 rounded-full bg-slate-900 border border-white/10 text-white font-black text-[13px] uppercase tracking-widest flex items-center justify-center gap-5 shadow-2xl hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all italic"
+          className="w-full py-8 rounded-full bg-slate-900 border border-white/10 text-white font-black text-[14px] uppercase tracking-[0.2em] flex items-center justify-center gap-6 shadow-2xl hover:bg-slate-800 hover:scale-[1.02] active:scale-95 transition-all italic"
         >
-          <Chrome size={24} className="text-indigo-400" />
+          <Chrome size={28} className="text-indigo-400" />
           {isLogin ? (isZh ? '使用 Google 登录' : 'Sign in with Google') : (isZh ? '使用 Google 注册' : 'Sign up with Google')}
         </button>
 
-        <div className="flex items-center gap-6 opacity-10 px-8">
-          <div className="h-px flex-1 bg-white" /><span className="text-[9px] font-black text-white uppercase tracking-widest italic">Direct Terminal</span><div className="h-px flex-1 bg-white" />
+        <div className="flex items-center gap-8 opacity-10 px-10">
+          <div className="h-px flex-1 bg-white" /><span className="text-[10px] font-black text-white uppercase tracking-widest italic">Direct Ingress</span><div className="h-px flex-1 bg-white" />
         </div>
 
-        <form onSubmit={handleAuthAction} className="space-y-6">
-          <div className="space-y-4">
+        <form onSubmit={handleAuthAction} className="space-y-8">
+          <div className="space-y-5">
             {!isLogin && (
               <div className="relative group">
-                <User className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={22} />
-                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={isZh ? "受试者姓名" : "Subject Name"} className="w-full bg-slate-900/40 border border-white/5 rounded-full pl-16 pr-10 py-7 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic shadow-inner" required />
+                <User className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={24} />
+                <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={isZh ? "受试者姓名" : "Subject Name"} className="w-full bg-slate-950 border border-white/5 rounded-full pl-20 pr-10 py-8 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic shadow-inner" required />
               </div>
             )}
             <div className="relative group">
-              <Mail className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={22} />
-              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={isZh ? "识别码 (邮箱)" : "Identifier (Email)"} className="w-full bg-slate-900/40 border border-white/5 rounded-full pl-16 pr-10 py-7 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic shadow-inner" required />
+              <Mail className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={24} />
+              <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={isZh ? "识别码 (邮箱)" : "Identifier (Email)"} className="w-full bg-slate-950 border border-white/5 rounded-full pl-20 pr-10 py-8 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic shadow-inner" required />
             </div>
             <div className="relative group">
-              <Lock className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={22} />
-              <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "实验室通行证" : "Laboratory Access Pass"} className="w-full bg-slate-900/40 border border-white/5 rounded-full pl-16 pr-24 py-7 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic shadow-inner" required />
-              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors">
-                {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+              <Lock className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors" size={24} />
+              <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "实验室通行证" : "Laboratory Access Pass"} className="w-full bg-slate-950 border border-white/5 rounded-full pl-20 pr-24 py-8 text-sm text-white outline-none focus:border-indigo-500/50 font-bold italic shadow-inner" required />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-12 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors">
+                {showPassword ? <EyeOff size={26} /> : <Eye size={26} />}
               </button>
             </div>
           </div>
 
-          <div ref={turnstileRef} className="flex justify-center min-h-[65px] opacity-80"></div>
+          <div ref={turnstileRef} className="flex justify-center min-h-[70px] opacity-80"></div>
 
           <button 
             type="submit" disabled={isProcessing || cooldown > 0}
-            className={`w-full py-8 rounded-full font-black text-[14px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-5 transition-all italic ${cooldown > 0 ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-900/20 active:scale-[0.98]'}`}
+            className={`w-full py-9 rounded-full font-black text-[15px] uppercase tracking-[0.4em] shadow-2xl flex items-center justify-center gap-6 transition-all italic ${cooldown > 0 ? 'bg-slate-800 text-slate-500' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-900/20 active:scale-[0.98]'}`}
           >
-            {isProcessing ? <Loader2 className="animate-spin" size={24} /> : cooldown > 0 ? <Clock size={24} /> : <Zap size={24} fill="currentColor" />}
+            {isProcessing ? <Loader2 className="animate-spin" size={28} /> : cooldown > 0 ? <Clock size={28} /> : <Zap size={28} fill="currentColor" />}
             <span>
               {cooldown > 0 
                 ? (isZh ? `系统冷却 (${cooldown}S)` : `COOLDOWN (${cooldown}S)`)
-                : isLogin ? (isZh ? '初始化连接' : 'Initiate Session') : (isZh ? '注册节点' : 'Register Node')
+                : isLogin ? (isZh ? '连接终端' : 'Initiate Session') : (isZh ? '注册节点' : 'Register Node')
               }
             </span>
           </button>
         </form>
 
-        <div className="flex flex-col items-center gap-8 pt-4">
-          <p className="text-[12px] font-bold text-slate-600 uppercase tracking-widest italic">
+        <div className="flex flex-col items-center gap-10 pt-4">
+          <p className="text-[13px] font-bold text-slate-600 uppercase tracking-widest italic">
             {isLogin ? (isZh ? "首次接入？" : "New Node? ") : (isZh ? "已有标识符？" : "Legacy Identity? ")}
             <button type="button" onClick={() => {
               const nextTab = isLogin ? 'signup' : 'login';
               setActiveTab(nextTab);
               setError(null);
               window.history.pushState(null, '', `/${nextTab}`);
-            }} className="text-indigo-400 underline underline-offset-4 ml-3 hover:text-indigo-300 font-black">
-              {isLogin ? (isZh ? '立即注册' : 'Sign Up') : (isZh ? '立即登录' : 'Sign In')}
+            }} className="text-indigo-400 underline underline-offset-8 ml-4 hover:text-indigo-300 font-black transition-colors">
+              {isLogin ? (isZh ? '创建实验室访问权限' : 'Register Access') : (isZh ? '连接已有节点' : 'Link Node')}
             </button>
           </p>
         </div>
@@ -221,23 +218,23 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
               initial={{ opacity: 0, scale: 0.95 }} 
               animate={{ opacity: 1, scale: 1 }} 
               exit={{ opacity: 0, scale: 0.95 }}
-              className={`p-10 border rounded-[3.5rem] text-left flex items-start gap-8 ${error.isRateLimit ? 'bg-amber-500/5 border-amber-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}
+              className={`p-12 border rounded-[4rem] text-left flex items-start gap-10 ${error.isRateLimit ? 'bg-amber-500/5 border-amber-500/20' : 'bg-rose-500/5 border-rose-500/20'}`}
             >
-              <AlertCircle className={error.isRateLimit ? 'text-amber-500 shrink-0 mt-1' : 'text-rose-500 shrink-0 mt-1'} size={28} />
-              <div className="space-y-3">
-                <p className={`text-[12px] font-black uppercase italic leading-relaxed ${error.isRateLimit ? 'text-amber-400' : 'text-rose-400'}`}>{error.message}</p>
-                <button onClick={() => window.location.reload()} className={`text-[11px] font-black underline uppercase tracking-widest ${error.isRateLimit ? 'text-amber-300' : 'text-rose-300'}`}>Refresh Gateway</button>
+              <AlertCircle className={error.isRateLimit ? 'text-amber-500 shrink-0 mt-1' : 'text-rose-500 shrink-0 mt-1'} size={32} />
+              <div className="space-y-4">
+                <p className={`text-[13px] font-black uppercase italic leading-relaxed ${error.isRateLimit ? 'text-amber-400' : 'text-rose-400'}`}>{error.message}</p>
+                <button onClick={() => window.location.reload()} className={`text-[12px] font-black underline uppercase tracking-[0.2em] ${error.isRateLimit ? 'text-amber-300' : 'text-rose-300'}`}>Restore Gateway</button>
               </div>
             </m.div>
           )}
         </AnimatePresence>
       </div>
 
-      <footer className="mt-24 flex flex-col items-center gap-5 opacity-30 text-[10px] font-black uppercase tracking-[0.6em] text-slate-600 italic">
-         <div className="flex items-center gap-4 px-8 py-3 bg-indigo-500/5 border border-indigo-500/10 rounded-full text-indigo-400/70">
-            <Link2 size={14} /> Encrypted Node Bridge Active
+      <footer className="mt-24 flex flex-col items-center gap-6 opacity-30 text-[11px] font-black uppercase tracking-[0.6em] text-slate-600 italic">
+         <div className="flex items-center gap-5 px-10 py-3.5 bg-indigo-500/5 border border-indigo-500/10 rounded-full text-indigo-400/70 shadow-inner">
+            <Link2 size={16} /> Encrypted Ingress Bridge Active
          </div>
-         <p>@2026 SomnoAI Laboratory Hub</p>
+         <p>@2026 SomnoAI Laboratory Hub • Security Protocol V9.2</p>
       </footer>
     </div>
   );

@@ -35,6 +35,29 @@ export interface DiaryEntry {
 }
 
 /**
+ * Editorial Content Interfaces
+ */
+export interface Author {
+  name: string;
+  role: string;
+  bio: string;
+  avatar?: string;
+}
+
+export interface Article {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt: string;
+  content: string;
+  date: string;
+  author: Author;
+  category: 'Science' | 'AI' | 'Health' | 'Technology';
+  readTime: string;
+  coverImage?: string;
+}
+
+/**
  * Strategic Ingress Interface
  */
 export interface HealthTelemetryPayload {
@@ -70,6 +93,6 @@ export interface AuditLog {
   created_at: string; // Standardized
 }
 
-export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'registry' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'support' | 'contact' | 'not-found' | 'signup' | 'login' | 'science' | 'faq' | 'landing' | 'update-password';
+export type ViewType = 'dashboard' | 'calendar' | 'assistant' | 'diary' | 'registry' | 'profile' | 'settings' | 'about' | 'admin' | 'admin-login' | 'privacy' | 'terms' | 'feedback' | 'experiment' | 'support' | 'contact' | 'not-found' | 'signup' | 'login' | 'science' | 'faq' | 'landing' | 'update-password' | 'news' | 'article';
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
 export type Language = 'en' | 'zh' | 'es';
