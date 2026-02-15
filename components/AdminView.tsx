@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   Users, User, ShieldAlert, RefreshCw, Loader2, ChevronLeft, 
@@ -6,7 +5,8 @@ import {
   Activity, Fingerprint, Lock, CheckCircle2,
   List, Unlock, Mail, ActivitySquare, 
   AlertTriangle, Database, Search, ShieldX, 
-  TrendingUp, Server, Plus, Clock, Terminal, ChevronDown, Copy, Check, Radio, Shield, Key, Smartphone, Monitor, Globe, Command
+  TrendingUp, Server, Plus, Clock, Terminal, ChevronDown, Copy, Check, Radio, Shield, Key, Smartphone, Monitor, Globe, Command,
+  Filter, Eye, ArrowUpRight
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -55,6 +55,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [actionError, setActionError] = useState<string | null>(null);
   const [registrySearch, setRegistrySearch] = useState('');
+  const [logSearch, setLogSearch] = useState('');
   const [modifyingUserId, setModifyingUserId] = useState<string | null>(null);
   
   const [newRecipientEmail, setNewRecipientEmail] = useState('');
@@ -74,7 +75,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       const [uRes, tRes, aRes, rRes] = await Promise.allSettled([
         adminApi.getUsers(),
         supabase.from('analytics_daily').select('*').order('date', { ascending: true }).limit(14),
-        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100),
+        supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(200),
         adminApi.getNotificationRecipients()
       ]);
 
@@ -115,6 +116,13 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
       return name.includes(term) || email.includes(term);
     });
   }, [users, registrySearch]);
+
+  const filteredLogs = useMemo(() => {
+    const term = logSearch.toLowerCase().trim();
+    const coreLogs = auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH' || l.action === 'GA4_PERMISSION_DENIED');
+    if (!term) return coreLogs;
+    return coreLogs.filter(l => (l.details || '').toLowerCase().includes(term) || l.action.toLowerCase().includes(term));
+  }, [auditLogs, logSearch]);
 
   const handleManualSync = async () => {
     if (syncState === 'RUNNING') return;
@@ -172,18 +180,14 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
     } catch (e: any) { setActionError(e.message); } finally { setModifyingUserId(null); }
   };
 
-  // Fix: Implemented handleAddRecipient to add new notification recipients to the matrix.
   const handleAddRecipient = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newRecipientEmail || isAddingRecipient) return;
-    
     setIsAddingRecipient(true);
     setActionError(null);
     try {
       const { error } = await adminApi.addNotificationRecipient(newRecipientEmail, 'Admin Node');
       if (error) throw error;
-      
-      // Refresh the notification recipient list after successful addition
       const { data } = await adminApi.getNotificationRecipients();
       setRecipients(data || []);
       setNewRecipientEmail('');
@@ -205,8 +209,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
   })();
 
   return (
-    <div className="space-y-8 md:space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left relative overflow-hidden">
-      {/* Background Decor - Terminal Style */}
+    <div className="space-y-8 md:space-y-12 pb-32 max-w-7xl mx-auto px-4 font-sans text-left relative overflow-hidden selection:bg-indigo-500/30">
       <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none text-white transform rotate-12">
         <TerminalIcon size={600} strokeWidth={0.5} />
       </div>
@@ -218,16 +221,16 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
           )}
           <div className="space-y-2 text-left">
             <div className="flex items-center gap-3">
-               <div className="p-2 bg-indigo-600 rounded-lg text-white"><Shield size={20} /></div>
-               <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase leading-none">Bridge <span className="text-indigo-500">Terminal</span></h1>
+               <div className="p-2 bg-indigo-600 rounded-lg text-white shadow-lg"><Shield size={20} /></div>
+               <h1 className="text-3xl md:text-4xl font-black italic tracking-tighter text-white uppercase leading-none">SomnoAI <span className="text-indigo-500">Admin</span></h1>
             </div>
             <div className="flex items-center gap-3">
               <div className={`px-4 py-1 rounded-full border text-[9px] font-black uppercase tracking-widest ${currentAdmin?.is_super_owner ? 'bg-amber-500/20 border-amber-500/40 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.2)]' : 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400'}`}>
-                AUTHORITY: {currentAdmin?.is_super_owner ? 'ROOT_SUPER_OWNER' : currentAdmin?.role?.toUpperCase() || 'SYNCHRONIZING'}
+                CLEARANCE: {currentAdmin?.is_super_owner ? 'ROOT_SUPER_OWNER' : currentAdmin?.role?.toUpperCase() || 'SYNCHRONIZING'}
               </div>
               <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
                  <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Signal Stable</span>
+                 <span className="text-[8px] font-black text-slate-500 uppercase tracking-widest italic">Signal Nominal</span>
               </div>
             </div>
           </div>
@@ -240,7 +243,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               onClick={() => setActiveTab(tab as AdminTab)} 
               className={`flex items-center gap-3 px-8 py-4 rounded-[1.5rem] text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${activeTab === tab ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
             >
-               {tab === 'signals' ? 'Security Signals' : tab.toUpperCase()}
+               {tab === 'signals' ? 'Security Trace' : tab.toUpperCase()}
             </button>
           ))}
         </nav>
@@ -253,7 +256,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
               <Loader2 className="animate-spin text-indigo-500 relative z-10" size={64} />
             </div>
-            <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Syncing Authority Matrix...</p>
+            <p className="text-[11px] font-black uppercase tracking-[0.6em] text-slate-500 italic">Accessing Neural Registry...</p>
           </div>
         ) : (
           <m.div key={activeTab} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} className="space-y-12">
@@ -261,10 +264,10 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
               <div className="space-y-12">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                   {DATABASE_SCHEMA.map((stat, i) => (
-                    <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all duration-500">
+                    <GlassCard key={i} className="p-8 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all duration-500 group">
                       <div className="flex justify-between items-start mb-6">
-                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20"><stat.icon size={20} /></div>
-                        <span className="text-[8px] font-mono text-slate-700 uppercase tracking-widest italic">SYS_DB_PTR</span>
+                        <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 group-hover:scale-110 transition-transform"><stat.icon size={20} /></div>
+                        <span className="text-[8px] font-mono text-slate-700 uppercase tracking-widest italic group-hover:text-indigo-400">NODE_0x{i+1}</span>
                       </div>
                       <p className="text-5xl font-black text-white italic tracking-tighter leading-none">{tableCounts[stat.id] || 0}</p>
                       <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest mt-4 flex items-center gap-2">
@@ -282,6 +285,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                            <div className="w-1.5 h-6 bg-indigo-600 rounded-full" />
                            <h3 className="text-xl font-black italic text-white uppercase tracking-tight">Access Telemetry</h3>
                          </div>
+                         <div className="flex gap-2">
+                            <div className="px-3 py-1 bg-white/5 rounded-full text-[8px] font-black text-slate-500 uppercase tracking-widest">GA4_STREAM</div>
+                         </div>
                       </div>
                       <div className="h-[320px] w-full">
                         <ResponsiveContainer width="100%" height="100%">
@@ -294,7 +300,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                             </defs>
                             <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.03)" vertical={false} />
                             <XAxis dataKey="date" axisLine={false} tickLine={false} tick={{ fill: 'rgba(148, 163, 184, 0.4)', fontSize: 9, fontWeight: 900 }} dy={15} />
-                            <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#chartGrad)" />
+                            <YAxis axisLine={false} tickLine={false} tick={{ fill: 'rgba(148, 163, 184, 0.4)', fontSize: 9 }} />
+                            <Tooltip 
+                               contentStyle={{ backgroundColor: '#020617', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '1rem' }}
+                               itemStyle={{ color: '#818cf8', fontWeight: 'bold' }}
+                            />
+                            <Area type="monotone" dataKey="users" stroke="#6366f1" strokeWidth={4} fillOpacity={1} fill="url(#chartGrad)" animationDuration={2000} />
                           </AreaChart>
                         </ResponsiveContainer>
                       </div>
@@ -315,9 +326,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              </div>
                           </div>
                        </div>
-                       <button onClick={handleManualSync} disabled={syncState === 'RUNNING'} className="w-full py-7 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95 disabled:opacity-30">
-                         {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} MANUALLY RE-SYNC
-                       </button>
+                       <div className="space-y-4">
+                          <p className="text-[10px] text-slate-500 italic leading-relaxed px-2 font-medium">Synchronizing laboratory traffic records from Google Analytics 4 API into the primary data warehouse.</p>
+                          <button onClick={handleManualSync} disabled={syncState === 'RUNNING'} className="w-full py-7 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2rem] font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-xl italic active:scale-95 disabled:opacity-30">
+                            {syncState === 'RUNNING' ? <Loader2 size={16} className="animate-spin" /> : <RefreshCw size={16} />} EXECUTE SIGNAL
+                          </button>
+                       </div>
                     </GlassCard>
                   </div>
                 </div>
@@ -333,9 +347,12 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         type="text" 
                         value={registrySearch} 
                         onChange={(e) => setRegistrySearch(e.target.value)} 
-                        placeholder="Filter Global Node Registry..." 
+                        placeholder="Filter Subject Node Registry..." 
                         className="w-full bg-slate-950 border border-white/10 rounded-full pl-16 pr-14 py-6 text-sm text-white focus:border-indigo-500/50 outline-none italic font-bold placeholder:text-slate-800 transition-all shadow-2xl" 
                      />
+                  </div>
+                  <div className="px-6 py-3 bg-white/5 rounded-full border border-white/5 text-[9px] font-black text-slate-500 uppercase tracking-widest">
+                     NODES_ACTIVE: {filteredUsers.length}
                   </div>
                 </div>
 
@@ -346,7 +363,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                         <tr className="border-b border-white/5 bg-white/[0.01]">
                           <th className="px-10 py-7 text-[9px] font-black text-slate-600 uppercase tracking-widest italic whitespace-nowrap">Identity Node</th>
                           <th className="px-10 py-7 text-[9px] font-black text-slate-600 uppercase tracking-widest italic whitespace-nowrap">Clearance Level</th>
-                          <th className="px-10 py-7 text-[9px] font-black text-slate-600 uppercase tracking-widest italic whitespace-nowrap text-right">Channel Status</th>
+                          <th className="px-10 py-7 text-[9px] font-black text-slate-600 uppercase tracking-widest italic whitespace-nowrap text-right">Integrity Status</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
@@ -374,9 +391,9 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                     <select 
                                       value={u.role}
                                       onChange={(e) => handleRoleChange(u.id, u.email, e.target.value)}
-                                      className={`appearance-none bg-slate-900 border border-white/10 rounded-full px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white outline-none cursor-pointer hover:border-indigo-500/50 transition-all pr-12`}
+                                      className={`appearance-none bg-slate-900 border border-white/10 rounded-full px-8 py-3 text-[10px] font-black uppercase tracking-widest text-white outline-none cursor-pointer hover:border-indigo-500/50 transition-all pr-12 font-mono`}
                                     >
-                                      {ROLES.map(r => <option key={r} value={r}>{r}</option>)}
+                                      {ROLES.map(r => <option key={r} value={r}>{r.toUpperCase()}</option>)}
                                     </select>
                                     <ChevronDown size={14} className="absolute right-5 top-1/2 -translate-y-1/2 text-slate-500 pointer-events-none" />
                                   </div>
@@ -409,98 +426,63 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
 
             {activeTab === 'signals' && (
               <div className="space-y-8 px-2 max-w-5xl mx-auto">
-                <div className="flex items-center justify-between px-2 text-left border-b border-white/5 pb-8">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 text-left border-b border-white/5 pb-8">
                    <div className="flex items-center gap-6">
                       <div className="p-5 bg-rose-500/10 rounded-[2rem] text-rose-500 border border-rose-500/20 shadow-xl shadow-rose-900/10">
                         <ShieldAlert size={32} />
                       </div>
                       <div>
-                        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Global Security Stream</h2>
+                        <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Security Trace</h2>
                         <p className="text-[10px] text-slate-600 uppercase tracking-widest font-black italic mt-1.5 flex items-center gap-2">
                            <div className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-ping" /> Real-time Anomaly Detection
                         </p>
                       </div>
                    </div>
+                   <div className="relative w-full md:w-64">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-700" size={16} />
+                      <input 
+                        type="text" 
+                        value={logSearch} 
+                        onChange={(e) => setLogSearch(e.target.value)} 
+                        placeholder="Trace Node Signal..." 
+                        className="w-full bg-slate-950 border border-white/5 rounded-full pl-12 pr-6 py-4 text-xs text-white focus:border-indigo-500/50 outline-none font-bold italic"
+                      />
+                   </div>
                 </div>
                 
                 <div className="grid grid-cols-1 gap-6">
-                  {auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH' || l.action === 'GA4_PERMISSION_DENIED').length > 0 ? (
-                    auditLogs.filter(l => l.action === 'USER_LOGIN' || l.level === 'CRITICAL' || l.action === 'SECURITY_BREACH' || l.action === 'GA4_PERMISSION_DENIED').map((log) => {
+                  {filteredLogs.length > 0 ? (
+                    filteredLogs.map((log) => {
                       const isLogin = log.action === 'USER_LOGIN';
                       const isBreach = log.action === 'SECURITY_BREACH' || log.level === 'CRITICAL';
                       const parsed = isLogin ? parseSecurityTelemetry(log.details) : null;
-                      const deviceType = parsed?.device?.toLowerCase();
-                      const isMobile = deviceType?.includes('mobile') || deviceType?.includes('android') || deviceType?.includes('iphone');
                       
                       return (
                         <GlassCard key={log.id} className="p-10 rounded-[4rem] border-white/5 hover:bg-white/[0.02] transition-all group overflow-hidden relative">
                           {isBreach && <div className="absolute top-0 left-0 w-2 h-full bg-rose-600 animate-pulse shadow-[0_0_20px_rgba(225,29,72,0.6)]" />}
-                          {isLogin && <div className="absolute top-0 left-0 w-1.5 h-full bg-indigo-500/40" />}
                           
-                          <div className="flex items-start gap-10">
+                          <div className="flex flex-col md:flex-row items-start gap-10">
                             <div className={`w-20 h-20 rounded-3xl flex items-center justify-center shrink-0 border ${isBreach ? 'bg-rose-500/10 border-rose-500/30 text-rose-500' : 'bg-indigo-500/5 border-indigo-500/20 text-indigo-400'} shadow-inner`}>
                                {isBreach ? <ShieldX size={36} className="animate-pulse" /> : isLogin ? <Fingerprint size={36} /> : <TerminalIcon size={36} />}
                             </div>
                             
-                            <div className="flex-1 space-y-8">
+                            <div className="flex-1 space-y-6 min-w-0">
                               <div className="flex flex-wrap items-center justify-between gap-4">
-                                 <div className="flex flex-wrap items-center gap-4">
-                                   <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase border italic ${isBreach ? 'bg-rose-600 text-white border-rose-500' : isLogin ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300' : 'bg-slate-950 border-white/10 text-slate-600'}`}>
-                                     {log.action.replace('_', ' ')}
-                                   </span>
-                                   <span className="text-[11px] font-mono text-slate-700 flex items-center gap-3 bg-black/40 px-4 py-1.5 rounded-xl border border-white/5 shadow-inner">
-                                     <Clock size={14} className="text-slate-800" /> {new Date(log.created_at).toLocaleString()}
-                                   </span>
-                                 </div>
+                                 <span className={`px-5 py-2 rounded-full text-[10px] font-black uppercase border italic ${isBreach ? 'bg-rose-600 text-white border-rose-500' : isLogin ? 'bg-indigo-500/20 border-indigo-500/40 text-indigo-300' : 'bg-slate-950 border-white/10 text-slate-600'}`}>
+                                   {log.action.replace(/_/g, ' ')}
+                                 </span>
+                                 <span className="text-[11px] font-mono text-slate-700 flex items-center gap-3 bg-black/40 px-4 py-1.5 rounded-xl border border-white/5">
+                                   <Clock size={14} className="text-slate-800" /> {new Date(log.created_at).toLocaleString()}
+                                 </span>
                               </div>
                               
-                              <div className="bg-black/50 p-10 rounded-[3rem] border border-white/5 group-hover:border-white/10 transition-colors shadow-inner">
-                                 {isLogin && parsed ? (
-                                   <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-                                      <div className="space-y-6">
-                                         <div className="flex items-center gap-5">
-                                            <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 shadow-inner"><User size={20} /></div>
-                                            <div className="space-y-0.5">
-                                               <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest">Identified Node</p>
-                                               <p className="text-base font-black text-white italic truncate max-w-[200px]">{parsed.subject || 'UNSPECIFIED'}</p>
-                                               <p className="text-[11px] font-mono text-slate-600">{parsed.identity}</p>
-                                            </div>
-                                         </div>
-                                         <div className="flex items-center gap-5">
-                                            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 flex items-center justify-center text-amber-500 shadow-inner"><Lock size={20} /></div>
-                                            <div className="space-y-0.5">
-                                               <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest">Clearance Status</p>
-                                               <p className="text-sm font-black text-amber-500 uppercase italic tracking-widest">{parsed.clearance}</p>
-                                            </div>
-                                         </div>
-                                      </div>
-                                      <div className="space-y-6">
-                                         <div className="flex items-center gap-5">
-                                            <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-400 shadow-inner">
-                                               {isMobile ? <Smartphone size={20} /> : <Monitor size={20} />}
-                                            </div>
-                                            <div className="space-y-0.5 flex-1 min-w-0">
-                                               <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest">Origin Terminal</p>
-                                               <p className="text-[11px] font-mono text-emerald-500/70 break-all leading-tight italic line-clamp-2">{parsed.device || 'Direct Ingress'}</p>
-                                            </div>
-                                         </div>
-                                      </div>
-                                   </div>
-                                 ) : (
-                                   <div className="space-y-4">
-                                      <div className="flex items-center gap-3 text-[10px] font-black uppercase text-slate-700 tracking-widest italic mb-2">
-                                         <TerminalIcon size={12} /> Log Trace
-                                      </div>
-                                      <p className="text-sm font-bold italic text-slate-300 leading-relaxed whitespace-pre-wrap font-mono break-all">
-                                        {log.details}
-                                      </p>
-                                   </div>
-                                 )}
+                              <div className="bg-black/50 p-8 rounded-[2.5rem] border border-white/5 group-hover:border-white/10 transition-colors shadow-inner overflow-hidden font-mono text-xs italic leading-loose text-slate-400">
+                                {log.details}
                               </div>
 
-                              <div className="flex items-center gap-4 opacity-40 group-hover:opacity-100 transition-opacity">
+                              <div className="flex items-center gap-4 opacity-40">
                                  <Command size={14} className="text-slate-700" />
-                                 <span className="text-[9px] font-mono text-slate-700 uppercase tracking-[0.3em]">REF_TOKEN: {log.id.toUpperCase()}</span>
+                                 <span className="text-[9px] font-mono text-slate-700 uppercase tracking-[0.3em]">PTR_REF: {log.id.slice(0,18).toUpperCase()}</span>
                               </div>
                             </div>
                           </div>
@@ -523,7 +505,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <div className="lg:col-span-7 space-y-10 text-left">
                        <GlassCard className="p-12 md:p-16 rounded-[5rem] border-white/5 bg-slate-950/40 relative overflow-hidden" intensity={1.2}>
                           <div className="flex items-center gap-6 mb-12 border-b border-white/5 pb-10 relative z-10">
-                             <div className="p-4 bg-indigo-500/10 rounded-[1.5rem] text-indigo-400"><Mail size={32} /></div>
+                             <div className="p-4 bg-indigo-500/10 rounded-[1.5rem] text-indigo-400 shadow-lg"><Mail size={32} /></div>
                              <div>
                                 <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Alert Matrix</h3>
                                 <p className="text-[10px] text-slate-600 uppercase tracking-widest font-black italic mt-1">Managed Critical Notification Nodes</p>
@@ -548,6 +530,17 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                            <p className="text-[9px] font-black text-slate-700 uppercase tracking-widest">Active Dispatcher</p>
                                         </div>
                                      </div>
+                                     <button 
+                                        onClick={async () => {
+                                            if (confirm("Sever link to this node?")) {
+                                                await adminApi.removeNotificationRecipient(r.id, r.email);
+                                                setRecipients(recipients.filter(x => x.id !== r.id));
+                                            }
+                                        }}
+                                        className="p-3 text-slate-800 hover:text-rose-500 opacity-0 group-hover:opacity-100 transition-all"
+                                     >
+                                         <X size={18} />
+                                     </button>
                                   </div>
                                 ))}
                              </div>
@@ -558,7 +551,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                     <div className="lg:col-span-5 space-y-10 text-left">
                        <GlassCard className="p-12 md:p-16 rounded-[5rem] border-indigo-500/20 h-full relative overflow-hidden bg-black/40" intensity={1.5}>
                           <div className="flex items-center gap-6 mb-12 border-b border-white/5 pb-10">
-                             <div className="p-4 bg-indigo-500/10 rounded-[1.5rem] text-indigo-400"><Cpu size={32} /></div>
+                             <div className="p-4 bg-indigo-500/10 rounded-[1.5rem] text-indigo-400 shadow-lg"><Cpu size={32} /></div>
                              <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">Diagnostics</h3>
                           </div>
 
@@ -587,6 +580,26 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                                      STABLE
                                    </div>
                                 </div>
+                                <div className="flex justify-between items-center px-2">
+                                   <span className="text-[11px] font-black text-slate-700 uppercase tracking-widest italic">Vercel Runtime</span>
+                                   <div className="flex items-center gap-3 px-5 py-2 bg-slate-900 text-slate-400 rounded-full border border-white/5 text-[10px] font-black uppercase tracking-widest italic">
+                                     {pulseData?.vercel_runtime || 'UNKNOWN'}
+                                   </div>
+                                </div>
+                             </div>
+                             
+                             <div className="pt-10">
+                                <a 
+                                  href="https://sleepsomno.com/sitemap.xml" 
+                                  target="_blank"
+                                  className="flex items-center justify-between p-6 bg-indigo-600/10 border border-indigo-500/20 rounded-3xl hover:bg-indigo-600/20 transition-all group"
+                                >
+                                    <div className="flex items-center gap-4">
+                                        <Globe size={18} className="text-indigo-400" />
+                                        <span className="text-[10px] font-black text-white uppercase tracking-widest">Sitemap Alpha</span>
+                                    </div>
+                                    <ArrowUpRight size={16} className="text-slate-600 group-hover:text-white transition-all" />
+                                </a>
                              </div>
                           </div>
                        </GlassCard>

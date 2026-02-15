@@ -1,4 +1,3 @@
-
 {
   "cleanUrls": true,
   "trailingSlash": false,
@@ -20,6 +19,6 @@
     },
     { "source": "/privacy", "destination": "/privacy.html" },
     { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/((?!api|privacy|terms|.*\\.).*)", "destination": "/index.html" }
+    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

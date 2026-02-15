@@ -1,17 +1,16 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, Article } from './types.ts';
 import {
   LayoutDashboard, TrendingUp, Sparkles, FlaskConical,
-  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper
+  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Language } from './services/i18n.ts';
+import { Language, translations } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
 import { authApi } from './services/supabaseService.ts';
-import { safeNavigatePath } from './services/navigation.ts';
+import { safeNavigatePath, updateMetadata } from './services/navigation.ts';
 
 // Core Views
 import { Dashboard } from './components/Dashboard.tsx';
@@ -33,6 +32,7 @@ import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
 import { NewsHub } from './components/NewsHub.tsx';
 import { ArticleView } from './components/ArticleView.tsx';
+import { NotFoundView } from './components/NotFoundView.tsx';
 
 const m = motion as any;
 
@@ -59,6 +59,7 @@ const AppContent: React.FC = () => {
   const resolveViewFromLocation = useCallback((): ViewType => {
     const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
     const views: Record<string, ViewType> = {
+      '/': 'landing',
       '/dashboard': 'dashboard',
       '/assistant': 'assistant',
       '/calendar': 'calendar',
@@ -76,7 +77,7 @@ const AppContent: React.FC = () => {
       '/news': 'news',
       '/article': 'article'
     };
-    return views[path] || 'landing';
+    return views[path] || 'not-found';
   }, []);
 
   const [activeView, setActiveView] = useState<ViewType>(resolveViewFromLocation());
@@ -95,26 +96,65 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('popstate', handleRouting);
   }, [resolveViewFromLocation]);
 
+  // Dynamic SEO Metadata Sync
+  useEffect(() => {
+    const t = translations[lang];
+    const brand = "SomnoAI Digital Sleep Lab";
+    let title = brand;
+    let desc = "Advanced AI-powered sleep architecture analysis and neurological recovery hub.";
+
+    switch(activeView) {
+      case 'dashboard': title = `${t.dashboard.status} | ${brand}`; break;
+      case 'science': title = `${t.landing.nav.science} | ${brand}`; desc = "Biological architecture and scientific sleep protocol."; break;
+      case 'faq': title = `Laboratory FAQ | ${brand}`; break;
+      case 'news': title = `${t.news.title} | ${brand}`; desc = t.news.subtitle; break;
+      case 'about': title = `About Project | ${brand}`; break;
+      case 'login': title = `Terminal Login | ${brand}`; break;
+      case 'signup': title = `Subject Registry | ${brand}`; break;
+      case 'not-found': title = `404 Node Unreachable | ${brand}`; break;
+    }
+
+    if (activeView !== 'article') {
+      updateMetadata(title, desc, window.location.pathname);
+    }
+  }, [activeView, lang]);
+
   if (loading) return (
     <div className="h-screen w-screen flex items-center justify-center bg-[#01040a]">
       <Logo size={80} animated={true} />
     </div>
   );
 
-  // Unauthenticated routing
+  // Common View Router - Logic to render static/doc pages for both auth/unauth
+  const renderSharedViews = () => {
+    switch(activeView) {
+      case 'science': return <ScienceView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
+      case 'faq': return <FAQView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
+      case 'about': return <AboutView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} onNavigate={navigate} />;
+      case 'support': return <SupportView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} onNavigate={navigate} />;
+      case 'feedback': return <FeedbackView lang={lang} onBack={() => navigate('support')} />;
+      case 'news': return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />;
+      case 'article': return activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />;
+      case 'not-found': return <NotFoundView />;
+      default: return null;
+    }
+  };
+
+  const sharedContent = renderSharedViews();
+  if (sharedContent) return (
+    <RootLayout>
+      <div className="pt-20 px-6 max-w-7xl mx-auto">{sharedContent}</div>
+    </RootLayout>
+  );
+
+  // Unauthenticated routing for core app states
   if (!profile) {
     if (activeView === 'signup') return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
-    if (activeView === 'science') return <ScienceView lang={lang} onBack={() => navigate('/')} />;
-    if (activeView === 'faq') return <FAQView lang={lang} onBack={() => navigate('/')} />;
-    if (activeView === 'about') return <AboutView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
-    if (activeView === 'support') return <SupportView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
-    if (activeView === 'feedback') return <FeedbackView lang={lang} onBack={() => navigate('/')} />;
-    if (activeView === 'news') return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />;
-    if (activeView === 'article' && activeArticle) return <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} />;
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
+  // Mandatory Setup Flow
   if (!profile.full_name) return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [
@@ -172,13 +212,6 @@ const AppContent: React.FC = () => {
             {activeView === 'diary' && <DiaryView lang={lang} />}
             {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => setIsExitModalOpen(true)} onNavigate={navigate} />}
             {activeView === 'registry' && <UserProfile lang={lang} />}
-            {activeView === 'science' && <ScienceView lang={lang} onBack={() => navigate('dashboard')} />}
-            {activeView === 'faq' && <FAQView lang={lang} onBack={() => navigate('dashboard')} />}
-            {activeView === 'support' && <SupportView lang={lang} onBack={() => navigate('dashboard')} onNavigate={navigate} />}
-            {activeView === 'about' && <AboutView lang={lang} onBack={() => navigate('dashboard')} onNavigate={navigate} />}
-            {activeView === 'feedback' && <FeedbackView lang={lang} onBack={() => navigate('support')} />}
-            {activeView === 'news' && <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />}
-            {activeView === 'article' && activeArticle && <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} />}
           </m.div>
         </AnimatePresence>
       </main>

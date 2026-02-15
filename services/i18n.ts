@@ -1,7 +1,8 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v12.2
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v12.5
+ * Optimized for Publication E-E-A-T
  */
 
 const BRAND_NAME = "SomnoAI Digital Sleep Lab";
@@ -36,10 +37,13 @@ const commonEn = {
   news: {
     title: "NEURAL RESEARCH HUB",
     subtitle: "Peer-reviewed insights into sleep architecture & AI synthesis",
-    readMore: "Read Full Paper",
-    backToHub: "Return to Hub",
-    verified: "EXPERT VERIFIED",
-    published: "PUBLISHED ON"
+    readMore: "Read Full Publication",
+    backToHub: "Return to Index",
+    verified: "AI RESEARCH VERIFIED",
+    published: "DATE PUBLISHED",
+    author: "LEAD RESEARCHER",
+    category: "DOMAIN",
+    readTime: "READ TIME"
   },
   dashboard: {
     status: "Neural Sync: Connected",
@@ -59,21 +63,6 @@ const commonEn = {
       { id: "3.", title: "PRECISION PROTOCOL", desc: "Receive tailored optimization protocols. Identify disruptions and transform every rest period." }
     ]
   },
-  registry: {
-    title: "Profile Settings",
-    subtitle: "Personal Health Calibration",
-    syncing: "Synchronizing...",
-    success: "Profile Calibrated",
-    failure: "Update Failed",
-    commit: "Commit Changes",
-    identitySector: "Account Identity",
-    biometricSector: "Physiological Metrics",
-    callsign: "Subject Display Name",
-    identifier: "Registry Email",
-    polarity: "Gender",
-    sovereignty: "Privacy Sovereignty",
-    sovereigntyDesc: "Your health telemetry is processed locally within our secure infrastructure. Data is never persisted on our cloud nodes."
-  },
   settings: {
     title: 'Lab Config',
     language: 'Language',
@@ -87,20 +76,6 @@ const commonEn = {
     genderNone: 'Confidential',
     height: 'Stature (cm)',
     weight: 'Mass (kg)'
-  },
-  support: {
-    title: 'Support Matrix',
-    subtitle: 'Laboratory Support Interface',
-    techSupport: 'Technical Feedback',
-    techDesc: 'Submit biometric anomalies.',
-    funding: 'R&D Funding',
-    fundingDesc: 'Support sleep staging models.',
-    pcTitle: 'Desktop Node',
-    pcDesc: 'Optimized for deep architecture visualization.',
-    mobileTitle: 'Mobile Node',
-    mobileDesc: 'Lightweight PWA support.',
-    donateTitle: 'CONTRIBUTION ACKNOWLEDGED',
-    donateSubtitle: 'Your support fuels advanced research.'
   }
 };
 
@@ -124,34 +99,19 @@ const commonZh = {
       project: "关于项目",
       support: "技术支持",
       enter: "进入实验室",
-      news: "研究中心"
+      news: "科研中心"
     }
   },
   news: {
     title: "神经科研中心",
-    subtitle: "关于睡眠架构与 AI 合成的深度洞察",
-    readMore: "阅读全文",
-    backToHub: "返回列表",
-    verified: "专家验证",
-    published: "发布于"
-  },
-  dashboard: {
-    status: "神经同步：已连接",
-    scoreLabel: "恢复评分",
-    scoreStatus: "最佳恢复状态",
-    stagingTitle: "神经分期",
-    stagingQuote: "我们的 AI 模型检测到稳健的深睡/REM 节奏，表明神经系统恢复效率极高。",
-    syncTitle: "全量同步",
-    syncDesc: "同步所有生物遥测节点。",
-    syncButton: "执行信号注入",
-    syncingButton: "正在同步...",
-    protocolTitle: "实验室协议",
-    protocolSub: "从生物遥测到人类潜能转化",
-    steps: [
-      { id: "1.", title: "生物准入", desc: "通过 Health Connect 或手动注入终端同步佩戴设备数据。" },
-      { id: "2.", title: "神经合成", desc: "利用 Google Gemini AI 模型识别睡眠效率与节律。" },
-      { id: "3.", title: "精准协议", desc: "获取定制化的优化方案，转化每一次休憩。" }
-    ]
+    subtitle: "关于睡眠架构与 AI 合成的学术洞察",
+    readMore: "阅读完整论文",
+    backToHub: "返回索引",
+    verified: "AI 科研专家验证",
+    published: "发布日期",
+    author: "首席研究员",
+    category: "研究领域",
+    readTime: "阅读耗时"
   }
 };
 
