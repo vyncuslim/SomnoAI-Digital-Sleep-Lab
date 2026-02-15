@@ -3,13 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirecting - SomnoAI</title>
+    <title>Routing Recovery - SomnoAI</title>
     <script>
-        // Standard SPA recovery: Any hit on a non-physical path should go to index.html
-        // If rewrites are correctly configured, this file should rarely be served.
-        window.location.href = '/';
+        // Force redirect to root if served as a fallback
+        if (window.location.pathname !== '/') {
+            window.location.replace('/');
+        }
     </script>
+    <style>
+        body { background-color: #01040a; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .loader { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 10px 0 0 0 #6366f1; animation: spin 1s infinite linear; }
+        @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+    </style>
 </head>
-<body style="background-color: #020617;">
+<body>
+    <div class="loader"></div>
 </body>
 </html>

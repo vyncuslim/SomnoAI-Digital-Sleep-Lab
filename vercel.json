@@ -1,24 +1,14 @@
 {
   "cleanUrls": true,
   "trailingSlash": false,
-  "headers": [
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder"
+    },
     {
       "source": "/(.*)",
-      "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "X-Frame-Options", "value": "DENY" },
-        { "key": "X-XSS-Protection", "value": "1; mode=block" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" }
-      ]
+      "destination": "/index.html"
     }
-  ],
-  "rewrites": [
-    { 
-      "source": "/api/(.*)", 
-      "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder" 
-    },
-    { "source": "/privacy", "destination": "/privacy.html" },
-    { "source": "/terms", "destination": "/terms.html" },
-    { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

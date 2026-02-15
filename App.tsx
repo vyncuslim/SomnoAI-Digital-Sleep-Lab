@@ -57,12 +57,16 @@ const AppContent: React.FC = () => {
   const [activeArticle, setActiveArticle] = useState<Article | null>(null);
 
   const resolveViewFromLocation = useCallback((): ViewType => {
-    // 规范化路径解析，处理末尾斜杠和大小写
-    const rawPath = window.location.pathname.toLowerCase();
-    const path = rawPath === '/' ? '/' : rawPath.replace(/\/$/, '');
+    let path = window.location.pathname.toLowerCase().trim();
+    
+    // Normalize: index.html or empty or slash all lead to landing
+    if (!path || path === '/' || path === '/index.html' || path === '/landing') {
+      return 'landing';
+    }
+
+    const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
     
     const views: Record<string, ViewType> = {
-      '/': 'landing',
       '/dashboard': 'dashboard',
       '/assistant': 'assistant',
       '/calendar': 'calendar',
@@ -80,7 +84,9 @@ const AppContent: React.FC = () => {
       '/news': 'news',
       '/article': 'article'
     };
-    return views[path] || 'not-found';
+    
+    // Defaults to landing to prevent hard 404 views unless explicitly needed
+    return views[cleanPath] || 'landing';
   }, []);
 
   const [activeView, setActiveView] = useState<ViewType>(resolveViewFromLocation());
@@ -92,43 +98,25 @@ const AppContent: React.FC = () => {
   };
 
   useEffect(() => {
-    const handleRouting = () => {
-      setActiveView(resolveViewFromLocation());
-    };
+    const handleRouting = () => setActiveView(resolveViewFromLocation());
     window.addEventListener('popstate', handleRouting);
     return () => window.removeEventListener('popstate', handleRouting);
   }, [resolveViewFromLocation]);
 
-  // 动态更新页面标题和元数据
   useEffect(() => {
-    const t = translations[lang];
     const brand = "SomnoAI Digital Sleep Lab";
     let title = brand;
-    let desc = "Advanced AI-powered sleep architecture analysis and neurological recovery hub.";
-
-    switch(activeView) {
-      case 'dashboard': title = `${t.dashboard.status} | ${brand}`; break;
-      case 'science': title = `${t.landing.nav.science} | ${brand}`; desc = "Biological architecture and scientific sleep protocol."; break;
-      case 'faq': title = `Laboratory FAQ | ${brand}`; break;
-      case 'news': title = `${t.news.title} | ${brand}`; desc = t.news.subtitle; break;
-      case 'about': title = `About Project | ${brand}`; break;
-      case 'login': title = `Terminal Login | ${brand}`; break;
-      case 'signup': title = `Subject Registry | ${brand}`; break;
-      case 'not-found': title = `404 Node Unreachable | ${brand}`; break;
+    if (activeView === 'article' && activeArticle) {
+      // Fixed: Change article.slug to activeArticle.slug to resolve undefined variable error
+      updateMetadata(activeArticle.title, activeArticle.excerpt, `/article/${activeArticle.slug}`);
+      return;
     }
+    updateMetadata(title, "Advanced Sleep Analysis Hub", window.location.pathname);
+  }, [activeView, activeArticle]);
 
-    if (activeView !== 'article') {
-      updateMetadata(title, desc, window.location.pathname);
-    }
-  }, [activeView, lang]);
+  if (loading) return null; // Let index.html's preloader handle this
 
-  if (loading) return (
-    <div className="h-screen w-screen flex items-center justify-center bg-[#01040a]">
-      <Logo size={80} animated={true} />
-    </div>
-  );
-
-  // 共享视图路由器：处理文档、科学协议等无论是否登录都可访问的页面
+  // Shared/Public Layouts
   const renderSharedViews = () => {
     switch(activeView) {
       case 'science': return <ScienceView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
@@ -138,27 +126,20 @@ const AppContent: React.FC = () => {
       case 'feedback': return <FeedbackView lang={lang} onBack={() => navigate('support')} />;
       case 'news': return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />;
       case 'article': return activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />;
-      case 'not-found': return <NotFoundView />;
       default: return null;
     }
   };
 
   const sharedContent = renderSharedViews();
-  if (sharedContent) return (
-    <RootLayout>
-      <div className="pt-20 px-6 max-w-7xl mx-auto">{sharedContent}</div>
-    </RootLayout>
-  );
+  if (sharedContent) return sharedContent;
 
-  // 未登录状态路由
   if (!profile) {
     if (activeView === 'signup') return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
-  // 强制初始化流程
-  if (!profile.full_name) return <FirstTimeSetup onComplete={refresh} />;
+  if (!profile.full_name && activeView !== 'settings') return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: lang === 'zh' ? '仪表盘' : 'Overview' },
@@ -174,7 +155,7 @@ const AppContent: React.FC = () => {
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('dashboard')}>
             <Logo size={34} animated={true} />
-            <div className="flex flex-col text-left">
+            <div className="flex flex-col">
               <span className="text-xl font-black italic tracking-tighter uppercase leading-none text-white">Somno<span className="text-indigo-400">AI</span></span>
               <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Sleep Lab</span>
             </div>

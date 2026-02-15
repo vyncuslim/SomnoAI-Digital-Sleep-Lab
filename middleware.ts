@@ -1,6 +1,6 @@
 /**
  * SOMNO LAB ROUTE TRANSPARENCY PROTOCOL
- * Standard Edge Passthrough - Disabled to prevent rewrite conflicts.
+ * Middleware inactive to allow vercel.json rewrite precedence.
  */
 export default function middleware(req: Request) {
   return null;

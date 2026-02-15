@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../lib/supabaseClient.ts';
 import { logAuditLog } from '../services/supabaseService.ts';
@@ -44,21 +43,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSyncing.current) return;
     isSyncing.current = true;
     
+    // Failsafe timeout: 6 seconds max for auth check
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn("AuthContext: Handshake timed out. Dropping into guest mode.");
+        setLoading(false);
+        isSyncing.current = false;
+      }
+    }, 6000);
+    
     try {
-      // Explicitly check for session error to handle 'refresh_token_not_found'
       const { data: { session }, error: sessionError } = await (supabase.auth as any).getSession();
 
       if (sessionError || !session || !session.user) {
-        if (sessionError) {
-          console.debug("AuthContext: Active session voided.", sessionError.message);
-        }
         setProfile(null);
         setLoading(false);
+        clearTimeout(timeoutId);
         isSyncing.current = false;
         return;
       }
 
-      // Unique session tracker to prevent alert loops on refreshes
       const currentSessionId = session.access_token.slice(-12);
       const shouldLog = isFreshLogin && lastLoggedSessionId.current !== currentSessionId;
 
@@ -79,24 +83,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       setProfile(currentProfile);
 
-      // AUTOMATED ADMIN NOTIFICATION PROTOCOL
       if (shouldLog && currentProfile) {
         lastLoggedSessionId.current = currentSessionId;
-        const identityType = currentProfile.is_super_owner ? 'SUPER_OWNER' : currentProfile.role.toUpperCase();
-        const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown Node';
-        
-        const logMsg = `[ACCESS_GRANTED]\nSubject: ${currentProfile.email}\nIdentity: ${currentProfile.full_name || 'N/A'}\nClearance: ${identityType}\nDevice: ${userAgent}`;
-        
-        // This call triggers both Email and Telegram notifications via logAuditLog internal logic
+        const logMsg = `[ACCESS_GRANTED] Subject: ${currentProfile.email}`;
         logAuditLog('USER_LOGIN', logMsg, 'INFO');
       }
     } catch (err) {
-      console.warn("AuthContext: Terminal handshake delayed.");
+      console.error("AuthContext: Terminal handshake crashed.");
     } finally {
+      clearTimeout(timeoutId);
       setLoading(false);
       isSyncing.current = false;
     }
-  }, []);
+  }, [loading]);
 
   useEffect(() => {
     fetchProfile();

@@ -6,55 +6,6 @@
     <title>SomnoAI Digital Sleep Lab | AI-Powered Sleep Science & Restoration Hub</title>
     <meta name="description" content="SomnoAI Digital Sleep Lab integrates physiological telemetry, Google Gemini AI synthesis, and neurological recovery research. Verified 2026 Sleep Science Hub.">
     
-    <!-- E-E-A-T Structured Data - Organization & Medical Publication -->
-    <script type="application/ld+json">
-    [
-      {
-        "@context": "https://schema.org",
-        "@type": "Organization",
-        "name": "SomnoAI Digital Sleep Lab",
-        "url": "https://sleepsomno.com",
-        "logo": "https://sleepsomno.com/favicon.svg",
-        "founder": {
-          "@type": "Person",
-          "name": "Vyncuslim",
-          "jobTitle": "Lead Researcher"
-        },
-        "description": "SomnoAI is a 2026 digital laboratory platform dedicated to synthesizing physiological metrics into actionable sleep optimization protocols."
-      },
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "SomnoAI Digital Sleep Lab",
-        "url": "https://sleepsomno.com",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://sleepsomno.com/news?q={search_term_string}",
-          "query-input": "required name=search_term_string"
-        }
-      }
-    ]
-    </script>
-
-    <!-- Google News & SEO Keywords -->
-    <meta name="news_keywords" content="Sleep AI, Deep Sleep Research 2026, Neurological Recovery, SomnoAI, Sleep Science, Biological Telemetry, Restorative AI">
-    <link rel="alternate" type="application/rss+xml" title="SomnoAI Neural Research Hub Feed" href="/rss.xml">
-    <link rel="canonical" href="https://sleepsomno.com/">
-
-    <!-- Open Graph / Social -->
-    <meta property="og:type" content="website">
-    <meta property="og:url" content="https://sleepsomno.com/">
-    <meta property="og:title" content="SomnoAI Digital Sleep Lab | Neural Research Hub">
-    <meta property="og:description" content="Decoding sleep architecture through biological telemetry and Google Gemini AI models. Official 2026 Science Publication.">
-    <meta property="og:image" content="https://sleepsomno.com/favicon.svg">
-
-    <!-- Twitter Card -->
-    <meta property="twitter:card" content="summary_large_image">
-    <meta property="twitter:site" content="@somnoai">
-    <meta property="twitter:title" content="SomnoAI Digital Sleep Lab | Neural Synthesis">
-    <meta property="twitter:description" content="Engineer your recovery with 2026 Latest AI Research and biometric telemetry.">
-
-    <!-- Identity Assets -->
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="apple-touch-icon" href="/favicon.svg">
     <link rel="manifest" href="/manifest.json">
@@ -93,12 +44,12 @@
     "recharts": "https://esm.sh/recharts@2.15.0?deps=react@18.3.1",
     "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.47.10",
     "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
+    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
     "react/": "https://esm.sh/react@^19.2.4/",
     "vite": "https://esm.sh/vite@^7.3.1",
-    "@vitejs/plugin-react": "https://esm.sh/@vitejs/plugin-react@^5.1.4",
-    "@google-analytics/data": "https://esm.sh/@google-analytics/data@^5.2.1",
     "nodemailer": "https://esm.sh/nodemailer@^8.0.1",
-    "google-auth-library": "https://esm.sh/google-auth-library@^10.5.0"
+    "google-auth-library": "https://esm.sh/google-auth-library@^10.5.0",
+    "@google-analytics/data": "https://esm.sh/@google-analytics/data@^5.2.1"
   }
 }
 </script>
@@ -110,6 +61,21 @@
             <div class="loading-text">Neural Handshake...</div>
         </div>
     </div>
+    
     <script type="module" src="/index.tsx"></script>
+
+    <!-- Failsafe for "Always Spinning" issue -->
+    <script>
+      window.addEventListener('load', function() {
+        setTimeout(function() {
+          var loader = document.getElementById('preloader');
+          if (loader) {
+            console.warn('SomnoAI: Failsafe triggered to remove preloader.');
+            loader.style.opacity = '0';
+            setTimeout(function() { loader.remove(); }, 500);
+          }
+        }, 8000);
+      });
+    </script>
 </body>
 </html>
