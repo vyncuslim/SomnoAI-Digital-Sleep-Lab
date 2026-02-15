@@ -1,16 +1,11 @@
 /**
  * SOMNO LAB ROUTE TRANSPARENCY PROTOCOL
- * Minimal Edge passthrough.
+ * Standard Edge Passthrough - Disabled to prevent rewrite conflicts.
  */
 export default function middleware(req: Request) {
-  return new Response(null, {
-    status: 200,
-    headers: { 'x-middleware-next': '1' }
-  });
+  return null;
 }
 
 export const config = {
-  matcher: [
-    '/((?!api|_next|static|favicon\\.ico|sw\\.js|manifest\\.json|favicon.png).*)',
-  ],
+  matcher: [],
 };

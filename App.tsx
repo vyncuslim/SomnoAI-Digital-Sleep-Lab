@@ -57,7 +57,10 @@ const AppContent: React.FC = () => {
   const [activeArticle, setActiveArticle] = useState<Article | null>(null);
 
   const resolveViewFromLocation = useCallback((): ViewType => {
-    const path = window.location.pathname.toLowerCase().replace(/\/$/, '') || '/';
+    // 规范化路径解析，处理末尾斜杠和大小写
+    const rawPath = window.location.pathname.toLowerCase();
+    const path = rawPath === '/' ? '/' : rawPath.replace(/\/$/, '');
+    
     const views: Record<string, ViewType> = {
       '/': 'landing',
       '/dashboard': 'dashboard',
@@ -96,7 +99,7 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('popstate', handleRouting);
   }, [resolveViewFromLocation]);
 
-  // Dynamic SEO Metadata Sync
+  // 动态更新页面标题和元数据
   useEffect(() => {
     const t = translations[lang];
     const brand = "SomnoAI Digital Sleep Lab";
@@ -125,7 +128,7 @@ const AppContent: React.FC = () => {
     </div>
   );
 
-  // Common View Router - Logic to render static/doc pages for both auth/unauth
+  // 共享视图路由器：处理文档、科学协议等无论是否登录都可访问的页面
   const renderSharedViews = () => {
     switch(activeView) {
       case 'science': return <ScienceView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
@@ -147,14 +150,14 @@ const AppContent: React.FC = () => {
     </RootLayout>
   );
 
-  // Unauthenticated routing for core app states
+  // 未登录状态路由
   if (!profile) {
     if (activeView === 'signup') return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
     if (activeView === 'login') return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
-  // Mandatory Setup Flow
+  // 强制初始化流程
   if (!profile.full_name) return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [
@@ -171,7 +174,7 @@ const AppContent: React.FC = () => {
         <div className="flex items-center gap-8">
           <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('dashboard')}>
             <Logo size={34} animated={true} />
-            <div className="flex flex-col">
+            <div className="flex flex-col text-left">
               <span className="text-xl font-black italic tracking-tighter uppercase leading-none text-white">Somno<span className="text-indigo-400">AI</span></span>
               <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Sleep Lab</span>
             </div>
