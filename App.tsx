@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, Article } from './types.ts';
@@ -78,17 +79,24 @@ const AppContent: React.FC = () => {
       '/news': 'news',
       '/article': 'article'
     };
-    return views[cleanPath] || 'dashboard'; // Default to dashboard for authenticated paths
+    return views[cleanPath] || 'landing';
   }, []);
 
   const [activeView, setActiveView] = useState<ViewType>(resolveViewFromLocation());
 
-  // Fix: Sync activeView with profile loading to prevent black screen
+  // FIX: Force rendering transition to dashboard if profile exists
   useEffect(() => {
     if (!loading) {
       const currentLoc = resolveViewFromLocation();
-      if (profile && (currentLoc === 'landing' || currentLoc === 'login' || currentLoc === 'signup')) {
-        setActiveView('dashboard');
+      if (profile) {
+        if (currentLoc === 'landing' || currentLoc === 'login' || currentLoc === 'signup') {
+          setActiveView('dashboard');
+          if (window.location.pathname !== '/dashboard') {
+            window.history.replaceState(null, '', '/dashboard');
+          }
+        } else {
+          setActiveView(currentLoc);
+        }
       } else {
         setActiveView(currentLoc);
       }
@@ -107,31 +115,21 @@ const AppContent: React.FC = () => {
     return () => window.removeEventListener('popstate', handleRouting);
   }, [resolveViewFromLocation]);
 
-  useEffect(() => {
-    if (activeView === 'article' && activeArticle) {
-      updateMetadata(activeArticle.title, activeArticle.excerpt, `/article/${activeArticle.slug}`);
-      return;
-    }
-    updateMetadata("SomnoAI Digital Sleep Lab", "Advanced Sleep Analysis Hub", window.location.pathname);
-  }, [activeView, activeArticle]);
-
   if (loading) return null;
 
-  const renderSharedViews = () => {
-    switch(activeView) {
-      case 'science': return <ScienceView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
-      case 'faq': return <FAQView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
-      case 'about': return <AboutView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} onNavigate={navigate} />;
-      case 'support': return <SupportView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} onNavigate={navigate} />;
-      case 'feedback': return <FeedbackView lang={lang} onBack={() => navigate('support')} />;
-      case 'news': return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />;
-      case 'article': return activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />;
-      default: return null;
-    }
+  // Shared View Logic
+  // Added comment above fix: Replacing JSX.Element with React.ReactElement to resolve the 'Cannot find namespace JSX' error
+  const sharedViews: Record<string, React.ReactElement> = {
+    'science': <ScienceView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />,
+    'faq': <FAQView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />,
+    'about': <AboutView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} onNavigate={navigate} />,
+    'support': <SupportView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} onNavigate={navigate} />,
+    'feedback': <FeedbackView lang={lang} onBack={() => navigate('support')} />,
+    'news': <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />,
+    'article': activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />
   };
 
-  const sharedContent = renderSharedViews();
-  if (sharedContent) return sharedContent;
+  if (sharedViews[activeView]) return sharedViews[activeView];
 
   if (!profile) {
     if (activeView === 'signup') return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
@@ -139,6 +137,7 @@ const AppContent: React.FC = () => {
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
+  // Mandatory Setup for new users
   if (!profile.full_name && activeView !== 'settings') return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [
@@ -146,7 +145,7 @@ const AppContent: React.FC = () => {
     { id: 'calendar', icon: TrendingUp, label: lang === 'zh' ? '分析' : 'Atlas' },
     { id: 'assistant', icon: Sparkles, label: lang === 'zh' ? '合成' : 'AI Sync' },
     { id: 'news', icon: Newspaper, label: lang === 'zh' ? '科研' : 'Research' },
-    { id: 'diary', icon: BookOpen, label: lang === 'zh' ? '归档' : 'Log' },
+    { id: 'diary', icon: BookOpen, label: lang === 'zh' ? '日志' : 'Log' },
   ];
 
   return (
@@ -178,12 +177,6 @@ const AppContent: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-6">
-          <div className="hidden md:flex flex-col items-end mr-4">
-             <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">Node Status</span>
-             <span className="text-[11px] font-bold text-emerald-500 italic flex items-center gap-2 uppercase">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> SYNC_NOMINAL
-             </span>
-          </div>
           <button onClick={() => navigate('registry')} className={`p-4 rounded-3xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
             <User size={20} />
           </button>

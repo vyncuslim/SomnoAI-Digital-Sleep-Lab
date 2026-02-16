@@ -19,7 +19,7 @@ interface SupportViewProps {
 
 export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNavigate }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const [showDonation, setshowDonation] = useState(false);
+  const [showDonation, setShowDonation] = useState(false);
   const t = translations[lang].support;
 
   const handleCopy = (id: string, text: string) => {
@@ -30,7 +30,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
   return (
     <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
-      <header className="flex items-center gap-6 mb-16 px-4 max-w-4xl mx-auto">
+      <header className="flex items-center gap-6 mb-16 px-4 max-w-4xl mx-auto pt-20">
         <button 
           onClick={onBack}
           className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
@@ -65,7 +65,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           </GlassCard>
 
           <GlassCard 
-            onClick={() => setshowDonation(true)}
+            onClick={() => setShowDonation(true)}
             className="p-12 rounded-[4rem] border-rose-500/20 bg-rose-500/[0.02] cursor-pointer group hover:bg-rose-500/[0.05] transition-all shadow-2xl"
             intensity={1.2}
           >
@@ -107,14 +107,14 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
         <AnimatePresence>
           {showDonation && (
-            <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl overflow-y-auto" onClick={() => setshowDonation(false)}>
+            <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl overflow-y-auto" onClick={() => setShowDonation(false)}>
               <m.div 
                 initial={{ scale: 0.9, opacity: 0, y: 20 }} animate={{ scale: 1, opacity: 1, y: 0 }} exit={{ scale: 0.9, opacity: 0, y: 20 }} 
                 onClick={(e: React.MouseEvent) => e.stopPropagation()} 
                 className="w-full max-w-2xl text-center space-y-12 relative bg-[#01040a] p-10 md:p-16 rounded-[5rem] border border-white/10 shadow-[0_60px_150px_-30px_rgba(0,0,0,1)]"
               >
                 <button 
-                  onClick={() => setshowDonation(false)}
+                  onClick={() => setShowDonation(false)}
                   className="absolute top-10 right-10 p-4 bg-white/5 hover:bg-rose-500/20 rounded-2xl text-slate-600 hover:text-rose-500 transition-all active:scale-90"
                 >
                   <X size={24} />
