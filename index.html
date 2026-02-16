@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover">
-    <title>SomnoAI Digital Sleep Lab | AI-Powered Restoration Hub</title>
-    <meta name="description" content="SomnoAI integrates physiological telemetry with Gemini 2.5 Pro synthesis for high-performance neurological recovery.">
+    <title>SomnoAI | Digital Restoration Lab</title>
+    <meta name="description" content="Engineering high-performance recovery through Gemini 2.5 Pro neural synthesis.">
     
     <link rel="icon" type="image/svg+xml" href="/favicon.svg">
     <link rel="manifest" href="/manifest.json">
@@ -16,8 +16,14 @@
       tailwind.config = {
         theme: {
           extend: {
-            fontFamily: { sans: ['Inter', 'sans-serif'], mono: ['JetBrains Mono', 'monospace'] },
-            colors: { indigo: { 600: '#4f46e5' } }
+            fontFamily: { 
+              sans: ['Inter', 'system-ui', 'sans-serif'], 
+              mono: ['JetBrains Mono', 'monospace'] 
+            },
+            colors: { 
+              indigo: { 400: '#818cf8', 500: '#6366f1', 600: '#4f46e5' },
+              slate: { 950: '#020617' }
+            }
           }
         }
       };
@@ -45,27 +51,18 @@
   }
 }
 </script>
+    <!-- Integration: SalesSmartly Support Node -->
+    <script src="https://plugin-code.salesmartly.com/js/project_445539_520520_1761223371.js"></script>
 </head>
-<body class="bg-[#01040a]">
+<body class="bg-[#01040a] selection:bg-indigo-500/30 selection:text-indigo-200">
     <div id="root">
         <div class="lab-preloader" id="preloader">
             <div class="loader-moon"></div>
-            <div class="scan-bar"></div>
+            <div class="loading-grid"></div>
             <div class="loading-text">Neural Handshake Active...</div>
-            <div class="system-bits">SYNC_LEVEL: NOMINAL</div>
+            <div class="system-bits">SYNC_PROTOCOL: v3.0.0 // STATUS: NOMINAL</div>
         </div>
     </div>
     <script type="module" src="/index.tsx"></script>
-    <script>
-      window.addEventListener('load', function() {
-        setTimeout(function() {
-          var loader = document.getElementById('preloader');
-          if (loader) {
-            loader.style.opacity = '0';
-            setTimeout(function() { loader.remove(); }, 600);
-          }
-        }, 8000);
-      });
-    </script>
 </body>
 </html>

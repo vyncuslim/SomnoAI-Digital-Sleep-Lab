@@ -78,10 +78,22 @@ const AppContent: React.FC = () => {
       '/news': 'news',
       '/article': 'article'
     };
-    return views[cleanPath] || 'landing';
+    return views[cleanPath] || 'dashboard'; // Default to dashboard for authenticated paths
   }, []);
 
   const [activeView, setActiveView] = useState<ViewType>(resolveViewFromLocation());
+
+  // Fix: Sync activeView with profile loading to prevent black screen
+  useEffect(() => {
+    if (!loading) {
+      const currentLoc = resolveViewFromLocation();
+      if (profile && (currentLoc === 'landing' || currentLoc === 'login' || currentLoc === 'signup')) {
+        setActiveView('dashboard');
+      } else {
+        setActiveView(currentLoc);
+      }
+    }
+  }, [profile, loading, resolveViewFromLocation]);
 
   const navigate = (view: string) => {
     const cleanView = view.startsWith('/') ? view : `/${view}`;
@@ -130,16 +142,16 @@ const AppContent: React.FC = () => {
   if (!profile.full_name && activeView !== 'settings') return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: lang === 'zh' ? '仪表盘' : 'Overview' },
-    { id: 'calendar', icon: TrendingUp, label: lang === 'zh' ? '趋势' : 'Trends' },
-    { id: 'assistant', icon: Sparkles, label: lang === 'zh' ? 'AI 教练' : 'AI Coach' },
+    { id: 'dashboard', icon: LayoutDashboard, label: lang === 'zh' ? '实验室' : 'Lab' },
+    { id: 'calendar', icon: TrendingUp, label: lang === 'zh' ? '分析' : 'Atlas' },
+    { id: 'assistant', icon: Sparkles, label: lang === 'zh' ? '合成' : 'AI Sync' },
     { id: 'news', icon: Newspaper, label: lang === 'zh' ? '科研' : 'Research' },
-    { id: 'diary', icon: BookOpen, label: lang === 'zh' ? '日志' : 'Logs' },
+    { id: 'diary', icon: BookOpen, label: lang === 'zh' ? '归档' : 'Log' },
   ];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#01040a]/80 backdrop-blur-2xl border-b border-white/5 px-8 h-24 flex items-center justify-between">
+      <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-2xl border-b border-white/5 px-8 h-24 flex items-center justify-between shadow-2xl">
         <div className="flex items-center gap-12">
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('dashboard')}>
             <Logo size={42} animated={true} />
@@ -167,9 +179,9 @@ const AppContent: React.FC = () => {
 
         <div className="flex items-center gap-6">
           <div className="hidden md:flex flex-col items-end mr-4">
-             <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">Subject Status</span>
+             <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">Node Status</span>
              <span className="text-[11px] font-bold text-emerald-500 italic flex items-center gap-2 uppercase">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> NOMINAL_REST
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> SYNC_NOMINAL
              </span>
           </div>
           <button onClick={() => navigate('registry')} className={`p-4 rounded-3xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
@@ -184,9 +196,9 @@ const AppContent: React.FC = () => {
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-7xl mx-auto p-8 pt-40 pb-40">
+      <main className="flex-1 w-full max-w-7xl mx-auto p-8 pt-40 pb-40 relative">
         <AnimatePresence mode="wait">
-          <m.div key={activeView} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
+          <m.div key={activeView} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
             {activeView === 'dashboard' && <Dashboard data={currentRecord} lang={lang} onNavigate={navigate} />}
             {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
