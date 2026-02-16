@@ -3,11 +3,11 @@
   "trailingSlash": false,
   "rewrites": [
     {
-      "source": "/api/(.*)",
+      "source": "/api/external/(.*)",
       "destination": "https://ojcvvtyaebdodmegwqan.supabase.co/functions/v1/bright-responder"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!api/|assets/|favicon.svg|manifest.json|sw.js|index.css|index.tsx|robots.txt|sitemap.xml|rss.xml|privacy/|terms/).*)",
       "destination": "/index.html"
     }
   ]

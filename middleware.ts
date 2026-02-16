@@ -1,11 +1,14 @@
 /**
  * SOMNO LAB ROUTE TRANSPARENCY PROTOCOL
- * Middleware inactive to allow vercel.json rewrite precedence.
+ * Middleware configuration updated to satisfy Vercel routing schema.
  */
 export default function middleware(req: Request) {
   return null;
 }
 
 export const config = {
-  matcher: [],
+  // Fix: A non-empty matcher is required to prevent "Route at index X must define handle or src" errors
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|assets|.*\\..*).*)',
+  ],
 };
