@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Zap, ShieldCheck, Activity, 
   ArrowRight, LogIn, Command, BrainCircuit, Cpu, X, Menu, Target,
   Microscope, Sparkles, Database, Lock, Mail, Globe, LifeBuoy, Copy, Check, Newspaper,
-  ChevronRight, Calendar, FlaskConical, Binary, Layers, Waves
+  ChevronRight, Calendar, FlaskConical, Binary, Layers, Waves, Play, Pause, AlertCircle
 } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { Language, translations } from '../services/i18n.ts';
@@ -45,6 +45,9 @@ const SectionHeading = ({ title, sub, align = 'center' }: { title: string, sub: 
 export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const t = translations[lang].landing;
 
   useEffect(() => {
@@ -53,11 +56,46 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Force video playback logic to bypass browser quirks
+  useEffect(() => {
+    if (videoRef.current) {
+      const playVideo = async () => {
+        try {
+          await videoRef.current?.play();
+          setIsPlaying(true);
+        } catch (err) {
+          console.warn("Autoplay blocked or failed:", err);
+          setIsPlaying(false);
+        }
+      };
+      playVideo();
+    }
+  }, []);
+
+  const togglePlayback = () => {
+    if (videoRef.current) {
+      if (videoRef.current.paused) {
+        videoRef.current.play();
+        setIsPlaying(true);
+      } else {
+        videoRef.current.pause();
+        setIsPlaying(false);
+      }
+    }
+  };
+
   const navLinks = [
     { label: t.nav.science, view: 'science' },
     { label: t.nav.news, view: 'news' },
     { label: t.nav.project, view: 'about' },
     { label: t.nav.support, view: 'support' },
+  ];
+
+  const infrastructureLinks = [
+    { label: 'SCIENTIFIC SCIENCE', view: 'science' },
+    { label: 'LAB FAQ', view: 'faq' },
+    { label: 'ABOUT PROJECT', view: 'about' },
+    { label: 'TECH SUPPORT', view: 'support' },
   ];
 
   return (
@@ -100,51 +138,97 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </div>
       </nav>
 
-      {/* Hero Sector */}
-      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-6 text-center pt-32">
+      {/* Hero Sector - High Performance Video Engine */}
+      <section className="relative z-10 min-h-screen flex flex-col items-center justify-center px-4 text-center pt-32 pb-24 overflow-hidden">
         <m.div 
-          initial={{ opacity: 0, y: 40 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          className="max-w-7xl space-y-16"
+          initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 1.5 }}
+          className="w-full max-w-7xl relative"
         >
-          <div className="inline-flex items-center gap-4 px-6 py-2.5 bg-indigo-600/5 border border-indigo-500/20 rounded-full shadow-[0_0_40px_rgba(99,102,241,0.1)]">
-             <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_15px_#10b981]" />
-             <span className="text-[10px] font-black uppercase tracking-[0.5em] text-indigo-400 italic">Neural Ingress v2.9.2 [SECURE]</span>
-          </div>
+          {/* Main Video Presentation - With programmed playback fix */}
+          <div className="relative w-full aspect-video md:aspect-[21/9] rounded-[4rem] md:rounded-[6rem] overflow-hidden shadow-[0_100px_200px_-50px_rgba(0,0,0,1)] border border-white/10 bg-[#050a1f] group">
+            
+            {/* Fallback & Loading Visual: Neural Waveform */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none -z-10">
+               <m.div 
+                 animate={{ 
+                    scale: [1, 1.2, 1],
+                    opacity: [0.1, 0.3, 0.1]
+                 }}
+                 transition={{ duration: 4, repeat: Infinity }}
+                 className="w-full h-full bg-[radial-gradient(circle_at_center,rgba(99,102,241,0.15),transparent_70%)]"
+               />
+               {videoError && (
+                 <div className="flex flex-col items-center gap-4 text-slate-700">
+                    <AlertCircle size={48} strokeWidth={1} />
+                    <span className="text-[10px] font-black uppercase tracking-widest italic">Signal Offline: Visual Stream Error</span>
+                 </div>
+               )}
+            </div>
 
-          <div className="space-y-2 select-none">
-            <h1 className="text-[8rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] font-black italic tracking-tighter text-white uppercase leading-[0.78] drop-shadow-[0_20px_60px_rgba(0,0,0,0.5)]">
-              Engineer
-            </h1>
-            <h1 className="text-[8rem] sm:text-[10rem] md:text-[14rem] lg:text-[17rem] font-black italic tracking-tighter text-indigo-600 uppercase leading-[0.78] mt-[-2%]">
-              Recovery
-            </h1>
+            {!videoError && (
+              <video 
+                ref={videoRef}
+                autoPlay 
+                muted 
+                loop 
+                playsInline 
+                onError={() => setVideoError(true)}
+                className="w-full h-full object-cover opacity-60 group-hover:opacity-75 transition-opacity duration-1000"
+                poster="/favicon.svg" // Placeholder to avoid black frame
+              >
+                {/* Standard Mirror of widely compatible video source */}
+                <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/mp4" />
+                <source src="https://storage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4" type="video/webm" />
+              </video>
+            )}
+            
+            {/* Scrim Overlays */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#01040a] via-transparent to-[#01040a]/50" />
+            <div className="absolute inset-0 bg-indigo-600/5 mix-blend-color" />
+
+            {/* Interactive Overlay */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center p-8 space-y-12">
+               <m.div 
+                 initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.5, duration: 1 }}
+                 className="space-y-4"
+               >
+                  <div className="inline-flex items-center gap-4 px-6 py-2.5 bg-black/40 backdrop-blur-xl border border-white/10 rounded-full shadow-2xl">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Neural Synthesis v2.8 ACTIVE</span>
+                  </div>
+                  <h1 className="text-[5.5rem] sm:text-[8rem] md:text-[10rem] lg:text-[13rem] font-black italic tracking-tighter text-white uppercase leading-[0.75] drop-shadow-[0_20px_50px_rgba(0,0,0,0.9)]">
+                    Engineer<br/><span className="text-indigo-500">Recovery</span>
+                  </h1>
+               </m.div>
+
+               <m.div 
+                 initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 1, duration: 0.8 }}
+                 className="flex flex-col sm:flex-row items-center gap-8"
+               >
+                  <m.button 
+                    whileHover={{ scale: 1.05, y: -6 }} whileTap={{ scale: 0.98 }}
+                    onClick={() => onNavigate('signup')}
+                    className="px-14 py-8 bg-white text-black rounded-full font-black text-[13px] uppercase tracking-[0.4em] shadow-[0_40px_80px_rgba(255,255,255,0.1)] transition-all italic flex items-center justify-center gap-4 active:scale-95"
+                  >
+                    {t.ctaPrimary} <ArrowRight size={20} />
+                  </m.button>
+                  <button 
+                    onClick={togglePlayback}
+                    className="px-14 py-8 bg-black/40 backdrop-blur-2xl border border-white/10 text-white rounded-full font-black text-[13px] uppercase tracking-[0.4em] transition-all italic flex items-center justify-center gap-4 shadow-2xl hover:bg-black/60"
+                  >
+                    {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+                    {isPlaying ? 'PAUSE PROTOCOL' : 'WATCH PROTOCOL'}
+                  </button>
+               </m.div>
+            </div>
           </div>
 
           <m.p 
-            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }}
-            className="text-xl md:text-3xl text-slate-400 font-bold italic max-w-4xl mx-auto leading-relaxed border-l-4 border-indigo-600/30 pl-10 text-left md:text-center"
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }}
+            className="mt-16 text-xl md:text-2xl text-slate-500 font-bold italic max-w-4xl mx-auto leading-relaxed px-6"
           >
              {t.heroSubtitle}
           </m.p>
-
-          <m.div 
-            initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }}
-            className="flex flex-col sm:flex-row items-center justify-center gap-10 pt-10"
-          >
-            <m.button 
-              whileHover={{ scale: 1.05, y: -6 }} whileTap={{ scale: 0.98 }}
-              onClick={() => onNavigate('signup')}
-              className="px-16 py-8 bg-indigo-600 text-white rounded-full font-black text-[13px] uppercase tracking-[0.4em] shadow-[0_40px_80px_rgba(79,70,229,0.3)] transition-all italic flex items-center justify-center gap-5"
-            >
-              {t.ctaPrimary} <ArrowRight size={20} />
-            </m.button>
-            <button 
-              onClick={() => onNavigate('login')}
-              className="px-16 py-8 bg-transparent border border-white/10 hover:bg-white/5 text-slate-300 rounded-full font-black text-[13px] uppercase tracking-[0.4em] transition-all italic flex items-center justify-center gap-5 shadow-2xl active:scale-95"
-            >
-              <Command size={20} className="text-indigo-500" /> {t.ctaSecondary}
-            </button>
-          </m.div>
         </m.div>
       </section>
 
@@ -190,8 +274,26 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
          </div>
       </section>
 
+      {/* Infrastructure Navigation Sector (Exact visual match from provided image) */}
+      <section className="relative z-10 bg-black/60 border-y border-white/5 py-12 md:py-20 backdrop-blur-3xl shadow-2xl">
+        <div className="max-w-[1600px] mx-auto px-6">
+          <div className="flex flex-wrap items-center justify-center md:justify-around gap-y-10 gap-x-12 md:gap-x-20">
+            {infrastructureLinks.map((link) => (
+              <m.button
+                key={link.view}
+                whileHover={{ scale: 1.05, color: '#818cf8' }}
+                onClick={() => onNavigate(link.view)}
+                className="text-2xl md:text-3xl font-black text-slate-500 hover:text-indigo-400 transition-all tracking-[0.25em] uppercase italic whitespace-nowrap drop-shadow-[0_0_10px_rgba(0,0,0,0.5)]"
+              >
+                {link.label}
+              </m.button>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* Research Hub Intersection */}
-      <section className="relative z-10 py-52 px-6 max-w-[1500px] mx-auto w-full border-t border-white/5">
+      <section className="relative z-10 py-52 px-6 max-w-[1500px] mx-auto w-full">
          <SectionHeading title="Research Hub" sub="Validated Biometric Insights" align="left" />
          
          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
