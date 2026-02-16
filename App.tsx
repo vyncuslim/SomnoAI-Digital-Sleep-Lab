@@ -3,7 +3,7 @@ import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, Article } from './types.ts';
 import {
   LayoutDashboard, TrendingUp, Sparkles, FlaskConical,
-  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, Info, Activity, Command
+  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, Info, Activity, Command, ShieldCheck, Github, Mail
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
@@ -32,6 +32,7 @@ import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
 import { NewsHub } from './components/NewsHub.tsx';
 import { ArticleView } from './components/ArticleView.tsx';
+import { ContactView } from './components/ContactView.tsx';
 
 const m = motion as any;
 
@@ -76,7 +77,8 @@ const AppContent: React.FC = () => {
       '/support': 'support',
       '/feedback': 'feedback',
       '/news': 'news',
-      '/article': 'article'
+      '/article': 'article',
+      '/contact': 'contact'
     };
     return views[cleanPath] || 'landing';
   }, []);
@@ -105,6 +107,7 @@ const AppContent: React.FC = () => {
     const cleanView = view.startsWith('/') ? view : `/${view}`;
     safeNavigatePath(cleanView);
     setActiveView(resolveViewFromLocation());
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   useEffect(() => {
@@ -112,6 +115,8 @@ const AppContent: React.FC = () => {
     window.addEventListener('popstate', handleRouting);
     return () => window.removeEventListener('popstate', handleRouting);
   }, [resolveViewFromLocation]);
+
+  const isPublicPage = ['landing', 'login', 'signup', 'science', 'faq', 'about', 'support', 'feedback', 'news', 'article', 'contact'].includes(activeView);
 
   if (loading) return null;
 
@@ -121,6 +126,7 @@ const AppContent: React.FC = () => {
     'about': <AboutView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} onNavigate={navigate} />,
     'support': <SupportView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} onNavigate={navigate} />,
     'feedback': <FeedbackView lang={lang} onBack={() => navigate('support')} />,
+    'contact': <ContactView lang={lang} onBack={() => navigate('about')} />,
     'news': <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />,
     'article': activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate('article'); }} />
   };
@@ -145,7 +151,6 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200">
-      {/* Optimized Desktop Header */}
       <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 px-6 md:px-12 h-20 md:h-24 flex items-center justify-between shadow-2xl">
         <div className="flex items-center gap-12">
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('dashboard')}>
@@ -199,7 +204,39 @@ const AppContent: React.FC = () => {
         </AnimatePresence>
       </main>
 
-      {/* Floating Mobile Bottom Navigation */}
+      <footer className="w-full bg-slate-950/40 border-t border-white/5 py-12 px-6 mt-auto">
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between items-center gap-10">
+          <div className="flex flex-col items-center md:items-start gap-4">
+            <div className="flex items-center gap-3">
+              <Logo size={24} />
+              <span className="text-sm font-black italic text-white uppercase tracking-widest">SomnoAI</span>
+            </div>
+            <p className="text-[10px] font-black text-slate-600 uppercase tracking-widest italic">
+              Digital Sleep Laboratory Infrastructure v2.8
+            </p>
+          </div>
+
+          <div className="flex gap-8">
+            <button onClick={() => navigate('about')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-[0.2em] transition-all italic">About</button>
+            <button onClick={() => navigate('science')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-[0.2em] transition-all italic">Protocol</button>
+            <button onClick={() => navigate('support')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-[0.2em] transition-all italic">Support</button>
+            <a href="/privacy" className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-[0.2em] transition-all italic">Privacy</a>
+          </div>
+
+          <div className="flex items-center gap-5 opacity-40">
+             <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" className="text-slate-400 hover:text-white transition-colors"><Github size={18} /></a>
+             <a href="mailto:contact@sleepsomno.com" className="text-slate-400 hover:text-white transition-colors"><Mail size={18} /></a>
+             <div className="flex items-center gap-2 px-4 py-1.5 bg-indigo-500/5 rounded-full border border-indigo-500/10">
+                <ShieldCheck size={12} className="text-indigo-400" />
+                <span className="text-[8px] font-mono uppercase tracking-widest">Secure Node</span>
+             </div>
+          </div>
+        </div>
+        <p className="text-center text-[9px] font-mono text-slate-800 uppercase tracking-[0.8em] mt-12">
+          © 2026 SomnoAI Laboratory Node • All Recovery Protocols Verified
+        </p>
+      </footer>
+
       <div className="lg:hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-sm">
         <div className="bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-2 flex items-center justify-around shadow-[0_40px_80px_-20px_rgba(0,0,0,1)]">
            {navItems.map((item) => (

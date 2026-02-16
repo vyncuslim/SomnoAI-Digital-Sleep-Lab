@@ -102,7 +102,7 @@ const commonZh = {
   },
   landing: {
     heroTitle: "工程级 恢复方案",
-    heroSubtitle: "高阶生物遥测合成。SomnoAI 将可穿戴数据流与 Gemini 2.5 Pro 神经模型相结合，旨在解构修复架构并优化个人表现。",
+    heroSubtitle: "SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。",
     ctaPrimary: "开始优化",
     ctaSecondary: "访问终端",
     nav: {
