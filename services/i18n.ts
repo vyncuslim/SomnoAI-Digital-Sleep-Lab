@@ -1,8 +1,8 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v12.5
- * Optimized for Publication E-E-A-T
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v12.6
+ * Optimized for Premium Research Laboratory Experience
  */
 
 const BRAND_NAME = "SomnoAI Digital Sleep Lab";
@@ -20,7 +20,7 @@ const commonEn = {
     dispatchTitle: "LABORATORY DISPATCH",
     dispatchSub: "Secure Communication Channels",
     nav: {
-      science: "SCIENTIFIC SCIENCE",
+      science: "SCIENTIFIC PROTOCOL",
       faq: "LAB FAQ",
       project: "ABOUT PROJECT",
       support: "TECH SUPPORT",
@@ -87,7 +87,7 @@ const commonZh = {
   },
   landing: {
     heroTitle: "工程级 恢复方案",
-    heroSubtitle: "它将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验室体验。",
+    heroSubtitle: "SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，利用 Google Gemini AI 模型重构您的修复窗口并优化个人表现。",
     ctaPrimary: "开始优化",
     ctaSecondary: "访问终端",
     dispatchTitle: "实验室联络矩阵",

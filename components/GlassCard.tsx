@@ -29,15 +29,15 @@ export const GlassCard: React.FC<GlassCardProps> = ({
   const x = useMotionValue(0);
   const y = useMotionValue(0);
 
-  const mouseXSpring = useSpring(x, { stiffness: 80, damping: 30 });
-  const mouseYSpring = useSpring(y, { stiffness: 80, damping: 30 });
+  const mouseXSpring = useSpring(x, { stiffness: 120, damping: 25 });
+  const mouseYSpring = useSpring(y, { stiffness: 120, damping: 25 });
 
-  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [`${10 * intensity}deg`, `${-10 * intensity}deg`]);
-  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [`${-10 * intensity}deg`, `${10 * intensity}deg`]);
+  const rotateX = useTransform(mouseYSpring, [-0.5, 0.5], [`${8 * intensity}deg`, `${-8 * intensity}deg`]);
+  const rotateY = useTransform(mouseXSpring, [-0.5, 0.5], [`${-8 * intensity}deg`, `${8 * intensity}deg`]);
 
   const background = useTransform(
     [mouseXSpring, mouseYSpring],
-    ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(99, 102, 241, 0.08) 0%, transparent 70%)`
+    ([vx, vy]) => `radial-gradient(circle at ${(vx as number + 0.5) * 100}% ${(vy as number + 0.5) * 100}%, rgba(99, 102, 241, 0.12) 0%, transparent 80%)`
   );
 
   const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -67,19 +67,19 @@ export const GlassCard: React.FC<GlassCardProps> = ({
       }}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      whileHover={hoverScale ? { scale: 1.02, y: -4 } : {}}
-      whileTap={onClick ? { scale: 0.98 } : {}}
+      whileHover={hoverScale ? { scale: 1.01, y: -2 } : {}}
+      whileTap={onClick ? { scale: 0.99 } : {}}
       onClick={onClick}
       className={`
-        backdrop-blur-3xl bg-slate-950/40 border border-white/5 rounded-[2.5rem] 
-        shadow-[0_40px_100px_rgba(0,0,0,0.5)] transition-all duration-500
+        backdrop-blur-2xl bg-slate-950/50 border border-white/5 rounded-[2.5rem] 
+        shadow-[0_40px_80px_-20px_rgba(0,0,0,0.8)] transition-all duration-300
         relative overflow-hidden group
         ${className}
       `}
     >
       <m.div 
         style={{ background }}
-        className="absolute inset-0 pointer-events-none z-0 opacity-50"
+        className="absolute inset-0 pointer-events-none z-0 opacity-40 group-hover:opacity-100 transition-opacity"
       />
       <div className="relative z-10 h-full">
         {children}
