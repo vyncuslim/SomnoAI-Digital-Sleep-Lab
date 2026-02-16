@@ -1,12 +1,9 @@
-
 import React, { useState, useMemo } from 'react';
-// Added Loader2 to the lucide-react imports
-import { X, Check, Clock, Heart, Star, Flame, Info, ShieldAlert, Activity, Zap, BrainCircuit, Waves, Terminal, Loader2 } from 'lucide-react';
+import { X, Check, Clock, Heart, Star, Flame, Info, ShieldAlert, Activity, Zap, BrainCircuit, Waves, Terminal, Loader2, ArrowRight } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { SleepRecord, SleepStage } from '../types.ts';
 import { motion } from 'framer-motion';
 
-// Fix: Use any cast to bypass broken library types for motion props
 const m = motion as any;
 
 interface DataEntryProps {
@@ -15,15 +12,13 @@ interface DataEntryProps {
 }
 
 export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
-  const [duration, setDuration] = useState(450); // 7.5 hours
+  const [duration, setDuration] = useState(450); 
   const [score, setScore] = useState(85);
   const [restingHr, setRestingHr] = useState(62);
-  const [calories, setCalories] = useState(2100);
   const [isValidating, setIsValidating] = useState(false);
 
   const previewData = useMemo(() => {
-    const activityFactor = Math.min(0.05, (calories - 2000) / 40000);
-    const deepBase = 0.22 + activityFactor;
+    const deepBase = 0.22;
     const remBase = 0.20;
     const awakeRatio = (100 - score) / 300; 
     const awake = Math.floor(duration * awakeRatio);
@@ -32,7 +27,7 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
     const rem = Math.floor(remaining * remBase);
     const efficiency = Math.round(((duration - awake) / Math.max(1, duration)) * 100);
     return { deep, rem, awake, efficiency };
-  }, [duration, score, calories]);
+  }, [duration, score]);
 
   const handleSave = () => {
     setIsValidating(true);
@@ -53,19 +48,9 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
         deepRatio: Math.round((deep / duration) * 100),
         remRatio: Math.round((rem / duration) * 100),
         efficiency,
-        calories,
         stages,
-        heartRate: {
-          resting: restingHr,
-          max: Math.round(restingHr * 1.35),
-          min: Math.max(40, restingHr - 4),
-          average: Math.round(restingHr * 1.1),
-          history: Array.from({ length: 12 }, (_, i) => ({ 
-            time: `${(i * 2 + 22) % 24}:00`, 
-            bpm: restingHr + Math.floor(Math.random() * 12) 
-          })),
-        },
-        aiInsights: ["Manual injection override detected. Biometric synchronization complete."]
+        heartRate: { resting: restingHr, max: restingHr + 15, min: restingHr - 10, average: restingHr + 5, history: [] },
+        aiInsights: ["Manual injection override complete. Biometric link stable."]
       };
       onSave(newRecord);
       setIsValidating(false);
@@ -73,93 +58,95 @@ export const DataEntry: React.FC<DataEntryProps> = ({ onClose, onSave }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 backdrop-blur-3xl bg-slate-950/90 overflow-y-auto">
-      <m.div initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-full max-w-4xl">
-        <GlassCard className="p-8 md:p-12 space-y-10 border-indigo-500/20 shadow-2xl">
-          <header className="flex justify-between items-center border-b border-white/5 pb-8">
-            <div className="flex items-center gap-5">
-              <div className="w-14 h-14 bg-indigo-500/10 rounded-2xl flex items-center justify-center border border-indigo-500/20">
-                <Terminal size={28} className="text-indigo-400" />
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-6 backdrop-blur-3xl bg-[#01040a]/95">
+      <m.div initial={{ scale: 0.95, opacity: 0, y: 30 }} animate={{ scale: 1, opacity: 1, y: 0 }} className="w-full max-w-5xl">
+        <GlassCard className="p-10 md:p-16 rounded-[4.5rem] border-white/5 shadow-[0_100px_200px_-50px_rgba(0,0,0,1)] relative overflow-hidden" intensity={1.5}>
+          {/* Background Detail */}
+          <div className="absolute top-0 right-0 p-20 opacity-[0.02] text-indigo-400 pointer-events-none transform rotate-45">
+             <Waves size={400} />
+          </div>
+
+          <header className="flex justify-between items-center mb-16 border-b border-white/5 pb-10 relative z-10">
+            <div className="flex items-center gap-6">
+              <div className="w-16 h-16 bg-slate-900 rounded-[2rem] flex items-center justify-center border border-indigo-500/20 shadow-2xl">
+                <Terminal size={32} className="text-indigo-400" />
               </div>
-              <div className="space-y-1">
-                <h2 className="text-3xl font-black italic text-white tracking-tighter">Injection Terminal</h2>
-                <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.4em]">Signal Override Protocol</p>
+              <div className="space-y-1 text-left">
+                <h2 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Injection Terminal</h2>
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-[0.5em] italic">Manual Biometric Synthesis v4.1</p>
               </div>
             </div>
-            <button onClick={onClose} className="p-3 bg-white/5 hover:bg-rose-500/20 rounded-xl text-slate-400 hover:text-rose-400 transition-all">
-              <X size={24} />
+            <button onClick={onClose} className="p-5 bg-white/5 hover:bg-rose-500/10 rounded-full text-slate-500 hover:text-rose-500 transition-all border border-white/5">
+              <X size={28} />
             </button>
           </header>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            <div className="space-y-8">
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                  <span className="text-slate-500 flex items-center gap-2"><Clock size={12}/> Duration</span>
-                  <span className="text-indigo-400 font-mono">{Math.floor(duration/60)}H {duration%60}M</span>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-16 relative z-10">
+            <div className="lg:col-span-7 space-y-12">
+              {[
+                { label: 'Time Stature', icon: Clock, value: `${Math.floor(duration/60)}H ${duration%60}M`, state: duration, set: setDuration, min: 120, max: 720, step: 15 },
+                { label: 'Perceived Quality', icon: Star, value: `${score}%`, state: score, set: setScore, min: 0, max: 100, step: 1 },
+                { label: 'Resting Pulse', icon: Heart, value: `${restingHr} BPM`, state: restingHr, set: setRestingHr, min: 40, max: 110, step: 1 }
+              ].map((field) => (
+                <div key={field.label} className="space-y-6">
+                  <div className="flex justify-between items-center px-4">
+                     <div className="flex items-center gap-3 text-slate-500">
+                        <field.icon size={16} />
+                        <span className="text-[11px] font-black uppercase tracking-widest italic">{field.label}</span>
+                     </div>
+                     <span className="text-2xl font-black italic text-indigo-400 tabular-nums">{field.value}</span>
+                  </div>
+                  <div className="relative h-12 flex items-center group">
+                     <div className="absolute inset-x-0 h-1 bg-slate-900 rounded-full" />
+                     <input 
+                       type="range" min={field.min} max={field.max} step={field.step} value={field.state} 
+                       onChange={(e) => field.set(parseInt(e.target.value))} 
+                       className="absolute inset-x-0 w-full bg-transparent appearance-none cursor-pointer accent-indigo-500 h-1 z-10" 
+                     />
+                     <m.div 
+                       className="absolute left-0 h-1 bg-indigo-600 rounded-full shadow-[0_0_15px_rgba(99,102,241,0.5)]" 
+                       style={{ width: `${((field.state - field.min) / (field.max - field.min)) * 100}%` }}
+                     />
+                  </div>
                 </div>
-                <input type="range" min="120" max="720" step="15" value={duration} onChange={(e) => setDuration(parseInt(e.target.value))} className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                  <span className="text-slate-500 flex items-center gap-2"><Star size={12}/> Subjective Score</span>
-                  <span className="text-indigo-400 font-mono">{score}</span>
-                </div>
-                <input type="range" min="0" max="100" value={score} onChange={(e) => setScore(parseInt(e.target.value))} className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest">
-                  <span className="text-slate-500 flex items-center gap-2"><Heart size={12}/> Resting HR</span>
-                  <span className="text-indigo-400 font-mono">{restingHr} BPM</span>
-                </div>
-                <input type="range" min="40" max="110" value={restingHr} onChange={(e) => setRestingHr(parseInt(e.target.value))} className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500" />
-              </div>
-
-              <div className="p-5 bg-indigo-500/5 border border-indigo-500/10 rounded-2xl flex gap-4">
-                <Info size={20} className="text-indigo-500 shrink-0" />
-                <p className="text-[11px] text-slate-400 italic">Synthetic engine will extrapolate architecture based on metabolic load and RHR stabilization.</p>
-              </div>
+              ))}
             </div>
 
-            <div className="bg-slate-900/40 border border-indigo-500/20 rounded-3xl p-8 flex flex-col justify-between">
-              <div className="space-y-8">
-                <div className="flex items-center gap-3">
-                  <BrainCircuit size={20} className="text-indigo-400" />
-                  <h3 className="text-sm font-black italic text-white uppercase tracking-widest">Biometric Projection</h3>
-                </div>
+            <div className="lg:col-span-5">
+              <div className="bg-slate-900/60 border border-white/5 rounded-[4rem] p-10 h-full flex flex-col justify-between shadow-2xl">
+                 <div className="space-y-10">
+                    <div className="flex items-center gap-3 text-indigo-400">
+                       <BrainCircuit size={20} />
+                       <h3 className="text-xs font-black uppercase tracking-[0.3em] italic">Projection Engine</h3>
+                    </div>
+                    
+                    <div className="space-y-8">
+                       {[
+                         { label: 'Synthesis Efficiency', val: previewData.efficiency, color: 'bg-emerald-500' },
+                         { label: 'Deep Recovery Ratio', val: Math.round((previewData.deep/duration)*100), color: 'bg-indigo-500' }
+                       ].map(proj => (
+                         <div key={proj.label} className="space-y-3">
+                            <div className="flex justify-between text-[10px] font-black uppercase text-slate-500 italic px-2">
+                               <span>{proj.label}</span>
+                               <span className="text-white">{proj.val}%</span>
+                            </div>
+                            <div className="h-1.5 w-full bg-black rounded-full overflow-hidden">
+                               <m.div animate={{ width: `${proj.val}%` }} className={`h-full ${proj.color} shadow-[0_0_10px_currentColor]`} />
+                            </div>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
 
-                <div className="space-y-6">
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
-                       <span>Efficiency Projection</span>
-                       <span>{previewData.efficiency}%</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
-                       <m.div animate={{ width: `${previewData.efficiency}%` }} className="h-full bg-emerald-500" />
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-[9px] font-black uppercase text-slate-500">
-                       <span>Deep Recovery</span>
-                       <span>{previewData.deep}M</span>
-                    </div>
-                    <div className="h-1.5 w-full bg-slate-950 rounded-full overflow-hidden">
-                       <m.div animate={{ width: `${(previewData.deep/duration)*100}%` }} className="h-full bg-indigo-500" />
-                    </div>
-                  </div>
-                </div>
+                 <button 
+                   onClick={handleSave} disabled={isValidating}
+                   className="w-full py-8 mt-12 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[2.5rem] font-black text-[12px] uppercase tracking-[0.5em] transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-95 disabled:opacity-50 italic group"
+                 >
+                   {isValidating ? <Loader2 className="animate-spin" size={20} /> : <Zap size={20} fill="currentColor" />}
+                   {isValidating ? 'Encoding Stream...' : 'Execute Injection'}
+                   <ArrowRight size={18} className="group-hover:translate-x-2 transition-transform" />
+                 </button>
               </div>
-
-              <button 
-                onClick={handleSave} 
-                disabled={isValidating}
-                className="w-full py-5 mt-10 bg-indigo-600 text-white rounded-[1.5rem] font-black text-xs uppercase tracking-[0.3em] shadow-xl hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-3"
-              >
-                {isValidating ? <Loader2 className="animate-spin" /> : <Zap size={16} />}
-                {isValidating ? 'Encoding Data Stream' : 'Execute Injection'}
-              </button>
             </div>
           </div>
         </GlassCard>

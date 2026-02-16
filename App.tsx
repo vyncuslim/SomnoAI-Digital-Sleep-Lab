@@ -3,7 +3,7 @@ import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, Article } from './types.ts';
 import {
   LayoutDashboard, TrendingUp, Sparkles, FlaskConical,
-  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, Info
+  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, Info, Activity, Command
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
@@ -32,7 +32,6 @@ import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
 import { NewsHub } from './components/NewsHub.tsx';
 import { ArticleView } from './components/ArticleView.tsx';
-import { NotFoundView } from './components/NotFoundView.tsx';
 
 const m = motion as any;
 
@@ -58,14 +57,9 @@ const AppContent: React.FC = () => {
 
   const resolveViewFromLocation = useCallback((): ViewType => {
     let path = window.location.pathname.toLowerCase().trim();
-    
-    // Normalize: index.html or empty or slash all lead to landing
-    if (!path || path === '/' || path === '/index.html' || path === '/landing') {
-      return 'landing';
-    }
+    if (!path || path === '/' || path === '/index.html' || path === '/landing') return 'landing';
 
     const cleanPath = path.endsWith('/') ? path.slice(0, -1) : path;
-    
     const views: Record<string, ViewType> = {
       '/dashboard': 'dashboard',
       '/assistant': 'assistant',
@@ -84,8 +78,6 @@ const AppContent: React.FC = () => {
       '/news': 'news',
       '/article': 'article'
     };
-    
-    // Defaults to landing to prevent hard 404 views unless explicitly needed
     return views[cleanPath] || 'landing';
   }, []);
 
@@ -104,19 +96,15 @@ const AppContent: React.FC = () => {
   }, [resolveViewFromLocation]);
 
   useEffect(() => {
-    const brand = "SomnoAI Digital Sleep Lab";
-    let title = brand;
     if (activeView === 'article' && activeArticle) {
-      // Fixed: Change article.slug to activeArticle.slug to resolve undefined variable error
       updateMetadata(activeArticle.title, activeArticle.excerpt, `/article/${activeArticle.slug}`);
       return;
     }
-    updateMetadata(title, "Advanced Sleep Analysis Hub", window.location.pathname);
+    updateMetadata("SomnoAI Digital Sleep Lab", "Advanced Sleep Analysis Hub", window.location.pathname);
   }, [activeView, activeArticle]);
 
-  if (loading) return null; // Let index.html's preloader handle this
+  if (loading) return null;
 
-  // Shared/Public Layouts
   const renderSharedViews = () => {
     switch(activeView) {
       case 'science': return <ScienceView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
@@ -145,50 +133,60 @@ const AppContent: React.FC = () => {
     { id: 'dashboard', icon: LayoutDashboard, label: lang === 'zh' ? '仪表盘' : 'Overview' },
     { id: 'calendar', icon: TrendingUp, label: lang === 'zh' ? '趋势' : 'Trends' },
     { id: 'assistant', icon: Sparkles, label: lang === 'zh' ? 'AI 教练' : 'AI Coach' },
-    { id: 'news', icon: Newspaper, label: lang === 'zh' ? '研究' : 'Research' },
+    { id: 'news', icon: Newspaper, label: lang === 'zh' ? '科研' : 'Research' },
     { id: 'diary', icon: BookOpen, label: lang === 'zh' ? '日志' : 'Logs' },
   ];
 
   return (
     <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200">
-      <header className="fixed top-0 left-0 right-0 z-50 bg-[#01040a]/80 backdrop-blur-xl border-b border-white/5 px-6 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-8">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('dashboard')}>
-            <Logo size={34} animated={true} />
+      <header className="fixed top-0 left-0 right-0 z-50 bg-[#01040a]/80 backdrop-blur-2xl border-b border-white/5 px-8 h-24 flex items-center justify-between">
+        <div className="flex items-center gap-12">
+          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('dashboard')}>
+            <Logo size={42} animated={true} />
             <div className="flex flex-col">
-              <span className="text-xl font-black italic tracking-tighter uppercase leading-none text-white">Somno<span className="text-indigo-400">AI</span></span>
-              <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Sleep Lab</span>
+              <span className="text-2xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
+              <span className="text-[7px] font-black uppercase tracking-[0.5em] text-slate-500 mt-1.5">Digital Sleep Lab</span>
             </div>
           </div>
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-10">
             {navItems.map(item => (
               <button 
                 key={item.id} 
                 onClick={() => navigate(item.id)}
-                className={`text-[11px] font-bold uppercase tracking-widest transition-all flex items-center gap-2 italic ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
+                className={`group relative text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2.5 italic ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
               >
-                <item.icon size={14} /> {item.label}
+                <item.icon size={16} className={activeView === item.id ? 'animate-pulse' : ''} /> 
+                {item.label}
+                {activeView === item.id && (
+                  <m.div layoutId="nav-glow" className="absolute -bottom-10 left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_15px_#6366f1]" />
+                )}
               </button>
             ))}
           </nav>
         </div>
 
-        <div className="flex items-center gap-5">
-          <button onClick={() => navigate('registry')} className={`p-3 rounded-2xl transition-all ${activeView === 'registry' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-white/5 text-slate-500 hover:text-white'}`}>
+        <div className="flex items-center gap-6">
+          <div className="hidden md:flex flex-col items-end mr-4">
+             <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest italic">Subject Status</span>
+             <span className="text-[11px] font-bold text-emerald-500 italic flex items-center gap-2 uppercase">
+                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" /> NOMINAL_REST
+             </span>
+          </div>
+          <button onClick={() => navigate('registry')} className={`p-4 rounded-3xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
             <User size={20} />
           </button>
-          <button onClick={() => navigate('settings')} className={`p-3 rounded-2xl transition-all ${activeView === 'settings' ? 'bg-indigo-500/10 text-indigo-400' : 'bg-white/5 text-slate-500 hover:text-white'}`}>
+          <button onClick={() => navigate('settings')} className={`p-4 rounded-3xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
             <SettingsIcon size={20} />
           </button>
-          <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-white/5 rounded-2xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-all">
+          <button onClick={() => setIsExitModalOpen(true)} className="p-4 bg-white/5 border border-white/5 rounded-3xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all">
             <LogOut size={20} />
           </button>
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-7xl mx-auto p-6 pt-32 pb-32">
+      <main className="flex-1 w-full max-w-7xl mx-auto p-8 pt-40 pb-40">
         <AnimatePresence mode="wait">
-          <m.div key={activeView} initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -15 }} transition={{ duration: 0.4 }}>
+          <m.div key={activeView} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -20 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
             {activeView === 'dashboard' && <Dashboard data={currentRecord} lang={lang} onNavigate={navigate} />}
             {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
