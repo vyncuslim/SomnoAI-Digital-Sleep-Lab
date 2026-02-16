@@ -12,6 +12,9 @@ html, body {
   min-height: 100vh;
   overflow-x: hidden;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  /* Mobile touch optimization */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 /* Global Scanline Effect */
@@ -97,9 +100,14 @@ body::after {
 
 /* Cinematic Text Utilities */
 .text-hero {
-  font-size: clamp(8rem, 20vw, 24rem);
+  font-size: clamp(6rem, 25vw, 24rem);
   line-height: 0.8;
   letter-spacing: -0.08em;
   font-weight: 900;
   font-style: italic;
+}
+
+/* Ensure touch targets are healthy */
+button, a, select, input {
+  min-height: 48px;
 }

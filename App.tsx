@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, Article } from './types.ts';
@@ -84,7 +83,6 @@ const AppContent: React.FC = () => {
 
   const [activeView, setActiveView] = useState<ViewType>(resolveViewFromLocation());
 
-  // FIX: Force rendering transition to dashboard if profile exists
   useEffect(() => {
     if (!loading) {
       const currentLoc = resolveViewFromLocation();
@@ -117,8 +115,6 @@ const AppContent: React.FC = () => {
 
   if (loading) return null;
 
-  // Shared View Logic
-  // Added comment above fix: Replacing JSX.Element with React.ReactElement to resolve the 'Cannot find namespace JSX' error
   const sharedViews: Record<string, React.ReactElement> = {
     'science': <ScienceView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />,
     'faq': <FAQView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />,
@@ -137,7 +133,6 @@ const AppContent: React.FC = () => {
     return <LandingPage lang={lang} onNavigate={navigate} />;
   }
 
-  // Mandatory Setup for new users
   if (!profile.full_name && activeView !== 'settings') return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [
@@ -150,13 +145,14 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200">
-      <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-2xl border-b border-white/5 px-8 h-24 flex items-center justify-between shadow-2xl">
+      {/* Optimized Desktop Header */}
+      <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 px-6 md:px-12 h-20 md:h-24 flex items-center justify-between shadow-2xl">
         <div className="flex items-center gap-12">
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('dashboard')}>
-            <Logo size={42} animated={true} />
-            <div className="flex flex-col">
-              <span className="text-2xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
-              <span className="text-[7px] font-black uppercase tracking-[0.5em] text-slate-500 mt-1.5">Digital Sleep Lab</span>
+            <Logo size={40} animated={true} />
+            <div className="flex flex-col text-left">
+              <span className="text-xl md:text-2xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
+              <span className="text-[7px] font-black uppercase tracking-[0.5em] text-slate-500 mt-1">Digital Sleep Lab</span>
             </div>
           </div>
           <nav className="hidden lg:flex items-center gap-10">
@@ -176,22 +172,22 @@ const AppContent: React.FC = () => {
           </nav>
         </div>
 
-        <div className="flex items-center gap-6">
-          <button onClick={() => navigate('registry')} className={`p-4 rounded-3xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
-            <User size={20} />
+        <div className="flex items-center gap-3 md:gap-6">
+          <button onClick={() => navigate('registry')} className={`p-4 rounded-[1.5rem] transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10 shadow-xl'}`}>
+            <User size={18} />
           </button>
-          <button onClick={() => navigate('settings')} className={`p-4 rounded-3xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
-            <SettingsIcon size={20} />
+          <button onClick={() => navigate('settings')} className={`p-4 rounded-[1.5rem] transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10 shadow-xl'}`}>
+            <SettingsIcon size={18} />
           </button>
-          <button onClick={() => setIsExitModalOpen(true)} className="p-4 bg-white/5 border border-white/5 rounded-3xl text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 hover:border-rose-500/20 transition-all">
-            <LogOut size={20} />
+          <button onClick={() => setIsExitModalOpen(true)} className="p-4 bg-rose-500/10 border border-rose-500/20 rounded-[1.5rem] text-rose-500 hover:text-white hover:bg-rose-500 transition-all shadow-xl active:scale-90">
+            <LogOut size={18} />
           </button>
         </div>
       </header>
 
-      <main className="flex-1 w-full max-w-7xl mx-auto p-8 pt-40 pb-40 relative">
+      <main className="flex-1 w-full max-w-7xl mx-auto p-4 md:p-8 pt-28 md:pt-40 pb-40 relative">
         <AnimatePresence mode="wait">
-          <m.div key={activeView} initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
+          <m.div key={activeView} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.02 }} transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}>
             {activeView === 'dashboard' && <Dashboard data={currentRecord} lang={lang} onNavigate={navigate} />}
             {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
@@ -202,6 +198,25 @@ const AppContent: React.FC = () => {
           </m.div>
         </AnimatePresence>
       </main>
+
+      {/* Floating Mobile Bottom Navigation */}
+      <div className="lg:hidden fixed bottom-8 left-1/2 -translate-x-1/2 z-[200] w-[90%] max-w-sm">
+        <div className="bg-slate-950/80 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-2 flex items-center justify-around shadow-[0_40px_80px_-20px_rgba(0,0,0,1)]">
+           {navItems.map((item) => (
+             <button 
+               key={item.id} 
+               onClick={() => navigate(item.id)}
+               className={`flex flex-col items-center gap-1.5 p-4 rounded-3xl transition-all relative ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-slate-300'}`}
+             >
+                {activeView === item.id && (
+                  <m.div layoutId="mobile-nav-pill" className="absolute inset-0 bg-indigo-500/10 rounded-3xl -z-10 border border-indigo-500/20" />
+                )}
+                <item.icon size={22} className={activeView === item.id ? 'scale-110' : ''} />
+                <span className="text-[8px] font-black uppercase tracking-widest">{item.label}</span>
+             </button>
+           ))}
+        </div>
+      </div>
 
       <ExitFeedbackModal 
         isOpen={isExitModalOpen} 
