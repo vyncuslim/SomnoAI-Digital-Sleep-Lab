@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Microscope, ArrowRight, Tag, Clock, Calendar, Sparkles, Newspaper, Landmark } from 'lucide-react';
@@ -7,7 +8,7 @@ import { Language, translations } from '../services/i18n.ts';
 
 const m = motion as any;
 
-const MOCK_RESEARCH: Article[] = [
+export const MOCK_RESEARCH: Article[] = [
   {
     id: 'art-001',
     slug: 'ai-driven-sleep-optimization-2026',

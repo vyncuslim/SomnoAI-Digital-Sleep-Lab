@@ -1,22 +1,27 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Routing Recovery - SomnoAI</title>
-    <script>
-        // Force redirect to root if served as a fallback
-        if (window.location.pathname !== '/') {
-            window.location.replace('/');
-        }
-    </script>
     <style>
-        body { background-color: #01040a; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .loader { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 10px 0 0 0 #6366f1; animation: spin 1s infinite linear; }
+        body { background-color: #01040a; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; font-family: sans-serif; color: #f8fafc; }
+        .loader { width: 40px; height: 40px; border-radius: 50%; box-shadow: inset 10px 0 0 0 #6366f1; animation: spin 1s infinite linear; margin-bottom: 20px; }
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+        p { font-size: 10px; text-transform: uppercase; letter-spacing: 0.3em; color: #64748b; font-weight: 900; }
     </style>
 </head>
 <body>
     <div class="loader"></div>
+    <p>Neural Path Resolution...</p>
+    <script>
+      // Fallback redirect only if not at root and after a short delay
+      setTimeout(() => {
+        if (window.location.pathname !== '/') {
+          window.location.replace('/');
+        }
+      }, 3000);
+    </script>
 </body>
 </html>

@@ -1,18 +1,13 @@
+
 /**
- * SomnoAI Safe Navigation Utility (v7.0)
+ * SomnoAI Safe Navigation Utility (v11.0)
  * Optimized for clean URLs, robust SPA routing, and Dynamic SEO Metadata.
  */
 
 export const getSafeUrl = (): string => {
   try {
-    if (typeof document !== 'undefined' && document.URL) {
-      return String(document.URL);
-    }
-  } catch (e) {}
-
-  try {
-    if (typeof window !== 'undefined' && window.origin) {
-      return window.origin;
+    if (typeof window !== 'undefined' && window.location.href) {
+      return String(window.location.href);
     }
   } catch (e) {}
 
@@ -24,7 +19,8 @@ export const getSafeUrl = (): string => {
  */
 export const updateMetadata = (title: string, description?: string, canonicalPath?: string) => {
   const brand = "SomnoAI Digital Sleep Lab";
-  document.title = `${title} | ${brand}`;
+  const fullTitle = `${title} | ${brand}`;
+  document.title = fullTitle;
   
   if (description) {
     const metaDesc = document.querySelector('meta[name="description"]');
@@ -37,12 +33,13 @@ export const updateMetadata = (title: string, description?: string, canonicalPat
   // Update Canonical
   const canonical = document.querySelector('link[rel="canonical"]');
   if (canonical && canonicalPath) {
-    canonical.setAttribute('href', `https://sleepsomno.com${canonicalPath}`);
+    const cleanPath = canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`;
+    canonical.setAttribute('href', `https://sleepsomno.com${cleanPath}`);
   }
 
   // Update OpenGraph Title
   const ogTitle = document.querySelector('meta[property="og:title"]');
-  if (ogTitle) ogTitle.setAttribute('content', `${title} | ${brand}`);
+  if (ogTitle) ogTitle.setAttribute('content', fullTitle);
 };
 
 export const getSafeHash = (): string => {
@@ -58,10 +55,24 @@ export const getSafeHash = (): string => {
 
 /**
  * Executes a clean URL transition using the History API.
+ * Handles alias normalization and enforces single-slash standards.
  */
 export const safeNavigatePath = (path: string) => {
-  let cleanPath = path.startsWith('/') ? path : `/${path}`;
-  if (cleanPath === '/landing' || cleanPath === '/index.html') cleanPath = '/';
+  // Normalize path: Ensure single leading slash and no double slashes
+  let cleanPath = '/' + path.replace(/^\/+/, '').replace(/\/+$/, '');
+  if (cleanPath === '/index.html' || cleanPath === '/home' || cleanPath === '/landing') {
+    cleanPath = '/';
+  }
+  
+  // Custom Aliases
+  const aliases: Record<string, string> = {
+    '/atlas': '/calendar',
+    '/join': '/signup'
+  };
+
+  if (aliases[cleanPath]) {
+    cleanPath = aliases[cleanPath];
+  }
 
   try {
     if (window.location.pathname === cleanPath && !window.location.hash) return;

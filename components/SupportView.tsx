@@ -1,9 +1,10 @@
+
 import React, { useState } from 'react';
 import { 
   ArrowLeft, Heart, MessageSquare, HelpCircle, 
   ChevronRight, Copy, QrCode, ArrowUpRight, 
   Mail, ShieldCheck, Zap, Info, Sparkles, 
-  AlertCircle, ExternalLink, Coffee, LifeBuoy, Check, X, Monitor, Smartphone
+  AlertCircle, ExternalLink, Coffee, LifeBuoy, Check, X, Monitor, Smartphone, MessageCircle
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -65,18 +66,18 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           </GlassCard>
 
           <GlassCard 
-            onClick={() => setShowDonation(true)}
-            className="p-12 rounded-[4rem] border-rose-500/20 bg-rose-500/[0.02] cursor-pointer group hover:bg-rose-500/[0.05] transition-all shadow-2xl"
+            onClick={() => window.open('https://discord.com/invite/9EXJtRmju', '_blank')}
+            className="p-12 rounded-[4rem] border-indigo-500/20 bg-indigo-600/[0.02] cursor-pointer group hover:bg-indigo-500/[0.05] transition-all shadow-2xl"
             intensity={1.2}
           >
             <div className="flex items-center justify-between mb-10">
-               <div className="p-4 bg-rose-500/10 rounded-2xl text-rose-400 group-hover:scale-110 transition-transform">
-                  <Heart size={32} fill="currentColor" className="opacity-80" />
+               <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform">
+                  <MessageCircle size={32} />
                </div>
-               <ChevronRight size={22} className="text-rose-500/40 group-hover:text-rose-400 transition-colors" />
+               <ExternalLink size={22} className="text-indigo-500/40 group-hover:text-indigo-400 transition-colors" />
             </div>
-            <h3 className="text-2xl font-black italic text-white uppercase tracking-tight mb-4">{t.funding}</h3>
-            <p className="text-xs text-slate-500 leading-relaxed italic font-medium opacity-80">{t.fundingDesc}</p>
+            <h3 className="text-2xl font-black italic text-white uppercase tracking-tight mb-4">Laboratory Blog</h3>
+            <p className="text-xs text-slate-500 leading-relaxed italic font-medium opacity-80">Join our Discord node for laboratory logs, research blog posts, and elite protocols.</p>
           </GlassCard>
         </div>
 
@@ -186,7 +187,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
         <footer className="pt-20 text-center opacity-40">
            <button 
              onClick={onBack}
-             className="px-16 py-7 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-[11px] uppercase tracking-widest transition-all italic shadow-2xl active:scale-95 uppercase"
+             className="px-16 py-7 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-black text-[11px] uppercase tracking-widest transition-all italic shadow-2xl active:scale-95 uppercase"
            >
              Return to Terminal
            </button>

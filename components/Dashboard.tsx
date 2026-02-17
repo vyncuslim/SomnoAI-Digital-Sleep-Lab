@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -5,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   RefreshCw, Brain, Heart, Zap, Sparkles, Microscope, Binary, 
   ArrowRight, Activity, Command, Target, Waves, Thermometer, Droplets,
-  ShieldCheck, ChevronRight, Fingerprint, Radio, BarChart3
+  ShieldCheck, ChevronRight, Fingerprint, Radio, BarChart3, FlaskConical, Beaker, MessageCircle, ExternalLink
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { getQuickInsight } from '../services/geminiService.ts';
@@ -167,7 +168,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <div className="space-y-8">
                   <div className="flex flex-wrap gap-2 md:gap-4">
                     {insights.slice(0, 3).map((insight, idx) => (
-                      <div key={idx} className="px-4 py-2 md:px-6 md:py-3 bg-white/[0.04] border border-white/10 rounded-xl md:rounded-2xl text-[10px] md:text-[12px] text-slate-400 italic font-black uppercase tracking-widest hover:text-indigo-400 hover:border-indigo-500/30 transition-all">
+                      <div key={insight + idx} className="px-4 py-2 md:px-6 md:py-3 bg-white/[0.04] border border-white/10 rounded-xl md:rounded-2xl text-[10px] md:text-[12px] text-slate-400 italic font-black uppercase tracking-widest hover:text-indigo-400 hover:border-indigo-500/30 transition-all">
                         # {insight}
                       </div>
                     ))}
@@ -186,7 +187,8 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
         {/* Action Matrix */}
         <div className="lg:col-span-4 space-y-8 md:space-y-12">
-          <GlassCard className="p-10 md:p-16 rounded-[4rem] md:rounded-[6rem] border-transparent bg-indigo-600 text-white h-[480px] md:h-[580px] flex flex-col justify-between shadow-[0_80px_160px_-30px_rgba(79,70,229,0.5)] relative overflow-hidden group" intensity={2}>
+          {/* Signal Sync Card */}
+          <GlassCard className="p-10 md:p-16 rounded-[4rem] md:rounded-[6rem] border-transparent bg-indigo-600 text-white h-[400px] md:h-[480px] flex flex-col justify-between shadow-[0_80px_160px_-30px_rgba(79,70,229,0.5)] relative overflow-hidden group" intensity={2}>
             <div className="absolute top-0 right-0 p-12 md:p-20 opacity-10 transform translate-x-1/4 -translate-y-1/4 group-hover:scale-125 transition-transform duration-1000 pointer-events-none">
                <Waves size={400} className="md:size-[500px]" strokeWidth={1} />
             </div>
@@ -209,7 +211,48 @@ export const Dashboard: React.FC<DashboardProps> = ({
             </button>
           </GlassCard>
 
-          <GlassCard className="p-10 md:p-14 rounded-[3.5rem] md:rounded-[5rem] border-white/10 bg-slate-950/80 flex-1 space-y-10 relative overflow-hidden group">
+          {/* Discord Hub Card */}
+          <GlassCard 
+            onClick={() => window.open('https://discord.com/invite/9EXJtRmju', '_blank')}
+            className="p-10 md:p-14 rounded-[3.5rem] md:rounded-[5rem] border-indigo-500/20 bg-[#5865F2]/5 hover:bg-[#5865F2]/10 cursor-pointer transition-all flex flex-col justify-between h-[280px] group relative overflow-hidden"
+          >
+             <div className="absolute top-0 right-0 p-10 opacity-[0.05] text-[#5865F2] group-hover:scale-110 transition-transform">
+                <MessageCircle size={220} />
+             </div>
+             <div className="space-y-6 relative z-10">
+                <div className="flex items-center gap-4 text-[#5865F2]">
+                   <MessageCircle size={24} />
+                   <span className="text-[11px] font-black uppercase tracking-[0.3em] italic">Neural Collective</span>
+                </div>
+                <h4 className="text-3xl font-black text-white italic uppercase tracking-tight">Community Blog</h4>
+                <p className="text-xs text-slate-500 font-medium italic leading-relaxed max-w-[240px]">Join our Discord node for biological laboratory logs, research blog, and elite protocols.</p>
+             </div>
+             <div className="flex items-center justify-between relative z-10">
+                <span className="text-[9px] font-black text-[#5865F2] uppercase tracking-widest">Access Collective Knowledge</span>
+                <ExternalLink size={20} className="text-[#5865F2] group-hover:translate-x-1 group-hover:-translate-y-1 transition-transform" />
+             </div>
+          </GlassCard>
+
+          {/* AI Experiment Card */}
+          <GlassCard onClick={() => onNavigate?.('experiment')} className="p-10 md:p-14 rounded-[3.5rem] md:rounded-[5rem] border-white/5 bg-slate-900/60 hover:bg-indigo-900/20 cursor-pointer transition-all flex flex-col justify-between h-[300px] group relative overflow-hidden">
+             <div className="absolute top-0 right-0 p-12 opacity-[0.05] text-indigo-400 group-hover:rotate-12 transition-transform">
+                <Beaker size={200} />
+             </div>
+             <div className="space-y-6 relative z-10">
+                <div className="flex items-center gap-4 text-indigo-400">
+                   <FlaskConical size={24} />
+                   <span className="text-[11px] font-black uppercase tracking-[0.3em] italic">Experimental Hub</span>
+                </div>
+                <h4 className="text-3xl font-black text-white italic uppercase tracking-tight">Recovery Experiment</h4>
+                <p className="text-xs text-slate-500 font-medium italic leading-relaxed max-w-[240px]">Synthesize specialized 3-day sleep optimization protocols powered by Gemini Pro.</p>
+             </div>
+             <div className="flex items-center justify-between relative z-10">
+                <span className="text-[9px] font-black text-indigo-500 uppercase tracking-widest">Design New Protocol</span>
+                <ChevronRight size={20} className="text-indigo-500 group-hover:translate-x-2 transition-transform" />
+             </div>
+          </GlassCard>
+
+          <GlassCard className="p-10 md:p-14 rounded-[3.5rem] md:rounded-[5rem] border-white/10 bg-slate-950/80 space-y-10 relative overflow-hidden group">
              <div className="flex items-center gap-4 md:gap-6 text-slate-500 relative z-10">
                <Thermometer size={20} className="md:size-6" />
                <span className="text-[11px] md:text-[13px] font-black uppercase tracking-[0.4em] italic">Environmental Node</span>

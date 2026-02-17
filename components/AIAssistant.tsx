@@ -1,9 +1,10 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, User, Loader2, Sparkles, BrainCircuit, 
   Terminal as TerminalIcon, Globe, Cpu, History,
   Activity, BarChart3, ChevronRight, Zap, ShieldCheck,
-  RefreshCw, Binary, Network
+  RefreshCw, Binary, Network, MapPin
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
@@ -153,11 +154,18 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
                   
                   {msg.sources && msg.sources.length > 0 && (
                     <div className="mt-8 md:mt-12 pt-8 md:pt-12 border-t border-white/10 flex flex-wrap gap-3 md:gap-5 relative z-10">
-                      {msg.sources.map((src, sIdx) => (
-                        <a key={sIdx} href={String(src.web?.uri || '')} target="_blank" className="px-5 py-2 md:px-8 md:py-4 bg-black/50 hover:bg-indigo-600/30 border border-white/10 rounded-full text-[10px] md:text-[11px] font-black text-indigo-400 flex items-center gap-3 transition-all italic shadow-2xl">
-                          <Globe size={14} className="md:size-4" /> {String(src.web?.title || 'Research_Reference').toUpperCase()}
-                        </a>
-                      ))}
+                      {msg.sources.map((src, sIdx) => {
+                        const isMaps = !!src.maps;
+                        const uri = isMaps ? src.maps.uri : src.web?.uri;
+                        const title = isMaps ? src.maps.title : src.web?.title;
+                        
+                        return (
+                          <a key={sIdx} href={String(uri || '')} target="_blank" className={`px-5 py-2 md:px-8 md:py-4 bg-black/50 border border-white/10 rounded-full text-[10px] md:text-[11px] font-black flex items-center gap-3 transition-all italic shadow-2xl ${isMaps ? 'text-emerald-400 hover:bg-emerald-600/30' : 'text-indigo-400 hover:bg-indigo-600/30'}`}>
+                            {isMaps ? <MapPin size={14} className="md:size-4" /> : <Globe size={14} className="md:size-4" />} 
+                            {String(title || 'Research_Reference').toUpperCase()}
+                          </a>
+                        );
+                      })}
                     </div>
                   )}
                 </div>
@@ -170,7 +178,6 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
           {isTyping && messages[messages.length-1].content === "" && (
              <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex gap-6 md:gap-12">
                <div className="w-14 h-14 md:w-20 md:h-20 rounded-2xl md:rounded-[2rem] bg-slate-950 border-2 border-indigo-500/20 flex items-center justify-center text-indigo-400 shadow-2xl">
-                 {/* Fixed: Combined duplicated className attributes into a single attribute */}
                  <RefreshCw className="animate-spin md:size-[32px]" size={24} />
                </div>
                <div className="p-8 md:p-16 rounded-[2.5rem] md:rounded-[5rem] bg-slate-950/40 border border-white/10 text-slate-700 text-base md:text-xl font-black italic tracking-widest uppercase">Synthesizing...</div>

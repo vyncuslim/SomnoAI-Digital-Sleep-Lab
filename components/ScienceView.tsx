@@ -1,7 +1,9 @@
+
 import React from 'react';
 import { 
   ArrowLeft, Brain, Activity, Waves, Info, ShieldAlert, Microscope, 
-  Target, Zap, Binary, Fingerprint, HeartPulse, Cpu, Layers, BarChart3
+  Target, Zap, Binary, Fingerprint, HeartPulse, Cpu, Layers, BarChart3,
+  ExternalLink, Globe, BookOpen
 } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -14,6 +16,13 @@ interface ScienceViewProps {
   lang: Language;
   onBack: () => void;
 }
+
+const REFERENCE_NODES = [
+  { name: 'Sleep Foundation', url: 'https://www.sleepfoundation.org', category: 'General' },
+  { name: 'National Institute of Health', url: 'https://www.nih.gov', category: 'Federal' },
+  { name: 'PubMed Central', url: 'https://www.ncbi.nlm.nih.gov/pmc/', category: 'Journals' },
+  { name: 'Society for Neuroscience', url: 'https://www.sfn.org', category: 'Neuro' }
+];
 
 export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
   const isZh = lang === 'zh';
@@ -80,6 +89,42 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
            </GlassCard>
         </div>
 
+        {/* External Resources Section */}
+        <div className="space-y-16">
+          <div className="space-y-4">
+             <div className="flex items-center gap-4">
+                <Globe size={24} className="text-indigo-400" />
+                <h2 className="text-4xl font-black italic text-white uppercase tracking-tight">Resource <span className="text-indigo-500">Links</span></h2>
+             </div>
+             <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.6em] italic">Validated Authority Nodes</p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {REFERENCE_NODES.map((node) => (
+              <a 
+                key={node.name} 
+                href={node.url} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="group"
+              >
+                <GlassCard className="p-8 rounded-[3rem] border-white/5 bg-slate-900/40 hover:bg-indigo-600/[0.03] hover:border-indigo-500/30 transition-all h-full flex flex-col justify-between">
+                   <div className="flex justify-between items-start mb-6">
+                      <div className="p-3 bg-white/5 rounded-2xl text-slate-500 group-hover:text-indigo-400 transition-colors">
+                        <BookOpen size={20} />
+                      </div>
+                      <ExternalLink size={14} className="text-slate-800 group-hover:text-indigo-500" />
+                   </div>
+                   <div>
+                      <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.3em] italic mb-1 block">{node.category} Node</span>
+                      <h4 className="text-xl font-black italic text-white uppercase tracking-tight leading-tight group-hover:text-indigo-400 transition-colors">{node.name}</h4>
+                   </div>
+                </GlassCard>
+              </a>
+            ))}
+          </div>
+        </div>
+
         {/* Closing CTA */}
         <footer className="pt-20 text-center space-y-12">
            <div className="flex items-center justify-center gap-4 opacity-30">
@@ -88,7 +133,7 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
            </div>
            <button 
              onClick={onBack}
-             className="px-20 py-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-xs uppercase tracking-[0.4em] italic shadow-[0_30px_70px_rgba(79,70,229,0.3)] active:scale-95 transition-all"
+             className="px-20 py-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-black text-xs uppercase tracking-[0.4em] italic shadow-[0_30px_70px_rgba(79,70,229,0.3)] active:scale-95 transition-all"
            >
              TERMINATE ANALYSIS MODULE
            </button>

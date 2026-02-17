@@ -84,7 +84,7 @@ export const startContextualCoach = async (
 
   const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。
   已知受试者近期数据: ${bioBrief}
-  你拥有访问最新睡眠研究的权限（使用 Google 搜索）。
+  你拥有访问最新睡眠研究的权限（使用 Google 搜索）和地点查找权限（使用 Google 地图）。
   语气：高度专业、冷静、具有预见性。
   回复语言：${lang}。`;
 
@@ -99,7 +99,7 @@ export const startContextualCoach = async (
       contents,
       config: { 
         systemInstruction,
-        tools: [{ googleSearch: {} }] 
+        tools: [{ googleSearch: {} }, { googleMaps: {} }] 
       }
     });
   } catch (err: any) {

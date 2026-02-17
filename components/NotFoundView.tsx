@@ -4,8 +4,7 @@ import { motion } from 'framer-motion';
 import { Home, RefreshCw, ShieldX, Radio, Terminal, Search, Cpu } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { GlassCard } from './GlassCard.tsx';
-// Fix: safeNavigateHash does not exist in navigation.ts, replacing with safeNavigatePath
-import { safeNavigatePath, safeReload, getSafeHash } from '../services/navigation.ts';
+import { safeReload, getSafeHash } from '../services/navigation.ts';
 import { trackPageView } from '../services/analytics.ts';
 
 const m = motion as any;
@@ -49,7 +48,6 @@ export const NotFoundView: React.FC = () => {
         </div>
 
         <GlassCard className="p-12 md:p-20 rounded-[5rem] border-white/5 bg-black/40 backdrop-blur-3xl shadow-[0_120px_200px_-50px_rgba(0,0,0,1)] overflow-hidden relative" intensity={2}>
-          {/* Glitch Decorative Element */}
           <div className="absolute top-0 right-0 p-12 opacity-[0.02] pointer-events-none text-white transform rotate-45">
              <Terminal size={300} strokeWidth={0.5} />
           </div>
@@ -92,8 +90,7 @@ export const NotFoundView: React.FC = () => {
 
             <div className="flex flex-col sm:flex-row gap-5 pt-8 max-w-sm mx-auto">
               <button 
-                // Fix: replacing safeNavigateHash with safeNavigatePath
-                onClick={() => safeNavigatePath('dashboard')}
+                onClick={() => window.location.href = '/'}
                 className="group flex-1 py-7 bg-indigo-600 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl hover:bg-indigo-500 active:scale-95 transition-all flex items-center justify-center gap-3 italic"
               >
                 <Home size={18} /> Restore Hub

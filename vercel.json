@@ -1,3 +1,4 @@
+
 {
   "cleanUrls": true,
   "trailingSlash": false,
@@ -5,10 +6,6 @@
     {
       "source": "/api/(.*)",
       "destination": "/api/$1"
-    },
-    {
-      "source": "/((?!api/|assets/|favicon.svg|manifest.json|sw.js|index.css|index.tsx|robots.txt|sitemap.xml|rss.xml|privacy/|terms/|googlee47ef5d2eacdf45a.html).*\\..*)",
-      "destination": "/$1"
     },
     {
       "source": "/(.*)",
