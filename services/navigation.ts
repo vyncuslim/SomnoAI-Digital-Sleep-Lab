@@ -1,6 +1,6 @@
 
 /**
- * SomnoAI Safe Navigation Utility (v11.0)
+ * SomnoAI Safe Navigation Utility (v12.0)
  * Optimized for clean URLs, robust SPA routing, and Dynamic SEO Metadata.
  */
 

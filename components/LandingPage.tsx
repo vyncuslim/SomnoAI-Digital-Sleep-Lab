@@ -50,7 +50,7 @@ const VisualStream = ({ isVideoLoaded, videoError, onLoaded }: any) => (
           className="absolute top-1/2 left-1/2 w-160vw h-160vh -translate-x-1/2 -translate-y-1/2 pointer-events-none"
           style={{ border: 'none' }}
           allow="autoplay; encrypted-media"
-          onLoad={onLoaded}
+          onLoaded={onLoaded}
         />
       </div>
     )}
@@ -120,7 +120,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             <Logo size={44} animated={true} />
             <div className="flex flex-col text-left">
                 <span className="text-2xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
-                <span className="text-[7px] font-black uppercase tracking-[0.5em] text-slate-600 mt-1.5">Digital Restoration Lab</span>
+                <span className="text-[7px] font-black uppercase tracking-[0.5em] text-slate-600 mt-1.5">Digital Sleep Lab</span>
             </div>
           </div>
 
@@ -252,7 +252,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       <footer className="relative z-10 px-12 py-20 flex flex-col md:flex-row justify-between items-center gap-10 opacity-50 border-t border-white/5 bg-[#01040a]">
         <div className="flex items-center gap-5">
           <Logo size={32} />
-          <span className="text-[10px] font-black uppercase tracking-[0.6em] italic text-slate-600">@2026 SomnoAI Restoration Lab</span>
+          <span className="text-[10px] font-black uppercase tracking-[0.6em] italic text-slate-600">@2026 SomnoAI Digital Sleep Lab</span>
         </div>
         <div className="flex items-center gap-10">
            <button onClick={() => onNavigate('privacy')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">Privacy</button>

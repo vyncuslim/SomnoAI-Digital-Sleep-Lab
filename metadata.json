@@ -1,6 +1,6 @@
 {
   "name": "SomnoAI Digital Sleep Lab",
-  "description": "SomnoAI 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。",
+  "description": "SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。",
   "requestFramePermissions": [
     "microphone",
     "camera"
