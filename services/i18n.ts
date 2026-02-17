@@ -1,7 +1,8 @@
+
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v12.9
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v13.0
  * Optimized for Discipline, Research, and Performance Engineering.
  */
 

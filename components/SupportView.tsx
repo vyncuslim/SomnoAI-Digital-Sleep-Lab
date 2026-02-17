@@ -76,8 +76,9 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
                </div>
                <ExternalLink size={22} className="text-indigo-500/40 group-hover:text-indigo-400 transition-colors" />
             </div>
-            <h3 className="text-2xl font-black italic text-white uppercase tracking-tight mb-4">Laboratory Blog</h3>
-            <p className="text-xs text-slate-500 leading-relaxed italic font-medium opacity-80">Join our Discord node for laboratory logs, research blog posts, and elite protocols.</p>
+            <h3 className="text-2xl font-black italic text-white uppercase tracking-tight mb-4">Laboratory Community</h3>
+            <p className="text-xs text-slate-200 leading-relaxed italic font-bold">🚀 Join the SomnoAI Blog community on Discord!</p>
+            <p className="text-[10px] text-slate-500 leading-relaxed italic font-medium opacity-80 mt-2">💬 Discuss articles, share ideas, and select your favorite topics.</p>
           </GlassCard>
         </div>
 

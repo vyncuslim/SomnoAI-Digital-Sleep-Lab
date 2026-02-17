@@ -47,10 +47,10 @@ const VisualStream = ({ isVideoLoaded, videoError, onLoaded }: any) => (
       <div className={`absolute inset-0 transition-opacity duration-[2000ms] ${isVideoLoaded ? 'opacity-50' : 'opacity-0'}`}>
         <iframe 
           src="https://www.youtube.com/embed/V_6FAQhJX8Y?autoplay=1&mute=1&loop=1&playlist=V_6FAQhJX8Y&controls=0&modestbranding=1&rel=0&iv_load_policy=3&showinfo=0&disablekb=1&enablejsapi=1"
-          className="absolute top-1/2 left-1/2 w-[160vw] h-[160vh] -translate-x-1/2 -translate-y-1/2 pointer-events-none"
+          className="absolute top-1/2 left-1/2 w-160vw h-160vh -translate-x-1/2 -translate-y-1/2 pointer-events-none"
           style={{ border: 'none' }}
           allow="autoplay; encrypted-media"
-          onLoaded={onLoaded}
+          onLoad={onLoaded}
         />
       </div>
     )}
@@ -213,7 +213,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </m.div>
       </section>
 
-      {/* Laboratory Community Section */}
+      {/* Laboratory Community Section - Community Centric Design */}
       <section className="relative z-10 py-32 px-6">
         <div className="max-w-6xl mx-auto">
           <GlassCard className="p-16 md:p-24 rounded-[5rem] md:rounded-[7rem] border-indigo-500/20 bg-indigo-600/[0.02] flex flex-col md:flex-row items-center gap-16 overflow-hidden group">
@@ -226,8 +226,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             </div>
             <div className="space-y-8 flex-1 text-center md:text-left relative z-10">
                <div className="space-y-4">
-                  <h2 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter leading-none">JOIN THE <span className="text-indigo-400">BLOG</span></h2>
-                  <p className="text-lg text-slate-500 font-medium italic leading-relaxed max-w-xl">Join our laboratory blog and community collective on Discord. Discuss neural restoration protocols, share biological telemetry insights, and participate in global experiments.</p>
+                  <h2 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter leading-none">JOIN THE <span className="text-indigo-400">RESEARCH COMMUNITY</span></h2>
+                  <div className="space-y-2">
+                    <p className="text-xl text-slate-200 font-bold italic">
+                      🚀 Join the SomnoAI Digital Sleep Lab Blog community on Discord!
+                    </p>
+                    <p className="text-lg text-slate-500 font-medium italic leading-relaxed max-w-xl">
+                      💬 Discuss the latest articles, share ideas, and select your favorite topics with other research subjects.
+                    </p>
+                  </div>
                </div>
                <a 
                  href="https://discord.com/invite/9EXJtRmju" 
@@ -235,7 +242,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                  rel="noopener noreferrer"
                  className="inline-flex px-12 py-6 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-black text-xs uppercase tracking-[0.4em] shadow-2xl transition-all active:scale-95 italic items-center gap-4"
                >
-                 ENTER DISCORD <ArrowUpRight size={18} />
+                 👉 CLICK TO JOIN <ArrowUpRight size={18} />
                </a>
             </div>
           </GlassCard>
