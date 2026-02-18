@@ -43,14 +43,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (isSyncing.current) return;
     isSyncing.current = true;
     
-    // Failsafe timeout: 6 seconds max for auth check
+    // 加急超时判定：3.5秒内必须释放首页加载锁定
     const timeoutId = setTimeout(() => {
       if (loading) {
-        console.warn("AuthContext: Handshake timed out. Dropping into guest mode.");
+        console.warn("AuthContext: Handshake timeout. Release load lock.");
         setLoading(false);
         isSyncing.current = false;
       }
-    }, 6000);
+    }, 3500);
     
     try {
       const { data: { session }, error: sessionError } = await (supabase.auth as any).getSession();

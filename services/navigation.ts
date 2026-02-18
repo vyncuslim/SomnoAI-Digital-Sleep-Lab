@@ -1,7 +1,7 @@
 
 /**
- * SomnoAI Safe Navigation Utility (v12.0)
- * Optimized for clean URLs, robust SPA routing, and Dynamic SEO Metadata.
+ * SomnoAI Safe Navigation Utility (v101.0)
+ * Optimized for clean URLs, robust SPA routing, and Hybrid Node architectures.
  */
 
 export const getSafeUrl = (): string => {
@@ -55,19 +55,32 @@ export const getSafeHash = (): string => {
 
 /**
  * Executes a clean URL transition using the History API.
- * Handles alias normalization and enforces single-slash standards.
  */
 export const safeNavigatePath = (path: string) => {
-  // Normalize path: Ensure single leading slash and no double slashes
-  let cleanPath = '/' + path.replace(/^\/+/, '').replace(/\/+$/, '');
-  if (cleanPath === '/index.html' || cleanPath === '/home' || cleanPath === '/landing') {
+  // 1. 基础标准化：移除查询参数，合并斜杠
+  let cleanPath = path.split('?')[0].replace(/\/+/g, '/').trim();
+  
+  // 2. 根路径绝对归并
+  const rootAliases = ['/', '', '/index.html', '/home', '/landing', '/welcome'];
+  if (rootAliases.includes(cleanPath)) {
     cleanPath = '/';
+  } else {
+    // 确保以单斜杠开头
+    if (!cleanPath.startsWith('/')) {
+      cleanPath = '/' + cleanPath;
+    }
+    // 强制移除末尾斜杠（除根路径外）
+    if (cleanPath.length > 1 && cleanPath.endsWith('/')) {
+      cleanPath = cleanPath.slice(0, -1);
+    }
   }
   
-  // Custom Aliases
+  // 3. 别名转换
   const aliases: Record<string, string> = {
     '/atlas': '/calendar',
-    '/join': '/signup'
+    '/join': '/signup',
+    '/research': '/news',
+    '/stories': '/blog'
   };
 
   if (aliases[cleanPath]) {
@@ -75,9 +88,13 @@ export const safeNavigatePath = (path: string) => {
   }
 
   try {
-    if (window.location.pathname === cleanPath && !window.location.hash) return;
+    const currentPath = window.location.pathname;
+    if (currentPath === cleanPath && !window.location.hash) return;
+    
     window.history.pushState({ somno_route: true, timestamp: Date.now() }, '', cleanPath);
     window.dispatchEvent(new PopStateEvent('popstate', { state: { somno_route: true } }));
+    
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
     window.location.href = cleanPath;
   }

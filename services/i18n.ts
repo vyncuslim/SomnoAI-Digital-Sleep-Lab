@@ -2,8 +2,8 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v13.0
- * Optimized for Discipline, Research, and Performance Engineering.
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v19.0
+ * Optimized for Semi-Open Source (Dual-Node) Architecture.
  */
 
 const BRAND_NAME = "SomnoAI Digital Sleep Lab";
@@ -12,6 +12,12 @@ const commonEn = {
   brand: {
     name: BRAND_NAME,
     sublabel: "Digital Sleep Lab"
+  },
+  legal: {
+    privacy: "Privacy",
+    terms: "Terms",
+    opensource: "Hybrid Architecture",
+    license: "License Protocol"
   },
   landing: {
     heroTitle: "ENGINEER RECOVERY",
@@ -24,7 +30,8 @@ const commonEn = {
       project: "ABOUT",
       support: "SUPPORT",
       enter: "ENTER LAB",
-      news: "RESEARCH"
+      news: "RESEARCH",
+      blog: "BLOG"
     }
   },
   dashboard: {
@@ -103,6 +110,16 @@ const commonEn = {
     category: "DOMAIN",
     readTime: "SCAN"
   },
+  blog: {
+    title: "Laboratory Blog",
+    subtitle: "Stories from the edge of sleep engineering",
+    readMore: "Read Story",
+    backToIndex: "Back to Blog",
+    published: "POSTED",
+    author: "WRITER",
+    category: "TAG",
+    readTime: "READ"
+  },
   support: {
     title: "Support Node",
     techSupport: "Technical Support",
@@ -133,9 +150,15 @@ const commonZh = {
     name: BRAND_NAME,
     sublabel: "数字化睡眠实验室"
   },
+  legal: {
+    privacy: "隐私政策",
+    terms: "服务条款",
+    opensource: "混合架构声明",
+    license: "许可证协议"
+  },
   landing: {
     heroTitle: "工程级 恢复方案",
-    heroSubtitle: "它将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。",
+    heroSubtitle: "SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。",
     ctaPrimary: "开始优化",
     ctaSecondary: "访问终端",
     nav: {
@@ -144,7 +167,8 @@ const commonZh = {
       project: "关于项目",
       support: "技术支持",
       enter: "进入实验室",
-      news: "科研中心"
+      news: "科研中心",
+      blog: "实验室博客"
     }
   },
   dashboard: {
@@ -172,6 +196,16 @@ const commonZh = {
     statusSyncing: "执行握手...",
     statusActive: "神经链路：已激活",
     instruction: "请清晰说话。首席研究官正在监测您的生物遥测数据。"
+  },
+  blog: {
+    title: "实验室博客",
+    subtitle: "来自睡眠工程前沿的故事",
+    readMore: "阅读全文",
+    backToIndex: "返回博客列表",
+    published: "发布日期",
+    author: "作者",
+    category: "标签",
+    readTime: "阅读时长"
   },
   support: {
     title: "支持节点",

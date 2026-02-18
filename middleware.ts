@@ -1,6 +1,5 @@
-
 export default function middleware(req: Request) {
-  // SOMNO TRANSPARENCY PROTOCOL: 让 Vercel 静态层处理所有请求
+  // SOMNO TRANSPARENCY PROTOCOL: 让 Vercel 静态层处理所有请求，防止 SPA 路由冲突
   return null;
 }
 

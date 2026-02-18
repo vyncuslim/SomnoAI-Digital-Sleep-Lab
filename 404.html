@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -16,12 +15,10 @@
     <div class="loader"></div>
     <p>Neural Path Resolution...</p>
     <script>
-      // Fallback redirect only if not at root and after a short delay
+      // 自动尝试恢复至根路径
       setTimeout(() => {
-        if (window.location.pathname !== '/') {
-          window.location.replace('/');
-        }
-      }, 3000);
+        window.location.replace('/');
+      }, 1000);
     </script>
 </body>
 </html>
