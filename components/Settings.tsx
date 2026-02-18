@@ -126,7 +126,7 @@ export const Settings: React.FC<SettingsProps> = ({
                </div>
             </div>
 
-            {/* Neural API Key Section - Exact Design Language Alignment with Auth */}
+            {/* Neural API Key Section - Refined Masked Input */}
             <div className="space-y-6 pt-4 border-t border-white/5">
               <div className="space-y-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic px-2">{t.apiKeyLabel}</span>
@@ -173,13 +173,13 @@ export const Settings: React.FC<SettingsProps> = ({
               </form>
             </div>
 
-            {/* Network Presence Matrix - 9 Nodes */}
+            {/* Network Presence Matrix */}
             <div className="space-y-6 pt-4 border-t border-white/5">
               <div className="flex items-center justify-between px-2">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic">{t.socialLabel}</span>
                 <span className="text-[8px] font-mono text-slate-800 tracking-widest">MATRIX_V2.0</span>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {socialLinks.map((social) => (
                   <a 
                     key={social.label}
