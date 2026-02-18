@@ -1,4 +1,3 @@
-
 import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -10,7 +9,10 @@ export interface BiologicalReport {
 }
 
 const getAIClient = () => {
-  const apiKey = process.env.API_KEY;
+  // Prioritize custom user key from settings, fallback to system environment key
+  const customKey = typeof localStorage !== 'undefined' ? localStorage.getItem('custom_gemini_key') : null;
+  const apiKey = customKey || process.env.API_KEY;
+  
   if (!apiKey) throw new Error("API_KEY_VOID");
   return new GoogleGenAI({ apiKey });
 };

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
   Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, 
-  Bell, RefreshCw, Zap, MessageSquare, Mail, ChevronRight, Check, ShieldCheck, Globe, LifeBuoy, X
+  Bell, RefreshCw, Zap, MessageSquare, Mail, ChevronRight, Check, ShieldCheck, Globe, LifeBuoy, X, Key, Eye, EyeOff,
+  Github, Linkedin, Instagram, Facebook, Youtube, Video, UserCircle
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -23,9 +24,13 @@ export const Settings: React.FC<SettingsProps> = ({
   const [showDonation, setShowDonation] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
+  
+  // API Key State
+  const [apiKey, setApiKey] = useState(() => localStorage.getItem('custom_gemini_key') || '');
+  const [showApiKey, setShowApiKey] = useState(false);
+  const [keyCommitStatus, setKeyCommitStatus] = useState<'idle' | 'success'>('idle');
 
   const t = translations[lang]?.settings || translations.en.settings;
-  const ts = translations[lang]?.support || translations.en.support;
 
   const handleRequestNotif = async () => {
     const granted = await notificationService.requestPermission();
@@ -41,23 +46,42 @@ export const Settings: React.FC<SettingsProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const handleCommitKey = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    localStorage.setItem('custom_gemini_key', apiKey.trim());
+    setKeyCommitStatus('success');
+    setTimeout(() => setKeyCommitStatus('idle'), 2000);
+  };
+
+  const socialLinks = [
+    { icon: Globe, url: 'https://sleepsomno.com', label: 'Website' },
+    { icon: MessageSquare, url: 'https://discord.com/invite/9EXJtRmju', label: 'Discord' },
+    { icon: Github, url: 'https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', label: 'GitHub' },
+    { icon: Linkedin, url: 'https://www.linkedin.com/company/somnoai-digital-sleep-lab', label: 'LinkedIn Lab' },
+    { icon: UserCircle, url: 'https://www.linkedin.com/in/vyncuslim-lim-761300375', label: 'LinkedIn Founder' },
+    { icon: Video, url: 'https://www.tiktok.com/@somnoaidigitalsleeplab', label: 'TikTok' },
+    { icon: Instagram, url: 'https://www.instagram.com/somnoaidigitalsleep/', label: 'Instagram' },
+    { icon: Facebook, url: 'https://www.facebook.com/people/Somnoai-Digital-Sleep-Lab/61587027632695/', label: 'Facebook' },
+    { icon: Youtube, url: 'https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og', label: 'YouTube' },
+  ];
+
   return (
-    <div className="space-y-10 pb-48 max-w-3xl mx-auto px-4 font-sans text-left relative">
+    <div className="space-y-10 pb-48 max-w-4xl mx-auto px-4 font-sans text-left relative">
       <header className="flex flex-col gap-2 pt-8">
         <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">{t.title}</h1>
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">System Preferences & Interface Configuration</p>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">System Preferences & Neural Interface Configuration</p>
       </header>
 
       <div className="flex flex-col gap-6">
-        {/* 系统状态 */}
+        {/* System Status Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <GlassCard className="p-6 rounded-[2.5rem] border-indigo-500/20 bg-indigo-500/5">
             <div className="flex items-center gap-4">
-              <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400">
+              <div className="p-3 rounded-2xl bg-emerald-500/10 text-emerald-400 shadow-[0_0_20px_rgba(16,185,129,0.1)]">
                 <Zap size={20} className="animate-pulse" />
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Neural Infrastructure</p>
+                <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Neural Grid Status</p>
                 <p className="text-sm font-black text-white italic">LAB_SYNC_NOMINAL</p>
               </div>
             </div>
@@ -70,7 +94,7 @@ export const Settings: React.FC<SettingsProps> = ({
                     <Bell size={20} />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Alert System</p>
+                    <p className="text-[10px] font-black uppercase text-slate-500 tracking-widest">Global Alerts</p>
                     <p className="text-sm font-black text-white italic">{notifPermission.toUpperCase()}</p>
                   </div>
                 </div>
@@ -83,12 +107,13 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
-        {/* 核心设置卡片 */}
-        <GlassCard className="p-10 rounded-[4rem] border-white/10 bg-white/[0.01]">
-          <div className="space-y-12">
+        {/* Configuration Matrix */}
+        <GlassCard className="p-8 md:p-12 rounded-[4rem] border-white/10 bg-white/[0.01]">
+          <div className="space-y-16">
+            {/* Language Selection */}
             <div className="space-y-4">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 italic px-2">{t.language}</span>
-               <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5">
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic px-2">{t.language}</span>
+               <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5 shadow-inner">
                   {['en', 'zh'].map((l) => (
                     <button 
                       key={l} 
@@ -101,11 +126,83 @@ export const Settings: React.FC<SettingsProps> = ({
                </div>
             </div>
 
+            {/* Neural API Key Section - Exact Design Language Alignment with Auth */}
+            <div className="space-y-6 pt-4 border-t border-white/5">
+              <div className="space-y-1">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic px-2">{t.apiKeyLabel}</span>
+                <p className="text-[9px] text-slate-700 italic px-2">Override default Gemini API credits with your private laboratory key.</p>
+              </div>
+              
+              <form onSubmit={handleCommitKey} className="space-y-6">
+                <div className="relative group">
+                  <div className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors">
+                    <Key size={20} />
+                  </div>
+                  <input 
+                    type={showApiKey ? "text" : "password"}
+                    value={apiKey}
+                    onChange={(e) => setApiKey(e.target.value)}
+                    placeholder={t.apiKeyPlaceholder}
+                    className="w-full bg-slate-950 border border-white/5 rounded-full pl-18 pr-20 py-7 text-sm text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800"
+                  />
+                  <button 
+                    type="button" 
+                    onClick={() => setShowApiKey(!showApiKey)}
+                    className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors active:scale-90"
+                  >
+                    {showApiKey ? <EyeOff size={22} /> : <Eye size={22} />}
+                  </button>
+                </div>
+                
+                <button 
+                  type="submit"
+                  className={`w-full py-6 rounded-full font-black text-[11px] uppercase tracking-[0.4em] transition-all italic flex items-center justify-center gap-3 shadow-2xl ${keyCommitStatus === 'success' ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-900/20 active:scale-95'}`}
+                >
+                  <AnimatePresence mode="wait">
+                    {keyCommitStatus === 'success' ? (
+                      <m.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
+                        <Check size={18} /> SYNC SUCCESS
+                      </m.div>
+                    ) : (
+                      <m.div key="link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
+                        <ShieldCheck size={18} /> {t.apiKeyCommit}
+                      </m.div>
+                    )}
+                  </AnimatePresence>
+                </button>
+              </form>
+            </div>
+
+            {/* Network Presence Matrix - 9 Nodes */}
+            <div className="space-y-6 pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between px-2">
+                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic">{t.socialLabel}</span>
+                <span className="text-[8px] font-mono text-slate-800 tracking-widest">MATRIX_V2.0</span>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-3 gap-4">
+                {socialLinks.map((social) => (
+                  <a 
+                    key={social.label}
+                    href={social.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-5 bg-black/40 border border-white/5 rounded-[2rem] flex flex-col items-center gap-3 hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all group shadow-inner"
+                  >
+                    <div className="p-2 bg-white/5 rounded-xl text-slate-600 group-hover:text-indigo-400 group-hover:bg-indigo-500/5 transition-all">
+                      <social.icon size={20} />
+                    </div>
+                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-700 group-hover:text-slate-300 transition-colors text-center">{social.label}</span>
+                  </a>
+                ))}
+              </div>
+            </div>
+
+            {/* Support Actions */}
             <div className="space-y-4 pt-4 border-t border-white/5">
-               <button onClick={() => setShowDonation(true)} className="w-full py-7 rounded-full bg-[#f43f5e]/5 border border-[#f43f5e]/20 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/10 hover:bg-[#f43f5e]/10">
+               <button onClick={() => setShowDonation(true)} className="w-full py-7 rounded-full bg-[#f43f5e]/5 border border-[#f43f5e]/20 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/5 hover:bg-[#f43f5e]/10">
                  <Heart size={20} fill="currentColor" /> {t.coffee}
                </button>
-               <button onClick={onLogout} className="w-full py-7 rounded-full bg-slate-900 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20">
+               <button onClick={onLogout} className="w-full py-7 rounded-full bg-slate-950 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20">
                  <DisconnectIcon size={18} /> {t.logout}
                </button>
             </div>
@@ -113,6 +210,7 @@ export const Settings: React.FC<SettingsProps> = ({
         </GlassCard>
       </div>
 
+      {/* Donation Modal Logic */}
       <AnimatePresence>
         {showDonation && (
           <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl overflow-y-auto" onClick={() => setShowDonation(false)}>

@@ -1,7 +1,7 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v19.5
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v19.6
  */
 
 const BRAND_NAME = "SomnoAI Digital Sleep Lab";
@@ -37,7 +37,6 @@ const commonEn = {
       protocols: { title: "RECOVERY PROTOCOLS", desc: "Tailored 3-day experiments for optimal neurological restoration." }
     }
   },
-  // ... (Other categories remain same or optimized)
   about: {
     visionTitle: "CORE VISION",
     visionStatement: "SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep lab experience.",
@@ -65,6 +64,16 @@ const commonEn = {
     disconnect: "SEVER LINK",
     statusIdle: "Awaiting Connection",
     statusActive: "Neural Link: ACTIVE",
+  },
+  settings: {
+    title: "System Configuration",
+    language: "Linguistic Protocol",
+    apiKeyLabel: "Neural Ingress Key",
+    apiKeyPlaceholder: "Enter Gemini API Key...",
+    apiKeyCommit: "COMMIT LINK",
+    socialLabel: "Network Presence",
+    coffee: "Support the Lab",
+    logout: "Sever Neural Link"
   }
 };
 
@@ -123,6 +132,16 @@ const commonZh = {
     disconnect: "切断链路",
     statusIdle: "等待连接",
     statusActive: "神经链路：已激活",
+  },
+  settings: {
+    title: "系统配置",
+    language: "语言协议",
+    apiKeyLabel: "神经准入密钥",
+    apiKeyPlaceholder: "输入 Gemini API Key...",
+    apiKeyCommit: "建立链路",
+    socialLabel: "网络节点",
+    coffee: "支持实验室",
+    logout: "切断神经链路"
   }
 };
 
