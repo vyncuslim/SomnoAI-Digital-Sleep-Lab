@@ -1,7 +1,8 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, Zap, Eye, EyeOff, 
-  Chrome, AlertCircle, Mail, Lock, User, Link2, Clock, Info, ShieldCheck, Sparkles, Microscope, Cpu, ArrowRight, Command
+  Chrome, AlertCircle, Mail, Lock, User, Link2, Clock, Info, ShieldCheck, Sparkles, Microscope, Cpu, ArrowRight, Command, ShieldAlert, RefreshCw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
@@ -26,12 +27,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const [error, setError] = useState<{message: string; isRateLimit?: boolean} | null>(null);
   const [showPassword, setShowPassword] = useState(false);
   const [cooldown, setCooldown] = useState(0);
+  const [isSecure, setIsSecure] = useState(true);
   
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = useRef<HTMLDivElement>(null);
 
   const isZh = lang === 'zh';
   const isLogin = activeTab === 'login';
+
+  useEffect(() => {
+    // Protocol Guard: Validate Secure Context
+    const secure = window.isSecureContext && window.location.protocol === 'https:';
+    setIsSecure(secure);
+    if (!secure && window.location.hostname !== 'localhost') {
+      setError({ message: isZh ? "连接不安全：Google 登录需要 HTTPS 加密协议。请检查您的域名 SSL 配置。" : "Insecure Protocol: Google Login requires HTTPS. Check SSL configuration." });
+    }
+  }, [isZh]);
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -86,6 +97,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     }
   };
 
+  const handleGoogleLogin = async () => {
+    if (!isSecure && window.location.hostname !== 'localhost') {
+      window.location.href = window.location.href.replace('http:', 'https:');
+      return;
+    }
+    await authApi.signInWithGoogle();
+  };
+
   return (
     <div className="flex flex-col lg:flex-row min-h-screen bg-[#01040a] font-sans relative overflow-hidden w-full">
       {/* Visual Side */}
@@ -125,6 +144,17 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         <div className="lg:hidden mb-12"><Logo size={80} animated={true} /></div>
         
         <m.div initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} className="w-full max-w-[480px] space-y-12">
+          {!isSecure && window.location.hostname !== 'localhost' && (
+            <m.div initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="p-6 bg-rose-600/10 border border-rose-500/40 rounded-3xl flex items-center gap-4 shadow-[0_0_40px_rgba(225,29,72,0.1)]">
+               <ShieldAlert className="text-rose-500 shrink-0" size={32} />
+               <div className="space-y-1">
+                  <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Protocol Warning</p>
+                  <p className="text-xs text-rose-200 italic font-bold">Unsecured Handshake. Redirecting to HTTPS node...</p>
+               </div>
+               <button onClick={() => window.location.href = window.location.href.replace('http:', 'https:')} className="ml-auto p-2 bg-rose-600 text-white rounded-xl active:scale-90 transition-all"><RefreshCw size={16} /></button>
+            </m.div>
+          )}
+
           <div className="text-center lg:text-left space-y-2">
              <h2 className="text-4xl font-black italic text-white uppercase tracking-tight">{isLogin ? 'Access Terminal' : 'Register Node'}</h2>
              <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.6em] italic">Initialize Secure Neural Link</p>
@@ -132,7 +162,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
           <div className="space-y-10">
             <button 
-              onClick={() => authApi.signInWithGoogle()}
+              onClick={handleGoogleLogin}
               className="w-full py-7 rounded-full bg-white/5 border border-white/10 text-white font-black text-[13px] uppercase tracking-[0.2em] flex items-center justify-center gap-5 hover:bg-white/10 hover:scale-[1.02] active:scale-95 transition-all italic shadow-2xl"
             >
               <Chrome size={22} className="text-indigo-400" />
@@ -142,6 +172,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
             <div className="flex items-center gap-8 opacity-10">
                <div className="h-px flex-1 bg-white" /><span className="text-[9px] font-black uppercase tracking-widest italic">Direct Ingress</span><div className="h-px flex-1 bg-white" />
             </div>
+
+            {error && (
+              <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="p-5 bg-rose-500/10 border border-rose-500/20 rounded-2xl flex items-center gap-4">
+                 <AlertCircle className="text-rose-500 shrink-0" size={18} />
+                 <p className="text-[10px] font-bold text-rose-400 uppercase tracking-widest leading-relaxed italic">{error.message}</p>
+              </m.div>
+            )}
 
             <form onSubmit={handleAuthAction} className="space-y-6">
                {!isLogin && (

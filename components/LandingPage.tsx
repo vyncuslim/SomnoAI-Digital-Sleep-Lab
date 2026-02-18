@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, LogIn, Command, MessageSquare, ShieldCheck, Newspaper, FlaskConical, HelpCircle, Info, MessageCircle, ArrowUpRight, Layers
+  ArrowRight, LogIn, Command, MessageSquare, ShieldCheck, Newspaper, FlaskConical, HelpCircle, Info, MessageCircle, ArrowUpRight, Layers, Play, Volume2, VolumeX, Monitor
 } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { Language, translations } from '../services/i18n.ts';
@@ -27,6 +27,9 @@ const NeuralScanOverlay = () => (
 
 export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) => {
   const [scrolled, setScrolled] = useState(false);
+  const [isVideoMuted, setIsVideoMuted] = useState(true);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  
   const t = translations[lang as Language].landing;
   const tl = translations[lang as Language].legal;
 
@@ -93,7 +96,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       </nav>
 
       {/* 主视觉 */}
-      <section className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-32 pb-24 min-h-screen">
+      <section className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-48 pb-32 min-h-screen">
         <NeuralScanOverlay />
         
         <div className="max-w-7xl space-y-16 relative z-10">
@@ -136,6 +139,64 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
               <Command size={20} className="text-indigo-400" /> WATCH PROTOCOL
             </m.button>
           </m.div>
+        </div>
+      </section>
+
+      {/* 沉浸式实验影像 (NEURAL VISION VIDEO SECTION) */}
+      <section className="relative z-10 py-32 px-6 overflow-hidden">
+        <div className="max-w-6xl mx-auto">
+          <div className="flex flex-col md:flex-row items-end justify-between gap-10 mb-16 px-4">
+             <div className="space-y-4 text-left">
+                <div className="flex items-center gap-3 text-indigo-400">
+                   <Monitor size={20} />
+                   <span className="text-[10px] font-black uppercase tracking-[0.4em] italic">Neural Vision v1.0</span>
+                </div>
+                <h2 className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">Laboratory <span className="text-indigo-400">Reel</span></h2>
+             </div>
+             <p className="text-sm md:text-base text-slate-500 italic max-w-sm font-medium leading-relaxed border-l border-white/10 pl-8">
+               Observe the synthesis of biological telemetry as our AI constructs the optimal restoration window.
+             </p>
+          </div>
+
+          <GlassCard className="rounded-[4rem] md:rounded-[6rem] border-white/10 bg-black/40 overflow-hidden relative group aspect-video shadow-[0_100px_200px_-50px_rgba(0,0,0,1)]" intensity={0.5}>
+             <video 
+               ref={videoRef}
+               src="https://r2.erweima.ai/v2/user/32688/veo/veo_ed0ca7f94da946059d2822a5598687a4.mp4" 
+               className="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity duration-1000"
+               autoPlay 
+               muted={isVideoMuted} 
+               loop 
+               playsInline
+             />
+             
+             {/* 视频叠加层 */}
+             <div className="absolute inset-0 bg-gradient-to-t from-[#01040a] via-transparent to-transparent opacity-60 pointer-events-none" />
+             
+             <div className="absolute bottom-10 left-10 md:bottom-16 md:left-16 right-10 md:right-16 flex items-center justify-between z-20">
+                <div className="flex items-center gap-6">
+                   <div className="w-16 h-16 rounded-2xl bg-indigo-600 text-white flex items-center justify-center shadow-2xl backdrop-blur-xl border border-white/20">
+                      <Play size={24} fill="currentColor" />
+                   </div>
+                   <div className="space-y-1">
+                      <p className="text-[10px] font-black text-white uppercase tracking-widest italic">Live Processing</p>
+                      <div className="flex items-center gap-2">
+                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                         <p className="text-[9px] font-mono text-emerald-400 uppercase tracking-widest">ENCODING_STREAM_0X44A</p>
+                      </div>
+                   </div>
+                </div>
+
+                <button 
+                  onClick={() => setIsVideoMuted(!isVideoMuted)}
+                  className="p-4 bg-white/5 hover:bg-white/10 rounded-2xl text-white transition-all backdrop-blur-3xl border border-white/10 shadow-xl active:scale-90"
+                >
+                  {isVideoMuted ? <VolumeX size={20} /> : <Volume2 size={20} />}
+                </button>
+             </div>
+
+             {/* 装饰性网格 */}
+             <div className="absolute inset-0 pointer-events-none border-[30px] md:border-[60px] border-black/20 mix-blend-overlay" />
+          </GlassCard>
         </div>
       </section>
 

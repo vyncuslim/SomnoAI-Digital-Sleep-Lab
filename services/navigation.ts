@@ -1,7 +1,7 @@
 
 /**
- * SomnoAI Safe Navigation Utility (v101.0)
- * Optimized for clean URLs, robust SPA routing, and Hybrid Node architectures.
+ * SomnoAI Safe Navigation Utility (v105.1)
+ * Optimized for DNS Stability, Clean URLs, and HTTPS Protocol Enforcement.
  */
 
 export const getSafeUrl = (): string => {
@@ -11,6 +11,7 @@ export const getSafeUrl = (): string => {
     }
   } catch (e) {}
 
+  // Fallback to the primary canonical origin
   return 'https://sleepsomno.com/';
 };
 
@@ -30,11 +31,15 @@ export const updateMetadata = (title: string, description?: string, canonicalPat
     if (ogDesc) ogDesc.setAttribute('content', description);
   }
 
-  // Update Canonical
+  // Update Canonical - Dynamic detection to avoid 1001 Loops
   const canonical = document.querySelector('link[rel="canonical"]');
-  if (canonical && canonicalPath) {
-    const cleanPath = canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`;
-    canonical.setAttribute('href', `https://sleepsomno.com${cleanPath}`);
+  if (canonical) {
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://sleepsomno.com';
+    const cleanPath = canonicalPath 
+      ? (canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`)
+      : (typeof window !== 'undefined' ? window.location.pathname : '/');
+    
+    canonical.setAttribute('href', `${origin}${cleanPath}`);
   }
 
   // Update OpenGraph Title
@@ -55,8 +60,17 @@ export const getSafeHash = (): string => {
 
 /**
  * Executes a clean URL transition using the History API.
+ * Includes explicit HTTPS enforcement for production nodes.
  */
 export const safeNavigatePath = (path: string) => {
+  if (typeof window === 'undefined') return;
+
+  // Protocol Enforcement for Production
+  if (window.location.hostname !== 'localhost' && window.location.protocol === 'http:') {
+     window.location.replace(window.location.href.replace('http:', 'https:'));
+     return;
+  }
+
   // 1. 基础标准化：移除查询参数，合并斜杠
   let cleanPath = path.split('?')[0].replace(/\/+/g, '/').trim();
   
@@ -96,6 +110,7 @@ export const safeNavigatePath = (path: string) => {
     
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
+    // 物理回退逻辑
     window.location.href = cleanPath;
   }
 };
