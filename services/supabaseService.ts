@@ -25,6 +25,8 @@ export const logAuditLog = async (action: string, details: string, level: string
     // 2. Notification Dispatch Logic (Non-blocking to prevent UI hangs)
     const actionToTypeMap: Record<string, string> = {
       'USER_LOGIN': 'USER_LOGIN',
+      'USER_SIGNUP': 'USER_SIGNUP',
+      'OTP_RESEND_REQUEST': 'SYSTEM_SIGNAL',
       'ADMIN_ROLE_UPDATE': 'ADMIN_CONFIG_CHANGE',
       'ADMIN_BLOCK_TOGGLE': 'ADMIN_CONFIG_CHANGE',
       'ADMIN_RECIPIENT_ADDED': 'ADMIN_CONFIG_CHANGE',
@@ -39,19 +41,17 @@ export const logAuditLog = async (action: string, details: string, level: string
     const isPriority = level === 'CRITICAL' || level === 'WARNING' || !!targetType;
 
     if (isPriority) {
-      // Execute notifications asynchronously to ensure UI does not hang waiting for Telegram/Email responders
       (async () => {
-        // Mirrored Alert: Telegram Admin Bot
         notifyAdmin({ 
           type: targetType || 'SYSTEM_SIGNAL', 
           message: details, 
           source: user?.email || 'GATEWAY_TERMINAL'
         }).catch(err => console.debug('TG_ALERT_THROTTLED'));
 
-        // Mirrored Alert: Email Dispatch
         const shouldEmail = 
           level === 'CRITICAL' || 
           action === 'USER_LOGIN' || 
+          action === 'USER_SIGNUP' ||
           action === 'GA4_PERMISSION_DENIED' || 
           action === 'SECURITY_BREACH';
 
@@ -156,8 +156,10 @@ export const authApi = {
   signOut: () => (supabase.auth as any).signOut(),
   sendOTP: (email: string, captchaToken?: string) => 
     (supabase.auth as any).signInWithOtp({ email, options: { captchaToken } }),
-  verifyOTP: (email: string, token: string) => 
-    (supabase.auth as any).verifyOtp({ email, token, type: 'email' }),
+  verifyOTP: (email: string, token: string, type: string = 'email') => 
+    (supabase.auth as any).verifyOtp({ email, token, type }),
+  resend: (email: string, type: 'signup' | 'email_change' | 'sms' = 'signup') =>
+    (supabase.auth as any).resend({ type, email }),
   updatePassword: (password: string) => 
     (supabase.auth as any).updateUser({ password }),
   signUp: async (email: string, password: string, metadata: any, captchaToken?: string) => {
