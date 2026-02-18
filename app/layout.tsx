@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 const m = motion as any;
 
 /**
- * RootLayout component that wraps the main application content.
+ * RootLayout component optimized for high-density lab interfaces.
  */
 export default function RootLayout({ children }: { children?: React.ReactNode }) {
   const navigateToOpenSource = () => {
@@ -18,16 +18,16 @@ export default function RootLayout({ children }: { children?: React.ReactNode })
         {children}
       </div>
 
-      {/* Lab Global Footer */}
-      <footer className="py-12 flex flex-col items-center gap-3 opacity-30 shrink-0">
-        <p className="text-[10px] font-mono uppercase tracking-[0.5em]">
-          @2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
+      {/* Lab Global Footer - Compressed */}
+      <footer className="py-8 flex flex-col items-center gap-2 opacity-20 shrink-0">
+        <p className="text-[9px] font-mono uppercase tracking-[0.4em]">
+          @2026 SomnoAI Digital Sleep Lab • Infrastructure v3.5
         </p>
         <button 
           onClick={navigateToOpenSource}
-          className="text-[8px] font-black text-indigo-500 uppercase tracking-[0.3em] italic hover:text-white transition-colors pointer-events-auto cursor-pointer"
+          className="text-[7px] font-black text-indigo-500 uppercase tracking-[0.2em] italic hover:text-white transition-colors pointer-events-auto cursor-pointer"
         >
-          SEMI-OPEN SOURCE DUAL-NODE PROTOCOL • VIEW ARCHITECTURE
+          SEMI-OPEN SOURCE PROTOCOL • VIEW ARCHITECTURE
         </button>
       </footer>
     </div>
