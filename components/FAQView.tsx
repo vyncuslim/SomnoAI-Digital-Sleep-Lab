@@ -24,29 +24,36 @@ export const FAQView: React.FC<FAQViewProps> = ({ lang, onBack }) => {
       icon: Watch,
       q: isZh ? '我需要购买专门的追踪设备吗？' : 'Do I need to buy specific tracking gear?',
       a: isZh 
-        ? '绝对不需要。SomnoAI 的核心优势在于“硬件中立”。我们相信 AI 代码的力量胜过昂贵的硬件。您只需使用现有的 Apple Watch、智能手表或手机，通过我们的移动应用将 Health Connect 数据同步至实验室即可。' 
-        : 'Absolutely not. The core advantage of SomnoAI is hardware neutrality. We believe the power of AI code outweighs expensive hardware. Simply use your existing Apple Watch, Android smartwatch, or smartphone. Our mobile app bridges your Health Connect data directly to the lab.'
+        ? '绝对不需要。SomnoAI 的核心优势在于“硬件中立”。我们致力于消除品牌限制，您只需使用现有的 Apple Watch、小米手环、华为手表、佳明或三星设备，只要它们能与 Android 手机上的 Health Connect 同步数据，即可接入实验室。' 
+        : 'Absolutely not. The core advantage of SomnoAI is hardware neutrality. We aim to eliminate brand restrictions. Simply use your existing Apple Watch, Mi Band, Huawei, Garmin, or Samsung device. As long as it syncs with Health Connect on Android, it works here.'
     },
     {
       icon: Smartphone,
-      q: isZh ? 'Health Connect 是如何运作的？' : 'How does Health Connect work?',
+      q: isZh ? '数据是如何流动的？' : 'How does the data flow work?',
       a: isZh 
-        ? '在 Android 设备上，Health Connect 作为数据中枢，安全地从您的手表 App 收集生理指标。我们的移动端应用会读取这些指标并上传至您的账户。登录 Web 端后，系统会自动调取这些遥测数据进行 AI 分析。' 
-        : 'On Android, Health Connect acts as a secure data hub, gathering metrics from your watch apps. Our mobile application reads these metrics and uploads them to your profile. Once you log in to the web interface, the system retrieves this telemetry for AI analysis.'
+        ? '路径为：智能手表 -> 手机 (Health Connect) -> SomnoAI 移动应用 -> 安全上传 -> Web 端 AI 分析。登录 Web 端后，系统会自动调取您通过手机上传的最新遥测数据进行 AI 深度合成。' 
+        : 'The path is: Smartwatch -> Phone (Health Connect) -> SomnoAI Mobile App -> Secure Upload -> Web AI Analysis. Once you log in to the web terminal, the system automatically retrieves your latest mobile-synced telemetry.'
+    },
+    {
+      icon: Cpu,
+      q: isZh ? 'AI 分析涵盖哪些维度？' : 'What dimensions does AI analysis cover?',
+      a: isZh 
+        ? '我们的 AI 引擎涵盖：健康趋势预测、个性化建议、异常监测警报、运动表现优化以及深度睡眠质量评估。通过机器学习算法，我们会对心率、睡眠阶段、步数等进行多维度的关联挖掘。' 
+        : 'Our AI engine covers: Health Trend Prediction, Personalized Recommendations, Anomaly Detection, Exercise Optimization, and Deep Sleep Assessment. We mine correlations between HR, sleep stages, and activity.'
     },
     {
       icon: Lock,
-      q: isZh ? '数据安全性如何？' : 'How secure is my data?',
+      q: isZh ? '不再使用 Google 存储数据了吗？' : 'Moving away from Google storage?',
       a: isZh 
-        ? '数据通过端到端加密传输。您的生理流仅在登录会话期间被调取进行分析。一旦登出，原始同步流将从浏览器缓存中永久抹除，确保您的生物主权。' 
-        : 'Data is transmitted via end-to-end encrypted links. Your biological streams are only retrieved for analysis during active sessions. Upon logout, all raw synchronized streams are permanently purged from your browser cache, ensuring your biometric sovereignty.'
+        ? '我们利用 Google 提供的 Health Connect 技术作为本地桥接，但数据不再依赖 Google Fit 的统一云存储。数据流经我们的移动应用加密上传。原始生理流仅在登录会话期间被调取进行分析，确保生物主权。' 
+        : 'We use Google\'s Health Connect technology as a local bridge, but we no longer rely on Google Fit\'s unified cloud storage. Telemetry flows through our encrypted mobile bridge. Raw data is only accessed during active sessions to ensure biometric sovereignty.'
     },
     {
       icon: Zap,
       q: isZh ? '它真的能达到智能戒指的分析深度吗？' : 'Can it really match smart ring depth?',
       a: isZh 
-        ? '是的。通过 Gemini 2.5 Pro 驱动的神经合成技术，我们能够从手表提供的基础心率和体动数据中解构出深层的睡眠架构和恢复熵值，这些以往只有像 Oura 这样昂贵的设备才能做到。' 
-        : 'Yes. Using neural synthesis powered by Gemini 2.5 Pro, we deconstruct deep sleep architecture and recovery entropy from standard heart rate and motion data—insights previously exclusive to expensive devices like Oura.'
+        ? '是的。通过 Gemini 2.5 Pro 驱动的神经合成技术，我们能从普通传感器提供的原始数据中解构出深层的恢复熵值和架构，让普通手表也能产出以往只有像 Oura Ring 这种专业设备才能提供的高价值洞察。' 
+        : 'Yes. Using neural synthesis powered by Gemini 2.5 Pro, we deconstruct deep recovery entropy and architecture from standard sensor data, providing high-value insights previously exclusive to professional devices like Oura Ring.'
     }
   ];
 

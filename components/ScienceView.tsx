@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { 
   ArrowLeft, Brain, Activity, Waves, Info, ShieldAlert, Microscope, 
   Target, Zap, Binary, Fingerprint, HeartPulse, Cpu, Layers, BarChart3,
-  ExternalLink, Globe, BookOpen
+  ExternalLink, Globe, BookOpen, Smartphone, Cloud, Terminal
 } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -31,7 +30,7 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
     <div className="min-h-screen bg-[#01040a] pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-700 font-sans text-left relative overflow-hidden">
       {/* Background Decor */}
       <div className="absolute top-0 right-0 p-32 opacity-[0.02] text-white pointer-events-none transform rotate-12">
-        <Microscope size={600} strokeWidth={0.5} />
+        <Terminal size={600} strokeWidth={0.5} />
       </div>
 
       <header className="max-w-7xl mx-auto px-6 mb-20 relative z-10">
@@ -48,17 +47,17 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
         <div className="space-y-10">
           <div className="inline-flex items-center gap-4 px-6 py-2 bg-indigo-600/10 border border-indigo-500/20 rounded-full">
              <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse" />
-             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Scientific Protocol v2.8</span>
+             <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Scientific Protocol v3.0</span>
           </div>
           
           <h1 className="text-6xl md:text-9xl font-black italic text-white uppercase tracking-tighter leading-none">
-            {isZh ? '科学分析' : 'BIOLOGICAL'} <br/><span className="text-indigo-500">{isZh ? '架构' : 'ARCHITECTURE'}</span>
+            {isZh ? '混合架构' : 'HYBRID'} <br/><span className="text-indigo-500">{isZh ? '分析协议' : 'PROTOCOL'}</span>
           </h1>
           
           <p className="text-xl md:text-3xl text-slate-400 font-bold italic max-w-4xl leading-relaxed border-l-4 border-indigo-600/30 pl-10">
             {isZh 
-              ? "SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为您提供全方位的数字化睡眠实验室体验。" 
-              : "SomnoAI Digital Sleep Lab integrates physiological monitoring, deep AI insights, and tailored health protocols into a unified digital sleep laboratory environment."}
+              ? "SomnoAI 不再依赖单一生态，而是通过 Health Connect 混合架构，将多种品牌硬件的遥测数据聚合至 Web 端 AI 引擎，实现跨设备的高级恢复评估。" 
+              : "SomnoAI no longer relies on a single ecosystem. Through a hybrid Health Connect architecture, we aggregate telemetry from multiple hardware brands into our Web AI engine for elite recovery assessment."}
           </p>
         </div>
 
@@ -66,12 +65,12 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
            <GlassCard className="p-16 rounded-[5rem] border-white/5 space-y-10 group" intensity={1.2}>
               <div className="p-5 bg-indigo-500/10 rounded-3xl text-indigo-400 w-fit group-hover:scale-110 transition-transform">
-                <HeartPulse size={40} />
+                <Smartphone size={40} />
               </div>
               <div className="space-y-6">
-                <h3 className="text-3xl font-black italic text-white uppercase tracking-tight">Signal Normalization</h3>
+                <h3 className="text-3xl font-black italic text-white uppercase tracking-tight">Health Connect Ingress</h3>
                 <p className="text-slate-500 text-lg leading-relaxed italic font-bold opacity-80">
-                  Raw heart rate and motion telemetry are cross-referenced against your historical 14-day baseline to isolate acute deviations.
+                  Data flows from your smartwatch into Android Health Connect. Our App cleans, encrypts, and buffers this telemetry before cloud transmission.
                 </p>
               </div>
            </GlassCard>
@@ -81,47 +80,36 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
                 <Brain size={40} />
               </div>
               <div className="space-y-6">
-                <h3 className="text-3xl font-black italic text-white uppercase tracking-tight">Neural Synthesis</h3>
+                <h3 className="text-3xl font-black italic text-white uppercase tracking-tight">Neural Synthesis Model</h3>
                 <p className="text-slate-500 text-lg leading-relaxed italic font-bold opacity-80">
-                  Gemini AI models analyze complex correlations between RHR stabilization and deep sleep architecture to identify recovery windows.
+                  Gemini 2.5 Pro processes the de-identified biometric streams on login, reconstructing your deep sleep architecture with clinical-grade precision.
                 </p>
               </div>
            </GlassCard>
         </div>
 
-        {/* External Resources Section */}
+        {/* Methodology Flow */}
         <div className="space-y-16">
           <div className="space-y-4">
              <div className="flex items-center gap-4">
-                <Globe size={24} className="text-indigo-400" />
-                <h2 className="text-4xl font-black italic text-white uppercase tracking-tight">Resource <span className="text-indigo-500">Links</span></h2>
+                <Zap size={24} className="text-indigo-400" />
+                <h2 className="text-4xl font-black italic text-white uppercase tracking-tight">Data <span className="text-indigo-400">Handshake</span></h2>
              </div>
-             <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.6em] italic">Validated Authority Nodes</p>
+             <p className="text-[10px] font-black text-slate-600 uppercase tracking-[0.6em] italic">From Hardware to Insight</p>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {REFERENCE_NODES.map((node) => (
-              <a 
-                key={node.name} 
-                href={node.url} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="group"
-              >
-                <GlassCard className="p-8 rounded-[3rem] border-white/5 bg-slate-900/40 hover:bg-indigo-600/[0.03] hover:border-indigo-500/30 transition-all h-full flex flex-col justify-between">
-                   <div className="flex justify-between items-start mb-6">
-                      <div className="p-3 bg-white/5 rounded-2xl text-slate-500 group-hover:text-indigo-400 transition-colors">
-                        <BookOpen size={20} />
-                      </div>
-                      <ExternalLink size={14} className="text-slate-800 group-hover:text-indigo-500" />
-                   </div>
-                   <div>
-                      <span className="text-[8px] font-black text-indigo-400 uppercase tracking-[0.3em] italic mb-1 block">{node.category} Node</span>
-                      <h4 className="text-xl font-black italic text-white uppercase tracking-tight leading-tight group-hover:text-indigo-400 transition-colors">{node.name}</h4>
-                   </div>
-                </GlassCard>
-              </a>
-            ))}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+             {[
+               { icon: Activity, title: "Normalization", desc: "AI filters noise from multi-brand sensors to establish a stable biological baseline." },
+               { icon: Binary, title: "Correlation", desc: "Cross-referencing RHR, HRV, and REM cycles to find the hidden 'Restoration Score'." },
+               { icon: Cloud, title: "Persistence", desc: "Secure cloud upload from mobile app ensures data availability across all login nodes." }
+             ].map((m, i) => (
+               <div key={i} className="p-10 bg-slate-900/40 rounded-[3rem] border border-white/5 space-y-6">
+                  <div className="text-indigo-500"><m.icon size={32} /></div>
+                  <h4 className="text-xl font-black italic text-white uppercase">{m.title}</h4>
+                  <p className="text-sm text-slate-500 leading-relaxed italic font-medium">{m.desc}</p>
+               </div>
+             ))}
           </div>
         </div>
 
@@ -129,13 +117,13 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
         <footer className="pt-20 text-center space-y-12">
            <div className="flex items-center justify-center gap-4 opacity-30">
               <BarChart3 size={16} />
-              <p className="text-[10px] font-mono tracking-[0.5em] uppercase">SomnoAI Digital Sleep Lab Node • v2.8.5</p>
+              <p className="text-[10px] font-mono tracking-[0.5em] uppercase">SomnoAI Digital Sleep Lab Node • v3.0.1</p>
            </div>
            <button 
              onClick={onBack}
              className="px-20 py-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full font-black text-xs uppercase tracking-[0.4em] italic shadow-[0_30px_70px_rgba(79,70,229,0.3)] active:scale-95 transition-all"
            >
-             TERMINATE ANALYSIS MODULE
+             RETURN TO TERMINAL
            </button>
         </footer>
       </div>

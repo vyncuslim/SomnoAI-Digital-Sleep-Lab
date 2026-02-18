@@ -8,7 +8,15 @@
       "destination": "/api/$1"
     },
     {
-      "source": "/((?!assets/|public/|favicon.svg|manifest.json|sw.js|.*\\.(?:js|ts|tsx|css|svg|png|jpg|jpeg|json|xml|txt|ico|woff|woff2)$).*)",
+      "source": "/privacy",
+      "destination": "/privacy.html"
+    },
+    {
+      "source": "/terms",
+      "destination": "/terms.html"
+    },
+    {
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ],

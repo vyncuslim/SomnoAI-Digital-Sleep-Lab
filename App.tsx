@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, Article } from './types.ts';
 import {
   LayoutDashboard, TrendingUp, Sparkles, FlaskConical, Mic,
-  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, PenTool, Shield
+  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, PenTool, Shield,
+  Image as ImageIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
@@ -18,6 +18,7 @@ import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
 import { LiveAssistant } from './components/LiveAssistant.tsx';
+import { DreamVisualizer } from './components/DreamVisualizer.tsx';
 import { Settings } from './components/Settings.tsx';
 import { Trends } from './components/Trends.tsx';
 import { DiaryView } from './components/DiaryView.tsx';
@@ -75,7 +76,7 @@ const AppContent: React.FC = () => {
   const resolveViewFromLocation = useCallback((): ViewType | 'opensource' => {
     try {
       const pathname = window.location.pathname || '/';
-      const cleanPath = pathname.toLowerCase().split('?')[0].replace(/\/+/g, '/').replace(/\/+$/, '');
+      const cleanPath = pathname.toLowerCase().split('?')[0].replace(/\/+/g, '/').replace(/\/+$/, '') || '/';
       const segments = cleanPath.split('/').filter(Boolean);
       
       // Admin Priority Catch
@@ -111,6 +112,7 @@ const AppContent: React.FC = () => {
         'dashboard': 'dashboard',
         'assistant': 'assistant',
         'voice': 'voice',
+        'dreams': 'dreams',
         'calendar': 'calendar',
         'atlas': 'calendar',
         'experiment': 'experiment',
@@ -138,8 +140,8 @@ const AppContent: React.FC = () => {
         if (viewMap[segments[i]]) return viewMap[segments[i]];
       }
 
-      const rootAliases = ['', 'index', 'index.html', 'home', 'landing', 'welcome'];
-      if (segments.length === 0 || (segments.length === 1 && rootAliases.includes(segments[0]))) {
+      const rootAliases = ['/', '', 'index', 'index.html', 'home', 'landing', 'welcome'];
+      if (cleanPath === '/' || rootAliases.includes(cleanPath.replace(/^\//, ''))) {
         return 'landing';
       }
 
@@ -167,9 +169,12 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (!loading) {
       const currentLoc = resolveViewFromLocation();
-      // Only redirect standard landing/login/signup to dashboard if logged in
       if (profile && ['landing', 'login', 'signup'].includes(currentLoc)) {
-        navigate('dashboard');
+        if (window.location.pathname !== '/dashboard') {
+          navigate('dashboard');
+        } else {
+          setActiveView('dashboard');
+        }
       } else {
         setActiveView(currentLoc);
       }
@@ -233,6 +238,7 @@ const AppContent: React.FC = () => {
     { id: 'calendar', icon: TrendingUp, label: lang === 'zh' ? '分析' : 'Atlas' },
     { id: 'experiment', icon: FlaskConical, label: lang === 'zh' ? '实验' : 'Trials' },
     { id: 'assistant', icon: Sparkles, label: lang === 'zh' ? '合成' : 'AI Sync' },
+    { id: 'dreams', icon: ImageIcon, label: lang === 'zh' ? '投影' : 'Dreams' },
     { id: 'voice', icon: Mic, label: lang === 'zh' ? '语音' : 'Voice' },
     { id: 'news', icon: Newspaper, label: lang === 'zh' ? '科研' : 'Research' },
     { id: 'blog', icon: PenTool, label: lang === 'zh' ? '博文' : 'Blog' },
@@ -241,57 +247,58 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200 selection:bg-indigo-500/30">
-      <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 px-4 md:px-8 h-16 flex items-center justify-between shadow-2xl">
-        <div className="flex items-center gap-6 md:gap-10">
-          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('dashboard')}>
-            <Logo size={30} animated={true} />
+      <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 px-6 md:px-12 h-20 flex items-center justify-between shadow-2xl">
+        <div className="flex items-center gap-10">
+          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('dashboard')}>
+            <Logo size={36} animated={true} />
             <div className="flex flex-col text-left">
-              <span className="text-base font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
-              <span className="text-[5px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Lab</span>
+              <span className="text-xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
+              <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Lab Node</span>
             </div>
           </div>
-          <nav className="hidden lg:flex items-center gap-6">
+          <nav className="hidden xl:flex items-center gap-8">
             {navItems.map(item => (
               <button 
                 key={item.id} 
                 onClick={() => navigate(item.id)}
-                className={`group relative text-[8px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-1.5 italic ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
+                className={`group relative text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 italic ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
               >
-                <item.icon size={12} className={activeView === item.id ? 'animate-pulse' : ''} /> 
+                <item.icon size={14} className={activeView === item.id ? 'animate-pulse' : ''} /> 
                 {item.label}
                 {activeView === item.id && (
-                  <m.div layoutId="nav-glow" className="absolute -bottom-6 left-0 right-0 h-[1.5px] bg-indigo-500 shadow-[0_0_10px_#6366f1]" />
+                  <m.div layoutId="nav-glow" className="absolute -bottom-7 left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_15px_#6366f1]" />
                 )}
               </button>
             ))}
             {isAdmin && (
               <button 
                 onClick={() => navigate('admin')}
-                className={`group relative text-[8px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-1.5 italic ${activeView === 'admin' ? 'text-rose-400' : 'text-slate-500 hover:text-rose-400'}`}
+                className={`group relative text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 italic ${activeView === 'admin' ? 'text-rose-400' : 'text-slate-500 hover:text-rose-400'}`}
               >
-                <Shield size={12} /> ADMIN
+                <Shield size={14} /> ADMIN
               </button>
             )}
           </nav>
         </div>
-        <div className="flex items-center gap-2">
-          <button onClick={() => navigate('registry')} className={`p-2 rounded-lg transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
-            <User size={14} />
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('registry')} className={`p-3 rounded-xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
+            <User size={18} />
           </button>
-          <button onClick={() => navigate('settings')} className={`p-2 rounded-lg transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
-            <SettingsIcon size={14} />
+          <button onClick={() => navigate('settings')} className={`p-3 rounded-xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
+            <SettingsIcon size={18} />
           </button>
-          <button onClick={() => setIsExitModalOpen(true)} className="p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90">
-            <LogOut size={14} />
+          <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90">
+            <LogOut size={18} />
           </button>
         </div>
       </header>
-      <main className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-6 pt-20 pb-16 relative">
+      <main className="flex-1 w-full max-w-[1700px] mx-auto p-6 md:p-12 pt-32 pb-24 relative overflow-x-hidden">
         <AnimatePresence mode="wait">
-          <m.div key={activeView} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.01 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
+          <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.01 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
             {activeView === 'dashboard' && <Dashboard data={currentRecord} lang={lang} onNavigate={navigate} />}
             {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
+            {activeView === 'dreams' && <DreamVisualizer lang={lang} data={currentRecord} />}
             {activeView === 'voice' && <LiveAssistant lang={lang} data={currentRecord} />}
             {activeView === 'experiment' && <ExperimentView data={currentRecord} lang={lang} />}
             {activeView === 'diary' && <DiaryView lang={lang} />}

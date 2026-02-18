@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   ArrowRight, LogIn, Command, ShieldCheck, Newspaper, FlaskConical, HelpCircle, Info, Activity, BrainCircuit, Zap, Microscope, LayoutGrid,
-  Github, Linkedin, Instagram, Facebook, Youtube, Video, MessageSquare, Globe, UserCircle, Share2, ExternalLink, Watch, Smartphone, Cpu, Binary
+  Github, Linkedin, Instagram, Facebook, Youtube, Video, MessageSquare, Globe, UserCircle, Share2, ExternalLink, Watch, Smartphone, Cpu, Binary,
+  User, Verified
 } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { Language, translations } from '../services/i18n.ts';
@@ -47,43 +48,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
     { label: t.nav.project, view: 'about', icon: Info },
   ];
 
-  const pillars = [
-    { 
-      icon: Watch, 
-      title: t.pillars.telemetry.title, 
-      desc: t.pillars.telemetry.desc,
-      color: 'text-emerald-400',
-      bg: 'bg-emerald-500/10',
-      tag: 'WEARABLE_READY'
-    },
-    { 
-      icon: Binary, 
-      title: t.pillars.synthesis.title, 
-      desc: t.pillars.synthesis.desc,
-      color: 'text-indigo-400',
-      bg: 'bg-indigo-500/10',
-      tag: 'AI_ALGORITHMIC'
-    },
-    { 
-      icon: Smartphone, 
-      title: t.pillars.protocols.title, 
-      desc: t.pillars.protocols.desc,
-      color: 'text-rose-400',
-      bg: 'bg-rose-500/10',
-      tag: 'CLOUD_HANDSHAKE'
-    }
-  ];
-
   const socialMatrix = [
-    { icon: Globe, url: 'https://sleepsomno.com', label: isZh ? '官方网站' : 'Official Site', status: 'ACTIVE', color: '#6366f1' },
-    { icon: MessageSquare, url: 'https://discord.com/invite/9EXJtRmju', label: isZh ? 'Discord 社区' : 'Discord Community', status: 'ACTIVE', color: '#5865F2' },
-    { icon: Github, url: 'https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', label: 'GitHub', status: 'OPEN SOURCE', color: '#ffffff' },
-    { icon: Linkedin, url: 'https://www.linkedin.com/company/somnoai-digital-sleep-lab', label: isZh ? 'LinkedIn 公司页' : 'LinkedIn Company', status: 'ACTIVE', color: '#0077b5' },
-    { icon: UserCircle, url: 'https://www.linkedin.com/in/vyncuslim-lim-761300375', label: isZh ? 'LinkedIn 个人' : 'LinkedIn Personal', status: 'VYNCUS LIM', color: '#0077b5' },
-    { icon: Video, url: 'https://www.tiktok.com/@somnoaidigitalsleeplab', label: 'TikTok', status: 'ACTIVE', color: '#ff0050' },
-    { icon: Instagram, url: 'https://www.instagram.com/somnoaidigitalsleep/', label: 'Instagram', status: 'ACTIVE', color: '#e1306c' },
-    { icon: Facebook, url: 'https://www.facebook.com/people/Somnoai-Digital-Sleep-Lab/61587027632695/', label: 'Facebook', status: 'ACTIVE', color: '#1877f2' },
-    { icon: Youtube, url: 'https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og', label: 'YouTube', status: 'ACTIVE', color: '#ff0000' },
+    { icon: Globe, url: 'https://sleepsomno.com', label: isZh ? '官方网站' : 'Official Site', status: 'ACTIVE', color: '#6366f1', type: 'CORE' },
+    { icon: MessageSquare, url: 'https://discord.com/invite/9EXJtRmju', label: isZh ? 'Discord 社区' : 'Discord Hub', status: 'ACTIVE', color: '#5865F2', type: 'COMMUNITY' },
+    { icon: Github, url: 'https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', label: 'GitHub', status: 'OPEN SOURCE', color: '#ffffff', type: 'CODE' },
+    { icon: Video, url: 'https://www.tiktok.com/@somnoaidigitalsleeplab', label: 'TikTok', status: 'ACTIVE', color: '#ff0050', type: 'SOCIAL' },
+    { icon: Linkedin, url: 'https://www.linkedin.com/company/somnoai-digital-sleep-lab', label: isZh ? 'LinkedIn 公司页' : 'LinkedIn Co.', status: 'ACTIVE', color: '#0077b5', type: 'BUSINESS' },
+    { icon: UserCircle, url: 'https://www.linkedin.com/in/vyncuslim-lim-761300375', label: 'Vyncus Lim', status: 'FOUNDER', color: '#0077b5', type: 'IDENTITY' },
+    { icon: Instagram, url: 'https://www.instagram.com/somnoaidigitalsleep/', label: 'Instagram', status: 'ACTIVE', color: '#e1306c', type: 'SOCIAL' },
+    { icon: Facebook, url: 'https://www.facebook.com/people/Somnoai-Digital-Sleep-Lab/61587027632695/', label: 'Facebook', status: 'ACTIVE', color: '#1877f2', type: 'SOCIAL' },
+    { icon: Youtube, url: 'https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og', label: 'YouTube', status: 'ACTIVE', color: '#ff0000', type: 'CONTENT' },
   ];
 
   return (
@@ -124,7 +98,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         <div className="max-w-7xl space-y-16 relative z-10">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-4 px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full shadow-2xl">
             <Watch size={14} className="text-indigo-400 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Hardware-Neutral Protocol v4.0</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Zero-Hardware Ingress v4.1</span>
           </m.div>
 
           <div className="space-y-4">
@@ -147,25 +121,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </div>
       </section>
 
-      {/* Pillars Section - UPGRADED */}
-      <section className="relative z-10 py-40 px-6 border-y border-white/5 bg-slate-950/40">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
-           {pillars.map((p, idx) => (
-             <GlassCard key={idx} className="p-12 rounded-[4rem] border-white/5 space-y-8 group relative overflow-hidden" intensity={1.2}>
-                <div className="absolute top-8 right-8 text-[8px] font-black text-slate-800 tracking-widest">{p.tag}</div>
-                <div className={`p-5 rounded-3xl w-fit ${p.bg} ${p.color} group-hover:scale-110 transition-transform`}>
-                   <p.icon size={36} />
-                </div>
-                <div className="space-y-4">
-                   <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">{p.title}</h3>
-                   <p className="text-slate-500 text-lg leading-relaxed italic font-bold opacity-80">{p.desc}</p>
-                </div>
-             </GlassCard>
-           ))}
-        </div>
-      </section>
-
-      {/* Network Presence Section */}
+      {/* Network Matrix Section - THE COMMUNITY & USER HUB */}
       <section className="relative z-10 py-40 px-6 border-t border-white/5 bg-slate-950/20">
         <div className="max-w-7xl mx-auto space-y-24">
           <div className="flex flex-col md:flex-row justify-between items-end gap-10 px-4">
@@ -174,12 +130,25 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                    <Share2 size={22} />
                    <span className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-500">Laboratory Dispatch</span>
                 </div>
-                <h2 className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">{isZh ? '网络' : 'Network'} <span className="text-indigo-400">{isZh ? '节点' : 'Presence'}</span></h2>
+                <h2 className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">Network <span className="text-indigo-400">Presence</span></h2>
              </div>
-             <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-full px-6 py-2">
-                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-[9px] font-black uppercase tracking-widest text-slate-400 italic">Nodes Synchronized</span>
-             </div>
+             
+             {/* User Profile Spotlight */}
+             <GlassCard 
+               onClick={() => window.open('https://www.linkedin.com/in/vyncuslim-lim-761300375', '_blank')}
+               className="p-6 rounded-3xl border-white/10 bg-indigo-600/5 hover:bg-indigo-600/10 cursor-pointer group transition-all"
+             >
+                <div className="flex items-center gap-5">
+                   <div className="w-12 h-12 rounded-2xl bg-indigo-600 flex items-center justify-center text-white italic font-black shadow-lg">V</div>
+                   <div className="text-left">
+                      <p className="text-[10px] font-black text-indigo-400 uppercase tracking-widest italic flex items-center gap-2">
+                        Founder / Subject 001 <Verified size={10} />
+                      </p>
+                      <p className="text-sm font-black text-white italic uppercase tracking-tight">Vyncus Lim</p>
+                   </div>
+                   <ExternalLink size={14} className="text-slate-700 group-hover:text-indigo-400 ml-4" />
+                </div>
+             </GlassCard>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -190,6 +159,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                 className="p-8 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all group cursor-pointer relative overflow-hidden h-full flex flex-col justify-between"
                 intensity={1.2}
               >
+                {/* Brand Micro-glow */}
                 <div 
                   className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity pointer-events-none"
                   style={{ backgroundColor: node.color }}
@@ -199,17 +169,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                    <div className="p-4 bg-slate-900 border border-white/5 rounded-2xl text-slate-400 group-hover:text-white transition-all shadow-inner group-hover:scale-110">
                       <node.icon size={28} />
                    </div>
-                   <div className={`px-4 py-1.5 rounded-full border border-white/5 text-[8px] font-black tracking-widest ${node.status === 'OPEN SOURCE' ? 'bg-emerald-500/10 text-emerald-400' : node.status === 'VYNCUS LIM' ? 'bg-amber-500/10 text-amber-400' : 'bg-white/5 text-slate-500'} group-hover:bg-white/10 group-hover:text-white transition-all italic`}>
+                   <div className={`px-4 py-1.5 rounded-full border border-white/5 text-[8px] font-black tracking-widest ${node.status === 'OPEN SOURCE' ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : node.status === 'FOUNDER' ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' : 'bg-white/5 text-slate-500'} group-hover:bg-white/10 group-hover:text-white transition-all italic`}>
                       {node.status}
                    </div>
                 </div>
 
-                <div className="space-y-3 relative z-10">
+                <div className="space-y-3 relative z-10 text-left">
+                   <div className="flex items-center gap-3">
+                      <span className="text-[8px] font-mono text-slate-600 tracking-widest">{node.type}</span>
+                      <div className="h-px w-6 bg-slate-800" />
+                   </div>
                    <h4 className="text-2xl font-black italic text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">
                      {node.label}
                    </h4>
                    <div className="flex items-center justify-between opacity-40 group-hover:opacity-100 transition-opacity pt-2 border-t border-white/5">
-                      <span className="text-[8px] font-mono text-slate-600 uppercase truncate max-w-[200px]">{node.url.replace('https://', '').replace('http://', '')}</span>
+                      <span className="text-[8px] font-mono text-slate-600 uppercase truncate max-w-[200px]">
+                        {node.url.replace('https://', '').replace('http://', '')}
+                      </span>
                       <ExternalLink size={12} className="text-slate-700" />
                    </div>
                 </div>
@@ -223,7 +199,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       <footer className="relative z-10 px-12 py-20 flex flex-col md:flex-row justify-between items-center gap-12 bg-[#01040a] border-t border-white/5">
         <div className="flex items-center gap-6">
           <Logo size={40} />
-          <div className="flex flex-col">
+          <div className="flex flex-col text-left">
             <span className="text-[10px] font-black uppercase tracking-[0.6em] italic text-slate-500">@2026 SomnoAI Laboratory Node</span>
             <div className="flex items-center gap-2 mt-1">
               <ShieldCheck size={12} className="text-indigo-500" />
@@ -237,13 +213,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
              <button onClick={() => onNavigate('opensource')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors underline decoration-indigo-500/20 underline-offset-8">ARCHITECTURE_ISO</button>
              <button onClick={() => onNavigate('privacy')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">PRIVACY_CORE</button>
              <button onClick={() => onNavigate('terms')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">TERMS_PROTO</button>
-          </div>
-          <div className="flex gap-4">
-            {socialMatrix.slice(0, 4).map((s, i) => (
-              <a key={i} href={s.url} target="_blank" rel="noopener" className="p-2 bg-white/5 rounded-lg text-slate-600 hover:text-white hover:bg-indigo-600/20 transition-all">
-                <s.icon size={14} />
-              </a>
-            ))}
           </div>
         </div>
       </footer>

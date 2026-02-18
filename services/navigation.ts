@@ -1,6 +1,6 @@
 /**
- * SomnoAI Safe Navigation Utility (v105.3)
- * Optimized for DNS Stability and Strict HTTPS Protocol Enforcement.
+ * SomnoAI Safe Navigation Utility (v107.0)
+ * Optimized for DNS Stability and SPA Routing Persistence.
  */
 
 export const getSafeUrl = (): string => {
@@ -48,14 +48,10 @@ export const getSafeHash = (): string => {
 export const safeNavigatePath = (path: string) => {
   if (typeof window === 'undefined') return;
 
-  // Protocol Enforcement: Fix ERR_SSL_VERSION_OR_CIPHER_MISMATCH
-  if (window.location.hostname !== 'localhost' && window.location.protocol === 'http:') {
-     window.location.replace(window.location.href.replace('http:', 'https:'));
-     return;
-  }
-
+  // Path purification: Ensure consistent leading slash and remove trailing slash
   let cleanPath = path.split('?')[0].replace(/\/+/g, '/').trim();
   const rootAliases = ['/', '', '/index.html', '/home', '/landing', '/welcome'];
+  
   if (rootAliases.includes(cleanPath)) {
     cleanPath = '/';
   } else {
@@ -71,12 +67,17 @@ export const safeNavigatePath = (path: string) => {
   if (aliases[cleanPath]) cleanPath = aliases[cleanPath];
 
   try {
-    const currentPath = window.location.pathname;
-    if (currentPath === cleanPath && !window.location.hash) return;
+    const currentPath = window.location.pathname.replace(/\/+$/, '') || '/';
+    const targetPath = cleanPath === '/' ? '/' : cleanPath.replace(/\/+$/, '');
+    
+    if (currentPath === targetPath && !window.location.hash) return;
+    
+    // Use History API for smooth transition
     window.history.pushState({ somno_route: true, timestamp: Date.now() }, '', cleanPath);
     window.dispatchEvent(new PopStateEvent('popstate', { state: { somno_route: true } }));
     window.scrollTo({ top: 0, behavior: 'smooth' });
   } catch (e) {
+    // Fallback to hard reload if history API fails
     window.location.href = cleanPath;
   }
 };

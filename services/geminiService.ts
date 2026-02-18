@@ -1,3 +1,4 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
@@ -9,20 +10,17 @@ export interface BiologicalReport {
 }
 
 const getAIClient = () => {
-  /**
-   * FIXED: Guidelines enforce exclusive use of process.env.API_KEY.
-   * Assume pre-configured and valid.
-   */
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
 // Use stable production models instead of previews for system logic paths
 const MODEL_PRO = 'gemini-2.5-pro';
 const MODEL_FLASH = 'gemini-2.5-flash';
+const MODEL_IMAGE = 'gemini-2.5-flash-image';
+const MODEL_IMAGE_PRO = 'gemini-3-pro-image-preview';
 
 /**
  * 核心功能：对多日睡眠数据进行深度趋势分析
- * 启用 thinkingBudget 以获得更高质量的神经科学洞察
  */
 export const analyzeBiologicalTrends = async (
   history: SleepRecord[], 
@@ -53,7 +51,6 @@ export const analyzeBiologicalTrends = async (
       config: {
         systemInstruction,
         responseMimeType: "application/json",
-        // Enable advanced reasoning for CRO analysis
         thinkingConfig: { thinkingBudget: 4000 },
         responseSchema: {
           type: Type.OBJECT,
@@ -66,7 +63,6 @@ export const analyzeBiologicalTrends = async (
         }
       }
     });
-    // Access .text property directly (not a method)
     return JSON.parse(response.text || "{}") as BiologicalReport;
   } catch (err) {
     console.error("Neural Analysis Failed:", err);
@@ -75,24 +71,94 @@ export const analyzeBiologicalTrends = async (
 };
 
 /**
- * 增强型流式教练：注入历史数据作为长期上下文
+ * 图像合成：基于受试者生理状态生成“梦境可视化”或“优化环境”
  */
+export const synthesizeImage = async (
+  prompt: string,
+  highQuality: boolean = false,
+  aspectRatio: "1:1" | "9:16" | "16:9" = "1:1"
+): Promise<{ imageUrl: string; text?: string }> => {
+  const ai = getAIClient();
+  const model = highQuality ? MODEL_IMAGE_PRO : MODEL_IMAGE;
+  
+  try {
+    const response = await ai.models.generateContent({
+      model,
+      contents: { parts: [{ text: prompt }] },
+      config: {
+        imageConfig: {
+          aspectRatio,
+          imageSize: highQuality ? "2K" : "1K"
+        }
+      }
+    });
+
+    let imageUrl = '';
+    let text = '';
+
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        imageUrl = `data:image/png;base64,${part.inlineData.data}`;
+      } else if (part.text) {
+        text += part.text;
+      }
+    }
+
+    if (!imageUrl) throw new Error("IMAGE_GENERATION_FAILED");
+    return { imageUrl, text };
+  } catch (err) {
+    console.error("Image Synthesis Failed:", err);
+    throw err;
+  }
+};
+
+/**
+ * 图像编辑：对现有环境图进行优化建议的可视化
+ */
+export const editImage = async (
+  base64Data: string,
+  mimeType: string,
+  instruction: string
+): Promise<{ imageUrl: string }> => {
+  const ai = getAIClient();
+  
+  try {
+    const response = await ai.models.generateContent({
+      model: MODEL_IMAGE,
+      contents: {
+        parts: [
+          { inlineData: { data: base64Data, mimeType } },
+          { text: instruction }
+        ]
+      }
+    });
+
+    let imageUrl = '';
+    for (const part of response.candidates?.[0]?.content?.parts || []) {
+      if (part.inlineData) {
+        imageUrl = `data:image/png;base64,${part.inlineData.data}`;
+      }
+    }
+
+    if (!imageUrl) throw new Error("IMAGE_EDIT_FAILED");
+    return { imageUrl };
+  } catch (err) {
+    console.error("Image Edit Failed:", err);
+    throw err;
+  }
+};
+
 export const startContextualCoach = async (
   history: { role: string; content: string }[], 
   records: SleepRecord[],
   lang: Language = 'zh'
 ) => {
   const ai = getAIClient();
-  
   const bioBrief = records.slice(0, 5).map(r => 
     `${r.date}: Score ${r.score}, Deep ${r.deepRatio}%`
   ).join(' | ');
 
-  const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。
-  已知受试者近期数据: ${bioBrief}
-  你拥有访问最新睡眠研究的权限（使用 Google 搜索）和地点查找权限（使用 Google 地图）。
-  语气：高度专业、冷静、具有预见性。
-  回复语言：${lang}。`;
+  const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。语气：高度专业、冷静、具有预见性。回复语言：${lang}。`;
 
   try {
     const contents = history.map(msg => ({
@@ -105,7 +171,6 @@ export const startContextualCoach = async (
       contents,
       config: { 
         systemInstruction,
-        // Using high-performance reasoning for chat
         thinkingConfig: { thinkingBudget: 2000 },
         tools: [{ googleSearch: {} }, { googleMaps: {} }] 
       }
@@ -116,12 +181,9 @@ export const startContextualCoach = async (
   }
 };
 
-/**
- * 快速生成实验协议 (基于单日数据)
- */
 export const getQuickInsight = async (data: SleepRecord, lang: Language = 'zh'): Promise<string[]> => {
   const ai = getAIClient();
-  const prompt = `分析数据：分数 ${data.score}, RHR ${data.heartRate.resting}bpm。给出3条极其精简的优化方案（JSON 数组）。`;
+  const prompt = `分析数据：分数 ${data.score}, RHR ${data.heartRate.resting}bpm。给出3条极其精简的优化方案（JSON 数组）。语言：${lang}`;
   
   try {
     const response = await ai.models.generateContent({
@@ -132,7 +194,6 @@ export const getQuickInsight = async (data: SleepRecord, lang: Language = 'zh'):
         responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
       }
     });
-    // Access .text property directly
     return JSON.parse(response.text || "[]");
   } catch {
     return ["正在同步神经链路..."];
@@ -145,34 +206,19 @@ export interface SleepExperiment {
   expectedImpact: string;
 }
 
-/**
- * 实验协议生成：基于受试者生理基准设计干预实验
- */
 export const designExperiment = async (
   data: SleepRecord,
   lang: Language = 'zh'
 ): Promise<SleepExperiment> => {
   const ai = getAIClient();
-  const prompt = `基于以下受试者数据设计一个为期 3 天的睡眠优化实验：
-  分数: ${data.score}, 
-  总时长: ${data.totalDuration} 分钟, 
-  深睡比例: ${data.deepRatio}%, 
-  静息心率: ${data.heartRate.resting}bpm。
-  
-  请提供：
-  1. 神经科学假设 (hypothesis)
-  2. 3 步实验协议 (protocol)
-  3. 预期的恢复影响 (expectedImpact)
-  语言：${lang === 'zh' ? '中文' : 'English'}`;
-
-  const systemInstruction = "你是 SomnoAI 首席研究官 (CRO)。你擅长基于生理数据设计精密的神经科学实验。输出必须为 JSON 格式。";
+  const prompt = `基于以下数据设计睡眠优化实验：分数: ${data.score}, RHR: ${data.heartRate.resting}bpm。语言：${lang}`;
 
   try {
     const response = await ai.models.generateContent({
       model: MODEL_PRO,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
-        systemInstruction,
+        systemInstruction: "你是 SomnoAI 首席研究官 (CRO)。输出 JSON。",
         thinkingConfig: { thinkingBudget: 4000 },
         responseMimeType: "application/json",
         responseSchema: {
@@ -186,7 +232,6 @@ export const designExperiment = async (
         }
       }
     });
-    // Access .text property directly
     return JSON.parse(response.text || "{}") as SleepExperiment;
   } catch (err) {
     console.error("Experiment Synthesis Failure:", err);
