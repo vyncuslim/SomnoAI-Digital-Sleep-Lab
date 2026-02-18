@@ -31,6 +31,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [keyCommitStatus, setKeyCommitStatus] = useState<'idle' | 'success'>('idle');
 
   const t = translations[lang]?.settings || translations.en.settings;
+  const isZh = lang === 'zh';
 
   const handleRequestNotif = async () => {
     const granted = await notificationService.requestPermission();
@@ -54,11 +55,11 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const socialLinks = [
-    { icon: Globe, url: 'https://sleepsomno.com', label: 'Website' },
+    { icon: Globe, url: 'https://sleepsomno.com', label: isZh ? '官方网站' : 'Website' },
     { icon: MessageSquare, url: 'https://discord.com/invite/9EXJtRmju', label: 'Discord' },
     { icon: Github, url: 'https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', label: 'GitHub' },
-    { icon: Linkedin, url: 'https://www.linkedin.com/company/somnoai-digital-sleep-lab', label: 'LinkedIn Lab' },
-    { icon: UserCircle, url: 'https://www.linkedin.com/in/vyncuslim-lim-761300375', label: 'LinkedIn Founder' },
+    { icon: Linkedin, url: 'https://www.linkedin.com/company/somnoai-digital-sleep-lab', label: isZh ? 'LinkedIn 公司' : 'LinkedIn Lab' },
+    { icon: UserCircle, url: 'https://www.linkedin.com/in/vyncuslim-lim-761300375', label: isZh ? 'LinkedIn 个人' : 'LinkedIn Founder' },
     { icon: Video, url: 'https://www.tiktok.com/@somnoaidigitalsleeplab', label: 'TikTok' },
     { icon: Instagram, url: 'https://www.instagram.com/somnoaidigitalsleep/', label: 'Instagram' },
     { icon: Facebook, url: 'https://www.facebook.com/people/Somnoai-Digital-Sleep-Lab/61587027632695/', label: 'Facebook' },
@@ -126,7 +127,7 @@ export const Settings: React.FC<SettingsProps> = ({
                </div>
             </div>
 
-            {/* Neural API Key Section - Refined Masked Input */}
+            {/* Neural API Key Section */}
             <div className="space-y-6 pt-4 border-t border-white/5">
               <div className="space-y-1">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic px-2">{t.apiKeyLabel}</span>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, LogIn, Command, ShieldCheck, Newspaper, FlaskConical, HelpCircle, Info, Play, Volume2, VolumeX, Activity, BrainCircuit, Zap, Microscope, LayoutGrid,
+  ArrowRight, LogIn, Command, ShieldCheck, Newspaper, FlaskConical, HelpCircle, Info, Play, Activity, BrainCircuit, Zap, Microscope, LayoutGrid,
   Github, Linkedin, Instagram, Facebook, Youtube, Video, MessageSquare, Globe, UserCircle, Share2, ExternalLink
 } from 'lucide-react';
 import { Logo } from './Logo.tsx';
@@ -30,10 +30,9 @@ const NeuralPulseBackground = () => (
 
 export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) => {
   const [scrolled, setScrolled] = useState(false);
-  const [isVideoMuted, setIsVideoMuted] = useState(true);
-  const videoRef = useRef<HTMLVideoElement>(null);
   
   const t = translations[lang as Language].landing;
+  const isZh = lang === 'zh';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 40);
@@ -49,15 +48,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
   ];
 
   const socialMatrix = [
-    { icon: Globe, url: 'https://sleepsomno.com', label: 'Official Site', status: 'ACTIVE', color: '#6366f1' },
-    { icon: MessageSquare, url: 'https://discord.com/invite/9EXJtRmju', label: 'Discord Hub', status: 'ACTIVE', color: '#5865F2' },
-    { icon: Github, url: 'https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', label: 'GitHub Node', status: 'OPEN SOURCE', color: '#ffffff' },
-    { icon: Video, url: 'https://www.tiktok.com/@somnoaidigitalsleeplab', label: 'TikTok Lab', status: 'ACTIVE', color: '#ff0050' },
-    { icon: Linkedin, url: 'https://www.linkedin.com/company/somnoai-digital-sleep-lab', label: 'LinkedIn Co.', status: 'ACTIVE', color: '#0077b5' },
-    { icon: UserCircle, url: 'https://www.linkedin.com/in/vyncuslim-lim-761300375', label: 'Vyncus Lim', status: 'FOUNDER', color: '#0077b5' },
+    { icon: Globe, url: 'https://sleepsomno.com', label: isZh ? '官方网站' : 'Official Site', status: 'ACTIVE', color: '#6366f1' },
+    { icon: MessageSquare, url: 'https://discord.com/invite/9EXJtRmju', label: isZh ? 'Discord 社区' : 'Discord Community', status: 'ACTIVE', color: '#5865F2' },
+    { icon: Github, url: 'https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', label: 'GitHub', status: 'OPEN SOURCE', color: '#ffffff' },
+    { icon: Linkedin, url: 'https://www.linkedin.com/company/somnoai-digital-sleep-lab', label: isZh ? 'LinkedIn 公司页' : 'LinkedIn Company', status: 'ACTIVE', color: '#0077b5' },
+    { icon: UserCircle, url: 'https://www.linkedin.com/in/vyncuslim-lim-761300375', label: isZh ? 'LinkedIn 个人' : 'LinkedIn Personal', status: 'VYNCUS LIM', color: '#0077b5' },
+    { icon: Video, url: 'https://www.tiktok.com/@somnoaidigitalsleeplab', label: 'TikTok', status: 'ACTIVE', color: '#ff0050' },
     { icon: Instagram, url: 'https://www.instagram.com/somnoaidigitalsleep/', label: 'Instagram', status: 'ACTIVE', color: '#e1306c' },
     { icon: Facebook, url: 'https://www.facebook.com/people/Somnoai-Digital-Sleep-Lab/61587027632695/', label: 'Facebook', status: 'ACTIVE', color: '#1877f2' },
-    { icon: Youtube, url: 'https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og', label: 'YouTube Ch.', status: 'ACTIVE', color: '#ff0000' },
+    { icon: Youtube, url: 'https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og', label: 'YouTube', status: 'ACTIVE', color: '#ff0000' },
   ];
 
   return (
@@ -73,7 +72,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             <Logo size={46} animated={true} />
             <div className="flex flex-col text-left">
               <span className="text-2xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
-              <span className="text-[7px] font-black uppercase tracking-[0.5em] text-slate-500 mt-1.5">Digital Restoration Lab</span>
+              <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1.5">{isZh ? '数字化睡眠实验室' : 'Digital Restoration Lab'}</span>
             </div>
           </div>
 
@@ -121,7 +120,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </div>
       </section>
 
-      {/* Community Matrix Section - UPGRADED */}
+      {/* Network Presence Section */}
       <section className="relative z-10 py-40 px-6 border-t border-white/5 bg-slate-950/20">
         <div className="max-w-7xl mx-auto space-y-24">
           <div className="flex flex-col md:flex-row justify-between items-end gap-10 px-4">
@@ -130,7 +129,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                    <Share2 size={22} />
                    <span className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-500">Laboratory Dispatch</span>
                 </div>
-                <h2 className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">Network <span className="text-indigo-400">Presence</span></h2>
+                <h2 className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">{isZh ? '网络' : 'Network'} <span className="text-indigo-400">{isZh ? '节点' : 'Presence'}</span></h2>
              </div>
              <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-full px-6 py-2">
                 <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
@@ -143,30 +142,30 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
               <GlassCard 
                 key={idx}
                 onClick={() => window.open(node.url, '_blank')}
-                className="p-8 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all group cursor-pointer relative overflow-hidden"
+                className="p-8 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all group cursor-pointer relative overflow-hidden h-full flex flex-col justify-between"
                 intensity={1.2}
               >
                 {/* Brand Color Glow on Hover */}
-                <m.div 
-                  className="absolute inset-0 opacity-0 group-hover:opacity-10 transition-opacity pointer-events-none"
+                <div 
+                  className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity pointer-events-none"
                   style={{ backgroundColor: node.color }}
                 />
                 
-                <div className="flex justify-between items-start mb-10 relative z-10">
+                <div className="flex justify-between items-start mb-12 relative z-10">
                    <div className="p-4 bg-slate-900 border border-white/5 rounded-2xl text-slate-400 group-hover:text-white transition-all shadow-inner group-hover:scale-110">
                       <node.icon size={28} />
                    </div>
-                   <div className={`px-4 py-1.5 rounded-full border border-white/5 text-[8px] font-black tracking-widest ${node.status === 'OPEN SOURCE' ? 'bg-emerald-500/10 text-emerald-400' : node.status === 'FOUNDER' ? 'bg-amber-500/10 text-amber-400' : 'bg-white/5 text-slate-500'} group-hover:bg-white/10 group-hover:text-white transition-all italic`}>
+                   <div className={`px-4 py-1.5 rounded-full border border-white/5 text-[8px] font-black tracking-widest ${node.status === 'OPEN SOURCE' ? 'bg-emerald-500/10 text-emerald-400' : node.status === 'VYNCUS LIM' ? 'bg-amber-500/10 text-amber-400' : 'bg-white/5 text-slate-500'} group-hover:bg-white/10 group-hover:text-white transition-all italic`}>
                       {node.status}
                    </div>
                 </div>
 
-                <div className="space-y-2 relative z-10">
+                <div className="space-y-3 relative z-10">
                    <h4 className="text-2xl font-black italic text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">
                      {node.label}
                    </h4>
-                   <div className="flex items-center justify-between opacity-40 group-hover:opacity-100 transition-opacity">
-                      <span className="text-[8px] font-mono text-slate-600 uppercase truncate max-w-[200px]">{node.url.replace('https://', '')}</span>
+                   <div className="flex items-center justify-between opacity-40 group-hover:opacity-100 transition-opacity pt-2 border-t border-white/5">
+                      <span className="text-[8px] font-mono text-slate-600 uppercase truncate max-w-[200px]">{node.url.replace('https://', '').replace('http://', '')}</span>
                       <ExternalLink size={12} className="text-slate-700" />
                    </div>
                 </div>
@@ -177,7 +176,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       </section>
 
       {/* Global Footer */}
-      <footer className="relative z-10 px-12 py-16 flex flex-col md:flex-row justify-between items-center gap-8 bg-[#01040a] border-t border-white/5 opacity-60">
+      <footer className="relative z-10 px-12 py-20 flex flex-col md:flex-row justify-between items-center gap-12 bg-[#01040a] border-t border-white/5">
         <div className="flex items-center gap-6">
           <Logo size={40} />
           <div className="flex flex-col">
@@ -188,10 +187,20 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             </div>
           </div>
         </div>
-        <div className="flex flex-wrap items-center justify-center gap-10">
-           <button onClick={() => onNavigate('opensource')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors underline decoration-indigo-500/20 underline-offset-8">ARCHITECTURE_ISO</button>
-           <button onClick={() => onNavigate('privacy')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">PRIVACY_CORE</button>
-           <button onClick={() => onNavigate('terms')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">TERMS_PROTO</button>
+
+        <div className="flex flex-col items-center md:items-end gap-6">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-10">
+             <button onClick={() => onNavigate('opensource')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors underline decoration-indigo-500/20 underline-offset-8">ARCHITECTURE_ISO</button>
+             <button onClick={() => onNavigate('privacy')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">PRIVACY_CORE</button>
+             <button onClick={() => onNavigate('terms')} className="text-[9px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">TERMS_PROTO</button>
+          </div>
+          <div className="flex gap-4">
+            {socialMatrix.slice(0, 4).map((s, i) => (
+              <a key={i} href={s.url} target="_blank" rel="noopener" className="p-2 bg-white/5 rounded-lg text-slate-600 hover:text-white hover:bg-indigo-600/20 transition-all">
+                <s.icon size={14} />
+              </a>
+            ))}
+          </div>
         </div>
       </footer>
     </div>
