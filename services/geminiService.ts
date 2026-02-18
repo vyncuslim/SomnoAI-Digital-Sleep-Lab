@@ -15,11 +15,13 @@ const getAIClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
-const MODEL_PRO = 'gemini-2.5-pro';
-const MODEL_FLASH = 'gemini-2.5-flash';
+// Updated model constants to latest recommended versions
+const MODEL_PRO = 'gemini-3-pro-preview';
+const MODEL_FLASH = 'gemini-3-flash-preview';
 
 /**
  * 核心功能：对多日睡眠数据进行深度趋势分析
+ * 启用 thinkingBudget 以获得更高质量的神经科学洞察
  */
 export const analyzeBiologicalTrends = async (
   history: SleepRecord[], 
@@ -50,6 +52,8 @@ export const analyzeBiologicalTrends = async (
       config: {
         systemInstruction,
         responseMimeType: "application/json",
+        // Enable advanced reasoning for CRO analysis
+        thinkingConfig: { thinkingBudget: 4000 },
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -99,6 +103,8 @@ export const startContextualCoach = async (
       contents,
       config: { 
         systemInstruction,
+        // Using high-performance reasoning for chat
+        thinkingConfig: { thinkingBudget: 2000 },
         tools: [{ googleSearch: {} }, { googleMaps: {} }] 
       }
     });
@@ -130,7 +136,6 @@ export const getQuickInsight = async (data: SleepRecord, lang: Language = 'zh'):
   }
 };
 
-// Added comment above fix: Export SleepExperiment interface and designExperiment function for ExperimentView.tsx
 export interface SleepExperiment {
   hypothesis: string;
   protocol: string[];
@@ -165,6 +170,7 @@ export const designExperiment = async (
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         systemInstruction,
+        thinkingConfig: { thinkingBudget: 4000 },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

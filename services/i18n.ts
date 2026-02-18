@@ -1,8 +1,8 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v19.0
- * Optimized for Semi-Open Source (Dual-Node) Architecture.
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v19.2
+ * Optimized for Semi-Open Source (Dual-Node) Strategy.
  */
 
 const BRAND_NAME = "SomnoAI Digital Sleep Lab";
@@ -32,6 +32,11 @@ const commonEn = {
       news: "RESEARCH",
       blog: "BLOG"
     }
+  },
+  about: {
+    visionTitle: "CORE VISION",
+    visionStatement: "SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep lab experience.",
+    missionLabel: "Project Mission"
   },
   dashboard: {
     status: "LINK NOMINAL",
@@ -152,7 +157,7 @@ const commonZh = {
   legal: {
     privacy: "隐私政策",
     terms: "服务条款",
-    opensource: "混合架构声明",
+    opensource: "混合架构隔离",
     license: "许可证协议"
   },
   landing: {
@@ -169,6 +174,11 @@ const commonZh = {
       news: "科研中心",
       blog: "实验室博客"
     }
+  },
+  about: {
+    visionTitle: "核心愿景",
+    visionStatement: "SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。",
+    missionLabel: "项目概述"
   },
   dashboard: {
     status: "神经链路已连接",

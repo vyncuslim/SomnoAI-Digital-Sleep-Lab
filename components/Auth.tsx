@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, Zap, Eye, EyeOff, 
@@ -36,11 +35,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const isLogin = activeTab === 'login';
 
   useEffect(() => {
-    // Protocol Guard: Validate Secure Context
+    // Protocol Guard: Validate Secure Context & Modern TLS expectation
     const secure = window.isSecureContext && window.location.protocol === 'https:';
-    setIsSecure(secure);
+    setIsSecure(secure || window.location.hostname === 'localhost');
+    
     if (!secure && window.location.hostname !== 'localhost') {
-      setError({ message: isZh ? "连接不安全：Google 登录需要 HTTPS 加密协议。请检查您的域名 SSL 配置。" : "Insecure Protocol: Google Login requires HTTPS. Check SSL configuration." });
+      setError({ 
+        message: isZh 
+          ? "检测到不安全协议：Google 身份验证要求严格的 HTTPS 加密。请点击下方修复按钮升级连接。" 
+          : "Protocol Mismatch: Google Auth requires a verified HTTPS handshake. Use the restore button below." 
+      });
     }
   }, [isZh]);
 
@@ -98,9 +102,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   };
 
   const handleGoogleLogin = async () => {
-    if (!isSecure && window.location.hostname !== 'localhost') {
-      window.location.href = window.location.href.replace('http:', 'https:');
-      return;
+    // Final Protocol Pre-flight
+    if (window.location.protocol === 'http:' && window.location.hostname !== 'localhost') {
+       window.location.href = window.location.href.replace('http:', 'https:');
+       return;
     }
     await authApi.signInWithGoogle();
   };
@@ -151,7 +156,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                   <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest">Protocol Warning</p>
                   <p className="text-xs text-rose-200 italic font-bold">Unsecured Handshake. Redirecting to HTTPS node...</p>
                </div>
-               <button onClick={() => window.location.href = window.location.href.replace('http:', 'https:')} className="ml-auto p-2 bg-rose-600 text-white rounded-xl active:scale-90 transition-all"><RefreshCw size={16} /></button>
+               <button onClick={() => window.location.href = window.location.href.replace('http:', 'https:')} className="ml-auto p-2 bg-rose-600 text-white rounded-xl active:scale-90 transition-all hover:bg-rose-500"><RefreshCw size={16} /></button>
             </m.div>
           )}
 

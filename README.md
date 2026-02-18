@@ -6,23 +6,32 @@
 
 ---
 
-## 🚀 Core Architecture
+## 🚀 Dual-Node Strategy (半开源架构)
 
-- **Neural Synthesis Engine**: Advanced multi-modal analysis of sleep architecture powered by Google Gemini models.
-- **Biometric Telemetry**: Real-time visualization of neurological recovery, heart rate stability, and metabolic load.
-- **Secure Edge Processing**: Zero-backend storage policy. All physiological data is processed in-browser.
+SomnoAI adopts a **"Strategic Physical Isolation"** model to balance community transparency with core intellectual property protection.
 
-## ⚖️ Semi-Open Strategy (Dual-Node)
+### 1. SomnoAI-frontend (Public Node)
+- **Status**: [PUBLIC] MIT License
+- **Scope**: UI/UX, data visualization, client-side routing, and Gemini API orchestration.
+- **Goal**: Provide a professional, high-performance interface for laboratory subjects.
 
-SomnoAI utilizes a **Hybrid Architecture** to balance transparency and research sovereignty:
+### 2. SomnoAI-core (Sovereign Node)
+- **Status**: [PRIVATE] Proprietary
+- **Scope**: Neural synthesis algorithms, proprietary prompt engineering, model weights, and sensitive data processing logic.
+- **Goal**: The "Engine" of SomnoAI. Protected to ensure long-term competitive advantage.
 
-- **Public UI Node (MIT License)**: Frontend source code, layout, and visualization components are public.
-- **Private Core Node (Proprietary)**: Deep neural synthesis logic, proprietary prompt engineering, and security audit protocols are managed in a private repository.
+### 3. SomnoAI-docs (Public Node)
+- **Status**: [PUBLIC]
+- **Scope**: Architecture diagrams, Whitepapers, and Protocol Documentation.
+- **Goal**: Strategic display of system capabilities.
 
-## 🛠️ Security
+---
 
-- **Environment Separation**: API keys and database credentials are NEVER hardcoded.
-- **Audit Logs**: All access events are logged via encrypted Supabase channels.
+## 🛠️ Security & Asset Management
+
+- **Zero-Key Policy**: No API Keys or database credentials are ever committed to the Public Node.
+- **Strict Git-Ignore**: All `.env`, `*.pt`, and `*.ckpt` files are physically restricted from the public stream.
+- **API Boundary**: The frontend interacts with the core through secure, authenticated neural relays.
 
 ---
 

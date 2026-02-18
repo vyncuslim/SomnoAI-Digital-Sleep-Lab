@@ -1,9 +1,8 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { 
-  Mic, MicOff, RefreshCw, Radio, Binary, 
-  Terminal as TerminalIcon, ShieldCheck, Activity, 
-  Zap, Loader2, Volume2, Globe, Heart
+  Mic, MicOff, Radio, Terminal as TerminalIcon, ShieldCheck, 
+  Zap, Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
@@ -14,8 +13,8 @@ import { Language, translations } from '../services/i18n.ts';
 const m = motion as any;
 
 /**
- * SOMNO LAB NEURAL VOICE BRIDGE v1.0
- * Strict implementation of Gemini Live API Protocols.
+ * SOMNO LAB NEURAL VOICE BRIDGE v1.1
+ * Refined implementation of Gemini Live API Protocols.
  */
 
 function encode(bytes: Uint8Array) {
@@ -79,9 +78,9 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
       sessionRef.current = null;
     }
     if (audioContextRef.current) {
-      audioContextRef.current.input.close();
-      audioContextRef.current.output.close();
-      audioContextRef.current.sources.forEach(s => s.stop());
+      audioContextRef.current.input.close().catch(() => {});
+      audioContextRef.current.output.close().catch(() => {});
+      audioContextRef.current.sources.forEach(s => { try { s.stop(); } catch(e) {} });
       audioContextRef.current = null;
     }
     setIsConnected(false);
@@ -134,7 +133,6 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
             scriptProcessor.connect(inputAudioContext.destination);
           },
           onmessage: async (message: LiveServerMessage) => {
-            // Transcription Handling
             if (message.serverContent?.outputTranscription) {
               setOutputTranscription(prev => prev + message.serverContent!.outputTranscription!.text);
             } else if (message.serverContent?.inputTranscription) {
@@ -147,7 +145,6 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
               setOutputTranscription("");
             }
 
-            // Audio Output Handling
             const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
             if (base64Audio) {
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContext.currentTime);
@@ -181,8 +178,7 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
           systemInstruction: `You are the SomnoAI Chief Research Officer. You are speaking to a laboratory subject in real-time. 
           Use biological telemetry context if available: ${bioBrief}. 
           Your tone is highly professional, efficient, and scientifically focused. 
-          Keep responses concise as this is a real-time voice bridge. 
-          Reply in ${lang === 'zh' ? 'Chinese' : 'English'}.`,
+          Keep responses concise. Reply in ${lang === 'zh' ? 'Chinese' : 'English'}.`,
         },
       });
 
@@ -209,7 +205,7 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
         <div className="flex items-center gap-4">
            <div className="hidden lg:flex items-center gap-3 px-6 py-3 bg-indigo-600/5 border border-white/5 rounded-full">
               <ShieldCheck size={14} className="text-indigo-400" />
-              <span className="text-[9px] font-black text-slate-600 uppercase">PROTOCOL_V2.5_VOICE</span>
+              <span className="text-[9px] font-black text-slate-600 uppercase">PROTOCOL_V3.0_LIVE</span>
            </div>
         </div>
       </header>
@@ -220,34 +216,19 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
         </div>
 
         <div className="flex-1 flex flex-col items-center justify-center p-10 space-y-12 relative z-10">
-           {/* Visualizer Core */}
            <div className="relative">
               <m.div 
                 animate={isConnected ? { 
-                  scale: [1, 1.2, 1],
-                  rotate: [0, 180, 360],
-                  borderRadius: ["40%", "50%", "40%"]
+                  scale: [1, 1.1, 1],
+                  rotate: [0, 90, 180, 270, 360],
                 } : {}}
-                transition={{ duration: 8, repeat: Infinity, ease: "linear" }}
-                className={`w-64 h-64 border-4 flex items-center justify-center transition-all duration-1000 ${isConnected ? 'border-emerald-500/30 shadow-[0_0_80px_rgba(16,185,129,0.2)]' : 'border-indigo-500/20 opacity-40'}`}
+                transition={{ duration: 15, repeat: Infinity, ease: "linear" }}
+                className={`w-64 h-64 border-2 flex items-center justify-center transition-all duration-1000 rounded-full ${isConnected ? 'border-emerald-500/30 shadow-[0_0_80px_rgba(16,185,129,0.2)]' : 'border-indigo-500/20 opacity-40'}`}
               >
-                 <div className={`w-32 h-32 rounded-full border-2 flex items-center justify-center ${isConnected ? 'border-emerald-400/40 animate-ping' : 'border-indigo-400/20'}`}>
+                 <div className={`w-32 h-32 rounded-full border-2 flex items-center justify-center ${isConnected ? 'border-emerald-400/40 animate-pulse' : 'border-indigo-400/20'}`}>
                     <Mic size={48} className={isConnected ? 'text-emerald-400' : 'text-slate-700'} />
                  </div>
               </m.div>
-              
-              <AnimatePresence>
-                {isConnected && (
-                  <m.div 
-                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="absolute -inset-10 pointer-events-none"
-                  >
-                    <svg width="100%" height="100%" viewBox="0 0 100 100">
-                       <circle cx="50" cy="50" r="48" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-emerald-500/10" strokeDasharray="2 2" />
-                    </svg>
-                  </m.div>
-                )}
-              </AnimatePresence>
            </div>
 
            <div className="text-center space-y-4">
@@ -255,32 +236,31 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
                 {isSyncing ? t.statusSyncing : isConnected ? t.statusActive : t.statusIdle}
               </p>
               <p className="text-xs text-slate-500 max-w-xs italic font-medium opacity-60">
-                {isConnected ? t.instruction : "Initialize biometric audio bridge to begin laboratory interaction."}
+                {isConnected ? t.instruction : "Initialize biometric audio bridge for real-time synthesis."}
               </p>
            </div>
 
-           {/* Live Telemetry Log */}
            <div className="w-full max-w-2xl bg-black/40 border border-white/5 rounded-[2.5rem] p-8 h-48 overflow-y-auto scrollbar-hide font-mono text-[10px] space-y-4 shadow-inner">
               <div className="flex items-center gap-2 border-b border-white/5 pb-2 text-slate-700 mb-4">
                  <TerminalIcon size={12} />
-                 <span className="uppercase tracking-widest">Live Telemetry Log</span>
+                 <span className="uppercase tracking-widest text-[9px]">Neural Pulse Log</span>
               </div>
               {transcription.map((line, i) => (
                 <m.div initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} key={i} className="flex gap-4">
-                   <span className="text-indigo-500 shrink-0">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
-                   <span className={line.startsWith('User') ? 'text-slate-400' : 'text-indigo-300 font-bold italic'}>{line}</span>
+                   <span className="text-indigo-500/50 shrink-0">[{new Date().toLocaleTimeString([], { hour12: false })}]</span>
+                   <span className={line.startsWith('User') ? 'text-slate-500' : 'text-indigo-400 font-bold italic'}>{line}</span>
                 </m.div>
               ))}
               {inputTranscription && (
                 <div className="flex gap-4 animate-pulse">
-                   <span className="text-emerald-500 shrink-0">[INPUT]</span>
-                   <span className="text-emerald-400 italic">{inputTranscription}...</span>
+                   <span className="text-emerald-500/50 shrink-0">[INPUT]</span>
+                   <span className="text-emerald-500/80 italic">{inputTranscription}...</span>
                 </div>
               )}
               {outputTranscription && (
                 <div className="flex gap-4 animate-pulse">
-                   <span className="text-indigo-500 shrink-0">[OUTPUT]</span>
-                   <span className="text-indigo-300 italic">{outputTranscription}...</span>
+                   <span className="text-indigo-500/50 shrink-0">[OUTPUT]</span>
+                   <span className="text-indigo-400 italic">{outputTranscription}...</span>
                 </div>
               )}
               <div ref={logEndRef} />
@@ -291,10 +271,10 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
            <button 
              onClick={isConnected ? disconnect : connect}
              disabled={isSyncing}
-             className={`px-16 py-7 rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-95 italic ${isConnected ? 'bg-rose-600 text-white hover:bg-rose-500' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30'}`}
+             className={`px-16 py-7 rounded-full font-black text-[12px] uppercase tracking-[0.4em] transition-all flex items-center justify-center gap-4 shadow-2xl active:scale-95 italic ${isConnected ? 'bg-rose-600 text-white hover:bg-rose-500 shadow-rose-600/20' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-600/30'}`}
            >
              {isSyncing ? <Loader2 size={18} className="animate-spin" /> : isConnected ? <MicOff size={18} /> : <Zap size={18} fill="currentColor" />}
-             {isSyncing ? 'HANDSHAKE...' : isConnected ? t.disconnect : t.connect}
+             {isSyncing ? 'SYNCING...' : isConnected ? t.disconnect : t.connect}
            </button>
         </div>
       </GlassCard>

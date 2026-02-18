@@ -1,7 +1,6 @@
-
 /**
- * SomnoAI Safe Navigation Utility (v105.1)
- * Optimized for DNS Stability, Clean URLs, and HTTPS Protocol Enforcement.
+ * SomnoAI Safe Navigation Utility (v105.2)
+ * Optimized for DNS Stability, Clean URLs, and Strict HTTPS Protocol Enforcement.
  */
 
 export const getSafeUrl = (): string => {
@@ -60,13 +59,14 @@ export const getSafeHash = (): string => {
 
 /**
  * Executes a clean URL transition using the History API.
- * Includes explicit HTTPS enforcement for production nodes.
+ * Includes explicit HTTPS enforcement for production nodes to fix ERR_SSL issues.
  */
 export const safeNavigatePath = (path: string) => {
   if (typeof window === 'undefined') return;
 
   // Protocol Enforcement for Production
   if (window.location.hostname !== 'localhost' && window.location.protocol === 'http:') {
+     console.warn("Unsecured Node Detected. Upgrading connection...");
      window.location.replace(window.location.href.replace('http:', 'https:'));
      return;
   }
