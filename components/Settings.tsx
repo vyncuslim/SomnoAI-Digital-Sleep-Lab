@@ -25,11 +25,6 @@ export const Settings: React.FC<SettingsProps> = ({
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
   
-  // API Key State
-  const [apiKey, setApiKey] = useState(() => localStorage.getItem('custom_gemini_key') || '');
-  const [showApiKey, setShowApiKey] = useState(false);
-  const [keyCommitStatus, setKeyCommitStatus] = useState<'idle' | 'success'>('idle');
-
   const t = translations[lang]?.settings || translations.en.settings;
   const isZh = lang === 'zh';
 
@@ -45,13 +40,6 @@ export const Settings: React.FC<SettingsProps> = ({
     navigator.clipboard.writeText(text);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
-  };
-
-  const handleCommitKey = (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    localStorage.setItem('custom_gemini_key', apiKey.trim());
-    setKeyCommitStatus('success');
-    setTimeout(() => setKeyCommitStatus('idle'), 2000);
   };
 
   const socialLinks = [
@@ -125,53 +113,6 @@ export const Settings: React.FC<SettingsProps> = ({
                     </button>
                   ))}
                </div>
-            </div>
-
-            {/* Neural API Key Section */}
-            <div className="space-y-6 pt-4 border-t border-white/5">
-              <div className="space-y-1">
-                <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic px-2">{t.apiKeyLabel}</span>
-                <p className="text-[9px] text-slate-700 italic px-2">Override default Gemini API credits with your private laboratory key.</p>
-              </div>
-              
-              <form onSubmit={handleCommitKey} className="space-y-6">
-                <div className="relative group">
-                  <div className="absolute left-8 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-400 transition-colors">
-                    <Key size={20} />
-                  </div>
-                  <input 
-                    type={showApiKey ? "text" : "password"}
-                    value={apiKey}
-                    onChange={(e) => setApiKey(e.target.value)}
-                    placeholder={t.apiKeyPlaceholder}
-                    className="w-full bg-slate-950 border border-white/5 rounded-full pl-18 pr-20 py-7 text-sm text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800"
-                  />
-                  <button 
-                    type="button" 
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-8 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors active:scale-90"
-                  >
-                    {showApiKey ? <EyeOff size={22} /> : <Eye size={22} />}
-                  </button>
-                </div>
-                
-                <button 
-                  type="submit"
-                  className={`w-full py-6 rounded-full font-black text-[11px] uppercase tracking-[0.4em] transition-all italic flex items-center justify-center gap-3 shadow-2xl ${keyCommitStatus === 'success' ? 'bg-emerald-600 text-white' : 'bg-indigo-600 text-white hover:bg-indigo-500 shadow-indigo-900/20 active:scale-95'}`}
-                >
-                  <AnimatePresence mode="wait">
-                    {keyCommitStatus === 'success' ? (
-                      <m.div key="check" initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex items-center gap-2">
-                        <Check size={18} /> SYNC SUCCESS
-                      </m.div>
-                    ) : (
-                      <m.div key="link" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2">
-                        <ShieldCheck size={18} /> {t.apiKeyCommit}
-                      </m.div>
-                    )}
-                  </AnimatePresence>
-                </button>
-              </form>
             </div>
 
             {/* Network Presence Matrix */}

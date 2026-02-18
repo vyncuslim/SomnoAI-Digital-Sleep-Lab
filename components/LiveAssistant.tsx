@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   Mic, MicOff, Radio, Terminal as TerminalIcon, ShieldCheck, 
@@ -92,10 +91,10 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
     setIsSyncing(true);
     
     try {
-      const apiKey = process.env.API_KEY;
-      if (!apiKey) throw new Error("API_KEY_VOID");
-
-      const ai = new GoogleGenAI({ apiKey });
+      /**
+       * FIXED: Guidelines enforce exclusive process.env.API_KEY usage with named parameters.
+       */
+      const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
       const inputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 16000 });
       const outputAudioContext = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
       const sources = new Set<AudioBufferSourceNode>();
@@ -125,6 +124,7 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
                 mimeType: 'audio/pcm;rate=16000',
               };
 
+              // CRITICAL: Initiating send after sessionPromise resolves
               sessionPromise.then((session) => {
                 session.sendRealtimeInput({ media: pcmBlob });
               });

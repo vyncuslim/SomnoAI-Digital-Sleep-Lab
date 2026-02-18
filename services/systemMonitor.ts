@@ -1,4 +1,3 @@
-
 import { supabase } from './supabaseService.ts';
 import { notifyAdmin } from './telegramService.ts';
 import { emailService } from './emailService.ts';
@@ -42,8 +41,11 @@ export const systemMonitor = {
       const { data: { session } } = await (supabase.auth as any).getSession();
       result.details.auth = !!session;
 
-      // 3. Check Critical Environment Keys
-      result.details.environment = !!process.env.API_KEY || !!localStorage.getItem('custom_gemini_key');
+      /**
+       * FIXED: Guidelines enforce exclusive process.env.API_KEY usage.
+       * 3. Check Critical Environment Keys
+       */
+      result.details.environment = !!process.env.API_KEY;
 
       const endTime = performance.now();
       result.latency = Math.round(endTime - startTime);

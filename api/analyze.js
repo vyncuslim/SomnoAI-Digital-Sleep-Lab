@@ -1,4 +1,3 @@
-
 /**
  * SOMNO LAB - VERTEX AI SECURE BRIDGE v1.3
  * Enhanced diagnostics and environment validation.
@@ -43,8 +42,12 @@ export default async function handler(req, res) {
 
     const client = await auth.getClient();
     const location = process.env.GCP_LOCATION || "us-central1";
-    // Standardize on 'gemini-3-pro-preview' for complex biological analysis tasks
-    const targetModel = modelId || process.env.VERTEX_MODEL_ID || "gemini-3-pro-preview";
+    
+    /**
+     * FIXED: Production path requirement: avoid preview models.
+     * Defaulting to Gemini 2.5 Pro for biological telemetry synthesis.
+     */
+    const targetModel = modelId || process.env.VERTEX_MODEL_ID || "gemini-2.5-pro";
     
     // Determine URL based on model type
     const url = targetModel.includes('/') 

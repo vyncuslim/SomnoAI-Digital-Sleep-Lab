@@ -1,10 +1,9 @@
-
 import React, { useState, useEffect } from 'react';
 import { SleepRecord, SyncStatus } from '../types.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  RefreshCw, Brain, Heart, Zap, Activity, ArrowRight, Target, ShieldCheck, ChevronRight, MessageCircle, ExternalLink, FlaskConical
+  RefreshCw, Brain, Heart, Zap, Activity, ArrowRight, Target, ShieldCheck, ChevronRight, MessageCircle, ExternalLink, FlaskConical, Smartphone
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { getQuickInsight } from '../services/geminiService.ts';
@@ -160,7 +159,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
           <GlassCard className="p-5 rounded-[2rem] border-transparent bg-indigo-600 text-white flex flex-col justify-between shadow-lg relative overflow-hidden" intensity={1.5}>
             <div className="space-y-3 relative z-10">
               <div className="w-8 h-8 bg-white/10 rounded-lg flex items-center justify-center shadow-md border border-white/20 backdrop-blur-xl">
-                <RefreshCw size={14} className={isProcessing ? 'animate-spin' : ''} />
+                <Smartphone size={14} className={isProcessing ? 'animate-pulse' : ''} />
               </div>
               <div className="space-y-0.5">
                 <h3 className="text-base md:text-lg font-black italic uppercase tracking-tighter leading-none">{t.syncTitle}</h3>
@@ -178,7 +177,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
           <div className="grid grid-cols-2 gap-3">
              <GlassCard 
-               // Correct the undefined 'navigate' call to 'onNavigate' provided in props
                onClick={() => onNavigate?.('blog')}
                className="p-3.5 rounded-2xl border-indigo-500/10 bg-[#5865F2]/5 hover:bg-[#5865F2]/10 cursor-pointer transition-all flex flex-col justify-between h-[85px] group overflow-hidden"
              >

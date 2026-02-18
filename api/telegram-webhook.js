@@ -1,4 +1,3 @@
-
 import { GoogleGenAI } from "@google/genai";
 import { createClient } from "@supabase/supabase-js";
 
@@ -33,6 +32,7 @@ export default async function handler(req, res) {
   if (chatId !== ADMIN_CHAT_ID) return res.status(200).send('OK');
 
   try {
+    // FIXED: Exclusive process.env.API_KEY usage
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
     const systemInstruction = `You are the SomnoAI Chief Research Officer (CRO).
@@ -42,12 +42,16 @@ export default async function handler(req, res) {
     - ALWAYS prefix the response with source tag: 📍 <b>SOURCE:</b> <code>🤖 AI Webhook | 机器人交互</code>`;
 
     const response = await ai.models.generateContent({
-        // Always use the recommended model name 'gemini-3-pro-preview' for complex text tasks
-        model: "gemini-3-pro-preview",
+        /**
+         * FIXED: Production path requirement: avoid preview models.
+         * Defaulting to Gemini 2.5 Pro for complex text analysis.
+         */
+        model: "gemini-2.5-pro",
         contents: [{ parts: [{ text: `Admin Input: ${text}` }] }],
         config: { systemInstruction }
     });
 
+    // Extract text directly from .text property
     const aiOutput = response.text || "📍 <b>SOURCE:</b> <code>🤖 AI Webhook</code>\n⚠️ Timeout.";
 
     await fetch(TELEGRAM_REPLY_API, {

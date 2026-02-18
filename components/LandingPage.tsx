@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  ArrowRight, LogIn, Command, ShieldCheck, Newspaper, FlaskConical, HelpCircle, Info, Play, Activity, BrainCircuit, Zap, Microscope, LayoutGrid,
-  Github, Linkedin, Instagram, Facebook, Youtube, Video, MessageSquare, Globe, UserCircle, Share2, ExternalLink
+  ArrowRight, LogIn, Command, ShieldCheck, Newspaper, FlaskConical, HelpCircle, Info, Activity, BrainCircuit, Zap, Microscope, LayoutGrid,
+  Github, Linkedin, Instagram, Facebook, Youtube, Video, MessageSquare, Globe, UserCircle, Share2, ExternalLink, Watch, Smartphone, Cpu, Binary
 } from 'lucide-react';
 import { Logo } from './Logo.tsx';
 import { Language, translations } from '../services/i18n.ts';
@@ -45,6 +45,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
     { label: t.nav.news, view: 'news', icon: Newspaper },
     { label: t.nav.faq, view: 'faq', icon: HelpCircle },
     { label: t.nav.project, view: 'about', icon: Info },
+  ];
+
+  const pillars = [
+    { 
+      icon: Watch, 
+      title: t.pillars.telemetry.title, 
+      desc: t.pillars.telemetry.desc,
+      color: 'text-emerald-400',
+      bg: 'bg-emerald-500/10',
+      tag: 'WEARABLE_READY'
+    },
+    { 
+      icon: Binary, 
+      title: t.pillars.synthesis.title, 
+      desc: t.pillars.synthesis.desc,
+      color: 'text-indigo-400',
+      bg: 'bg-indigo-500/10',
+      tag: 'AI_ALGORITHMIC'
+    },
+    { 
+      icon: Smartphone, 
+      title: t.pillars.protocols.title, 
+      desc: t.pillars.protocols.desc,
+      color: 'text-rose-400',
+      bg: 'bg-rose-500/10',
+      tag: 'CLOUD_HANDSHAKE'
+    }
   ];
 
   const socialMatrix = [
@@ -91,18 +118,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </div>
       </nav>
 
-      {/* Hero */}
+      {/* Hero Section */}
       <section className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-56 pb-40 min-h-screen">
         <NeuralPulseBackground />
         <div className="max-w-7xl space-y-16 relative z-10">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-4 px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full shadow-2xl">
-            <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Neural Engine v2.9 Active</span>
+            <Watch size={14} className="text-indigo-400 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Hardware-Neutral Protocol v4.0</span>
           </m.div>
 
           <div className="space-y-4">
-            <m.h1 initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }} className="text-7xl sm:text-9xl md:text-[11rem] lg:text-[13rem] font-black text-white italic tracking-tighter leading-[0.8] uppercase">Engineer.</m.h1>
-            <m.h1 initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.2 }} className="text-7xl sm:text-9xl md:text-[11rem] lg:text-[14rem] font-black text-indigo-600 italic tracking-tighter leading-[0.8] uppercase">Recovery.</m.h1>
+            <m.h1 initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }} className="text-7xl sm:text-9xl md:text-[11rem] lg:text-[12rem] font-black text-white italic tracking-tighter leading-[0.8] uppercase">Zero.</m.h1>
+            <m.h1 initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.2 }} className="text-7xl sm:text-9xl md:text-[11rem] lg:text-[13rem] font-black text-indigo-600 italic tracking-tighter leading-[0.8] uppercase">Hardware.</m.h1>
           </div>
 
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="max-w-4xl mx-auto">
@@ -117,6 +144,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
               <Command size={20} className="text-indigo-400" /> {t.ctaSecondary}
             </m.button>
           </m.div>
+        </div>
+      </section>
+
+      {/* Pillars Section - UPGRADED */}
+      <section className="relative z-10 py-40 px-6 border-y border-white/5 bg-slate-950/40">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-8">
+           {pillars.map((p, idx) => (
+             <GlassCard key={idx} className="p-12 rounded-[4rem] border-white/5 space-y-8 group relative overflow-hidden" intensity={1.2}>
+                <div className="absolute top-8 right-8 text-[8px] font-black text-slate-800 tracking-widest">{p.tag}</div>
+                <div className={`p-5 rounded-3xl w-fit ${p.bg} ${p.color} group-hover:scale-110 transition-transform`}>
+                   <p.icon size={36} />
+                </div>
+                <div className="space-y-4">
+                   <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">{p.title}</h3>
+                   <p className="text-slate-500 text-lg leading-relaxed italic font-bold opacity-80">{p.desc}</p>
+                </div>
+             </GlassCard>
+           ))}
         </div>
       </section>
 
@@ -145,7 +190,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                 className="p-8 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all group cursor-pointer relative overflow-hidden h-full flex flex-col justify-between"
                 intensity={1.2}
               >
-                {/* Brand Color Glow on Hover */}
                 <div 
                   className="absolute inset-0 opacity-0 group-hover:opacity-[0.03] transition-opacity pointer-events-none"
                   style={{ backgroundColor: node.color }}

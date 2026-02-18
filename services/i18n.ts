@@ -1,7 +1,8 @@
 export type Language = 'en' | 'zh' | 'es';
 
 /**
- * SOMNO LAB NEURAL LINGUISTICS ENGINE v19.7
+ * SOMNO LAB NEURAL LINGUISTICS ENGINE v21.0
+ * Core Philosophy: Zero Hardware. AI Transformation. Mobile-to-Web Sync.
  */
 
 const BRAND_NAME = "SomnoAI Digital Sleep Lab";
@@ -14,44 +15,44 @@ const commonEn = {
   legal: {
     privacy: "Privacy",
     terms: "Terms",
-    opensource: "Hybrid Architecture",
+    opensource: "Architecture",
     license: "License Protocol"
   },
   landing: {
-    heroTitle: "ENGINEER RECOVERY",
-    heroSubtitle: "SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep lab experience.",
+    heroTitle: "ZERO HARDWARE. ELITE INTELLIGENCE.",
+    heroSubtitle: "Transform your existing smartwatch into a high-performance biometric lab. We use Health Connect and Gemini AI to give your gear the power of a professional smart ring.",
     ctaPrimary: "START OPTIMIZATION",
-    ctaSecondary: "WATCH PROTOCOL",
+    ctaSecondary: "VIEW ARCHITECTURE",
     nav: {
-      science: "PROTOCOL",
+      science: "SCIENCE",
       faq: "LOGS FAQ",
-      project: "ABOUT",
+      project: "PHILOSOPHY",
       support: "SUPPORT",
       enter: "ENTER LAB",
       news: "RESEARCH",
       blog: "BLOG"
     },
     pillars: {
-      telemetry: { title: "BIO TELEMETRY", desc: "Real-time synchronization of heart rate, HRV, and movement entropy." },
-      synthesis: { title: "GEMINI SYNTHESIS", desc: "Advanced neural models decode complex recovery patterns." },
-      protocols: { title: "RECOVERY PROTOCOLS", desc: "Tailored 3-day experiments for optimal neurological restoration." }
+      telemetry: { title: "HARDWARE NEUTRAL", desc: "No specific trackers required. Use your existing Apple or Android wearables via Health Connect." },
+      synthesis: { title: "VIRTUAL RING ENGINE", desc: "Our AI transforms standard sensor data into the diagnostic depth of a smart ring." },
+      protocols: { title: "MOBILE-TO-WEB BRIDGE", desc: "Local telemetry is aggregated via our mobile app and synced to your web dashboard." }
     }
   },
   about: {
-    visionTitle: "CORE VISION",
-    visionStatement: "SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep lab experience.",
+    visionTitle: "OUR PHILOSOPHY",
+    visionStatement: "To democratize elite health diagnostics by proving that the most powerful ring is the AI code running behind your existing watch.",
     missionLabel: "Project Mission"
   },
   dashboard: {
-    status: "LINK NOMINAL",
+    status: "NODE NOMINAL",
     scoreLabel: "Recovery Rating",
     scoreStatus: "Optimal Restoration",
     stagingTitle: "Neural Architecture",
     stagingQuote: "AI synthesis detects a robust circadian alignment, suggesting high-performance neurological recovery protocols are active.",
-    syncTitle: "Signal Sync",
-    syncDesc: "Execute full biological telemetry handshake.",
-    syncButton: "EXECUTE SIGNAL",
-    syncingButton: "SYNCING...",
+    syncTitle: "Mobile Sync",
+    syncDesc: "Pulling telemetry from your Mobile App bridge.",
+    syncButton: "SYNC FROM MOBILE NODE",
+    syncingButton: "PULLING DATA...",
   },
   assistant: {
     intro: "Neural link established. Chief Research Officer online. How shall we optimize your recovery protocol today?",
@@ -148,44 +149,44 @@ const commonZh = {
   legal: {
     privacy: "隐私政策",
     terms: "服务条款",
-    opensource: "混合架构隔离",
+    opensource: "架构体系",
     license: "许可证协议"
   },
   landing: {
-    heroTitle: "工程级 恢复方案",
-    heroSubtitle: "SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。",
+    heroTitle: "零成本硬件。纯 AI 洞察。",
+    heroSubtitle: "将您现有的智能手表转化为高性能生物实验室。利用 Health Connect 与 Gemini AI，赋予您的设备以专业智能戒指般的分析能力。",
     ctaPrimary: "开始优化",
-    ctaSecondary: "科学协议",
+    ctaSecondary: "查看架构",
     nav: {
-      science: "科学协议",
+      science: "科学架构",
       faq: "实验室 FAQ",
-      project: "关于项目",
+      project: "品牌哲学",
       support: "技术支持",
       enter: "进入实验室",
       news: "科研中心",
       blog: "实验室博客"
     },
     pillars: {
-      telemetry: { title: "生物遥测", desc: "实时同步心率、HRV 与体动熵值。" },
-      synthesis: { title: "神经合成", desc: "通过 Gemini 高级模型解码复杂的恢复模式。" },
-      protocols: { title: "恢复协议", desc: "定制化的 3 日实验方案，实现最佳神经系统修复。" }
+      telemetry: { title: "硬件中立性", desc: "无需购买特定设备。支持 Apple 或 Android（通过 Health Connect）现有的各种可穿戴设备。" },
+      synthesis: { title: "数字戒指引擎", desc: "AI 算法赋予您的手表以顶级智能戒指（如 Oura）般的诊断深度。" },
+      protocols: { title: "移动-Web 桥接", desc: "通过移动 App 聚合 Health Connect 数据，并无缝同步至您的 Web 控制台。" }
     }
   },
   about: {
-    visionTitle: "核心愿景",
-    visionStatement: "SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。",
+    visionTitle: "品牌哲学",
+    visionStatement: "让精英级健康诊断普适化。我们相信最强大的“戒指”是运行在您手表背后的 AI 代码。",
     missionLabel: "项目概述"
   },
   dashboard: {
-    status: "神经链路已连接",
+    status: "节点正常",
     scoreLabel: "恢复评分",
     scoreStatus: "最佳修复状态",
     stagingTitle: "神经架构",
-    stagingQuote: "AI 模型检测到强劲的深睡/REM 节奏，显示高水平的神经系统恢复效率。",
-    syncTitle: "全域同步",
-    syncDesc: "执行完整的生物指标握手协议。",
-    syncButton: "执行同步",
-    syncingButton: "同步中...",
+    stagingQuote: "AI 模型检测到强劲的昼夜节律对齐，显示高水平的神经系统恢复效率。",
+    syncTitle: "移动同步",
+    syncDesc: "从移动 App 桥接器获取遥测数据。",
+    syncButton: "从移动节点同步",
+    syncingButton: "正在拉取数据...",
   },
   voice: {
     title: "神经语音链路",

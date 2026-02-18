@@ -9,17 +9,16 @@ export interface BiologicalReport {
 }
 
 const getAIClient = () => {
-  // Prioritize custom user key from settings, fallback to system environment key
-  const customKey = typeof localStorage !== 'undefined' ? localStorage.getItem('custom_gemini_key') : null;
-  const apiKey = customKey || process.env.API_KEY;
-  
-  if (!apiKey) throw new Error("API_KEY_VOID");
-  return new GoogleGenAI({ apiKey });
+  /**
+   * FIXED: Guidelines enforce exclusive use of process.env.API_KEY.
+   * Assume pre-configured and valid.
+   */
+  return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
 
-// Updated model constants to latest recommended versions
-const MODEL_PRO = 'gemini-3-pro-preview';
-const MODEL_FLASH = 'gemini-3-flash-preview';
+// Use stable production models instead of previews for system logic paths
+const MODEL_PRO = 'gemini-2.5-pro';
+const MODEL_FLASH = 'gemini-2.5-flash';
 
 /**
  * 核心功能：对多日睡眠数据进行深度趋势分析
@@ -67,6 +66,7 @@ export const analyzeBiologicalTrends = async (
         }
       }
     });
+    // Access .text property directly (not a method)
     return JSON.parse(response.text || "{}") as BiologicalReport;
   } catch (err) {
     console.error("Neural Analysis Failed:", err);
@@ -132,6 +132,7 @@ export const getQuickInsight = async (data: SleepRecord, lang: Language = 'zh'):
         responseSchema: { type: Type.ARRAY, items: { type: Type.STRING } }
       }
     });
+    // Access .text property directly
     return JSON.parse(response.text || "[]");
   } catch {
     return ["正在同步神经链路..."];
@@ -185,6 +186,7 @@ export const designExperiment = async (
         }
       }
     });
+    // Access .text property directly
     return JSON.parse(response.text || "{}") as SleepExperiment;
   } catch (err) {
     console.error("Experiment Synthesis Failure:", err);
