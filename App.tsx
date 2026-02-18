@@ -78,6 +78,10 @@ const AppContent: React.FC = () => {
       const cleanPath = pathname.toLowerCase().split('?')[0].replace(/\/+/g, '/').replace(/\/+$/, '');
       const segments = cleanPath.split('/').filter(Boolean);
       
+      // Admin Priority Catch
+      if (segments.includes('admin')) return 'admin';
+      if (segments.includes('admin-login')) return 'admin-login';
+
       if (segments.includes('article') || segments.includes('news')) {
         const idx = segments.indexOf('article') !== -1 ? segments.indexOf('article') : segments.indexOf('news');
         const slug = segments[idx + 1];
@@ -91,7 +95,8 @@ const AppContent: React.FC = () => {
       }
 
       if (segments.includes('blog')) {
-        const slug = segments[segments.indexOf('blog') + 1];
+        const slugIdx = segments.indexOf('blog') + 1;
+        const slug = segments[slugIdx];
         if (slug) {
           const found = MOCK_BLOG_POSTS.find(p => p.slug === slug);
           if (found) {
@@ -126,8 +131,6 @@ const AppContent: React.FC = () => {
         'contact': 'contact',
         'feedback': 'feedback',
         'opensource': 'opensource',
-        'admin': 'admin',
-        'admin-login': 'admin-login',
         '404': 'not-found'
       };
 
@@ -164,6 +167,7 @@ const AppContent: React.FC = () => {
   useEffect(() => {
     if (!loading) {
       const currentLoc = resolveViewFromLocation();
+      // Only redirect standard landing/login/signup to dashboard if logged in
       if (profile && ['landing', 'login', 'signup'].includes(currentLoc)) {
         navigate('dashboard');
       } else {
@@ -175,8 +179,8 @@ const AppContent: React.FC = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center gap-6">
-         <Logo size={80} animated={true} />
-         <div className="text-[10px] font-black uppercase tracking-[0.6em] text-indigo-500/40 animate-pulse">Synchronizing Lab Pulse...</div>
+         <Logo size={60} animated={true} />
+         <div className="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-500/40 animate-pulse">Synchronizing Terminal...</div>
       </div>
     );
   }
@@ -198,6 +202,11 @@ const AppContent: React.FC = () => {
       case 'login': return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
       case 'signup': return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
       case 'admin-login': return <AdminLoginPage />;
+      case 'admin': return (
+        <ProtectedRoute level="admin">
+          <AdminView onBack={() => navigate('dashboard')} />
+        </ProtectedRoute>
+      );
       case 'contact': return <ContactView lang={lang} onBack={() => navigate('about')} />;
       case 'feedback': return <FeedbackView lang={lang} onBack={() => navigate('support')} />;
       case 'not-found': return <NotFoundView />;
@@ -205,7 +214,7 @@ const AppContent: React.FC = () => {
     }
   };
 
-  const isStandaloneView = ['landing', 'science', 'faq', 'about', 'support', 'privacy', 'terms', 'login', 'signup', 'admin-login', 'opensource', 'contact', 'feedback', 'not-found', 'news', 'article', 'blog', 'blog-post'].includes(activeView);
+  const isStandaloneView = ['landing', 'science', 'faq', 'about', 'support', 'privacy', 'terms', 'login', 'signup', 'admin-login', 'opensource', 'contact', 'feedback', 'not-found', 'news', 'article', 'blog', 'blog-post', 'admin'].includes(activeView);
 
   if (isStandaloneView) {
     return (
@@ -217,7 +226,7 @@ const AppContent: React.FC = () => {
   }
 
   if (!profile) return <LandingPage lang={lang} onNavigate={navigate} />;
-  if (!profile.full_name && !['settings', 'registry'].includes(activeView)) return <FirstTimeSetup onComplete={refresh} />;
+  if (!profile.full_name && !['settings', 'registry', 'admin'].includes(activeView)) return <FirstTimeSetup onComplete={refresh} />;
 
   const navItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: lang === 'zh' ? '实验室' : 'Lab' },
@@ -232,54 +241,54 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200 selection:bg-indigo-500/30">
-      <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 px-6 md:px-12 h-16 md:h-20 flex items-center justify-between shadow-2xl">
-        <div className="flex items-center gap-12">
-          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('dashboard')}>
-            <Logo size={36} animated={true} />
+      <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 px-4 md:px-8 h-16 flex items-center justify-between shadow-2xl">
+        <div className="flex items-center gap-6 md:gap-10">
+          <div className="flex items-center gap-3 cursor-pointer group" onClick={() => navigate('dashboard')}>
+            <Logo size={30} animated={true} />
             <div className="flex flex-col text-left">
-              <span className="text-lg md:text-xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
-              <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Sleep Lab</span>
+              <span className="text-base font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
+              <span className="text-[5px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Lab</span>
             </div>
           </div>
-          <nav className="hidden lg:flex items-center gap-8">
+          <nav className="hidden lg:flex items-center gap-6">
             {navItems.map(item => (
               <button 
                 key={item.id} 
                 onClick={() => navigate(item.id)}
-                className={`group relative text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 italic ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
+                className={`group relative text-[8px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-1.5 italic ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
               >
-                <item.icon size={14} className={activeView === item.id ? 'animate-pulse' : ''} /> 
+                <item.icon size={12} className={activeView === item.id ? 'animate-pulse' : ''} /> 
                 {item.label}
                 {activeView === item.id && (
-                  <m.div layoutId="nav-glow" className="absolute -bottom-8 left-0 right-0 h-[1.5px] bg-indigo-500 shadow-[0_0_10px_#6366f1]" />
+                  <m.div layoutId="nav-glow" className="absolute -bottom-6 left-0 right-0 h-[1.5px] bg-indigo-500 shadow-[0_0_10px_#6366f1]" />
                 )}
               </button>
             ))}
             {isAdmin && (
               <button 
                 onClick={() => navigate('admin')}
-                className={`group relative text-[9px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 italic ${activeView === 'admin' ? 'text-rose-400' : 'text-slate-500 hover:text-rose-400'}`}
+                className={`group relative text-[8px] font-black uppercase tracking-[0.1em] transition-all flex items-center gap-1.5 italic ${activeView === 'admin' ? 'text-rose-400' : 'text-slate-500 hover:text-rose-400'}`}
               >
-                <Shield size={14} /> ADMIN
+                <Shield size={12} /> ADMIN
               </button>
             )}
           </nav>
         </div>
-        <div className="flex items-center gap-3 md:gap-4">
-          <button onClick={() => navigate('registry')} className={`p-3 rounded-xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10 shadow-xl'}`}>
-            <User size={16} />
+        <div className="flex items-center gap-2">
+          <button onClick={() => navigate('registry')} className={`p-2 rounded-lg transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
+            <User size={14} />
           </button>
-          <button onClick={() => navigate('settings')} className={`p-3 rounded-xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10 shadow-xl'}`}>
-            <SettingsIcon size={16} />
+          <button onClick={() => navigate('settings')} className={`p-2 rounded-lg transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
+            <SettingsIcon size={14} />
           </button>
-          <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 transition-all shadow-xl active:scale-90">
-            <LogOut size={16} />
+          <button onClick={() => setIsExitModalOpen(true)} className="p-2 bg-rose-500/10 border border-rose-500/20 rounded-lg text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90">
+            <LogOut size={14} />
           </button>
         </div>
       </header>
-      <main className="flex-1 w-full max-w-6xl mx-auto p-4 md:p-6 pt-24 md:pt-28 pb-16 relative">
+      <main className="flex-1 w-full max-w-5xl mx-auto p-4 md:p-6 pt-20 pb-16 relative">
         <AnimatePresence mode="wait">
-          <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.01 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
+          <m.div key={activeView} initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.01 }} transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}>
             {activeView === 'dashboard' && <Dashboard data={currentRecord} lang={lang} onNavigate={navigate} />}
             {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
             {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
@@ -288,11 +297,6 @@ const AppContent: React.FC = () => {
             {activeView === 'diary' && <DiaryView lang={lang} />}
             {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => setIsExitModalOpen(true)} onNavigate={navigate} />}
             {activeView === 'registry' && <UserProfile lang={lang} />}
-            {activeView === 'admin' && (
-              <ProtectedRoute level="admin">
-                <AdminView onBack={() => navigate('dashboard')} />
-              </ProtectedRoute>
-            )}
           </m.div>
         </AnimatePresence>
       </main>
