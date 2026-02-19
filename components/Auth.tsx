@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { 
   Loader2, Zap, Eye, EyeOff, 
-  Chrome, AlertCircle, Mail, Lock, User, Clock, Info, ShieldCheck, RefreshCw, Terminal, ArrowRight, ShieldAlert, Key, CheckCircle2, Send, Fingerprint, Activity
+  Chrome, AlertCircle, Mail, Lock, User, Clock, Info, ShieldCheck, RefreshCw, Terminal, ArrowRight, ShieldAlert, Key, CheckCircle2, Send, Fingerprint, Activity, Radio
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Logo } from './Logo.tsx';
@@ -40,13 +40,13 @@ const LabVisualSide = ({ isZh }: { isZh: boolean }) => (
             <Activity size={16} className="text-indigo-400 animate-pulse" />
             <span className="text-[11px] font-black uppercase text-indigo-400 tracking-[0.5em] italic">Identity Calibration Ingress</span>
          </div>
-         <h1 className="text-[7rem] md:text-[10rem] font-black italic tracking-tighter text-white uppercase leading-[0.78] drop-shadow-[0_20px_80px_rgba(0,0,0,0.8)]">
-           Code is<br/><span className="text-indigo-600">The Ring</span>
+         <h1 className="text-[6.5rem] md:text-[9rem] font-black italic tracking-tighter text-white uppercase leading-[0.78] drop-shadow-[0_20px_80px_rgba(0,0,0,0.8)]">
+           SomnoAI<br/><span className="text-indigo-600">Sleep Lab</span>
          </h1>
       </div>
       
-      <p className="text-3xl text-slate-500 font-bold italic max-w-xl leading-relaxed border-l-8 border-indigo-600/40 pl-12 py-6">
-         {isZh ? "SomnoAI 解构生物遥测。我们认为，最强大的戒指是不存在的戒指。" : "Decoding biological telemetry. We believe the most powerful ring is the one you don't have to wear."}
+      <p className="text-2xl text-slate-500 font-bold italic max-w-xl leading-relaxed border-l-8 border-indigo-600/40 pl-12 py-6">
+         {isZh ? "解构生物遥测。我们认为，最强大的戒指是不存在的戒指。代码即是我们的核心。" : "Decoding biological telemetry. We believe the most powerful ring is the one you don't have to wear. Code is our core."}
       </p>
       
       <div className="flex items-center gap-16 opacity-20 pt-10">
@@ -56,7 +56,7 @@ const LabVisualSide = ({ isZh }: { isZh: boolean }) => (
          </div>
          <div className="flex items-center gap-4 group">
             <Terminal size={32} className="text-indigo-400 group-hover:scale-110 transition-transform" />
-            <span className="text-xs font-black text-white uppercase tracking-[0.3em]">PROTO_NODE_v4.8</span>
+            <span className="text-xs font-black text-white uppercase tracking-[0.3em]">PROTO_NODE_v4.2</span>
          </div>
       </div>
     </m.div>
@@ -128,7 +128,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       } else if (activeTab === 'signup') {
         const { data, error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, turnstileToken || undefined);
         if (signUpErr) throw signUpErr;
-        setSuccessMsg(isZh ? `同步码已发送至：${email}` : `Sync token dispatched to: ${email}`);
+        
+        // 明确通知 OTP 已发送
+        setSuccessMsg(isZh ? `验证令牌已分发至：${email}` : `Validation token dispatched to: ${email}`);
         setActiveTab('otp');
         setOtpCooldown(60);
         setTimeout(() => otpRefs.current[0]?.focus(), 150);
@@ -153,7 +155,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     try {
       const { error: resendErr } = await (authApi as any).resend(email.trim(), 'signup');
       if (resendErr) throw resendErr;
-      setSuccessMsg(isZh ? "验证信号已重新发射。" : "Verification signal re-dispatched.");
+      setSuccessMsg(isZh ? "令牌已重新分发。" : "Token re-dispatched.");
       setOtpCooldown(60);
       logAuditLog('OTP_RESEND_REQUEST', `Node: ${email}`, 'INFO');
     } catch (err: any) {
@@ -220,7 +222,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
             <AnimatePresence mode="wait">
               {successMsg && (
                 <m.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="p-8 bg-emerald-500/10 border border-emerald-500/20 rounded-[2.5rem] flex items-center gap-5 shadow-2xl">
-                  <CheckCircle2 className="text-emerald-500 shrink-0" size={32} />
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 flex items-center justify-center">
+                    <Radio className="text-emerald-500 animate-pulse" size={24} />
+                  </div>
                   <p className="text-sm font-black text-emerald-400 uppercase tracking-widest italic">{successMsg}</p>
                 </m.div>
               )}
@@ -260,7 +264,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                     <span>{isZh ? '建立同步' : 'ESTABLISH LINK'}</span>
                   </button>
                   <button type="button" onClick={handleResendOTP} disabled={otpCooldown > 0 || isProcessing} className={`w-full text-center text-[11px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-3 ${otpCooldown > 0 ? 'text-slate-800 cursor-not-allowed' : 'text-indigo-400 hover:text-white'}`}>
-                    <Send size={14} /> {otpCooldown > 0 ? `${isZh ? '冷却' : 'COOLDOWN'} (${otpCooldown}S)` : (isZh ? '重发令牌' : 'RE-DISPATCH')}
+                    <Send size={14} /> {otpCooldown > 0 ? `${isZh ? '冷却' : 'COOLDOWN'} (${otpCooldown}S)` : (isZh ? '重新分发信号' : 'RE-DISPATCH SIGNAL')}
                   </button>
                 </div>
               </form>

@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { 
-  Heart, Copy, QrCode, ArrowUpRight, LogOut as DisconnectIcon, 
-  Bell, RefreshCw, Zap, MessageSquare, Mail, ChevronRight, Check, ShieldCheck, Globe, LifeBuoy, X, Key, Eye, EyeOff,
-  Github, Linkedin, Instagram, Facebook, Youtube, Video, UserCircle
+  Heart, Copy, QrCode, LogOut as DisconnectIcon, 
+  Bell, RefreshCw, Zap, MessageSquare, ShieldCheck, Globe, X, Check,
+  Github, Linkedin, Instagram, Facebook, Youtube, Video, UserCircle, Shield
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -56,13 +57,17 @@ export const Settings: React.FC<SettingsProps> = ({
 
   return (
     <div className="space-y-10 pb-48 max-w-4xl mx-auto px-4 font-sans text-left relative">
-      <header className="flex flex-col gap-2 pt-8">
-        <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">{t.title}</h1>
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic">System Preferences & Neural Interface Configuration</p>
+      <header className="flex flex-col gap-3 pt-8">
+        <div className="flex items-center gap-4">
+           <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400 border border-indigo-500/20 shadow-xl">
+             <Shield size={24} />
+           </div>
+           <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">{t.title}</h1>
+        </div>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic pl-1">Configuration Matrix // SomnoAI Digital Sleep Lab Node</p>
       </header>
 
       <div className="flex flex-col gap-6">
-        {/* System Status Row */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <GlassCard className="p-6 rounded-[2.5rem] border-indigo-500/20 bg-indigo-500/5">
             <div className="flex items-center gap-4">
@@ -96,12 +101,10 @@ export const Settings: React.FC<SettingsProps> = ({
           </GlassCard>
         </div>
 
-        {/* Configuration Matrix */}
-        <GlassCard className="p-8 md:p-12 rounded-[4rem] border-white/10 bg-white/[0.01]">
+        <GlassCard className="p-10 md:p-14 rounded-[4rem] border-white/10 bg-white/[0.01]">
           <div className="space-y-16">
-            {/* Language Selection */}
-            <div className="space-y-4">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic px-2">{t.language}</span>
+            <div className="space-y-6">
+               <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic px-4">{t.language}</span>
                <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5 shadow-inner">
                   {['en', 'zh'].map((l) => (
                     <button 
@@ -115,11 +118,10 @@ export const Settings: React.FC<SettingsProps> = ({
                </div>
             </div>
 
-            {/* Network Presence Matrix */}
-            <div className="space-y-6 pt-4 border-t border-white/5">
-              <div className="flex items-center justify-between px-2">
+            <div className="space-y-6 pt-8 border-t border-white/5">
+              <div className="flex items-center justify-between px-4">
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic">{t.socialLabel}</span>
-                <span className="text-[8px] font-mono text-slate-800 tracking-widest">MATRIX_V2.0</span>
+                <span className="text-[8px] font-mono text-slate-800 tracking-widest">MATRIX_V4.2</span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
                 {socialLinks.map((social) => (
@@ -128,31 +130,29 @@ export const Settings: React.FC<SettingsProps> = ({
                     href={social.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="p-5 bg-black/40 border border-white/5 rounded-[2rem] flex flex-col items-center gap-3 hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all group shadow-inner"
+                    className="p-6 bg-black/40 border border-white/5 rounded-[2.5rem] flex flex-col items-center gap-3 hover:bg-indigo-600/10 hover:border-indigo-500/30 transition-all group shadow-inner"
                   >
                     <div className="p-2 bg-white/5 rounded-xl text-slate-600 group-hover:text-indigo-400 group-hover:bg-indigo-500/5 transition-all">
-                      <social.icon size={20} />
+                      <social.icon size={22} />
                     </div>
-                    <span className="text-[8px] font-black uppercase tracking-widest text-slate-700 group-hover:text-slate-300 transition-colors text-center">{social.label}</span>
+                    <span className="text-[9px] font-black uppercase tracking-widest text-slate-700 group-hover:text-slate-300 transition-colors text-center">{social.label}</span>
                   </a>
                 ))}
               </div>
             </div>
 
-            {/* Support Actions */}
-            <div className="space-y-4 pt-4 border-t border-white/5">
-               <button onClick={() => setShowDonation(true)} className="w-full py-7 rounded-full bg-[#f43f5e]/5 border border-[#f43f5e]/20 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/5 hover:bg-[#f43f5e]/10">
-                 <Heart size={20} fill="currentColor" /> {t.coffee}
+            <div className="space-y-4 pt-8 border-t border-white/5">
+               <button onClick={() => setShowDonation(true)} className="w-full py-8 rounded-full bg-[#f43f5e]/5 border border-[#f43f5e]/20 text-[#f43f5e] font-black text-xs uppercase tracking-[0.3em] flex items-center justify-center gap-3 active:scale-95 transition-all shadow-xl shadow-rose-950/5 hover:bg-[#f43f5e]/10 italic">
+                 <Heart size={22} fill="currentColor" /> {t.coffee}
                </button>
-               <button onClick={onLogout} className="w-full py-7 rounded-full bg-slate-950 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20">
-                 <DisconnectIcon size={18} /> {t.logout}
+               <button onClick={onLogout} className="w-full py-8 rounded-full bg-slate-950 border border-white/5 text-slate-500 font-black text-[11px] uppercase tracking-widest flex items-center justify-center gap-3 active:scale-95 transition-all hover:text-rose-500 hover:border-rose-500/20 italic">
+                 <DisconnectIcon size={20} /> {t.logout}
                </button>
             </div>
           </div>
         </GlassCard>
       </div>
 
-      {/* Donation Modal Logic */}
       <AnimatePresence>
         {showDonation && (
           <div className="fixed inset-0 z-[3000] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl overflow-y-auto" onClick={() => setShowDonation(false)}>
@@ -184,7 +184,7 @@ export const Settings: React.FC<SettingsProps> = ({
                      <span className="text-indigo-400">ACKNOWLEDGED</span>
                    </h2>
                    <p className="text-sm md:text-base text-slate-500 italic max-w-md mx-auto leading-relaxed font-bold opacity-80">
-                     Your support ensures the continued synthesis of neurological restoration protocols.
+                     Your support ensures the continued synthesis of neurological restoration protocols at SomnoAI Digital Sleep Lab.
                    </p>
                 </div>
 

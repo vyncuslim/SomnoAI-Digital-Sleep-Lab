@@ -9,6 +9,10 @@ export interface BiologicalReport {
   protocolChanges: string[];
 }
 
+/**
+ * FIXED: Guidelines enforce exclusive process.env.API_KEY usage.
+ * The API key must not be obtained from localStorage or user input.
+ */
 const getAIClient = () => {
   return new GoogleGenAI({ apiKey: process.env.API_KEY });
 };
@@ -211,7 +215,7 @@ export const designExperiment = async (
   lang: Language = 'zh'
 ): Promise<SleepExperiment> => {
   const ai = getAIClient();
-  const prompt = `基于以下数据设计睡眠优化实验：分数: ${data.score}, RHR: ${data.heartRate.resting}bpm。语言：${lang}`;
+  const prompt = `基于以下数据 design 睡眠优化实验：分数: ${data.score}, RHR: ${data.heartRate.resting}bpm。语言：${lang}`;
 
   try {
     const response = await ai.models.generateContent({

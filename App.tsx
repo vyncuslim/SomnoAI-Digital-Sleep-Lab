@@ -252,8 +252,8 @@ const AppContent: React.FC = () => {
           <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('dashboard')}>
             <Logo size={36} animated={true} />
             <div className="flex flex-col text-left">
-              <span className="text-xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
-              <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Digital Lab Node</span>
+              <span className="text-lg font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">SomnoAI <span className="text-indigo-400 font-medium">Digital Sleep Lab</span></span>
+              <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Sovereign Node Interface</span>
             </div>
           </div>
           <nav className="hidden xl:flex items-center gap-8">
