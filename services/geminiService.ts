@@ -28,7 +28,7 @@ const MODEL_IMAGE_PRO = 'gemini-3-pro-image-preview';
  */
 export const analyzeBiologicalTrends = async (
   history: SleepRecord[], 
-  lang: Language = 'zh'
+  lang: Language = 'en'
 ): Promise<BiologicalReport> => {
   const ai = getAIClient();
   const dataSummary = history.map(h => 
@@ -157,7 +157,7 @@ export const editImage = async (
 export const startContextualCoach = async (
   history: { role: string; content: string }[], 
   records: SleepRecord[],
-  lang: Language = 'zh'
+  lang: Language = 'en'
 ) => {
   const ai = getAIClient();
   const bioBrief = records.slice(0, 5).map(r => 
@@ -187,7 +187,7 @@ export const startContextualCoach = async (
   }
 };
 
-export const getQuickInsight = async (data: SleepRecord, lang: Language = 'zh'): Promise<string[]> => {
+export const getQuickInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const ai = getAIClient();
   const prompt = `分析数据：分数 ${data.score}, RHR ${data.heartRate.resting}bpm。给出3条极其精简的优化方案（JSON 数组）。语言：${lang}`;
   
@@ -214,7 +214,7 @@ export interface SleepExperiment {
 
 export const designExperiment = async (
   data: SleepRecord,
-  lang: Language = 'zh'
+  lang: Language = 'en'
 ): Promise<SleepExperiment> => {
   const ai = getAIClient();
   const prompt = `基于以下数据 design 睡眠优化实验：分数: ${data.score}, RHR: ${data.heartRate.resting}bpm。语言：${lang}`;
