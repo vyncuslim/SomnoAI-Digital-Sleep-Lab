@@ -7,7 +7,6 @@ import { createClient } from "@supabase/supabase-js";
  */
 
 const DEFAULT_SA_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
-const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
 
 function robustParse(input) {
   if (!input) return null;
@@ -33,12 +32,12 @@ function robustParse(input) {
 export default async function handler(req, res) {
   try {
     const querySecret = req.query.secret;
-    const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
+    const serverSecret = process.env.CRON_SECRET;
 
     res.setHeader('X-Robots-Tag', 'noindex, nofollow');
     res.setHeader('Content-Type', 'application/json');
 
-    if (querySecret !== serverSecret) {
+    if (!serverSecret || querySecret !== serverSecret) {
       return res.status(401).json({ error: "UNAUTHORIZED_PULSE", message: "Link identity mismatch." });
     }
 

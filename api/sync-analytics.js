@@ -6,7 +6,6 @@ import { createClient } from "@supabase/supabase-js";
  * Optimized for diagnostic clarity and robust environment key extraction.
  */
 
-const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
 const FALLBACK_PROPERTY_ID = "380909155"; 
 
 function robustParse(input) {
@@ -56,9 +55,9 @@ export default async function handler(req, res) {
 
   try {
     const secret = req.query.secret || req.body?.secret;
-    const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
+    const serverSecret = process.env.CRON_SECRET;
     
-    if (secret !== serverSecret) {
+    if (!serverSecret || secret !== serverSecret) {
       return res.status(401).json({ error: "UNAUTHORIZED_VOID" });
     }
 

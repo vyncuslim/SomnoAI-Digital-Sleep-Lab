@@ -12,10 +12,9 @@ export default async function handler(req, res) {
   const { prompt, secret } = req.body;
 
   // Internal laboratory handshake
-  const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
-  const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
+  const serverSecret = process.env.CRON_SECRET;
 
-  if (secret !== serverSecret) {
+  if (!serverSecret || secret !== serverSecret) {
     return res.status(401).json({ error: "UNAUTHORIZED_GATEWAY_ACCESS" });
   }
 

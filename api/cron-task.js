@@ -8,13 +8,11 @@ import syncHandler from "./sync-analytics.js";
  * Orchestrates telemetry synchronization and system pulse auditing.
  */
 
-const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
-
 export default async function handler(req, res) {
   const secret = req.query.secret || req.body?.secret;
-  const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
+  const serverSecret = process.env.CRON_SECRET;
 
-  if (secret !== serverSecret) {
+  if (!serverSecret || secret !== serverSecret) {
     return res.status(401).json({ error: "UNAUTHORIZED_VOID", message: "Invalid Lab Secret Provided." });
   }
 

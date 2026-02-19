@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import RootLayout from './app/layout.tsx';
+import RootLayout from './components/RootLayout.tsx';
 import { ViewType, SleepRecord, Article } from './types.ts';
 import {
   LayoutDashboard, TrendingUp, Sparkles, FlaskConical, Mic,
@@ -28,9 +28,9 @@ import { ScienceView } from './components/ScienceView.tsx';
 import { FAQView } from './components/FAQView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
-import UserLoginPage from './app/login/page.tsx';
-import UserSignupPage from './app/signup/page.tsx';
-import AdminLoginPage from './app/admin/login/page.tsx';
+import UserLoginPage from './legacy_pages/UserLoginPage.tsx';
+import UserSignupPage from './legacy_pages/UserSignupPage.tsx';
+import AdminLoginPage from './legacy_pages/AdminLoginPage.tsx';
 import { AdminView } from './components/AdminView.tsx';
 import { AboutView } from './components/AboutView.tsx';
 import { FeedbackView } from './components/FeedbackView.tsx';

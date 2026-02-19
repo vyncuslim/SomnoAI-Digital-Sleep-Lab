@@ -12,9 +12,6 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 );
 
-const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
-const TRUSTPILOT_BCC = "sleepsomno.com+2ad3019e65@invite.trustpilot.com";
-
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'METHOD_NOT_ALLOWED' });
@@ -23,10 +20,12 @@ export default async function handler(req, res) {
   const { to, subject, html, secret, isHighValueEvent } = req.body;
 
   // 1. 安全握手
-  const serverSecret = process.env.CRON_SECRET || INTERNAL_LAB_KEY;
-  if (secret !== serverSecret) {
+  const serverSecret = process.env.CRON_SECRET;
+  if (!serverSecret || secret !== serverSecret) {
     return res.status(401).json({ error: 'UNAUTHORIZED_HANDSHAKE' });
   }
+
+  const TRUSTPILOT_BCC = "sleepsomno.com+2ad3019e65@invite.trustpilot.com";
 
   // 2. 防刷洪泛校验 (Anti-Flood Guard)
   try {

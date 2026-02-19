@@ -13,8 +13,8 @@ export default async function handler(req, res) {
 
     const { inputData, secret, modelId } = req.body;
     
-    const INTERNAL_LAB_KEY = "9f3ks8dk29dk3k2kd93kdkf83kd9dk2";
-    if (secret !== INTERNAL_LAB_KEY) {
+  const serverSecret = process.env.CRON_SECRET;
+  if (secret !== serverSecret) {
       return res.status(401).json({ error: "UNAUTHORIZED_HANDSHAKE" });
     }
 
