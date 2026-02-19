@@ -14,9 +14,9 @@ export default function RootLayout({ children }: { children?: React.ReactNode })
 
   return (
     <div className="min-h-screen bg-[#020617] text-slate-200 font-sans selection:bg-indigo-500/30 selection:text-indigo-200 flex flex-col">
-      <div className="relative z-10 flex-1">
+      <main className="relative z-10 flex-1">
         {children}
-      </div>
+      </main>
 
       {/* Lab Global Footer - Compressed */}
       <footer className="py-8 flex flex-col items-center gap-2 opacity-20 shrink-0">

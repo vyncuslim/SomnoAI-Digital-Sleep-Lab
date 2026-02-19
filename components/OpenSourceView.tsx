@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { 
   ArrowLeft, Github, Scale, Code2, ShieldCheck, ExternalLink, Globe, 
-  Layers, Lock, Cpu, Layout, GitBranch, Binary, Database, EyeOff, FileText, Server, AlertShield
+  Layers, Lock, Cpu, Layout, GitBranch, Binary, Database, EyeOff, FileText, Server
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { Language, translations } from '../services/i18n.ts';

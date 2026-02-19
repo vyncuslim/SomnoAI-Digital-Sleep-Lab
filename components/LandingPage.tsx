@@ -145,7 +145,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                       </p>
                       <p className="text-sm font-black text-white italic uppercase tracking-tight">Vyncus Lim</p>
                    </div>
-                   <ExternalLink size={14} className="text-slate-700 group-hover:text-indigo-400 ml-4" />
+                   <ExternalLink size={14} className="text-slate-500 group-hover:text-indigo-400 ml-4" />
                 </div>
              </GlassCard>
           </div>
@@ -177,14 +177,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                       <span className="text-[8px] font-mono text-slate-600 tracking-widest">{node.type}</span>
                       <div className="h-px w-8 bg-slate-800" />
                    </div>
-                   <h4 className="text-2xl font-black italic text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">
+                   <h3 className="text-2xl font-black italic text-white uppercase tracking-tight group-hover:text-indigo-400 transition-colors">
                      {node.label}
-                   </h4>
-                   <div className="flex items-center justify-between opacity-30 group-hover:opacity-100 transition-opacity pt-4 border-t border-white/5">
-                      <span className="text-[8px] font-mono text-slate-600 uppercase truncate max-w-[200px]">
+                   </h3>
+                   <div className="flex items-center justify-between opacity-40 group-hover:opacity-100 transition-opacity pt-4 border-t border-white/5">
+                      <span className="text-[8px] font-mono text-slate-500 uppercase truncate max-w-[200px]">
                         {node.url.replace('https://', '').replace('http://', '')}
                       </span>
-                      <ExternalLink size={14} className="text-slate-700" />
+                      <ExternalLink size={14} className="text-slate-500" />
                    </div>
                 </div>
               </GlassCard>
@@ -212,7 +212,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
              <button onClick={() => onNavigate('privacy')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">PRIVACY_CORE</button>
              <button onClick={() => onNavigate('terms')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">TERMS_PROTO</button>
           </div>
-          <p className="text-[8px] font-mono text-slate-800 tracking-[0.4em]">STABILITY_VERSION: 4.2.8 // REGION: GLOBAL_EDGE</p>
+          <p className="text-[8px] font-mono text-slate-500 tracking-[0.4em]">STABILITY_VERSION: 4.2.8 // REGION: GLOBAL_EDGE</p>
         </div>
       </footer>
     </div>

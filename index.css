@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
   --lab-bg: #01040a;
   --lab-accent: #6366f1;

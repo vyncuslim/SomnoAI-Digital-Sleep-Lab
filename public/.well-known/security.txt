@@ -1,0 +1,5 @@
+Contact: mailto:contact@sleepsomno.com
+Expires: 2027-01-01T00:00:00.000Z
+Preferred-Languages: en, zh
+Canonical: https://sleepsomno.com/.well-known/security.txt
+Policy: https://sleepsomno.com/terms
