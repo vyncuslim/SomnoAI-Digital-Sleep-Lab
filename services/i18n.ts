@@ -16,7 +16,7 @@ const commonEn = {
   },
   landing: {
     heroTitle: "CODE IS THE RING. DATA IS THE SOUL.",
-    heroSubtitle: "Transform your existing smartwatch into an elite biometric lab. SomnoAI bridges Health Connect data via our mobile link to deliver smart-ring depth analysis without the hardware cost.",
+    heroSubtitle: "Transform your existing smartwatch into an elite biometric lab. SomnoAI bridges Android Health Connect data to deliver smart-ring depth analysis without the hardware cost. (Note: Excludes Apple ecosystem)",
     ctaPrimary: "START OPTIMIZATION",
     ctaSecondary: "VIEW PHILOSOPHY",
     nav: {
@@ -29,9 +29,9 @@ const commonEn = {
       blog: "BLOG"
     },
     pillars: {
-      telemetry: { title: "HARDWARE NEUTRAL", desc: "No proprietary gear. From Apple to Garmin, if it syncs with Health Connect, SomnoAI empowers it." },
+      telemetry: { title: "DEVICE AGNOSTIC", desc: "No proprietary gear required. From Garmin to Samsung, if it syncs with Android Health Connect, we empower it. (Excludes Apple Watch)" },
       synthesis: { title: "VIRTUAL RING", desc: "Our AI transforms ordinary sensor data into deep diagnostic insights previously exclusive to high-end smart rings." },
-      protocols: { title: "MOBILE BRIDGE", desc: "Seamless integration: Device -> Health Connect -> Somno App -> Web Terminal. Encrypted & Secure." }
+      protocols: { title: "HEALTH CONNECT BRIDGE", desc: "Seamless integration: Android Watch -> Health Connect -> Somno App -> Web Terminal. Encrypted & Secure." }
     }
   },
   dashboard: {
@@ -139,7 +139,7 @@ const commonEn = {
     missionLabel: "Project Narrative",
     compatibilityTitle: "Broad Compatibility",
     aiCoreTitle: "Core AI Analysis Capabilities",
-    appleNote: "Note: Apple Watch users can sync directly. For Android, please use the SomnoAI Mobile App to bridge Health Connect data."
+    appleNote: "Note: SomnoAI focuses on the Android ecosystem. Please use the SomnoAI Mobile App to bridge Health Connect data. Apple Watch is currently not supported."
   },
   support: {
     title: "Lab Support",
@@ -161,7 +161,7 @@ const commonZh = {
   },
   landing: {
     heroTitle: "代码即戒指。数据即灵魂。",
-    heroSubtitle: "将您现有的智能手表转化为顶级生物监测站。SomnoAI 通过移动端 App 桥接 Health Connect 数据，为您提供无需购买额外硬件的智能戒指级深度分析。",
+    heroSubtitle: "将您现有的智能手表转化为顶级生物监测站。SomnoAI 通过安卓 Health Connect 桥接数据，为您提供无需额外硬件的智能戒指级深度分析。（注：不包含苹果 Apple 品牌）",
     ctaPrimary: "开始优化",
     ctaSecondary: "品牌哲学",
     nav: {
@@ -174,9 +174,9 @@ const commonZh = {
       blog: "实验室博客"
     },
     pillars: {
-      telemetry: { title: "硬件中立性", desc: "无需专用追踪器。只要能同步 Health Connect，SomnoAI 就能为您现有设备赋能。" },
+      telemetry: { title: "硬件中立性", desc: "无需专用追踪器。只要能同步安卓 Health Connect，SomnoAI 就能为您现有设备赋能。（不包含苹果 Apple 设备）" },
       synthesis: { title: "虚拟智能戒指", desc: "我们的 AI 将普通的传感器数据转化为深层诊断洞察，让手表具备以往只有昂贵智能戒指才有的能力。" },
-      protocols: { title: "移动端网桥", desc: "无缝集成链路：手表 -> Health Connect -> 移动应用 -> 网页终端。全程加密安全。" }
+      protocols: { title: "Health Connect 网桥", desc: "无缝集成链路：安卓手表 -> Health Connect -> 移动应用 -> 网页终端。全程加密安全。" }
     }
   },
   dashboard: {

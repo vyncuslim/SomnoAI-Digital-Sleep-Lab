@@ -36,6 +36,8 @@ export const analyzeBiologicalTrends = async (
   ).join('\n');
 
   const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。分析受试者的多日生物遥测数据。
+  数据来源：安卓 Health Connect (通过智能手表采集)。
+  分析目标：提供等同于高端智能戒指 (Smart Ring) 级别的深度生理洞察。
   识别异常模式，并提供基于神经科学的建议。
   输出必须为 JSON 格式。`;
 

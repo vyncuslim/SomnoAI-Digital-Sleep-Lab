@@ -193,7 +193,10 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <Smartphone size={36} className={isProcessing ? 'animate-pulse' : ''} />
               </div>
               <div className="space-y-2">
-                <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-none">{t.syncTitle}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-none">{t.syncTitle}</h3>
+                  <div className="px-2 py-0.5 bg-white/10 rounded text-[8px] font-bold tracking-tighter">HEALTH CONNECT</div>
+                </div>
                 <p className="text-indigo-100 text-sm font-bold italic opacity-80">{t.syncDesc}</p>
               </div>
             </div>

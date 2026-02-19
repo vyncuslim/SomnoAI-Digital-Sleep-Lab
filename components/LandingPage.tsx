@@ -97,13 +97,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         <NeuralPulseBackground />
         <div className="max-w-7xl space-y-16 relative z-10">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-4 px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full shadow-2xl">
-            <Watch size={14} className="text-indigo-400 animate-pulse" />
-            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Code is the Ring v4.2</span>
+            <Smartphone size={14} className="text-indigo-400 animate-pulse" />
+            <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Health Connect Bridge v4.2</span>
           </m.div>
 
           <div className="space-y-4">
-            <m.h1 initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }} className="text-7xl sm:text-9xl md:text-[11rem] lg:text-[12rem] font-black text-white italic tracking-tighter leading-[0.8] uppercase">Zero.</m.h1>
-            <m.h1 initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.2 }} className="text-7xl sm:text-9xl md:text-[11rem] lg:text-[13rem] font-black text-indigo-600 italic tracking-tighter leading-[0.8] uppercase">Hardware.</m.h1>
+            <m.h1 initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1 }} className="text-7xl sm:text-9xl md:text-[11rem] lg:text-[12rem] font-black text-white italic tracking-tighter leading-[0.8] uppercase">Device.</m.h1>
+            <m.h1 initial={{ opacity: 0, x: 50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 1, delay: 0.2 }} className="text-7xl sm:text-9xl md:text-[11rem] lg:text-[13rem] font-black text-indigo-600 italic tracking-tighter leading-[0.8] uppercase">Agnostic.</m.h1>
           </div>
 
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="max-w-4xl mx-auto">
