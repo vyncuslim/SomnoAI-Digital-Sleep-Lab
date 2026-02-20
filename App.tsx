@@ -14,36 +14,38 @@ import { authApi } from './services/supabaseService.ts';
 import { safeNavigatePath } from './services/navigation.ts';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 
-// Core Views
+// Lazy loaded components
+const DreamVisualizer = React.lazy(() => import('./components/DreamVisualizer.tsx').then(m => ({ default: m.DreamVisualizer })));
+const LiveAssistant = React.lazy(() => import('./components/LiveAssistant.tsx').then(m => ({ default: m.LiveAssistant })));
+const ExperimentView = React.lazy(() => import('./components/ExperimentView.tsx').then(m => ({ default: m.ExperimentView })));
+const AdminView = React.lazy(() => import('./components/AdminView.tsx').then(m => ({ default: m.AdminView })));
+const NewsHub = React.lazy(() => import('./components/NewsHub.tsx').then(m => ({ default: m.NewsHub })));
+const BlogHub = React.lazy(() => import('./components/BlogHub.tsx').then(m => ({ default: m.BlogHub })));
+const LegalView = React.lazy(() => import('./components/LegalView.tsx').then(m => ({ default: m.LegalView })));
+const OpenSourceView = React.lazy(() => import('./components/OpenSourceView.tsx').then(m => ({ default: m.OpenSourceView })));
+const ArticleView = React.lazy(() => import('./components/ArticleView.tsx').then(m => ({ default: m.ArticleView })));
+const BlogPostView = React.lazy(() => import('./components/BlogPostView.tsx').then(m => ({ default: m.BlogPostView })));
+const SupportView = React.lazy(() => import('./components/SupportView.tsx').then(m => ({ default: m.SupportView })));
+const ScienceView = React.lazy(() => import('./components/ScienceView.tsx').then(m => ({ default: m.ScienceView })));
+const FAQView = React.lazy(() => import('./components/FAQView.tsx').then(m => ({ default: m.FAQView })));
+const AboutView = React.lazy(() => import('./components/AboutView.tsx').then(m => ({ default: m.AboutView })));
+const FeedbackView = React.lazy(() => import('./components/FeedbackView.tsx').then(m => ({ default: m.FeedbackView })));
+const ContactView = React.lazy(() => import('./components/ContactView.tsx').then(m => ({ default: m.ContactView })));
+
+// Core Views (Keep synchronous for critical path)
 import { Dashboard } from './components/Dashboard.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
-import { LiveAssistant } from './components/LiveAssistant.tsx';
-import { DreamVisualizer } from './components/DreamVisualizer.tsx';
 import { Settings } from './components/Settings.tsx';
 import { Trends } from './components/Trends.tsx';
 import { DiaryView } from './components/DiaryView.tsx';
-import { ExperimentView } from './components/ExperimentView.tsx';
-import { SupportView } from './components/SupportView.tsx';
-import { ScienceView } from './components/ScienceView.tsx';
-import { FAQView } from './components/FAQView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
 import { LandingPage } from './components/LandingPage.tsx';
 import UserLoginPage from './legacy_pages/UserLoginPage.tsx';
 import UserSignupPage from './legacy_pages/UserSignupPage.tsx';
 import AdminLoginPage from './legacy_pages/AdminLoginPage.tsx';
-import { AdminView } from './components/AdminView.tsx';
-import { AboutView } from './components/AboutView.tsx';
-import { FeedbackView } from './components/FeedbackView.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
-import { NewsHub, MOCK_RESEARCH } from './components/NewsHub.tsx';
-import { ArticleView } from './components/ArticleView.tsx';
-import { BlogHub, MOCK_BLOG_POSTS } from './components/BlogHub.tsx';
-import { BlogPostView } from './components/BlogPostView.tsx';
-import { ContactView } from './components/ContactView.tsx';
 import { NotFoundView } from './components/NotFoundView.tsx';
-import { LegalView } from './components/LegalView.tsx';
-import { OpenSourceView } from './components/OpenSourceView.tsx';
 
 const m = motion as any;
 
@@ -191,32 +193,43 @@ const AppContent: React.FC = () => {
   }
 
   const renderContent = () => {
-    switch (activeView) {
-      case 'landing': return <LandingPage lang={lang} onNavigate={navigate} />;
-      case 'science': return <ScienceView lang={lang} onBack={() => navigate('/')} />;
-      case 'faq': return <FAQView lang={lang} onBack={() => navigate('/')} />;
-      case 'news': return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate(`article/${a.slug}`); }} />;
-      case 'article': return activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate(`article/${a.slug}`); }} />;
-      case 'blog': return <BlogHub lang={lang} onSelectPost={(p) => { setActivePost(p); navigate(`blog/${p.slug}`); }} />;
-      case 'blog-post': return activePost ? <BlogPostView post={activePost} lang={lang} onBack={() => navigate('blog')} /> : <BlogHub lang={lang} onSelectPost={(p) => { setActivePost(p); navigate(`blog/${p.slug}`); }} />;
-      case 'about': return <AboutView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
-      case 'support': return <SupportView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
-      case 'privacy': return <LegalView type="privacy" lang={lang} onBack={() => navigate('/')} />;
-      case 'terms': return <LegalView type="terms" lang={lang} onBack={() => navigate('/')} />;
-      case 'opensource': return <OpenSourceView lang={lang} onBack={() => navigate('/')} />;
-      case 'login': return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
-      case 'signup': return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
-      case 'admin-login': return <AdminLoginPage />;
-      case 'admin': return (
-        <ProtectedRoute level="admin">
-          <AdminView onBack={() => navigate('dashboard')} />
-        </ProtectedRoute>
-      );
-      case 'contact': return <ContactView lang={lang} onBack={() => navigate('about')} />;
-      case 'feedback': return <FeedbackView lang={lang} onBack={() => navigate('support')} />;
-      case 'not-found': return <NotFoundView />;
-      default: return null;
-    }
+    return (
+      <React.Suspense fallback={
+        <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center gap-6">
+           <Logo size={60} animated={true} />
+           <div className="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-500/40 animate-pulse">Loading Sector...</div>
+        </div>
+      }>
+        {(() => {
+          switch (activeView) {
+            case 'landing': return <LandingPage lang={lang} onNavigate={navigate} />;
+            case 'science': return <ScienceView lang={lang} onBack={() => navigate('/')} />;
+            case 'faq': return <FAQView lang={lang} onBack={() => navigate('/')} />;
+            case 'news': return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate(`article/${a.slug}`); }} />;
+            case 'article': return activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate(`article/${a.slug}`); }} />;
+            case 'blog': return <BlogHub lang={lang} onSelectPost={(p) => { setActivePost(p); navigate(`blog/${p.slug}`); }} />;
+            case 'blog-post': return activePost ? <BlogPostView post={activePost} lang={lang} onBack={() => navigate('blog')} /> : <BlogHub lang={lang} onSelectPost={(p) => { setActivePost(p); navigate(`blog/${p.slug}`); }} />;
+            case 'about': return <AboutView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
+            case 'support': return <SupportView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
+            case 'privacy': return <LegalView type="privacy" lang={lang} onBack={() => navigate('/')} />;
+            case 'terms': return <LegalView type="terms" lang={lang} onBack={() => navigate('/')} />;
+            case 'opensource': return <OpenSourceView lang={lang} onBack={() => navigate('/')} />;
+            case 'login': return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
+            case 'signup': return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
+            case 'admin-login': return <AdminLoginPage />;
+            case 'admin': return (
+              <ProtectedRoute level="admin">
+                <AdminView onBack={() => navigate('dashboard')} />
+              </ProtectedRoute>
+            );
+            case 'contact': return <ContactView lang={lang} onBack={() => navigate('about')} />;
+            case 'feedback': return <FeedbackView lang={lang} onBack={() => navigate('support')} />;
+            case 'not-found': return <NotFoundView />;
+            default: return null;
+          }
+        })()}
+      </React.Suspense>
+    );
   };
 
   const isStandaloneView = ['landing', 'science', 'faq', 'about', 'support', 'privacy', 'terms', 'login', 'signup', 'admin-login', 'opensource', 'contact', 'feedback', 'not-found', 'news', 'article', 'blog', 'blog-post', 'admin'].includes(activeView);

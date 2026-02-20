@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
  * Optimized for diagnostic clarity and robust environment key extraction.
  */
 
-const FALLBACK_PROPERTY_ID = "380909155"; 
+const FALLBACK_PROPERTY_ID = process.env.GA_PROPERTY_ID; 
 
 function robustParse(input) {
   if (!input) return null;

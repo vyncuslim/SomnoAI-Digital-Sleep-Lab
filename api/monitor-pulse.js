@@ -6,7 +6,7 @@ import { createClient } from "@supabase/supabase-js";
  * Secure diagnostic logic with robust multi-pass JSON parsing and UptimeRobot secret validation.
  */
 
-const DEFAULT_SA_EMAIL = "somnoai-digital-sleep-lab@gen-lang-client-0694195176.iam.gserviceaccount.com";
+const DEFAULT_SA_EMAIL = process.env.GA_SERVICE_ACCOUNT_EMAIL || "UNKNOWN";
 
 function robustParse(input) {
   if (!input) return null;

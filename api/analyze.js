@@ -18,12 +18,12 @@ export default async function handler(req, res) {
       return res.status(401).json({ error: "UNAUTHORIZED_HANDSHAKE" });
     }
 
-    const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID || "gen-lang-client-0694195176";
+    const GCP_PROJECT_ID = process.env.GCP_PROJECT_ID;
     const SA_KEY_RAW = process.env.VERTEX_SERVICE_ACCOUNT_KEY;
 
-    if (!SA_KEY_RAW) {
-      console.error("[Vertex Bridge]: Environment variable VERTEX_SERVICE_ACCOUNT_KEY is missing.");
-      return res.status(500).json({ error: "VERTEX_CONFIG_INCOMPLETE", details: "Bridge node credentials missing." });
+    if (!SA_KEY_RAW || !GCP_PROJECT_ID) {
+      console.error("[Vertex Bridge]: Environment variables missing.");
+      return res.status(500).json({ error: "VERTEX_CONFIG_INCOMPLETE", details: "Bridge node credentials or project ID missing." });
     }
 
     let credentials;

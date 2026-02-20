@@ -5,8 +5,8 @@ import { createClient } from "@supabase/supabase-js";
  * SOMNO LAB - INTELLIGENT COMMAND WEBHOOK v7.0
  */
 
-const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
-const ADMIN_CHAT_ID = '-1003851949025';
+const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
+const ADMIN_CHAT_ID = process.env.TELEGRAM_ADMIN_CHAT_ID;
 const TELEGRAM_REPLY_API = `https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`;
 
 const supabase = createClient(

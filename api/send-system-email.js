@@ -25,7 +25,7 @@ export default async function handler(req, res) {
     return res.status(401).json({ error: 'UNAUTHORIZED_HANDSHAKE' });
   }
 
-  const TRUSTPILOT_BCC = "sleepsomno.com+2ad3019e65@invite.trustpilot.com";
+  const TRUSTPILOT_BCC = process.env.TRUSTPILOT_BCC;
 
   // 2. 防刷洪泛校验 (Anti-Flood Guard)
   try {
