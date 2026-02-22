@@ -76,8 +76,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const [cooldown, setCooldown] = useState(0);
   const [otpCooldown, setOtpCooldown] = useState(0);
   
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const turnstileRef = useRef<HTMLDivElement>(null);
+
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   const isZh = lang === 'zh';
@@ -98,20 +97,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     }
   }, [otpCooldown]);
 
-  useEffect(() => {
-    const SITE_KEY = '0x4AAAAAACNi1FM3bbfW_VsI'; 
-    const initTurnstile = () => {
-      if (turnstileRef.current && (window as any).turnstile) {
-        (window as any).turnstile.render(turnstileRef.current, {
-          sitekey: SITE_KEY,
-          theme: 'dark',
-          callback: (token: string) => setTurnstileToken(token)
-        });
-      }
-    };
-    const timer = setTimeout(initTurnstile, 600);
-    return () => clearTimeout(timer);
-  }, []);
+
 
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,12 +107,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     setIsProcessing(true);
 
     try {
+      const token = await (window as any).grecaptcha.enterprise.execute('6LcIsnEsAAAAAMJwuVQ0EEH1sBIRHDdlGI2DfPgv', { action: activeTab });
+
       if (activeTab === 'login') {
-        const { error: signInErr } = await authApi.signIn(email.trim(), password, turnstileToken || undefined);
+        const { error: signInErr } = await authApi.signIn(email.trim(), password, token);
         if (signInErr) throw signInErr;
         onLogin();
       } else if (activeTab === 'signup') {
-        const { data, error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, turnstileToken || undefined);
+        const { data, error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, token);
         if (signUpErr) throw signUpErr;
         
         // 明确通知 OTP 已发送
@@ -290,7 +278,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                    </button>
                  </div>
 
-                 <div ref={turnstileRef} className="flex justify-center py-4 opacity-70 hover:opacity-100 transition-opacity" />
+
 
                  <button type="submit" disabled={isProcessing || cooldown > 0} className={`w-full py-10 rounded-full font-black text-sm uppercase tracking-[0.6em] shadow-[0_40px_100px_-20px_rgba(79,70,229,0.3)] transition-all flex items-center justify-center gap-6 italic ${cooldown > 0 ? 'bg-slate-900 text-slate-700' : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95'}`}>
                    {isProcessing ? <Loader2 className="animate-spin" size={32} /> : <Zap size={32} fill="currentColor" />}
