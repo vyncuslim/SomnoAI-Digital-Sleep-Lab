@@ -4,8 +4,8 @@ import {
   ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, 
   Microscope, Zap, Linkedin, ShieldCheck, Sparkles, Target, Layers, 
   Watch, Smartphone, Cpu, Binary, HeartPulse, Activity, AlertCircle, Scale, Ruler, Search,
-  // Fix: Added missing ArrowRight import
-  Server, Shield, Database, Cloud, ArrowRight
+  // Fix: Added missing icons
+  Server, Shield, Database, Cloud, ArrowRight, MessageSquare, Youtube
 } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -52,49 +52,58 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         </div>
         <div className="space-y-4">
           <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white uppercase leading-none">
-            {isZh ? '关于' : 'About'} <span className="text-indigo-400">SomnoAI</span>
+            {isZh ? '关于项目' : 'About Project'}
           </h1>
           <p className="text-[10px] text-slate-600 font-mono font-bold uppercase tracking-[0.6em] italic">
-            SomnoAI Digital Sleep Lab • PHILOSOPHY v4.2
+            SomnoAI Digital Sleep Lab • Documentation v1.3.0
           </p>
         </div>
       </header>
 
       <div className="max-w-4xl mx-auto space-y-16 px-4">
-        {/* Core Vision */}
+        {/* Project Overview */}
         <section className="relative">
            <m.div initial={{ opacity: 0, scale: 0.95 }} whileInView={{ opacity: 1, scale: 1 }} transition={{ duration: 0.8 }} className="absolute -inset-10 bg-indigo-500/5 blur-[80px] rounded-full pointer-events-none" />
            <GlassCard className="p-12 md:p-20 rounded-[5rem] border-indigo-500/20 bg-indigo-600/[0.02] overflow-hidden" intensity={1.5}>
               <div className="space-y-10 relative z-10">
                  <div className="flex items-center gap-4">
                     <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-xl"><Target size={24} /></div>
-                    <h2 className="text-xl font-black italic text-indigo-400 uppercase tracking-widest">{t.visionTitle}</h2>
+                    <h2 className="text-xl font-black italic text-indigo-400 uppercase tracking-widest">{isZh ? '项目概述' : 'Overview'}</h2>
                  </div>
-                 <p className="text-3xl md:text-5xl font-black text-white leading-[1.1] italic tracking-tighter uppercase">
-                   {t.visionStatement}
-                 </p>
+                 <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic font-medium">
+                   <p>
+                     {isZh 
+                       ? "SomnoAI Digital Sleep Lab 是一个专注于睡眠数据分析的数字化项目。该项目旨在通过处理来自可穿戴设备的生理数据，为用户提供深度的睡眠质量评估与健康见解。" 
+                       : "SomnoAI Digital Sleep Lab is a digital health project focused on the analysis of sleep data. The project aims to provide users with in-depth sleep quality assessments and health insights by processing physiological data from wearable devices."}
+                   </p>
+                   <p>
+                     {isZh 
+                       ? "该平台利用先进的机器学习算法，对心率、睡眠周期及活动水平进行综合分析，帮助用户识别影响恢复的关键因素。" 
+                       : "The platform utilizes advanced machine learning algorithms to comprehensively analyze heart rate, sleep cycles, and activity levels, helping users identify key factors affecting their restoration."}
+                   </p>
+                 </div>
               </div>
            </GlassCard>
         </section>
 
-        {/* Brand Philosophy - Broad Compatibility */}
+        {/* Technical Architecture */}
         <section className="space-y-8">
            <div className="flex items-center gap-4 px-6">
               <Globe size={24} className="text-indigo-400" />
-              <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{t.compatibilityTitle}</h2>
+              <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{isZh ? '技术架构与兼容性' : 'Architecture & Compatibility'}</h2>
            </div>
            
            <GlassCard className="p-12 md:p-16 rounded-[4rem] border-white/5 bg-slate-900/40" intensity={1.2}>
               <div className="space-y-8 text-slate-300 text-lg leading-relaxed italic font-medium">
                 <p className="border-l-4 border-indigo-500/30 pl-8 font-bold text-white text-xl">
                   {isZh 
-                    ? "我们深知许多用户已经拥有了心仪的智能穿戴设备。SomnoAI 从设计之初就考虑到了广泛的兼容性。" 
-                    : "We understand users have preferred wearables. SomnoAI was designed for broad compatibility from day one."}
+                    ? "SomnoAI 采用设备无关（Device-Agnostic）的设计理念，通过 Google Health Connect 实现跨平台数据集成。" 
+                    : "SomnoAI adopts a device-agnostic design philosophy, achieving cross-platform data integration through Google Health Connect."}
                 </p>
                 <p>
                   {isZh 
-                    ? "除 Apple 设备外，市面上绝大多数主流智能手表品牌——只要能与 Android 手机上的 Health Connect 同步数据——都能无缝接入我们的系统。这意味着您无需购买特定品牌的昂贵设备，显著降低了获得顶级健康诊断的门槛。" 
-                    : "Beyond Apple, most mainstream smartwatches—as long as they sync with Health Connect on Android—integrate seamlessly. This means no specific branded hardware is required, lowering the barrier to elite diagnostics."}
+                    ? "目前系统已支持包括小米、华为、三星、佳明及 Fitbit 在内的多种主流智能穿戴品牌。只要设备能够将数据同步至 Android 系统的 Health Connect 框架，即可接入 SomnoAI 进行分析。" 
+                    : "The system currently supports various mainstream wearable brands including Xiaomi, Huawei, Samsung, Garmin, and Fitbit. Any device capable of syncing data to the Android Health Connect framework can integrate with SomnoAI for analysis."}
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
                   {brandCompatibility.map((brand, idx) => (
@@ -104,6 +113,49 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
                     </div>
                   ))}
                 </div>
+              </div>
+           </GlassCard>
+        </section>
+
+        {/* Organization & Contact */}
+        <section className="space-y-8">
+           <div className="flex items-center gap-4 px-6">
+              <UserCheck size={24} className="text-indigo-400" />
+              <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{isZh ? '组织与联系方式' : 'Organization & Contact'}</h2>
+           </div>
+           
+           <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-black/20">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                 <div className="space-y-6">
+                    <h4 className="text-lg font-black text-white italic uppercase tracking-tight">{isZh ? '关于我们' : 'Who We Are'}</h4>
+                    <p className="text-sm text-slate-400 leading-relaxed italic font-medium">
+                       {isZh 
+                         ? "SomnoAI Digital Sleep Lab 是一个由开发者与健康爱好者共同维护的数字化睡眠研究项目。我们致力于通过技术手段降低专业级健康分析的门槛。" 
+                         : "SomnoAI Digital Sleep Lab is a digital sleep research project maintained by developers and health enthusiasts. We are dedicated to lowering the barrier to professional-grade health analysis through technology."}
+                    </p>
+                    <div className="flex items-center gap-3 text-slate-500">
+                       <Mail size={16} className="text-indigo-400" />
+                       <span className="text-xs font-bold uppercase tracking-widest">contact@sleepsomno.com</span>
+                    </div>
+                 </div>
+
+                 <div className="space-y-6">
+                    <h4 className="text-lg font-black text-white italic uppercase tracking-tight">{isZh ? '官方链接' : 'Official Links'}</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                       <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-indigo-400 transition-colors uppercase italic tracking-tight">
+                          <Github size={14} /> GitHub
+                       </a>
+                       <a href="https://discord.com/invite/9EXJtRmju" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-indigo-400 transition-colors uppercase italic tracking-tight">
+                          <MessageSquare size={14} /> Discord
+                       </a>
+                       <a href="https://www.linkedin.com/company/somnoai-digital-sleep-lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-indigo-400 transition-colors uppercase italic tracking-tight">
+                          <Linkedin size={14} /> LinkedIn
+                       </a>
+                       <a href="https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-indigo-400 transition-colors uppercase italic tracking-tight">
+                          <Youtube size={14} /> YouTube
+                       </a>
+                    </div>
+                 </div>
               </div>
            </GlassCard>
         </section>

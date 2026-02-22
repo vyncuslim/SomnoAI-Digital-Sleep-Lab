@@ -12,6 +12,11 @@
   "routes": [
     { "src": "/privacy$", "dest": "/privacy.html" },
     { "src": "/terms$", "dest": "/terms.html" },
+    { "src": "/about$", "dest": "/index.html" },
+    { "src": "/science$", "dest": "/index.html" },
+    { "src": "/faq$", "dest": "/index.html" },
+    { "src": "/news$", "dest": "/index.html" },
+    { "src": "/blog$", "dest": "/index.html" },
     { "handle": "filesystem" },
     { "src": "/api/(.*)", "dest": "/api/$1" },
     {
