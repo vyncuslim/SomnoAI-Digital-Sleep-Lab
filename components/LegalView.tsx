@@ -21,7 +21,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
           <ArrowLeft size={20} />
         </button>
         <div>
-          <h1 className="text-3xl font-black italic tracking-tighter text-white">
+          <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter text-white">
             {isPrivacy ? 'Privacy Policy' : 'Terms of Service'}
           </h1>
           <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-0.5">

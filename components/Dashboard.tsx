@@ -33,22 +33,22 @@ const NeuralAura = () => (
 );
 
 const MetricCard = ({ icon: Icon, label, value, unit, color, trend }: any) => (
-  <div className="p-8 bg-white/[0.02] border border-white/5 rounded-[3rem] space-y-6 group hover:border-indigo-500/30 transition-all relative overflow-hidden flex-1 shadow-inner">
-    <div className={`p-4 rounded-2xl ${color} w-fit relative z-10 shadow-xl group-hover:scale-110 transition-transform duration-500`}>
+  <div className="p-6 md:p-8 bg-white/[0.02] border border-white/5 rounded-3xl md:rounded-[3rem] space-y-4 md:space-y-6 group hover:border-indigo-500/30 transition-all relative overflow-hidden flex-1 shadow-inner">
+    <div className={`p-3 md:p-4 rounded-2xl ${color} w-fit relative z-10 shadow-xl group-hover:scale-110 transition-transform duration-500`}>
       <Icon size={24} strokeWidth={2.5} />
     </div>
     <div className="relative z-10">
       <div className="flex justify-between items-center mb-1">
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">{label}</p>
-        {trend && <span className="text-[10px] font-black text-emerald-500 italic">+{trend}%</span>}
+        <p className="text-[8px] md:text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">{label}</p>
+        {trend && <span className="text-[8px] md:text-[10px] font-black text-emerald-500 italic">+{trend}%</span>}
       </div>
-      <div className="flex items-baseline gap-3">
-        <span className="text-4xl md:text-6xl font-black text-white italic tabular-nums tracking-tighter leading-none">{value}</span>
-        <span className="text-[11px] font-black text-slate-700 uppercase tracking-[0.3em]">{unit}</span>
+      <div className="flex items-baseline gap-2 md:gap-3">
+        <span className="text-3xl md:text-6xl font-black text-white italic tabular-nums tracking-tighter leading-none">{value}</span>
+        <span className="text-[9px] md:text-[11px] font-black text-slate-700 uppercase tracking-[0.3em]">{unit}</span>
       </div>
     </div>
     <div className="absolute -right-6 -bottom-6 opacity-[0.03] text-white group-hover:opacity-[0.06] transition-opacity">
-       <Icon size={140} />
+       <Icon size={100} md:size={140} />
     </div>
   </div>
 );
@@ -134,11 +134,11 @@ export const Dashboard: React.FC<DashboardProps> = ({
                   <div className="flex items-baseline gap-5 group cursor-default">
                      <m.h1 
                         initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                        className="text-[10rem] md:text-[14rem] font-black italic tracking-tighter text-white leading-none drop-shadow-[0_0_120px_rgba(99,102,241,0.2)]"
+                        className="text-8xl md:text-[10rem] xl:text-[14rem] font-black italic tracking-tighter text-white leading-none drop-shadow-[0_0_120px_rgba(99,102,241,0.2)]"
                       >
                        {Number(data.score)}
                      </m.h1>
-                     <span className="text-4xl font-black text-slate-800 tracking-widest">%</span>
+                     <span className="text-2xl md:text-4xl font-black text-slate-800 tracking-widest">%</span>
                   </div>
                   <div className="inline-flex items-center gap-5 px-8 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-full shadow-inner">
                      <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />

@@ -4,7 +4,7 @@ import { ViewType, SleepRecord, Article } from './types.ts';
 import {
   LayoutDashboard, TrendingUp, Sparkles, FlaskConical, Mic,
   User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, PenTool, Shield,
-  Image as ImageIcon
+  Image as ImageIcon, Menu, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
@@ -74,6 +74,7 @@ const AppContent: React.FC = () => {
 
   const [currentRecord] = useState<SleepRecord>(INITIAL_MOCK_RECORD);
   const [isExitModalOpen, setIsExitModalOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [activeArticle, setActiveArticle] = useState<Article | null>(null);
   const [activePost, setActivePost] = useState<Article | null>(null);
 
@@ -161,6 +162,7 @@ const AppContent: React.FC = () => {
     const target = view === '/' ? '/' : (view.startsWith('/') ? view : `/${view}`);
     safeNavigatePath(target);
     setActiveView(resolveViewFromLocation());
+    setIsMobileMenuOpen(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -296,16 +298,72 @@ const AppContent: React.FC = () => {
           </nav>
         </div>
         <div className="flex items-center gap-4">
-          <button onClick={() => navigate('registry')} className={`p-3 rounded-xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
-            <User size={18} />
-          </button>
-          <button onClick={() => navigate('settings')} className={`p-3 rounded-xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
-            <SettingsIcon size={18} />
-          </button>
-          <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90">
-            <LogOut size={18} />
+          <div className="hidden sm:flex items-center gap-4">
+            <button onClick={() => navigate('registry')} className={`p-3 rounded-xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
+              <User size={18} />
+            </button>
+            <button onClick={() => navigate('settings')} className={`p-3 rounded-xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
+              <SettingsIcon size={18} />
+            </button>
+            <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90">
+              <LogOut size={18} />
+            </button>
+          </div>
+          <button 
+            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            className="xl:hidden p-3 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all"
+          >
+            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
           </button>
         </div>
+
+        {/* Mobile Menu Overlay */}
+        <AnimatePresence>
+          {isMobileMenuOpen && (
+            <m.div 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="xl:hidden absolute top-24 left-6 right-6 bg-[#01040a]/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl z-[200] max-h-[70vh] overflow-y-auto"
+            >
+              <div className="grid grid-cols-2 gap-4">
+                {navItems.map((item) => (
+                  <button 
+                    key={item.id} 
+                    onClick={() => navigate(item.id)}
+                    className={`flex flex-col items-center gap-3 p-6 rounded-3xl border transition-all ${activeView === item.id ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white'}`}
+                  >
+                    <item.icon size={24} />
+                    <span className="text-[10px] font-black uppercase tracking-widest italic">{item.label}</span>
+                  </button>
+                ))}
+                {isAdmin && (
+                  <button 
+                    onClick={() => navigate('admin')}
+                    className={`flex flex-col items-center gap-3 p-6 rounded-3xl border transition-all ${activeView === 'admin' ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-rose-400'}`}
+                  >
+                    <Shield size={24} />
+                    <span className="text-[10px] font-black uppercase tracking-widest italic">ADMIN</span>
+                  </button>
+                )}
+              </div>
+              <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-white/5">
+                <button onClick={() => navigate('registry')} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-500">
+                  <User size={20} />
+                  <span className="text-[8px] font-black uppercase tracking-widest italic">Profile</span>
+                </button>
+                <button onClick={() => navigate('settings')} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-500">
+                  <SettingsIcon size={20} />
+                  <span className="text-[8px] font-black uppercase tracking-widest italic">Settings</span>
+                </button>
+                <button onClick={() => setIsExitModalOpen(true)} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500">
+                  <LogOut size={20} />
+                  <span className="text-[8px] font-black uppercase tracking-widest italic">Exit</span>
+                </button>
+              </div>
+            </m.div>
+          )}
+        </AnimatePresence>
       </header>
       <main className="flex-1 w-full max-w-[1700px] mx-auto p-6 md:p-12 pt-32 pb-24 relative overflow-x-hidden">
         <AnimatePresence mode="wait">

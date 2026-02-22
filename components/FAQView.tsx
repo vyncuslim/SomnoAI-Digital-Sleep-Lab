@@ -74,7 +74,7 @@ export const FAQView: React.FC<FAQViewProps> = ({ lang, onBack }) => {
               <HelpCircle size={48} strokeWidth={1.5} />
            </div>
            <div className="space-y-2">
-             <h1 className="text-4xl md:text-6xl font-black italic text-white uppercase tracking-tighter">Laboratory <span className="text-indigo-400">FAQ</span></h1>
+             <h1 className="text-3xl md:text-6xl font-black italic text-white uppercase tracking-tighter">Laboratory <span className="text-indigo-400">FAQ</span></h1>
              <p className="text-[10px] text-slate-600 font-mono font-bold uppercase tracking-[0.6em] italic">Knowledge Base • Protocol v2.1</p>
            </div>
         </div>

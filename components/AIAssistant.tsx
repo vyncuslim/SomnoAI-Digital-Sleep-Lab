@@ -98,7 +98,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
   };
 
   return (
-    <div className="flex flex-col h-[calc(100vh-140px)] max-w-5xl mx-auto font-sans animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="flex flex-col h-[calc(100vh-120px)] md:h-[calc(100vh-140px)] max-w-5xl mx-auto font-sans animate-in fade-in slide-in-from-bottom-4 duration-700">
       <header className="flex items-center justify-between mb-6 px-4">
         <div className="flex items-center gap-4 text-left">
           <div className="p-3 bg-slate-900 border border-indigo-500/20 rounded-xl text-indigo-400 relative">
@@ -177,7 +177,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder={String(t.placeholder || 'Command laboratory...')}
-              className="w-full bg-[#050a1f] border border-white/10 rounded-full pl-14 pr-20 py-4 md:py-6 text-sm md:text-base text-white focus:border-indigo-500/50 outline-none transition-all italic font-bold"
+              className="w-full bg-[#050a1f] border border-white/10 rounded-full pl-10 md:pl-14 pr-16 md:pr-20 py-3 md:py-6 text-sm md:text-base text-white focus:border-indigo-500/50 outline-none transition-all italic font-bold"
             />
             <m.button 
               whileTap={{ scale: 0.9 }}

@@ -50,7 +50,7 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
              <span className="text-[10px] font-black uppercase tracking-[0.4em] text-indigo-400 italic">Scientific Protocol v3.0</span>
           </div>
           
-          <h1 className="text-6xl md:text-9xl font-black italic text-white uppercase tracking-tighter leading-none">
+          <h1 className="text-4xl md:text-9xl font-black italic text-white uppercase tracking-tighter leading-none">
             {isZh ? '混合架构' : 'HYBRID'} <br/><span className="text-indigo-500">{isZh ? '分析协议' : 'PROTOCOL'}</span>
           </h1>
           
@@ -63,25 +63,25 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
 
         {/* Feature Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-           <GlassCard className="p-16 rounded-[5rem] border-white/5 space-y-10 group" intensity={1.2}>
-              <div className="p-5 bg-indigo-500/10 rounded-3xl text-indigo-400 w-fit group-hover:scale-110 transition-transform">
+           <GlassCard className="p-10 md:p-16 rounded-[3rem] md:rounded-[5rem] border-white/5 space-y-10 group" intensity={1.2}>
+              <div className="p-4 md:p-5 bg-indigo-500/10 rounded-3xl text-indigo-400 w-fit group-hover:scale-110 transition-transform">
                 <Smartphone size={40} />
               </div>
-              <div className="space-y-6">
-                <h3 className="text-3xl font-black italic text-white uppercase tracking-tight">Health Connect Ingress</h3>
-                <p className="text-slate-500 text-lg leading-relaxed italic font-bold opacity-80">
+              <div className="space-y-4 md:space-y-6">
+                <h3 className="text-2xl md:text-3xl font-black italic text-white uppercase tracking-tight">Health Connect Ingress</h3>
+                <p className="text-slate-500 text-base md:text-lg leading-relaxed italic font-bold opacity-80">
                   Data flows from your smartwatch into Android Health Connect. Our App cleans, encrypts, and buffers this telemetry before cloud transmission.
                 </p>
               </div>
            </GlassCard>
 
-           <GlassCard className="p-16 rounded-[5rem] border-indigo-500/20 bg-indigo-600/[0.01] space-y-10 group" intensity={1.2}>
-              <div className="p-5 bg-indigo-500/10 rounded-3xl text-indigo-400 w-fit group-hover:scale-110 transition-transform">
+           <GlassCard className="p-10 md:p-16 rounded-[3rem] md:rounded-[5rem] border-indigo-500/20 bg-indigo-600/[0.01] space-y-10 group" intensity={1.2}>
+              <div className="p-4 md:p-5 bg-indigo-500/10 rounded-3xl text-indigo-400 w-fit group-hover:scale-110 transition-transform">
                 <Brain size={40} />
               </div>
-              <div className="space-y-6">
-                <h3 className="text-3xl font-black italic text-white uppercase tracking-tight">Neural Synthesis Model</h3>
-                <p className="text-slate-500 text-lg leading-relaxed italic font-bold opacity-80">
+              <div className="space-y-4 md:space-y-6">
+                <h3 className="text-2xl md:text-3xl font-black italic text-white uppercase tracking-tight">Neural Synthesis Model</h3>
+                <p className="text-slate-500 text-base md:text-lg leading-relaxed italic font-bold opacity-80">
                   Gemini 2.5 Pro processes the de-identified biometric streams on login, reconstructing your deep sleep architecture with clinical-grade precision.
                 </p>
               </div>

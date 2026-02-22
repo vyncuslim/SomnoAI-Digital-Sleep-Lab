@@ -148,9 +148,9 @@ export const Trends: React.FC<{ history: SleepRecord[]; lang: Language }> = ({ h
           </div>
         </div>
 
-        <div className="h-[300px] w-full relative z-10">
+        <div className="h-[250px] md:h-[300px] w-full relative z-10">
           <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -20, bottom: 0 }}>
+            <AreaChart data={chartData} margin={{ top: 0, right: 0, left: -25, bottom: 0 }}>
               <defs>
                 <linearGradient id="colorScore" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>

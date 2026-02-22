@@ -39,7 +39,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           <ArrowLeft size={24} />
         </button>
         <div>
-          <h1 className="text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
+          <h1 className="text-2xl md:text-3xl font-black italic tracking-tighter text-white uppercase leading-none">
             {t.title}
           </h1>
           <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-2">
