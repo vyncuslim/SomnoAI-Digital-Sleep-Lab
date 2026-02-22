@@ -198,6 +198,12 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
                   </div>
                 </div>
                 <div className="space-y-4 text-left">
+                  <label className="text-[11px] font-black uppercase text-slate-500 px-6 italic">{t_registry.clearance}</label>
+                  <div className="bg-[#020617] border border-white/10 rounded-[3rem] px-8 py-7 text-base text-indigo-400 font-black uppercase italic shadow-inner">
+                    {profile?.role || 'USER'}
+                  </div>
+                </div>
+                <div className="space-y-4 text-left">
                   <label className="text-[11px] font-black uppercase text-indigo-400 px-6 italic">{t_registry.callsign}</label>
                   <input 
                     type="text" value={formData.displayName}

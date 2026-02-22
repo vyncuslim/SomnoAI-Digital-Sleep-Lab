@@ -12,7 +12,7 @@
 
 html, body { 
   background-color: var(--lab-bg);
-  color: #f8fafc;
+  color: #f1f5f9; /* Increased contrast from f8fafc */
   margin: 0; 
   padding: 0; 
   min-height: 100vh;
@@ -21,6 +21,11 @@ html, body {
   font-feature-settings: "cv02", "cv03", "cv04", "cv11", "ss01";
   -webkit-font-smoothing: antialiased;
   scrollbar-gutter: stable;
+  font-size: 16px; /* Base font size */
+}
+
+@media (max-width: 768px) {
+  html { font-size: 14px; } /* Slightly smaller on mobile to fit more, but we'll use utility classes for readability */
 }
 
 /* 实验室动态扫描线层 */

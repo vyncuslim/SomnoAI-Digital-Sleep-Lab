@@ -88,6 +88,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           </div>
 
           <div className="flex items-center gap-4">
+            <button onClick={() => onNavigate('signup')} className="hidden sm:flex text-[10px] font-black text-slate-500 hover:text-white transition-all tracking-[0.2em] uppercase italic px-4">
+              {t.nav.signup}
+            </button>
             <m.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => onNavigate('login')} className="hidden sm:flex px-10 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-500 transition-all italic items-center gap-3 shadow-[0_20px_40px_-10px_rgba(79,70,229,0.3)]">
               <LogIn size={14} /> {t.nav.enter}
             </m.button>
@@ -128,6 +131,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
                     </span>
                   </button>
                 ))}
+                <button 
+                  onClick={() => onNavigate('signup')}
+                  className="sm:hidden flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 text-left group"
+                >
+                  <User size={16} className="text-indigo-400 group-hover:text-white" />
+                  <span className="text-xs font-black uppercase tracking-widest italic text-slate-400 group-hover:text-white transition-colors">
+                    {t.nav.signup}
+                  </span>
+                </button>
                 <button 
                   onClick={() => onNavigate('login')}
                   className="sm:hidden flex items-center gap-4 p-4 rounded-2xl bg-indigo-600 text-white text-left shadow-xl"
@@ -290,6 +302,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         <div className="flex flex-col items-center md:items-end gap-8">
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-12">
              <button onClick={() => onNavigate('about')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">ABOUT</button>
+             <button onClick={() => onNavigate('opensource')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">ARCHITECTURE</button>
              <button onClick={() => onNavigate('contact')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">CONTACT</button>
              <button onClick={() => onNavigate('privacy')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">PRIVACY</button>
              <button onClick={() => onNavigate('terms')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">TERMS</button>

@@ -197,7 +197,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                   className="w-full py-10 rounded-[2.5rem] bg-white/5 border border-white/10 text-white font-black text-[13px] uppercase tracking-[0.4em] flex items-center justify-center gap-8 hover:bg-white/10 hover:scale-[1.02] active:scale-95 transition-all italic shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)] group relative overflow-hidden"
                 >
                   <Chrome size={32} className="text-indigo-400 relative z-10 group-hover:rotate-12 transition-transform" />
-                  <span className="relative z-10">{isLogin ? (isZh ? '通过 GOOGLE 执行' : 'EXECUTE VIA GOOGLE') : (isZh ? '绑定 GOOGLE 身份' : 'BIND GOOGLE IDENTITY')}</span>
+                  <span className="relative z-10">{isLogin ? (isZh ? '通过 GOOGLE 登录' : 'LOGIN WITH GOOGLE') : (isZh ? '通过 GOOGLE 注册' : 'SIGNUP WITH GOOGLE')}</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </button>
 
@@ -261,7 +261,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                  {!isLogin && (
                    <div className="relative group">
                      <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><User size={24} /></div>
-                     <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={isZh ? "受试者代号" : "Subject Callsign"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-10 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
+                     <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={isZh ? "受试者姓名 (姓名)" : "Subject Name (Full Name)"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-10 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
                    </div>
                  )}
                  
@@ -272,7 +272,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
                  <div className="relative group">
                    <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><Lock size={24} /></div>
-                   <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "通行密匙" : "Access Token"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
+                   <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "通行密码 (Password)" : "Access Token (Password)"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors">
                      {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
                    </button>
@@ -282,7 +282,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
                  <button type="submit" disabled={isProcessing || cooldown > 0} className={`w-full py-10 rounded-full font-black text-sm uppercase tracking-[0.6em] shadow-[0_40px_100px_-20px_rgba(79,70,229,0.3)] transition-all flex items-center justify-center gap-6 italic ${cooldown > 0 ? 'bg-slate-900 text-slate-700' : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95'}`}>
                    {isProcessing ? <Loader2 className="animate-spin" size={32} /> : <Zap size={32} fill="currentColor" />}
-                   <span>{cooldown > 0 ? `COOLDOWN (${cooldown}S)` : isLogin ? 'START SESSION' : 'REGISTER NODE'}</span>
+                   <span>{cooldown > 0 ? `COOLDOWN (${cooldown}S)` : isLogin ? (isZh ? '登录实验室' : 'LOGIN / START SESSION') : (isZh ? '注册新受试者' : 'SIGNUP / REGISTER NODE')}</span>
                  </button>
               </form>
             )}
@@ -292,7 +292,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                  <p className="text-sm font-bold text-slate-600 uppercase tracking-widest italic">
                    {isLogin ? (isZh ? "尚未获得实验室准入？" : "NEW SUBJECT? ") : (isZh ? "已有注册节点？" : "LEGACY NODE? ")}
                    <button type="button" onClick={() => setActiveTab(isLogin ? 'signup' : 'login')} className="text-indigo-400 underline underline-offset-8 ml-6 hover:text-white transition-all font-black">
-                     {isLogin ? (isZh ? '申请入口' : 'APPLY FOR ACCESS') : (isZh ? '执行会话' : 'EXECUTE SESSION')}
+                     {isLogin ? (isZh ? '立即注册' : 'CREATE ACCOUNT') : (isZh ? '登录终端' : 'LOGIN TO TERMINAL')}
                    </button>
                  </p>
               </div>

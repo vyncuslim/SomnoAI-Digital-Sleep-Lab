@@ -17,14 +17,15 @@ const commonEn = {
   landing: {
     heroTitle: "CODE IS THE RING. DATA IS THE SOUL.",
     heroSubtitle: "Transform your existing smartwatch into an elite biometric lab. SomnoAI bridges Android Health Connect data to deliver smart-ring depth analysis without the hardware cost. (Note: Excludes Apple ecosystem)",
-    ctaPrimary: "START OPTIMIZATION",
+    ctaPrimary: "GET STARTED",
     ctaSecondary: "VIEW PHILOSOPHY",
     nav: {
       science: "PROTOCOL",
       faq: "LOGS FAQ",
       project: "PHILOSOPHY",
       support: "SUPPORT",
-      enter: "ENTER LAB",
+      enter: "LOGIN",
+      signup: "JOIN NOW",
       news: "RESEARCH",
       blog: "BLOG"
     },
@@ -70,6 +71,7 @@ const commonEn = {
     identitySector: "Identity Sector",
     identifier: "Node Identifier",
     callsign: "Subject Callsign",
+    clearance: "Clearance Level",
     biometricSector: "Biometric Baseline",
     polarity: "Neural Polarity",
     commit: "COMMIT METRICS",
@@ -162,14 +164,15 @@ const commonZh = {
   landing: {
     heroTitle: "代码即戒指。数据即灵魂。",
     heroSubtitle: "将您现有的智能手表转化为顶级生物监测站。SomnoAI 通过安卓 Health Connect 桥接数据，为您提供无需额外硬件的智能戒指级深度分析。（注：不包含苹果 Apple 品牌）",
-    ctaPrimary: "开始优化",
+    ctaPrimary: "立即开始",
     ctaSecondary: "品牌哲学",
     nav: {
       science: "科学架构",
       faq: "实验室 FAQ",
       project: "品牌哲学",
       support: "技术支持",
-      enter: "进入实验室",
+      enter: "登录终端",
+      signup: "加入实验室",
       news: "科研中心",
       blog: "实验室博客"
     },
@@ -207,6 +210,7 @@ const commonZh = {
     identitySector: "身份板块",
     identifier: "节点标识",
     callsign: "受试者代号",
+    clearance: "权限等级",
     biometricSector: "生物基准",
     polarity: "神经极性",
     commit: "提交指标",
