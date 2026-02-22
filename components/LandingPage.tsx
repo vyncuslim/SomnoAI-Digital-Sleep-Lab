@@ -72,8 +72,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           <div className="flex items-center gap-5 cursor-pointer group" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
             <Logo size={46} animated={true} />
             <div className="flex flex-col text-left">
-              <span className="text-2xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">Somno<span className="text-indigo-400">AI</span></span>
-              <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1.5">{isZh ? '数字化睡眠实验室' : 'Digital Restoration Lab'}</span>
+              <span className="text-2xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">SomnoAI <span className="text-indigo-400">Digital Sleep Lab</span></span>
+              <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1.5">{isZh ? '您的AI驱动睡眠伴侣' : 'Your AI-Powered Sleep Companion'}</span>
             </div>
           </div>
 
@@ -108,7 +108,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
           <m.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.6 }} className="max-w-4xl mx-auto">
             <p className="text-xl md:text-3xl text-slate-400 font-bold italic leading-relaxed border-l-4 border-indigo-600/30 pl-10 text-left md:text-center">
-               {t.heroSubtitle}
+               {isZh ? 'SomnoAI 数字睡眠实验室提供个性化报告、AI 驱动的洞察和可操作的建议，以优化您的睡眠。兼容 Health Connect 和主流智能手表。' : 'SomnoAI Digital Sleep Lab provides personalized reports, AI-driven insights, and actionable recommendations to optimize your sleep. Compatible with Health Connect and major smartwatches.'}
+            </p>
+            <p className="text-lg md:text-xl text-slate-500 italic leading-relaxed mt-4">
+              {isZh ? '查看我们的示例报告和订阅计划，解锁您的最佳恢复。' : 'Explore our sample reports and subscription plans to unlock your optimal restoration.'}
             </p>
           </m.div>
 
@@ -193,12 +196,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </div>
       </section>
 
+      {/* Data Reliability Section */}
+      <section className="relative z-10 py-40 px-6 border-t border-white/5 bg-slate-950/20">
+        <div className="max-w-7xl mx-auto space-y-24">
+          <div className="flex flex-col md:flex-row justify-between items-end gap-10 px-4">
+            <div className="space-y-4 text-left">
+              <div className="flex items-center gap-3 text-emerald-400">
+                <ShieldCheck size={22} />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] italic text-slate-500">Data Integrity</span>
+              </div>
+              <h2 className="text-4xl md:text-7xl font-black italic text-white uppercase tracking-tighter leading-none">Trust & <span className="text-emerald-400">Reliability</span></h2>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-2 gap-12 text-slate-300 text-lg leading-relaxed">
+            <div className="space-y-6">
+              <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">{isZh ? '我们的方法论' : 'Our Methodology'}</h3>
+              <p>{isZh ? '我们采用先进的AI算法和经过验证的神经科学原理来分析您的睡眠数据。我们的模型经过数百万小时的匿名睡眠数据训练，以确保高精度和相关性。' : 'We employ advanced AI algorithms and validated neuroscience principles to analyze your sleep data. Our models are trained on millions of hours of anonymized sleep data to ensure high accuracy and relevance.'}</p>
+              <p>{isZh ? '数据来源包括临床研究、可穿戴设备和用户自愿贡献的匿名数据集。' : 'Data sources include clinical studies, wearable devices, and voluntarily contributed anonymized datasets from users.'}</p>
+            </div>
+            <div className="space-y-6">
+              <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">{isZh ? '隐私与限制' : 'Privacy & Limitations'}</h3>
+              <p>{isZh ? '您的数据隐私是我们的核心承诺。所有个人身份信息都经过严格加密和匿名化处理。我们绝不会出售您的数据。' : 'Your data privacy is our core commitment. All personally identifiable information is rigorously encrypted and anonymized. We never sell your data.'}</p>
+              <p>{isZh ? '请注意，SomnoAI 提供的洞察仅供参考，不应替代专业的医疗建议。对于任何健康问题，请咨询合格的医疗专业人员。' : 'Please note that insights provided by SomnoAI are for informational purposes only and should not replace professional medical advice. Consult a qualified healthcare professional for any health concerns.'}</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Global Footer */}
       <footer className="relative z-10 px-12 py-24 flex flex-col md:flex-row justify-between items-center gap-12 bg-[#01040a] border-t border-white/5">
         <div className="flex items-center gap-8">
           <Logo size={48} />
           <div className="flex flex-col text-left">
-            <span className="text-[10px] font-black uppercase tracking-[0.6em] italic text-slate-500">@2026 SomnoAI Laboratory Hub</span>
+            <span className="text-[10px] font-black uppercase tracking-[0.6em] italic text-slate-500">@2026 SomnoAI Digital Sleep Lab</span>
             <div className="flex items-center gap-2 mt-2">
               <ShieldCheck size={14} className="text-indigo-500" />
               <span className="text-[8px] font-bold text-slate-700 uppercase tracking-widest">Neural Link Encrypted</span>
@@ -208,9 +238,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
         <div className="flex flex-col items-center md:items-end gap-8">
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-12">
-             <button onClick={() => onNavigate('opensource')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors underline decoration-indigo-500/20 underline-offset-8">ARCHITECTURE_ISO</button>
-             <button onClick={() => onNavigate('privacy')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">PRIVACY_CORE</button>
-             <button onClick={() => onNavigate('terms')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">TERMS_PROTO</button>
+             <button onClick={() => onNavigate('about')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">ABOUT</button>
+             <button onClick={() => onNavigate('contact')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">CONTACT</button>
+             <button onClick={() => onNavigate('privacy')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">PRIVACY</button>
+             <button onClick={() => onNavigate('terms')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">TERMS</button>
           </div>
           <p className="text-[8px] font-mono text-slate-500 tracking-[0.4em]">STABILITY_VERSION: 4.2.8 // REGION: GLOBAL_EDGE</p>
         </div>
