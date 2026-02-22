@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import RootLayout from './components/RootLayout.tsx';
+import RootLayout from './app/layout.tsx';
 import { ViewType, SleepRecord, Article } from './types.ts';
 import {
   LayoutDashboard, TrendingUp, Sparkles, FlaskConical, Mic,
@@ -46,6 +46,8 @@ import AdminLoginPage from './legacy_pages/AdminLoginPage.tsx';
 import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
 import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
 import { NotFoundView } from './components/NotFoundView.tsx';
+import { MOCK_RESEARCH } from './components/NewsHub.tsx';
+import { MOCK_BLOG_POSTS } from './components/BlogHub.tsx';
 
 const m = motion as any;
 
