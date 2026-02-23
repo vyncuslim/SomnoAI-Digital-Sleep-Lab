@@ -19,6 +19,10 @@ export default defineConfig({
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {
+      input: {
+        main: 'index.html',
+        login: 'login.html'
+      },
       output: {
         manualChunks: {
           vendor: ['react', 'react-dom', 'framer-motion', 'recharts']

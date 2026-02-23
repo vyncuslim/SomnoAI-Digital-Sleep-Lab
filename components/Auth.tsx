@@ -64,7 +64,7 @@ const LabVisualSide = ({ isZh }: { isZh: boolean }) => (
 );
 
 export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab = 'login' }) => {
-  const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'otp'>(initialTab);
+  const [activeTab, setActiveTab] = useState<'login' | 'signup' | 'otp' | 'magic_link'>(initialTab);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -82,6 +82,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const isZh = lang === 'zh';
   const isLogin = activeTab === 'login';
   const isOTP = activeTab === 'otp';
+  const isMagicLink = activeTab === 'magic_link';
 
   useEffect(() => {
     if (cooldown > 0) {
@@ -119,6 +120,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         
         // 明确通知 OTP 已发送
         setSuccessMsg(isZh ? `验证令牌已分发至：${email}` : `Validation token dispatched to: ${email}`);
+        setActiveTab('otp');
+        setOtpCooldown(60);
+        setTimeout(() => otpRefs.current[0]?.focus(), 150);
+      } else if (activeTab === 'magic_link') {
+        const { error: magicErr } = await authApi.sendOTP(email.trim(), token);
+        if (magicErr) throw magicErr;
+        
+        setSuccessMsg(isZh ? `魔法链接已分发至：${email}` : `Magic link dispatched to: ${email}`);
         setActiveTab('otp');
         setOtpCooldown(60);
         setTimeout(() => otpRefs.current[0]?.focus(), 150);
@@ -160,7 +169,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     setIsProcessing(true);
     setError(null);
     try {
-      const { error: verifyErr } = await authApi.verifyOTP(email.trim(), token, 'signup');
+      // If it's magic link, the type is 'email', if it's signup, the type is 'signup'
+      const type = email && !password && !fullName ? 'email' : 'signup';
+      const { error: verifyErr } = await authApi.verifyOTP(email.trim(), token, type);
       if (verifyErr) throw verifyErr;
       onLogin();
     } catch (err: any) {
@@ -182,10 +193,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         <m.div initial={{ opacity: 0, scale: 0.98, y: 10 }} animate={{ opacity: 1, scale: 1, y: 0 }} className="w-full max-w-[540px] space-y-16">
           <div className="text-center lg:text-left space-y-4">
              <h2 className="text-6xl font-black italic text-white uppercase tracking-tighter drop-shadow-2xl">
-               {isOTP ? (isZh ? '验证节点' : 'Verify Node') : isLogin ? (isZh ? '访问终端' : 'Access Hub') : (isZh ? '注册受试者' : 'Register Subject')}
+               {isOTP ? (isZh ? '验证节点' : 'Verify Node') : isLogin ? (isZh ? '访问终端' : 'Access Hub') : isMagicLink ? (isZh ? '无密码访问' : 'Passwordless') : (isZh ? '注册受试者' : 'Register Subject')}
              </h2>
              <p className="text-xs font-black text-slate-600 uppercase tracking-[0.8em] italic">
-               {isOTP ? (isZh ? '输入发送至邮箱的验证令牌' : 'INPUT DISPATCHED TOKEN') : 'SOMNOAI NEURAL GRID ADMISSION'}
+               {isOTP ? (isZh ? '输入发送至邮箱的验证令牌' : 'INPUT DISPATCHED TOKEN') : isMagicLink ? (isZh ? '通过邮箱获取一次性令牌' : 'GET ONE-TIME TOKEN VIA EMAIL') : 'SOMNOAI NEURAL GRID ADMISSION'}
              </p>
           </div>
 
@@ -197,7 +208,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                   className="w-full py-10 rounded-[2.5rem] bg-white/5 border border-white/10 text-white font-black text-[13px] uppercase tracking-[0.4em] flex items-center justify-center gap-8 hover:bg-white/10 hover:scale-[1.02] active:scale-95 transition-all italic shadow-[0_40px_100px_-20px_rgba(0,0,0,0.6)] group relative overflow-hidden"
                 >
                   <Chrome size={32} className="text-indigo-400 relative z-10 group-hover:rotate-12 transition-transform" />
-                  <span className="relative z-10">{isLogin ? (isZh ? '使用 Google 账号快捷登录' : 'LOGIN WITH GOOGLE') : (isZh ? '使用 Google 账号快捷注册' : 'SIGNUP WITH GOOGLE')}</span>
+                  <span className="relative z-10">{isLogin ? (isZh ? '使用 Google 账号快捷登录' : 'LOGIN WITH GOOGLE') : isMagicLink ? (isZh ? '使用 Google 账号快捷登录' : 'LOGIN WITH GOOGLE') : (isZh ? '使用 Google 账号快捷注册' : 'SIGNUP WITH GOOGLE')}</span>
                   <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
                 </button>
 
@@ -258,7 +269,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
               </form>
             ) : (
               <form onSubmit={handleAuthAction} className="space-y-10">
-                 {!isLogin && (
+                 {(!isLogin && !isMagicLink) && (
                    <div className="relative group">
                      <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><User size={24} /></div>
                      <input type="text" value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder={isZh ? "姓名 (Full Name)" : "Full Name"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-10 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
@@ -270,29 +281,37 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                    <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={isZh ? "邮箱 (Email)" : "Email"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-10 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
                  </div>
 
-                 <div className="relative group">
-                   <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><Lock size={24} /></div>
-                   <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "密码 (Password)" : "Password"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
-                   <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors">
-                     {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
-                   </button>
-                 </div>
+                 {!isMagicLink && (
+                   <div className="relative group">
+                     <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><Lock size={24} /></div>
+                     <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "密码 (Password)" : "Password"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
+                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors">
+                       {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+                     </button>
+                   </div>
+                 )}
 
 
 
                  <button type="submit" disabled={isProcessing || cooldown > 0} className={`w-full py-10 rounded-full font-black text-sm uppercase tracking-[0.6em] shadow-[0_40px_100px_-20px_rgba(79,70,229,0.3)] transition-all flex items-center justify-center gap-6 italic ${cooldown > 0 ? 'bg-slate-900 text-slate-700' : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95'}`}>
                    {isProcessing ? <Loader2 className="animate-spin" size={32} /> : <Zap size={32} fill="currentColor" />}
-                   <span>{cooldown > 0 ? `COOLDOWN (${cooldown}S)` : isLogin ? (isZh ? '登录账号' : 'LOGIN / START SESSION') : (isZh ? '注册账号' : 'SIGNUP / REGISTER NODE')}</span>
+                   <span>{cooldown > 0 ? `COOLDOWN (${cooldown}S)` : isLogin ? (isZh ? '登录账号' : 'LOGIN / START SESSION') : isMagicLink ? (isZh ? '发送魔法链接' : 'SEND MAGIC LINK') : (isZh ? '注册账号' : 'SIGNUP / REGISTER NODE')}</span>
                  </button>
               </form>
             )}
 
             {!isOTP && (
-              <div className="text-center lg:text-left pt-6">
+              <div className="text-center lg:text-left pt-6 space-y-4">
                  <p className="text-sm font-bold text-slate-600 uppercase tracking-widest italic">
-                   {isLogin ? (isZh ? "尚未获得实验室准入？" : "NEW SUBJECT? ") : (isZh ? "已有注册节点？" : "LEGACY NODE? ")}
+                   {isLogin ? (isZh ? "尚未获得实验室准入？" : "NEW SUBJECT? ") : isMagicLink ? (isZh ? "已有注册节点？" : "LEGACY NODE? ") : (isZh ? "已有注册节点？" : "LEGACY NODE? ")}
                    <button type="button" onClick={() => setActiveTab(isLogin ? 'signup' : 'login')} className="text-indigo-400 underline underline-offset-8 ml-6 hover:text-white transition-all font-black">
                      {isLogin ? (isZh ? '立即注册' : 'CREATE ACCOUNT') : (isZh ? '登录终端' : 'LOGIN TO TERMINAL')}
+                   </button>
+                 </p>
+                 <p className="text-sm font-bold text-slate-600 uppercase tracking-widest italic">
+                   {isMagicLink ? (isZh ? "使用密码登录？" : "USE PASSWORD? ") : (isZh ? "忘记密码？" : "FORGOT PASSWORD? ")}
+                   <button type="button" onClick={() => setActiveTab(isMagicLink ? 'login' : 'magic_link')} className="text-indigo-400 underline underline-offset-8 ml-6 hover:text-white transition-all font-black">
+                     {isMagicLink ? (isZh ? '密码登录' : 'PASSWORD LOGIN') : (isZh ? '无密码登录' : 'PASSWORDLESS LOGIN')}
                    </button>
                  </p>
               </div>

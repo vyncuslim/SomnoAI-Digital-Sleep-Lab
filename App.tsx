@@ -150,9 +150,9 @@ const AppContent: React.FC = () => {
         return 'landing';
       }
 
-      return 'landing';
+      return 'not-found';
     } catch (e) {
-      return 'landing';
+      return 'not-found';
     }
   }, []);
 
