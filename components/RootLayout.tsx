@@ -2,5 +2,4 @@
 // Some older commits import RootLayout from "./components/RootLayout".
 // Keep this file to avoid build failures.
 
-import RootLayout from '../app/layout';
-export default RootLayout;
+export { default } from '../app/layout';
