@@ -122,6 +122,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
       return;
     }
     
+    if (!isMagicLink && password.length < 6) {
+      setError({ message: isZh ? "密码长度至少为 6 个字符。" : "Password must be at least 6 characters." });
+      return;
+    }
+    
     setError(null);
     setSuccessMsg(null);
     setIsProcessing(true);
@@ -135,9 +140,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         onLogin();
       } else if (activeTab === 'signup') {
         const { data, error: signUpErr } = await authApi.signUp(email.trim(), password, { full_name: fullName.trim() }, token);
-        if (signUpErr) throw signUpErr;
+        if (signUpErr) {
+          if (signUpErr.message.includes('User already registered')) {
+            throw new Error(isZh ? "该邮箱已注册。请直接登录。" : "Email already registered. Please login.");
+          }
+          throw signUpErr;
+        }
         
-        // 明确通知 OTP 已发送
         setSuccessMsg(isZh ? `验证令牌已分发至：${email}` : `Validation token dispatched to: ${email}`);
         setActiveTab('otp');
         setOtpCooldown(60);
@@ -169,7 +178,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     setIsProcessing(true);
     setError(null);
     try {
-      const { error: resendErr } = await (authApi as any).resend(email.trim(), 'signup');
+      const token = await (window as any).grecaptcha.enterprise.execute('6Lean3UsAAAAAE4VcnRN95_r4bLK6wrYnduAFBDx', { action: 'resend_otp' });
+      
+      let resendErr;
+      if (activeTab === 'otp' && (email && password)) {
+        // This was a signup flow
+        const res = await authApi.resend(email.trim(), 'signup');
+        resendErr = res.error;
+      } else {
+        // This was likely a magic link flow
+        const res = await authApi.sendOTP(email.trim(), token);
+        resendErr = res.error;
+      }
+
       if (resendErr) throw resendErr;
       setSuccessMsg(isZh ? "令牌已重新分发。" : "Token re-dispatched.");
       setOtpCooldown(60);
@@ -188,8 +209,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     setIsProcessing(true);
     setError(null);
     try {
-      // If it's magic link, the type is 'email', if it's signup, the type is 'signup'
-      const type = email && !password && !fullName ? 'email' : 'signup';
+      // If it's magic link (no password/fullName provided during the flow), the type is 'email'
+      // If it's signup, the type is 'signup'
+      const isMagicLinkFlow = !password && !fullName;
+      const type = isMagicLinkFlow ? 'email' : 'signup';
+      
       const { error: verifyErr } = await authApi.verifyOTP(email.trim(), token, type);
       if (verifyErr) throw verifyErr;
       onLogin();
