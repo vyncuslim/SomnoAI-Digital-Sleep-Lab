@@ -14,13 +14,17 @@ export const logAuditLog = async (action: string, details: string, level: string
   try {
     const { data: { user } } = await (supabase.auth as any).getUser();
     
-    // 1. Record in DB Audit Archive (Blocking)
-    const { error } = await supabase.from('audit_logs').insert([{
+    const logEntry: any = {
       action,
       details,
-      level,
-      user_id: user?.id
-    }]);
+      level
+    };
+    if (user?.id) {
+      logEntry.user_id = user.id;
+    }
+
+    // 1. Record in DB Audit Archive (Blocking)
+    const { error } = await supabase.from('audit_logs').insert([logEntry]);
     
     // 2. Notification Dispatch Logic (Non-blocking to prevent UI hangs)
     const actionToTypeMap: Record<string, string> = {

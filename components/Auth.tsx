@@ -127,7 +127,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     setIsProcessing(true);
 
     try {
-      const token = await (window as any).grecaptcha.enterprise.execute('6LcIsnEsAAAAAMJwuVQ0EEH1sBIRHDdlGI2DfPgv', { action: activeTab });
+      const token = await (window as any).grecaptcha.enterprise.execute('6Lean3UsAAAAAE4VcnRN95_r4bLK6wrYnduAFBDx', { action: activeTab });
 
       if (activeTab === 'login') {
         const { error: signInErr } = await authApi.signIn(email.trim(), password, token);
@@ -284,6 +284,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                   <button type="button" onClick={handleResendOTP} disabled={otpCooldown > 0 || isProcessing} className={`w-full text-center text-[11px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-3 ${otpCooldown > 0 ? 'text-slate-800 cursor-not-allowed' : 'text-indigo-400 hover:text-white'}`}>
                     <Send size={14} /> {otpCooldown > 0 ? `${isZh ? '冷却' : 'COOLDOWN'} (${otpCooldown}S)` : (isZh ? '重新分发信号' : 'RE-DISPATCH SIGNAL')}
                   </button>
+                  <p className="text-center text-[10px] text-slate-500 italic mt-4">
+                    {isZh ? '未收到邮件？请检查垃圾邮件文件夹，或等待冷却结束后重试。' : 'No email? Check your spam folder, or wait for cooldown to retry.'}
+                  </p>
                 </div>
               </form>
             ) : (
@@ -304,7 +307,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                    <div className="space-y-3">
                      <div className="relative group">
                        <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><Lock size={24} /></div>
-                       <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "密码 (Password)" : "Password"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
+                       <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "密码 (Password)" : "Password"} autoComplete={isLogin ? "current-password" : "new-password"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
                        <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors">
                          {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
                        </button>

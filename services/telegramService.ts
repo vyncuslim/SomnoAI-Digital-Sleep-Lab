@@ -53,13 +53,17 @@ const isRecentlySent = async (action: string, fingerprint: string) => {
     }
 
     const lookbackTime = new Date(now - cooldownPeriod).toISOString();
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('audit_logs')
       .select('id')
       .eq('action', action)
       .ilike('details', `%${fingerprint}%`)
       .gt('created_at', lookbackTime)
       .limit(1);
+
+    if (error && error.code !== 'PGRST116') {
+      // Ignore 404s (table not found or no rows)
+    }
 
     if (data && data.length > 0) {
       memoryCache.set(cacheKey, now);
