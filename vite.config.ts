@@ -21,7 +21,11 @@ export default defineConfig({
     rollupOptions: {
       input: {
         main: 'index.html',
-        login: 'login.html'
+        login: 'login.html',
+        signup: 'signup.html',
+        dashboard: 'dashboard.html',
+        privacy: 'privacy.html',
+        terms: 'terms.html'
       },
       output: {
         manualChunks: {
