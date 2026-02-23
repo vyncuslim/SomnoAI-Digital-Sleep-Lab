@@ -324,11 +324,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                  
                  <div className="relative group">
                    <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><Mail size={24} /></div>
-                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={isZh ? "邮箱 (Email)" : "Email"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-10 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
+                   <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder={isZh ? "邮箱 (Email)" : "Email"} autoComplete="username" className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-10 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
                  </div>
 
                  {!isMagicLink && (
                    <div className="space-y-3">
+                     {/* Hidden username field for accessibility/password managers */}
+                     <input type="text" name="username" value={email} readOnly className="hidden" autoComplete="username" />
                      <div className="relative group">
                        <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><Lock size={24} /></div>
                        <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "密码 (Password)" : "Password"} autoComplete={isLogin ? "current-password" : "new-password"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
