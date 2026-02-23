@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
+import { Navbar } from './components/Navbar.tsx';
 import { authApi } from './services/supabaseService.ts';
 import { safeNavigatePath } from './services/navigation.ts';
 import { ProtectedRoute } from './components/ProtectedRoute.tsx';
@@ -241,145 +242,37 @@ const AppContent: React.FC = () => {
 
   const isStandaloneView = ['landing', 'science', 'faq', 'about', 'support', 'privacy', 'terms', 'login', 'signup', 'admin-login', 'opensource', 'contact', 'feedback', 'changelog', 'not-found', 'news', 'article', 'blog', 'blog-post', 'admin'].includes(activeView);
 
-  if (isStandaloneView) {
-    return (
-      <>
-        {renderContent()}
-        <ExitFeedbackModal isOpen={isExitModalOpen} lang={lang} onConfirmLogout={async () => { await authApi.signOut(); window.location.href = '/'; }} />
-      </>
-    );
-  }
-
-  if (!profile) return <LandingPage lang={lang} onNavigate={navigate} />;
-  if (!profile.full_name && !['settings', 'registry', 'admin'].includes(activeView)) return <FirstTimeSetup onComplete={refresh} />;
-
-  const navItems = [
-    { id: 'dashboard', icon: LayoutDashboard, label: lang === 'zh' ? '实验室' : 'Lab' },
-    { id: 'calendar', icon: TrendingUp, label: lang === 'zh' ? '分析' : 'Atlas' },
-    { id: 'experiment', icon: FlaskConical, label: lang === 'zh' ? '实验' : 'Trials' },
-    { id: 'assistant', icon: Sparkles, label: lang === 'zh' ? '合成' : 'AI Sync' },
-    { id: 'dreams', icon: ImageIcon, label: lang === 'zh' ? '投影' : 'Dreams' },
-    { id: 'voice', icon: Mic, label: lang === 'zh' ? '语音' : 'Voice' },
-    { id: 'news', icon: Newspaper, label: lang === 'zh' ? '科研' : 'Research' },
-    { id: 'blog', icon: PenTool, label: lang === 'zh' ? '博文' : 'Blog' },
-    { id: 'diary', icon: BookOpen, label: lang === 'zh' ? '日志' : 'Log' },
-  ];
+  if (!profile && !isStandaloneView) return <LandingPage lang={lang} onNavigate={navigate} />;
+  if (profile && !profile.full_name && !['settings', 'registry', 'admin'].includes(activeView)) return <FirstTimeSetup onComplete={refresh} />;
 
   return (
     <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200 selection:bg-indigo-500/30">
-      <header className="fixed top-0 left-0 right-0 z-[100] bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 px-6 md:px-12 h-20 flex items-center justify-between shadow-2xl">
-        <div className="flex items-center gap-10">
-          <div className="flex items-center gap-4 cursor-pointer group" onClick={() => navigate('dashboard')}>
-            <Logo size={36} animated={true} />
-            <div className="flex flex-col text-left">
-              <span className="text-lg font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">SomnoAI <span className="text-indigo-400 font-medium">Digital Sleep Lab</span></span>
-              <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">Sovereign Node Interface</span>
-            </div>
-          </div>
-          <nav className="hidden xl:flex items-center gap-8">
-            {navItems.map(item => (
-              <button 
-                key={item.id} 
-                onClick={() => navigate(item.id)}
-                className={`group relative text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 italic ${activeView === item.id ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
-              >
-                <item.icon size={14} className={activeView === item.id ? 'animate-pulse' : ''} /> 
-                {item.label}
-                {activeView === item.id && (
-                  <m.div layoutId="nav-glow" className="absolute -bottom-7 left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_15px_#6366f1]" />
-                )}
-              </button>
-            ))}
-            {isAdmin && (
-              <button 
-                onClick={() => navigate('admin')}
-                className={`group relative text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 italic ${activeView === 'admin' ? 'text-rose-400' : 'text-slate-500 hover:text-rose-400'}`}
-              >
-                <Shield size={14} /> ADMIN
-              </button>
-            )}
-          </nav>
-        </div>
-        <div className="flex items-center gap-4">
-          <div className="hidden sm:flex items-center gap-4">
-            <button onClick={() => navigate('registry')} className={`p-3 rounded-xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
-              <User size={18} />
-            </button>
-            <button onClick={() => navigate('settings')} className={`p-3 rounded-xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
-              <SettingsIcon size={18} />
-            </button>
-            <button onClick={() => setIsExitModalOpen(true)} className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90">
-              <LogOut size={18} />
-            </button>
-          </div>
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="xl:hidden p-3 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all"
-          >
-            {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-          </button>
-        </div>
-
-        {/* Mobile Menu Overlay */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <m.div 
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="xl:hidden absolute top-24 left-6 right-6 bg-[#01040a]/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl z-[200] max-h-[70vh] overflow-y-auto"
-            >
-              <div className="grid grid-cols-2 gap-4">
-                {navItems.map((item) => (
-                  <button 
-                    key={item.id} 
-                    onClick={() => navigate(item.id)}
-                    className={`flex flex-col items-center gap-3 p-6 rounded-3xl border transition-all ${activeView === item.id ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white'}`}
-                  >
-                    <item.icon size={24} />
-                    <span className="text-[10px] font-black uppercase tracking-widest italic">{item.label}</span>
-                  </button>
-                ))}
-                {isAdmin && (
-                  <button 
-                    onClick={() => navigate('admin')}
-                    className={`flex flex-col items-center gap-3 p-6 rounded-3xl border transition-all ${activeView === 'admin' ? 'bg-rose-500/10 border-rose-500/30 text-rose-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-rose-400'}`}
-                  >
-                    <Shield size={24} />
-                    <span className="text-[10px] font-black uppercase tracking-widest italic">ADMIN</span>
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-3 gap-4 mt-8 pt-8 border-t border-white/5">
-                <button onClick={() => navigate('registry')} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-500">
-                  <User size={20} />
-                  <span className="text-[8px] font-black uppercase tracking-widest italic">Profile</span>
-                </button>
-                <button onClick={() => navigate('settings')} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-500">
-                  <SettingsIcon size={20} />
-                  <span className="text-[8px] font-black uppercase tracking-widest italic">Settings</span>
-                </button>
-                <button onClick={() => setIsExitModalOpen(true)} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-rose-500">
-                  <LogOut size={20} />
-                  <span className="text-[8px] font-black uppercase tracking-widest italic">Exit</span>
-                </button>
-              </div>
-            </m.div>
-          )}
-        </AnimatePresence>
-      </header>
-      <main className="flex-1 w-full max-w-[1700px] mx-auto p-6 md:p-12 pt-32 pb-24 relative overflow-x-hidden">
+      <Navbar 
+        lang={lang} 
+        activeView={activeView} 
+        onNavigate={navigate} 
+        isAuthenticated={!!profile}
+        isAdmin={isAdmin}
+        onLogout={() => setIsExitModalOpen(true)}
+      />
+      
+      <main className={`flex-1 w-full max-w-[1700px] mx-auto p-6 md:p-12 pt-32 pb-24 relative overflow-x-hidden ${isStandaloneView ? 'max-w-7xl' : ''}`}>
         <AnimatePresence mode="wait">
           <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.01 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
-            {activeView === 'dashboard' && <Dashboard data={currentRecord} lang={lang} onNavigate={navigate} />}
-            {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
-            {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
-            {activeView === 'dreams' && <DreamVisualizer lang={lang} data={currentRecord} />}
-            {activeView === 'voice' && <LiveAssistant lang={lang} data={currentRecord} />}
-            {activeView === 'experiment' && <ExperimentView data={currentRecord} lang={lang} />}
-            {activeView === 'diary' && <DiaryView lang={lang} />}
-            {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => setIsExitModalOpen(true)} onNavigate={navigate} />}
-            {activeView === 'registry' && <UserProfile lang={lang} />}
+            {renderContent()}
+            {!isStandaloneView && (
+              <>
+                {activeView === 'dashboard' && <Dashboard data={currentRecord} lang={lang} onNavigate={navigate} />}
+                {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
+                {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
+                {activeView === 'dreams' && <DreamVisualizer lang={lang} data={currentRecord} />}
+                {activeView === 'voice' && <LiveAssistant lang={lang} data={currentRecord} />}
+                {activeView === 'experiment' && <ExperimentView data={currentRecord} lang={lang} />}
+                {activeView === 'diary' && <DiaryView lang={lang} />}
+                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => setIsExitModalOpen(true)} onNavigate={navigate} />}
+                {activeView === 'registry' && <UserProfile lang={lang} />}
+              </>
+            )}
           </m.div>
         </AnimatePresence>
       </main>

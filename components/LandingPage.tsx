@@ -30,24 +30,8 @@ const NeuralPulseBackground = () => (
 );
 
 export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) => {
-  const [scrolled, setScrolled] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  
   const t = translations[lang as Language].landing;
   const isZh = lang === 'zh';
-
-  useEffect(() => {
-    const handleScroll = () => setScrolled(window.scrollY > 40);
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
-
-  const navLinks = [
-    { label: t.nav.science, view: 'science', icon: FlaskConical },
-    { label: t.nav.news, view: 'news', icon: Newspaper },
-    { label: t.nav.faq, view: 'faq', icon: HelpCircle },
-    { label: t.nav.project, view: 'about', icon: Info },
-  ];
 
   const socialMatrix = [
     { icon: Globe, url: '/', label: isZh ? '官方网站' : 'Official Site', status: 'ACTIVE', color: '#6366f1', type: 'CORE' },
@@ -66,94 +50,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       <div className="fixed inset-0 pointer-events-none z-0">
         <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.15]" />
       </div>
-
-      {/* Navigation */}
-      <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-700 px-6 py-10 md:px-12 ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/95 backdrop-blur-3xl py-6 border-b border-white/5 shadow-2xl' : ''}`}>
-        <div className="max-w-[1600px] mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-5 cursor-pointer group" onClick={() => window.scrollTo({top: 0, behavior: 'smooth'})}>
-            <Logo size={46} animated={true} />
-            <div className="flex flex-col text-left">
-              <span className="text-xl md:text-2xl font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">SomnoAI <span className="text-indigo-400">Digital Sleep Lab</span></span>
-              <span className="text-[7px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1.5">{isZh ? '您的AI驱动睡眠伴侣' : 'Your AI-Powered Sleep Companion'}</span>
-            </div>
-          </div>
-
-          <div className="hidden lg:flex items-center gap-14">
-            {navLinks.map((link) => (
-              <button key={link.view} onClick={() => onNavigate(link.view)} className="text-[10px] font-black text-slate-500 hover:text-white transition-all tracking-[0.3em] uppercase italic group relative">
-                {link.label}
-                <span className="absolute -bottom-2 left-0 w-0 h-[1px] bg-indigo-500 group-hover:w-full transition-all duration-300" />
-              </button>
-            ))}
-          </div>
-
-          <div className="flex items-center gap-4">
-            <button onClick={() => onNavigate('signup')} className="hidden sm:flex text-[10px] font-black text-slate-500 hover:text-white transition-all tracking-[0.2em] uppercase italic px-4">
-              {t.nav.signup}
-            </button>
-            <m.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }} onClick={() => onNavigate('login')} className="hidden sm:flex px-10 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-500 transition-all italic items-center gap-3 shadow-[0_20px_40px_-10px_rgba(79,70,229,0.3)]">
-              <LogIn size={14} /> {t.nav.enter}
-            </m.button>
-            
-            <button 
-              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-              className="lg:hidden p-3 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all"
-            >
-              {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile Menu Overlay */}
-        <AnimatePresence>
-          {isMobileMenuOpen && (
-            <m.div 
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden mt-6 overflow-hidden"
-            >
-              <div className="flex flex-col gap-4 pb-6">
-                {navLinks.map((link) => (
-                  <button 
-                    key={link.view} 
-                    onClick={() => {
-                      onNavigate(link.view);
-                      setIsMobileMenuOpen(false);
-                    }} 
-                    className="flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 text-left group"
-                  >
-                    <div className="p-2 bg-indigo-500/10 rounded-lg text-indigo-400 group-hover:bg-indigo-500 group-hover:text-white transition-all">
-                      <link.icon size={16} />
-                    </div>
-                    <span className="text-xs font-black uppercase tracking-widest italic text-slate-400 group-hover:text-white transition-colors">
-                      {link.label}
-                    </span>
-                  </button>
-                ))}
-                <button 
-                  onClick={() => onNavigate('signup')}
-                  className="sm:hidden flex items-center gap-4 p-4 rounded-2xl bg-white/5 border border-white/5 text-left group"
-                >
-                  <User size={16} className="text-indigo-400 group-hover:text-white" />
-                  <span className="text-xs font-black uppercase tracking-widest italic text-slate-400 group-hover:text-white transition-colors">
-                    {t.nav.signup}
-                  </span>
-                </button>
-                <button 
-                  onClick={() => onNavigate('login')}
-                  className="sm:hidden flex items-center gap-4 p-4 rounded-2xl bg-indigo-600 text-white text-left shadow-xl"
-                >
-                  <LogIn size={16} />
-                  <span className="text-xs font-black uppercase tracking-widest italic">
-                    {t.nav.enter}
-                  </span>
-                </button>
-              </div>
-            </m.div>
-          )}
-        </AnimatePresence>
-      </nav>
 
       {/* Hero Section */}
       <section className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-56 pb-40 min-h-screen">
