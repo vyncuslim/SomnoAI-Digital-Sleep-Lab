@@ -280,6 +280,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
             {isOTP ? (
               <form onSubmit={handleVerifyOTP} className="space-y-16">
+                <div className="text-center space-y-4">
+                  <h3 className="text-2xl font-black italic text-white uppercase tracking-tighter">
+                    {isZh ? '输入验证令牌' : 'INPUT AUTH TOKEN'}
+                  </h3>
+                  <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] italic">
+                    {isZh ? '令牌已分发至您的神经节点' : 'TOKEN DISPATCHED TO YOUR NEURAL NODE'}
+                  </p>
+                </div>
+
                 <div className="flex justify-between gap-4 md:gap-6">
                   {otp.map((digit, idx) => (
                     <input
@@ -293,24 +302,30 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                         setOtp(newOtp);
                         if (e.target.value && idx < 5) otpRefs.current[idx + 1]?.focus();
                       }}
-                      onKeyDown={(e) => e.key === 'Backspace' && !otp[idx] && idx > 0 && otpRefs.current[idx - 1]?.focus()}
-                      className="w-14 h-20 md:w-16 md:h-24 bg-slate-950 border border-white/10 rounded-3xl text-center text-4xl font-black text-white focus:border-indigo-500 outline-none transition-all shadow-inner hover:border-indigo-500/50"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Backspace' && !otp[idx] && idx > 0) {
+                          otpRefs.current[idx - 1]?.focus();
+                        }
+                      }}
+                      className="w-14 h-20 md:w-16 md:h-24 bg-slate-950/80 border border-white/10 rounded-3xl text-center text-4xl font-black text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/20 outline-none transition-all shadow-[inset_0_2px_10px_rgba(0,0,0,0.8)] hover:border-indigo-500/50"
                       required
                     />
                   ))}
                 </div>
                 
                 <div className="space-y-8">
-                  <button type="submit" disabled={isProcessing || otp.join('').length < 6} className={`w-full py-10 rounded-full font-black text-sm uppercase tracking-[0.5em] shadow-2xl flex items-center justify-center gap-6 transition-all italic ${otp.join('').length < 6 ? 'bg-slate-900 text-slate-700' : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95'}`}>
+                  <button type="submit" disabled={isProcessing || otp.join('').length < 6} className={`w-full py-12 rounded-full font-black text-sm uppercase tracking-[0.6em] shadow-[0_20px_50px_-10px_rgba(79,70,229,0.4)] flex items-center justify-center gap-6 transition-all italic ${otp.join('').length < 6 ? 'bg-slate-900 text-slate-700' : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95'}`}>
                     {isProcessing ? <Loader2 className="animate-spin" size={32} /> : <ShieldCheck size={32} />}
                     <span>{isZh ? '建立同步' : 'ESTABLISH LINK'}</span>
                   </button>
-                  <button type="button" onClick={handleResendOTP} disabled={otpCooldown > 0 || isProcessing} className={`w-full text-center text-[11px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-3 ${otpCooldown > 0 ? 'text-slate-800 cursor-not-allowed' : 'text-indigo-400 hover:text-white'}`}>
-                    <Send size={14} /> {otpCooldown > 0 ? `${isZh ? '冷却' : 'COOLDOWN'} (${otpCooldown}S)` : (isZh ? '重新分发信号' : 'RE-DISPATCH SIGNAL')}
-                  </button>
-                  <p className="text-center text-[10px] text-slate-500 italic mt-4">
-                    {isZh ? '未收到邮件？请检查垃圾邮件文件夹，或等待冷却结束后重试。' : 'No email? Check your spam folder, or wait for cooldown to retry.'}
-                  </p>
+                  <div className="flex flex-col gap-4">
+                    <button type="button" onClick={handleResendOTP} disabled={otpCooldown > 0 || isProcessing} className={`w-full text-center text-[11px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-3 ${otpCooldown > 0 ? 'text-slate-800 cursor-not-allowed' : 'text-indigo-400 hover:text-white'}`}>
+                      <Send size={14} /> {otpCooldown > 0 ? `${isZh ? '冷却' : 'COOLDOWN'} (${otpCooldown}S)` : (isZh ? '重新分发信号' : 'RE-DISPATCH SIGNAL')}
+                    </button>
+                    <p className="text-center text-[10px] text-slate-500 italic">
+                      {isZh ? '未收到邮件？请务必检查垃圾邮件文件夹。' : 'No email? Please ensure to check your spam folder.'}
+                    </p>
+                  </div>
                 </div>
               </form>
             ) : (
