@@ -44,7 +44,7 @@ export const Settings: React.FC<SettingsProps> = ({
   };
 
   const socialLinks = [
-    { icon: Globe, url: 'https://sleepsomno.com', label: isZh ? '官方网站' : 'Website' },
+    { icon: Globe, url: '/', label: isZh ? '官方网站' : 'Website' },
     { icon: MessageSquare, url: 'https://discord.com/invite/9EXJtRmju', label: 'Discord' },
     { icon: Github, url: 'https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', label: 'GitHub' },
     { icon: Linkedin, url: 'https://www.linkedin.com/company/somnoai-digital-sleep-lab', label: isZh ? 'LinkedIn 公司' : 'LinkedIn Lab' },

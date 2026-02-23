@@ -144,15 +144,37 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
 
                   <div className="w-full grid grid-cols-1 md:grid-cols-5 gap-10 items-start">
                     <div className="md:col-span-2 space-y-8 flex flex-col items-center">
+                       <div className="flex bg-white/5 p-1.5 rounded-full border border-white/10 w-full">
+                          <button 
+                            onClick={() => setPaymentMethod('tng')}
+                            className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'tng' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                          >
+                            TNG eWallet
+                          </button>
+                          <button 
+                            onClick={() => setPaymentMethod('paypal')}
+                            className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${paymentMethod === 'paypal' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                          >
+                            PayPal
+                          </button>
+                       </div>
                        <div className="p-8 bg-white rounded-[4rem] shadow-[0_40px_80px_rgba(255,255,255,0.05)] ring-8 ring-white/5 overflow-hidden">
                           <img 
-                            src={`https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=000000&bgcolor=ffffff&margin=4&ecc=M`} 
-                            alt="Lab Ingress" 
-                            className="w-40 h-40 md:w-52 md:h-52 [image-rendering:pixelated]" 
+                            src={paymentMethod === 'tng' ? '/tng-qr.png' : '/paypal-qr.png'} 
+                            alt="Donation QR Code" 
+                            className="w-40 h-40 md:w-52 md:h-52 object-contain" 
+                            onError={(e) => {
+                              // Fallback if image not found
+                              if (paymentMethod === 'paypal') {
+                                e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('https://paypal.me/vyncuslim')}&color=000000&bgcolor=ffffff&margin=4&ecc=M`;
+                              } else {
+                                e.currentTarget.src = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent('Touch n Go eWallet')}&color=000000&bgcolor=ffffff&margin=4&ecc=M`;
+                              }
+                            }}
                           />
                        </div>
                        <p className="text-[10px] font-black text-rose-500 uppercase tracking-[0.5em] flex items-center gap-3 italic">
-                         <QrCode size={16} /> SCAN TO PAYPAL
+                         <QrCode size={16} /> SCAN TO {paymentMethod === 'tng' ? 'TNG EWALLET' : 'PAYPAL'}
                        </p>
                     </div>
 

@@ -50,7 +50,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
   ];
 
   const socialMatrix = [
-    { icon: Globe, url: 'https://sleepsomno.com', label: isZh ? '官方网站' : 'Official Site', status: 'ACTIVE', color: '#6366f1', type: 'CORE' },
+    { icon: Globe, url: '/', label: isZh ? '官方网站' : 'Official Site', status: 'ACTIVE', color: '#6366f1', type: 'CORE' },
     { icon: MessageSquare, url: 'https://discord.com/invite/9EXJtRmju', label: isZh ? 'Discord 社区' : 'Discord Hub', status: 'ACTIVE', color: '#5865F2', type: 'COMMUNITY' },
     { icon: Github, url: 'https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab', label: 'GitHub', status: 'OPEN SOURCE', color: '#ffffff', type: 'CODE' },
     { icon: Video, url: 'https://www.tiktok.com/@somnoaidigitalsleeplab', label: 'TikTok', status: 'ACTIVE', color: '#ff0050', type: 'SOCIAL' },

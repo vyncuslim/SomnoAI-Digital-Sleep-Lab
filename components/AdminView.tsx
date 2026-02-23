@@ -590,7 +590,7 @@ export const AdminView: React.FC<{ onBack?: () => void }> = ({ onBack }) => {
                              
                              <div className="pt-10">
                                 <a 
-                                  href="https://sleepsomno.com/sitemap.xml" 
+                                  href="/sitemap.xml" 
                                   target="_blank"
                                   className="flex items-center justify-between p-6 bg-indigo-600/10 border border-indigo-500/20 rounded-3xl hover:bg-indigo-600/20 transition-all group"
                                 >
