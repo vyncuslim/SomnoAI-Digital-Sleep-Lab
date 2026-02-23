@@ -31,6 +31,7 @@ const FAQView = React.lazy(() => import('./components/FAQView.tsx').then(m => ({
 const AboutView = React.lazy(() => import('./components/AboutView.tsx').then(m => ({ default: m.AboutView })));
 const FeedbackView = React.lazy(() => import('./components/FeedbackView.tsx').then(m => ({ default: m.FeedbackView })));
 const ContactView = React.lazy(() => import('./components/ContactView.tsx').then(m => ({ default: m.ContactView })));
+const ChangelogView = React.lazy(() => import('./components/ChangelogView.tsx').then(m => ({ default: m.ChangelogView })));
 
 // Core Views (Keep synchronous for critical path)
 import { Dashboard } from './components/Dashboard.tsx';
@@ -138,6 +139,7 @@ const AppContent: React.FC = () => {
         'contact': 'contact',
         'feedback': 'feedback',
         'opensource': 'opensource',
+        'changelog': 'changelog',
         '404': 'not-found'
       };
 
@@ -228,6 +230,7 @@ const AppContent: React.FC = () => {
             );
             case 'contact': return <ContactView lang={lang} onBack={() => navigate('about')} />;
             case 'feedback': return <FeedbackView lang={lang} onBack={() => navigate('support')} />;
+            case 'changelog': return <ChangelogView lang={lang} onBack={() => navigate('/')} />;
             case 'not-found': return <NotFoundView />;
             default: return null;
           }
@@ -236,7 +239,7 @@ const AppContent: React.FC = () => {
     );
   };
 
-  const isStandaloneView = ['landing', 'science', 'faq', 'about', 'support', 'privacy', 'terms', 'login', 'signup', 'admin-login', 'opensource', 'contact', 'feedback', 'not-found', 'news', 'article', 'blog', 'blog-post', 'admin'].includes(activeView);
+  const isStandaloneView = ['landing', 'science', 'faq', 'about', 'support', 'privacy', 'terms', 'login', 'signup', 'admin-login', 'opensource', 'contact', 'feedback', 'changelog', 'not-found', 'news', 'article', 'blog', 'blog-post', 'admin'].includes(activeView);
 
   if (isStandaloneView) {
     return (

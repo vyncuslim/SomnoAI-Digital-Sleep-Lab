@@ -76,6 +76,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const [cooldown, setCooldown] = useState(0);
   const [otpCooldown, setOtpCooldown] = useState(0);
   
+  const isValidEmail = (email: string) => {
+    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+  };
+
+  const calculatePasswordStrength = (password: string) => {
+    let score = 0;
+    if (!password) return 0;
+    if (password.length >= 8) score += 1;
+    if (/[a-z]/.test(password) && /[A-Z]/.test(password)) score += 1;
+    if (/\d/.test(password)) score += 1;
+    if (/[^a-zA-Z0-9]/.test(password)) score += 1;
+    return score;
+  };
 
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -103,6 +116,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const handleAuthAction = async (e: React.FormEvent) => {
     e.preventDefault();
     if (isProcessing || cooldown > 0) return;
+    
+    if (!isValidEmail(email)) {
+      setError({ message: isZh ? "邮箱格式无效。" : "Invalid email format." });
+      return;
+    }
+    
     setError(null);
     setSuccessMsg(null);
     setIsProcessing(true);
@@ -282,12 +301,28 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                  </div>
 
                  {!isMagicLink && (
-                   <div className="relative group">
-                     <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><Lock size={24} /></div>
-                     <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "密码 (Password)" : "Password"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
-                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors">
-                       {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
-                     </button>
+                   <div className="space-y-3">
+                     <div className="relative group">
+                       <div className="absolute left-10 top-1/2 -translate-y-1/2 text-slate-700 group-focus-within:text-indigo-500 transition-colors"><Lock size={24} /></div>
+                       <input type={showPassword ? "text" : "password"} value={password} onChange={(e) => setPassword(e.target.value)} placeholder={isZh ? "密码 (Password)" : "Password"} className="w-full bg-slate-950/80 border border-white/10 rounded-full pl-22 pr-24 py-8 text-base text-white focus:border-indigo-500/50 outline-none transition-all font-black italic shadow-inner placeholder:text-slate-800" required />
+                       <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-10 top-1/2 -translate-y-1/2 text-slate-700 hover:text-indigo-400 transition-colors">
+                         {showPassword ? <EyeOff size={24} /> : <Eye size={24} />}
+                       </button>
+                     </div>
+                     {!isLogin && password && (
+                       <div className="flex gap-2 px-6">
+                         {[1, 2, 3, 4].map((level) => {
+                           const strength = calculatePasswordStrength(password);
+                           let colorClass = 'bg-white/10';
+                           if (strength >= level) {
+                             if (strength <= 2) colorClass = 'bg-rose-500';
+                             else if (strength === 3) colorClass = 'bg-amber-500';
+                             else colorClass = 'bg-emerald-500';
+                           }
+                           return <div key={level} className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${colorClass}`} />;
+                         })}
+                       </div>
+                     )}
                    </div>
                  )}
 

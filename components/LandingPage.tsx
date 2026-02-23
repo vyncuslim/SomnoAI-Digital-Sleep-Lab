@@ -304,6 +304,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
              <button onClick={() => onNavigate('about')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">ABOUT</button>
              <button onClick={() => onNavigate('opensource')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">ARCHITECTURE</button>
              <button onClick={() => onNavigate('contact')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">CONTACT</button>
+             <button onClick={() => onNavigate('changelog')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">CHANGELOG</button>
              <button onClick={() => onNavigate('privacy')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">PRIVACY</button>
              <button onClick={() => onNavigate('terms')} className="text-[10px] font-black text-slate-500 hover:text-white uppercase tracking-widest italic transition-colors">TERMS</button>
           </div>
