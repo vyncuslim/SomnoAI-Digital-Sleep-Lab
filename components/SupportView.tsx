@@ -21,6 +21,7 @@ interface SupportViewProps {
 export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNavigate }) => {
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showDonation, setShowDonation] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<'tng' | 'paypal'>('tng');
   const t = translations[lang].support;
 
   const handleCopy = (id: string, text: string) => {

@@ -256,6 +256,37 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
                 </div>
               </div>
             </div>
+
+            {/* Activity Log Sector */}
+            <div className="space-y-10">
+              <div className="flex items-center gap-4 border-b border-white/10 pb-6">
+                <RefreshCw size={24} className="text-indigo-400" />
+                <h2 className="text-xl font-black italic text-white uppercase">Activity Log</h2>
+              </div>
+              <div className="space-y-4">
+                {[
+                  { id: 1, type: 'LOGIN', desc: 'Secure Node Access', time: '2 mins ago', status: 'SUCCESS' },
+                  { id: 2, type: 'SYNC', desc: 'Biometric Data Uplink', time: '1 hour ago', status: 'SUCCESS' },
+                  { id: 3, type: 'UPDATE', desc: 'Identity Parameters Modified', time: '3 days ago', status: 'SUCCESS' },
+                ].map((log) => (
+                  <div key={log.id} className="flex items-center justify-between p-6 bg-[#020617] border border-white/5 rounded-[2.5rem] shadow-inner">
+                    <div className="flex items-center gap-4">
+                      <div className="p-3 bg-indigo-500/10 rounded-2xl text-indigo-400">
+                        {log.type === 'LOGIN' ? <Lock size={16} /> : log.type === 'SYNC' ? <RefreshCw size={16} /> : <Edit2 size={16} />}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-white italic">{log.desc}</p>
+                        <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">{log.time}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2 px-4 py-2 bg-emerald-500/10 rounded-full border border-emerald-500/20 hidden sm:flex">
+                      <CheckCircle2 size={12} className="text-emerald-400" />
+                      <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">{log.status}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
 
           <div className="pt-24">
