@@ -64,7 +64,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 h-20 flex items-center justify-between ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl' : 'bg-transparent'}`}>
       <div className="flex items-center gap-10">
-        <button 
+        <m.button 
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           className="flex items-center gap-4 cursor-pointer group bg-transparent border-none p-0 outline-none text-left" 
           onClick={() => onNavigate(isAuthenticated ? 'dashboard' : '/')}
         >
@@ -77,15 +79,17 @@ export const Navbar: React.FC<NavbarProps> = ({
               {isZh ? '您的AI驱动睡眠伴侣' : 'Your AI-Powered Sleep Companion'}
             </span>
           </div>
-        </button>
+        </m.button>
 
         <div className="hidden xl:flex items-center gap-8">
           {links.map((link: any) => {
             const id = link.id || link.view;
             const isActive = activeView === id;
             return (
-              <button 
+              <m.button 
                 key={id} 
+                whileHover={{ y: -2 }}
+                whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   onNavigate(id);
                   setIsMobileMenuOpen(false);
@@ -97,16 +101,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {isActive && (
                   <m.div layoutId="nav-glow" className="absolute -bottom-7 left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_15px_#6366f1]" />
                 )}
-              </button>
+              </m.button>
             );
           })}
           {isAuthenticated && isAdmin && (
-            <button 
+            <m.button 
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => onNavigate('admin')}
               className={`group relative text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 italic ${activeView === 'admin' ? 'text-rose-400' : 'text-slate-500 hover:text-rose-400'}`}
             >
               <Shield size={14} /> ADMIN
-            </button>
+            </m.button>
           )}
         </div>
       </div>
@@ -114,15 +120,30 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="flex items-center gap-4">
         {isAuthenticated ? (
           <div className="hidden sm:flex items-center gap-4">
-            <button onClick={() => onNavigate('registry')} className={`p-3 rounded-xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
+            <m.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onNavigate('registry')} 
+              className={`p-3 rounded-xl transition-all border ${activeView === 'registry' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}
+            >
               <User size={18} />
-            </button>
-            <button onClick={() => onNavigate('settings')} className={`p-3 rounded-xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}>
+            </m.button>
+            <m.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={() => onNavigate('settings')} 
+              className={`p-3 rounded-xl transition-all border ${activeView === 'settings' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white hover:bg-white/10'}`}
+            >
               <SettingsIcon size={18} />
-            </button>
-            <button onClick={onLogout} className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90">
+            </m.button>
+            <m.button 
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              onClick={onLogout} 
+              className="p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl text-rose-500 hover:text-white hover:bg-rose-500 transition-all active:scale-90"
+            >
               <LogOut size={18} />
-            </button>
+            </m.button>
           </div>
         ) : (
           <div className="hidden sm:flex items-center gap-6">
@@ -140,12 +161,14 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
         )}
         
-        <button 
+        <m.button 
+          whileHover={{ scale: 1.1 }}
+          whileTap={{ scale: 0.9 }}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="xl:hidden p-3 bg-white/5 border border-white/10 rounded-xl text-slate-400 hover:text-white transition-all"
         >
           {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+        </m.button>
       </div>
 
       {/* Mobile Menu Overlay */}

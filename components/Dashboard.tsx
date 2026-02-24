@@ -171,14 +171,16 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       </div>
                     ))}
                   </div>
-                  <button 
+                  <m.button 
+                    whileHover={{ scale: 1.02, y: -2 }}
+                    whileTap={{ scale: 0.98 }}
                     onClick={() => onNavigate?.('dreams')}
                     className="w-full py-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-sm uppercase tracking-[0.5em] transition-all flex items-center justify-center gap-6 shadow-[0_40px_100px_-20px_rgba(79,70,229,0.5)] italic group relative overflow-hidden"
                   >
                     <ImageIcon size={24} className="group-hover:rotate-12 transition-transform duration-500" />
                     START DREAM PROJECTION
                     <div className="absolute inset-0 bg-white/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                  </button>
+                  </m.button>
                 </div>
               </div>
             </div>
@@ -200,43 +202,57 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-indigo-100 text-sm font-bold italic opacity-80">{t.syncDesc}</p>
               </div>
             </div>
-            <button 
+            <m.button 
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
               onClick={handleFullSync}
               disabled={isProcessing}
-              className="w-full py-5 mt-10 bg-slate-950 border border-white/10 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl transition-all hover:bg-black active:scale-95 disabled:opacity-50 italic flex items-center justify-center gap-4"
+              className="w-full py-5 mt-10 bg-slate-950 border border-white/10 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl transition-all hover:bg-black disabled:opacity-50 italic flex items-center justify-center gap-4"
             >
               {isProcessing ? <RefreshCw size={18} className="animate-spin" /> : <RefreshCw size={18} />}
               {isProcessing ? t.syncingButton : t.syncButton}
-            </button>
+            </m.button>
           </GlassCard>
 
           <div className="grid grid-cols-1 gap-8 h-[calc(55%-2rem)]">
-             <GlassCard 
-               onClick={() => onNavigate?.('blog')}
-               className="p-12 rounded-[4rem] border-white/5 bg-[#5865F2]/5 hover:bg-[#5865F2]/10 cursor-pointer transition-all flex flex-col justify-between group shadow-2xl"
+             <m.div
+               whileHover={{ scale: 1.02, y: -2 }}
+               whileTap={{ scale: 0.98 }}
+               className="h-full"
              >
-                <div className="p-4 bg-[#5865F2]/10 rounded-2xl w-fit text-[#5865F2] shadow-inner"><MessageCircle size={32} /></div>
-                <div className="space-y-2">
-                   <h4 className="text-2xl font-black text-white italic uppercase tracking-tight">Narrative Node</h4>
-                   <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Protocol Discussions</p>
-                </div>
-                <div className="flex items-center justify-between opacity-30 group-hover:opacity-100 transition-all pt-6 border-t border-white/5">
-                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">STREAM_OK</span>
-                   <ExternalLink size={18} className="text-[#5865F2]" />
-                </div>
-             </GlassCard>
+               <GlassCard 
+                 onClick={() => onNavigate?.('blog')}
+                 className="p-12 rounded-[4rem] border-white/5 bg-[#5865F2]/5 hover:bg-[#5865F2]/10 cursor-pointer transition-all flex flex-col justify-between group shadow-2xl h-full"
+               >
+                  <div className="p-4 bg-[#5865F2]/10 rounded-2xl w-fit text-[#5865F2] shadow-inner"><MessageCircle size={32} /></div>
+                  <div className="space-y-2">
+                     <h4 className="text-2xl font-black text-white italic uppercase tracking-tight">Narrative Node</h4>
+                     <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Protocol Discussions</p>
+                  </div>
+                  <div className="flex items-center justify-between opacity-30 group-hover:opacity-100 transition-all pt-6 border-t border-white/5">
+                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">STREAM_OK</span>
+                     <ExternalLink size={18} className="text-[#5865F2]" />
+                  </div>
+               </GlassCard>
+             </m.div>
 
-             <GlassCard onClick={() => onNavigate?.('experiment')} className="p-12 rounded-[4rem] border-white/5 bg-slate-900/60 hover:bg-indigo-900/20 cursor-pointer transition-all flex flex-col justify-between group shadow-2xl">
-                <div className="p-4 bg-indigo-500/10 rounded-2xl w-fit text-indigo-400 shadow-inner"><FlaskConical size={32} /></div>
-                <div className="space-y-2">
-                   <h4 className="text-2xl font-black text-white italic uppercase tracking-tight">Trials Matrix</h4>
-                   <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Calibration Active</p>
-                </div>
-                <div className="flex items-center justify-between opacity-30 group-hover:opacity-100 transition-all pt-6 border-t border-white/5">
-                   <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">NODE_READY</span>
-                   <ChevronRight size={22} className="text-indigo-500" />
-                </div>
-             </GlassCard>
+             <m.div
+               whileHover={{ scale: 1.02, y: -2 }}
+               whileTap={{ scale: 0.98 }}
+               className="h-full"
+             >
+               <GlassCard onClick={() => onNavigate?.('experiment')} className="p-12 rounded-[4rem] border-white/5 bg-slate-900/60 hover:bg-indigo-900/20 cursor-pointer transition-all flex flex-col justify-between group shadow-2xl h-full">
+                  <div className="p-4 bg-indigo-500/10 rounded-2xl w-fit text-indigo-400 shadow-inner"><FlaskConical size={32} /></div>
+                  <div className="space-y-2">
+                     <h4 className="text-2xl font-black text-white italic uppercase tracking-tight">Trials Matrix</h4>
+                     <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Calibration Active</p>
+                  </div>
+                  <div className="flex items-center justify-between opacity-30 group-hover:opacity-100 transition-all pt-6 border-t border-white/5">
+                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">NODE_READY</span>
+                     <ChevronRight size={22} className="text-indigo-500" />
+                  </div>
+               </GlassCard>
+             </m.div>
           </div>
         </div>
       </div>

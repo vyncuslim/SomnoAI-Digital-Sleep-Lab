@@ -391,10 +391,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
 
 
 
-                 <button type="submit" disabled={isProcessing || cooldown > 0} className={`w-full py-10 rounded-full font-black text-sm uppercase tracking-[0.6em] shadow-[0_40px_100px_-20px_rgba(79,70,229,0.3)] transition-all flex items-center justify-center gap-6 italic ${cooldown > 0 ? 'bg-slate-900 text-slate-700' : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95'}`}>
+                 <m.button 
+                   whileHover={{ scale: 1.02 }}
+                   whileTap={{ scale: 0.98 }}
+                   type="submit" 
+                   disabled={isProcessing || cooldown > 0} 
+                   className={`w-full py-10 rounded-full font-black text-sm uppercase tracking-[0.6em] shadow-[0_40px_100px_-20px_rgba(79,70,229,0.3)] transition-all flex items-center justify-center gap-6 italic ${cooldown > 0 ? 'bg-slate-900 text-slate-700' : 'bg-indigo-600 text-white hover:bg-indigo-500 active:scale-95'}`}
+                 >
                    {isProcessing ? <Loader2 className="animate-spin" size={32} /> : <Zap size={32} fill="currentColor" />}
                    <span>{cooldown > 0 ? `COOLDOWN (${cooldown}S)` : isLogin ? (isZh ? '登录账号' : 'LOGIN / START SESSION') : isMagicLink ? (isZh ? '发送魔法链接' : 'SEND MAGIC LINK') : (isZh ? '注册账号' : 'SIGNUP / REGISTER NODE')}</span>
-                 </button>
+                 </m.button>
               </form>
             )}
 
@@ -402,15 +408,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
               <div className="text-center lg:text-left pt-6 space-y-4">
                  <p className="text-sm font-bold text-slate-600 uppercase tracking-widest italic">
                    {isLogin ? (isZh ? "尚未获得实验室准入？" : "NEW SUBJECT? ") : isMagicLink ? (isZh ? "已有注册节点？" : "LEGACY NODE? ") : (isZh ? "已有注册节点？" : "LEGACY NODE? ")}
-                   <button type="button" onClick={() => setActiveTab(isLogin ? 'signup' : 'login')} className="text-indigo-400 underline underline-offset-8 ml-6 hover:text-white transition-all font-black">
+                   <m.button type="button" whileHover={{ x: 5 }} whileTap={{ scale: 0.95 }} onClick={() => setActiveTab(isLogin ? 'signup' : 'login')} className="text-indigo-400 underline underline-offset-8 ml-6 hover:text-white transition-all font-black">
                      {isLogin ? (isZh ? '立即注册' : 'CREATE ACCOUNT') : (isZh ? '登录终端' : 'LOGIN TO TERMINAL')}
-                   </button>
+                   </m.button>
                  </p>
                  <p className="text-sm font-bold text-slate-600 uppercase tracking-widest italic">
                    {isMagicLink ? (isZh ? "使用密码登录？" : "USE PASSWORD? ") : (isZh ? "忘记密码？" : "FORGOT PASSWORD? ")}
-                   <button type="button" onClick={() => setActiveTab(isMagicLink ? 'login' : 'magic_link')} className="text-indigo-400 underline underline-offset-8 ml-6 hover:text-white transition-all font-black">
+                   <m.button type="button" whileHover={{ x: 5 }} whileTap={{ scale: 0.95 }} onClick={() => setActiveTab(isMagicLink ? 'login' : 'magic_link')} className="text-indigo-400 underline underline-offset-8 ml-6 hover:text-white transition-all font-black">
                      {isMagicLink ? (isZh ? '密码登录' : 'PASSWORD LOGIN') : (isZh ? '无密码登录' : 'PASSWORDLESS LOGIN')}
-                   </button>
+                   </m.button>
                  </p>
               </div>
             )}
