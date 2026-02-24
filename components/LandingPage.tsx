@@ -51,8 +51,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         <div className="absolute inset-0 bg-[radial-gradient(#1e293b_1px,transparent_1px)] [background-size:40px_40px] opacity-[0.15]" />
       </div>
 
+      {/* Beta Access Banner */}
+      <div className="relative z-[60] bg-indigo-600/10 border-b border-indigo-500/20 py-3 px-6 text-center backdrop-blur-md">
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 italic flex items-center justify-center gap-3">
+          <BrainCircuit size={14} className="animate-pulse" />
+          {isZh ? '🧠 加入 SomnoAI 早期访问计划 — 限量测试名额' : '🧠 Join SomnoAI Early Access — Limited Beta Access'}
+          <a 
+            href="https://docs.google.com/forms/d/1ZqqP5ypmcICDlcaJPa6Eom5bcq8ikNqPjfsDBdTCiNE" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="ml-4 px-3 py-1 bg-indigo-600 text-white rounded-full hover:bg-indigo-500 transition-all"
+          >
+            {isZh ? '立即申请' : 'Apply Now'}
+          </a>
+        </p>
+      </div>
+
       {/* Hero Section */}
-      <section className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-56 pb-40 min-h-screen">
+      <section className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 text-center pt-40 pb-40 min-h-screen">
         <NeuralPulseBackground />
         <div className="max-w-7xl space-y-16 relative z-10">
           <m.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="inline-flex items-center gap-4 px-6 py-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-full shadow-2xl">
@@ -75,11 +91,53 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           </m.div>
 
           <m.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="flex flex-col sm:flex-row items-center justify-center gap-8 pt-10">
-            <m.button whileHover={{ scale: 1.05, y: -4 }} whileTap={{ scale: 0.98 }} onClick={() => onNavigate('signup')} className="px-20 py-8 bg-indigo-600 text-white rounded-full font-black text-[13px] uppercase tracking-[0.4em] shadow-[0_40px_80px_-20px_rgba(79,70,229,0.4)] transition-all italic flex items-center gap-4">{t.ctaPrimary} <ArrowRight size={20} /></m.button>
+            <m.button 
+              whileHover={{ scale: 1.05, y: -4 }} 
+              whileTap={{ scale: 0.98 }} 
+              onClick={() => window.open('https://docs.google.com/forms/d/1ZqqP5ypmcICDlcaJPa6Eom5bcq8ikNqPjfsDBdTCiNE', '_blank')} 
+              className="px-20 py-8 bg-indigo-600 text-white rounded-full font-black text-[13px] uppercase tracking-[0.4em] shadow-[0_40px_80px_-20px_rgba(79,70,229,0.4)] transition-all italic flex items-center gap-4"
+            >
+              {isZh ? '加入早期访问' : 'Join Early Access'} <ArrowRight size={20} />
+            </m.button>
             <m.button whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }} onClick={() => onNavigate('science')} className="px-16 py-8 bg-black/40 backdrop-blur-3xl border border-white/10 text-slate-300 rounded-full font-black text-[13px] uppercase tracking-[0.4em] hover:bg-black/60 italic flex items-center gap-4 active:scale-95 shadow-2xl">
               <Command size={20} className="text-indigo-400" /> {t.ctaSecondary}
             </m.button>
           </m.div>
+        </div>
+      </section>
+
+      {/* Early Access Program Section */}
+      <section className="relative z-10 py-40 px-6 border-t border-white/5 bg-indigo-600/5">
+        <div className="max-w-7xl mx-auto text-center space-y-12">
+          <div className="space-y-4">
+            <div className="flex items-center justify-center gap-3 text-indigo-400">
+              <Zap size={24} className="animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-[0.5em] italic text-slate-500">Beta Enrollment</span>
+            </div>
+            <h2 className="text-5xl md:text-8xl font-black italic text-white uppercase tracking-tighter leading-none">
+              Shape the <span className="text-indigo-400">Future</span>
+            </h2>
+          </div>
+          
+          <div className="max-w-3xl mx-auto space-y-8">
+            <p className="text-xl md:text-2xl text-slate-400 italic leading-relaxed">
+              {isZh ? '我们正在构建一个 AI 驱动的数字睡眠实验室，将可穿戴数据转化为深度的恢复洞察。' : 'We are building an AI-powered digital sleep lab that transforms wearable data into deep recovery insights.'}
+            </p>
+            <p className="text-lg text-slate-500 italic">
+              {isZh ? '注册以获得早期访问权限，并帮助塑造睡眠智能的未来。限量测试名额。' : 'Sign up to get early access and help shape the future of sleep intelligence. Limited beta slots available.'}
+            </p>
+            
+            <div className="pt-8">
+              <m.button 
+                whileHover={{ scale: 1.05 }} 
+                whileTap={{ scale: 0.95 }}
+                onClick={() => window.open('https://docs.google.com/forms/d/1ZqqP5ypmcICDlcaJPa6Eom5bcq8ikNqPjfsDBdTCiNE', '_blank')}
+                className="px-16 py-6 bg-white text-black rounded-full font-black text-[12px] uppercase tracking-[0.3em] italic hover:bg-indigo-400 hover:text-white transition-all shadow-2xl"
+              >
+                {isZh ? '立即注册测试' : 'Register for Beta Now'}
+              </m.button>
+            </div>
+          </div>
         </div>
       </section>
 
