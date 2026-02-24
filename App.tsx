@@ -256,7 +256,7 @@ const AppContent: React.FC = () => {
         onLogout={() => setIsExitModalOpen(true)}
       />
       
-      <main className={`flex-1 w-full max-w-[1700px] mx-auto p-6 md:p-12 pt-32 pb-24 relative overflow-x-hidden ${isStandaloneView ? 'max-w-7xl' : ''}`}>
+      <main className={`flex-1 w-full max-w-[1700px] mx-auto p-6 md:p-12 pt-32 pb-24 relative z-0 overflow-x-hidden ${isStandaloneView ? 'max-w-7xl' : ''}`}>
         <AnimatePresence mode="wait">
           <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.01 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
             {renderContent()}

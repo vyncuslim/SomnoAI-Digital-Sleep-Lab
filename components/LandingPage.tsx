@@ -52,7 +52,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       </div>
 
       {/* Beta Access Banner */}
-      <div className="relative z-[60] bg-indigo-600/10 border-b border-indigo-500/20 py-3 px-6 text-center backdrop-blur-md">
+      <div className="relative bg-indigo-600/10 border-b border-indigo-500/20 py-3 px-6 text-center backdrop-blur-md">
         <p className="text-[10px] font-black uppercase tracking-[0.3em] text-indigo-400 italic flex items-center justify-center gap-3">
           <BrainCircuit size={14} className="animate-pulse" />
           {isZh ? '🧠 加入 SomnoAI 早期访问计划 — 限量测试名额' : '🧠 Join SomnoAI Early Access — Limited Beta Access'}

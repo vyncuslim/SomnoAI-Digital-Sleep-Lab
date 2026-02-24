@@ -64,9 +64,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 h-20 flex items-center justify-between ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl' : 'bg-transparent'}`}>
       <div className="flex items-center gap-10">
-        <div className="flex items-center gap-4 cursor-pointer group" onClick={() => onNavigate(isAuthenticated ? 'dashboard' : '/')}>
+        <button 
+          className="flex items-center gap-4 cursor-pointer group bg-transparent border-none p-0 outline-none text-left" 
+          onClick={() => onNavigate(isAuthenticated ? 'dashboard' : '/')}
+        >
           <Logo size={36} animated={true} />
-          <div className="flex flex-col text-left">
+          <div className="flex flex-col">
             <span className="text-lg font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">
               SomnoAI <span className="text-indigo-400 font-medium">Digital Sleep Lab</span>
             </span>
@@ -74,7 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               {isZh ? '您的AI驱动睡眠伴侣' : 'Your AI-Powered Sleep Companion'}
             </span>
           </div>
-        </div>
+        </button>
 
         <div className="hidden xl:flex items-center gap-8">
           {links.map((link: any) => {

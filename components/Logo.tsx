@@ -14,9 +14,6 @@ export const Logo: React.FC<LogoProps> = ({
 }) => {
   return (
     <div style={{ width: size, height: size, minWidth: size, minHeight: size }} className={`relative shrink-0 flex items-center justify-center ${className}`}>
-      {/* Background Glow */}
-      <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full opacity-50" />
-      
       <svg
         width="100%"
         height="100%"
@@ -25,7 +22,7 @@ export const Logo: React.FC<LogoProps> = ({
         xmlns="http://www.w3.org/2000/svg"
         role="img"
         aria-label="SomnoAI Logo"
-        className="relative z-10"
+        className="pointer-events-none"
       >
         {/* 轨道 - 使用白色增加对比度 */}
         {animated ? (
