@@ -31,8 +31,10 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
   };
 
   return (
-    <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
-      <header className="flex items-center gap-6 mb-16 px-4 max-w-4xl mx-auto pt-20">
+    <div className="min-h-screen bg-black pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
+      
+      <header className="flex items-center gap-6 mb-16 px-4 max-w-4xl mx-auto pt-20 relative z-10">
         <button 
           onClick={onBack}
           className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
@@ -185,7 +187,8 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
                         { id: 'paypal', label: 'PAYPAL DISPATCH', value: 'vyncuslim@icloud.com' },
                         { id: 'support_email', label: 'SUPPORT NODE', value: 'support@sleepsomno.com' },
                         { id: 'info_email', label: 'INFO NODE', value: 'info@sleepsomno.com' },
-                        { id: 'admin_email', label: 'ADMIN NODE', value: 'admin@sleepsomno.com' }
+                        { id: 'admin_email', label: 'ADMIN NODE', value: 'admin@sleepsomno.com' },
+                        { id: 'legal_email', label: 'LEGAL NODE', value: 'termandcondition@sleepsomno.com' }
                       ].map((item) => (
                         <div key={item.id} className="p-8 bg-slate-900 border border-white/5 rounded-[2.5rem] flex items-center justify-between group hover:border-indigo-500/40 transition-all shadow-inner">
                           <div className="space-y-1">

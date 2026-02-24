@@ -27,7 +27,9 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
   const isZh = lang === 'zh';
 
   return (
-    <div className="min-h-screen bg-[#01040a] pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-700 font-sans text-left relative overflow-hidden">
+    <div className="min-h-screen bg-black pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-700 font-sans text-left relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
+      
       {/* Background Decor */}
       <div className="absolute top-0 right-0 p-32 opacity-[0.02] text-white pointer-events-none transform rotate-12">
         <Terminal size={600} strokeWidth={0.5} />

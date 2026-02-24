@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   ArrowLeft, Mail, ShieldCheck, Globe, 
   MessageSquare, UserCircle, Settings, 
-  LifeBuoy, Copy, Check, ExternalLink, Zap
+  LifeBuoy, Copy, Check, ExternalLink, Zap, FileText
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from '../services/i18n.ts';
@@ -58,24 +58,34 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
       desc: isZh ? '核心权限、系统级配置与基础设施安全查询。' : 'Core permissions and system-level configuration inquiries.',
       icon: ShieldCheck,
       color: 'text-indigo-400'
+    },
+    {
+      id: 'legal',
+      email: 'termandcondition@sleepsomno.com',
+      label: isZh ? '法律事务部' : 'Legal Affairs',
+      desc: isZh ? '服务条款、隐私政策与合规性法律咨询。' : 'Terms of service, privacy policy, and compliance legal inquiries.',
+      icon: FileText,
+      color: 'text-rose-400'
     }
   ];
 
   return (
-    <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-700 font-sans text-left">
-      <header className="max-w-7xl mx-auto px-6 mb-12 md:mb-20">
+    <div className="min-h-screen bg-black pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-700 font-sans text-left relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
+      
+      <header className="max-w-7xl mx-auto px-6 mb-12 md:mb-20 relative z-10">
         <button 
           onClick={onBack}
-          className="p-4 bg-white/5 hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
+          className="p-4 bg-white/[0.02] hover:bg-white/5 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
         >
           <ArrowLeft size={24} />
         </button>
       </header>
 
-      <div className="max-w-5xl mx-auto px-6 space-y-24">
+      <div className="max-w-5xl mx-auto px-6 space-y-24 relative z-10">
         <div className="text-center space-y-8">
           <div className="relative inline-block">
-             <div className="absolute inset-0 bg-indigo-500/20 blur-[120px] rounded-full animate-pulse" />
+             <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
              <Logo size={140} animated={true} className="mx-auto relative z-10" />
           </div>
           <div className="space-y-4">
@@ -90,14 +100,14 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {contacts.map((node) => (
-            <GlassCard key={node.id} className="p-10 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all duration-500 group relative overflow-hidden bg-slate-900/40">
+            <GlassCard key={node.id} className="p-10 rounded-[3.5rem] border-white/5 hover:border-indigo-500/20 transition-all duration-500 group relative overflow-hidden bg-white/[0.01]">
                <div className="flex justify-between items-start mb-10 relative z-10">
-                  <div className={`p-4 bg-white/5 rounded-2xl ${node.color} group-hover:scale-110 transition-transform shadow-inner border border-white/5`}>
+                  <div className={`p-4 bg-white/[0.03] rounded-2xl ${node.color} group-hover:scale-110 transition-transform shadow-inner border border-white/5`}>
                     <node.icon size={32} />
                   </div>
                   <button 
                     onClick={() => handleCopy(node.id, node.email)}
-                    className={`p-3 rounded-xl transition-all active:scale-90 ${copiedId === node.id ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/5 text-slate-600 hover:text-white'}`}
+                    className={`p-3 rounded-xl transition-all active:scale-90 ${copiedId === node.id ? 'bg-emerald-500/20 text-emerald-400' : 'bg-white/[0.03] text-slate-600 hover:text-white'}`}
                   >
                     {copiedId === node.id ? <Check size={20} /> : <Copy size={20} />}
                   </button>

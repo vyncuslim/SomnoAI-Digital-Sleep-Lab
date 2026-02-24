@@ -12,8 +12,10 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
   const isPrivacy = type === 'privacy';
 
   return (
-    <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500">
-      <header className="flex items-center gap-4 mb-8 px-2">
+    <div className="min-h-screen bg-black pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
+      
+      <header className="flex items-center gap-4 mb-8 px-2 relative z-10">
         <button 
           onClick={onBack}
           className="p-3 bg-white/5 hover:bg-white/10 rounded-2xl text-slate-400 hover:text-white transition-all active:scale-90 border border-white/5 shadow-lg"
@@ -115,9 +117,15 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
         </div>
 
         <footer className="pt-12 border-t border-white/5 flex flex-col items-center gap-4 opacity-40">
-          <div className="flex items-center gap-2 text-indigo-400">
-            <Mail size={12} />
-            <span className="text-[10px] font-bold">contact@sleepsomno.com</span>
+          <div className="flex flex-col items-center gap-2 text-indigo-400">
+            <div className="flex items-center gap-2">
+              <Mail size={12} />
+              <span className="text-[10px] font-bold">contact@sleepsomno.com</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <ShieldCheck size={12} />
+              <span className="text-[10px] font-bold">termandcondition@sleepsomno.com</span>
+            </div>
           </div>
           <p className="text-[9px] font-black uppercase tracking-widest">© 2026 SOMNO LAB • Compliance Update: 2026.01.04</p>
         </footer>

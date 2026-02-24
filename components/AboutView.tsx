@@ -44,8 +44,10 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
   ];
 
   return (
-    <div className="min-h-screen pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left">
-      <header className="flex flex-col items-center text-center gap-8 mb-16 px-4 max-w-4xl mx-auto pt-20">
+    <div className="min-h-screen bg-black pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
+      
+      <header className="flex flex-col items-center text-center gap-8 mb-16 px-4 max-w-4xl mx-auto pt-20 relative z-10">
         <div className="relative inline-block">
           <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full" />
           <Logo size={140} animated={true} className="relative z-10" />
