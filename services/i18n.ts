@@ -77,6 +77,7 @@ const commonEn = {
     commit: "COMMIT METRICS",
     syncing: "SYNCING...",
     success: "SYNC COMPLETE",
+    error: "Failed to update profile. Please try again later.",
     sovereignty: "Biometric Sovereignty",
     sovereigntyDesc: "All biological telemetry is processed locally or via encrypted neural pipelines. SomnoAI does not persist raw biometric streams on external servers."
   },
@@ -216,6 +217,7 @@ const commonZh = {
     commit: "提交指标",
     syncing: "正在同步...",
     success: "同步完成",
+    error: "更新个人资料失败。请稍后再试。",
     sovereignty: "生物主权",
     sovereigntyDesc: "所有生物遥测数据均通过加密神经管道处理。SomnoAI 不会在外部服务器上持久化存储原始生物流。"
   },

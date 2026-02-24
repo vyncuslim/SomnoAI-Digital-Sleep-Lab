@@ -289,7 +289,23 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang }) => {
             </div>
           </div>
 
-          <div className="pt-24">
+          <div className="pt-24 space-y-6">
+            <AnimatePresence>
+              {status === 'error' && (
+                <m.div 
+                  initial={{ opacity: 0, y: 10 }} 
+                  animate={{ opacity: 1, y: 0 }} 
+                  exit={{ opacity: 0 }}
+                  className="p-6 bg-rose-500/10 border border-rose-500/20 rounded-[2.5rem] flex items-center gap-4 shadow-2xl"
+                >
+                  <AlertCircle className="text-rose-500 shrink-0" size={24} />
+                  <p className="text-sm font-bold text-rose-400 uppercase tracking-widest italic">
+                    {t_registry.error}
+                  </p>
+                </m.div>
+              )}
+            </AnimatePresence>
+
             <button 
               type="submit" disabled={isUpdating || !isFormValid}
               className={`w-full py-10 rounded-full font-black text-sm uppercase tracking-[0.6em] transition-all flex items-center justify-center gap-6 shadow-2xl active:scale-[0.98] italic ${

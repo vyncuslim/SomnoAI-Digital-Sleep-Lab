@@ -10,6 +10,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Language, translations } from './services/i18n.ts';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { Logo } from './components/Logo.tsx';
+import { Salesmartly } from './components/Salesmartly.tsx';
 import { Navbar } from './components/Navbar.tsx';
 import { authApi } from './services/supabaseService.ts';
 import { safeNavigatePath } from './services/navigation.ts';
@@ -247,6 +248,7 @@ const AppContent: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200 selection:bg-indigo-500/30">
+      <Salesmartly />
       <Navbar 
         lang={lang} 
         activeView={activeView} 

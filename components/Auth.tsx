@@ -75,6 +75,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
   const [showPassword, setShowPassword] = useState(false);
   const [cooldown, setCooldown] = useState(0);
   const [otpCooldown, setOtpCooldown] = useState(0);
+  const [authFlow, setAuthFlow] = useState<'signup' | 'magic_link' | null>(null);
   
   const isValidEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
@@ -149,7 +150,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         
         setSuccessMsg(isZh ? `验证令牌已分发至：${email}` : `Validation token dispatched to: ${email}`);
         setActiveTab('otp');
-        setOtpCooldown(60);
+        setAuthFlow('signup');
+        setOtpCooldown(90);
         setTimeout(() => otpRefs.current[0]?.focus(), 150);
       } else if (activeTab === 'magic_link') {
         const { error: magicErr } = await authApi.sendOTP(email.trim(), token);
@@ -157,7 +159,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
         
         setSuccessMsg(isZh ? `魔法链接已分发至：${email}` : `Magic link dispatched to: ${email}`);
         setActiveTab('otp');
-        setOtpCooldown(60);
+        setAuthFlow('magic_link');
+        setOtpCooldown(90);
         setTimeout(() => otpRefs.current[0]?.focus(), 150);
       }
     } catch (err: any) {
@@ -177,26 +180,30 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
     if (otpCooldown > 0 || isProcessing) return;
     setIsProcessing(true);
     setError(null);
+    setSuccessMsg(null);
     try {
       const token = await (window as any).grecaptcha.enterprise.execute('6Lean3UsAAAAAE4VcnRN95_r4bLK6wrYnduAFBDx', { action: 'resend_otp' });
       
       let resendErr;
-      if (activeTab === 'otp' && (email && password)) {
-        // This was a signup flow
+      // Use authFlow if available, otherwise fallback to state-based detection
+      const effectiveFlow = authFlow || (email && password ? 'signup' : 'magic_link');
+      
+      if (effectiveFlow === 'signup') {
         const res = await authApi.resend(email.trim(), 'signup');
         resendErr = res.error;
       } else {
-        // This was likely a magic link flow
         const res = await authApi.sendOTP(email.trim(), token);
         resendErr = res.error;
       }
 
       if (resendErr) throw resendErr;
-      setSuccessMsg(isZh ? "令牌已重新分发。" : "Token re-dispatched.");
-      setOtpCooldown(60);
-      logAuditLog('OTP_RESEND_REQUEST', `Node: ${email}`, 'INFO');
+      
+      setSuccessMsg(isZh ? "令牌已重新分发。请检查您的收件箱（及垃圾邮件）。" : "Token re-dispatched. Please check your inbox (and spam).");
+      setOtpCooldown(90); // Increased cooldown for safety
+      logAuditLog('OTP_RESEND_REQUEST', `Node: ${email} | Flow: ${effectiveFlow}`, 'INFO');
     } catch (err: any) {
-      setError({ message: err.message || "Dispatch failed." });
+      console.error("OTP Resend Error:", err);
+      setError({ message: err.message || (isZh ? "分发失败。请稍后再试。" : "Dispatch failed. Please try again later.") });
     } finally {
       setIsProcessing(false);
     }
@@ -321,6 +328,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, onLogin, onGuest, initialTab =
                   <div className="flex flex-col gap-4">
                     <button type="button" onClick={handleResendOTP} disabled={otpCooldown > 0 || isProcessing} className={`w-full text-center text-[11px] font-black uppercase tracking-widest transition-all italic flex items-center justify-center gap-3 ${otpCooldown > 0 ? 'text-slate-800 cursor-not-allowed' : 'text-indigo-400 hover:text-white'}`}>
                       <Send size={14} /> {otpCooldown > 0 ? `${isZh ? '冷却' : 'COOLDOWN'} (${otpCooldown}S)` : (isZh ? '重新分发信号' : 'RE-DISPATCH SIGNAL')}
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        setActiveTab(authFlow === 'signup' ? 'signup' : 'login');
+                        setAuthFlow(null);
+                        setError(null);
+                        setSuccessMsg(null);
+                      }} 
+                      className="w-full text-center text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-all italic"
+                    >
+                      {isZh ? '← 返回修改邮箱' : '← BACK TO CORRECT EMAIL'}
                     </button>
                     <p className="text-center text-[10px] text-slate-500 italic">
                       {isZh ? '未收到邮件？请务必检查垃圾邮件文件夹。' : 'No email? Please ensure to check your spam folder.'}
