@@ -54,6 +54,27 @@ export const FAQView: React.FC<FAQViewProps> = ({ lang, onBack }) => {
       a: isZh 
         ? '是的。通过 Gemini 2.5 Pro 驱动的神经合成技术，我们能从普通传感器提供的原始数据中解构出深层的恢复熵值和架构，让普通手表也能产出以往只有像 Oura Ring 这种专业设备才能提供的高价值洞察。' 
         : 'Yes. Using neural synthesis powered by Gemini 2.5 Pro, we deconstruct deep recovery entropy and architecture from standard sensor data, providing high-value insights previously exclusive to professional devices like Oura Ring.'
+    },
+    {
+      icon: FlaskConical,
+      q: isZh ? '如何开始使用 SomnoAI？' : 'How do I start using SomnoAI?',
+      a: isZh 
+        ? '第一步是注册账户并完成个人资料设置。接着，在您的 Android 手机上安装我们的移动端应用（Mobile Node），并授权其访问 Health Connect。一旦您的手表数据同步到手机，应用就会自动将其上传至实验室进行分析。' 
+        : 'The first step is to register an account and complete your profile. Next, install our mobile app (Mobile Node) on your Android phone and authorize it to access Health Connect. Once your watch data syncs to your phone, the app automatically uploads it to the lab for analysis.'
+    },
+    {
+      icon: ShieldCheck,
+      q: isZh ? '我的数据安全吗？' : 'Is my data secure?',
+      a: isZh 
+        ? '非常安全。我们采用端到端加密技术处理所有生理数据。您的原始生物特征数据仅用于生成 AI 洞察，且在传输和存储过程中均经过严格加密。我们坚持“生物主权”原则，您拥有数据的完整控制权。' 
+        : 'Extremely secure. We use end-to-end encryption for all physiological data. Your raw biometric data is used solely for generating AI insights and is strictly encrypted during transmission and storage. We adhere to "Biometric Sovereignty," giving you full control over your data.'
+    },
+    {
+      icon: Activity,
+      q: isZh ? 'AI 洞察的准确性如何？' : 'How accurate are the AI insights?',
+      a: isZh 
+        ? '我们的 AI 模型基于数百万小时的匿名睡眠数据进行训练，并结合了最新的睡眠科学研究。虽然它不能替代专业的医疗诊断，但在识别睡眠趋势、恢复质量和生活方式影响方面，它提供了极高参考价值的深度分析。' 
+        : 'Our AI models are trained on millions of hours of anonymized sleep data and integrated with the latest sleep science research. While not a replacement for professional medical diagnosis, it provides highly valuable deep analysis for identifying sleep trends, recovery quality, and lifestyle impacts.'
     }
   ];
 

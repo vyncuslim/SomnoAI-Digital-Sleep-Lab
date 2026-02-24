@@ -211,7 +211,7 @@ const AppContent: React.FC = () => {
           switch (activeView) {
             case 'landing': return <LandingPage lang={lang} onNavigate={navigate} />;
             case 'science': return <ScienceView lang={lang} onBack={() => navigate('/')} />;
-            case 'faq': return <FAQView lang={lang} onBack={() => navigate('/')} />;
+            case 'faq': return <FAQView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
             case 'news': return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate(`article/${a.slug}`); }} />;
             case 'article': return activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate(`article/${a.slug}`); }} />;
             case 'blog': return <BlogHub lang={lang} onSelectPost={(p) => { setActivePost(p); navigate(`blog/${p.slug}`); }} />;
