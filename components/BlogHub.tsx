@@ -5,43 +5,9 @@ import { BookOpen, ArrowRight, Tag, Clock, Calendar, Sparkles, MessageCircle, Pe
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
 import { Language, translations } from '../services/i18n.ts';
+import { MOCK_BLOG_POSTS } from '../data/mockData.ts';
 
 const m = motion as any;
-
-export const MOCK_BLOG_POSTS: Article[] = [
-  {
-    id: 'blog-001',
-    slug: 'the-future-of-ai-sleep-coaching',
-    title: 'The Future of AI-Powered Sleep Coaching',
-    excerpt: 'Exploring how large language models like Gemini are changing the way we interpret nightly biological rhythms.',
-    content: `Sleep is the last frontier of personal data. While we have tracked steps and heart rate for a decade, the "why" behind a bad night's sleep remained elusive. \n\nWith the advent of SomnoAI, we are bridging that gap. By feeding raw telemetry into specialized neural networks, we can now offer advice that feels human but is driven by hard data. In this post, we discuss the roadmap for the next 24 months of sleep engineering.`,
-    date: '2026-02-20',
-    author: {
-      name: 'Vyncuslim',
-      role: 'Lead Architect',
-      bio: 'Independent researcher and developer of the SomnoAI platform.'
-    },
-    category: 'AI',
-    readTime: '5 min',
-    tags: []
-  },
-  {
-    id: 'blog-002',
-    slug: 'morning-sunlight-and-neural-sync',
-    title: 'Morning Sunlight: The Ultimate Neural Sync',
-    excerpt: 'Why resetting your circadian clock is the first step in any recovery protocol.',
-    content: `Your brain has a master clock, and it is powered by photons. In the Digital Sleep Lab, we often see subjects trying to fix their sleep with supplements when the answer is as simple as 10 minutes of direct morning sunlight.\n\n### The Science\nWhen light hits your retina in the morning, it triggers a timed release of cortisol and sets a 16-hour countdown for melatonin production. Without this sync, your neural recovery window drifts, leading to "social jetlag."`,
-    date: '2026-02-18',
-    author: {
-      name: 'SomnoAI Analytics',
-      role: 'Lab Node',
-      bio: 'Automated insight generator for the SomnoAI ecosystem.'
-    },
-    category: 'Science',
-    readTime: '3 min',
-    tags: []
-  }
-];
 
 interface BlogHubProps {
   lang: Language;

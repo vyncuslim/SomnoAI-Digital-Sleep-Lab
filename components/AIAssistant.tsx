@@ -39,7 +39,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
     if (messages.length === 0) {
       setMessages([{ role: 'assistant', content: String(t.intro || 'Neural link established. Chief Research Officer online.'), timestamp: new Date() }]);
     }
-  }, [t.intro]);
+  }, [t.intro, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -48,7 +48,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
         behavior: 'smooth'
       });
     }
-  }, [messages, isTyping]);
+  }, [messages.length, isTyping]);
 
   const handleSend = async (overrideInput?: string) => {
     const text = overrideInput || input;

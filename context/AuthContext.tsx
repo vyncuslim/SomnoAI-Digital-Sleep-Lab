@@ -1,17 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabaseService.ts';
 import { logAuditLog } from '../services/supabaseService.ts';
-
-export type UserRole = "user" | "editor" | "admin" | "owner";
-
-export interface Profile {
-  id: string;
-  email: string;
-  role: UserRole;
-  is_super_owner: boolean;
-  is_blocked: boolean;
-  full_name: string | null;
-}
+import { Profile } from '../types.ts';
 
 interface AuthContextType {
   profile: Profile | null;
@@ -123,4 +113,5 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

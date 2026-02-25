@@ -12,9 +12,9 @@ import { ContactView } from './components/ContactView.tsx';
 import { AIAssistant } from './components/AIAssistant.tsx';
 import { ExperimentView } from './components/ExperimentView.tsx';
 import { DiaryView } from './components/DiaryView.tsx';
-import { BlogHub, MOCK_BLOG_POSTS } from './components/BlogHub.tsx';
+import { BlogHub } from './components/BlogHub.tsx';
 import { BlogPostView } from './components/BlogPostView.tsx';
-import { NewsHub, MOCK_RESEARCH } from './components/NewsHub.tsx';
+import { NewsHub } from './components/NewsHub.tsx';
 import { ArticleView } from './components/ArticleView.tsx';
 import { OpenSourceView } from './components/OpenSourceView.tsx';
 import { ChangelogView } from './components/ChangelogView.tsx';
@@ -22,6 +22,7 @@ import { LegalView } from './components/LegalView.tsx';
 import { SupportView } from './components/SupportView.tsx';
 import { Language } from './services/i18n.ts';
 import { SleepRecord } from './types.ts';
+import { MOCK_BLOG_POSTS, MOCK_RESEARCH } from './data/mockData.ts';
 
 // Mock Data for Demo Purposes
 const MOCK_SLEEP_DATA: SleepRecord = {

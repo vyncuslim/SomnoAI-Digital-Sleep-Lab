@@ -71,3 +71,14 @@ export interface HeartRateData {
   timestamp: string;
   value: number;
 }
+
+export type UserRole = "user" | "editor" | "admin" | "owner";
+
+export interface Profile {
+  id: string;
+  email: string;
+  role: UserRole;
+  is_super_owner: boolean;
+  is_blocked: boolean;
+  full_name: string | null;
+}

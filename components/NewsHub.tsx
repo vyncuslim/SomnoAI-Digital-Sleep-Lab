@@ -5,43 +5,9 @@ import { Microscope, ArrowRight, Tag, Clock, Calendar, Sparkles, Newspaper, Land
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
 import { Language, translations } from '../services/i18n.ts';
+import { MOCK_RESEARCH } from '../data/mockData.ts';
 
 const m = motion as any;
-
-export const MOCK_RESEARCH: Article[] = [
-  {
-    id: 'art-001',
-    slug: 'ai-driven-sleep-optimization-2026',
-    title: 'How AI Helps Improve Deep Sleep? 2026 Latest Research',
-    excerpt: 'A comprehensive breakthrough study on how multi-modal biological telemetry synthesized via Gemini AI models is revolutionizing restorative window detection.',
-    content: `The paradigm of sleep monitoring has shifted from passive observation to active neural engineering. In early 2026, the SomnoAI research team successfully implemented the Gemini 2.5 Pro synthesis engine, capable of processing heart rate variability (HRV) and motion entropy with 94% alignment with clinical polysomnography.\n\n### The Neural Bridge\nBy utilizing cross-attention layers, our models identify the precise moment of transition between Light and REM sleep stages. This allows for the normalization of recovery scores against a subject's metabolic load, ensuring that sleep advice is not just accurate, but contextual.\n\n### Implications for Longevity\nUnderstanding the restoration window is critical for cognitive maintenance. Our latest cohort studies suggest that AI-timed recovery interventions can reduce neurological inflammation by up to 18% over a 30-day cycle.`,
-    date: '2026-02-15',
-    author: {
-      name: 'Vyncuslim',
-      role: 'Lead Researcher & CRO',
-      bio: 'Independent researcher specializing in neural engineering and biological telemetry. Founder of the SomnoAI Digital Sleep Lab initiative. Lead architect of the 2026 recovery synthesis protocol.'
-    },
-    category: 'AI',
-    readTime: '8 min',
-    tags: []
-  },
-  {
-    id: 'art-002',
-    slug: 'decoded-neural-restoration-2026',
-    title: 'SomnoAI Lab: Decoding the 2026 Neural Restoration Protocol',
-    excerpt: 'Analyzing the intersection of biological telemetry and algorithmic intervention for elite cognitive recovery.',
-    content: `For high-performance individuals, the trade-off between physical restoration (Deep Sleep) and cognitive synthesis (REM) is a constant challenge. New telemetry data from the Somno Lab suggests that technical workers benefit more from extended REM phases during high-stress development cycles.\n\n### Biological Findings\nDuring deep sleep, the glymphatic system clears metabolic waste. However, REM sleep is where complex problem-solving patterns are solidified. Our AI diagnostics indicate that subjects with higher REM ratios performed 22% better on cognitive mapping tasks the following day.\n\n### Protocol Adjustments\nTo optimize for REM, the lab suggests lower core body temperatures (18.5°C) and consistent wake windows, allowing the natural crescendo of REM phases to occur in the final hours of the cycle.`,
-    date: '2026-02-10',
-    author: {
-      name: 'SomnoAI Team',
-      role: 'Laboratory Analytics',
-      bio: 'Collective research unit focused on biometric data synthesis and algorithmic sleep staging within the Digital Sleep Lab ecosystem.'
-    },
-    category: 'Science',
-    readTime: '5 min',
-    tags: []
-  }
-];
 
 interface NewsHubProps {
   lang: Language;
