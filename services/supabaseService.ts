@@ -31,6 +31,16 @@ export const adminApi = {
     const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
     return { data: data || [], error };
   },
+
+  getAuditLogs: async () => {
+    const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100);
+    return { data: data || [], error };
+  },
+
+  getSecurityEvents: async () => {
+    const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(100);
+    return { data: data || [], error };
+  },
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
@@ -76,6 +86,31 @@ export const userApi = {
 
   updateProfile: async (userId: string, updates: any) => {
     const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
+    return { error };
+  }
+};
+
+export const diaryApi = {
+  getEntries: async (userId: string) => {
+    const { data, error } = await supabase.from('diary_entries').select('*').eq('user_id', userId).order('date', { ascending: false });
+    return { data, error };
+  },
+  addEntry: async (userId: string, entry: any) => {
+    const { error } = await supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]);
+    return { error };
+  }
+};
+
+export const authApi = {
+  updatePassword: async (password: string) => {
+    const { error } = await supabase.auth.updateUser({ password });
+    return { error };
+  }
+};
+
+export const userDataApi = {
+  saveInitialSetup: async (userId: string, data: any) => {
+    const { error } = await supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId);
     return { error };
   }
 };

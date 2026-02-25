@@ -28,6 +28,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [users, setUsers] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
+  const [auditLogs, setAuditLogs] = useState<any[]>([]);
+  const [securityEvents, setSecurityEvents] = useState<any[]>([]);
   
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -43,13 +45,17 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
       const { data: { user } } = await (supabase.auth as any).getUser();
       if (!user) return;
 
-      const [uRes, fRes] = await Promise.allSettled([
+      const [uRes, fRes, aRes, sRes] = await Promise.allSettled([
         adminApi.getUsers(),
-        adminApi.getFeedback()
+        adminApi.getFeedback(),
+        adminApi.getAuditLogs(),
+        adminApi.getSecurityEvents()
       ]);
 
       setUsers(uRes.status === 'fulfilled' ? (uRes as any).value.data : []);
       setFeedback(fRes.status === 'fulfilled' ? (fRes as any).value.data : []);
+      setAuditLogs(aRes.status === 'fulfilled' ? (aRes as any).value.data : []);
+      setSecurityEvents(sRes.status === 'fulfilled' ? (sRes as any).value.data : []);
       
       const counts: Record<string, number> = {};
       for (const t of DATABASE_SCHEMA) {
@@ -152,6 +158,57 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
                   </div>
                 </GlassCard>
               ))}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'signals' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4">
+              {securityEvents.map((event) => (
+                <GlassCard key={event.id} className="p-6 flex items-center justify-between border-l-4 border-l-rose-500">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-rose-500/10 text-rose-500 rounded-full">
+                      <Shield size={20} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-rose-400 uppercase tracking-wider text-xs">{event.type}</h4>
+                      <p className="text-sm text-slate-300 mt-1">{event.details}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-xs text-slate-500 font-mono">{new Date(event.created_at).toLocaleString()}</p>
+                    <p className="text-xs text-slate-600 font-mono mt-1">{event.ip_address}</p>
+                  </div>
+                </GlassCard>
+              ))}
+              {securityEvents.length === 0 && (
+                <div className="text-center py-20 text-slate-500">No security events detected.</div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'system' && (
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 gap-4">
+              {auditLogs.map((log) => (
+                <GlassCard key={log.id} className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="p-2 bg-white/5 rounded-lg text-slate-400">
+                      <List size={16} />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-sm">{log.action}</h4>
+                      <p className="text-xs text-slate-500 font-mono">User: {log.user_id}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-slate-600 font-mono">{new Date(log.created_at).toLocaleString()}</span>
+                </GlassCard>
+              ))}
+              {auditLogs.length === 0 && (
+                <div className="text-center py-20 text-slate-500">No audit logs available.</div>
+              )}
             </div>
           </div>
         )}
