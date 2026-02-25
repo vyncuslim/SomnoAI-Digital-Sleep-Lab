@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import { 
   ArrowLeft, MessageSquare, AlertTriangle, Lightbulb, 
-  Zap, Mail, Send, Loader2, CheckCircle2, XCircle, 
-  Terminal, ShieldCheck, Sparkles, BrainCircuit
+  Mail, Send, Loader2, CheckCircle2, XCircle, 
+  Sparkles, BrainCircuit
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -24,7 +23,6 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
   const [email, setEmail] = useState('');
   const [content, setContent] = useState('');
   const [status, setStatus] = useState<'idle' | 'transmitting' | 'success' | 'error'>('idle');
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   
   const isMounted = useRef(true);
   const transitionTimer = useRef<any>(null);
@@ -49,7 +47,6 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
     if (!content.trim() || !email.trim() || status === 'transmitting') return;
 
     setStatus('transmitting');
-    setErrorMessage(null);
 
     try {
       const { success, error } = await feedbackApi.submitFeedback(type, content, email);
@@ -65,7 +62,6 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
       if (!isMounted.current) return;
       console.error("[Feedback Transmission Error]:", err);
       setStatus('error');
-      setErrorMessage(err.message || "Protocol transmission failure.");
       setTimeout(() => {
         if (isMounted.current) setStatus(prev => prev === 'error' ? 'idle' : prev);
       }, 5000);

@@ -1,259 +1,142 @@
 import React, { useState, useEffect } from 'react';
-import { SleepRecord, SyncStatus } from '../types.ts';
-import { GlassCard } from './GlassCard.tsx';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 import { 
-  RefreshCw, Brain, Heart, Zap, Activity, ArrowRight, Target, ShieldCheck, ChevronRight, MessageCircle, ExternalLink, FlaskConical, Smartphone, Image as ImageIcon,
-  Radio, TrendingUp, Cpu, Binary, Gauge, Microchip
+  Activity, Moon, Zap, Settings, LogOut, 
+  BarChart2, Brain, ChevronRight
 } from 'lucide-react';
-import { Language, translations } from '../services/i18n.ts';
-import { getQuickInsight } from '../services/geminiService.ts';
-
-const m = motion as any;
+import { GlassCard } from './GlassCard.tsx';
+import { Language } from '../services/i18n.ts';
+import { supabase } from '../services/supabaseService.ts';
 
 interface DashboardProps {
-  data: SleepRecord;
   lang: Language;
-  onSyncHealth?: (onProgress: (status: SyncStatus) => void) => Promise<void>;
-  onNavigate?: (view: any) => void;
 }
 
-const NeuralAura = () => (
-  <div className="absolute inset-0 overflow-hidden pointer-events-none opacity-[0.04]">
-    <div className="absolute inset-0 bg-[radial-gradient(#6366f1_1.5px,transparent_1.5px)] [background-size:48px_48px]" />
-    <m.div 
-      animate={{ 
-        scale: [1, 1.1, 1],
-        rotate: [0, 5, 0]
-      }}
-      transition={{ duration: 20, repeat: Infinity, ease: "linear" }}
-      className="absolute top-[-20%] left-[-10%] w-[120%] h-[120%] bg-[conic-gradient(from_0deg,transparent,rgba(99,102,241,0.2),transparent)]"
-    />
-  </div>
-);
-
-const MetricCard = ({ icon: Icon, label, value, unit, color, trend }: any) => (
-  <div className="p-6 md:p-8 bg-white/[0.02] border border-white/5 rounded-3xl md:rounded-[3rem] space-y-4 md:space-y-6 group hover:border-indigo-500/30 transition-all relative overflow-hidden flex-1 shadow-inner">
-    <div className={`p-3 md:p-4 rounded-2xl ${color} w-fit relative z-10 shadow-xl group-hover:scale-110 transition-transform duration-500`}>
-      <Icon size={24} strokeWidth={2.5} />
-    </div>
-    <div className="relative z-10">
-      <div className="flex justify-between items-center mb-1">
-        <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] italic">{label}</p>
-        {trend && <span className="text-[9px] md:text-[10px] font-black text-emerald-500 italic">+{trend}%</span>}
-      </div>
-      <div className="flex items-baseline gap-2 md:gap-3">
-        <span className="text-4xl md:text-6xl font-black text-white italic tabular-nums tracking-tighter leading-none">{value}</span>
-        <span className="text-[10px] md:text-[11px] font-black text-slate-500 uppercase tracking-[0.3em]">{unit}</span>
-      </div>
-    </div>
-    <div className="absolute -right-6 -bottom-6 opacity-[0.03] text-white group-hover:opacity-[0.06] transition-opacity">
-       <Icon size={100} md:size={140} />
-    </div>
-  </div>
-);
-
-export const Dashboard: React.FC<DashboardProps> = ({ 
-  data, lang, onSyncHealth, onNavigate
-}) => {
-  const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
-  const [insights, setInsights] = useState<string[]>([]);
-  const t = translations[lang].dashboard;
+export const Dashboard: React.FC<DashboardProps> = () => {
+  const navigate = useNavigate();
+  const [user, setUser] = useState<any>(null);
 
   useEffect(() => {
-    const fetchInsights = async () => {
-      try {
-        const res = await getQuickInsight(data, lang);
-        setInsights(Array.isArray(res) ? res : [res]);
-      } catch (e) {
-        setInsights(["Neural baseline established."]);
-      }
+    const fetchUser = async () => {
+      const { data: { user } } = await (supabase.auth as any).getUser();
+      if (user) setUser(user);
+      else navigate('/auth');
     };
-    fetchInsights();
-  }, [data, lang]);
+    fetchUser();
+  }, [navigate]);
 
-  const handleFullSync = async () => {
-    if (syncStatus !== 'idle') return;
-    setSyncStatus('fetching');
-    try {
-      if (onSyncHealth) await onSyncHealth((status) => setSyncStatus(status));
-      setSyncStatus('success');
-      setTimeout(() => setSyncStatus('idle'), 2500);
-    } catch (err) { 
-      setSyncStatus('error'); 
-      setTimeout(() => setSyncStatus('idle'), 4000);
-    }
+  const handleLogout = async () => {
+    await (supabase.auth as any).signOut();
+    navigate('/');
   };
 
-  const isProcessing = ['authorizing', 'fetching', 'analyzing'].includes(syncStatus);
-
   return (
-    <div className="space-y-12 pb-32 animate-in fade-in slide-in-from-bottom-8 duration-1000 text-left relative">
-      <NeuralAura />
-      
-      {/* 顶部状态栏 */}
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-10 px-6 relative z-10">
-         <div className="flex items-center gap-8">
-            <div className="p-5 bg-slate-950 border-2 border-indigo-500/20 rounded-[2.5rem] text-indigo-400 shadow-[0_0_80px_rgba(99,102,241,0.15)]">
-              <Gauge size={42} />
-            </div>
-            <div className="space-y-3">
-              <div className="flex items-center gap-4">
-                 <h2 className="text-3xl md:text-5xl font-black italic text-white uppercase tracking-tighter leading-none">Laboratory <span className="text-indigo-400">Terminal</span></h2>
-                 <div className="px-4 py-1.5 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-3">
-                    <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]" />
-                    <span className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.2em] italic">Active Sync</span>
-                 </div>
-              </div>
-              <div className="flex items-center gap-4 opacity-60">
-                 <Binary size={12} className="text-slate-500" />
-                 <p className="text-[11px] font-mono text-slate-500 uppercase tracking-[0.4em] italic">{t.status} // ID: SOMNO_LAB_001</p>
-              </div>
-            </div>
-         </div>
+    <div className="min-h-screen bg-[#01040a] text-white font-sans p-6">
+      <header className="flex items-center justify-between mb-12">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center font-bold">
+            {user?.email?.[0].toUpperCase()}
+          </div>
+          <div>
+            <h1 className="text-xl font-bold">Welcome back</h1>
+            <p className="text-xs text-slate-500 font-mono">{user?.email}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-4">
+          <button onClick={() => navigate('/settings')} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
+            <Settings size={20} />
+          </button>
+          <button onClick={handleLogout} className="p-3 bg-rose-500/10 text-rose-500 rounded-full hover:bg-rose-500/20 transition-colors">
+            <LogOut size={20} />
+          </button>
+        </div>
+      </header>
 
-         <div className="flex items-center gap-6">
-            <div className="hidden lg:flex items-center gap-4 px-8 py-4 bg-indigo-600/5 border border-white/5 rounded-full backdrop-blur-xl group cursor-help">
-               <ShieldCheck size={16} className="text-indigo-400 group-hover:scale-110 transition-transform" />
-               <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] italic">Biometric Integrity Secured</span>
-            </div>
-         </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+        <GlassCard className="p-6 flex items-center gap-4">
+          <div className="p-4 bg-indigo-500/10 text-indigo-500 rounded-2xl">
+            <Moon size={24} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Sleep Score</p>
+            <h3 className="text-2xl font-black">85</h3>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-6 flex items-center gap-4">
+          <div className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl">
+            <Activity size={24} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Resting HR</p>
+            <h3 className="text-2xl font-black">58 <span className="text-xs font-medium text-slate-500">bpm</span></h3>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-6 flex items-center gap-4">
+          <div className="p-4 bg-amber-500/10 text-amber-500 rounded-2xl">
+            <Zap size={24} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Readiness</p>
+            <h3 className="text-2xl font-black">92%</h3>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-6 flex items-center gap-4">
+          <div className="p-4 bg-purple-500/10 text-purple-500 rounded-2xl">
+            <Brain size={24} />
+          </div>
+          <div>
+            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Deep Sleep</p>
+            <h3 className="text-2xl font-black">1h 45m</h3>
+          </div>
+        </GlassCard>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 relative z-10">
-        {/* 主要生物遥测数据卡片 (占据 9 列) */}
-        <div className="lg:col-span-9">
-          <GlassCard className="p-16 md:p-24 rounded-[5rem] bg-[#01040a]/90 border-white/5 relative overflow-hidden h-full" intensity={1.1}>
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-24 relative z-10">
-              <div className="space-y-16">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-3 px-2">
-                    <Microchip size={14} className="text-indigo-500" />
-                    <p className="text-[11px] font-black uppercase text-slate-500 tracking-[0.4em] italic">Telemetry Overview</p>
-                  </div>
-                  <div className="flex items-baseline gap-5 group cursor-default">
-                     <m.h1 
-                        initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}
-                        className="text-9xl md:text-[10rem] xl:text-[14rem] font-black italic tracking-tighter text-white leading-none drop-shadow-[0_0_120px_rgba(99,102,241,0.2)]"
-                      >
-                       {Number(data.score)}
-                     </m.h1>
-                     <span className="text-3xl md:text-4xl font-black text-slate-600 tracking-widest">%</span>
-                  </div>
-                  <div className="inline-flex items-center gap-5 px-8 py-3 bg-emerald-500/5 border border-emerald-500/20 rounded-full shadow-inner">
-                     <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
-                     <span className="text-[13px] font-black uppercase text-emerald-400 tracking-[0.3em] italic">{t.scoreStatus}</span>
-                  </div>
-                </div>
-
-                <div className="flex flex-wrap gap-8">
-                   <MetricCard icon={Heart} label="Pulse Rate" value={data.heartRate.resting} unit="BPM" color="bg-rose-500/10 text-rose-500" />
-                   <MetricCard icon={Brain} label="Recovery Depth" value={data.deepRatio} unit="%" color="bg-indigo-500/10 text-indigo-400" />
-                </div>
-              </div>
-
-              <div className="flex flex-col justify-between space-y-16">
-                <div className="space-y-10">
-                   <div className="flex items-center gap-4 border-b border-white/5 pb-6">
-                      <TrendingUp size={20} className="text-indigo-400" />
-                      <p className="text-xs font-black uppercase text-white tracking-[0.4em] italic">{t.stagingTitle}</p>
-                   </div>
-                   <p className="text-xl md:text-4xl font-bold text-slate-200 leading-tight italic tracking-tight border-l-8 border-indigo-600/40 pl-8 md:pl-12 py-4 bg-gradient-to-r from-indigo-500/5 to-transparent rounded-r-3xl">
-                     "{t.stagingQuote}"
-                   </p>
-                </div>
-
-                <div className="space-y-10 bg-slate-950/60 p-12 rounded-[4rem] border border-white/5 shadow-inner">
-                  <div className="flex flex-wrap gap-4">
-                    {insights.map((insight, idx) => (
-                      <div key={insight + idx} className="px-6 py-3 bg-indigo-600/10 border border-indigo-500/20 rounded-2xl text-[11px] text-indigo-400 italic font-black uppercase tracking-widest shadow-xl">
-                        # {insight}
-                      </div>
-                    ))}
-                  </div>
-                  <m.button 
-                    whileHover={{ scale: 1.02, y: -2 }}
-                    whileTap={{ scale: 0.98 }}
-                    onClick={() => onNavigate?.('dreams')}
-                    className="w-full py-8 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-sm uppercase tracking-[0.5em] transition-all flex items-center justify-center gap-6 shadow-[0_40px_100px_-20px_rgba(79,70,229,0.5)] italic group relative overflow-hidden"
-                  >
-                    <ImageIcon size={24} className="group-hover:rotate-12 transition-transform duration-500" />
-                    START DREAM PROJECTION
-                    <div className="absolute inset-0 bg-white/5 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-1000" />
-                  </m.button>
-                </div>
-              </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-8">
+          <GlassCard className="p-8 min-h-[400px]">
+            <div className="flex items-center justify-between mb-8">
+              <h3 className="text-xl font-bold flex items-center gap-3">
+                <BarChart2 size={20} className="text-indigo-500" />
+                Sleep Stages
+              </h3>
+              <select className="bg-black/20 border border-white/10 rounded-lg px-3 py-1 text-xs">
+                <option>Last Night</option>
+                <option>Last Week</option>
+              </select>
+            </div>
+            <div className="h-64 flex items-center justify-center text-slate-600 font-mono text-sm border-2 border-dashed border-white/5 rounded-2xl">
+              Chart Visualization Placeholder
             </div>
           </GlassCard>
         </div>
 
-        {/* 侧边功能栏 (占据 3 列) */}
-        <div className="lg:col-span-3 space-y-8">
-          <GlassCard className="p-12 rounded-[5rem] border-transparent bg-indigo-600 text-white flex flex-col justify-between shadow-[0_60px_150px_-30px_rgba(79,70,229,0.5)] relative overflow-hidden h-[45%]" intensity={1.5}>
-            <div className="space-y-6 relative z-10">
-              <div className="w-20 h-20 bg-white/10 rounded-[2.5rem] flex items-center justify-center shadow-2xl border border-white/30 backdrop-blur-3xl group-hover:scale-110 transition-transform duration-500">
-                <Smartphone size={36} className={isProcessing ? 'animate-pulse' : ''} />
+        <div className="space-y-6">
+          <GlassCard className="p-6 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border-indigo-500/20">
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-3 bg-indigo-500 rounded-xl text-white shadow-lg shadow-indigo-500/30">
+                <Brain size={20} />
               </div>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <h3 className="text-3xl font-black italic uppercase tracking-tighter leading-none">{t.syncTitle}</h3>
-                  <div className="px-2 py-0.5 bg-white/10 rounded text-[8px] font-bold tracking-tighter">HEALTH CONNECT</div>
-                </div>
-                <p className="text-indigo-100 text-sm font-bold italic opacity-80">{t.syncDesc}</p>
-              </div>
+              <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-[10px] font-bold uppercase tracking-wider">AI Insight</span>
             </div>
-            <m.button 
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              onClick={handleFullSync}
-              disabled={isProcessing}
-              className="w-full py-5 mt-10 bg-slate-950 border border-white/10 text-white rounded-full font-black text-[11px] uppercase tracking-[0.4em] shadow-2xl transition-all hover:bg-black disabled:opacity-50 italic flex items-center justify-center gap-4"
-            >
-              {isProcessing ? <RefreshCw size={18} className="animate-spin" /> : <RefreshCw size={18} />}
-              {isProcessing ? t.syncingButton : t.syncButton}
-            </m.button>
+            <h4 className="font-bold text-lg mb-2">Optimal Recovery</h4>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              Your deep sleep ratio is 15% higher than your 30-day average. Cognitive performance is likely peaked today.
+            </p>
           </GlassCard>
 
-          <div className="grid grid-cols-1 gap-8 h-[calc(55%-2rem)]">
-             <m.div
-               whileHover={{ scale: 1.02, y: -2 }}
-               whileTap={{ scale: 0.98 }}
-               className="h-full"
-             >
-               <GlassCard 
-                 onClick={() => onNavigate?.('blog')}
-                 className="p-12 rounded-[4rem] border-white/5 bg-[#5865F2]/5 hover:bg-[#5865F2]/10 cursor-pointer transition-all flex flex-col justify-between group shadow-2xl h-full"
-               >
-                  <div className="p-4 bg-[#5865F2]/10 rounded-2xl w-fit text-[#5865F2] shadow-inner"><MessageCircle size={32} /></div>
-                  <div className="space-y-2">
-                     <h4 className="text-2xl font-black text-white italic uppercase tracking-tight">Narrative Node</h4>
-                     <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Protocol Discussions</p>
-                  </div>
-                  <div className="flex items-center justify-between opacity-30 group-hover:opacity-100 transition-all pt-6 border-t border-white/5">
-                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">STREAM_OK</span>
-                     <ExternalLink size={18} className="text-[#5865F2]" />
-                  </div>
-               </GlassCard>
-             </m.div>
-
-             <m.div
-               whileHover={{ scale: 1.02, y: -2 }}
-               whileTap={{ scale: 0.98 }}
-               className="h-full"
-             >
-               <GlassCard onClick={() => onNavigate?.('experiment')} className="p-12 rounded-[4rem] border-white/5 bg-slate-900/60 hover:bg-indigo-900/20 cursor-pointer transition-all flex flex-col justify-between group shadow-2xl h-full">
-                  <div className="p-4 bg-indigo-500/10 rounded-2xl w-fit text-indigo-400 shadow-inner"><FlaskConical size={32} /></div>
-                  <div className="space-y-2">
-                     <h4 className="text-2xl font-black text-white italic uppercase tracking-tight">Trials Matrix</h4>
-                     <p className="text-[10px] font-black text-slate-700 uppercase tracking-[0.3em]">Calibration Active</p>
-                  </div>
-                  <div className="flex items-center justify-between opacity-30 group-hover:opacity-100 transition-all pt-6 border-t border-white/5">
-                     <span className="text-[9px] font-black text-slate-500 uppercase tracking-widest italic">NODE_READY</span>
-                     <ChevronRight size={22} className="text-indigo-500" />
-                  </div>
-               </GlassCard>
-             </m.div>
-          </div>
+          <GlassCard className="p-6">
+            <h4 className="font-bold text-sm uppercase tracking-wider text-slate-500 mb-4">Quick Actions</h4>
+            <div className="space-y-3">
+              <button onClick={() => navigate('/experiment')} className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left flex items-center justify-between group transition-all">
+                <span className="font-medium text-sm">Start Experiment</span>
+                <ChevronRight size={16} className="text-slate-600 group-hover:text-white transition-colors" />
+              </button>
+              <button onClick={() => navigate('/journal')} className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left flex items-center justify-between group transition-all">
+                <span className="font-medium text-sm">Log Journal</span>
+                <ChevronRight size={16} className="text-slate-600 group-hover:text-white transition-colors" />
+              </button>
+            </div>
+          </GlassCard>
         </div>
       </div>
     </div>

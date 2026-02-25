@@ -1,0 +1,8 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#01040a"/>
+  <circle cx="600" cy="315" r="250" fill="#6366f1" fill-opacity="0.05"/>
+  <path d="M650 200 C450 200, 250 400, 250 650 C250 780, 300 880, 380 940 C250 860, 180 710, 180 560 C180 310, 380 110, 630 110 C710 110, 780 130, 840 160 C800 190, 750 200, 700 200" transform="translate(250, 50) scale(0.6)" fill="#6366F1"/>
+  <circle cx="720" cy="220" r="25" fill="#818CF8"/>
+  <text x="600" y="480" font-family="sans-serif" font-size="80" font-weight="900" fill="white" text-anchor="middle" letter-spacing="0.05em" style="text-transform: uppercase; font-style: italic;">SomnoAI</text>
+  <text x="600" y="550" font-family="monospace" font-size="30" font-weight="bold" fill="#6366f1" text-anchor="middle" letter-spacing="0.3em">DIGITAL SLEEP LAB</text>
+</svg>

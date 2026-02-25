@@ -1,294 +1,43 @@
-import React, { useState, useEffect, useCallback } from 'react';
-import RootLayout from './app/layout.tsx';
-import { ViewType, SleepRecord, Article } from './types.ts';
-import {
-  LayoutDashboard, TrendingUp, Sparkles, FlaskConical, Mic,
-  User, Settings as SettingsIcon, LogOut, BookOpen, Newspaper, PenTool, Shield,
-  Image as ImageIcon, Menu, X
-} from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Language, translations } from './services/i18n.ts';
-import { AuthProvider, useAuth } from './context/AuthContext.tsx';
-import { Logo } from './components/Logo.tsx';
-import { Salesmartly } from './components/Salesmartly.tsx';
-import { Navbar } from './components/Navbar.tsx';
-import { authApi } from './services/supabaseService.ts';
-import { safeNavigatePath } from './services/navigation.ts';
-import { ProtectedRoute } from './components/ProtectedRoute.tsx';
-
-// Lazy loaded components
-const DreamVisualizer = React.lazy(() => import('./components/DreamVisualizer.tsx').then(m => ({ default: m.DreamVisualizer })));
-const LiveAssistant = React.lazy(() => import('./components/LiveAssistant.tsx').then(m => ({ default: m.LiveAssistant })));
-const ExperimentView = React.lazy(() => import('./components/ExperimentView.tsx').then(m => ({ default: m.ExperimentView })));
-const AdminView = React.lazy(() => import('./components/AdminView.tsx').then(m => ({ default: m.AdminView })));
-const NewsHub = React.lazy(() => import('./components/NewsHub.tsx').then(m => ({ default: m.NewsHub })));
-const BlogHub = React.lazy(() => import('./components/BlogHub.tsx').then(m => ({ default: m.BlogHub })));
-const LegalView = React.lazy(() => import('./components/LegalView.tsx').then(m => ({ default: m.LegalView })));
-const OpenSourceView = React.lazy(() => import('./components/OpenSourceView.tsx').then(m => ({ default: m.OpenSourceView })));
-const ArticleView = React.lazy(() => import('./components/ArticleView.tsx').then(m => ({ default: m.ArticleView })));
-const BlogPostView = React.lazy(() => import('./components/BlogPostView.tsx').then(m => ({ default: m.BlogPostView })));
-const SupportView = React.lazy(() => import('./components/SupportView.tsx').then(m => ({ default: m.SupportView })));
-const ScienceView = React.lazy(() => import('./components/ScienceView.tsx').then(m => ({ default: m.ScienceView })));
-const FAQView = React.lazy(() => import('./components/FAQView.tsx').then(m => ({ default: m.FAQView })));
-const AboutView = React.lazy(() => import('./components/AboutView.tsx').then(m => ({ default: m.AboutView })));
-const FeedbackView = React.lazy(() => import('./components/FeedbackView.tsx').then(m => ({ default: m.FeedbackView })));
-const ContactView = React.lazy(() => import('./components/ContactView.tsx').then(m => ({ default: m.ContactView })));
-const ChangelogView = React.lazy(() => import('./components/ChangelogView.tsx').then(m => ({ default: m.ChangelogView })));
-
-// Core Views (Keep synchronous for critical path)
-import { Dashboard } from './components/Dashboard.tsx';
-import { AIAssistant } from './components/AIAssistant.tsx';
-import { Settings } from './components/Settings.tsx';
-import { Trends } from './components/Trends.tsx';
-import { DiaryView } from './components/DiaryView.tsx';
-import { UserProfile } from './components/UserProfile.tsx';
+import { useState } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { LandingPage } from './components/LandingPage.tsx';
-import UserLoginPage from './legacy_pages/UserLoginPage.tsx';
-import UserSignupPage from './legacy_pages/UserSignupPage.tsx';
-import AdminLoginPage from './legacy_pages/AdminLoginPage.tsx';
-import { FirstTimeSetup } from './components/FirstTimeSetup.tsx';
-import { ExitFeedbackModal } from './components/ExitFeedbackModal.tsx';
-import { NotFoundView } from './components/NotFoundView.tsx';
-import { MOCK_RESEARCH } from './components/NewsHub.tsx';
-import { MOCK_BLOG_POSTS } from './components/BlogHub.tsx';
+import { Dashboard } from './components/Dashboard.tsx';
+import { AdminView } from './components/AdminView.tsx';
+import { UserProfile } from './components/UserProfile.tsx';
+import { FeedbackView } from './components/FeedbackView.tsx';
+import { Auth } from './components/Auth.tsx';
+import { Placeholder } from './components/Placeholder.tsx';
+import { Language } from './services/i18n.ts';
 
-const m = motion as any;
-
-const INITIAL_MOCK_RECORD: SleepRecord = {
-  id: 'initial-state',
-  date: new Date().toLocaleDateString(),
-  score: 82,
-  totalDuration: 460,
-  deepRatio: 22,
-  remRatio: 20,
-  efficiency: 89,
-  stages: [],
-  heartRate: { resting: 58, max: 75, min: 48, average: 62, history: [] },
-  aiInsights: ["Neural link synced.", "Laboratory environment ready."]
-};
-
-const AppContent: React.FC = () => {
-  const { profile, loading, refresh, isAdmin } = useAuth();
-  const [lang, setLang] = useState<Language>(() => {
-    const stored = localStorage.getItem('somno_lang');
-    if (stored === 'zh' || stored === 'en' || stored === 'es') return stored as Language;
-    return 'en';
-  });
-
-  const [currentRecord] = useState<SleepRecord>(INITIAL_MOCK_RECORD);
-  const [isExitModalOpen, setIsExitModalOpen] = useState(false);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [activeArticle, setActiveArticle] = useState<Article | null>(null);
-  const [activePost, setActivePost] = useState<Article | null>(null);
-
-  const resolveViewFromLocation = useCallback((): ViewType | 'opensource' => {
-    try {
-      const pathname = window.location.pathname || '/';
-      const cleanPath = pathname.toLowerCase().split('?')[0].replace(/\/+/g, '/').replace(/\/+$/, '') || '/';
-      const segments = cleanPath.split('/').filter(Boolean);
-      
-      // Admin Priority Catch
-      if (segments.includes('admin')) return 'admin';
-      if (segments.includes('admin-login')) return 'admin-login';
-
-      if (segments.includes('article') || segments.includes('news')) {
-        const idx = segments.indexOf('article') !== -1 ? segments.indexOf('article') : segments.indexOf('news');
-        const slug = segments[idx + 1];
-        if (slug) {
-          const found = MOCK_RESEARCH.find(a => a.slug === slug);
-          if (found) {
-            setActiveArticle(found);
-            return 'article';
-          }
-        }
-      }
-
-      if (segments.includes('blog')) {
-        const slugIdx = segments.indexOf('blog') + 1;
-        const slug = segments[slugIdx];
-        if (slug) {
-          const found = MOCK_BLOG_POSTS.find(p => p.slug === slug);
-          if (found) {
-            setActivePost(found);
-            return 'blog-post';
-          }
-        }
-        return 'blog';
-      }
-
-      const viewMap: Record<string, ViewType | 'opensource'> = {
-        'dashboard': 'dashboard',
-        'assistant': 'assistant',
-        'voice': 'voice',
-        'dreams': 'dreams',
-        'calendar': 'calendar',
-        'atlas': 'calendar',
-        'experiment': 'experiment',
-        'settings': 'settings',
-        'diary': 'diary',
-        'registry': 'registry',
-        'login': 'login',
-        'signup': 'signup',
-        'join': 'signup',
-        'science': 'science',
-        'faq': 'faq',
-        'news': 'news',
-        'blog': 'blog',
-        'about': 'about',
-        'support': 'support',
-        'privacy': 'privacy',
-        'terms': 'terms',
-        'contact': 'contact',
-        'feedback': 'feedback',
-        'opensource': 'opensource',
-        'changelog': 'changelog',
-        '404': 'not-found'
-      };
-
-      for (let i = segments.length - 1; i >= 0; i--) {
-        if (viewMap[segments[i]]) return viewMap[segments[i]];
-      }
-
-      const rootAliases = ['/', '', 'index', 'index.html', 'home', 'landing', 'welcome'];
-      if (cleanPath === '/' || rootAliases.includes(cleanPath.replace(/^\//, ''))) {
-        return 'landing';
-      }
-
-      return 'not-found';
-    } catch (e) {
-      return 'not-found';
-    }
-  }, []);
-
-  const [activeView, setActiveView] = useState<ViewType | 'opensource'>(() => resolveViewFromLocation());
-
-  const navigate = (view: string) => {
-    const target = view === '/' ? '/' : (view.startsWith('/') ? view : `/${view}`);
-    safeNavigatePath(target);
-    setActiveView(resolveViewFromLocation());
-    setIsMobileMenuOpen(false);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  useEffect(() => {
-    const handleRouting = () => setActiveView(resolveViewFromLocation());
-    window.addEventListener('popstate', handleRouting);
-    return () => window.removeEventListener('popstate', handleRouting);
-  }, [resolveViewFromLocation]);
-
-  useEffect(() => {
-    if (!loading) {
-      const currentLoc = resolveViewFromLocation();
-      if (profile && ['landing', 'login', 'signup'].includes(currentLoc)) {
-        if (window.location.pathname !== '/dashboard') {
-          navigate('dashboard');
-        } else {
-          setActiveView('dashboard');
-        }
-      } else {
-        setActiveView(currentLoc);
-      }
-    }
-  }, [profile, loading, resolveViewFromLocation]);
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center gap-6">
-         <Logo size={60} animated={true} />
-         <div className="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-500/40 animate-pulse">Synchronizing Terminal...</div>
-      </div>
-    );
-  }
-
-  const renderContent = () => {
-    return (
-      <React.Suspense fallback={
-        <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center gap-6">
-           <Logo size={60} animated={true} />
-           <div className="text-[9px] font-black uppercase tracking-[0.5em] text-indigo-500/40 animate-pulse">Loading Sector...</div>
-        </div>
-      }>
-        {(() => {
-          switch (activeView) {
-            case 'landing': return <LandingPage lang={lang} onNavigate={navigate} />;
-            case 'science': return <ScienceView lang={lang} onBack={() => navigate('/')} />;
-            case 'faq': return <FAQView lang={lang} onBack={() => navigate(profile ? 'dashboard' : '/')} />;
-            case 'news': return <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate(`article/${a.slug}`); }} />;
-            case 'article': return activeArticle ? <ArticleView article={activeArticle} lang={lang} onBack={() => navigate('news')} /> : <NewsHub lang={lang} onSelectArticle={(a) => { setActiveArticle(a); navigate(`article/${a.slug}`); }} />;
-            case 'blog': return <BlogHub lang={lang} onSelectPost={(p) => { setActivePost(p); navigate(`blog/${p.slug}`); }} />;
-            case 'blog-post': return activePost ? <BlogPostView post={activePost} lang={lang} onBack={() => navigate('blog')} /> : <BlogHub lang={lang} onSelectPost={(p) => { setActivePost(p); navigate(`blog/${p.slug}`); }} />;
-            case 'about': return <AboutView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
-            case 'support': return <SupportView lang={lang} onBack={() => navigate('/')} onNavigate={navigate} />;
-            case 'privacy': return <LegalView type="privacy" lang={lang} onBack={() => navigate('/')} />;
-            case 'terms': return <LegalView type="terms" lang={lang} onBack={() => navigate('/')} />;
-            case 'opensource': return <OpenSourceView lang={lang} onBack={() => navigate('/')} />;
-            case 'login': return <UserLoginPage onSuccess={refresh} onSandbox={() => {}} lang={lang} mode="login" />;
-            case 'signup': return <UserSignupPage onSuccess={refresh} onSandbox={() => {}} lang={lang} />;
-            case 'admin-login': return <AdminLoginPage />;
-            case 'admin': return (
-              <ProtectedRoute level="admin">
-                <AdminView onBack={() => navigate('dashboard')} />
-              </ProtectedRoute>
-            );
-            case 'contact': return <ContactView lang={lang} onBack={() => navigate('about')} />;
-            case 'feedback': return <FeedbackView lang={lang} onBack={() => navigate('support')} />;
-            case 'changelog': return <ChangelogView lang={lang} onBack={() => navigate('/')} />;
-            case 'not-found': return <NotFoundView />;
-            default: return null;
-          }
-        })()}
-      </React.Suspense>
-    );
-  };
-
-  const isStandaloneView = ['landing', 'science', 'faq', 'about', 'support', 'privacy', 'terms', 'login', 'signup', 'admin-login', 'opensource', 'contact', 'feedback', 'changelog', 'not-found', 'news', 'article', 'blog', 'blog-post', 'admin'].includes(activeView);
-
-  if (!profile && !isStandaloneView) return <LandingPage lang={lang} onNavigate={navigate} />;
-  if (profile && !profile.full_name && !['settings', 'registry', 'admin'].includes(activeView)) return <FirstTimeSetup onComplete={refresh} />;
+function App() {
+  const [lang] = useState<Language>('en');
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#01040a] text-slate-200 selection:bg-indigo-500/30">
-      <Salesmartly />
-      <Navbar 
-        lang={lang} 
-        activeView={activeView} 
-        onNavigate={navigate} 
-        isAuthenticated={!!profile}
-        isAdmin={isAdmin}
-        onLogout={() => setIsExitModalOpen(true)}
-      />
-      
-      <main className={`flex-1 w-full max-w-[1700px] mx-auto p-6 md:p-12 pt-32 pb-24 relative z-0 overflow-x-hidden ${isStandaloneView ? 'max-w-7xl' : ''}`}>
-        <AnimatePresence mode="wait">
-          <m.div key={activeView} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 1.01 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}>
-            {renderContent()}
-            {!isStandaloneView && (
-              <>
-                {activeView === 'dashboard' && <Dashboard data={currentRecord} lang={lang} onNavigate={navigate} />}
-                {activeView === 'calendar' && <Trends history={[currentRecord]} lang={lang} />}
-                {activeView === 'assistant' && <AIAssistant lang={lang} data={currentRecord} />}
-                {activeView === 'dreams' && <DreamVisualizer lang={lang} data={currentRecord} />}
-                {activeView === 'voice' && <LiveAssistant lang={lang} data={currentRecord} />}
-                {activeView === 'experiment' && <ExperimentView data={currentRecord} lang={lang} />}
-                {activeView === 'diary' && <DiaryView lang={lang} />}
-                {activeView === 'settings' && <Settings lang={lang} onLanguageChange={setLang} onLogout={() => setIsExitModalOpen(true)} onNavigate={navigate} />}
-                {activeView === 'registry' && <UserProfile lang={lang} />}
-              </>
-            )}
-          </m.div>
-        </AnimatePresence>
-      </main>
-      <ExitFeedbackModal isOpen={isExitModalOpen} lang={lang} onConfirmLogout={async () => { await authApi.signOut(); window.location.href = '/'; }} />
-    </div>
+    <Router>
+      <Routes>
+        <Route path="/" element={<LandingPage lang={lang} />} />
+        <Route path="/auth" element={<Auth />} />
+        <Route path="/dashboard" element={<Dashboard lang={lang} />} />
+        <Route path="/admin" element={<AdminView lang={lang} onBack={() => window.history.back()} />} />
+        <Route path="/settings" element={<UserProfile lang={lang} onBack={() => window.history.back()} />} />
+        <Route path="/feedback" element={<FeedbackView lang={lang} onBack={() => window.history.back()} />} />
+        
+        <Route path="/experiment" element={<Placeholder title="Experiment" />} />
+        <Route path="/journal" element={<Placeholder title="Journal" />} />
+        <Route path="/ai-assistant" element={<Placeholder title="AI Assistant" />} />
+        
+        <Route path="/about" element={<Placeholder title="About Us" />} />
+        <Route path="/blog" element={<Placeholder title="Blog" />} />
+        <Route path="/contact" element={<Placeholder title="Contact" />} />
+        <Route path="/opensource" element={<Placeholder title="Open Source" />} />
+        <Route path="/changelog" element={<Placeholder title="Changelog" />} />
+        <Route path="/privacy" element={<Placeholder title="Privacy Policy" />} />
+        <Route path="/terms" element={<Placeholder title="Terms of Service" />} />
+        
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </Router>
   );
-};
-
-const App: React.FC = () => (
-  <AuthProvider>
-    <RootLayout>
-      <AppContent />
-    </RootLayout>
-  </AuthProvider>
-);
+}
 
 export default App;
