@@ -76,7 +76,7 @@ export const emailService = {
       `;
 
       // 2. Dispatch to all active recipients in the matrix
-      const promises = recipients.map(r => emailService.sendSystemEmail(r.email, subject, html, undefined, isSignup));
+      const promises = recipients.map((r: { email: string }) => emailService.sendSystemEmail(r.email, subject, html, undefined, isSignup));
       const results = await Promise.all(promises);
       
       return { success: results.some(r => r.success) };

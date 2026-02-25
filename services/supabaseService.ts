@@ -3,14 +3,114 @@ import { createClient } from '@supabase/supabase-js';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+let supabaseClient: any;
+
 if (!supabaseUrl || !supabaseAnonKey) {
-  console.error('Missing Supabase environment variables. Please check your .env file.');
+  console.warn('Missing Supabase environment variables. Running in Demo Mode with Mock Data.');
+  
+  // Mock Supabase Client for Demo Mode
+  const mockUser = {
+    id: 'mock-user-id',
+    email: 'demo@somno.ai',
+    user_metadata: { full_name: 'Demo User' },
+    app_metadata: {},
+    aud: 'authenticated',
+    created_at: new Date().toISOString()
+  };
+
+  const mockSession = {
+    access_token: 'mock-token',
+    refresh_token: 'mock-refresh-token',
+    expires_in: 3600,
+    token_type: 'bearer',
+    user: mockUser
+  };
+
+  const createQueryBuilder = (table: string) => {
+    const builder: any = {
+      select: () => builder,
+      insert: () => Promise.resolve({ data: [], error: null }),
+      update: () => builder,
+      delete: () => builder,
+      eq: () => builder,
+      order: () => builder,
+      limit: () => builder,
+      single: () => {
+        if (table === 'profiles') {
+          return Promise.resolve({ 
+            data: { 
+              id: mockUser.id, 
+              email: mockUser.email, 
+              role: 'owner', 
+              is_super_owner: true, 
+              full_name: 'Demo User',
+              is_blocked: false
+            }, 
+            error: null 
+          });
+        }
+        return Promise.resolve({ data: null, error: null });
+      },
+      then: (resolve: any) => {
+        // Default resolution for list queries
+        if (table === 'profiles') {
+           resolve({ data: [{ 
+              id: mockUser.id, 
+              email: mockUser.email, 
+              role: 'owner', 
+              is_super_owner: true, 
+              full_name: 'Demo User',
+              is_blocked: false
+           }], error: null });
+        } else if (table === 'diary_entries') {
+           resolve({ data: [], error: null });
+        } else {
+           resolve({ data: [], error: null });
+        }
+      }
+    };
+    return builder;
+  };
+
+  supabaseClient = {
+    auth: {
+      getSession: async () => ({ data: { session: mockSession }, error: null }),
+      getUser: async () => ({ data: { user: mockUser }, error: null }),
+      signInWithPassword: async () => ({ data: { session: mockSession, user: mockUser }, error: null }),
+      signUp: async () => ({ data: { session: mockSession, user: mockUser }, error: null }),
+      signInWithOAuth: async () => ({ data: { session: mockSession, user: mockUser }, error: null }),
+      signOut: async () => ({ error: null }),
+      onAuthStateChange: (callback: any) => {
+        // Immediately trigger signed in state for demo
+        setTimeout(() => callback('SIGNED_IN', mockSession), 0);
+        return { data: { subscription: { unsubscribe: () => {} } } };
+      },
+      updateUser: async () => ({ error: null }),
+    },
+    from: (table: string) => createQueryBuilder(table),
+    rpc: async (fn: string) => {
+       if (fn === 'get_my_detailed_profile') {
+         return { 
+           data: [{
+             id: mockUser.id, 
+             email: mockUser.email, 
+             role: 'owner', 
+             is_super_owner: true, 
+             full_name: 'Demo User',
+             is_blocked: false
+           }], 
+           error: null 
+         };
+       }
+       return { data: null, error: null };
+    }
+  };
+
+} else {
+  supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
 }
 
-export const supabase = createClient(
-  supabaseUrl || 'https://placeholder.supabase.co',
-  supabaseAnonKey || 'placeholder-key'
-);
+export const supabase = supabaseClient;
 
 export const logAuditLog = async (userId: string, action: string, details: any) => {
   const { error } = await supabase.from('audit_logs').insert([
@@ -129,3 +229,4 @@ export const userDataApi = {
     return { error };
   }
 };
+

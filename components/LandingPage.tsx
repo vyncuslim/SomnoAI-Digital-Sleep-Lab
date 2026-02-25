@@ -69,15 +69,9 @@ export const LandingPage: React.FC<any> = () => {
             <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <Brain size={18} className="animate-pulse" />
-                <span className="text-sm font-medium">Join SomnoAI Early Access — Limited Beta Access</span>
+                <span className="text-sm font-medium">Join SomnoAI Digital Sleep Lab Early Access — Limited Beta Access</span>
               </div>
               <div className="flex items-center gap-4">
-                <button 
-                  onClick={() => navigate('/auth')}
-                  className="px-4 py-1 bg-white text-indigo-600 rounded-full text-xs font-bold uppercase tracking-wider hover:bg-indigo-50 transition-colors"
-                >
-                  Apply Now
-                </button>
                 <button 
                   onClick={() => setShowBanner(false)}
                   className="p-1 hover:bg-white/20 rounded-full transition-colors"
@@ -93,7 +87,7 @@ export const LandingPage: React.FC<any> = () => {
       <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between relative z-40">
         <div className="flex items-center gap-3">
           <Logo size={32} />
-          <span className="font-bold text-xl tracking-tight">SomnoAI</span>
+          <span className="font-bold text-xl tracking-tight">SomnoAI Digital Sleep Lab</span>
         </div>
         <div className="flex items-center gap-6">
           <button onClick={() => navigate('/auth')} className="text-sm font-medium text-slate-400 hover:text-white transition-colors hidden md:block">
@@ -262,27 +256,17 @@ export const LandingPage: React.FC<any> = () => {
       </main>
 
       <footer className="border-t border-white/5 bg-black py-20 px-6">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
               <Logo size={24} />
-              <span className="font-bold text-lg tracking-tight">SomnoAI</span>
+              <span className="font-bold text-lg tracking-tight">SomnoAI Digital Sleep Lab</span>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed">
               Pioneering the future of digital sleep medicine through artificial intelligence and biological telemetry.
             </p>
           </div>
           
-          <div>
-            <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">Platform</h4>
-            <ul className="space-y-4 text-sm text-slate-500">
-              <li><a href="#" className="hover:text-white transition-colors">Features</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">Pricing</a></li>
-              <li><a href="#" className="hover:text-white transition-colors">API Access</a></li>
-              <li><a href="/changelog" className="hover:text-white transition-colors">Changelog</a></li>
-            </ul>
-          </div>
-
           <div>
             <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">Company</h4>
             <ul className="space-y-4 text-sm text-slate-500">

@@ -23,6 +23,7 @@ import { SupportView } from './components/SupportView.tsx';
 import { Language } from './services/i18n.ts';
 import { SleepRecord } from './types.ts';
 import { MOCK_BLOG_POSTS, MOCK_RESEARCH } from './data/mockData.ts';
+import { Salesmartly } from './components/Salesmartly.tsx';
 
 // Mock Data for Demo Purposes
 const MOCK_SLEEP_DATA: SleepRecord = {
@@ -76,12 +77,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { profile, loading } = useAuth();
   
   if (loading) {
-    return (
-      <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white space-y-4">
-        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
-        <p className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400 animate-pulse">Initializing Neural Link...</p>
-      </div>
-    );
+    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
   }
   
   if (!profile) {
@@ -99,66 +95,69 @@ const AppContent = () => {
   const handleBack = () => navigate(-1);
 
   return (
-    <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
-      <Route path="/auth" element={<Auth lang={lang} />} />
-      <Route path="/about" element={<AboutView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
-      <Route path="/contact" element={<ContactView lang={lang} onBack={handleBack} />} />
-      
-      {/* Blog & News */}
-      <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
-      <Route path="/blog/:slug" element={<BlogPostWrapper lang={lang} />} />
-      <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
-      <Route path="/news/:slug" element={<ArticleWrapper lang={lang} />} />
+    <>
+      <Salesmartly />
+      <Routes>
+        {/* Public Routes */}
+        <Route path="/" element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
+        <Route path="/auth" element={<Auth lang={lang} />} />
+        <Route path="/about" element={<AboutView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+        <Route path="/contact" element={<ContactView lang={lang} onBack={handleBack} />} />
+        
+        {/* Blog & News */}
+        <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
+        <Route path="/blog/:slug" element={<BlogPostWrapper lang={lang} />} />
+        <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
+        <Route path="/news/:slug" element={<ArticleWrapper lang={lang} />} />
 
-      {/* Legal & Support */}
-      <Route path="/privacy" element={<LegalView type="privacy" lang={lang} onBack={handleBack} />} />
-      <Route path="/terms" element={<LegalView type="terms" lang={lang} onBack={handleBack} />} />
-      <Route path="/opensource" element={<OpenSourceView lang={lang} onBack={handleBack} />} />
-      <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
-      <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+        {/* Legal & Support */}
+        <Route path="/privacy" element={<LegalView type="privacy" lang={lang} onBack={handleBack} />} />
+        <Route path="/terms" element={<LegalView type="terms" lang={lang} onBack={handleBack} />} />
+        <Route path="/opensource" element={<OpenSourceView lang={lang} onBack={handleBack} />} />
+        <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
+        <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
 
-      {/* Protected Routes */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Dashboard lang={lang} />
-        </ProtectedRoute>
-      } />
-      <Route path="/admin" element={
-        <ProtectedRoute>
-          <AdminView lang={lang} onBack={handleBack} />
-        </ProtectedRoute>
-      } />
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <UserProfile lang={lang} onBack={handleBack} />
-        </ProtectedRoute>
-      } />
-      <Route path="/feedback" element={
-        <ProtectedRoute>
-          <FeedbackView lang={lang} onBack={handleBack} />
-        </ProtectedRoute>
-      } />
-      <Route path="/experiment" element={
-        <ProtectedRoute>
-          <ExperimentView data={MOCK_SLEEP_DATA} lang={lang} />
-        </ProtectedRoute>
-      } />
-      <Route path="/journal" element={
-        <ProtectedRoute>
-          <DiaryView lang={lang} />
-        </ProtectedRoute>
-      } />
-      <Route path="/ai-assistant" element={
-        <ProtectedRoute>
-          <AIAssistant lang={lang} data={MOCK_SLEEP_DATA} />
-        </ProtectedRoute>
-      } />
+        {/* Protected Routes */}
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard lang={lang} />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute>
+            <AdminView lang={lang} onBack={handleBack} />
+          </ProtectedRoute>
+        } />
+        <Route path="/settings" element={
+          <ProtectedRoute>
+            <UserProfile lang={lang} onBack={handleBack} />
+          </ProtectedRoute>
+        } />
+        <Route path="/feedback" element={
+          <ProtectedRoute>
+            <FeedbackView lang={lang} onBack={handleBack} />
+          </ProtectedRoute>
+        } />
+        <Route path="/experiment" element={
+          <ProtectedRoute>
+            <ExperimentView data={MOCK_SLEEP_DATA} lang={lang} />
+          </ProtectedRoute>
+        } />
+        <Route path="/journal" element={
+          <ProtectedRoute>
+            <DiaryView lang={lang} />
+          </ProtectedRoute>
+        } />
+        <Route path="/ai-assistant" element={
+          <ProtectedRoute>
+            <AIAssistant lang={lang} data={MOCK_SLEEP_DATA} />
+          </ProtectedRoute>
+        } />
 
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        {/* Fallback */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
+    </>
   );
 };
 
