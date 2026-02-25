@@ -76,7 +76,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { profile, loading } = useAuth();
   
   if (loading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white space-y-4">
+        <div className="w-12 h-12 border-4 border-indigo-500/30 border-t-indigo-500 rounded-full animate-spin" />
+        <p className="text-xs font-black uppercase tracking-[0.3em] text-indigo-400 animate-pulse">Initializing Neural Link...</p>
+      </div>
+    );
   }
   
   if (!profile) {
