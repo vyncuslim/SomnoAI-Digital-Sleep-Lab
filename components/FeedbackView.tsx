@@ -31,8 +31,12 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await (supabase.auth as any).getUser();
-      if (user?.email && isMounted.current) setEmail(user.email);
+      try {
+        const { data: { user } } = await (supabase.auth as any).getUser();
+        if (user?.email && isMounted.current) setEmail(user.email);
+      } catch (e) {
+        console.error("Auth check failed:", e);
+      }
     };
     fetchUser();
 

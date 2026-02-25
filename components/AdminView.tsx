@@ -42,7 +42,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
   const fetchData = async () => {
     setIsSyncing(true);
     try {
-      const { data: { user } } = await (supabase.auth as any).getUser();
+      const { data: { user }, error } = await (supabase.auth as any).getUser();
+      if (error) throw error;
       if (!user) return;
 
       const [uRes, fRes, aRes, sRes] = await Promise.allSettled([

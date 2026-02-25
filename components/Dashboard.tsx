@@ -18,9 +18,15 @@ export const Dashboard: React.FC<DashboardProps> = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      const { data: { user } } = await (supabase.auth as any).getUser();
-      if (user) setUser(user);
-      else navigate('/auth');
+      try {
+        const { data: { user }, error } = await (supabase.auth as any).getUser();
+        if (error) throw error;
+        if (user) setUser(user);
+        else navigate('/auth');
+      } catch (e) {
+        console.error("Auth check failed:", e);
+        navigate('/auth');
+      }
     };
     fetchUser();
   }, [navigate]);
