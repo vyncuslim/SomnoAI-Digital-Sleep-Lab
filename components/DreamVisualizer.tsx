@@ -18,8 +18,6 @@ interface DreamVisualizerProps {
   data: SleepRecord | null;
 }
 
-declare var window: any;
-
 export const DreamVisualizer: React.FC<DreamVisualizerProps> = ({ lang, data }) => {
   const t = translations[lang].dreams;
   const [isProcessing, setIsProcessing] = useState(false);
@@ -34,9 +32,9 @@ export const DreamVisualizer: React.FC<DreamVisualizerProps> = ({ lang, data }) 
     setError(null);
     try {
       if (hqMode) {
-        const hasKey = await window.aistudio.hasSelectedApiKey();
+        const hasKey = await (window as any).aistudio.hasSelectedApiKey();
         if (!hasKey) {
-          await window.aistudio.openSelectKey();
+          await (window as any).aistudio.openSelectKey();
           // Procedure: proceed directly assuming selection was successful
         }
       }
@@ -50,7 +48,7 @@ export const DreamVisualizer: React.FC<DreamVisualizerProps> = ({ lang, data }) 
     } catch (err: any) {
       if (err.message?.includes("Requested entity was not found")) {
         setError("API Key Error: Resetting selection. Please select a valid key again.");
-        await window.aistudio.openSelectKey();
+        await (window as any).aistudio.openSelectKey();
       } else {
         setError(err.message || "Synthesis Protocol Fault.");
       }

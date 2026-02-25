@@ -79,7 +79,7 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
     if (audioContextRef.current) {
       audioContextRef.current.input.close().catch(() => {});
       audioContextRef.current.output.close().catch(() => {});
-      audioContextRef.current.sources.forEach(s => { try { s.stop(); } catch(e) {} });
+      audioContextRef.current.sources.forEach(s => { try { s.stop(); } catch(e) { /* ignore */ } });
       audioContextRef.current = null;
     }
     setIsConnected(false);
@@ -159,7 +159,7 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
             }
 
             if (message.serverContent?.interrupted) {
-              sources.forEach(s => { try { s.stop(); } catch(e) {} });
+              sources.forEach(s => { try { s.stop(); } catch(e) { /* ignore */ } });
               sources.clear();
               nextStartTimeRef.current = 0;
             }

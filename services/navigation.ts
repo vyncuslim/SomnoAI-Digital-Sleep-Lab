@@ -8,7 +8,9 @@ export const getSafeUrl = (): string => {
     if (typeof window !== 'undefined' && window.location.href) {
       return String(window.location.href);
     }
-  } catch (e) {}
+  } catch (e) {
+    // ignore
+  }
   return 'https://sleepsomno.com/';
 };
 

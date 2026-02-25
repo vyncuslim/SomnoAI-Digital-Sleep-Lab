@@ -3,8 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseService.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { Loader2 } from 'lucide-react';
+import { Language } from '../services/i18n.ts';
 
-export const Auth: React.FC = () => {
+interface AuthProps {
+  lang?: Language;
+}
+
+export const Auth: React.FC<AuthProps> = ({ lang = 'en' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
