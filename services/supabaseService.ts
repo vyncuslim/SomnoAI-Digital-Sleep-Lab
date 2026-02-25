@@ -98,6 +98,14 @@ export const diaryApi = {
   addEntry: async (userId: string, entry: any) => {
     const { error } = await supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]);
     return { error };
+  },
+  saveEntry: async (userId: string, entry: any) => {
+    const { error } = await supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]);
+    return { error };
+  },
+  deleteEntry: async (entryId: string) => {
+    const { error } = await supabase.from('diary_entries').delete().eq('id', entryId);
+    return { error };
   }
 };
 
@@ -110,6 +118,10 @@ export const authApi = {
 
 export const userDataApi = {
   saveInitialSetup: async (userId: string, data: any) => {
+    const { error } = await supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId);
+    return { error };
+  },
+  completeSetup: async (userId: string, data: any) => {
     const { error } = await supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId);
     return { error };
   }

@@ -3,8 +3,7 @@
  * Features: Multi-pass fingerprinting & strict 24h block for permanent authorization errors.
  */
 
-// @ts-ignore
-import { supabase } from '../lib/supabaseClient.ts';
+import { supabase } from './supabaseService.ts';
 
 const BOT_TOKEN = '8049272741:AAFCu9luLbMHeRe_K8WssuTqsKQe8nm5RJQ';
 const ADMIN_CHAT_ID = '-1003851949025';

@@ -7,11 +7,16 @@ export interface SleepRecord {
   heartRate: {
     resting: number;
     max?: number;
+    min?: number;
+    average?: number;
+    history?: HeartRateData[];
   };
   deepRatio: number;
   remRatio: number;
   totalDuration: number;
-  // Add other properties as needed
+  efficiency?: number;
+  stages?: SleepStage[];
+  aiInsights?: string[];
 }
 
 export type SyncStatus = 'idle' | 'authorizing' | 'fetching' | 'analyzing' | 'success' | 'error';
@@ -35,9 +40,16 @@ export interface Article {
   excerpt: string;
   content: string;
   date: string;
-  author: string;
+  author: {
+    name: string;
+    role: string;
+    bio: string;
+  };
   tags: string[];
   imageUrl?: string;
+  slug: string;
+  category: string;
+  readTime: string;
 }
 
 export interface DiaryEntry {
@@ -46,9 +58,14 @@ export interface DiaryEntry {
   content: string;
   mood: string;
   tags: string[];
+  created_at?: string;
 }
 
-export type SleepStage = 'Awake' | 'Light' | 'Deep' | 'REM';
+export interface SleepStage {
+  name: string;
+  duration: number;
+  startTime: string;
+}
 
 export interface HeartRateData {
   timestamp: string;

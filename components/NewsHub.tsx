@@ -22,7 +22,8 @@ export const MOCK_RESEARCH: Article[] = [
       bio: 'Independent researcher specializing in neural engineering and biological telemetry. Founder of the SomnoAI Digital Sleep Lab initiative. Lead architect of the 2026 recovery synthesis protocol.'
     },
     category: 'AI',
-    readTime: '8 min'
+    readTime: '8 min',
+    tags: []
   },
   {
     id: 'art-002',
@@ -37,7 +38,8 @@ export const MOCK_RESEARCH: Article[] = [
       bio: 'Collective research unit focused on biometric data synthesis and algorithmic sleep staging within the Digital Sleep Lab ecosystem.'
     },
     category: 'Science',
-    readTime: '5 min'
+    readTime: '5 min',
+    tags: []
   }
 ];
 

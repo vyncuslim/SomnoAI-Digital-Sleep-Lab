@@ -7,10 +7,12 @@ import { diaryApi } from '../services/supabaseService.ts';
 import { DiaryEntry, Language } from '../types.ts';
 import { translations } from '../services/i18n.ts';
 import { notificationService } from '../services/notificationService.ts';
+import { useAuth } from '../context/AuthContext.tsx';
 
 const m = motion as any;
 
 export const DiaryView: React.FC<{ lang: Language }> = ({ lang }) => {
+  const { profile } = useAuth();
   const [entries, setEntries] = useState<DiaryEntry[]>([]);
   const [content, setContent] = useState('');
   const [mood, setMood] = useState('Neutral');
@@ -22,9 +24,12 @@ export const DiaryView: React.FC<{ lang: Language }> = ({ lang }) => {
 
   useEffect(() => {
     const fetchEntries = async () => {
+      if (!profile) return;
       try {
-        const data = await diaryApi.getEntries();
-        setEntries(data as DiaryEntry[]);
+        const { data } = await diaryApi.getEntries(profile.id);
+        if (data) {
+          setEntries(data as DiaryEntry[]);
+        }
       } catch (e) {
         console.error("Diary Fetch Error:", e);
       } finally {
@@ -32,25 +37,34 @@ export const DiaryView: React.FC<{ lang: Language }> = ({ lang }) => {
       }
     };
     fetchEntries();
-  }, []);
+  }, [profile]);
 
   const handleSave = async () => {
-    if (!content.trim() || isSaving) return;
+    if (!content.trim() || isSaving || !profile) return;
     setIsSaving(true);
     try {
-      const newEntry = await diaryApi.saveEntry(content, mood);
-      setEntries([newEntry as DiaryEntry, ...entries]);
+      const { error } = await diaryApi.saveEntry(profile.id, { content, mood, date: new Date().toISOString() });
       
-      // Browser Local Feedback
-      notificationService.sendNotification("Diary Saved", `Mood: ${mood} • Your biological log has been archived.`);
-      
-      // NOTE: Multi-channel Admin Alerting (Email/TG) is now handled 
-      // automatically by diaryApi.saveEntry -> logAuditLog internally.
-
-      setContent('');
-      setMood('Neutral');
-      setSaveSuccess(true);
-      setTimeout(() => setSaveSuccess(false), 3000);
+      if (!error) {
+        // Optimistic update or refetch
+        const newEntry: DiaryEntry = {
+          id: Date.now().toString(), // Temporary ID
+          date: new Date().toISOString(),
+          content,
+          mood,
+          tags: [],
+          created_at: new Date().toISOString()
+        };
+        setEntries([newEntry, ...entries]);
+        
+        // Browser Local Feedback
+        notificationService.sendNotification("Diary Saved", `Mood: ${mood} • Your biological log has been archived.`);
+        
+        setContent('');
+        setMood('Neutral');
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+      }
     } catch (e) {
       console.error("Diary Save Error:", e);
     } finally {
@@ -150,7 +164,7 @@ export const DiaryView: React.FC<{ lang: Language }> = ({ lang }) => {
                     <div className="flex items-center gap-3">
                       <Calendar size={12} className="text-indigo-400" />
                       <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">
-                        {new Date(entry.created_at).toLocaleDateString()}
+                        {new Date(entry.created_at || entry.date).toLocaleDateString()}
                       </span>
                       <span className="px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-[8px] font-black text-indigo-300 uppercase">
                         {entry.mood}

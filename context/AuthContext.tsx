@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
-import { supabase } from '../lib/supabaseClient.ts';
+import { supabase } from '../services/supabaseService.ts';
 import { logAuditLog } from '../services/supabaseService.ts';
 
 export type UserRole = "user" | "editor" | "admin" | "owner";

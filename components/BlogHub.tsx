@@ -22,7 +22,8 @@ export const MOCK_BLOG_POSTS: Article[] = [
       bio: 'Independent researcher and developer of the SomnoAI platform.'
     },
     category: 'AI',
-    readTime: '5 min'
+    readTime: '5 min',
+    tags: []
   },
   {
     id: 'blog-002',
@@ -37,7 +38,8 @@ export const MOCK_BLOG_POSTS: Article[] = [
       bio: 'Automated insight generator for the SomnoAI ecosystem.'
     },
     category: 'Science',
-    readTime: '3 min'
+    readTime: '3 min',
+    tags: []
   }
 ];
 

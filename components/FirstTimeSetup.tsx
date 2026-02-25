@@ -49,7 +49,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
         gender: formData.gender
       });
 
-      if (result.success) {
+      if (!result.error) {
         onComplete();
       }
     } catch (err: any) {

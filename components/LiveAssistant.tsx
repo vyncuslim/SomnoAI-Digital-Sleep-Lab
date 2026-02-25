@@ -145,7 +145,7 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
               setOutputTranscription("");
             }
 
-            const base64Audio = message.serverContent?.modelTurn?.parts[0]?.inlineData?.data;
+            const base64Audio = message.serverContent?.modelTurn?.parts?.[0]?.inlineData?.data;
             if (base64Audio) {
               nextStartTimeRef.current = Math.max(nextStartTimeRef.current, outputAudioContext.currentTime);
               const audioBuffer = await decodeAudioData(decode(base64Audio), outputAudioContext, 24000, 1);

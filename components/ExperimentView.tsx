@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   FlaskConical, Sparkles, Zap, BrainCircuit, 
   Target, Activity, Loader2, CheckCircle2,
-  Terminal, Info, Binary, Microchip
+  Terminal, Info, Binary, Cpu
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
@@ -46,7 +46,7 @@ export const ExperimentView: React.FC<{ data: SleepRecord; lang: Language }> = (
           <GlassCard className="p-8 rounded-[3rem] border-white/5 bg-slate-900/40 shadow-inner">
             <div className="space-y-8">
               <div className="flex items-center gap-3">
-                <Microchip size={18} className="text-indigo-400" />
+                <Cpu size={18} className="text-indigo-400" />
                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">Baseline Unit</span>
               </div>
               <button 
