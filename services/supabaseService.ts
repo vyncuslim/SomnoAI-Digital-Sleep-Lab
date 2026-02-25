@@ -140,6 +140,11 @@ export const adminApi = {
     const { data, error } = await supabase.from('notification_recipients').select('*').order('created_at', { ascending: true });
     return { data: data || [], error };
   },
+
+  getFeedback: async () => {
+    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
+    return { data: data || [], error };
+  },
   
   addNotificationRecipient: async (email: string, label: string) => {
     const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
