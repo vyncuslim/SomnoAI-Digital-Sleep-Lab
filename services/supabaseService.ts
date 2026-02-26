@@ -1,232 +1,63 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
 
-let supabaseClient: any;
+// Initialize the Supabase client
+export const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  console.warn('Missing Supabase environment variables. Running in Demo Mode with Mock Data.');
-  
-  // Mock Supabase Client for Demo Mode
-  const mockUser = {
-    id: 'mock-user-id',
-    email: 'demo@somno.ai',
-    user_metadata: { full_name: 'Demo User' },
-    app_metadata: {},
-    aud: 'authenticated',
-    created_at: new Date().toISOString()
-  };
-
-  const mockSession = {
-    access_token: 'mock-token',
-    refresh_token: 'mock-refresh-token',
-    expires_in: 3600,
-    token_type: 'bearer',
-    user: mockUser
-  };
-
-  const createQueryBuilder = (table: string) => {
-    const builder: any = {
-      select: () => builder,
-      insert: () => Promise.resolve({ data: [], error: null }),
-      update: () => builder,
-      delete: () => builder,
-      eq: () => builder,
-      order: () => builder,
-      limit: () => builder,
-      single: () => {
-        if (table === 'profiles') {
-          return Promise.resolve({ 
-            data: { 
-              id: mockUser.id, 
-              email: mockUser.email, 
-              role: 'owner', 
-              is_super_owner: true, 
-              full_name: 'Demo User',
-              is_blocked: false
-            }, 
-            error: null 
-          });
-        }
-        return Promise.resolve({ data: null, error: null });
-      },
-      then: (resolve: any) => {
-        // Default resolution for list queries
-        if (table === 'profiles') {
-           resolve({ data: [{ 
-              id: mockUser.id, 
-              email: mockUser.email, 
-              role: 'owner', 
-              is_super_owner: true, 
-              full_name: 'Demo User',
-              is_blocked: false
-           }], error: null });
-        } else if (table === 'diary_entries') {
-           resolve({ data: [], error: null });
-        } else {
-           resolve({ data: [], error: null });
-        }
-      }
-    };
-    return builder;
-  };
-
-  supabaseClient = {
-    auth: {
-      getSession: async () => ({ data: { session: mockSession }, error: null }),
-      getUser: async () => ({ data: { user: mockUser }, error: null }),
-      signInWithPassword: async () => ({ data: { session: mockSession, user: mockUser }, error: null }),
-      signUp: async () => ({ data: { session: mockSession, user: mockUser }, error: null }),
-      signInWithOAuth: async () => ({ data: { session: mockSession, user: mockUser }, error: null }),
-      signOut: async () => ({ error: null }),
-      onAuthStateChange: (callback: any) => {
-        // Immediately trigger signed in state for demo
-        setTimeout(() => callback('SIGNED_IN', mockSession), 0);
-        return { data: { subscription: { unsubscribe: () => {} } } };
-      },
-      updateUser: async () => ({ error: null }),
-    },
-    from: (table: string) => createQueryBuilder(table),
-    rpc: async (fn: string) => {
-       if (fn === 'get_my_detailed_profile') {
-         return { 
-           data: [{
-             id: mockUser.id, 
-             email: mockUser.email, 
-             role: 'owner', 
-             is_super_owner: true, 
-             full_name: 'Demo User',
-             is_blocked: false
-           }], 
-           error: null 
-         };
-       }
-       return { data: null, error: null };
-    }
-  };
-
-} else {
-  supabaseClient = createClient(supabaseUrl, supabaseAnonKey);
-}
-
-export const supabase = supabaseClient;
-
+// Audit Log Helper
 export const logAuditLog = async (userId: string, action: string, details: any) => {
-  const { error } = await supabase.from('audit_logs').insert([
-    { user_id: userId, action, details }
-  ]);
-  if (error) console.error('Error logging audit log:', error);
-};
-
-export const adminApi = {
-  getUsers: async () => {
-    const { data, error } = await supabase.from('profiles').select('*');
-    return { data: data || [], error };
-  },
-  
-  getNotificationRecipients: async () => {
-    const { data, error } = await supabase.from('notification_recipients').select('*').order('created_at', { ascending: true });
-    return { data: data || [], error };
-  },
-
-  getFeedback: async () => {
-    const { data, error } = await supabase.from('feedback').select('*').order('created_at', { ascending: false });
-    return { data: data || [], error };
-  },
-
-  getAuditLogs: async () => {
-    const { data, error } = await supabase.from('audit_logs').select('*').order('created_at', { ascending: false }).limit(100);
-    return { data: data || [], error };
-  },
-
-  getSecurityEvents: async () => {
-    const { data, error } = await supabase.from('security_events').select('*').order('created_at', { ascending: false }).limit(100);
-    return { data: data || [], error };
-  },
-  
-  addNotificationRecipient: async (email: string, label: string) => {
-    const { data, error } = await supabase.from('notification_recipients').insert([{ email: email.toLowerCase().trim(), label }]);
-    return { data, error };
-  },
-
-  removeNotificationRecipient: async (id: string) => {
-    const { error } = await supabase.from('notification_recipients').delete().eq('id', id);
+  try {
+    const { error } = await supabase.from('audit_logs').insert([{
+      user_id: userId,
+      action,
+      details: typeof details === 'string' ? details : JSON.stringify(details)
+    }]);
     return { error };
-  },
-
-  getAdminClearance: async (userId: string) => {
-    const { data } = await supabase.from('profiles').select('role').eq('id', userId).single();
-    return data;
-  },
-
-  updateUserRole: async (userId: string, role: string) => {
-    const { error } = await supabase.from('profiles').update({ role }).eq('id', userId);
-    return { error };
-  },
-
-  toggleUserBlock: async (userId: string, blocked: boolean) => {
-    const { error } = await supabase.from('profiles').update({ blocked }).eq('id', userId);
-    return { error };
+  } catch (err) {
+    console.error("Audit log failed:", err);
+    return { error: err };
   }
 };
 
+// Admin API
+export const adminApi = {
+  getUsers: async () => supabase.from('profiles').select('*'),
+  getFeedback: async () => supabase.from('feedback').select('*'),
+  getAuditLogs: async () => supabase.from('audit_logs').select('*').order('created_at', { ascending: false }),
+  getSecurityEvents: async () => supabase.from('security_events').select('*').order('created_at', { ascending: false }),
+  updateUserRole: async (id: string, role: string) => supabase.from('profiles').update({ role }).eq('id', id)
+};
+
+// Feedback API
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
-    if (!error) {
-      await logAuditLog(email, 'SUBMIT_FEEDBACK', { type });
-    }
     return { success: !error, error };
   }
 };
 
-export const userApi = {
-  getProfile: async (userId: string) => {
-    const { data, error } = await supabase.from('profiles').select('*').eq('id', userId).single();
-    return { data, error };
-  },
-
-  updateProfile: async (userId: string, updates: any) => {
-    const { error } = await supabase.from('profiles').update(updates).eq('id', userId);
-    return { error };
-  }
-};
-
+// Diary API
 export const diaryApi = {
-  getEntries: async (userId: string) => {
-    const { data, error } = await supabase.from('diary_entries').select('*').eq('user_id', userId).order('date', { ascending: false });
-    return { data, error };
-  },
-  addEntry: async (userId: string, entry: any) => {
-    const { error } = await supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]);
-    return { error };
-  },
-  saveEntry: async (userId: string, entry: any) => {
-    const { error } = await supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]);
-    return { error };
-  },
-  deleteEntry: async (entryId: string) => {
-    const { error } = await supabase.from('diary_entries').delete().eq('id', entryId);
-    return { error };
-  }
+  getEntries: async (userId: string) => supabase.from('diary_entries').select('*').eq('user_id', userId),
+  saveEntry: async (userId: string, entry: any) => supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]),
+  deleteEntry: async (id: string) => supabase.from('diary_entries').delete().eq('id', id)
 };
 
+// Auth API
 export const authApi = {
-  updatePassword: async (password: string) => {
-    const { error } = await supabase.auth.updateUser({ password });
-    return { error };
-  }
+  updatePassword: async (password: string) => supabase.auth.updateUser({ password })
 };
 
+// User API
+export const userApi = {
+  getProfile: async (id: string) => supabase.from('profiles').select('*').eq('id', id).single(),
+  updateProfile: async (id: string, updates: any) => supabase.from('profiles').update(updates).eq('id', id)
+};
+
+// User Data API
 export const userDataApi = {
-  saveInitialSetup: async (userId: string, data: any) => {
-    const { error } = await supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId);
-    return { error };
-  },
-  completeSetup: async (userId: string, data: any) => {
-    const { error } = await supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId);
-    return { error };
-  }
+  saveInitialSetup: async (userId: string, data: any) => supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId),
+  completeSetup: async (userId: string, data: any) => supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId)
 };
-

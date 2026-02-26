@@ -1,6 +1,6 @@
 import { Article } from '../types.ts';
 
-export const MOCK_BLOG_POSTS: Article[] = [
+export const BLOG_POSTS: Article[] = [
   {
     id: 'blog-001',
     slug: 'the-future-of-ai-sleep-coaching',
@@ -35,7 +35,7 @@ export const MOCK_BLOG_POSTS: Article[] = [
   }
 ];
 
-export const MOCK_RESEARCH: Article[] = [
+export const RESEARCH_ARTICLES: Article[] = [
   {
     id: 'art-001',
     slug: 'ai-driven-sleep-optimization-2026',

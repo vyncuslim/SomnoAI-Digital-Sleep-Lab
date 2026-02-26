@@ -3,11 +3,12 @@ import {
   Users, User, RefreshCw, ChevronLeft, 
   List, MessageSquare,
   AlertTriangle, Search, Lightbulb, Sparkles,
-  Activity, Shield, Clock
+  Activity, Shield, Clock, Moon
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase } from '../services/supabaseService.ts';
-import { Language } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
+import { useAuth } from '../context/AuthContext.tsx';
 
 type AdminTab = 'overview' | 'registry' | 'signals' | 'system' | 'feedback';
 
@@ -16,6 +17,7 @@ const DATABASE_SCHEMA = [
   { id: 'audit_logs', name: 'System Audits', group: 'Maintenance', icon: List },
   { id: 'security_events', name: 'Security Signals', group: 'Security', icon: Shield },
   { id: 'profiles', name: 'Subject Registry', group: 'Core', icon: Users },
+  { id: 'sleep_records', name: 'Sleep Matrix', group: 'Biometrics', icon: Moon },
   { id: 'feedback', name: 'User Feedback', group: 'Support', icon: MessageSquare }
 ];
 
@@ -24,7 +26,9 @@ interface AdminViewProps {
   onBack: () => void;
 }
 
-export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
+export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
+  const { isAdmin, loading: authLoading } = useAuth();
+  const t = getTranslation(lang, 'admin');
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [users, setUsers] = useState<any[]>([]);
   const [feedback, setFeedback] = useState<any[]>([]);
@@ -36,8 +40,18 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    if (!authLoading && isAdmin) {
+      fetchData();
+    }
+  }, [isAdmin, authLoading]);
+
+  if (authLoading) return <div className="min-h-screen bg-[#01040a] flex items-center justify-center text-white">Authenticating...</div>;
+  if (!isAdmin) return <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white p-6 text-center">
+    <Shield size={48} className="text-rose-500 mb-4" />
+    <h1 className="text-2xl font-black uppercase tracking-widest mb-2">Access Denied</h1>
+    <p className="text-slate-500 max-w-md mb-8">You do not have the required clearance to access the Neural Admin Console.</p>
+    <button onClick={onBack} className="px-8 py-3 bg-indigo-600 rounded-full font-bold uppercase tracking-widest">Return to Base</button>
+  </div>;
 
   const fetchData = async () => {
     setIsSyncing(true);
@@ -79,7 +93,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
           <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
             <ChevronLeft size={20} />
           </button>
-          <h1 className="text-2xl font-black uppercase tracking-widest">Admin Console</h1>
+          <h1 className="text-2xl font-black uppercase tracking-widest">{t.title || 'Admin Console'}</h1>
         </div>
         <div className="flex items-center gap-4">
           <button 
@@ -148,12 +162,34 @@ export const AdminView: React.FC<AdminViewProps> = ({ onBack }) => {
                     </div>
                   </div>
                   <div className="flex items-center gap-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase ${
-                      user.role === 'admin' ? 'bg-purple-500/20 text-purple-400' : 'bg-slate-500/20 text-slate-400'
-                    }`}>
-                      {user.role || 'user'}
-                    </span>
-                    <button className="p-2 hover:bg-white/10 rounded-full transition-colors">
+                    <select 
+                      value={user.role || 'user'}
+                      onChange={(e) => {
+                        const newRole = e.target.value;
+                        adminApi.updateUserRole(user.id, newRole).then(() => fetchData());
+                      }}
+                      className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-xs font-bold uppercase tracking-wider outline-none focus:border-indigo-500 transition-colors"
+                    >
+                      <option value="user">User</option>
+                      <option value="editor">Editor</option>
+                      <option value="admin">Admin</option>
+                      <option value="owner">Owner</option>
+                    </select>
+                    <button 
+                      onClick={async () => {
+                        const newStatus = !user.is_blocked;
+                        await supabase.from('profiles').update({ is_blocked: newStatus }).eq('id', user.id);
+                        if (newStatus) {
+                          // Optionally clear login attempts when blocking manually
+                          await supabase.rpc('report_failed_login', { target_email: user.email }); // Just to ensure it's logged
+                        } else {
+                          await supabase.rpc('reset_login_attempts', { target_email: user.email });
+                        }
+                        fetchData();
+                      }}
+                      className={`p-2 rounded-full transition-colors ${user.is_blocked ? 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30' : 'hover:bg-white/10 text-slate-500'}`}
+                      title={user.is_blocked ? "Unblock User" : "Block User"}
+                    >
                       <Shield size={16} />
                     </button>
                   </div>

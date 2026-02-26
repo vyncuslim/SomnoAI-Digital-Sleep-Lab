@@ -66,9 +66,32 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .eq("id", session.user.id)
           .single();
         
-        if (fallbackData) currentProfile = fallbackData as Profile;
+        if (fallbackData) {
+          currentProfile = fallbackData as Profile;
+        } else {
+          // If profile doesn't exist in DB yet (e.g. trigger delay or legacy user), create a temporary one
+          currentProfile = {
+            id: session.user.id,
+            email: session.user.email || '',
+            role: 'user',
+            is_super_owner: false,
+            is_blocked: false,
+            full_name: session.user.user_metadata?.full_name || ''
+          } as Profile;
+          
+          // Try to insert it to fix the missing profile
+          supabase.from('profiles').insert([currentProfile]).then();
+        }
       } else {
         currentProfile = data[0] as Profile;
+      }
+
+      if (currentProfile?.is_blocked) {
+        await supabase.auth.signOut();
+        setProfile(null);
+        setLoading(false);
+        isSyncing.current = false;
+        return;
       }
       
       setProfile(currentProfile);

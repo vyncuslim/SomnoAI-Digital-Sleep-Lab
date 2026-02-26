@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
 import { GlassCard } from './GlassCard.tsx';
 import { SleepRecord } from '../types.ts';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 
 const m = motion as any;
 
@@ -61,7 +61,7 @@ export const LiveAssistant: React.FC<{ lang: Language; data: SleepRecord | null 
   const [inputTranscription, setInputTranscription] = useState("");
   const [outputTranscription, setOutputTranscription] = useState("");
   
-  const t = translations[lang].voice;
+  const t = getTranslation(lang, 'voice');
   const sessionRef = useRef<any>(null);
   const audioContextRef = useRef<{ input: AudioContext; output: AudioContext; sources: Set<AudioBufferSourceNode> } | null>(null);
   const nextStartTimeRef = useRef(0);

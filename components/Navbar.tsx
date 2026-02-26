@@ -6,7 +6,7 @@ import {
   TrendingUp, Sparkles, ImageIcon, Mic, BookOpen, PenTool
 } from 'lucide-react';
 import { Logo } from './Logo.tsx';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 
 const m = motion as any;
 
@@ -30,7 +30,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
-  const t = translations[lang];
+  const t = getTranslation(lang, 'landing');
   const isZh = lang === 'zh';
 
   useEffect(() => {
@@ -118,6 +118,20 @@ export const Navbar: React.FC<NavbarProps> = ({
       </div>
 
       <div className="flex items-center gap-4">
+        <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10 mr-2">
+          <button 
+            onClick={() => onNavigate('/en')}
+            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'en' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+          >
+            EN
+          </button>
+          <button 
+            onClick={() => onNavigate('/cn')}
+            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'zh' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+          >
+            CN
+          </button>
+        </div>
         {isAuthenticated ? (
           <div className="hidden sm:flex items-center gap-4">
             <m.button 
@@ -212,6 +226,20 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
             
             <div className="mt-8 pt-8 border-t border-white/5">
+              <div className="flex items-center bg-black/40 p-1.5 rounded-full border border-white/5 shadow-inner mb-6">
+                {['en', 'zh'].map((l) => (
+                  <button 
+                    key={l} 
+                    onClick={() => {
+                      onNavigate(l === 'en' ? '/en' : '/cn');
+                      setIsMobileMenuOpen(false);
+                    }}
+                    className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                  >
+                    {l === 'en' ? 'ENGLISH' : '中文简体'}
+                  </button>
+                ))}
+              </div>
               {isAuthenticated ? (
                 <div className="grid grid-cols-3 gap-4">
                   <button onClick={() => onNavigate('registry')} className="flex flex-col items-center gap-2 p-4 rounded-2xl bg-white/5 border border-white/5 text-slate-500">

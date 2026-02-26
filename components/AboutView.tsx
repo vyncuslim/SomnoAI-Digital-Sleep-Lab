@@ -7,7 +7,7 @@ import {
   // Fix: Added missing icons
   Server, Shield, Database, Cloud, ArrowRight, MessageSquare, Youtube
 } from 'lucide-react';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { Logo } from './Logo.tsx';
 import { motion } from 'framer-motion';
@@ -22,7 +22,7 @@ interface AboutViewProps {
 
 export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }) => {
   const isZh = lang === 'zh';
-  const t = translations[lang].about;
+  const t = getTranslation(lang, 'about');
 
   const aiDimensions = [
     { icon: Activity, title: isZh ? '健康趋势预测' : 'Health Trend Prediction', desc: isZh ? '基于历史数据，预测未来的健康变化，如心率异常风险及睡眠质量下降趋势。' : 'Predicting future health changes like HR anomaly risks and sleep quality decline based on historical data.' },

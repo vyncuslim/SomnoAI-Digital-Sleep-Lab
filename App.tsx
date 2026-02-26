@@ -1,7 +1,10 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
+import { Language } from './types.ts';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { Auth } from './components/Auth.tsx';
+import { AuthVerify } from './components/AuthVerify.tsx';
 import { Dashboard } from './components/Dashboard.tsx';
 import { AdminView } from './components/AdminView.tsx';
 import { UserProfile } from './components/UserProfile.tsx';
@@ -20,14 +23,15 @@ import { OpenSourceView } from './components/OpenSourceView.tsx';
 import { ChangelogView } from './components/ChangelogView.tsx';
 import { LegalView } from './components/LegalView.tsx';
 import { SupportView } from './components/SupportView.tsx';
-import { Language } from './services/i18n.ts';
+import { getTranslation } from './services/i18n.ts';
 import { SleepRecord } from './types.ts';
-import { MOCK_BLOG_POSTS, MOCK_RESEARCH } from './data/mockData.ts';
+import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData.ts';
 import { Salesmartly } from './components/Salesmartly.tsx';
+import { supabase } from './services/supabaseService.ts';
 
-// Mock Data for Demo Purposes
-const MOCK_SLEEP_DATA: SleepRecord = {
-  id: 'demo-record-1',
+// Initial Data
+const INITIAL_SLEEP_DATA: SleepRecord = {
+  id: 'rec_7892345610',
   date: new Date().toISOString(),
   score: 85,
   heartRate: {
@@ -52,7 +56,7 @@ const MOCK_SLEEP_DATA: SleepRecord = {
 const BlogPostWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const post = MOCK_BLOG_POSTS.find(p => p.slug === slug);
+  const post = BLOG_POSTS.find(p => p.slug === slug);
 
   if (!post) {
     return <div className="min-h-screen flex items-center justify-center text-white">Post not found</div>;
@@ -64,7 +68,7 @@ const BlogPostWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
 const ArticleWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
   const { slug } = useParams();
   const navigate = useNavigate();
-  const article = MOCK_RESEARCH.find(a => a.slug === slug);
+  const article = RESEARCH_ARTICLES.find(a => a.slug === slug);
 
   if (!article) {
     return <div className="min-h-screen flex items-center justify-center text-white">Article not found</div>;
@@ -87,85 +91,189 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-const AppContent = () => {
-  const [lang, setLang] = useState<Language>('en');
-  const navigate = useNavigate();
+interface AppRoutesProps {
+  lang: Language;
+  setLang: (lang: Language) => void;
+  latestData: SleepRecord | null;
+  history: SleepRecord[];
+  profile: any; // TODO: Type this properly
+  handleNavigate: (path: string) => void;
+}
 
-  // Helper to handle back navigation
+const AppRoutes: React.FC<AppRoutesProps> = ({
+  lang,
+  setLang,
+  latestData,
+  history,
+  profile,
+  handleNavigate,
+}) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
   const handleBack = () => navigate(-1);
 
+  // Force English for auth routes as requested: sleepsomno.com/cn/auth also English
+  const effectiveLang = location.pathname.includes('/auth') ? 'en' : lang;
+
   return (
-    <>
+    <React.Fragment>
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<LandingPage lang={effectiveLang} onLanguageChange={setLang} />} />
+      <Route path="/auth" element={<Auth lang={effectiveLang} />} />
+      <Route path="/auth/login" element={<Auth lang={effectiveLang} initialView="login" />} />
+      <Route path="/auth/signup" element={<Auth lang={effectiveLang} initialView="signup" />} />
+      <Route path="/auth/verify" element={<AuthVerify lang={effectiveLang} />} />
+      <Route path="/about" element={<AboutView lang={effectiveLang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+      <Route path="/contact" element={<ContactView lang={effectiveLang} onBack={handleBack} />} />
+      
+      {/* Blog & News */}
+      <Route path="/blog" element={<BlogHub lang={effectiveLang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
+      <Route path="/blog/:slug" element={<BlogPostWrapper lang={effectiveLang} />} />
+      <Route path="/news" element={<NewsHub lang={effectiveLang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
+      <Route path="/news/:slug" element={<ArticleWrapper lang={effectiveLang} />} />
+
+      {/* Legal & Support */}
+      <Route path="/privacy" element={<LegalView type="privacy" lang={effectiveLang} onBack={handleBack} />} />
+      <Route path="/terms" element={<LegalView type="terms" lang={effectiveLang} onBack={handleBack} />} />
+      <Route path="/opensource" element={<OpenSourceView lang={effectiveLang} onBack={handleBack} />} />
+      <Route path="/changelog" element={<ChangelogView lang={effectiveLang} onBack={handleBack} />} />
+      <Route path="/support" element={<SupportView lang={effectiveLang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+
+      {/* Protected Routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard lang={effectiveLang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute>
+          <AdminView lang={effectiveLang} onBack={handleBack} />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <UserProfile lang={effectiveLang} onBack={handleBack} onNavigate={handleNavigate} />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/feedback" element={
+        <ProtectedRoute>
+          <FeedbackView lang={effectiveLang} onBack={handleBack} />
+        </ProtectedRoute>
+      } />
+      <Route path="/experiment" element={
+        <ProtectedRoute>
+          <ExperimentView data={latestData} lang={effectiveLang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/journal" element={
+        <ProtectedRoute>
+          <DiaryView lang={effectiveLang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/ai-assistant" element={
+        <ProtectedRoute>
+          <AIAssistant lang={effectiveLang} data={latestData} history={history} />
+        </ProtectedRoute>
+      } />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+    </React.Fragment>
+  );
+};
+
+const AppContent = () => {
+  const navigate = useNavigate();
+  const { profile, loading } = useAuth();
+  const [lang, setLang] = useState<Language>('en'); // Default language to English
+  const [latestData, setLatestData] = useState<SleepRecord | null>(null);
+  const [history, setHistory] = useState<SleepRecord[]>([]);
+  const isSupabaseConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  useEffect(() => {
+    if (profile) {
+      supabase.from('sleep_records')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('date', { ascending: false })
+        .then(({ data }: { data: any[] | null }) => {
+          if (data && data.length > 0) {
+            const mapped = data.map((d: any) => ({
+              id: d.id,
+              date: d.date,
+              score: d.score,
+              heartRate: {
+                resting: d.heart_rate_resting,
+                min: d.heart_rate_min,
+                max: d.heart_rate_max,
+                average: d.heart_rate_avg,
+                history: []
+              },
+              deepRatio: d.deep_sleep_duration / (d.total_duration || 1),
+              remRatio: d.rem_sleep_duration / (d.total_duration || 1),
+              totalDuration: d.total_duration,
+              efficiency: d.efficiency,
+              stages: [],
+              aiInsights: d.ai_insights || []
+            }));
+            setLatestData(mapped[0]);
+            setHistory(mapped);
+          }
+        });
+    }
+  }, [profile]);
+
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang);
+    const currentPath = window.location.pathname;
+    const pathWithoutLang = currentPath.replace(/^\/(cn|en)/, '');
+    navigate(`/${newLang === 'zh' ? 'cn' : 'en'}${pathWithoutLang}`);
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">Neural Handshake in Progress...</p>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <div className="min-h-screen bg-[#01040a]">
+      {!isSupabaseConfigured && (
+        <div className="relative w-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
+          ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
+        </div>
+      )}
       <Salesmartly />
       <Routes>
-        {/* Public Routes */}
-        <Route path="/" element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
-        <Route path="/auth" element={<Auth lang={lang} />} />
-        <Route path="/about" element={<AboutView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
-        <Route path="/contact" element={<ContactView lang={lang} onBack={handleBack} />} />
-        
-        {/* Blog & News */}
-        <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
-        <Route path="/blog/:slug" element={<BlogPostWrapper lang={lang} />} />
-        <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
-        <Route path="/news/:slug" element={<ArticleWrapper lang={lang} />} />
-
-        {/* Legal & Support */}
-        <Route path="/privacy" element={<LegalView type="privacy" lang={lang} onBack={handleBack} />} />
-        <Route path="/terms" element={<LegalView type="terms" lang={lang} onBack={handleBack} />} />
-        <Route path="/opensource" element={<OpenSourceView lang={lang} onBack={handleBack} />} />
-        <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
-        <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
-
-        {/* Protected Routes */}
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <Dashboard lang={lang} />
-          </ProtectedRoute>
-        } />
-        <Route path="/admin" element={
-          <ProtectedRoute>
-            <AdminView lang={lang} onBack={handleBack} />
-          </ProtectedRoute>
-        } />
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <UserProfile lang={lang} onBack={handleBack} />
-          </ProtectedRoute>
-        } />
-        <Route path="/feedback" element={
-          <ProtectedRoute>
-            <FeedbackView lang={lang} onBack={handleBack} />
-          </ProtectedRoute>
-        } />
-        <Route path="/experiment" element={
-          <ProtectedRoute>
-            <ExperimentView data={MOCK_SLEEP_DATA} lang={lang} />
-          </ProtectedRoute>
-        } />
-        <Route path="/journal" element={
-          <ProtectedRoute>
-            <DiaryView lang={lang} />
-          </ProtectedRoute>
-        } />
-        <Route path="/ai-assistant" element={
-          <ProtectedRoute>
-            <AIAssistant lang={lang} data={MOCK_SLEEP_DATA} />
-          </ProtectedRoute>
-        } />
-
-        {/* Fallback */}
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
       </Routes>
-    </>
+    </div>
   );
 };
 
 function App() {
   return (
-    <Router>
-      <AppContent />
-    </Router>
+    <ErrorBoundary>
+      <AuthProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 }
 

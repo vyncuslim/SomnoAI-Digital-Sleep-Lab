@@ -6,22 +6,23 @@ import {
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { userApi, supabase } from '../services/supabaseService.ts';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 
 const m = motion as any;
 
 interface UserProfileProps {
   lang: Language;
   onBack: () => void;
+  onNavigate: (path: string) => void;
 }
 
-export const UserProfile: React.FC<UserProfileProps> = ({ lang, onBack }) => {
+export const UserProfile: React.FC<UserProfileProps> = ({ lang, onBack, onNavigate }) => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState<any>(null);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
-  const t = translations[lang].settings;
+  const t = getTranslation(lang, 'settings');
 
   useEffect(() => {
     fetchProfile();
@@ -77,7 +78,27 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang, onBack }) => {
         <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
           <ChevronLeft size={20} />
         </button>
-        <h1 className="text-2xl font-black uppercase tracking-widest">User Profile</h1>
+        <h1 className="text-2xl font-black uppercase tracking-widest">{t.title}</h1>
+        <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10 ml-auto">
+          <button 
+            onClick={() => {
+              const pathWithoutLang = window.location.pathname.replace(/^\/(cn|en)/, '');
+              onNavigate(`/en${pathWithoutLang}`);
+            }}
+            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'en' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+          >
+            EN
+          </button>
+          <button 
+            onClick={() => {
+              const pathWithoutLang = window.location.pathname.replace(/^\/(cn|en)/, '');
+              onNavigate(`/cn${pathWithoutLang}`);
+            }}
+            className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'zh' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+          >
+            CN
+          </button>
+        </div>
       </header>
 
       <div className="max-w-2xl mx-auto space-y-8">

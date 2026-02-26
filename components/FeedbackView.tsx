@@ -7,7 +7,7 @@ import {
 import { GlassCard } from './GlassCard.tsx';
 import { motion, AnimatePresence } from 'framer-motion';
 import { feedbackApi, supabase } from '../services/supabaseService.ts';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 
 const m = motion as any;
 
@@ -27,7 +27,7 @@ export const FeedbackView: React.FC<FeedbackViewProps> = ({ lang, onBack }) => {
   const isMounted = useRef(true);
   const transitionTimer = useRef<any>(null);
 
-  const t = translations[lang].settings;
+  const t = getTranslation(lang, 'settings');
 
   useEffect(() => {
     const fetchUser = async () => {

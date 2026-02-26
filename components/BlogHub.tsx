@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { BookOpen, ArrowRight, Tag, Clock, Calendar, Sparkles, MessageCircle, PenTool } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
-import { Language, translations } from '../services/i18n.ts';
-import { MOCK_BLOG_POSTS } from '../data/mockData.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
+import { BLOG_POSTS } from '../data/mockData.ts';
 
 const m = motion as any;
 
@@ -15,7 +15,7 @@ interface BlogHubProps {
 }
 
 export const BlogHub: React.FC<BlogHubProps> = ({ lang, onSelectPost }) => {
-  const t = translations[lang].blog;
+  const t = getTranslation(lang, 'blog');
 
   return (
     <div className="min-h-screen bg-[#01040a] pt-10 pb-40 px-6 font-sans text-left">
@@ -36,7 +36,7 @@ export const BlogHub: React.FC<BlogHubProps> = ({ lang, onSelectPost }) => {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {MOCK_BLOG_POSTS.map((post) => (
+          {BLOG_POSTS.map((post) => (
             <GlassCard 
               key={post.id} 
               onClick={() => onSelectPost(post)}

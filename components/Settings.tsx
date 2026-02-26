@@ -6,7 +6,7 @@ import {
   Bell, RefreshCw, Zap, MessageSquare, ShieldCheck, Globe, X, Check,
   Github, Linkedin, Instagram, Facebook, Youtube, Video, UserCircle, Shield
 } from 'lucide-react';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { notificationService } from '../services/notificationService.ts';
 
@@ -27,7 +27,7 @@ export const Settings: React.FC<SettingsProps> = ({
   const [notifPermission, setNotifPermission] = useState<string>(Notification.permission);
   const [paymentMethod, setPaymentMethod] = useState<'tng' | 'paypal'>('tng');
   
-  const t = translations[lang]?.settings || translations.en.settings;
+  const t = getTranslation(lang, 'settings');
   const isZh = lang === 'zh';
 
   const handleRequestNotif = async () => {
@@ -64,6 +64,17 @@ export const Settings: React.FC<SettingsProps> = ({
              <Shield size={24} />
            </div>
            <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">{t.title}</h1>
+           <div className="flex items-center bg-black/40 p-1.5 rounded-full border border-white/5 shadow-inner ml-auto">
+              {['en', 'zh'].map((l) => (
+                <button 
+                  key={l} 
+                  onClick={() => onLanguageChange(l as Language)} 
+                  className={`flex-1 py-2 px-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
+                >
+                  {l === 'en' ? 'ENGLISH' : '中文简体'}
+                </button>
+              ))}
+           </div>
         </div>
         <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic pl-1">Configuration Matrix // SomnoAI Digital Sleep Lab Node</p>
       </header>
@@ -104,20 +115,7 @@ export const Settings: React.FC<SettingsProps> = ({
 
         <GlassCard className="p-10 md:p-14 rounded-[4rem] border-white/10 bg-white/[0.01]">
           <div className="space-y-16">
-            <div className="space-y-6">
-               <span className="text-[10px] font-black uppercase tracking-widest text-slate-600 italic px-4">{t.language}</span>
-               <div className="flex bg-black/40 p-1.5 rounded-full border border-white/5 shadow-inner">
-                  {['en', 'zh'].map((l) => (
-                    <button 
-                      key={l} 
-                      onClick={() => onLanguageChange(l as Language)} 
-                      className={`flex-1 py-4 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
-                    >
-                      {l === 'en' ? 'ENGLISH' : '中文简体'}
-                    </button>
-                  ))}
-               </div>
-            </div>
+            <div className="space-y-6"></div>
 
             <div className="space-y-6 pt-8 border-t border-white/5">
               <div className="flex items-center justify-between px-4">

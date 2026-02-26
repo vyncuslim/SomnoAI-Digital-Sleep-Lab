@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Calendar, User, ShieldCheck, Tag, Share2, ArrowUpRight } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 import { updateMetadata } from '../services/navigation.ts';
 
 const m = motion as any;
@@ -16,7 +16,7 @@ interface BlogPostViewProps {
 }
 
 export const BlogPostView: React.FC<BlogPostViewProps> = ({ post, lang, onBack }) => {
-  const t = translations[lang].blog;
+  const t = getTranslation(lang, 'blog');
 
   useEffect(() => {
     updateMetadata(post.title, post.excerpt);

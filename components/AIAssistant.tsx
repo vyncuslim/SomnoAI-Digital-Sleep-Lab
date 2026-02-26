@@ -10,7 +10,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
 import { startContextualCoach } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
 
 const m = motion as any;
@@ -29,7 +29,7 @@ const NeuralPulse = () => (
 );
 
 export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; history?: SleepRecord[] }> = ({ lang, data, history = [] }) => {
-  const t = translations[lang].assistant;
+  const t = getTranslation(lang, 'assistant');
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);

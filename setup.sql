@@ -28,6 +28,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- RPC: 前端通过此函数获取自身资料
+DROP FUNCTION IF EXISTS public.get_my_detailed_profile();
 CREATE OR REPLACE FUNCTION public.get_my_detailed_profile()
 RETURNS SETOF public.profiles AS $$
 BEGIN
@@ -49,6 +50,16 @@ BEGIN
     RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- 触发器绑定 (仅在不存在时创建)
+DO $$
+BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created') THEN
+    CREATE TRIGGER on_auth_user_created
+      AFTER INSERT ON auth.users
+      FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+  END IF;
+END $$;
 
 -- 4. 审计日志阵列
 CREATE TABLE IF NOT EXISTS public.audit_logs (
@@ -73,6 +84,41 @@ CREATE TABLE IF NOT EXISTS public.notification_recipients (
 INSERT INTO public.notification_recipients (email, label) 
 VALUES ('contact@sleepsomno.com', 'Primary Lab Admin')
 ON CONFLICT (email) DO NOTHING;
+
+-- 6. 登录尝试记录
+CREATE TABLE IF NOT EXISTS public.login_attempts (
+    email text PRIMARY KEY,
+    attempts int DEFAULT 1,
+    last_attempt timestamptz DEFAULT now()
+);
+
+-- RPC: 报告登录失败
+CREATE OR REPLACE FUNCTION public.report_failed_login(target_email text)
+RETURNS void AS $$
+DECLARE
+  current_attempts int;
+BEGIN
+  INSERT INTO public.login_attempts (email, attempts, last_attempt)
+  VALUES (target_email, 1, now())
+  ON CONFLICT (email) DO UPDATE 
+  SET attempts = public.login_attempts.attempts + 1,
+      last_attempt = now()
+  RETURNING attempts INTO current_attempts;
+
+  IF current_attempts >= 5 THEN
+    UPDATE public.profiles SET is_blocked = true WHERE email = target_email;
+  END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC: 重置登录尝试
+CREATE OR REPLACE FUNCTION public.reset_login_attempts(target_email text)
+RETURNS void AS $$
+BEGIN
+  DELETE FROM public.login_attempts WHERE email = target_email;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 
 -- ==========================================
 -- 安全策略 (RLS)

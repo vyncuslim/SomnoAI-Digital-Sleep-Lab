@@ -4,31 +4,64 @@ import {
   Activity, Moon, Zap, Settings, LogOut, 
   BarChart2, Brain, ChevronRight
 } from 'lucide-react';
+import { 
+  AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
+} from 'recharts';
 import { GlassCard } from './GlassCard.tsx';
-import { Language } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 import { supabase } from '../services/supabaseService.ts';
 
 interface DashboardProps {
   lang: Language;
 }
 
-export const Dashboard: React.FC<DashboardProps> = () => {
+export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
   const navigate = useNavigate();
+  const t = getTranslation(lang, 'dashboard');
   const [user, setUser] = useState<any>(null);
+  const [sleepData, setSleepData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    score: null,
+    hr: null,
+    readiness: null,
+    deep: null
+  });
 
   useEffect(() => {
-    const fetchUser = async () => {
+    const fetchUserAndData = async () => {
       try {
         const { data: { user }, error } = await (supabase.auth as any).getUser();
         if (error) throw error;
-        if (user) setUser(user);
-        else navigate('/auth');
+        if (user) {
+          setUser(user);
+          // Fetch real sleep records
+          const { data, error: dataError } = await supabase
+            .from('sleep_records')
+            .select('*')
+            .eq('user_id', user.id)
+            .order('date', { ascending: false });
+          
+          if (!dataError && data && data.length > 0) {
+            setSleepData(data);
+            const latest = data[0];
+            setStats({
+              score: latest.score,
+              hr: latest.heart_rate_resting,
+              readiness: latest.readiness,
+              deep: latest.deep_sleep_duration
+            });
+          }
+        } else {
+          navigate('/auth');
+        }
       } catch (e) {
-        console.error("Auth check failed:", e);
-        navigate('/auth');
+        console.error("Dashboard data fetch failed:", e);
+      } finally {
+        setLoading(false);
       }
     };
-    fetchUser();
+    fetchUserAndData();
   }, [navigate]);
 
   const handleLogout = async () => {
@@ -44,11 +77,31 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             {user?.email?.[0].toUpperCase()}
           </div>
           <div>
-            <h1 className="text-xl font-bold">Welcome back</h1>
+            <h1 className="text-xl font-bold">{lang === 'zh' ? '欢迎回来' : 'Welcome back'}</h1>
             <p className="text-xs text-slate-500 font-mono">{user?.email}</p>
           </div>
         </div>
         <div className="flex items-center gap-4">
+          <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10 mr-2">
+            <button 
+              onClick={() => {
+                const pathWithoutLang = window.location.pathname.replace(/^\/(cn|en)/, '');
+                navigate(`/en${pathWithoutLang}`);
+              }}
+              className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'en' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+            >
+              EN
+            </button>
+            <button 
+              onClick={() => {
+                const pathWithoutLang = window.location.pathname.replace(/^\/(cn|en)/, '');
+                navigate(`/cn${pathWithoutLang}`);
+              }}
+              className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'zh' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
+            >
+              CN
+            </button>
+          </div>
           <button onClick={() => navigate('/settings')} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
             <Settings size={20} />
           </button>
@@ -64,8 +117,8 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             <Moon size={24} />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Sleep Score</p>
-            <h3 className="text-2xl font-black">85</h3>
+            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">{t.scoreStatus || 'Sleep Score'}</p>
+            <h3 className="text-2xl font-black">{stats.score ?? (t.void || 'Void')}</h3>
           </div>
         </GlassCard>
         <GlassCard className="p-6 flex items-center gap-4">
@@ -73,8 +126,10 @@ export const Dashboard: React.FC<DashboardProps> = () => {
             <Activity size={24} />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Resting HR</p>
-            <h3 className="text-2xl font-black">58 <span className="text-xs font-medium text-slate-500">bpm</span></h3>
+            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">{t.status || 'Resting HR'}</p>
+            <h3 className="text-2xl font-black">
+              {stats.hr ? `${stats.hr} bpm` : (t.void || 'Void')}
+            </h3>
           </div>
         </GlassCard>
         <GlassCard className="p-6 flex items-center gap-4">
@@ -83,7 +138,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           </div>
           <div>
             <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Readiness</p>
-            <h3 className="text-2xl font-black">92%</h3>
+            <h3 className="text-2xl font-black">{stats.readiness ? `${stats.readiness}%` : (t.void || 'Void')}</h3>
           </div>
         </GlassCard>
         <GlassCard className="p-6 flex items-center gap-4">
@@ -92,7 +147,7 @@ export const Dashboard: React.FC<DashboardProps> = () => {
           </div>
           <div>
             <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Deep Sleep</p>
-            <h3 className="text-2xl font-black">1h 45m</h3>
+            <h3 className="text-2xl font-black">{stats.deep ?? (t.void || 'Void')}</h3>
           </div>
         </GlassCard>
       </div>
@@ -110,8 +165,32 @@ export const Dashboard: React.FC<DashboardProps> = () => {
                 <option>Last Week</option>
               </select>
             </div>
-            <div className="h-64 flex items-center justify-center text-slate-600 font-mono text-sm border-2 border-dashed border-white/5 rounded-2xl">
-              Chart Visualization Placeholder
+            <div className="h-64 flex items-center justify-center">
+              {sleepData.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={sleepData.map(d => ({ time: d.date, value: d.score }))}>
+                    <defs>
+                      <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" vertical={false} />
+                    <XAxis dataKey="time" stroke="#64748b" fontSize={10} tickLine={false} axisLine={false} />
+                    <YAxis hide />
+                    <Tooltip 
+                      contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #ffffff10', borderRadius: '8px' }}
+                      itemStyle={{ color: '#6366f1' }}
+                    />
+                    <Area type="monotone" dataKey="value" stroke="#6366f1" fillOpacity={1} fill="url(#colorValue)" strokeWidth={3} />
+                  </AreaChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="text-center space-y-2">
+                  <BarChart2 size={48} className="text-slate-800 mx-auto" />
+                  <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">{t.noData || 'No Data Available'}</p>
+                </div>
+              )}
             </div>
           </GlassCard>
         </div>

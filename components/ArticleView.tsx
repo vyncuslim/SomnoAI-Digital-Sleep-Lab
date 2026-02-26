@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Calendar, User, ShieldCheck, Tag, Share2, Info, ArrowUpRight } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 import { updateMetadata } from '../services/navigation.ts';
 
 const m = motion as any;
@@ -15,7 +15,7 @@ interface ArticleViewProps {
 }
 
 export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack }) => {
-  const t = translations[lang].news;
+  const t = getTranslation(lang, 'news');
 
   useEffect(() => {
     // 1. Dynamic Meta Update for SEO

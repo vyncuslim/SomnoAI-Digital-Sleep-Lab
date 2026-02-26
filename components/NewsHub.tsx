@@ -4,8 +4,8 @@ import { motion } from 'framer-motion';
 import { Microscope, ArrowRight, Tag, Clock, Calendar, Sparkles, Newspaper, Landmark } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
-import { Language, translations } from '../services/i18n.ts';
-import { MOCK_RESEARCH } from '../data/mockData.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
+import { RESEARCH_ARTICLES } from '../data/mockData.ts';
 
 const m = motion as any;
 
@@ -15,7 +15,7 @@ interface NewsHubProps {
 }
 
 export const NewsHub: React.FC<NewsHubProps> = ({ lang, onSelectArticle }) => {
-  const t = translations[lang].news;
+  const t = getTranslation(lang, 'news');
 
   return (
     <div className="min-h-screen bg-[#01040a] pt-10 pb-40 px-6 font-sans text-left">
@@ -36,7 +36,7 @@ export const NewsHub: React.FC<NewsHubProps> = ({ lang, onSelectArticle }) => {
         </header>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-          {MOCK_RESEARCH.map((article) => (
+          {RESEARCH_ARTICLES.map((article) => (
             <GlassCard 
               key={article.id} 
               onClick={() => onSelectArticle(article)}

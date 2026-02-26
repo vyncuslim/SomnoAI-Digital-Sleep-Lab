@@ -8,17 +8,18 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { SleepRecord } from '../types.ts';
 import { designExperiment, SleepExperiment } from '../services/geminiService.ts';
-import { Language, translations } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n.ts';
 
 const m = motion as any;
 
-export const ExperimentView: React.FC<{ data: SleepRecord; lang: Language }> = ({ data, lang }) => {
+export const ExperimentView: React.FC<{ data: SleepRecord | null; lang: Language }> = ({ data, lang }) => {
   const [experiment, setExperiment] = useState<SleepExperiment | null>(null);
   const [isSynthesizing, setIsSynthesizing] = useState(false);
 
-  const t = translations[lang].experiment;
+  const t = getTranslation(lang, 'experiment');
 
   const handleSynthesize = async () => {
+    if (!data) return;
     setIsSynthesizing(true);
     try {
       const result = await designExperiment(data, lang);
@@ -29,6 +30,22 @@ export const ExperimentView: React.FC<{ data: SleepRecord; lang: Language }> = (
       setIsSynthesizing(false);
     }
   };
+
+  if (!data) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center text-center space-y-8 p-6">
+        <div className="p-6 bg-slate-900/50 rounded-[3rem] border border-white/5 text-slate-700">
+           <Binary size={64} />
+        </div>
+        <div className="space-y-2">
+           <h2 className="text-2xl font-black uppercase tracking-tighter text-white italic">Baseline Missing</h2>
+           <p className="text-slate-500 font-mono text-xs uppercase tracking-widest max-w-xs mx-auto">
+             Neural synthesis requires active biometric telemetry. Please sync your device first.
+           </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-10 pb-40 max-w-4xl mx-auto px-4 font-sans text-left">
