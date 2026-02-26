@@ -1,8 +1,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { motion } from 'framer-motion';
+import { Logo } from './Logo';
 import { Home, RefreshCw, ShieldX, Radio, Terminal, Search, Cpu } from 'lucide-react';
-import { Logo } from './Logo.tsx';
+
 import { GlassCard } from './GlassCard.tsx';
 import { safeReload, getSafeHash } from '../services/navigation.ts';
 import { trackPageView } from '../services/analytics.ts';
@@ -39,7 +40,7 @@ export const NotFoundView: React.FC = () => {
         className="w-full max-w-2xl space-y-12 relative z-10"
       >
         <div className="relative inline-block mb-4">
-          <Logo size={120} animated={true} className="mx-auto grayscale opacity-40 relative z-10" />
+
           <m.div 
             animate={{ rotate: [0, -360], scale: [1, 1.1, 1] }}
             transition={{ duration: 30, repeat: Infinity, ease: 'linear' }}

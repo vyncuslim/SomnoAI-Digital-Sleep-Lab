@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Users, Zap, Shield, Globe, Mail, Phone, MapPin } from 'lucide-react';
-import { Logo } from '../../components/Logo.tsx';
+
 
 interface AboutViewProps {
   lang: 'en' | 'zh' | 'es';
@@ -34,12 +34,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
 
       <div className="max-w-4xl mx-auto space-y-24 relative z-10 pt-16">
         <div className="text-center space-y-8">
-          <Logo size={80} animated={true} />
+
           <h1 className="text-7xl font-black italic text-white uppercase tracking-tighter drop-shadow-2xl">
             {isZh ? '关于 SomnoAI' : 'About SomnoAI'}
           </h1>
           <p className="text-xl text-slate-400 font-bold italic max-w-2xl mx-auto leading-relaxed">
-            {isZh ? '我们是 SomnoAI 数字睡眠实验室，致力于通过尖端AI和神经科学重新定义睡眠恢复。' : 'We are SomnoAI Digital Sleep Lab, dedicated to redefining sleep restoration through cutting-edge AI and neuroscience.'}
+            {isZh ? '我们是 SomnoAI 睡眠实验室，致力于通过尖端AI和神经科学重新定义睡眠恢复。' : 'We are SomnoAI Sleep Lab, dedicated to redefining sleep restoration through cutting-edge AI and neuroscience.'}
           </p>
         </div>
 

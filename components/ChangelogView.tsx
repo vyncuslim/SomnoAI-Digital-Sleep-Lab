@@ -1,7 +1,8 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { Logo } from './Logo';
 import { ArrowLeft, Terminal, GitCommit, GitPullRequest, ShieldCheck, Zap } from 'lucide-react';
-import { Logo } from './Logo.tsx';
+
 import { GlassCard } from './GlassCard.tsx';
 import { trackPageView } from '../services/analytics.ts';
 
@@ -70,7 +71,7 @@ export const ChangelogView: React.FC<ChangelogViewProps> = ({ lang, onBack }) =>
         </button>
 
         <div className="flex items-center gap-6 mb-16">
-          <Logo size={60} animated={true} />
+
           <div>
             <h1 className="text-4xl md:text-5xl font-black italic text-white uppercase tracking-tighter">
               {isZh ? '更新日志' : 'Changelog'}

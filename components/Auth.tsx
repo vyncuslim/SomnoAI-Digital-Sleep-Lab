@@ -56,8 +56,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         }
       });
       if (error) {
-        console.error("OTP Verification Error:", error);
-        setError(`${error.message} (Check console for details)`);
+        setError(error.message);
         await supabase.rpc('report_failed_login', { target_email: email });
       } else {
         navigate(`/auth/verify?email=${encodeURIComponent(email)}${fullName ? `&name=${encodeURIComponent(fullName)}` : ''}`);
@@ -85,7 +84,19 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup`);
         }
       } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+
+          if (signInData.user) {
+            const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', signInData.user.id).single();
+            if (profile?.is_blocked) {
+              await supabase.auth.signOut();
+              setError(t.blocked);
+              setLoading(false);
+              return;
+            }
+            await supabase.rpc('reset_login_attempts', { target_email: email });
+            navigate('/dashboard');
+          }
         if (error) {
           setError(error.message);
           await supabase.rpc('report_failed_login', { target_email: email });
@@ -109,39 +120,14 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
-    
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
-      const msg = lang === 'zh' 
-        ? "配置错误：VITE_SUPABASE_URL 未设置。请在 Vercel 中配置环境变量。" 
-        : "Configuration Error: VITE_SUPABASE_URL is not set. Please configure environment variables in Vercel.";
-      setError(msg);
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: `${window.location.origin}/dashboard`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent',
-          },
-        },
-      });
-      
-      if (error) {
-        console.error("Google Login Error:", error);
-        setError(`${error.message} (Check console for details)`);
-      }
-    } catch (err: any) {
-      console.error("Unexpected Auth Error:", err);
-      setError(lang === 'zh' 
-        ? `网络错误：无法连接到身份验证服务 (${err.message})` 
-        : `Network Error: Could not connect to authentication service (${err.message})`);
-    } finally {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+    if (error) {
+      setError(error.message);
       setLoading(false);
     }
   };
@@ -270,7 +256,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         
         <div className="mt-8 text-center">
           <p className="text-[10px] text-slate-600 uppercase tracking-widest font-mono">
-            SomnoAI Digital Sleep Lab • Neural Unix Access
+            SomnoAI Sleep Lab • Neural Unix Access
           </p>
         </div>
       </GlassCard>

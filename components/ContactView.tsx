@@ -7,7 +7,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
-import { Logo } from './Logo.tsx';
+
 
 const m = motion as any;
 
@@ -84,10 +84,6 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
 
       <div className="max-w-5xl mx-auto px-6 space-y-24 relative z-10">
         <div className="text-center space-y-8">
-          <div className="relative inline-block">
-             <div className="absolute inset-0 bg-indigo-500/10 blur-[120px] rounded-full animate-pulse" />
-             <Logo size={140} animated={true} className="mx-auto relative z-10" />
-          </div>
           <div className="space-y-4">
             <h1 className="text-6xl md:text-[5rem] font-black italic text-white uppercase tracking-tighter leading-none">
               Connectivity <span className="text-indigo-500">Hub</span>

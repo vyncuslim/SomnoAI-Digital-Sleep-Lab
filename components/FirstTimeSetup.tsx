@@ -6,7 +6,8 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { userDataApi } from '../services/supabaseService.ts';
-import { Logo } from './Logo.tsx';
+import { Logo } from './Logo';
+
 
 const m = motion as any;
 
@@ -79,7 +80,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
         className="w-full max-w-xl z-10"
       >
         <div className="text-center mb-10 space-y-4">
-          <Logo size={110} animated={true} />
+
           <div className="space-y-1">
             <h1 className="text-4xl font-black italic text-white uppercase tracking-tighter leading-none">Subject Registration</h1>
             <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.6em]">Initial Laboratory Onboarding</p>
@@ -179,7 +180,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
             <div className="p-8 bg-indigo-500/5 border border-indigo-500/10 rounded-[3rem] flex gap-6">
               <ShieldCheck size={28} className="text-indigo-400 shrink-0 mt-1" />
               <p className="text-[11px] text-slate-400 italic leading-relaxed">
-                Biometric data is utilized exclusively for Neural Synthesis calibration within SomnoAI Digital Sleep Lab.
+                Biometric data is utilized exclusively for Neural Synthesis calibration within SomnoAI Sleep Lab.
               </p>
             </div>
 
@@ -220,7 +221,7 @@ export const FirstTimeSetup: React.FC<FirstTimeSetupProps> = ({ onComplete }) =>
 
       <footer className="mt-16 text-center opacity-40">
         <p className="text-[10px] font-black uppercase tracking-[0.5em] text-slate-700 italic">
-          @2026 SomnoAI Digital Sleep Lab • Neural Infrastructure
+          @2026 SomnoAI Sleep Lab • Neural Infrastructure
         </p>
       </footer>
     </div>

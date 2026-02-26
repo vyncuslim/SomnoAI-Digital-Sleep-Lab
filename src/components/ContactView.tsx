@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Mail, Phone, MapPin, MessageSquare, Send } from 'lucide-react';
-import { Logo } from '../../components/Logo.tsx';
+
 
 interface ContactViewProps {
   lang: 'en' | 'zh' | 'es';
@@ -27,7 +27,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
 
       <div className="max-w-3xl mx-auto space-y-20 relative z-10 pt-16">
         <div className="text-center space-y-8">
-          <Logo size={80} animated={true} />
+
           <h1 className="text-7xl font-black italic text-white uppercase tracking-tighter drop-shadow-2xl">
             {isZh ? '联系我们' : 'Contact Us'}
           </h1>
@@ -66,7 +66,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
           <div className="flex flex-col items-center gap-4 bg-slate-900/50 border border-white/10 rounded-3xl p-8 shadow-xl">
             <MapPin size={48} className="text-blue-400" />
             <p className="text-lg font-bold text-slate-300 leading-relaxed">
-              {isZh ? 'SomnoAI 数字睡眠实验室总部' : 'SomnoAI Digital Sleep Lab Headquarters'}
+              {isZh ? 'SomnoAI 睡眠实验室总部' : 'SomnoAI Sleep Lab Headquarters'}
             </p>
             <p className="text-base text-slate-400 leading-relaxed">
               {isZh ? '123 睡眠大道，梦境市，加利福尼亚州 90210' : '123 Slumber Avenue, Dreamville, CA 90210'}

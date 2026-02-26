@@ -6,7 +6,7 @@ import {
   CheckCircle2, Users, Database, ShieldCheck,
   Smartphone, BarChart3, MessageSquare, Github, Twitter, Linkedin
 } from 'lucide-react';
-import { Logo } from './Logo.tsx';
+
 import { GlassCard } from './GlassCard.tsx';
 import { Language, getTranslation } from '../services/i18n.ts';
 
@@ -101,12 +101,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
 
       <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between relative z-40">
         <div className="flex items-center gap-3">
-          <motion.div
-            whileHover={{ rotate: 15 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-          >
-            <Logo size={32} animated={true} />
-          </motion.div>
+
           <span className="font-bold text-xl tracking-tight">SomnoAI Digital Sleep Lab</span>
         </div>
         <div className="flex items-center gap-6">
@@ -148,7 +143,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               transition={{ duration: 0.8 }}
               className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8"
             >
-              {lang === 'zh' ? '数字' : 'DIGITAL'} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{t.heroTitle || 'SLEEP LAB'}</span>
             </motion.h1>
             <motion.p 
@@ -293,7 +287,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <Logo size={24} />
               <span className="font-bold text-lg tracking-tight">SomnoAI Digital Sleep Lab</span>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed italic">
@@ -322,7 +315,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
         </div>
 
         <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-xs text-slate-600 font-mono">© 2026 SOMNO DIGITAL LABS. {t.footer?.rights}.</p>
+          <p className="text-xs text-slate-600 font-mono">© 2026 SOMNOAI DIGITAL SLEEP LAB. {t.footer?.rights}.</p>
           <div className="flex items-center gap-6 text-slate-600">
             <a href="#" className="hover:text-white transition-colors"><Github size={18} /></a>
             <a href="#" className="hover:text-white transition-colors"><Twitter size={18} /></a>

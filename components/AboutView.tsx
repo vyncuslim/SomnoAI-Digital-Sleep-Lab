@@ -4,11 +4,12 @@ import {
   ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, 
   Microscope, Zap, Linkedin, ShieldCheck, Sparkles, Target, Layers, 
   Watch, Smartphone, Cpu, Binary, HeartPulse, Activity, AlertCircle, Scale, Ruler, Search,
+  // Fix: Added missing icons
   Server, Shield, Database, Cloud, ArrowRight, MessageSquare, Youtube
 } from 'lucide-react';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
-import { Logo } from './Logo.tsx';
+
 import { motion } from 'framer-motion';
 
 const m = motion as any;
@@ -22,14 +23,6 @@ interface AboutViewProps {
 export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }) => {
   const isZh = lang === 'zh';
   const t = getTranslation(lang, 'about');
-
-  const overviewText1 = isZh 
-    ? "SomnoAI Digital Sleep Lab 是一个专注于睡眠数据分析的数字化项目。该项目旨在通过处理来自可穿戴设备的生理数据，为用户提供深度的睡眠质量评估与健康见解。" 
-    : "SomnoAI Digital Sleep Lab is a digital health project focused on the analysis of sleep data. The project aims to provide users with in-depth sleep quality assessments and health insights by processing physiological data from wearable devices.";
-
-  const overviewText2 = isZh 
-    ? "该平台利用先进的机器学习算法，对心率、睡眠周期及活动水平进行综合分析，帮助用户识别影响恢复的关键因素。" 
-    : "The platform utilizes advanced machine learning algorithms to comprehensively analyze heart rate, sleep cycles, and activity levels, helping users identify key factors affecting their restoration.";
 
   const aiDimensions = [
     { icon: Activity, title: isZh ? '健康趋势预测' : 'Health Trend Prediction', desc: isZh ? '基于历史数据，预测未来的健康变化，如心率异常风险及睡眠质量下降趋势。' : 'Predicting future health changes like HR anomaly risks and sleep quality decline based on historical data.' },
@@ -56,7 +49,6 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
       
       <header className="flex flex-col items-center text-center gap-8 mb-16 px-4 max-w-4xl mx-auto pt-20 relative z-10">
         <div className="flex items-center justify-center gap-4">
-          <Logo size={48} animated={true} className="relative z-10" />
           <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white uppercase leading-none">
             {isZh ? '关于项目' : 'About Project'}
           </h1>
@@ -77,8 +69,16 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
                     <h2 className="text-xl font-black italic text-indigo-400 uppercase tracking-widest">{isZh ? '项目概述' : 'Overview'}</h2>
                  </div>
                  <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic font-medium">
-                   <p>{overviewText1}</p>
-                   <p>{overviewText2}</p>
+                   <p>
+                     {isZh 
+                       ? "SomnoAI Digital Sleep Lab 是一个专注于睡眠数据分析的数字化项目。该项目旨在通过处理来自可穿戴设备的生理数据，为用户提供深度的睡眠质量评估与健康见解。" 
+                       : "SomnoAI Digital Sleep Lab is a digital health project focused on the analysis of sleep data. The project aims to provide users with in-depth sleep quality assessments and health insights by processing physiological data from wearable devices."
+                   </p>
+                   <p>
+                     {isZh 
+                       ? "该平台利用先进的机器学习算法，对心率、睡眠周期及活动水平进行综合分析，帮助用户识别影响恢复的关键因素。" 
+                       : "The platform utilizes advanced machine learning algorithms to comprehensively analyze heart rate, sleep cycles, and activity levels, helping users identify key factors affecting their restoration."}
+                   </p>
                  </div>
               </div>
            </GlassCard>
@@ -128,8 +128,8 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
                     <h4 className="text-lg font-black text-white italic uppercase tracking-tight">{isZh ? '关于我们' : 'Who We Are'}</h4>
                     <p className="text-sm text-slate-400 leading-relaxed italic font-medium">
                        {isZh 
-                         ? "SomnoAI Digital Sleep Lab 是一个由开发者与健康爱好者共同维护的数字化睡眠研究项目。我们致力于通过技术手段降低专业级健康分析的门槛。" 
-                         : "SomnoAI Digital Sleep Lab is a digital sleep research project maintained by developers and health enthusiasts. We are dedicated to lowering the barrier to professional-grade health analysis through technology."}
+                         ? "SomnoAI Sleep Lab 是一个由开发者与健康爱好者共同维护的数字化睡眠研究项目。我们致力于通过技术手段降低专业级健康分析的门槛。" 
+                         : "SomnoAI Digital Sleep Lab is a digital sleep research project maintained by developers and health enthusiasts. We are dedicated to lowering the barrier to professional-grade health analysis through technology."
                     </p>
                     <div className="flex items-center gap-3 text-slate-500">
                        <Mail size={16} className="text-indigo-400" />

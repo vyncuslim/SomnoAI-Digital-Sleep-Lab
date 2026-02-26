@@ -11,7 +11,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { supabase } from '../services/supabaseService.ts';
 
-import { Logo } from './Logo.tsx';
+
 
 interface DashboardProps {
   lang: Language;
@@ -75,7 +75,6 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
     <div className="min-h-screen bg-[#01040a] text-white font-sans p-6">
       <header className="flex items-center justify-between mb-12">
         <div className="flex items-center gap-4">
-          <Logo size={40} animated={true} />
           <div>
             <h1 className="text-xl font-bold">{lang === 'zh' ? '欢迎回来' : 'Welcome back'}</h1>
             <p className="text-xs text-slate-500 font-mono">{user?.email}</p>

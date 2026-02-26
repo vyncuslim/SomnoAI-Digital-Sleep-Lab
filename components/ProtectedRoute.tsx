@@ -2,7 +2,7 @@
 import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LockKeyhole, Home, ShieldAlert } from 'lucide-react';
-import { Logo } from './Logo.tsx';
+
 import { logAuditLog } from '../services/supabaseService.ts';
 
 interface ProtectedRouteProps {
@@ -46,7 +46,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#020617] flex flex-col items-center justify-center p-8 space-y-12">
-        <Logo size={120} animated={true} className="mx-auto" />
+
         <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.8em] animate-pulse italic">Verifying Clearance...</p>
       </div>
     );

@@ -11,7 +11,8 @@ import { ChatMessage, SleepRecord } from '../types.ts';
 import { startContextualCoach } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, getTranslation } from '../services/i18n.ts';
-import { Logo } from './Logo.tsx';
+import { Logo } from './Logo';
+
 
 const m = motion as any;
 
@@ -129,7 +130,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
                   ? 'bg-slate-950 text-indigo-400' 
                   : 'bg-indigo-600 text-white'
               }`}>
-                {msg.role === 'assistant' ? <Logo size={24} animated={isTyping && idx === messages.length - 1} /> : <User size={18} />}
+                {msg.role === 'assistant' ? <BrainCircuit size={24} /> : <User size={18} />}
               </div>
               
               <div className={`space-y-2 max-w-[90%] ${msg.role === 'user' ? 'text-right' : 'text-left'}`}>

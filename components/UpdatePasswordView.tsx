@@ -3,8 +3,9 @@ import React, { useState } from 'react';
 import { GlassCard } from './GlassCard.tsx';
 import { Lock, Zap, Loader2, CheckCircle2, ShieldAlert, Eye, EyeOff } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './Logo';
 import { authApi } from '../services/supabaseService.ts';
-import { Logo } from './Logo.tsx';
+
 
 const m = motion as any;
 
@@ -56,7 +57,7 @@ export const UpdatePasswordView: React.FC<{ onSuccess: () => void }> = ({ onSucc
         className="w-full max-w-md space-y-10 relative z-10"
       >
         <div className="text-center space-y-6">
-          <Logo size={80} animated={true} className="mx-auto" />
+
           <div className="space-y-1">
              <h1 className="text-3xl font-black italic text-white uppercase tracking-tighter">Access Rotation</h1>
              <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.6em] italic">Identity Recovery Protocol</p>

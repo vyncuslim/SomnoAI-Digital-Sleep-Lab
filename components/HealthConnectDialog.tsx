@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Shield, SlidersHorizontal, History, Footprints, HeartPulse, Ruler, Activity, Moon, Scale, Mail, User, Info, Zap } from 'lucide-react';
-import { Logo } from './Logo.tsx';
+
 
 const m = motion as any;
 
@@ -23,7 +23,7 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
   isOpen, 
   onClose, 
   onAllow,
-  appName = "SomnoAI Digital Sleep Lab"
+  appName = "SomnoAI Sleep Lab"
 }) => {
   const [allowAll, setAllowAll] = useState(false);
   const [permissions, setPermissions] = useState<PermissionItem[]>([
@@ -66,9 +66,7 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
             {/* Dark Mode Header */}
             <div className="pt-12 pb-8 flex flex-col items-center relative overflow-hidden">
                <div className="absolute top-0 inset-x-0 h-40 bg-indigo-600/10 blur-[80px] -z-10" />
-               <div className="w-20 h-20 mb-6 p-4 bg-slate-900 rounded-[2.5rem] shadow-inner border border-white/5 flex items-center justify-center">
-                  <Logo size={48} animated={true} />
-               </div>
+
                <h1 className="text-[20px] font-black text-white text-center px-12 leading-tight tracking-tighter italic uppercase">
                  Neural Ingress <span className="text-indigo-400">Authorization</span>
                </h1>

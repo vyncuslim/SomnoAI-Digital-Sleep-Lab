@@ -5,8 +5,9 @@ import {
   FlaskConical, Newspaper, HelpCircle, Info, LayoutDashboard, 
   TrendingUp, Sparkles, ImageIcon, Mic, BookOpen, PenTool
 } from 'lucide-react';
-import { Logo } from './Logo.tsx';
+
 import { Language, getTranslation } from '../services/i18n.ts';
+import { Logo } from './Logo';
 
 const m = motion as any;
 
@@ -70,10 +71,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-4 cursor-pointer group bg-transparent border-none p-0 outline-none text-left" 
           onClick={() => onNavigate(isAuthenticated ? 'dashboard' : '/')}
         >
-          <Logo size={36} animated={true} />
+
           <div className="flex flex-col">
             <span className="text-lg font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">
-              SomnoAI <span className="text-indigo-400 font-medium">Digital Sleep Lab</span>
+              SomnoAI <span className="text-indigo-400 font-medium">Sleep Lab</span>
             </span>
             <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">
               {isZh ? '您的AI驱动睡眠伴侣' : 'Your AI-Powered Sleep Companion'}

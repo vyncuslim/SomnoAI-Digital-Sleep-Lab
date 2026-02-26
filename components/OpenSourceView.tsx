@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import { Logo } from './Logo';
 import { 
   ArrowLeft, Github, Scale, Code2, ShieldCheck, ExternalLink, Globe, 
   Layers, Lock, Cpu, Layout, GitBranch, Binary, Database, EyeOff, FileText, Server

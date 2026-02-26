@@ -6,7 +6,7 @@ import {
 } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
-import { Logo } from './Logo.tsx';
+
 import { motion } from 'framer-motion';
 
 const m = motion as any;

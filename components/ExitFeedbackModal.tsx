@@ -1,11 +1,12 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Logo } from './Logo';
 import { Star, Send, X, Loader2, CheckCircle2, Moon, Zap, ShieldAlert } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { feedbackApi, supabase } from '../services/supabaseService.ts';
 import { Language, translations } from '../services/i18n.ts';
-import { Logo } from './Logo.tsx';
+
 
 const m = motion as any;
 
@@ -57,7 +58,7 @@ export const ExitFeedbackModal: React.FC<ExitFeedbackModalProps> = ({ isOpen, la
               <div className="text-center space-y-8">
                 <div className="relative inline-block">
                    <div className="absolute inset-0 bg-indigo-500/20 blur-3xl rounded-full animate-pulse" />
-                   <Logo size={80} animated={!isSuccess} className="mx-auto relative z-10" />
+
                 </div>
                 
                 <div className="space-y-2">
