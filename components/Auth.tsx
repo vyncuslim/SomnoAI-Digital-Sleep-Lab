@@ -56,7 +56,8 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         }
       });
       if (error) {
-        setError(error.message);
+        console.error("OTP Verification Error:", error);
+        setError(`${error.message} (Check console for details)`);
         await supabase.rpc('report_failed_login', { target_email: email });
       } else {
         navigate(`/auth/verify?email=${encodeURIComponent(email)}${fullName ? `&name=${encodeURIComponent(fullName)}` : ''}`);
@@ -115,7 +116,8 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       },
     });
     if (error) {
-      setError(error.message);
+      console.error("Google Login Error:", error);
+      setError(`${error.message} (Check console for details)`);
       setLoading(false);
     }
   };
