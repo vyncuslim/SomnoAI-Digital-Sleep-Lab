@@ -42,6 +42,7 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
       });
       
       if (error) {
+        console.error("OTP Verification Error:", error);
         setError(error.message);
         await supabase.rpc('report_failed_login', { target_email: email });
       } else {
@@ -56,6 +57,7 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
         navigate('/dashboard');
       }
     } catch (err: any) {
+      console.error("Unexpected OTP Verification Error:", err);
       setError(err.message || 'An unexpected error occurred.');
       await supabase.rpc('report_failed_login', { target_email: email });
     } finally {

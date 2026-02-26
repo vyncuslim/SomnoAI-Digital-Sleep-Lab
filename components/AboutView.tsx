@@ -4,11 +4,12 @@ import {
   ArrowLeft, BrainCircuit, Globe, UserCheck, Moon, Lock, Mail, Github, 
   Microscope, Zap, Linkedin, ShieldCheck, Sparkles, Target, Layers, 
   Watch, Smartphone, Cpu, Binary, HeartPulse, Activity, AlertCircle, Scale, Ruler, Search,
+  // Fix: Added missing icons
   Server, Shield, Database, Cloud, ArrowRight, MessageSquare, Youtube
 } from 'lucide-react';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
-import { Logo } from './Logo.tsx';
+
 import { motion } from 'framer-motion';
 
 const m = motion as any;
@@ -22,30 +23,6 @@ interface AboutViewProps {
 export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }) => {
   const isZh = lang === 'zh';
   const t = getTranslation(lang, 'about');
-
-  const overviewTitle = isZh ? '项目概述' : 'Overview';
-  const overviewText1 = isZh 
-    ? "SomnoAI Digital Sleep Lab 是一个专注于睡眠数据分析的数字化项目。该项目旨在通过处理来自可穿戴设备的生理数据，为用户提供深度的睡眠质量评估与健康见解。" 
-    : "SomnoAI Digital Sleep Lab is a digital health project focused on the analysis of sleep data. The project aims to provide users with in-depth sleep quality assessments and health insights by processing physiological data from wearable devices.";
-
-  const overviewText2 = isZh 
-    ? "该平台利用先进的机器学习算法，对心率、睡眠周期及活动水平进行综合分析，帮助用户识别影响恢复的关键因素。" 
-    : "The platform utilizes advanced machine learning algorithms to comprehensively analyze heart rate, sleep cycles, and activity levels, helping users identify key factors affecting their restoration.";
-
-  const archTitle = isZh ? '技术架构与兼容性' : 'Architecture & Compatibility';
-  const archText1 = isZh 
-    ? "SomnoAI 采用设备无关（Device-Agnostic）的设计理念，通过 Google Health Connect 实现跨平台数据集成。" 
-    : "SomnoAI adopts a device-agnostic design philosophy, achieving cross-platform data integration through Google Health Connect.";
-  const archText2 = isZh 
-    ? "目前系统已支持包括小米、华为、三星、佳明及 Fitbit 在内的多种主流智能穿戴品牌。只要设备能够将数据同步至 Android 系统的 Health Connect 框架，即可接入 SomnoAI 进行分析。" 
-    : "The system currently supports various mainstream wearable brands including Xiaomi, Huawei, Samsung, Garmin, and Fitbit. Any device capable of syncing data to the Android Health Connect framework can integrate with SomnoAI for analysis.";
-
-  const contactTitle = isZh ? '组织与联系方式' : 'Organization & Contact';
-  const aboutUsTitle = isZh ? '关于我们' : 'Who We Are';
-  const aboutUsText = isZh 
-    ? "SomnoAI Digital Sleep Lab 是一个由开发者与健康爱好者共同维护的数字化睡眠研究项目。我们致力于通过技术手段降低专业级健康分析的门槛。" 
-    : "SomnoAI Digital Sleep Lab is a digital sleep research project maintained by developers and health enthusiasts. We are dedicated to lowering the barrier to professional-grade health analysis through technology.";
-  const officialLinksTitle = isZh ? '官方链接' : 'Official Links';
 
   const aiDimensions = [
     { icon: Activity, title: isZh ? '健康趋势预测' : 'Health Trend Prediction', desc: isZh ? '基于历史数据，预测未来的健康变化，如心率异常风险及睡眠质量下降趋势。' : 'Predicting future health changes like HR anomaly risks and sleep quality decline based on historical data.' },
@@ -66,24 +43,12 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
     { icon: Globe, label: isZh ? '网页终端' : 'Web Terminal', desc: isZh ? 'AI 分析与深度洞察' : 'AI Analysis & Insights' }
   ];
 
-  const aiDescription = isZh 
-    ? "我们的 AI 分析不仅仅是数据汇总。通过先进的机器学习算法，我们对心率、睡眠模式、步数和热量消耗进行深度挖掘与关联分析。AI 可以识别睡眠质量下降与工作压力增加之间的潜在联系，生成全面的报告。" 
-    : "AI analysis goes beyond aggregation. Through advanced algorithms, we perform deep mining of heart rate, sleep patterns, and activity, identifying correlations between sleep quality and life stressors.";
-
-  const evolutionTitle = isZh ? '持续学习与进化' : 'Continuous Evolution';
-  const evolutionText = isZh 
-    ? "我们的 AI 系统具有学习能力——随着受试者数据的积累，分析结果将越来越准确。所有结果均通过直观的图表呈现，帮助您更主动、更科学地掌控自己的健康。我们的愿景是让每个人都拥有专属的 AI 健康顾问。" 
-    : "Our AI system possesses learning capabilities—accuracy increases as data accumulates. Results are presented via intuitive charts, empowering you to take proactive control. Our vision is a dedicated AI health advisor for everyone.";
-
-  const appleTitle = isZh ? 'Apple 生态说明' : 'Apple Ecosystem Note';
-
   return (
     <div className="min-h-screen bg-black pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 font-sans text-left relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
       
       <header className="flex flex-col items-center text-center gap-8 mb-16 px-4 max-w-4xl mx-auto pt-20 relative z-10">
         <div className="flex items-center justify-center gap-4">
-          <Logo />
           <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white uppercase leading-none">
             {isZh ? '关于项目' : 'About Project'}
           </h1>
@@ -101,11 +66,19 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
               <div className="space-y-10 relative z-10">
                  <div className="flex items-center gap-4">
                     <div className="p-3 bg-indigo-600 rounded-2xl text-white shadow-xl"><Target size={24} /></div>
-                    <h2 className="text-xl font-black italic text-indigo-400 uppercase tracking-widest">{overviewTitle}</h2>
+                    <h2 className="text-xl font-black italic text-indigo-400 uppercase tracking-widest">{isZh ? '项目概述' : 'Overview'}</h2>
                  </div>
                  <div className="space-y-6 text-slate-300 text-lg leading-relaxed italic font-medium">
-                   <p>{overviewText1}</p>
-                   <p>{overviewText2}</p>
+                   <p>
+                     {isZh 
+                       ? "SomnoAI Digital Sleep Lab 是一个专注于睡眠数据分析的数字化项目。该项目旨在通过处理来自可穿戴设备的生理数据，为用户提供深度的睡眠质量评估与健康见解。" 
+                       : "SomnoAI Digital Sleep Lab is a digital health project focused on the analysis of sleep data. The project aims to provide users with in-depth sleep quality assessments and health insights by processing physiological data from wearable devices."}
+                   </p>
+                   <p>
+                     {isZh 
+                       ? "该平台利用先进的机器学习算法，对心率、睡眠周期及活动水平进行综合分析，帮助用户识别影响恢复的关键因素。" 
+                       : "The platform utilizes advanced machine learning algorithms to comprehensively analyze heart rate, sleep cycles, and activity levels, helping users identify key factors affecting their restoration."}
+                   </p>
                  </div>
               </div>
            </GlassCard>
@@ -115,16 +88,20 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         <section className="space-y-8">
            <div className="flex items-center gap-4 px-6">
               <Globe size={24} className="text-indigo-400" />
-              <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{archTitle}</h2>
+              <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{isZh ? '技术架构与兼容性' : 'Architecture & Compatibility'}</h2>
            </div>
            
            <GlassCard className="p-12 md:p-16 rounded-[4rem] border-white/5 bg-slate-900/40" intensity={1.2}>
               <div className="space-y-8 text-slate-300 text-lg leading-relaxed italic font-medium">
                 <p className="border-l-4 border-indigo-500/30 pl-8 font-bold text-white text-xl">
-                  {archText1}
+                  {isZh 
+                    ? "SomnoAI 采用设备无关（Device-Agnostic）的设计理念，通过 Google Health Connect 实现跨平台数据集成。" 
+                    : "SomnoAI adopts a device-agnostic design philosophy, achieving cross-platform data integration through Google Health Connect."}
                 </p>
                 <p>
-                  {archText2}
+                  {isZh 
+                    ? "目前系统已支持包括小米、华为、三星、佳明及 Fitbit 在内的多种主流智能穿戴品牌。只要设备能够将数据同步至 Android 系统的 Health Connect 框架，即可接入 SomnoAI 进行分析。" 
+                    : "The system currently supports various mainstream wearable brands including Xiaomi, Huawei, Samsung, Garmin, and Fitbit. Any device capable of syncing data to the Android Health Connect framework can integrate with SomnoAI for analysis."}
                 </p>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4 pt-4">
                   {brandCompatibility.map((brand, idx) => (
@@ -142,15 +119,17 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
         <section className="space-y-8">
            <div className="flex items-center gap-4 px-6">
               <UserCheck size={24} className="text-indigo-400" />
-              <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{contactTitle}</h2>
+              <h2 className="text-3xl font-black italic text-white uppercase tracking-tight">{isZh ? '组织与联系方式' : 'Organization & Contact'}</h2>
            </div>
            
            <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-black/20">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                  <div className="space-y-6">
-                    <h4 className="text-lg font-black text-white italic uppercase tracking-tight">{aboutUsTitle}</h4>
+                    <h4 className="text-lg font-black text-white italic uppercase tracking-tight">{isZh ? '关于我们' : 'Who We Are'}</h4>
                     <p className="text-sm text-slate-400 leading-relaxed italic font-medium">
-                       {aboutUsText}
+                       {isZh 
+                         ? "SomnoAI Digital Sleep Lab 是一个由开发者与健康爱好者共同维护的数字化睡眠研究项目。我们致力于通过技术手段降低专业级健康分析的门槛。" 
+                         : "SomnoAI Digital Sleep Lab is a digital sleep research project maintained by developers and health enthusiasts. We are dedicated to lowering the barrier to professional-grade health analysis through technology."}
                     </p>
                     <div className="flex items-center gap-3 text-slate-500">
                        <Mail size={16} className="text-indigo-400" />
@@ -159,7 +138,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
                  </div>
 
                  <div className="space-y-6">
-                    <h4 className="text-lg font-black text-white italic uppercase tracking-tight">{officialLinksTitle}</h4>
+                    <h4 className="text-lg font-black text-white italic uppercase tracking-tight">{isZh ? '官方链接' : 'Official Links'}</h4>
                     <div className="grid grid-cols-2 gap-4">
                        <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-[10px] font-black text-slate-500 hover:text-indigo-400 transition-colors uppercase italic tracking-tight">
                           <Github size={14} /> GitHub
@@ -193,6 +172,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
                       <p className="text-[10px] font-black text-white uppercase italic tracking-widest">{step.label}</p>
                       <p className="text-[8px] text-slate-500 uppercase font-bold">{step.desc}</p>
                    </div>
+                   {idx < 3 && <div className="hidden md:block absolute -right-2 top-1/2 -translate-y-1/2 z-20 text-indigo-500/30"><ArrowRight size={16} /></div>}
                 </GlassCard>
               ))}
            </div>
@@ -207,7 +187,9 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
            
            <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-black/20">
               <p className="text-slate-400 text-sm leading-relaxed italic mb-10 px-4">
-                {aiDescription}
+                {isZh 
+                  ? "我们的 AI 分析不仅仅是数据汇总。通过先进的机器学习算法，我们对心率、睡眠模式、步数和热量消耗进行深度挖掘与关联分析。AI 可以识别睡眠质量下降与工作压力增加之间的潜在联系，生成全面的报告。" 
+                  : "AI analysis goes beyond aggregation. Through advanced algorithms, we perform deep mining of heart rate, sleep patterns, and activity, identifying correlations between sleep quality and life stressors."}
               </p>
               
               <div className="grid grid-cols-1 gap-6">
@@ -232,9 +214,11 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
                     <Binary size={48} />
                  </div>
                  <div className="space-y-6">
-                    <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">{evolutionTitle}</h3>
+                    <h3 className="text-2xl font-black italic text-white uppercase tracking-tight">{isZh ? '持续学习与进化' : 'Continuous Evolution'}</h3>
                     <p className="text-base text-slate-400 leading-relaxed italic font-medium">
-                       {evolutionText}
+                       {isZh 
+                         ? "我们的 AI 系统具有学习能力——随着受试者数据的积累，分析结果将越来越准确。所有结果均通过直观的图表呈现，帮助您更主动、更科学地掌控自己的健康。我们的愿景是让每个人都拥有专属的 AI 健康顾问。" 
+                         : "Our AI system possesses learning capabilities—accuracy increases as data accumulates. Results are presented via intuitive charts, empowering you to take proactive control. Our vision is a dedicated AI health advisor for everyone."}
                     </p>
                  </div>
               </div>
@@ -246,7 +230,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
                     <Smartphone size={32} />
                  </div>
                  <div className="space-y-4">
-                    <h3 className="text-xl font-black italic text-white uppercase tracking-tight">{appleTitle}</h3>
+                    <h3 className="text-xl font-black italic text-white uppercase tracking-tight">{isZh ? 'Apple 生态说明' : 'Apple Ecosystem Note'}</h3>
                     <p className="text-sm text-slate-400 leading-relaxed italic font-medium">
                       {t.appleNote}
                     </p>
