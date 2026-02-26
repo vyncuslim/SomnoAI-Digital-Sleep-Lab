@@ -77,7 +77,7 @@ export const Settings: React.FC<SettingsProps> = ({
               ))}
            </div>
         </div>
-        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic pl-1">Configuration Matrix // SomnoAI Sleep Lab Node</p>
+        <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.4em] italic pl-1">Configuration Matrix // SomnoAI Digital Sleep Lab Node</p>
       </header>
 
       <div className="flex flex-col gap-6">
@@ -184,7 +184,7 @@ export const Settings: React.FC<SettingsProps> = ({
                      <span className="text-indigo-400">ACKNOWLEDGED</span>
                    </h2>
                    <p className="text-sm md:text-base text-slate-500 italic max-w-md mx-auto leading-relaxed font-bold opacity-80">
-                     Your support ensures the continued synthesis of neurological restoration protocols at SomnoAI Sleep Lab.
+                     Your support ensures the continued synthesis of neurological restoration protocols at SomnoAI Digital Sleep Lab.
                    </p>
                 </div>
 

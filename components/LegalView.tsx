@@ -27,7 +27,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
             {isPrivacy ? 'Privacy Policy' : 'Terms of Service'}
           </h1>
           <p className="text-[10px] text-indigo-400 font-mono font-bold uppercase tracking-[0.3em] mt-0.5">
-            Somno Lab • v2026.01.04
+            SomnoAI Digital Sleep Lab • v2026.01.04
           </p>
         </div>
       </header>
@@ -45,7 +45,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                  <h2 className="text-[11px] font-black uppercase tracking-widest">Health Data Limited Use Disclosure</h2>
               </div>
               <p className="italic text-slate-400">
-                Somno Lab's use and transfer of information received from personal health APIs will adhere to strict data safety policies, including the Limited Use requirements. This is used to bridge Health Connect data.
+                SomnoAI Digital Sleep Lab's use and transfer of information received from personal health APIs will adhere to strict data safety policies, including the Limited Use requirements. This is used to bridge Health Connect data.
               </p>
             </section>
 
@@ -88,7 +88,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                   <h3 className="text-[10px] font-black uppercase tracking-[0.3em]">Medical Disclaimer</h3>
                 </div>
                 <p className="text-[12px] text-slate-300 leading-relaxed font-bold italic">
-                  Somno Lab is not a medical device. AI content is for educational reference; consult a medical professional for health decisions.
+                  SomnoAI Digital Sleep Lab is not a medical device. AI content is for educational reference; consult a medical professional for health decisions.
                 </p>
               </div>
 

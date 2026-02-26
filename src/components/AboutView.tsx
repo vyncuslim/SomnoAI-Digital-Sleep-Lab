@@ -39,7 +39,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
             {isZh ? '关于 SomnoAI' : 'About SomnoAI'}
           </h1>
           <p className="text-xl text-slate-400 font-bold italic max-w-2xl mx-auto leading-relaxed">
-            {isZh ? '我们是 SomnoAI 睡眠实验室，致力于通过尖端AI和神经科学重新定义睡眠恢复。' : 'We are SomnoAI Sleep Lab, dedicated to redefining sleep restoration through cutting-edge AI and neuroscience.'}
+            {isZh ? '我们是 SomnoAI 睡眠实验室，致力于通过尖端AI和神经科学重新定义睡眠恢复。' : 'We are SomnoAI Digital Sleep Lab, dedicated to redefining sleep restoration through cutting-edge AI and neuroscience.'}
           </p>
         </div>
 

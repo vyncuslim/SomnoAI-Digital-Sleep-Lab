@@ -260,7 +260,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         
         <div className="mt-8 text-center">
           <p className="text-[10px] text-slate-600 uppercase tracking-widest font-mono">
-            SomnoAI Sleep Lab • Neural Unix Access
+            SomnoAI Digital Sleep Lab • Neural Unix Access
           </p>
         </div>
       </GlassCard>

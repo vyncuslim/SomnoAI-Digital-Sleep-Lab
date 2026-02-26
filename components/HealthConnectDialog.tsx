@@ -23,7 +23,7 @@ export const HealthConnectDialog: React.FC<HealthConnectDialogProps> = ({
   isOpen, 
   onClose, 
   onAllow,
-  appName = "SomnoAI Sleep Lab"
+  appName = "SomnoAI Digital Sleep Lab"
 }) => {
   const [allowAll, setAllowAll] = useState(false);
   const [permissions, setPermissions] = useState<PermissionItem[]>([

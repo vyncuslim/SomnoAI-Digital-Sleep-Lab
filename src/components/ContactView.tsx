@@ -66,7 +66,7 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
           <div className="flex flex-col items-center gap-4 bg-slate-900/50 border border-white/10 rounded-3xl p-8 shadow-xl">
             <MapPin size={48} className="text-blue-400" />
             <p className="text-lg font-bold text-slate-300 leading-relaxed">
-              {isZh ? 'SomnoAI 睡眠实验室总部' : 'SomnoAI Sleep Lab Headquarters'}
+              {isZh ? 'SomnoAI 睡眠实验室总部' : 'SomnoAI Digital Sleep Lab Headquarters'}
             </p>
             <p className="text-base text-slate-400 leading-relaxed">
               {isZh ? '123 睡眠大道，梦境市，加利福尼亚州 90210' : '123 Slumber Avenue, Dreamville, CA 90210'}
