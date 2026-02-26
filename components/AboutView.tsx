@@ -189,7 +189,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
            <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-black/20">
               <p className="text-slate-400 text-sm leading-relaxed italic mb-10 px-4">
                 {isZh 
-                  ? "我们的 AI 分析不仅仅是数据汇总。通过先进的机器学习算法，我们对心率、睡眠模式、步数和热量消耗进行深度挖掘与关联分析。AI 可以识别睡眠质量下降与工作压力增加之间的潜在联系，生成全面的报告。" 
+                  ? "我们的 AI 分析不仅仅是数据汇总。通过先进的机器学习算法，我们对心率、睡眠模式、步数和热量消耗进行深度挖掘与关联分析。AI 可以识别睡眠 quality 下降与工作压力增加之间的潜在联系，生成全面的报告。" 
                   : "AI analysis goes beyond aggregation. Through advanced algorithms, we perform deep mining of heart rate, sleep patterns, and activity, identifying correlations between sleep quality and life stressors."}
               </p>
               
