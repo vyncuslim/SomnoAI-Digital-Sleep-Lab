@@ -83,7 +83,7 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
       
       <header className="flex flex-col items-center text-center gap-8 mb-16 px-4 max-w-4xl mx-auto pt-20 relative z-10">
         <div className="flex items-center justify-center gap-4">
-          <Logo size={48} animated={true} className="relative z-10" />
+          <Logo />
           <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white uppercase leading-none">
             {isZh ? '关于项目' : 'About Project'}
           </h1>
