@@ -105,7 +105,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
             whileHover={{ rotate: 15 }}
             transition={{ duration: 0.3, ease: "easeInOut" }}
           >
-            <Logo size={32} />
+            <Logo size={32} animated={true} />
           </motion.div>
           <span className="font-bold text-xl tracking-tight">SomnoAI Digital Sleep Lab</span>
         </div>

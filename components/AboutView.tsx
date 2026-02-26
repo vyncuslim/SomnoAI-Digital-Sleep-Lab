@@ -48,18 +48,15 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
       
       <header className="flex flex-col items-center text-center gap-8 mb-16 px-4 max-w-4xl mx-auto pt-20 relative z-10">
-        <div className="relative inline-block">
-          <div className="absolute inset-0 bg-indigo-500/10 blur-[100px] rounded-full" />
-          <Logo size={140} animated={true} className="relative z-10" />
-        </div>
-        <div className="space-y-4">
+        <div className="flex items-center justify-center gap-4">
+          <Logo size={48} animated={true} className="relative z-10" />
           <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white uppercase leading-none">
             {isZh ? '关于项目' : 'About Project'}
           </h1>
+        </div>
           <p className="text-[10px] text-slate-600 font-mono font-bold uppercase tracking-[0.6em] italic">
             SomnoAI Digital Sleep Lab • Documentation v1.3.0
           </p>
-        </div>
       </header>
 
       <div className="max-w-4xl mx-auto space-y-16 px-4">

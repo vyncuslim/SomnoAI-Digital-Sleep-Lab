@@ -10,6 +10,7 @@ interface AuthContextType {
   isOwner: boolean;
   isEditor: boolean;
   isSuperOwner: boolean;
+  isBlocked: boolean;
   refresh: () => Promise<void>;
 }
 
@@ -20,12 +21,14 @@ const AuthContext = createContext<AuthContextType>({
   isOwner: false,
   isEditor: false,
   isSuperOwner: false,
+  isBlocked: false,
   refresh: async () => {}
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isBlocked, setIsBlocked] = useState(false);
   const isSyncing = useRef(false);
   const lastLoggedSessionId = useRef<string | null>(null);
 
@@ -87,12 +90,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
 
       if (currentProfile?.is_blocked) {
+        setIsBlocked(true);
         await supabase.auth.signOut();
         setProfile(null);
         setLoading(false);
         isSyncing.current = false;
         return;
       }
+      setIsBlocked(false);
       
       setProfile(currentProfile);
 
@@ -118,6 +123,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
         setLoading(false);
+        setIsBlocked(false);
         lastLoggedSessionId.current = null;
       }
     });
@@ -125,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, [fetchProfile]);
 
   const value = {
-    profile, loading,
+    profile, loading, isBlocked,
     isAdmin: profile?.role === "admin" || profile?.role === "owner" || profile?.is_super_owner === true,
     isOwner: profile?.role === "owner" || profile?.is_super_owner === true,
     isEditor: profile?.role === "editor" || profile?.role === "admin" || profile?.role === "owner" || profile?.is_super_owner === true,

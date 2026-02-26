@@ -26,8 +26,10 @@ import { SupportView } from './components/SupportView.tsx';
 import { getTranslation } from './services/i18n.ts';
 import { SleepRecord } from './types.ts';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData.ts';
-import { Salesmartly } from './components/Salesmartly.tsx';
+import { BlockedView } from './components/BlockedView.tsx';
+
 import { supabase } from './services/supabaseService.ts';
+import { Salesmartly } from './components/Salesmartly.tsx';
 
 // Initial Data
 const INITIAL_SLEEP_DATA: SleepRecord = {
@@ -110,11 +112,16 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { isBlocked } = useAuth();
 
   const handleBack = () => navigate(-1);
 
   // Force English for auth routes as requested: sleepsomno.com/cn/auth also English
   const effectiveLang = location.pathname.includes('/auth') ? 'en' : lang;
+
+  if (isBlocked) {
+    return <BlockedView />;
+  }
 
   return (
     <React.Fragment>
@@ -255,12 +262,13 @@ const AppContent = () => {
           ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
         </div>
       )}
-      <Salesmartly />
       <Routes>
-        <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-        <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-        <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/cn/:page" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/en/:page" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/:page" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
       </Routes>
+      <Salesmartly />
     </div>
   );
 };
