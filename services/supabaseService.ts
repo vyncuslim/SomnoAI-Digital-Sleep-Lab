@@ -1,10 +1,20 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  console.error(
+    'MISSING SUPABASE CONFIGURATION: VITE_SUPABASE_URL or VITE_SUPABASE_ANON_KEY is not defined in environment variables.'
+  );
+}
 
 // Initialize the Supabase client
-export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+// We use fallback values only to prevent immediate crash, but the error above will alert the developer
+export const supabase = createClient(
+  supabaseUrl || 'https://placeholder-please-set-env-vars.supabase.co', 
+  supabaseAnonKey || 'placeholder-please-set-env-vars'
+);
 
 // Audit Log Helper
 export const logAuditLog = async (userId: string, action: string, details: any) => {

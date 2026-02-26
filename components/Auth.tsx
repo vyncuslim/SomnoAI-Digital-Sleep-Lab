@@ -109,15 +109,39 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-    if (error) {
-      console.error("Google Login Error:", error);
-      setError(`${error.message} (Check console for details)`);
+    
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    if (!supabaseUrl || supabaseUrl.includes('placeholder')) {
+      const msg = lang === 'zh' 
+        ? "配置错误：VITE_SUPABASE_URL 未设置。请在 Vercel 中配置环境变量。" 
+        : "Configuration Error: VITE_SUPABASE_URL is not set. Please configure environment variables in Vercel.";
+      setError(msg);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+      
+      if (error) {
+        console.error("Google Login Error:", error);
+        setError(`${error.message} (Check console for details)`);
+      }
+    } catch (err: any) {
+      console.error("Unexpected Auth Error:", err);
+      setError(lang === 'zh' 
+        ? `网络错误：无法连接到身份验证服务 (${err.message})` 
+        : `Network Error: Could not connect to authentication service (${err.message})`);
+    } finally {
       setLoading(false);
     }
   };
