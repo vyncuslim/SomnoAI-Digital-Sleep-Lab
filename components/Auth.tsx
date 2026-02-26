@@ -36,55 +36,57 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
     setLoading(true);
     setError(null);
 
-    // Check if user is already blocked before attempting login
     try {
-      const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
-      if (profile?.is_blocked) {
-        setError(t.blocked);
-        setLoading(false);
-        return;
+      // 1. Check if Supabase is configured
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      if (!supabaseUrl || supabaseUrl.includes('your-project')) {
+        throw new Error('Supabase URL is not configured in Vercel. Please add VITE_SUPABASE_URL to Environment Variables.');
       }
-    } catch (e) {
-      // Ignore error if profile doesn't exist yet
-    }
 
-    if (mode === 'otp') {
-      const { error } = await (supabase.auth as any).signInWithOtp({ 
-        email,
-        options: {
-          data: { full_name: fullName }
+      // 2. Check if user is blocked
+      try {
+        const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
+        if (profile?.is_blocked) {
+          setError(t.blocked);
+          setLoading(false);
+          return;
         }
-      });
-      if (error) {
-        setError(error.message);
-        await supabase.rpc('report_failed_login', { target_email: email });
-      } else {
-        navigate(`/auth/verify?email=${encodeURIComponent(email)}${fullName ? `&name=${encodeURIComponent(fullName)}` : ''}`);
+      } catch (err) {
+        // Profile might not exist yet, ignore
       }
-    } else {
-      // Password mode
-      if (!password) {
-        setError(lang === 'zh' ? '请输入您的密码。' : 'Please enter your password.');
-        setLoading(false);
-        return;
-      }
-      
-      if (view === 'signup') {
-        const { error } = await supabase.auth.signUp({ 
-          email, 
-          password,
+
+      // 3. Perform Auth
+      if (mode === 'otp') {
+        const { error: authErr } = await (supabase.auth as any).signInWithOtp({ 
+          email,
           options: {
-            data: { full_name: fullName }
+            data: { full_name: fullName },
+            emailRedirectTo: `${window.location.origin}/auth/verify`
           }
         });
-        if (error) {
-          setError(error.message);
-          await supabase.rpc('report_failed_login', { target_email: email });
-        } else {
-          navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup`);
-        }
+        if (authErr) throw authErr;
+        navigate(`/auth/verify?email=${encodeURIComponent(email)}${fullName ? `&name=${encodeURIComponent(fullName)}` : ''}`);
       } else {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (!password) {
+          setError(lang === 'zh' ? '请输入您的密码。' : 'Please enter your password.');
+          setLoading(false);
+          return;
+        }
+        
+        if (view === 'signup') {
+          const { error: authErr } = await supabase.auth.signUp({ 
+            email, 
+            password,
+            options: {
+              data: { full_name: fullName },
+              emailRedirectTo: `${window.location.origin}/auth/verify`
+            }
+          });
+          if (authErr) throw authErr;
+          navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup`);
+        } else {
+          const { data: signInData, error: authErr } = await supabase.auth.signInWithPassword({ email, password });
+          if (authErr) throw authErr;
 
           if (signInData.user) {
             const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', signInData.user.id).single();
@@ -97,44 +99,47 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             await supabase.rpc('reset_login_attempts', { target_email: email });
             navigate('/dashboard');
           }
-        if (error) {
-          setError(error.message);
-          await supabase.rpc('report_failed_login', { target_email: email });
-        } else {
-          // Check if blocked after successful login just in case
-          const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
-          if (profile?.is_blocked) {
-            await supabase.auth.signOut();
-            setError(t.blocked);
-            setLoading(false);
-            return;
-          }
-          await supabase.rpc('reset_login_attempts', { target_email: email });
-          navigate('/dashboard');
         }
       }
+    } catch (err: any) {
+      console.error('Auth error:', err);
+      let errMsg = err.message || 'Failed to connect to authentication server.';
+      if (errMsg.includes('fetch')) {
+        errMsg = 'Connection failed. Please check if VITE_SUPABASE_URL is correctly set in Vercel Environment Variables.';
+      }
+      setError(errMsg);
+      if (email) {
+        try { await supabase.rpc('report_failed_login', { target_email: email }); } catch (e) {}
+      }
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   const handleGoogleLogin = async () => {
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/dashboard`,
-      },
-    });
-    if (error) {
-      setError(error.message);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
+        },
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error('Google Login error:', err);
+      setError(err.message || 'Failed to initialize Google login.');
       setLoading(false);
     }
   };
 
   return (
     <div className="min-h-screen bg-[#01040a] text-white flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Background Effects */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
         <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full" />
         <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full" />
@@ -203,7 +208,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             )}
           </div>
 
-          {error && <p className="text-rose-500 text-xs font-mono text-center bg-rose-500/10 py-2 rounded border border-rose-500/20">{error}</p>}
+          {error && <p className="text-rose-500 text-xs font-mono text-center bg-rose-500/10 py-2 rounded border border-rose-500/20 px-2">{error}</p>}
           
           <button
             type="submit"
@@ -256,7 +261,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         
         <div className="mt-8 text-center">
           <p className="text-[10px] text-slate-600 uppercase tracking-widest font-mono">
-            SomnoAI Sleep Lab • Neural Unix Access
+            SomnoAI Digital Sleep Lab • Neural Unix Access
           </p>
         </div>
       </GlassCard>
