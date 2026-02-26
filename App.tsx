@@ -263,10 +263,9 @@ const AppContent = () => {
         </div>
       )}
       <Routes>
-        <Route path="/cn/:page" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-        <Route path="/en/:page" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-        <Route path="/:page" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-        <Route path="/" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
       </Routes>
       <Salesmartly />
     </div>
