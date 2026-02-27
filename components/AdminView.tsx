@@ -30,6 +30,7 @@ interface MarketingData {
   source: string;
   active_users: number;
   clicks: number;
+  sessions: number;
   active1_day_users: number;
   active7_day_users: number;
 }
@@ -73,7 +74,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
   const fetchMarketingData = async () => {
     setLoadingMarketing(true);
     try {
-      const response = await fetch('https://connectors.windsor.ai/all?api_key=aa3204e4ef7d0c86362b3131645f629093b2&date_preset=last_14d&fields=account_id,account_name,achievement_id,active1_day_users,active7_day_users,active_users,clicks,datasource,date,source&select_accounts=googleanalytics4__380909155,searchconsole__sc-domain%3Asleepsomno.com');
+      const response = await fetch('https://connectors.windsor.ai/all?api_key=aa3204e4ef7d0c86362b3131645f629093b2&date_preset=last_14d&fields=account_id,account_name,achievement_id,active1_day_users,active7_day_users,active_users,clicks,sessions,datasource,date,source&select_accounts=googleanalytics4__380909155,searchconsole__sc-domain%3Asleepsomno.com');
       const data = await response.json();
       if (data && data.data) {
         setMarketingData(data.data);
@@ -517,6 +518,15 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                   </GlassCard>
                   <GlassCard className="p-6">
                     <div className="flex items-center gap-3 mb-2">
+                      <Activity size={16} className="text-pink-400" />
+                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Total Sessions</span>
+                    </div>
+                    <p className="text-2xl font-black text-white">
+                      {marketingData.reduce((acc, curr) => acc + (parseInt(curr.sessions as any) || 0), 0)}
+                    </p>
+                  </GlassCard>
+                  <GlassCard className="p-6">
+                    <div className="flex items-center gap-3 mb-2">
                       <Globe size={16} className="text-amber-400" />
                       <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Sources</span>
                     </div>
@@ -541,6 +551,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                         <Legend />
                         <Line type="monotone" dataKey="active_users" stroke="#818cf8" strokeWidth={2} dot={false} name="Active Users" />
                         <Line type="monotone" dataKey="clicks" stroke="#34d399" strokeWidth={2} dot={false} name="Clicks" />
+                        <Line type="monotone" dataKey="sessions" stroke="#f472b6" strokeWidth={2} dot={false} name="Sessions" />
                       </LineChart>
                     </ResponsiveContainer>
                   </div>
@@ -555,6 +566,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                         <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Platform</th>
                         <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Active Users</th>
                         <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Clicks</th>
+                        <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Sessions</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -565,6 +577,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                           <td className="p-4 text-xs font-mono text-slate-500 uppercase">{row.datasource}</td>
                           <td className="p-4 text-sm font-mono text-indigo-400 text-right">{row.active_users || '-'}</td>
                           <td className="p-4 text-sm font-mono text-emerald-400 text-right">{row.clicks || '-'}</td>
+                          <td className="p-4 text-sm font-mono text-pink-400 text-right">{row.sessions || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
