@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase, logAuditLog } from '../services/supabaseService.ts';
 import { emailService } from '../services/emailService.ts';
@@ -6,7 +6,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { Logo } from './Logo.tsx';
 import { Loader2, Mail, Lock, Zap, User, Apple, AlertCircle } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
-import { Turnstile } from '@marsidev/react-turnstile';
+import { Turnstile, type TurnstileInstance } from '@marsidev/react-turnstile';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface AuthProps {
@@ -26,6 +26,14 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const navigate = useNavigate();
+  const turnstileRef = useRef<TurnstileInstance>(null);
+
+  const resetCaptcha = () => {
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+    }
+    setCaptchaToken(null);
+  };
 
   const validateForm = () => {
     const errors: { email?: string; password?: string; fullName?: string } = {};
@@ -102,6 +110,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       if (profile?.is_blocked) {
         setError(t.blocked);
         setLoading(false);
+        resetCaptcha();
         return;
       }
     } catch (e) {
@@ -118,6 +127,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       });
       if (error) {
         setError(error.message);
+        resetCaptcha();
         await supabase.rpc('report_failed_login', { target_email: email });
         
         // Check if user should be blocked after failed attempt
@@ -138,6 +148,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         });
         if (error) {
           setError(error.message);
+          resetCaptcha();
           await supabase.rpc('report_failed_login', { target_email: email });
           
           // Check if user should be blocked after failed attempt
@@ -154,6 +165,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             await supabase.auth.signOut();
             setError(t.blocked);
             setLoading(false);
+            resetCaptcha();
             return;
           }
           await supabase.rpc('reset_login_attempts', { target_email: email });
@@ -161,6 +173,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         }
         if (error) {
           setError(error.message);
+          resetCaptcha();
           await supabase.rpc('report_failed_login', { target_email: email });
           
           // Check if user should be blocked after failed attempt
@@ -172,6 +185,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
              await supabase.auth.signOut();
              setError(t.blocked);
              setLoading(false);
+             resetCaptcha();
              return;
            }
            await supabase.rpc('reset_login_attempts', { target_email: email });
@@ -223,13 +237,13 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         
         <div className="flex p-1 bg-white/5 rounded-xl mb-8">
           <button
-            onClick={() => { setMode('otp'); setFieldErrors({}); setError(null); }}
+            onClick={() => { setMode('otp'); setFieldErrors({}); setError(null); resetCaptcha(); }}
             className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${mode === 'otp' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
           >
             {t.otpMode}
           </button>
           <button
-            onClick={() => { setMode('password'); setFieldErrors({}); setError(null); }}
+            onClick={() => { setMode('password'); setFieldErrors({}); setError(null); resetCaptcha(); }}
             className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${mode === 'password' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
           >
             {t.passwordMode}
@@ -340,6 +354,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
 
           <div className="flex justify-center my-4">
             <Turnstile
+              ref={turnstileRef}
               siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACNi1FM3bbfW_VsI'}
               onSuccess={(token) => setCaptchaToken(token)}
               options={{
@@ -380,7 +395,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           <div className="text-center mt-6">
             <button
               type="button"
-              onClick={() => { setView(view === 'login' ? 'signup' : 'login'); setFieldErrors({}); setError(null); }}
+              onClick={() => { setView(view === 'login' ? 'signup' : 'login'); setFieldErrors({}); setError(null); resetCaptcha(); }}
               className="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
               disabled={loading}
             >

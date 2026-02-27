@@ -192,7 +192,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
           <button onClick={onBack} className="p-2 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
             <ChevronLeft size={20} />
           </button>
-          <h1 className="text-2xl font-black uppercase tracking-widest">{t.title || 'Admin Console'}</h1>
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-widest">{t.title || 'Admin Console'}</h1>
+            {isSuperOwner && <span className="text-[10px] font-bold bg-amber-500/20 text-amber-500 px-2 py-0.5 rounded border border-amber-500/30 uppercase tracking-wider">Super Owner Access</span>}
+            {isOwner && !isSuperOwner && <span className="text-[10px] font-bold bg-indigo-500/20 text-indigo-500 px-2 py-0.5 rounded border border-indigo-500/30 uppercase tracking-wider">Owner Access</span>}
+            {!isOwner && !isSuperOwner && <span className="text-[10px] font-bold bg-slate-500/20 text-slate-500 px-2 py-0.5 rounded border border-slate-500/30 uppercase tracking-wider">Admin Access</span>}
+          </div>
         </div>
         <div className="flex items-center gap-4">
           <button 
@@ -428,48 +433,50 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                </div>
             </div>
 
-            <GlassCard className="p-8 rounded-[2rem] border-white/5 space-y-6">
-              <div className="space-y-4">
-                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Google Analytics Measurement ID</label>
-                <div className="relative group">
-                  <Activity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="G-XXXXXXXXXX"
-                    value={settings.ga_measurement_id || ''}
-                    onChange={(e) => setSettings({...settings, ga_measurement_id: e.target.value})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
-                  />
+            {(isOwner || isSuperOwner) && (
+              <GlassCard className="p-8 rounded-[2rem] border-white/5 space-y-6">
+                <div className="space-y-4">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Google Analytics Measurement ID</label>
+                  <div className="relative group">
+                    <Activity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="G-XXXXXXXXXX"
+                      value={settings.ga_measurement_id || ''}
+                      onChange={(e) => setSettings({...settings, ga_measurement_id: e.target.value})}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-600">Enter your GA4 Measurement ID to enable traffic tracking.</p>
                 </div>
-                <p className="text-[10px] text-slate-600">Enter your GA4 Measurement ID to enable traffic tracking.</p>
-              </div>
 
-              <div className="space-y-4 pt-4 border-t border-white/5">
-                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Google Search Console Verification</label>
-                <div className="relative group">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="HTML Tag Content (e.g., google-site-verification=...)"
-                    value={settings.google_site_verification || ''}
-                    onChange={(e) => setSettings({...settings, google_site_verification: e.target.value})}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
-                  />
+                <div className="space-y-4 pt-4 border-t border-white/5">
+                  <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Google Search Console Verification</label>
+                  <div className="relative group">
+                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                    <input 
+                      type="text" 
+                      placeholder="HTML Tag Content (e.g., google-site-verification=...)"
+                      value={settings.google_site_verification || ''}
+                      onChange={(e) => setSettings({...settings, google_site_verification: e.target.value})}
+                      className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
+                    />
+                  </div>
+                  <p className="text-[10px] text-slate-600">Enter the content of the meta tag for ownership verification.</p>
                 </div>
-                <p className="text-[10px] text-slate-600">Enter the content of the meta tag for ownership verification.</p>
-              </div>
 
-              <div className="pt-8 flex justify-end">
-                <button 
-                  onClick={handleSaveSettings}
-                  disabled={savingSettings}
-                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-2 shadow-lg disabled:opacity-50"
-                >
-                  {savingSettings ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
-                  Save Configuration
-                </button>
-              </div>
-            </GlassCard>
+                <div className="pt-8 flex justify-end">
+                  <button 
+                    onClick={handleSaveSettings}
+                    disabled={savingSettings}
+                    className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-2 shadow-lg disabled:opacity-50"
+                  >
+                    {savingSettings ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                    Save Configuration
+                  </button>
+                </div>
+              </GlassCard>
+            )}
 
             <div className="flex items-center gap-6 pt-8 mb-8">
                <div className="p-5 bg-emerald-500/10 rounded-[2rem] text-emerald-400 border border-emerald-500/20 shadow-xl">
