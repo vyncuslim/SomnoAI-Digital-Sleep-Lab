@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import nodemailer from "nodemailer";
 
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -43,7 +44,10 @@ async function startServer() {
 
   app.use(express.json());
 
+
+
   // Email API Endpoint
+  // ... (existing code)
   app.post("/api/send-email", async (req, res) => {
     const { to, subject, html, notifyAdmin } = req.body;
     
