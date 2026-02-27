@@ -72,14 +72,10 @@ export const Navbar: React.FC<NavbarProps> = ({
           onClick={() => onNavigate(isAuthenticated ? 'dashboard' : '/')}
         >
 
-          <div className="flex flex-col">
-            <span className="text-lg font-black italic tracking-tighter uppercase leading-none text-white group-hover:text-indigo-400 transition-colors">
-              SomnoAI <span className="text-indigo-400 font-medium">Sleep Lab</span>
-            </span>
-            <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1">
-              {isZh ? '您的AI驱动睡眠伴侣' : 'Your AI-Powered Sleep Companion'}
-            </span>
-          </div>
+          <Logo className="group-hover:text-indigo-400 transition-colors" />
+          <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1 ml-11">
+            {isZh ? '您的AI驱动睡眠伴侣' : 'Your AI-Powered Sleep Companion'}
+          </span>
         </m.button>
 
         <div className="hidden xl:flex items-center gap-8">

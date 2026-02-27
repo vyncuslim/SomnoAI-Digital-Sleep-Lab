@@ -157,7 +157,8 @@ export const editImage = async (
 export const startContextualCoach = async (
   history: { role: string; content: string }[], 
   records: SleepRecord[],
-  lang: Language = 'en'
+  lang: Language = 'en',
+  modelName: string = MODEL_PRO
 ) => {
   const ai = getAIClient();
   const bioBrief = records.slice(0, 5).map(r => 
@@ -172,14 +173,20 @@ export const startContextualCoach = async (
       parts: [{ text: msg.content }]
     }));
 
+    const config: any = { 
+      systemInstruction,
+      tools: [{ googleSearch: {} }, { googleMaps: {} }] 
+    };
+
+    // Only add thinking config for Pro models
+    if (modelName.includes('pro')) {
+      config.thinkingConfig = { thinkingBudget: 2000 };
+    }
+
     return await ai.models.generateContentStream({
-      model: MODEL_PRO,
+      model: modelName,
       contents,
-      config: { 
-        systemInstruction,
-        thinkingConfig: { thinkingBudget: 2000 },
-        tools: [{ googleSearch: {} }, { googleMaps: {} }] 
-      }
+      config
     });
   } catch (err: any) {
     console.error("Neural Handshake Failure:", err);

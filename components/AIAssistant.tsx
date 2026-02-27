@@ -34,7 +34,13 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash-latest');
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  const models = [
+    { id: 'gemini-2.5-flash-latest', name: 'Gemini 2.5 Flash (Fast)' },
+    { id: 'gemini-3.1-pro-preview', name: 'Gemini 3.1 Pro (Reasoning)' }
+  ];
 
   useEffect(() => {
     if (messages.length === 0) {
@@ -69,7 +75,8 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
       const stream = await startContextualCoach(
         messages.concat(userMsg).map(m => ({ role: m.role, content: String(m.content) })),
         history.length > 0 ? history : (data ? [data] : []),
-        lang
+        lang,
+        selectedModel
       );
 
       for await (const chunk of stream) {
@@ -110,7 +117,15 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
             <h1 className="text-xl font-black italic text-white uppercase tracking-tighter leading-none">AI Assistant</h1>
             <div className="flex items-center gap-3">
                <NeuralPulse />
-               <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic">Core: ONLINE</span>
+               <select 
+                 value={selectedModel}
+                 onChange={(e) => setSelectedModel(e.target.value)}
+                 className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-400 outline-none focus:border-indigo-500 transition-colors"
+               >
+                 {models.map(m => (
+                   <option key={m.id} value={m.id}>{m.name}</option>
+                 ))}
+               </select>
             </div>
           </div>
         </div>

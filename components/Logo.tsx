@@ -1,17 +1,25 @@
 import React from 'react';
+import { BrainCircuit } from 'lucide-react';
 
 interface LogoProps {
   className?: string;
-  width?: number | string;
-  height?: number | string;
+  showText?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ className = '', width = 240, height = 30 }) => {
+export const Logo: React.FC<LogoProps> = ({ className = '', showText = true }) => {
   return (
-    <svg width={width} height={height} viewBox="0 0 240 30" fill="none" xmlns="http://www.w3.org/2000/svg" className={className}>
-      <text x="0" y="20" fontFamily="'Space Grotesk', sans-serif" fontSize="20" fontWeight="bold" fill="white">
-        SomnoAI <tspan fill="#818cf8">Digital Sleep Lab</tspan>
-      </text>
-    </svg>
+    <div className={`flex items-center gap-3 ${className}`}>
+      <div className="relative">
+        <div className="absolute inset-0 bg-indigo-500 blur-lg opacity-50 rounded-full" />
+        <BrainCircuit className="relative text-indigo-400 w-8 h-8" />
+      </div>
+      {showText && (
+        <div className="flex flex-col">
+          <span className="text-lg font-black italic tracking-tighter uppercase leading-none text-white">
+            SomnoAI <span className="text-indigo-400 font-medium">Sleep Lab</span>
+          </span>
+        </div>
+      )}
+    </div>
   );
 };

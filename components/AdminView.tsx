@@ -27,7 +27,7 @@ interface AdminViewProps {
 }
 
 export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
-  const { isAdmin, loading: authLoading } = useAuth();
+  const { profile, isAdmin, isOwner, isSuperOwner, loading: authLoading } = useAuth();
   const t = getTranslation(lang, 'admin');
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
   const [users, setUsers] = useState<any[]>([]);
@@ -44,6 +44,43 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
       fetchData();
     }
   }, [isAdmin, authLoading]);
+
+  const canManage = (targetUser: any) => {
+    if (!profile) return false;
+    
+    // Self management is usually allowed but here we focus on admin actions
+    if (profile.id === targetUser.id) return false;
+
+    const myRole = isSuperOwner ? 'super_owner' : (isOwner ? 'owner' : (isAdmin ? 'admin' : 'user'));
+    const targetRole = targetUser.is_super_owner ? 'super_owner' : (targetUser.role || 'user');
+
+    if (myRole === 'super_owner') {
+      // Super owner can manage everyone except other super owners (optional constraint, but safer)
+      return targetRole !== 'super_owner'; 
+    }
+    if (myRole === 'owner') {
+      // Owner can manage user and admin, but NOT super_owner or other owners (usually)
+      return ['user', 'admin'].includes(targetRole);
+    }
+    if (myRole === 'admin') {
+      // Admin can only manage user
+      return targetRole === 'user';
+    }
+    return false;
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      if (newRole === 'super_owner') {
+        await supabase.from('profiles').update({ role: 'owner', is_super_owner: true }).eq('id', userId);
+      } else {
+        await supabase.from('profiles').update({ role: newRole, is_super_owner: false }).eq('id', userId);
+      }
+      fetchData();
+    } catch (error) {
+      console.error("Failed to update role:", error);
+    }
+  };
 
   if (authLoading) return <div className="min-h-screen bg-[#01040a] flex items-center justify-center text-white">Authenticating...</div>;
   if (!isAdmin) return <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white p-6 text-center">
@@ -163,17 +200,16 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                   </div>
                   <div className="flex items-center gap-4">
                     <select 
-                      value={user.role || 'user'}
-                      onChange={(e) => {
-                        const newRole = e.target.value;
-                        adminApi.updateUserRole(user.id, newRole).then(() => fetchData());
-                      }}
-                      className="bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-xs font-bold uppercase tracking-wider outline-none focus:border-indigo-500 transition-colors"
+                      value={user.is_super_owner ? 'super_owner' : (user.role || 'user')}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      disabled={!canManage(user)}
+                      className={`bg-white/5 border border-white/10 rounded-lg px-3 py-1 text-xs font-bold uppercase tracking-wider outline-none focus:border-indigo-500 transition-colors ${!canManage(user) ? 'opacity-50 cursor-not-allowed' : ''}`}
                     >
                       <option value="user">User</option>
                       <option value="editor">Editor</option>
                       <option value="admin">Admin</option>
                       <option value="owner">Owner</option>
+                      {isSuperOwner && <option value="super_owner">Super Owner</option>}
                     </select>
                     <button 
                       onClick={async () => {
@@ -186,7 +222,8 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                         }
                         fetchData();
                       }}
-                      className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors ${user.is_blocked ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30' : 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30'}`}
+                      disabled={!canManage(user)}
+                      className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors ${user.is_blocked ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30' : 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30'} ${!canManage(user) ? 'opacity-50 cursor-not-allowed' : ''}`}
                       title={user.is_blocked ? "Unblock User" : "Block User"}
                     >
                       {user.is_blocked ? 'Unblock' : 'Block'}

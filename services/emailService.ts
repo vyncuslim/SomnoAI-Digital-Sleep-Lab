@@ -86,12 +86,11 @@ export const emailService = {
   },
 
   sendSystemEmail: async (to: string, subject: string, html: string, secret?: string, isHighValueEvent?: boolean) => {
-    const finalSecret = secret || INTERNAL_LAB_KEY;
     try {
-      const response = await fetch('/api/send-system-email', {
+      const response = await fetch('/api/send-email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to, subject, html, secret: finalSecret, isHighValueEvent }),
+        body: JSON.stringify({ to, subject, html }),
       });
       const data = await response.json();
       if (!response.ok) return { success: false, error: data.error };
@@ -99,5 +98,33 @@ export const emailService = {
     } catch (e: any) {
       return { success: false, error: e.message };
     }
+  },
+
+  sendBlockNotification: async (email: string) => {
+    const subject = "Account Security Alert: Access Blocked";
+    const html = `
+      <p>Your account <strong>${email}</strong> has been temporarily blocked due to 5 consecutive failed login attempts.</p>
+      <p>If this was you, please wait or contact support.</p>
+      <p>If this was not you, your account may be under attack.</p>
+      <p style="margin-top: 20px; font-weight: bold;">SomnoAI Digital Sleep Lab Security Team</p>
+    `;
+    
+    // Send to user
+    await emailService.sendSystemEmail(email, subject, html);
+    
+    // Send to admin (using notifyAdmin flag if supported, or just relying on server logic if I added it)
+    // Since I added notifyAdmin to server.ts, I can use it.
+    // But sendSystemEmail above doesn't pass notifyAdmin.
+    // Let's update sendSystemEmail to accept options or just call fetch directly here for admin.
+    
+    await fetch('/api/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        notifyAdmin: true,
+        subject: `Security Alert: User Blocked (${email})`,
+        html: `<p>User <strong>${email}</strong> has been blocked due to excessive failed login attempts.</p><p>Time: ${new Date().toLocaleString()}</p>`
+      }),
+    });
   }
 };
