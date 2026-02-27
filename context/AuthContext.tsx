@@ -91,7 +91,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (currentProfile?.is_blocked) {
         setIsBlocked(true);
-        await supabase.auth.signOut();
+        // Don't await signOut here to avoid immediate state reset in onAuthStateChange
+        supabase.auth.signOut().then(() => {
+          // We want to keep isBlocked as true so the App can show BlockedView
+          // But we need to make sure we don't clear it in the listener
+        });
         setProfile(null);
         setLoading(false);
         isSyncing.current = false;
@@ -123,7 +127,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else if (event === 'SIGNED_OUT') {
         setProfile(null);
         setLoading(false);
-        setIsBlocked(false);
+        // Only reset isBlocked if it wasn't already true (which means it was a manual logout)
+        // If it's true, it means the user was just blocked and we want to keep showing the BlockedView
+        setIsBlocked(prev => prev); 
         lastLoggedSessionId.current = null;
       }
     });

@@ -429,10 +429,24 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           </div>
         </form>
         
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-2">
           <p className="text-[10px] text-slate-600 uppercase tracking-widest font-mono">
             SomnoAI Digital Sleep Lab • Neural Unix Access
           </p>
+          <div className="flex justify-center gap-4">
+            <button 
+              onClick={() => navigate('/terms')}
+              className="text-[9px] text-slate-500 hover:text-indigo-400 uppercase tracking-widest font-bold transition-colors"
+            >
+              Terms of Service
+            </button>
+            <button 
+              onClick={() => navigate('/privacy')}
+              className="text-[9px] text-slate-500 hover:text-indigo-400 uppercase tracking-widest font-bold transition-colors"
+            >
+              Privacy Policy
+            </button>
+          </div>
         </div>
       </GlassCard>
     </div>
