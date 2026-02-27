@@ -117,7 +117,13 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                   <li>Unauthorized access or attempted access to administrative areas ("Honeypot" protection).</li>
                   <li>Actions that may harm the laboratory infrastructure or other users.</li>
                 </ul>
-                <p className="italic text-slate-400 mt-4">If your account is blocked, you may contact admin@sleepsomno.com for clarification.</p>
+                <p className="italic text-slate-400 mt-4">
+                  If your account is blocked, you will see the following notice: 
+                  <br/>
+                  <span className="text-rose-400 font-bold">"你违反了条款。如有问题，请联系 admin@sleepsomno.com"</span>
+                  <br/>
+                  <span className="text-rose-400 font-bold">"You have violated the terms. If you have any questions, please contact admin@sleepsomno.com"</span>
+                </p>
               </div>
             </section>
           </>
