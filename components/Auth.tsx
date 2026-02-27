@@ -4,6 +4,7 @@ import { supabase } from '../services/supabaseService.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { Loader2, Mail, Lock, Zap, User, Apple } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 interface AuthProps {
   lang?: Language;
@@ -19,6 +20,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
   const handleRequestToken = async (e: React.FormEvent) => {
@@ -30,6 +32,11 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
 
     if (view === 'signup' && !fullName) {
       setError(lang === 'zh' ? '请输入您的全名。' : 'Please enter your full name.');
+      return;
+    }
+
+    if (!captchaToken) {
+      setError(lang === 'zh' ? '请完成人机验证。' : 'Please complete the Cloudflare verification.');
       return;
     }
 
@@ -52,7 +59,8 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       const { error } = await (supabase.auth as any).signInWithOtp({ 
         email,
         options: {
-          data: { full_name: fullName }
+          data: { full_name: fullName },
+          captchaToken
         }
       });
       if (error) {
@@ -74,7 +82,8 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           email, 
           password,
           options: {
-            data: { full_name: fullName }
+            data: { full_name: fullName },
+            captchaToken
           }
         });
         if (error) {
@@ -84,7 +93,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup`);
         }
       } else {
-        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password });
+        const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } } as any);
 
           if (signInData.user) {
             const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', signInData.user.id).single();
@@ -207,12 +216,22 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             )}
           </div>
 
+          <div className="flex justify-center my-4">
+            <Turnstile
+              siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACNi1FM3bbfW_VsI'}
+              onSuccess={(token) => setCaptchaToken(token)}
+              options={{
+                theme: 'dark',
+              }}
+            />
+          </div>
+
           {error && <p className="text-rose-500 text-xs font-mono text-center bg-rose-500/10 py-2 rounded border border-rose-500/20">{error}</p>}
           
           <button
             type="submit"
-            disabled={loading}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] group"
+            disabled={loading || !captchaToken}
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] group"
           >
             {loading ? <Loader2 className="animate-spin" /> : (
               <>

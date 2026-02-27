@@ -180,7 +180,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                         const newStatus = !user.is_blocked;
                         await supabase.from('profiles').update({ is_blocked: newStatus }).eq('id', user.id);
                         if (newStatus) {
-                          await supabase.rpc('report_failed_login', { target_email: user.email });
+                          await supabase.rpc('block_user', { target_email: user.email });
                         } else {
                           await supabase.rpc('reset_login_attempts', { target_email: user.email });
                         }
