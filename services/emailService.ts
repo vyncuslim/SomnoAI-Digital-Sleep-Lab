@@ -105,7 +105,7 @@ export const emailService = {
     const html = `
       <div style="margin-bottom: 20px;">
         <p style="font-size: 16px; font-weight: bold; color: #ef4444;">[Security Protocol Activated]</p>
-        <p>Your account <strong>${email}</strong> has been blocked due to multiple failed login attempts or policy violations.</p>
+        <p>Your account <strong>${email}</strong> has been blocked due to multiple failed login attempts, unauthorized access to restricted areas, or policy violations.</p>
         <p style="background: #fee2e2; padding: 15px; border-radius: 8px; color: #b91c1c; font-weight: bold;">
           你违反了条款。如有问题，请联系 admin@sleepsomno.com
         </p>
@@ -127,9 +127,9 @@ export const emailService = {
         subject: `Security Alert: User Blocked (${email})`,
         html: `
           <h2 style="color: #ef4444;">User Blocked</h2>
-          <p>User <strong>${email}</strong> has been blocked due to excessive failed login attempts or policy violations.</p>
+          <p>User <strong>${email}</strong> has been blocked due to excessive failed login attempts, unauthorized admin access, or policy violations.</p>
           <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
-          <p><strong>Action:</strong> Account access has been restricted.</p>
+          <p><strong>Action:</strong> Account access has been restricted immediately.</p>
         `
       }),
     });

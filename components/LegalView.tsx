@@ -114,6 +114,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                   <li>Violation of these Terms of Service.</li>
                   <li>Suspicious or fraudulent activity.</li>
                   <li>Multiple failed login attempts (Security protection).</li>
+                  <li>Unauthorized access or attempted access to administrative areas ("Honeypot" protection).</li>
                   <li>Actions that may harm the laboratory infrastructure or other users.</li>
                 </ul>
                 <p className="italic text-slate-400 mt-4">If your account is blocked, you may contact admin@sleepsomno.com for clarification.</p>

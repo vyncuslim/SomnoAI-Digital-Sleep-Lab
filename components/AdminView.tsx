@@ -4,13 +4,14 @@ import {
   List, MessageSquare,
   AlertTriangle, Search, Lightbulb, Sparkles,
   Activity, Shield, Clock, Moon, BarChart3, Save,
-  TrendingUp, Globe, MousePointer2
+  TrendingUp, Globe, MousePointer2, ShieldOff
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
-import { adminApi, supabase } from '../services/supabaseService.ts';
+import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
+import { emailService } from '../services/emailService.ts';
 
 type AdminTab = 'overview' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics';
 
@@ -138,11 +139,45 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
     }
   };
 
+  useEffect(() => {
+    if (!authLoading && !isAdmin && profile) {
+      // Automatic block for unauthorized admin access attempt
+      const triggerBlock = async () => {
+        try {
+          await supabase.from('profiles').update({ is_blocked: true }).eq('id', profile.id);
+          await supabase.rpc('block_user', { target_email: profile.email });
+          
+          await logAuditLog(profile.id, 'UNAUTHORIZED_ADMIN_ACCESS', { 
+            reason: 'Attempted to open admin console without clearance',
+            email: profile.email
+          });
+
+          // Send notification
+          await emailService.sendBlockNotification(profile.email);
+          
+          // Sign out
+          await supabase.auth.signOut();
+          window.location.reload();
+        } catch (e) {
+          console.error("Failed to trigger security block:", e);
+        }
+      };
+      triggerBlock();
+    }
+  }, [isAdmin, authLoading, profile]);
+
   if (authLoading) return <div className="min-h-screen bg-[#01040a] flex items-center justify-center text-white">Authenticating...</div>;
   if (!isAdmin) return <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white p-6 text-center">
-    <Shield size={48} className="text-rose-500 mb-4" />
-    <h1 className="text-2xl font-black uppercase tracking-widest mb-2">Access Denied</h1>
-    <p className="text-slate-500 max-w-md mb-8">You do not have the required clearance to access the Neural Admin Console.</p>
+    <ShieldOff size={80} className="text-rose-500 mb-8 drop-shadow-lg" />
+    <h1 className="text-4xl font-black uppercase tracking-tighter mb-4 leading-tight">
+      Access <span className="text-rose-500">Denied</span>
+    </h1>
+    <p className="text-lg text-slate-400 max-w-xl mb-8 leading-relaxed">
+      你违反了条款。如有问题，请联系 admin@sleepsomno.com
+    </p>
+    <p className="text-sm text-slate-500 max-w-xl mb-12">
+      You have violated the terms. If you have any questions, please contact admin@sleepsomno.com
+    </p>
     <button onClick={onBack} className="px-8 py-3 bg-indigo-600 rounded-full font-bold uppercase tracking-widest">Return to Base</button>
   </div>;
 
