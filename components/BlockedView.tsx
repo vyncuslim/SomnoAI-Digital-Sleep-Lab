@@ -15,11 +15,10 @@ export const BlockedView: React.FC = () => {
         Access <span className="text-rose-500">Denied</span>
       </h1>
       <p className="text-lg text-slate-400 max-w-xl mb-8 leading-relaxed">
-        Your account has been blocked due to suspicious activity or policy violations.
-        You will not be able to access the application.
+        你违反了条款。如有问题，请联系 admin@sleepsomno.com
       </p>
       <p className="text-sm text-slate-500 max-w-xl mb-12">
-        If you believe this is an error, please contact our support team at:
+        You have violated the terms. If you have any questions, please contact:
       </p>
       <a
         href="mailto:admin@sleepsomno.com"

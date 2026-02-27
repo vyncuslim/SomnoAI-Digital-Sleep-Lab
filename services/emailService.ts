@@ -103,27 +103,34 @@ export const emailService = {
   sendBlockNotification: async (email: string) => {
     const subject = "Account Security Alert: Access Blocked";
     const html = `
-      <p>Your account <strong>${email}</strong> has been temporarily blocked due to 5 consecutive failed login attempts.</p>
-      <p>If this was you, please wait or contact support.</p>
-      <p>If this was not you, your account may be under attack.</p>
+      <div style="margin-bottom: 20px;">
+        <p style="font-size: 16px; font-weight: bold; color: #ef4444;">[Security Protocol Activated]</p>
+        <p>Your account <strong>${email}</strong> has been blocked due to multiple failed login attempts or policy violations.</p>
+        <p style="background: #fee2e2; padding: 15px; border-radius: 8px; color: #b91c1c; font-weight: bold;">
+          你违反了条款。如有问题，请联系 admin@sleepsomno.com
+        </p>
+        <p>You have violated the terms. If you have any questions, please contact admin@sleepsomno.com</p>
+      </div>
+      <p>If this was not you, your account may be under attack. Please secure your email address immediately.</p>
       <p style="margin-top: 20px; font-weight: bold;">SomnoAI Digital Sleep Lab Security Team</p>
     `;
     
     // Send to user
     await emailService.sendSystemEmail(email, subject, html);
     
-    // Send to admin (using notifyAdmin flag if supported, or just relying on server logic if I added it)
-    // Since I added notifyAdmin to server.ts, I can use it.
-    // But sendSystemEmail above doesn't pass notifyAdmin.
-    // Let's update sendSystemEmail to accept options or just call fetch directly here for admin.
-    
+    // Send to admin
     await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         notifyAdmin: true,
         subject: `Security Alert: User Blocked (${email})`,
-        html: `<p>User <strong>${email}</strong> has been blocked due to excessive failed login attempts.</p><p>Time: ${new Date().toLocaleString()}</p>`
+        html: `
+          <h2 style="color: #ef4444;">User Blocked</h2>
+          <p>User <strong>${email}</strong> has been blocked due to excessive failed login attempts or policy violations.</p>
+          <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
+          <p><strong>Action:</strong> Account access has been restricted.</p>
+        `
       }),
     });
   }

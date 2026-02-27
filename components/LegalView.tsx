@@ -101,6 +101,23 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 </div>
                 <p>You confirm you understand the scopes accessed from Health Connect and agree to the data processing.</p>
               </div>
+
+              <div className="space-y-6">
+                <div className="flex items-center gap-3 text-white border-b border-white/5 pb-4">
+                  <div className="p-2.5 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/20">
+                    <ShieldAlert size={20} />
+                  </div>
+                  <h2 className="text-xl font-bold italic tracking-tight">Account Blocking Policy</h2>
+                </div>
+                <p>We reserve the right to block or terminate access to the website and services at our sole discretion, without prior notice, for any reason, including but not limited to:</p>
+                <ul className="list-disc list-inside space-y-2 ml-4">
+                  <li>Violation of these Terms of Service.</li>
+                  <li>Suspicious or fraudulent activity.</li>
+                  <li>Multiple failed login attempts (Security protection).</li>
+                  <li>Actions that may harm the laboratory infrastructure or other users.</li>
+                </ul>
+                <p className="italic text-slate-400 mt-4">If your account is blocked, you may contact admin@sleepsomno.com for clarification.</p>
+              </div>
             </section>
           </>
         )}
