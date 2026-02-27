@@ -98,7 +98,7 @@ export const translations: Record<Language, any> = {
     },
     landing: {
       ctaSecondary: 'Learn More',
-      heroTitle: 'DIGITAL SLEEP LAB',
+      heroTitle: 'SOMNOAI DIGITAL SLEEP LAB',
       heroSubtitle: 'Integrating physiological monitoring, AI deep insights, and health recommendations to provide users with a comprehensive digital sleep laboratory experience.',
       ctaPrimary: 'Start Analysis',
       stats: {
@@ -275,7 +275,7 @@ export const translations: Record<Language, any> = {
     },
     landing: {
       ctaSecondary: '了解更多',
-      heroTitle: '数字睡眠实验室',
+      heroTitle: 'SomnoAI 数字睡眠实验室',
       heroSubtitle: '整合生理监测、AI 深度洞察和健康建议，为用户提供全面的数字睡眠实验室体验。',
       ctaPrimary: '开始分析',
       stats: {

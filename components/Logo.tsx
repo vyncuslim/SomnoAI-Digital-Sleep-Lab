@@ -16,7 +16,7 @@ export const Logo: React.FC<LogoProps> = ({ className = '', showText = true }) =
       {showText && (
         <div className="flex flex-col">
           <span className="text-lg font-black italic tracking-tighter uppercase leading-none text-white">
-            SomnoAI <span className="text-indigo-400 font-medium">Sleep Lab</span>
+            SomnoAI <span className="text-indigo-400 font-medium">Digital Sleep Lab</span>
           </span>
         </div>
       )}
