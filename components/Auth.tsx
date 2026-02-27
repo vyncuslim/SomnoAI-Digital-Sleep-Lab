@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { supabase, logAuditLog } from '../services/supabaseService.ts';
 import { emailService } from '../services/emailService.ts';
 import { GlassCard } from './GlassCard.tsx';
+import { Logo } from './Logo.tsx';
 import { Loader2, Mail, Lock, Zap, User, Apple, AlertCircle } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { Turnstile } from '@marsidev/react-turnstile';
@@ -215,8 +216,8 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       </div>
 
       <GlassCard className="p-8 w-full max-w-md border-white/10 relative z-10 backdrop-blur-xl">
-        <div className="text-center mb-10">
-          <h2 className="text-3xl font-black uppercase tracking-tighter mb-2">SomnoAI <span className="text-indigo-500">Digital Sleep Lab</span></h2>
+        <div className="text-center mb-10 flex flex-col items-center">
+          <Logo className="mb-4" />
           <p className="text-slate-500 text-[10px] uppercase tracking-[0.3em] font-bold">{view === 'login' ? t.loginTitle : t.signupTitle}</p>
         </div>
         

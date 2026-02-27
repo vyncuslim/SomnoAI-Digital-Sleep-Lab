@@ -117,15 +117,25 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
             <h1 className="text-xl font-black italic text-white uppercase tracking-tighter leading-none">AI Assistant</h1>
             <div className="flex items-center gap-3">
                <NeuralPulse />
-               <select 
-                 value={selectedModel}
-                 onChange={(e) => setSelectedModel(e.target.value)}
-                 className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-black uppercase tracking-wider text-indigo-400 outline-none focus:border-indigo-500 transition-colors"
-               >
-                 {models.map(m => (
-                   <option key={m.id} value={m.id}>{m.name}</option>
-                 ))}
-               </select>
+               <div className="relative group/model">
+                 <select 
+                   value={selectedModel}
+                   onChange={(e) => setSelectedModel(e.target.value)}
+                   className="appearance-none bg-black/40 border border-white/10 rounded-lg pl-3 pr-8 py-1.5 text-[10px] font-black uppercase tracking-wider text-indigo-400 outline-none focus:border-indigo-500 transition-all cursor-pointer hover:bg-white/5"
+                 >
+                   {models.map(m => (
+                     <option key={m.id} value={m.id}>{m.name}</option>
+                   ))}
+                 </select>
+                 <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">
+                   <ChevronRight size={10} className="text-indigo-500 rotate-90" />
+                 </div>
+                 {selectedModel.includes('pro') && (
+                   <div className="absolute -top-2 -right-2 bg-indigo-500 text-white text-[8px] font-black px-1.5 rounded-full shadow-lg shadow-indigo-500/50 animate-pulse">
+                     PRO
+                   </div>
+                 )}
+               </div>
             </div>
           </div>
         </div>
