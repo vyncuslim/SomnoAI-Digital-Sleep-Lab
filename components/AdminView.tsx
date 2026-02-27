@@ -73,7 +73,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
   const fetchMarketingData = async () => {
     setLoadingMarketing(true);
     try {
-      const response = await fetch('https://connectors.windsor.ai/all?api_key=aa3204e4ef7d0c86362b3131645f629093b2&date_preset=last_14d&fields=account_id,account_name,achievement_id,active1_day_users,active7_day_users,active_users,clicks,datasource,date,source&select_accounts=googleanalytics4__522386153,searchconsole__sc-domain%3Asleepsomno.com');
+      const response = await fetch('https://connectors.windsor.ai/all?api_key=aa3204e4ef7d0c86362b3131645f629093b2&date_preset=last_14d&fields=account_id,account_name,achievement_id,active1_day_users,active7_day_users,active_users,clicks,datasource,date,source&select_accounts=googleanalytics4__380909155,searchconsole__sc-domain%3Asleepsomno.com');
       const data = await response.json();
       if (data && data.data) {
         setMarketingData(data.data);
