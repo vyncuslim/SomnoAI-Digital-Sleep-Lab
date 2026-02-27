@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../services/supabaseService.ts';
 import { GlassCard } from './GlassCard.tsx';
-import { Loader2, Mail, Lock, Zap, User, Apple } from 'lucide-react';
+import { Loader2, Mail, Lock, Zap, User, Apple, AlertCircle } from 'lucide-react';
 import { Language, translations } from '../services/i18n.ts';
 import { Turnstile } from '@marsidev/react-turnstile';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface AuthProps {
   lang?: Language;
@@ -20,34 +21,59 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
-  const handleRequestToken = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const validateForm = () => {
+    const errors: { email?: string; password?: string; fullName?: string } = {};
+    let isValid = true;
+
     if (!email) {
-      setError(lang === 'zh' ? '请输入您的电子邮件地址。' : 'Please enter your email address.');
-      return;
+      errors.email = t.emailRequired || 'Email is required';
+      isValid = false;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      errors.email = t.emailInvalid || 'Invalid email format';
+      isValid = false;
     }
 
     if (view === 'signup' && !fullName) {
-      setError(lang === 'zh' ? '请输入您的全名。' : 'Please enter your full name.');
-      return;
+      errors.fullName = t.nameRequired || 'Full name is required';
+      isValid = false;
     }
 
+    if (mode === 'password') {
+      if (!password) {
+        errors.password = t.passwordRequired || 'Password is required';
+        isValid = false;
+      } else if (password.length < 6) {
+        errors.password = t.passwordTooShort || 'Password must be at least 6 characters';
+        isValid = false;
+      }
+    }
+
+    setFieldErrors(errors);
+    return isValid;
+  };
+
+  const handleRequestToken = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) return;
+
     if (!captchaToken) {
-      setError(lang === 'zh' ? '请完成人机验证。' : 'Please complete the Cloudflare verification.');
+      setError(t.captchaRequired || 'Please complete the verification');
       return;
     }
 
     setLoading(true);
     setError(null);
 
-    // Check if user is already blocked before attempting login
     try {
+      // Check if user is already blocked before attempting login
       const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
       if (profile?.is_blocked) {
-        setError(lang === 'zh' ? "您已被封禁。请联系 admin@sleepsomno.com" : "You have been banned. Please contact admin@sleepsomno.com");
+        setError(t.blocked);
         setLoading(false);
         return;
       }
@@ -71,12 +97,6 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       }
     } else {
       // Password mode
-      if (!password) {
-        setError(lang === 'zh' ? '请输入您的密码。' : 'Please enter your password.');
-        setLoading(false);
-        return;
-      }
-      
       if (view === 'signup') {
         const { error } = await supabase.auth.signUp({ 
           email, 
@@ -95,31 +115,31 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       } else {
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } } as any);
 
-          if (signInData.user) {
-            const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', signInData.user.id).single();
-            if (profile?.is_blocked) {
-              await supabase.auth.signOut();
-              setError(lang === 'zh' ? "您已被封禁。请联系 admin@sleepsomno.com" : "You have been banned. Please contact admin@sleepsomno.com");
-              setLoading(false);
-              return;
-            }
-            await supabase.rpc('reset_login_attempts', { target_email: email });
-            navigate('/dashboard');
-          }
-        if (error) {
-          setError(error.message);
-          await supabase.rpc('report_failed_login', { target_email: email });
-        } else {
-          // Check if blocked after successful login just in case
-          const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
+        if (signInData.user) {
+          const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', signInData.user.id).single();
           if (profile?.is_blocked) {
             await supabase.auth.signOut();
-            setError(lang === 'zh' ? "您已被封禁。请联系 admin@sleepsomno.com" : "You have been banned. Please contact admin@sleepsomno.com");
+            setError(t.blocked);
             setLoading(false);
             return;
           }
           await supabase.rpc('reset_login_attempts', { target_email: email });
           navigate('/dashboard');
+        }
+        if (error) {
+          setError(error.message);
+          await supabase.rpc('report_failed_login', { target_email: email });
+        } else {
+           // Check if blocked after successful login just in case
+           const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
+           if (profile?.is_blocked) {
+             await supabase.auth.signOut();
+             setError(t.blocked);
+             setLoading(false);
+             return;
+           }
+           await supabase.rpc('reset_login_attempts', { target_email: email });
+           navigate('/dashboard');
         }
       }
     }
@@ -145,6 +165,12 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
     }
   };
 
+  const inputVariants = {
+    hidden: { opacity: 0, x: -20 },
+    visible: { opacity: 1, x: 0 },
+    exit: { opacity: 0, x: 20 }
+  };
+
   return (
     <div className="min-h-screen bg-[#01040a] text-white flex items-center justify-center p-6 relative overflow-hidden">
       {/* Background Effects */}
@@ -161,13 +187,13 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         
         <div className="flex p-1 bg-white/5 rounded-xl mb-8">
           <button
-            onClick={() => setMode('otp')}
+            onClick={() => { setMode('otp'); setFieldErrors({}); setError(null); }}
             className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${mode === 'otp' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
           >
             {t.otpMode}
           </button>
           <button
-            onClick={() => setMode('password')}
+            onClick={() => { setMode('password'); setFieldErrors({}); setError(null); }}
             className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${mode === 'password' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
           >
             {t.passwordMode}
@@ -175,46 +201,106 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         </div>
 
         <form onSubmit={handleRequestToken} className="space-y-4">
-          <div className="space-y-4">
-            {view === 'signup' && (
-              <div className="relative group">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
+          <AnimatePresence mode="wait">
+            <div className="space-y-4">
+              {view === 'signup' && (
+                <motion.div 
+                  key="fullname"
+                  variants={inputVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="relative group"
+                >
+                  <User className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.fullName ? 'text-rose-500' : 'text-slate-500 group-focus-within:text-indigo-400'}`} size={18} />
+                  <input
+                    type="text"
+                    placeholder={t.fullName}
+                    value={fullName}
+                    onChange={(e) => { setFullName(e.target.value); if (fieldErrors.fullName) setFieldErrors({...fieldErrors, fullName: undefined}); }}
+                    className={`w-full bg-black/40 border rounded-xl pl-12 pr-4 py-4 outline-none transition-colors text-sm font-medium placeholder-slate-600 ${fieldErrors.fullName ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-indigo-500'}`}
+                    disabled={loading}
+                  />
+                  <AnimatePresence>
+                    {fieldErrors.fullName && (
+                      <motion.p 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="text-rose-500 text-[10px] font-mono mt-1 ml-1 flex items-center gap-1"
+                      >
+                        <AlertCircle size={10} /> {fieldErrors.fullName}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+              
+              <motion.div 
+                key="email"
+                variants={inputVariants}
+                initial="hidden"
+                animate="visible"
+                exit="exit"
+                className="relative group"
+              >
+                <Mail className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.email ? 'text-rose-500' : 'text-slate-500 group-focus-within:text-indigo-400'}`} size={18} />
                 <input
-                  type="text"
-                  placeholder={t.fullName}
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 focus:border-indigo-500 outline-none transition-colors text-sm font-medium placeholder-slate-600"
-                  required
+                  type="email"
+                  placeholder={t.email}
+                  value={email}
+                  onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email) setFieldErrors({...fieldErrors, email: undefined}); }}
+                  className={`w-full bg-black/40 border rounded-xl pl-12 pr-4 py-4 outline-none transition-colors text-sm font-medium placeholder-slate-600 ${fieldErrors.email ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-indigo-500'}`}
+                  disabled={loading}
                 />
-              </div>
-            )}
-            <div className="relative group">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
-              <input
-                type="email"
-                placeholder={t.email}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 focus:border-indigo-500 outline-none transition-colors text-sm font-medium placeholder-slate-600"
-                required
-              />
+                <AnimatePresence>
+                  {fieldErrors.email && (
+                    <motion.p 
+                      initial={{ opacity: 0, y: -10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="text-rose-500 text-[10px] font-mono mt-1 ml-1 flex items-center gap-1"
+                    >
+                      <AlertCircle size={10} /> {fieldErrors.email}
+                    </motion.p>
+                  )}
+                </AnimatePresence>
+              </motion.div>
+              
+              {mode === 'password' && (
+                <motion.div 
+                  key="password"
+                  variants={inputVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="relative group"
+                >
+                  <Lock className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${fieldErrors.password ? 'text-rose-500' : 'text-slate-500 group-focus-within:text-indigo-400'}`} size={18} />
+                  <input
+                    type="password"
+                    placeholder={t.password}
+                    value={password}
+                    onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password) setFieldErrors({...fieldErrors, password: undefined}); }}
+                    className={`w-full bg-black/40 border rounded-xl pl-12 pr-4 py-4 outline-none transition-colors text-sm font-medium placeholder-slate-600 ${fieldErrors.password ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-indigo-500'}`}
+                    disabled={loading}
+                  />
+                  <AnimatePresence>
+                    {fieldErrors.password && (
+                      <motion.p 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="text-rose-500 text-[10px] font-mono mt-1 ml-1 flex items-center gap-1"
+                      >
+                        <AlertCircle size={10} /> {fieldErrors.password}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
             </div>
-            
-            {mode === 'password' && (
-              <div className="relative group">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors" size={18} />
-                <input
-                  type="password"
-                  placeholder={t.password}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 focus:border-indigo-500 outline-none transition-colors text-sm font-medium placeholder-slate-600"
-                  required
-                />
-              </div>
-            )}
-          </div>
+          </AnimatePresence>
 
           <div className="flex justify-center my-4">
             <Turnstile
@@ -226,26 +312,41 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             />
           </div>
 
-          {error && <p className="text-rose-500 text-xs font-mono text-center bg-rose-500/10 py-2 rounded border border-rose-500/20">{error}</p>}
+          <AnimatePresence>
+            {error && (
+              <motion.div 
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="text-rose-500 text-xs font-mono text-center bg-rose-500/10 py-2 rounded border border-rose-500/20 overflow-hidden"
+              >
+                {error}
+              </motion.div>
+            )}
+          </AnimatePresence>
           
           <button
             type="submit"
             disabled={loading || !captchaToken}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] group"
+            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] group relative overflow-hidden"
           >
-            {loading ? <Loader2 className="animate-spin" /> : (
-              <>
-                <Zap size={16} className="group-hover:text-yellow-300 transition-colors" />
-                {view === 'login' ? t.loginBtn : t.signupBtn}
-              </>
+            {loading && (
+              <div className="absolute inset-0 bg-indigo-700/50 flex items-center justify-center z-10">
+                 <Loader2 className="animate-spin" />
+              </div>
             )}
+            <span className={loading ? 'opacity-0' : 'opacity-100 flex items-center gap-2'}>
+              <Zap size={16} className="group-hover:text-yellow-300 transition-colors" />
+              {view === 'login' ? t.loginBtn : t.signupBtn}
+            </span>
           </button>
           
           <div className="text-center mt-6">
             <button
               type="button"
-              onClick={() => setView(view === 'login' ? 'signup' : 'login')}
+              onClick={() => { setView(view === 'login' ? 'signup' : 'login'); setFieldErrors({}); setError(null); }}
               className="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
+              disabled={loading}
             >
               {view === 'login' ? t.toSignup : t.toLogin}
             </button>
@@ -256,7 +357,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-3 border border-white/5"
+              className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-3 border border-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
