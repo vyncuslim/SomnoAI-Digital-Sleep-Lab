@@ -164,7 +164,7 @@ export const startContextualCoach = async (
     `${r.date}: Score ${r.score}, Deep ${r.deepRatio}%`
   ).join(' | ');
 
-  const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。语气：高度专业、冷静、具有预见性。回复语言：${lang}。`;
+  const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。语气：高度专业、冷静、具有预见性。回复语言：English。`;
 
   try {
     const contents = history.map(msg => ({

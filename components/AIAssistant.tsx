@@ -107,7 +107,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
             <div className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-emerald-500 rounded-full border border-[#01040a]" />
           </div>
           <div className="space-y-0.5">
-            <h1 className="text-xl font-black italic text-white uppercase tracking-tighter leading-none">AI Synthesis</h1>
+            <h1 className="text-xl font-black italic text-white uppercase tracking-tighter leading-none">AI Assistant</h1>
             <div className="flex items-center gap-3">
                <NeuralPulse />
                <span className="text-[8px] font-black text-slate-600 uppercase tracking-widest italic">Core: ONLINE</span>

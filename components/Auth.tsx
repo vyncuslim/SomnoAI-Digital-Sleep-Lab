@@ -40,7 +40,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
     try {
       const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
       if (profile?.is_blocked) {
-        setError(t.blocked);
+        setError(lang === 'zh' ? "您已被封禁。请联系 admin@sleepsomno.com" : "You have been banned. Please contact admin@sleepsomno.com");
         setLoading(false);
         return;
       }
@@ -90,7 +90,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', signInData.user.id).single();
             if (profile?.is_blocked) {
               await supabase.auth.signOut();
-              setError(t.blocked);
+              setError(lang === 'zh' ? "您已被封禁。请联系 admin@sleepsomno.com" : "You have been banned. Please contact admin@sleepsomno.com");
               setLoading(false);
               return;
             }
@@ -105,7 +105,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
           if (profile?.is_blocked) {
             await supabase.auth.signOut();
-            setError(t.blocked);
+            setError(lang === 'zh' ? "您已被封禁。请联系 admin@sleepsomno.com" : "You have been banned. Please contact admin@sleepsomno.com");
             setLoading(false);
             return;
           }

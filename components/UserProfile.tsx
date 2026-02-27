@@ -199,6 +199,21 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang, onBack, onNaviga
             </button>
           </form>
         </GlassCard>
+
+        <GlassCard className="p-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-bold">{lang === 'zh' ? '需要帮助？' : 'Need Help?'}</h3>
+              <p className="text-sm text-slate-500">{lang === 'zh' ? '访问我们的支持中心获取帮助。' : 'Visit our support center for assistance.'}</p>
+            </div>
+            <button 
+              onClick={() => onNavigate('/support')}
+              className="px-6 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-bold uppercase tracking-wider transition-colors"
+            >
+              {lang === 'zh' ? '支持中心' : 'Support Center'}
+            </button>
+          </div>
+        </GlassCard>
       </div>
     </div>
   );

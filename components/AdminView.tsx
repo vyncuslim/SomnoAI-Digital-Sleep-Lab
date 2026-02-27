@@ -180,31 +180,16 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                         const newStatus = !user.is_blocked;
                         await supabase.from('profiles').update({ is_blocked: newStatus }).eq('id', user.id);
                         if (newStatus) {
-                          // Optionally clear login attempts when blocking manually
-                          await supabase.rpc('report_failed_login', { target_email: user.email }); // Just to ensure it's logged
+                          await supabase.rpc('report_failed_login', { target_email: user.email });
                         } else {
                           await supabase.rpc('reset_login_attempts', { target_email: user.email });
                         }
                         fetchData();
                       }}
-                      className={`p-2 rounded-full transition-colors ${user.is_blocked ? 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30' : 'hover:bg-white/10 text-slate-500'}`}
+                      className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wider transition-colors ${user.is_blocked ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30' : 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30'}`}
                       title={user.is_blocked ? "Unblock User" : "Block User"}
                     >
-                      <button 
-                      onClick={async () => {
-                        const newStatus = !user.is_blocked;
-                        await supabase.from('profiles').update({ is_blocked: newStatus }).eq('id', user.id);
-                        if (newStatus) {
-                          // Optionally clear login attempts when blocking manually
-                          await supabase.rpc('report_failed_login', { target_email: user.email }); // Just to ensure it's logged
-                        } else {
-                          await supabase.rpc('reset_login_attempts', { target_email: user.email });
-                        }
-                        fetchData();
-                      }}
-                      className={`p-2 rounded-full transition-colors ${user.is_blocked ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30' : 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30'}`}>
                       {user.is_blocked ? 'Unblock' : 'Block'}
-                    </button>
                     </button>
                   </div>
                 </GlassCard>

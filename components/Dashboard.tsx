@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Activity, Moon, Zap, Settings, LogOut, 
-  BarChart2, Brain, ChevronRight
+  BarChart2, Brain, ChevronRight, MessageSquare, X
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -23,6 +23,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
   const [user, setUser] = useState<any>(null);
   const [sleepData, setSleepData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showLogoutFeedback, setShowLogoutFeedback] = useState(false);
+  const [feedbackText, setFeedbackText] = useState('');
+  const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [stats, setStats] = useState({
     score: null,
     hr: null,
@@ -66,13 +69,86 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
     fetchUserAndData();
   }, [navigate]);
 
-  const handleLogout = async () => {
+  const performLogout = async () => {
     await (supabase.auth as any).signOut();
     navigate('/');
   };
 
+  const handleLogoutClick = () => {
+    setShowLogoutFeedback(true);
+  };
+
+  const handleFeedbackSubmit = async () => {
+    if (!feedbackText.trim()) {
+      performLogout();
+      return;
+    }
+    
+    setIsSubmittingFeedback(true);
+    try {
+      await supabase.from('feedback').insert({
+        user_id: user?.id,
+        email: user?.email,
+        type: 'suggestion',
+        content: `[LOGOUT FEEDBACK] ${feedbackText}`
+      });
+    } catch (e) {
+      console.error("Failed to submit feedback", e);
+    } finally {
+      setIsSubmittingFeedback(false);
+      performLogout();
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#01040a] text-white font-sans p-6">
+    <div className="min-h-screen bg-[#01040a] text-white font-sans p-6 relative">
+      {showLogoutFeedback && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+          <GlassCard className="w-full max-w-md p-6 relative">
+            <button 
+              onClick={() => setShowLogoutFeedback(false)}
+              className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="text-center mb-6">
+              <div className="w-12 h-12 bg-indigo-500/20 text-indigo-400 rounded-full flex items-center justify-center mx-auto mb-4">
+                <MessageSquare size={24} />
+              </div>
+              <h3 className="text-xl font-bold mb-2">
+                {lang === 'zh' ? '退出前，请留下您的评价' : 'Before you go, leave some feedback'}
+              </h3>
+              <p className="text-xs text-slate-400">
+                {lang === 'zh' ? '您的反馈对我们非常重要。' : 'Your feedback is very important to us.'}
+              </p>
+            </div>
+            
+            <textarea
+              value={feedbackText}
+              onChange={(e) => setFeedbackText(e.target.value)}
+              placeholder={lang === 'zh' ? '写下您的建议或遇到的问题...' : 'Write your suggestions or issues...'}
+              className="w-full h-32 bg-black/40 border border-white/10 rounded-xl p-4 text-sm focus:border-indigo-500 outline-none transition-colors mb-6 resize-none"
+            />
+            
+            <div className="flex gap-4">
+              <button 
+                onClick={performLogout}
+                className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-sm font-bold transition-colors"
+              >
+                {lang === 'zh' ? '跳过并退出' : 'Skip & Logout'}
+              </button>
+              <button 
+                onClick={handleFeedbackSubmit}
+                disabled={isSubmittingFeedback || !feedbackText.trim()}
+                className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl text-sm font-bold transition-colors"
+              >
+                {isSubmittingFeedback ? (lang === 'zh' ? '提交中...' : 'Submitting...') : (lang === 'zh' ? '提交并退出' : 'Submit & Logout')}
+              </button>
+            </div>
+          </GlassCard>
+        </div>
+      )}
+
       <header className="flex items-center justify-between mb-12">
         <div className="flex items-center gap-4">
           <div>
@@ -104,7 +180,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
           <button onClick={() => navigate('/settings')} className="p-3 bg-white/5 rounded-full hover:bg-white/10 transition-colors">
             <Settings size={20} />
           </button>
-          <button onClick={handleLogout} className="p-3 bg-rose-500/10 text-rose-500 rounded-full hover:bg-rose-500/20 transition-colors">
+          <button onClick={handleLogoutClick} className="p-3 bg-rose-500/10 text-rose-500 rounded-full hover:bg-rose-500/20 transition-colors">
             <LogOut size={20} />
           </button>
         </div>

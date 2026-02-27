@@ -18,11 +18,39 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
   const navigate = useNavigate();
   const t = getTranslation(lang, 'auth');
 
+  const [resendCooldown, setResendCooldown] = useState(0);
+
   useEffect(() => {
     if (!email) {
       navigate('/auth');
     }
   }, [email, navigate]);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => setResendCooldown(c => c - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOtp({ email });
+      if (error) {
+        setError(error.message);
+      } else {
+        setResendCooldown(60);
+      }
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend OTP.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +77,7 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
         const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
         if (profile?.is_blocked) {
           await supabase.auth.signOut();
-          setError(t.blocked || "ACCOUNT BLOCKED due to multiple failed attempts or admin action. Please contact admin@sleepsomno.com");
+          setError(lang === 'zh' ? "您已被封禁。请联系 admin@sleepsomno.com" : "You have been banned. Please contact admin@sleepsomno.com");
           setLoading(false);
           return;
         }
@@ -104,6 +132,18 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
               autoFocus
               autoComplete="one-time-code"
             />
+            <div className="flex justify-end mt-2">
+              <button
+                type="button"
+                onClick={handleResendOtp}
+                disabled={resendCooldown > 0 || loading}
+                className="text-[10px] text-indigo-400 hover:text-indigo-300 disabled:text-slate-600 disabled:cursor-not-allowed uppercase tracking-widest font-bold transition-colors"
+              >
+                {resendCooldown > 0 
+                  ? (lang === 'zh' ? `重新发送 (${resendCooldown}s)` : `Resend OTP (${resendCooldown}s)`)
+                  : (lang === 'zh' ? '重新发送 OTP' : 'Resend OTP')}
+              </button>
+            </div>
           </div>
           
           {error && (
