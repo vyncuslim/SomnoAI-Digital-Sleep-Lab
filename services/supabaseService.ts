@@ -33,7 +33,9 @@ export const adminApi = {
   getFeedback: async () => supabase.from('feedback').select('*'),
   getAuditLogs: async () => supabase.from('audit_logs').select('*').order('created_at', { ascending: false }),
   getSecurityEvents: async () => supabase.from('security_events').select('*').order('created_at', { ascending: false }),
-  updateUserRole: async (id: string, role: string) => supabase.from('profiles').update({ role }).eq('id', id)
+  updateUserRole: async (id: string, role: string) => supabase.from('profiles').update({ role }).eq('id', id),
+  getSettings: async () => supabase.from('app_settings').select('*'),
+  updateSetting: async (key: string, value: string) => supabase.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() })
 };
 
 // Feedback API

@@ -30,6 +30,7 @@ import { BlockedView } from './components/BlockedView.tsx';
 
 import { supabase } from './services/supabaseService.ts';
 import { Salesmartly } from './components/Salesmartly.tsx';
+import { AnalyticsProvider } from './components/AnalyticsProvider.tsx';
 
 // Initial Data
 const INITIAL_SLEEP_DATA: SleepRecord = {
@@ -276,9 +277,11 @@ function App() {
   return (
     <ErrorBoundary>
       <AuthProvider>
-        <Router>
-          <AppContent />
-        </Router>
+        <AnalyticsProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AnalyticsProvider>
       </AuthProvider>
     </ErrorBoundary>
   );

@@ -3,14 +3,16 @@ import {
   Users, User, RefreshCw, ChevronLeft, 
   List, MessageSquare,
   AlertTriangle, Search, Lightbulb, Sparkles,
-  Activity, Shield, Clock, Moon
+  Activity, Shield, Clock, Moon, BarChart3, Save,
+  TrendingUp, Globe, MousePointer2
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase } from '../services/supabaseService.ts';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { useAuth } from '../context/AuthContext.tsx';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
-type AdminTab = 'overview' | 'registry' | 'signals' | 'system' | 'feedback';
+type AdminTab = 'overview' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity },
@@ -18,8 +20,19 @@ const DATABASE_SCHEMA = [
   { id: 'security_events', name: 'Security Signals', group: 'Security', icon: Shield },
   { id: 'profiles', name: 'Subject Registry', group: 'Core', icon: Users },
   { id: 'sleep_records', name: 'Sleep Matrix', group: 'Biometrics', icon: Moon },
-  { id: 'feedback', name: 'User Feedback', group: 'Support', icon: MessageSquare }
+  { id: 'feedback', name: 'User Feedback', group: 'Support', icon: MessageSquare },
+  { id: 'app_settings', name: 'App Settings', group: 'Config', icon: BarChart3 }
 ];
+
+interface MarketingData {
+  date: string;
+  datasource: string;
+  source: string;
+  active_users: number;
+  clicks: number;
+  active1_day_users: number;
+  active7_day_users: number;
+}
 
 interface AdminViewProps {
   lang: Language;
@@ -34,16 +47,43 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
   const [feedback, setFeedback] = useState<any[]>([]);
   const [auditLogs, setAuditLogs] = useState<any[]>([]);
   const [securityEvents, setSecurityEvents] = useState<any[]>([]);
+  const [settings, setSettings] = useState<Record<string, string>>({});
+  
+  const [marketingData, setMarketingData] = useState<MarketingData[]>([]);
+  const [loadingMarketing, setLoadingMarketing] = useState(false);
   
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
+  const [savingSettings, setSavingSettings] = useState(false);
+  const [showAllData, setShowAllData] = useState(false);
 
   useEffect(() => {
     if (!authLoading && isAdmin) {
       fetchData();
     }
   }, [isAdmin, authLoading]);
+
+  useEffect(() => {
+    if (activeTab === 'analytics') {
+      fetchMarketingData();
+    }
+  }, [activeTab]);
+
+  const fetchMarketingData = async () => {
+    setLoadingMarketing(true);
+    try {
+      const response = await fetch('https://connectors.windsor.ai/all?api_key=aa3204e4ef7d0c86362b3131645f629093b2&date_preset=last_14d&fields=account_id,account_name,achievement_id,active1_day_users,active7_day_users,active_users,clicks,datasource,date,source&select_accounts=googleanalytics4__522386153,searchconsole__sc-domain%3Asleepsomno.com');
+      const data = await response.json();
+      if (data && data.data) {
+        setMarketingData(data.data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch marketing data:", error);
+    } finally {
+      setLoadingMarketing(false);
+    }
+  };
 
   const canManage = (targetUser: any) => {
     if (!profile) return false;
@@ -82,6 +122,21 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
     }
   };
 
+  const handleSaveSettings = async () => {
+    setSavingSettings(true);
+    try {
+      await Promise.all(Object.entries(settings).map(([key, value]) => 
+        adminApi.updateSetting(key, value)
+      ));
+      alert('Settings saved successfully');
+    } catch (error) {
+      console.error("Failed to save settings:", error);
+      alert('Failed to save settings');
+    } finally {
+      setSavingSettings(false);
+    }
+  };
+
   if (authLoading) return <div className="min-h-screen bg-[#01040a] flex items-center justify-center text-white">Authenticating...</div>;
   if (!isAdmin) return <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white p-6 text-center">
     <Shield size={48} className="text-rose-500 mb-4" />
@@ -97,17 +152,24 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
       if (error) throw error;
       if (!user) return;
 
-      const [uRes, fRes, aRes, sRes] = await Promise.allSettled([
+      const [uRes, fRes, aRes, sRes, setRes] = await Promise.allSettled([
         adminApi.getUsers(),
         adminApi.getFeedback(),
         adminApi.getAuditLogs(),
-        adminApi.getSecurityEvents()
+        adminApi.getSecurityEvents(),
+        adminApi.getSettings()
       ]);
 
       setUsers(uRes.status === 'fulfilled' ? (uRes as any).value.data : []);
       setFeedback(fRes.status === 'fulfilled' ? (fRes as any).value.data : []);
       setAuditLogs(aRes.status === 'fulfilled' ? (aRes as any).value.data : []);
       setSecurityEvents(sRes.status === 'fulfilled' ? (sRes as any).value.data : []);
+      
+      if (setRes.status === 'fulfilled' && (setRes as any).value.data) {
+        const settingsMap: Record<string, string> = {};
+        (setRes as any).value.data.forEach((s: any) => settingsMap[s.key] = s.value);
+        setSettings(settingsMap);
+      }
       
       const counts: Record<string, number> = {};
       for (const t of DATABASE_SCHEMA) {
@@ -144,7 +206,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
       </header>
 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
-        {['overview', 'registry', 'signals', 'system', 'feedback'].map((tab) => (
+        {['overview', 'registry', 'signals', 'system', 'feedback', 'analytics'].map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as AdminTab)}
@@ -288,6 +350,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
 
         {activeTab === 'feedback' && (
           <div className="space-y-8 px-2 max-w-5xl mx-auto">
+            {/* ... (existing feedback content) ... */}
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 text-left border-b border-white/5 pb-8">
                <div className="flex items-center gap-6">
                   <div className="p-5 bg-indigo-500/10 rounded-[2rem] text-indigo-400 border border-indigo-500/20 shadow-xl">
@@ -348,6 +411,174 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                 </div>
               )}
             </div>
+          </div>
+        )}
+
+        {activeTab === 'analytics' && (
+          <div className="max-w-3xl mx-auto space-y-8">
+            <div className="flex items-center gap-6 mb-8">
+               <div className="p-5 bg-indigo-500/10 rounded-[2rem] text-indigo-400 border border-indigo-500/20 shadow-xl">
+                 <BarChart3 size={32} />
+               </div>
+               <div>
+                 <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Analytics & SEO</h2>
+                 <p className="text-[10px] text-slate-600 uppercase tracking-widest font-black italic mt-1.5">
+                    Configure external tracking signals
+                 </p>
+               </div>
+            </div>
+
+            <GlassCard className="p-8 rounded-[2rem] border-white/5 space-y-6">
+              <div className="space-y-4">
+                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Google Analytics Measurement ID</label>
+                <div className="relative group">
+                  <Activity className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="G-XXXXXXXXXX"
+                    value={settings.ga_measurement_id || ''}
+                    onChange={(e) => setSettings({...settings, ga_measurement_id: e.target.value})}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-600">Enter your GA4 Measurement ID to enable traffic tracking.</p>
+              </div>
+
+              <div className="space-y-4 pt-4 border-t border-white/5">
+                <label className="block text-xs font-bold uppercase tracking-widest text-slate-400">Google Search Console Verification</label>
+                <div className="relative group">
+                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-500 transition-colors" size={18} />
+                  <input 
+                    type="text" 
+                    placeholder="HTML Tag Content (e.g., google-site-verification=...)"
+                    value={settings.google_site_verification || ''}
+                    onChange={(e) => setSettings({...settings, google_site_verification: e.target.value})}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-600">Enter the content of the meta tag for ownership verification.</p>
+              </div>
+
+              <div className="pt-8 flex justify-end">
+                <button 
+                  onClick={handleSaveSettings}
+                  disabled={savingSettings}
+                  className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 rounded-full font-bold uppercase tracking-widest text-xs transition-all flex items-center gap-2 shadow-lg disabled:opacity-50"
+                >
+                  {savingSettings ? <RefreshCw className="animate-spin" size={16} /> : <Save size={16} />}
+                  Save Configuration
+                </button>
+              </div>
+            </GlassCard>
+
+            <div className="flex items-center gap-6 pt-8 mb-8">
+               <div className="p-5 bg-emerald-500/10 rounded-[2rem] text-emerald-400 border border-emerald-500/20 shadow-xl">
+                 <TrendingUp size={32} />
+               </div>
+               <div>
+                 <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Marketing Insights</h2>
+                 <p className="text-[10px] text-slate-600 uppercase tracking-widest font-black italic mt-1.5">
+                    Live data from Windsor.ai
+                 </p>
+               </div>
+            </div>
+
+            {loadingMarketing ? (
+              <div className="flex justify-center py-12">
+                <RefreshCw className="animate-spin text-indigo-500" size={32} />
+              </div>
+            ) : marketingData.length > 0 ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <GlassCard className="p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Users size={16} className="text-indigo-400" />
+                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Total Active Users</span>
+                    </div>
+                    <p className="text-2xl font-black text-white">
+                      {marketingData.reduce((acc, curr) => acc + (parseInt(curr.active_users as any) || 0), 0)}
+                    </p>
+                  </GlassCard>
+                  <GlassCard className="p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <MousePointer2 size={16} className="text-emerald-400" />
+                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Total Clicks</span>
+                    </div>
+                    <p className="text-2xl font-black text-white">
+                      {marketingData.reduce((acc, curr) => acc + (parseInt(curr.clicks as any) || 0), 0)}
+                    </p>
+                  </GlassCard>
+                  <GlassCard className="p-6">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Globe size={16} className="text-amber-400" />
+                      <span className="text-xs font-bold uppercase tracking-widest text-slate-500">Sources</span>
+                    </div>
+                    <p className="text-2xl font-black text-white">
+                      {new Set(marketingData.map(d => d.source)).size}
+                    </p>
+                  </GlassCard>
+                </div>
+
+                <GlassCard className="p-6 rounded-[2rem] border-white/5 overflow-hidden">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6">Traffic Trend (Last 14 Days)</h3>
+                  <div className="h-64 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={marketingData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
+                        <XAxis dataKey="date" stroke="#64748b" fontSize={10} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, {month:'short', day:'numeric'})} />
+                        <YAxis stroke="#64748b" fontSize={10} />
+                        <Tooltip 
+                          contentStyle={{ backgroundColor: '#000', border: '1px solid #333', borderRadius: '8px' }}
+                          itemStyle={{ color: '#fff', fontSize: '12px' }}
+                        />
+                        <Legend />
+                        <Line type="monotone" dataKey="active_users" stroke="#818cf8" strokeWidth={2} dot={false} name="Active Users" />
+                        <Line type="monotone" dataKey="clicks" stroke="#34d399" strokeWidth={2} dot={false} name="Clicks" />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </GlassCard>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10">
+                        <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Date</th>
+                        <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Source</th>
+                        <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Platform</th>
+                        <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Active Users</th>
+                        <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Clicks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(showAllData ? marketingData : marketingData.slice(0, 10)).map((row, i) => (
+                        <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                          <td className="p-4 text-sm font-mono text-slate-300">{row.date}</td>
+                          <td className="p-4 text-sm font-bold text-white">{row.source}</td>
+                          <td className="p-4 text-xs font-mono text-slate-500 uppercase">{row.datasource}</td>
+                          <td className="p-4 text-sm font-mono text-indigo-400 text-right">{row.active_users || '-'}</td>
+                          <td className="p-4 text-sm font-mono text-emerald-400 text-right">{row.clicks || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  {marketingData.length > 10 && (
+                    <div className="flex justify-center mt-4">
+                      <button 
+                        onClick={() => setShowAllData(!showAllData)}
+                        className="text-xs font-bold uppercase tracking-widest text-indigo-400 hover:text-indigo-300 transition-colors"
+                      >
+                        {showAllData ? 'Show Less' : `Show All (${marketingData.length})`}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-12 text-slate-500 border-2 border-dashed border-white/5 rounded-2xl">
+                No marketing data available.
+              </div>
+            )}
           </div>
         )}
       </div>

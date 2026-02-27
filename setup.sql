@@ -120,6 +120,31 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 
+-- 7. 应用设置表 (App Settings)
+CREATE TABLE IF NOT EXISTS public.app_settings (
+    key text PRIMARY KEY,
+    value text,
+    updated_at timestamptz DEFAULT now(),
+    updated_by uuid REFERENCES auth.users
+);
+
+ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Admin manage settings" ON public.app_settings
+FOR ALL TO authenticated
+USING (public.is_admin_check(auth.uid()))
+WITH CHECK (public.is_admin_check(auth.uid()));
+
+CREATE POLICY "Public read settings" ON public.app_settings
+FOR SELECT TO anon, authenticated
+USING (true);
+
+-- 插入默认值
+INSERT INTO public.app_settings (key, value) VALUES 
+('ga_measurement_id', ''),
+('google_site_verification', '')
+ON CONFLICT (key) DO NOTHING;
+
 -- ==========================================
 -- 安全策略 (RLS)
 -- ==========================================
