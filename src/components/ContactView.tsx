@@ -53,9 +53,6 @@ export const ContactView: React.FC<ContactViewProps> = ({ lang, onBack }) => {
             <p className="text-base text-slate-300">
               {isZh ? '与我们的支持团队即时沟通。' : 'Chat instantly with our support team.'}
             </p>
-            <button onClick={() => (window as any).Salesmartly('open')} className="inline-flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-full font-bold text-sm uppercase tracking-widest italic hover:bg-emerald-500 transition-all active:scale-95">
-              <MessageSquare size={16} /> {isZh ? '开始聊天' : 'Start Chat'}
-            </button>
           </div>
         </div>
 

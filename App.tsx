@@ -32,7 +32,6 @@ import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData.ts';
 import { BlockedView } from './components/BlockedView.tsx';
 
 import { supabase } from './services/supabaseService.ts';
-import { Salesmartly } from './components/Salesmartly.tsx';
 import { AnalyticsProvider } from './components/AnalyticsProvider.tsx';
 
 // Initial Data
@@ -278,7 +277,6 @@ const AppContent = () => {
         <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
         <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
       </Routes>
-      <Salesmartly />
     </div>
   );
 };
