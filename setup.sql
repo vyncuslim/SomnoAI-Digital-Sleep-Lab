@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     role text DEFAULT 'user' NOT NULL,
     is_super_owner boolean DEFAULT false,
     is_blocked boolean DEFAULT false,
+    failed_login_attempts int DEFAULT 0,
     created_at timestamptz DEFAULT now(),
     CONSTRAINT profiles_role_check CHECK (role IN ('user', 'editor', 'admin', 'owner'))
 );
@@ -106,8 +107,20 @@ BEGIN
   RETURNING attempts INTO current_attempts;
 
   IF current_attempts >= 5 THEN
-    UPDATE public.profiles SET is_blocked = true WHERE email = target_email;
+    UPDATE public.profiles SET is_blocked = true, failed_login_attempts = current_attempts WHERE email = target_email;
+  ELSE
+    UPDATE public.profiles SET failed_login_attempts = current_attempts WHERE email = target_email;
   END IF;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC: 封禁用户
+CREATE OR REPLACE FUNCTION public.block_user(target_email text)
+RETURNS void AS $$
+BEGIN
+  UPDATE public.profiles 
+  SET is_blocked = true 
+  WHERE email = target_email;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -116,6 +129,7 @@ CREATE OR REPLACE FUNCTION public.reset_login_attempts(target_email text)
 RETURNS void AS $$
 BEGIN
   DELETE FROM public.login_attempts WHERE email = target_email;
+  UPDATE public.profiles SET failed_login_attempts = 0 WHERE email = target_email;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
