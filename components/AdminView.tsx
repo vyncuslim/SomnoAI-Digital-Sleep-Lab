@@ -153,7 +153,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
           });
 
           // Send notification
-          await emailService.sendBlockNotification(profile.email);
+          await emailService.sendBlockNotification(profile.email, 'Unauthorized access to restricted areas');
           
           // Sign out
           await supabase.auth.signOut();

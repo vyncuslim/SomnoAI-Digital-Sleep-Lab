@@ -5,7 +5,7 @@ import { getSafeUrl } from './navigation.ts';
  * Handles analytics dispatch with cross-origin safety protocols and normalized SPA routing.
  */
 
-const GA_ID = 'G-3F9KVPNYLR';
+const GA_ID = 'G-1WM4RE66ER';
 
 export const trackEvent = (eventName: string, params: Record<string, any> = {}) => {
   try {

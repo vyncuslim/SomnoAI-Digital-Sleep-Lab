@@ -80,7 +80,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
          });
 
          // Send email notification
-         await emailService.sendBlockNotification(targetEmail);
+         await emailService.sendBlockNotification(targetEmail, 'Excessive failed login attempts');
 
          setError(t.blocked);
          return true;

@@ -141,9 +141,9 @@ USING (true);
 
 -- 插入默认值
 INSERT INTO public.app_settings (key, value) VALUES 
-('ga_measurement_id', ''),
+('ga_measurement_id', 'G-1WM4RE66ER'),
 ('google_site_verification', '')
-ON CONFLICT (key) DO NOTHING;
+ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value;
 
 -- ==========================================
 -- 安全策略 (RLS)

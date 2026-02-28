@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
+import { trackPageView } from './services/analytics.ts';
 import { Language } from './types.ts';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { Auth } from './components/Auth.tsx';
@@ -196,11 +197,16 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 
 const AppContent = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { profile, loading } = useAuth();
   const [lang, setLang] = useState<Language>('en'); // Default language to English
   const [latestData, setLatestData] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const isSupabaseConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  useEffect(() => {
+    trackPageView(location.pathname, document.title);
+  }, [location]);
 
   useEffect(() => {
     if (profile) {

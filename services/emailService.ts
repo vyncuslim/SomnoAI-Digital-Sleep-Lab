@@ -1,4 +1,4 @@
-import { getMYTTime, notifyAdmin } from './telegramService.ts';
+import { getMYTTime, notifyAdmin as notifyTelegram } from './telegramService.ts';
 import { supabase } from './supabaseService.ts';
 
 /**
@@ -16,8 +16,7 @@ const EVENT_MAP: Record<string, { en: string, es: string, zh: string, icon: stri
   'GA4_PERMISSION_DENIED': { en: '🛡️ GA4 Access Denied (403)', es: '🛡️ GA4 Acceso Denegado', zh: '🛡️ GA4 访问被拒绝 (403)', icon: '🚫' },
   'SECURITY_BREACH': { en: '🛡️ Unauthorized Ingress Attempt', es: '🛡️ Ingreso No Autorizado', zh: '🛡️ 未经授权的入侵尝试', icon: '⛔' },
   'SYSTEM_SIGNAL': { en: '📡 System Signal', es: '📡 Señal del Sistema', zh: '📡 系统信号', icon: '📡' },
-  'DIARY_LOG_ENTRY': { en: '📝 Biological Log Entry', es: '📝 Nuevo Diario', zh: '📝 新生物节律日志', icon: '📗' },
-  'USER_BLOCKED': { en: '🛡️ Account Access Restricted', es: '🛡️ Acceso Restringido', zh: '🛡️ 账户访问受限', icon: '⛔' }
+  'DIARY_LOG_ENTRY': { en: '📝 Biological Log Entry', es: '📝 Nuevo Diario', zh: '📝 新生物节律日志', icon: '📗' }
 };
 
 export const emailService = {
@@ -43,7 +42,7 @@ export const emailService = {
       const mapping = EVENT_MAP[eventType] || { en: eventType, es: eventType, zh: eventType, icon: '📡' };
       const isLogin = eventType === 'USER_LOGIN';
       const isSignup = eventType === 'USER_SIGNUP';
-      const isIncident = eventType.includes('FAILURE') || eventType.includes('DENIED') || eventType.includes('ERROR') || eventType.includes('BREACH') || eventType.includes('BLOCKED');
+      const isIncident = eventType.includes('FAILURE') || eventType.includes('DENIED') || eventType.includes('ERROR') || eventType.includes('BREACH');
       
       const subjectPrefix = isLogin ? '🔑 [ACCESS_GRANTED]' : isIncident ? '🚨 [INCIDENT_ALERT]' : '🛡️ [SYSTEM_SIGNAL]';
       const subject = `${subjectPrefix} ${mapping.en}`;
@@ -101,32 +100,26 @@ export const emailService = {
     }
   },
 
-  sendBlockNotification: async (email: string) => {
+  sendBlockNotification: async (email: string, reason: string = 'Policy Violation') => {
     const subject = "Account Security Alert: Access Blocked";
     const html = `
-      <div style="margin-bottom: 20px;">
+      <div style="margin-bottom: 20px; font-family: sans-serif;">
         <p style="font-size: 16px; font-weight: bold; color: #ef4444;">[Security Protocol Activated]</p>
-        <p>Your account <strong>${email}</strong> has been blocked due to multiple failed login attempts, unauthorized access to restricted areas, or policy violations.</p>
-        <p style="background: #fee2e2; padding: 15px; border-radius: 8px; color: #b91c1c; font-weight: bold;">
+        <p>Your account <strong>${email}</strong> has been blocked by <strong>SomnoAI Security System</strong>.</p>
+        <p><strong>Reason:</strong> ${reason}</p>
+        <div style="background: #fee2e2; padding: 15px; border-radius: 8px; color: #b91c1c; font-weight: bold; margin: 15px 0;">
           你违反了条款。如有问题，请联系 admin@sleepsomno.com
-        </p>
+        </div>
         <p>You have violated the terms. If you have any questions, please contact admin@sleepsomno.com</p>
       </div>
       <p>If this was not you, your account may be under attack. Please secure your email address immediately.</p>
       <p style="margin-top: 20px; font-weight: bold;">SomnoAI Digital Sleep Lab Security Team</p>
     `;
     
-    // 1. Send to user
+    // Send to user
     await emailService.sendSystemEmail(email, subject, html);
     
-    // 2. Send real-time alert to Telegram
-    await notifyAdmin({
-      type: 'SECURITY_BREACH',
-      message: `User Blocked: ${email}\nReason: Multiple failed login attempts or unauthorized access attempt.`,
-      source: 'AUTH_GATEWAY'
-    });
-
-    // 3. Send to admin email
+    // Send to admin via Email
     await fetch('/api/send-email', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -135,11 +128,19 @@ export const emailService = {
         subject: `Security Alert: User Blocked (${email})`,
         html: `
           <h2 style="color: #ef4444;">User Blocked</h2>
-          <p>User <strong>${email}</strong> has been blocked due to excessive failed login attempts, unauthorized admin access, or policy violations.</p>
+          <p>User <strong>${email}</strong> has been blocked by the system.</p>
+          <p><strong>Reason:</strong> ${reason}</p>
           <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
           <p><strong>Action:</strong> Account access has been restricted immediately.</p>
         `
       }),
+    });
+
+    // Send to admin via Telegram
+    await notifyTelegram({
+      type: 'SECURITY_BREACH',
+      message: `USER_BLOCKED: ${email}\nReason: ${reason}`,
+      source: 'Security Engine'
     });
   }
 };
