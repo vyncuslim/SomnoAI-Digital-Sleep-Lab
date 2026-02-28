@@ -78,6 +78,16 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
               </div>
               <p>Data is processed locally in your browser (SessionStorage) and never uploaded to our servers. All sensitive metrics are purged immediately upon logout or tab closure.</p>
             </section>
+
+            <section className="space-y-6 relative z-10">
+              <div className="flex items-center gap-3 text-white border-b border-white/5 pb-4">
+                <div className="p-2.5 bg-rose-500/10 rounded-xl text-rose-400 border border-rose-500/20">
+                  <ShieldAlert size={20} />
+                </div>
+                <h2 className="text-xl font-bold italic tracking-tight">4. Security and Automatic Account Blocking</h2>
+              </div>
+              <p>To ensure the security of our platform and protect user data, we employ automated security measures. Your account may be automatically blocked if our systems detect suspicious activities, such as multiple failed login attempts, unauthorized access attempts to restricted areas, or other actions that violate our Terms of Service. This is a necessary security precaution to prevent unauthorized access and protect the laboratory infrastructure.</p>
+            </section>
           </>
         ) : (
           <>
@@ -131,7 +141,7 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
         
         <div className="pt-8 flex justify-center">
           <a 
-            href={isPrivacy ? "/privacy.html" : "/terms.html"} 
+            href={isPrivacy ? "/privacy/index.html" : "/terms/index.html"} 
             target="_blank" 
             className="flex items-center gap-2 px-6 py-3 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 rounded-2xl text-indigo-400 font-bold transition-all"
           >

@@ -23,8 +23,9 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; fullName?: string }>({});
+  const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; fullName?: string; terms?: string }>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   const navigate = useNavigate();
   const turnstileRef = useRef<TurnstileInstance>(null);
 
@@ -36,7 +37,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   };
 
   const validateForm = () => {
-    const errors: { email?: string; password?: string; fullName?: string } = {};
+    const errors: { email?: string; password?: string; fullName?: string; terms?: string } = {};
     let isValid = true;
 
     if (!email) {
@@ -47,9 +48,15 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       isValid = false;
     }
 
-    if (view === 'signup' && !fullName) {
-      errors.fullName = t.nameRequired || 'Full name is required';
-      isValid = false;
+    if (view === 'signup') {
+      if (!fullName) {
+        errors.fullName = t.nameRequired || 'Full name is required';
+        isValid = false;
+      }
+      if (!agreedToTerms) {
+        errors.terms = lang === 'zh' ? '您必须同意条款和隐私政策' : 'You must agree to the Terms and Privacy Policy';
+        isValid = false;
+      }
     }
 
     if (mode === 'password') {
@@ -363,6 +370,55 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
                         className="text-rose-500 text-[10px] font-mono mt-1 ml-1 flex items-center gap-1"
                       >
                         <AlertCircle size={10} /> {fieldErrors.password}
+                      </motion.p>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )}
+
+              {view === 'signup' && (
+                <motion.div 
+                  key="terms"
+                  variants={inputVariants}
+                  initial="hidden"
+                  animate="visible"
+                  exit="exit"
+                  className="pt-2"
+                >
+                  <label className="flex items-start gap-3 cursor-pointer group">
+                    <div className="relative flex items-center justify-center mt-0.5">
+                      <input 
+                        type="checkbox" 
+                        checked={agreedToTerms}
+                        onChange={(e) => { setAgreedToTerms(e.target.checked); if (fieldErrors.terms) setFieldErrors({...fieldErrors, terms: undefined}); }}
+                        className="peer appearance-none w-4 h-4 border border-white/20 rounded bg-black/40 checked:bg-indigo-600 checked:border-indigo-500 transition-all cursor-pointer"
+                        disabled={loading}
+                      />
+                      <svg className="absolute w-3 h-3 text-white opacity-0 peer-checked:opacity-100 pointer-events-none" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12"></polyline>
+                      </svg>
+                    </div>
+                    <span className="text-xs text-slate-400 leading-relaxed">
+                      {lang === 'zh' ? '我已阅读并同意' : 'I have read and agree to the '}
+                      <a href="https://sleepsomno.com/terms" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors">
+                        {lang === 'zh' ? '使用条款' : 'Terms of Use'}
+                      </a>
+                      {lang === 'zh' ? '和' : ' and '}
+                      <a href="https://sleepsomno.com/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors">
+                        {lang === 'zh' ? '隐私政策' : 'Privacy Policy'}
+                      </a>
+                      {lang === 'zh' ? '。' : '.'}
+                    </span>
+                  </label>
+                  <AnimatePresence>
+                    {fieldErrors.terms && (
+                      <motion.p 
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="text-rose-500 text-[10px] font-mono mt-2 ml-1 flex items-center gap-1"
+                      >
+                        <AlertCircle size={10} /> {fieldErrors.terms}
                       </motion.p>
                     )}
                   </AnimatePresence>

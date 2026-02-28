@@ -6,6 +6,7 @@ import {
   Activity, BarChart3, ChevronRight, Zap, ShieldCheck,
   RefreshCw, Binary, Network, MapPin
 } from 'lucide-react';
+import { useLocation } from 'react-router-dom';
 import { GlassCard } from './GlassCard.tsx';
 import { ChatMessage, SleepRecord } from '../types.ts';
 import { startContextualCoach } from '../services/geminiService.ts';
@@ -36,6 +37,9 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
   const [isTyping, setIsTyping] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash-latest');
   const scrollRef = useRef<HTMLDivElement>(null);
+  const location = useLocation();
+  const initialQuery = location.state?.initialQuery;
+  const hasInitialized = useRef(false);
 
   const models = [
     { id: 'gemini-2.5-flash-latest', name: 'Gemini 2.5 Flash (Fast)' },
@@ -43,10 +47,20 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
   ];
 
   useEffect(() => {
-    if (messages.length === 0) {
+    if (messages.length === 0 && !hasInitialized.current) {
+      hasInitialized.current = true;
       setMessages([{ role: 'assistant', content: String(t.intro || 'Neural link established. Chief Research Officer online.'), timestamp: new Date() }]);
     }
   }, [t.intro, messages.length]);
+
+  useEffect(() => {
+    if (initialQuery && messages.length === 1 && !isTyping) {
+      // Clear the state so it doesn't re-trigger
+      window.history.replaceState({}, document.title);
+      handleSend(initialQuery);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery, messages.length]);
 
   useEffect(() => {
     if (scrollRef.current) {

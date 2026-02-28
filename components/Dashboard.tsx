@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Activity, Moon, Zap, Settings, LogOut, 
-  BarChart2, Brain, ChevronRight, MessageSquare, X
+  BarChart2, Brain, ChevronRight, MessageSquare, X, Sparkles
 } from 'lucide-react';
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
@@ -279,14 +279,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
               <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-[10px] font-bold uppercase tracking-wider">AI Insight</span>
             </div>
             <h4 className="font-bold text-lg mb-2">Optimal Recovery</h4>
-            <p className="text-sm text-slate-400 leading-relaxed">
+            <p className="text-sm text-slate-400 leading-relaxed mb-6">
               Your deep sleep ratio is 15% higher than your 30-day average. Cognitive performance is likely peaked today.
             </p>
+            
+            <div className="relative group">
+              <input 
+                type="text" 
+                placeholder={lang === 'zh' ? '询问关于睡眠的问题...' : 'Ask about your sleep...'}
+                className="w-full bg-black/40 border border-indigo-500/30 rounded-xl py-3 pl-4 pr-12 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none transition-all text-white placeholder-slate-500"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                    navigate('/ai-assistant', { state: { initialQuery: e.currentTarget.value } });
+                  }
+                }}
+              />
+              <button 
+                onClick={(e) => {
+                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                  if (input.value.trim()) {
+                    navigate('/ai-assistant', { state: { initialQuery: input.value } });
+                  }
+                }}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+              >
+                <Sparkles size={14} />
+              </button>
+            </div>
           </GlassCard>
 
           <GlassCard className="p-6">
             <h4 className="font-bold text-sm uppercase tracking-wider text-slate-500 mb-4">Quick Actions</h4>
             <div className="space-y-3">
+              <button onClick={() => navigate('/ai-assistant')} className="w-full p-4 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-left flex items-center justify-between group transition-all">
+                <span className="font-medium text-sm text-indigo-400 flex items-center gap-2"><Brain size={16} /> {lang === 'zh' ? 'AI 助手' : 'AI Assistant'}</span>
+                <ChevronRight size={16} className="text-indigo-500 group-hover:text-indigo-300 transition-colors" />
+              </button>
               <button onClick={() => navigate('/experiment')} className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left flex items-center justify-between group transition-all">
                 <span className="font-medium text-sm">Start Experiment</span>
                 <ChevronRight size={16} className="text-slate-600 group-hover:text-white transition-colors" />

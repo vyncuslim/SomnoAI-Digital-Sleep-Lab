@@ -50,7 +50,7 @@ export const emailService = {
       const html = `
         <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
           <div style="text-align: center; margin-bottom: 40px;">
-            <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">${mapping.icon} SOMNO LAB</h2>
+            <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">${mapping.icon} SomnoAI Digital Sleep Lab</h2>
             <p style="font-size: 10px; color: #6366f1; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">${isLogin ? 'Identity Pulse' : 'Incident Protocol'}</p>
           </div>
           <div style="background: rgba(99, 102, 241, 0.03); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(99, 102, 241, 0.1);">
@@ -63,7 +63,7 @@ export const emailService = {
             </div>
           </div>
           <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
-            SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: ${nodeIdentity}
+            SomnoAI Digital Sleep Lab • SECURE HUB: ${nodeIdentity}
           </div>
         </div>
       `;
@@ -98,7 +98,7 @@ export const emailService = {
     const html = `
       <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
         <div style="text-align: center; margin-bottom: 40px;">
-          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">🛡️ SOMNO LAB</h2>
+          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">🛡️ SomnoAI Digital Sleep Lab</h2>
           <p style="font-size: 10px; color: #ef4444; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">Security Protocol Activated</p>
         </div>
         <div style="background: rgba(239, 68, 68, 0.05); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(239, 68, 68, 0.2);">
@@ -116,7 +116,7 @@ export const emailService = {
           </p>
         </div>
         <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
-          SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: sleepsomno.com
+          SomnoAI Digital Sleep Lab • SECURE HUB: sleepsomno.com
         </div>
       </div>
     `;
@@ -157,7 +157,7 @@ export const emailService = {
     const html = `
       <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
         <div style="text-align: center; margin-bottom: 40px;">
-          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">✨ SOMNO LAB</h2>
+          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">✨ SomnoAI Digital Sleep Lab</h2>
           <p style="font-size: 10px; color: #10b981; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">Registration Confirmed</p>
         </div>
         <div style="background: rgba(16, 185, 129, 0.05); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(16, 185, 129, 0.2);">
@@ -173,7 +173,7 @@ export const emailService = {
           </div>
         </div>
         <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
-          SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: sleepsomno.com
+          SomnoAI Digital Sleep Lab • SECURE HUB: sleepsomno.com
         </div>
       </div>
     `;
@@ -191,7 +191,7 @@ export const emailService = {
     const html = `
       <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
         <div style="text-align: center; margin-bottom: 40px;">
-          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">🛡️ SOMNO LAB</h2>
+          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">🛡️ SomnoAI Digital Sleep Lab</h2>
           <p style="font-size: 10px; color: #f59e0b; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">Security Warning</p>
         </div>
         <div style="background: rgba(245, 158, 11, 0.05); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(245, 158, 11, 0.2);">
@@ -206,7 +206,7 @@ export const emailService = {
           </p>
         </div>
         <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
-          SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: sleepsomno.com
+          SomnoAI Digital Sleep Lab • SECURE HUB: sleepsomno.com
         </div>
       </div>
     `;
