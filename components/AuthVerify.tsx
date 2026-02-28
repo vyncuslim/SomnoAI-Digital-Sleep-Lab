@@ -83,7 +83,7 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
           await emailService.sendFailedLoginNotification(email, attemptData.attempts);
         }
       } else {
-        const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
+        const { data: profile } = await supabase.from('profiles').select('is_blocked, role').eq('email', email).single();
         if (profile?.is_blocked) {
           await supabase.auth.signOut();
           setError(t.blocked);
@@ -101,7 +101,11 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
           await emailService.sendSignupNotification(email, name || email.split('@')[0]);
         }
 
-        navigate('/dashboard');
+        if (profile?.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       }
     } catch (err: any) {
       console.error("Unexpected OTP Verification Error:", err);

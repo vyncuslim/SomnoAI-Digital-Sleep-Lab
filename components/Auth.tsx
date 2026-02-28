@@ -181,7 +181,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } } as any);
 
         if (signInData.user) {
-          const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('id', signInData.user.id).single();
+          const { data: profile } = await supabase.from('profiles').select('is_blocked, role').eq('id', signInData.user.id).single();
           if (profile?.is_blocked) {
             await supabase.auth.signOut();
             setError(t.blocked);
@@ -195,7 +195,11 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           const location = await emailService.getLoginLocation();
           await emailService.sendLoginNotification(email, location);
 
-          navigate('/dashboard');
+          if (profile?.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/dashboard');
+          }
         }
         if (error) {
           setError(error.message);
@@ -217,6 +221,11 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   };
 
   const handleGoogleLogin = async () => {
+    if (!agreedToTerms) {
+      setFieldErrors({ terms: lang === 'zh' ? '您必须同意条款和隐私政策' : 'You must agree to the Terms and Privacy Policy' });
+      return;
+    }
+
     if (!import.meta.env.VITE_SUPABASE_URL) {
       setError(lang === 'zh' ? '配置错误：缺少 Supabase URL。请检查 Vercel 环境变量设置。' : 'Configuration Error: Missing Supabase URL. Please check Vercel environment variables.');
       return;
@@ -454,7 +463,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           
           <button
             type="submit"
-            disabled={loading || !captchaToken}
+            disabled={loading || !captchaToken || !agreedToTerms}
             className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl font-black uppercase tracking-[0.2em] italic text-xs transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_-5px_rgba(79,70,229,0.5)] group relative overflow-hidden"
           >
             {loading && (
@@ -483,7 +492,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             <button
               type="button"
               onClick={handleGoogleLogin}
-              disabled={loading}
+              disabled={loading || !agreedToTerms}
               className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-3 border border-white/5 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">

@@ -119,9 +119,6 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 
   const handleBack = () => navigate(-1);
 
-  // Force English for auth routes as requested: sleepsomno.com/cn/auth also English
-  const effectiveLang = location.pathname.includes('/auth') ? 'en' : lang;
-
   if (isBlocked) {
     return <BlockedView />;
   }
@@ -130,64 +127,65 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
     <React.Fragment>
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<LandingPage lang={effectiveLang} onLanguageChange={setLang} />} />
-      <Route path="/auth" element={<Auth lang={effectiveLang} />} />
-      <Route path="/auth/login" element={<Auth lang={effectiveLang} initialView="login" />} />
-      <Route path="/auth/signup" element={<Auth lang={effectiveLang} initialView="signup" />} />
-      <Route path="/auth/verify" element={<AuthVerify lang={effectiveLang} />} />
-      <Route path="/about" element={<AboutView lang={effectiveLang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
-      <Route path="/contact" element={<ContactView lang={effectiveLang} onBack={handleBack} />} />
-      <Route path="/faq" element={<FAQView lang={effectiveLang} onBack={handleBack} />} />
-      <Route path="/science" element={<ScienceView lang={effectiveLang} onBack={handleBack} />} />
+      <Route path="/" element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
+      <Route path="/auth" element={<Auth lang={lang} />} />
+      <Route path="/auth/login" element={<Auth lang={lang} initialView="login" />} />
+      <Route path="/auth/signin" element={<Auth lang={lang} initialView="login" />} />
+      <Route path="/auth/signup" element={<Auth lang={lang} initialView="signup" />} />
+      <Route path="/auth/verify" element={<AuthVerify lang={lang} />} />
+      <Route path="/about" element={<AboutView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+      <Route path="/contact" element={<ContactView lang={lang} onBack={handleBack} />} />
+      <Route path="/faq" element={<FAQView lang={lang} onBack={handleBack} />} />
+      <Route path="/science" element={<ScienceView lang={lang} onBack={handleBack} />} />
       
       {/* Blog & News */}
-      <Route path="/blog" element={<BlogHub lang={effectiveLang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
-      <Route path="/blog/:slug" element={<BlogPostWrapper lang={effectiveLang} />} />
-      <Route path="/news" element={<NewsHub lang={effectiveLang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
-      <Route path="/news/:slug" element={<ArticleWrapper lang={effectiveLang} />} />
+      <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
+      <Route path="/blog/:slug" element={<BlogPostWrapper lang={lang} />} />
+      <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
+      <Route path="/news/:slug" element={<ArticleWrapper lang={lang} />} />
 
       {/* Legal & Support */}
-      <Route path="/privacy" element={<LegalView type="privacy" lang={effectiveLang} onBack={handleBack} />} />
-      <Route path="/terms" element={<LegalView type="terms" lang={effectiveLang} onBack={handleBack} />} />
-      <Route path="/opensource" element={<OpenSourceView lang={effectiveLang} onBack={handleBack} />} />
-      <Route path="/changelog" element={<ChangelogView lang={effectiveLang} onBack={handleBack} />} />
-      <Route path="/support" element={<SupportView lang={effectiveLang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+      <Route path="/privacy" element={<LegalView type="privacy" lang={lang} onBack={handleBack} />} />
+      <Route path="/terms" element={<LegalView type="terms" lang={lang} onBack={handleBack} />} />
+      <Route path="/opensource" element={<OpenSourceView lang={lang} onBack={handleBack} />} />
+      <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
+      <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
 
       {/* Protected Routes */}
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <Dashboard lang={effectiveLang} />
+          <Dashboard lang={lang} />
         </ProtectedRoute>
       } />
       <Route path="/admin" element={
         <ProtectedRoute>
-          <AdminView lang={effectiveLang} onBack={handleBack} />
+          <AdminView lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
       <Route path="/settings" element={
         <ProtectedRoute>
-          <UserProfile lang={effectiveLang} onBack={handleBack} onNavigate={handleNavigate} />
+          <UserProfile lang={lang} onBack={handleBack} onNavigate={handleNavigate} />
         </ProtectedRoute>
       } />
 
       <Route path="/feedback" element={
         <ProtectedRoute>
-          <FeedbackView lang={effectiveLang} onBack={handleBack} />
+          <FeedbackView lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
       <Route path="/experiment" element={
         <ProtectedRoute>
-          <ExperimentView data={latestData} lang={effectiveLang} />
+          <ExperimentView data={latestData} lang={lang} />
         </ProtectedRoute>
       } />
       <Route path="/journal" element={
         <ProtectedRoute>
-          <DiaryView lang={effectiveLang} />
+          <DiaryView lang={lang} />
         </ProtectedRoute>
       } />
       <Route path="/ai-assistant" element={
         <ProtectedRoute>
-          <AIAssistant lang={effectiveLang} data={latestData} history={history} />
+          <AIAssistant lang={lang} data={latestData} history={history} />
         </ProtectedRoute>
       } />
 
