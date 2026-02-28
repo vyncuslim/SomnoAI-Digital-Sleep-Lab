@@ -4,7 +4,7 @@ import {
   Send, User, Loader2, Sparkles, BrainCircuit, 
   Terminal as TerminalIcon, Globe, Cpu, History,
   Activity, BarChart3, ChevronRight, Zap, ShieldCheck,
-  RefreshCw, Binary, Network, MapPin
+  RefreshCw, Binary, Network, MapPin, Info
 } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import { GlassCard } from './GlassCard.tsx';
@@ -13,6 +13,8 @@ import { startContextualCoach } from '../services/geminiService.ts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { Logo } from './Logo';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 
 const m = motion as any;
@@ -35,6 +37,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
   const [messages, setMessages] = useState<(ChatMessage & { sources?: any[] })[]>([]);
   const [input, setInput] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
   const [selectedModel, setSelectedModel] = useState('gemini-2.5-flash-latest');
   const scrollRef = useRef<HTMLDivElement>(null);
   const location = useLocation();
@@ -78,6 +81,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
     const userMsg: ChatMessage = { role: 'user', content: text, timestamp: new Date() };
     setMessages(prev => [...prev, userMsg]);
     setInput('');
+    setIsThinking(true);
     setIsTyping(true);
     
     let aiContent = "";
@@ -94,8 +98,10 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
       );
 
       for await (const chunk of stream) {
+        setIsThinking(false);
         const chunkText = chunk.text;
         const sources = chunk.candidates?.[0]?.groundingMetadata?.groundingChunks || [];
+        
         if (chunkText) {
           aiContent += chunkText;
           if (sources.length > 0) aiSources = [...aiSources, ...sources];
@@ -115,6 +121,7 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
         return newMsgs;
       });
     } finally {
+      setIsThinking(false);
       setIsTyping(false);
     }
   };
@@ -178,8 +185,20 @@ export const AIAssistant: React.FC<{ lang: Language; data: SleepRecord | null; h
                     ? 'bg-slate-900/80 border border-white/5 text-slate-100 backdrop-blur-xl' 
                     : 'bg-indigo-600 text-white border border-indigo-400/20 shadow-xl'
                 }`}>
-                  <div className="whitespace-pre-wrap italic font-bold tracking-tight relative z-10">
-                    {String(msg.content || (isTyping && idx === messages.length - 1 ? "Synthesizing..." : "Void..."))}
+                  {msg.role === 'assistant' && isThinking && idx === messages.length - 1 && (
+                    <div className="flex items-center gap-3 mb-4 p-3 bg-indigo-500/10 border border-indigo-500/20 rounded-xl animate-pulse">
+                      <Cpu size={14} className="text-indigo-400" />
+                      <span className="text-[10px] font-black uppercase tracking-widest text-indigo-400">Chief Research Officer is reasoning...</span>
+                    </div>
+                  )}
+                  <div className={`markdown-body ${msg.role === 'assistant' ? 'prose prose-invert prose-sm max-w-none' : 'font-bold tracking-tight'} relative z-10`}>
+                    {msg.role === 'assistant' ? (
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {String(msg.content || (isTyping && idx === messages.length - 1 ? "Synthesizing..." : "Void..."))}
+                      </ReactMarkdown>
+                    ) : (
+                      <div className="whitespace-pre-wrap italic">{String(msg.content)}</div>
+                    )}
                   </div>
                   
                   {msg.sources && msg.sources.length > 0 && (

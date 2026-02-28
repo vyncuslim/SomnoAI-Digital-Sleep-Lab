@@ -152,16 +152,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-5xl md:text-7xl font-black tracking-tighter leading-[1.1] mb-8"
+              className="text-6xl md:text-9xl font-black tracking-tighter leading-[0.85] mb-8 uppercase italic"
             >
-              {lang === 'zh' ? '您的私人数字' : 'Your Personal Digital'} <br />
+              {lang === 'zh' ? 'SomnoAI 数字' : 'SomnoAI Digital'} <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{lang === 'zh' ? '睡眠实验室' : 'Sleep Lab'}</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-xl text-slate-400 max-w-2xl leading-relaxed mb-12 font-medium"
+              className="text-xl md:text-2xl text-slate-400 max-w-2xl leading-relaxed mb-12 font-medium italic"
             >
               {lang === 'zh' ? '连接您的穿戴设备 → 获取 AI 恢复情报。上传您的睡眠数据，让我们的 AI 进行深度分析，并为您提供可执行的恢复方案。' : 'Connect your wearable → Get AI recovery intelligence. Upload your sleep data, let our AI analyze it, and wake up to actionable recovery protocols.'}
             </motion.p>
@@ -321,32 +321,42 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
         </section>
 
         {/* Use Cases */}
-        <section className="max-w-7xl mx-auto px-6 py-32">
-          <div className="mb-16 text-center">
-            <h2 className="text-4xl font-black uppercase tracking-tighter mb-4">{lang === 'zh' ? '为谁设计？' : 'Who is it for?'}</h2>
-            <p className="text-slate-400 max-w-xl mx-auto">{lang === 'zh' ? '无论您的目标是什么，SomnoAI 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI provides customized recovery strategies.'}</p>
+        <section className="max-w-7xl mx-auto px-6 py-32 relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          <div className="mb-24 text-center">
+            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-4 italic">{lang === 'zh' ? '为谁设计？' : 'Who is it for?'}</h2>
+            <p className="text-xl text-slate-500 max-w-xl mx-auto italic font-medium">{lang === 'zh' ? '无论您的目标是什么，SomnoAI 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI provides customized recovery strategies.'}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <GlassCard className="p-8 border-white/5 bg-white/[0.02]">
-              <div className="h-48 bg-indigo-900/20 rounded-2xl mb-6 flex items-center justify-center border border-indigo-500/20">
-                <Activity size={48} className="text-indigo-400" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+            <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-slate-900/40 group hover:border-indigo-500/30 transition-all overflow-hidden relative">
+              <div className="absolute -right-8 -top-8 w-48 h-48 bg-indigo-500/5 blur-3xl rounded-full group-hover:bg-indigo-500/10 transition-all" />
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl mb-8 flex items-center justify-center border border-indigo-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                  <Activity size={40} className="text-indigo-400" />
+                </div>
+                <h3 className="text-3xl font-black italic uppercase tracking-tight text-white mb-4">{lang === 'zh' ? '高强度运动员' : 'Elite Athletes'}</h3>
+                <p className="text-slate-400 leading-relaxed italic font-medium">{lang === 'zh' ? '优化训练负荷，预测疲劳，并在比赛日达到最佳状态。' : 'Optimize training load, predict fatigue, and peak on race day.'}</p>
               </div>
-              <h3 className="text-2xl font-bold mb-3">{lang === 'zh' ? '高强度运动员' : 'Elite Athletes'}</h3>
-              <p className="text-slate-400 leading-relaxed">{lang === 'zh' ? '优化训练负荷，预测疲劳，并在比赛日达到最佳状态。' : 'Optimize training load, predict fatigue, and peak on race day.'}</p>
             </GlassCard>
-            <GlassCard className="p-8 border-white/5 bg-white/[0.02]">
-              <div className="h-48 bg-emerald-900/20 rounded-2xl mb-6 flex items-center justify-center border border-emerald-500/20">
-                <Brain size={48} className="text-emerald-400" />
+            <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-slate-900/40 group hover:border-emerald-500/30 transition-all overflow-hidden relative">
+              <div className="absolute -right-8 -top-8 w-48 h-48 bg-emerald-500/5 blur-3xl rounded-full group-hover:bg-emerald-500/10 transition-all" />
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-emerald-500/10 rounded-3xl mb-8 flex items-center justify-center border border-emerald-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                  <Brain size={40} className="text-emerald-400" />
+                </div>
+                <h3 className="text-3xl font-black italic uppercase tracking-tight text-white mb-4">{lang === 'zh' ? '知识工作者' : 'Knowledge Workers'}</h3>
+                <p className="text-slate-400 leading-relaxed italic font-medium">{lang === 'zh' ? '最大化深度睡眠，提高白天的认知清晰度和专注力。' : 'Maximize deep sleep to improve daytime cognitive clarity and focus.'}</p>
               </div>
-              <h3 className="text-2xl font-bold mb-3">{lang === 'zh' ? '知识工作者' : 'Knowledge Workers'}</h3>
-              <p className="text-slate-400 leading-relaxed">{lang === 'zh' ? '最大化深度睡眠，提高白天的认知清晰度和专注力。' : 'Maximize deep sleep to improve daytime cognitive clarity and focus.'}</p>
             </GlassCard>
-            <GlassCard className="p-8 border-white/5 bg-white/[0.02]">
-              <div className="h-48 bg-rose-900/20 rounded-2xl mb-6 flex items-center justify-center border border-rose-500/20">
-                <ShieldCheck size={48} className="text-rose-400" />
+            <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-slate-900/40 group hover:border-rose-500/30 transition-all overflow-hidden relative">
+              <div className="absolute -right-8 -top-8 w-48 h-48 bg-rose-500/5 blur-3xl rounded-full group-hover:bg-rose-500/10 transition-all" />
+              <div className="relative z-10">
+                <div className="w-20 h-20 bg-rose-500/10 rounded-3xl mb-8 flex items-center justify-center border border-rose-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                  <ShieldCheck size={40} className="text-rose-400" />
+                </div>
+                <h3 className="text-3xl font-black italic uppercase tracking-tight text-white mb-4">{lang === 'zh' ? '失眠改善者' : 'Sleep Improvers'}</h3>
+                <p className="text-slate-400 leading-relaxed italic font-medium">{lang === 'zh' ? '识别破坏睡眠的隐藏因素，建立健康的作息规律。' : 'Identify hidden factors disrupting sleep and establish healthy routines.'}</p>
               </div>
-              <h3 className="text-2xl font-bold mb-3">{lang === 'zh' ? '失眠改善者' : 'Sleep Improvers'}</h3>
-              <p className="text-slate-400 leading-relaxed">{lang === 'zh' ? '识别破坏睡眠的隐藏因素，建立健康的作息规律。' : 'Identify hidden factors disrupting sleep and establish healthy routines.'}</p>
             </GlassCard>
           </div>
         </section>

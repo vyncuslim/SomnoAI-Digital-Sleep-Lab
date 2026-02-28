@@ -191,42 +191,42 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="p-4 bg-indigo-500/10 text-indigo-500 rounded-2xl">
+        <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-indigo-500/30 transition-all">
+          <div className="p-4 bg-indigo-500/10 text-indigo-500 rounded-2xl group-hover:scale-110 transition-transform">
             <Moon size={24} />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">{t.scoreStatus || 'Sleep Score'}</p>
-            <h3 className="text-2xl font-black">{stats.score ?? (t.void || 'Void')}</h3>
+            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">{t.scoreStatus || 'Sleep Score'}</p>
+            <h3 className="text-3xl font-black italic tracking-tighter">{stats.score ?? (t.void || 'Void')}</h3>
           </div>
         </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl">
+        <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-emerald-500/30 transition-all">
+          <div className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl group-hover:scale-110 transition-transform">
             <Activity size={24} />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">{t.status || 'Resting HR'}</p>
-            <h3 className="text-2xl font-black">
+            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">{t.status || 'Resting HR'}</p>
+            <h3 className="text-3xl font-black italic tracking-tighter">
               {stats.hr ? `${stats.hr} bpm` : (t.void || 'Void')}
             </h3>
           </div>
         </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="p-4 bg-amber-500/10 text-amber-500 rounded-2xl">
+        <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-amber-500/30 transition-all">
+          <div className="p-4 bg-amber-500/10 text-amber-500 rounded-2xl group-hover:scale-110 transition-transform">
             <Zap size={24} />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Readiness</p>
-            <h3 className="text-2xl font-black">{stats.readiness ? `${stats.readiness}%` : (t.void || 'Void')}</h3>
+            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">Readiness</p>
+            <h3 className="text-3xl font-black italic tracking-tighter">{stats.readiness ? `${stats.readiness}%` : (t.void || 'Void')}</h3>
           </div>
         </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4">
-          <div className="p-4 bg-purple-500/10 text-purple-500 rounded-2xl">
+        <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-purple-500/30 transition-all">
+          <div className="p-4 bg-purple-500/10 text-purple-500 rounded-2xl group-hover:scale-110 transition-transform">
             <Brain size={24} />
           </div>
           <div>
-            <p className="text-xs text-slate-500 uppercase font-bold tracking-wider">Deep Sleep</p>
-            <h3 className="text-2xl font-black">{stats.deep ?? (t.void || 'Void')}</h3>
+            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">Deep Sleep</p>
+            <h3 className="text-3xl font-black italic tracking-tighter">{stats.deep ?? (t.void || 'Void')}</h3>
           </div>
         </GlassCard>
       </div>
@@ -235,14 +235,20 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
         <div className="lg:col-span-2 space-y-8">
           <GlassCard className="p-8 min-h-[400px]">
             <div className="flex items-center justify-between mb-8">
-              <h3 className="text-xl font-bold flex items-center gap-3">
+              <h3 className="text-xl font-black italic uppercase tracking-tight flex items-center gap-3">
                 <BarChart2 size={20} className="text-indigo-500" />
-                Sleep Stages
+                Laboratory Telemetry
               </h3>
-              <select className="bg-black/20 border border-white/10 rounded-lg px-3 py-1 text-xs">
-                <option>Last Night</option>
-                <option>Last Week</option>
-              </select>
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+                  <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-pulse" />
+                  <span className="text-[8px] font-black text-emerald-500 uppercase tracking-widest">Live Link</span>
+                </div>
+                <select className="bg-black/40 border border-white/10 rounded-lg px-3 py-1.5 text-[10px] font-black uppercase tracking-wider text-slate-400 outline-none focus:border-indigo-500 transition-all">
+                  <option>Last Night</option>
+                  <option>Last Week</option>
+                </select>
+              </div>
             </div>
             <div className="h-64 flex items-center justify-center">
               {sleepData.length > 0 ? (
