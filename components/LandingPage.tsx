@@ -38,21 +38,27 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
   const steps = [
     { 
       step: "01", 
-      title: t.protocol?.step1?.title || "Connect Device", 
-      desc: t.protocol?.step1?.desc || "Sync with Apple Health, Google Fit, or Oura Ring in seconds.",
+      title: lang === 'zh' ? "连接设备" : "Connect Device", 
+      desc: lang === 'zh' ? "同步 Apple Health, Google Fit, 或 Oura Ring 数据。" : "Sync with Apple Health, Google Fit, or Oura Ring.",
       icon: Smartphone 
     },
     { 
       step: "02", 
-      title: t.protocol?.step2?.title || "Neural Analysis", 
-      desc: t.protocol?.step2?.desc || "Our AI engine processes 50+ biometric markers during your sleep.",
+      title: lang === 'zh' ? "AI 分析" : "AI Analysis", 
+      desc: lang === 'zh' ? "Gemini 2.5 Pro 处理您的睡眠和生理数据。" : "Gemini 2.5 Pro processes your sleep and physiological data.",
       icon: Brain 
     },
     { 
       step: "03", 
-      title: t.protocol?.step3?.title || "Receive Insights", 
-      desc: t.protocol?.step3?.desc || "Wake up to actionable recovery protocols and energy forecasts.",
+      title: lang === 'zh' ? "生成报告" : "Generate Report", 
+      desc: lang === 'zh' ? "获取深度的睡眠架构和恢复评分。" : "Get deep sleep architecture and recovery scoring.",
       icon: BarChart3 
+    },
+    { 
+      step: "04", 
+      title: lang === 'zh' ? "行动建议" : "Actionable Advice", 
+      desc: lang === 'zh' ? "获得个性化的作息调整和训练建议。" : "Receive personalized schedule and training recommendations.",
+      icon: Zap 
     }
   ];
 
@@ -146,17 +152,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8 }}
-              className="text-6xl md:text-8xl font-black tracking-tighter leading-[0.9] mb-8"
+              className="text-5xl md:text-7xl font-black tracking-tighter leading-[1.1] mb-8"
             >
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{t.heroTitle || 'SLEEP LAB'}</span>
+              {lang === 'zh' ? '您的私人数字' : 'Your Personal Digital'} <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{lang === 'zh' ? '睡眠实验室' : 'Sleep Lab'}</span>
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.2 }}
-              className="text-xl text-slate-400 max-w-2xl leading-relaxed mb-12"
+              className="text-xl text-slate-400 max-w-2xl leading-relaxed mb-12 font-medium"
             >
-              {t.heroSubtitle}
+              {lang === 'zh' ? '连接您的穿戴设备 → 获取 AI 恢复情报。上传您的睡眠数据，让我们的 AI 进行深度分析，并为您提供可执行的恢复方案。' : 'Connect your wearable → Get AI recovery intelligence. Upload your sleep data, let our AI analyze it, and wake up to actionable recovery protocols.'}
             </motion.p>
             <motion.div 
               initial={{ opacity: 0, y: 20 }}
@@ -178,6 +185,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               </button>
             </motion.div>
           </div>
+        </section>
+
+        {/* Visual Evidence / Dashboard Preview */}
+        <section className="max-w-7xl mx-auto px-6 py-12 relative z-20 -mt-20">
+          <motion.div 
+            initial={{ opacity: 0, y: 40 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, delay: 0.6 }}
+            className="relative rounded-3xl overflow-hidden border border-white/10 bg-slate-900/80 backdrop-blur-xl shadow-2xl"
+          >
+            <div className="absolute top-0 left-0 right-0 h-12 bg-black/40 border-b border-white/5 flex items-center px-4 gap-2">
+              <div className="w-3 h-3 rounded-full bg-rose-500/50" />
+              <div className="w-3 h-3 rounded-full bg-amber-500/50" />
+              <div className="w-3 h-3 rounded-full bg-emerald-500/50" />
+              <div className="ml-4 text-xs font-mono text-slate-500">somnoai-analysis-report.json</div>
+            </div>
+            <div className="p-8 pt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="col-span-2 space-y-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="text-2xl font-bold text-white">{lang === 'zh' ? '恢复评分' : 'Recovery Score'}</h3>
+                    <p className="text-slate-400">{lang === 'zh' ? '基于昨晚的生物特征数据' : 'Based on last night\'s biometrics'}</p>
+                  </div>
+                  <div className="text-5xl font-black text-emerald-400">87</div>
+                </div>
+                <div className="h-40 bg-white/5 rounded-xl border border-white/5 flex items-end p-4 gap-2">
+                  {/* Mock chart bars */}
+                  {[40, 60, 30, 80, 90, 45, 70, 85].map((h, i) => (
+                    <div key={i} className="flex-1 bg-indigo-500/50 hover:bg-indigo-400/70 transition-colors rounded-t-sm" style={{ height: `${h}%` }} />
+                  ))}
+                </div>
+              </div>
+              <div className="space-y-4">
+                <div className="p-4 bg-indigo-500/10 rounded-xl border border-indigo-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Brain size={16} className="text-indigo-400" />
+                    <span className="text-sm font-bold text-indigo-400">{lang === 'zh' ? 'AI 洞察' : 'AI Insight'}</span>
+                  </div>
+                  <p className="text-sm text-slate-300">{lang === 'zh' ? '将室温调整至 18°C 后，您的深度睡眠增加了 15%。保持此方案以获得最佳恢复。' : 'Your deep sleep increased by 15% after adjusting room temperature to 18°C. Maintain this protocol for optimal recovery.'}</p>
+                </div>
+                <div className="p-4 bg-rose-500/10 rounded-xl border border-rose-500/20">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Activity size={16} className="text-rose-400" />
+                    <span className="text-sm font-bold text-rose-400">{lang === 'zh' ? '需要采取行动' : 'Action Required'}</span>
+                  </div>
+                  <p className="text-sm text-slate-300">{lang === 'zh' ? '检测到静息心率升高 (68 bpm)。建议今天降低训练强度。' : 'Elevated resting heart rate detected (68 bpm). Consider reducing training intensity today.'}</p>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </section>
 
         {/* Stats Section */}
@@ -224,10 +281,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
           <div className="max-w-7xl mx-auto px-6 relative z-10">
             <div className="text-center mb-20">
               <h2 className="text-4xl font-black uppercase tracking-tighter mb-4">{lang === 'zh' ? '协议流程' : 'The Protocol'}</h2>
-              <p className="text-slate-400">{lang === 'zh' ? '实现全面认知恢复的三个步骤。' : 'Three steps to total cognitive restoration.'}</p>
+              <p className="text-slate-400">{lang === 'zh' ? '实现全面认知恢复的四个步骤。' : 'Four steps to total cognitive restoration.'}</p>
             </div>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8 relative">
               <div className="hidden md:block absolute top-12 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-indigo-500/30 to-transparent -z-10" />
               
               {steps.map((step, i) => (
@@ -245,6 +302,52 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
                 </div>
               ))}
             </div>
+          </div>
+        </section>
+
+        {/* Supported Devices */}
+        <section className="py-20 border-y border-white/5 bg-black/40">
+          <div className="max-w-7xl mx-auto px-6 text-center">
+            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest mb-8">{lang === 'zh' ? '兼容主流设备' : 'Compatible with major devices'}</p>
+            <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
+              {/* Mock logos using text for now */}
+              <div className="text-xl font-black tracking-tighter">Apple Watch</div>
+              <div className="text-xl font-black tracking-tighter">Oura</div>
+              <div className="text-xl font-black tracking-tighter">Garmin</div>
+              <div className="text-xl font-black tracking-tighter">Fitbit</div>
+              <div className="text-xl font-black tracking-tighter">Whoop</div>
+            </div>
+          </div>
+        </section>
+
+        {/* Use Cases */}
+        <section className="max-w-7xl mx-auto px-6 py-32">
+          <div className="mb-16 text-center">
+            <h2 className="text-4xl font-black uppercase tracking-tighter mb-4">{lang === 'zh' ? '为谁设计？' : 'Who is it for?'}</h2>
+            <p className="text-slate-400 max-w-xl mx-auto">{lang === 'zh' ? '无论您的目标是什么，SomnoAI 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI provides customized recovery strategies.'}</p>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <GlassCard className="p-8 border-white/5 bg-white/[0.02]">
+              <div className="h-48 bg-indigo-900/20 rounded-2xl mb-6 flex items-center justify-center border border-indigo-500/20">
+                <Activity size={48} className="text-indigo-400" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">{lang === 'zh' ? '高强度运动员' : 'Elite Athletes'}</h3>
+              <p className="text-slate-400 leading-relaxed">{lang === 'zh' ? '优化训练负荷，预测疲劳，并在比赛日达到最佳状态。' : 'Optimize training load, predict fatigue, and peak on race day.'}</p>
+            </GlassCard>
+            <GlassCard className="p-8 border-white/5 bg-white/[0.02]">
+              <div className="h-48 bg-emerald-900/20 rounded-2xl mb-6 flex items-center justify-center border border-emerald-500/20">
+                <Brain size={48} className="text-emerald-400" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">{lang === 'zh' ? '知识工作者' : 'Knowledge Workers'}</h3>
+              <p className="text-slate-400 leading-relaxed">{lang === 'zh' ? '最大化深度睡眠，提高白天的认知清晰度和专注力。' : 'Maximize deep sleep to improve daytime cognitive clarity and focus.'}</p>
+            </GlassCard>
+            <GlassCard className="p-8 border-white/5 bg-white/[0.02]">
+              <div className="h-48 bg-rose-900/20 rounded-2xl mb-6 flex items-center justify-center border border-rose-500/20">
+                <ShieldCheck size={48} className="text-rose-400" />
+              </div>
+              <h3 className="text-2xl font-bold mb-3">{lang === 'zh' ? '失眠改善者' : 'Sleep Improvers'}</h3>
+              <p className="text-slate-400 leading-relaxed">{lang === 'zh' ? '识别破坏睡眠的隐藏因素，建立健康的作息规律。' : 'Identify hidden factors disrupting sleep and establish healthy routines.'}</p>
+            </GlassCard>
           </div>
         </section>
 
@@ -303,8 +406,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
             <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">{t.footer?.links}</h4>
             <ul className="space-y-4 text-sm text-slate-500">
               <li><a href="/about" className="hover:text-white transition-colors">{t.footer?.about}</a></li>
+              <li><a href="/science" className="hover:text-white transition-colors">{lang === 'zh' ? '科学' : 'Science'}</a></li>
               <li><a href="/blog" className="hover:text-white transition-colors">{t.blog?.title || 'Blog'}</a></li>
               <li><a href="/news" className="hover:text-white transition-colors">{t.news?.title || 'Research'}</a></li>
+              <li><a href="/faq" className="hover:text-white transition-colors">{lang === 'zh' ? '常见问题' : 'FAQ'}</a></li>
               <li><a href="/contact" className="hover:text-white transition-colors">{t.support?.title || 'Contact'}</a></li>
             </ul>
           </div>

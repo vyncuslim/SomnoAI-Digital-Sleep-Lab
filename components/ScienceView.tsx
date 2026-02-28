@@ -6,6 +6,9 @@ import {
 } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
+import { Logo } from './Logo.tsx';
+import { updateMetadata } from '../services/navigation.ts';
+import { useEffect } from 'react';
 
 import { motion } from 'framer-motion';
 
@@ -26,6 +29,10 @@ const REFERENCE_NODES = [
 export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
   const isZh = lang === 'zh';
 
+  useEffect(() => {
+    updateMetadata(isZh ? '科学 - SomnoAI Digital Sleep Lab' : 'Science - SomnoAI Digital Sleep Lab', isZh ? '探索睡眠科学' : 'Explore the science of sleep', '/science');
+  }, [isZh]);
+
   return (
     <div className="min-h-screen bg-black pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-700 font-sans text-left relative overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
@@ -35,13 +42,14 @@ export const ScienceView: React.FC<ScienceViewProps> = ({ lang, onBack }) => {
         <Terminal size={600} strokeWidth={0.5} />
       </div>
 
-      <header className="max-w-7xl mx-auto px-6 mb-20 relative z-10">
+      <header className="max-w-7xl mx-auto px-6 mb-20 relative z-10 flex justify-between items-center mt-6">
         <button 
           onClick={onBack}
           className="p-4 bg-slate-950/80 backdrop-blur-3xl hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
         >
           <ArrowLeft size={24} />
         </button>
+        <Logo />
       </header>
 
       <div className="max-w-6xl mx-auto px-6 space-y-32 relative z-10">

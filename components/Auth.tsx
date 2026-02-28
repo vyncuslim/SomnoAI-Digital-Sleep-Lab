@@ -400,11 +400,11 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
                     </div>
                     <span className="text-xs text-slate-400 leading-relaxed">
                       {lang === 'zh' ? '我已阅读并同意' : 'I have read and agree to the '}
-                      <a href="https://sleepsomno.com/terms" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors">
+                      <a href="/terms/index.html" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors">
                         {lang === 'zh' ? '使用条款' : 'Terms of Use'}
                       </a>
                       {lang === 'zh' ? '和' : ' and '}
-                      <a href="https://sleepsomno.com/privacy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors">
+                      <a href="/privacy/index.html" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 underline underline-offset-2 transition-colors">
                         {lang === 'zh' ? '隐私政策' : 'Privacy Policy'}
                       </a>
                       {lang === 'zh' ? '。' : '.'}

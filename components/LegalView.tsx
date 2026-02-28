@@ -1,6 +1,8 @@
 import React from 'react';
 import { ArrowLeft, FileText, ShieldCheck, Lock, ShieldAlert, Activity, AlertTriangle, Zap, Mail, ExternalLink, Shield } from 'lucide-react';
 import { Language } from '../services/i18n.ts';
+import { updateMetadata } from '../services/navigation.ts';
+import { useEffect } from 'react';
 
 interface LegalViewProps {
   type: 'privacy' | 'terms';
@@ -10,6 +12,11 @@ interface LegalViewProps {
 
 export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
   const isPrivacy = type === 'privacy';
+
+  useEffect(() => {
+    const title = isPrivacy ? 'Privacy Policy' : 'Terms of Service';
+    updateMetadata(`${title} - SomnoAI Digital Sleep Lab`, 'Legal information for SomnoAI Digital Sleep Lab.', `/${type}`);
+  }, [type, isPrivacy]);
 
   return (
     <div className="min-h-screen bg-black pt-4 pb-32 animate-in fade-in slide-in-from-right-4 duration-500 relative overflow-hidden">

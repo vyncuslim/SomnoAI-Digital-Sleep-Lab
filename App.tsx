@@ -24,6 +24,8 @@ import { OpenSourceView } from './components/OpenSourceView.tsx';
 import { ChangelogView } from './components/ChangelogView.tsx';
 import { LegalView } from './components/LegalView.tsx';
 import { SupportView } from './components/SupportView.tsx';
+import { FAQView } from './components/FAQView.tsx';
+import { ScienceView } from './components/ScienceView.tsx';
 import { getTranslation } from './services/i18n.ts';
 import { SleepRecord } from './types.ts';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData.ts';
@@ -136,6 +138,8 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/auth/verify" element={<AuthVerify lang={effectiveLang} />} />
       <Route path="/about" element={<AboutView lang={effectiveLang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
       <Route path="/contact" element={<ContactView lang={effectiveLang} onBack={handleBack} />} />
+      <Route path="/faq" element={<FAQView lang={effectiveLang} onBack={handleBack} />} />
+      <Route path="/science" element={<ScienceView lang={effectiveLang} onBack={handleBack} />} />
       
       {/* Blog & News */}
       <Route path="/blog" element={<BlogHub lang={effectiveLang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />

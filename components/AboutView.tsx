@@ -9,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { GlassCard } from './GlassCard.tsx';
+import { Logo } from './Logo.tsx';
+import { updateMetadata } from '../services/navigation.ts';
 
 import { motion } from 'framer-motion';
 
@@ -23,6 +25,14 @@ interface AboutViewProps {
 export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }) => {
   const isZh = lang === 'zh';
   const t = getTranslation(lang, 'about');
+
+  React.useEffect(() => {
+    updateMetadata(
+      isZh ? "关于项目 | SomnoAI" : "About Project | SomnoAI",
+      isZh ? "了解 SomnoAI 数字睡眠实验室的愿景和技术。" : "Learn about the vision and technology behind SomnoAI Digital Sleep Lab.",
+      "/about"
+    );
+  }, [isZh]);
 
   const aiDimensions = [
     { icon: Activity, title: isZh ? '健康趋势预测' : 'Health Trend Prediction', desc: isZh ? '基于历史数据，预测未来的健康变化，如心率异常风险及睡眠质量下降趋势。' : 'Predicting future health changes like HR anomaly risks and sleep quality decline based on historical data.' },
@@ -48,7 +58,18 @@ export const AboutView: React.FC<AboutViewProps> = ({ lang, onBack, onNavigate }
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_-20%,#1e1b4b_0%,transparent_50%)] opacity-30" />
       
       <header className="flex flex-col items-center text-center gap-8 mb-16 px-4 max-w-4xl mx-auto pt-20 relative z-10">
-        <div className="flex items-center justify-center gap-4">
+        <div className="absolute top-0 left-4">
+          <button 
+            onClick={onBack}
+            className="p-4 bg-slate-950/80 backdrop-blur-3xl hover:bg-white/10 rounded-3xl text-slate-400 hover:text-white transition-all border border-white/5 shadow-2xl active:scale-95"
+          >
+            <ArrowLeft size={24} />
+          </button>
+        </div>
+        <div className="absolute top-0 right-4">
+          <Logo />
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-8">
           <h1 className="text-5xl md:text-7xl font-black italic tracking-tighter text-white uppercase leading-none">
             {isZh ? '关于项目' : 'About Project'}
           </h1>
