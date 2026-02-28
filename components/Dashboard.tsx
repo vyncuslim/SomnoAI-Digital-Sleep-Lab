@@ -31,7 +31,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
   const [feedbackText, setFeedbackText] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
   const [showAIAssistant, setShowAIAssistant] = useState(false);
-  const [stats, setStats] = useState({
+  const [stats, setStats] = useState<{
+    score: number | null;
+    hr: number | null;
+    readiness: number | null;
+    deep: string | number | null;
+  }>({
     score: null,
     hr: null,
     readiness: null,
@@ -108,7 +113,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
             }
           }
         } else {
-          navigate('/auth');
+          navigate('/auth/signin');
         }
       } catch (e) {
         console.error("Dashboard data fetch failed:", e);
@@ -121,7 +126,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
 
   const performLogout = async () => {
     await (supabase.auth as any).signOut();
-    navigate('/');
+    navigate('/auth/signin');
   };
 
   const handleLogoutClick = () => {

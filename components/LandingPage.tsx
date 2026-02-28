@@ -134,11 +134,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               CN
             </button>
           </div>
-          <button onClick={() => navigate('/auth')} className="text-sm font-medium text-slate-400 hover:text-white transition-colors hidden md:block">
+          <button onClick={() => navigate('/auth/signin')} className="text-sm font-medium text-slate-400 hover:text-white transition-colors hidden md:block">
             {t.nav?.enter || 'LOGIN'}
           </button>
           <button 
-            onClick={() => navigate('/auth')}
+            onClick={() => navigate('/auth/signup')}
             className="px-5 py-2 bg-white text-black rounded-full text-sm font-bold hover:bg-slate-200 transition-colors"
           >
             {t.nav?.signup || 'JOIN NOW'}
@@ -176,7 +176,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               className="flex flex-col sm:flex-row items-start gap-4"
             >
               <button 
-                onClick={() => navigate('/auth')}
+                onClick={() => navigate('/auth/signup')}
                 className="px-8 py-4 bg-indigo-600 text-white rounded-full font-bold text-lg hover:bg-indigo-500 transition-all flex items-center gap-2 group shadow-[0_0_40px_-10px_rgba(79,70,229,0.5)]"
               >
                 {t.ctaPrimary || 'Start Analysis'} <ArrowRight className="group-hover:translate-x-1 transition-transform" />
@@ -408,7 +408,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
             </h2>
             <p className="text-xl text-slate-400">{lang === 'zh' ? '加入下一代睡眠工程的候补名单。' : 'Join the waitlist for the next generation of sleep engineering.'}</p>
             <button 
-              onClick={() => navigate('/auth')}
+              onClick={() => navigate('/auth/signup')}
               className="px-12 py-5 bg-white text-black rounded-full font-black text-lg uppercase tracking-widest hover:scale-105 transition-transform shadow-2xl"
             >
               {lang === 'zh' ? '立即开始' : 'Get Started Now'}
@@ -432,6 +432,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
             <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">{t.footer?.links}</h4>
             <ul className="space-y-4 text-sm text-slate-500">
               <li><a href="/about" className="hover:text-white transition-colors">{t.footer?.about}</a></li>
+              <li><a href="/auth/signin" className="hover:text-white transition-colors">{lang === 'zh' ? '登录' : 'Login'}</a></li>
+              <li><a href="/auth/signup" className="hover:text-white transition-colors">{lang === 'zh' ? '注册' : 'Sign Up'}</a></li>
               <li><a href="/science" className="hover:text-white transition-colors">{lang === 'zh' ? '科学' : 'Science'}</a></li>
               <li><a href="/blog" className="hover:text-white transition-colors">{t.blog?.title || 'Blog'}</a></li>
               <li><a href="/news" className="hover:text-white transition-colors">{t.news?.title || 'Research'}</a></li>

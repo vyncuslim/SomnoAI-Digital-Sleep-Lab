@@ -25,7 +25,7 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
 
   useEffect(() => {
     if (!email) {
-      navigate('/auth');
+      navigate('/auth/signin');
     }
   }, [email, navigate]);
 
@@ -122,7 +122,7 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
 
       <GlassCard className="p-8 w-full max-w-md border-indigo-500/20 relative z-10 backdrop-blur-xl">
         <button 
-          onClick={() => navigate('/auth')}
+          onClick={() => navigate('/auth/signin')}
           className="absolute left-6 top-6 p-2 hover:bg-white/5 rounded-full transition-colors text-slate-500 hover:text-white"
         >
           <ArrowLeft size={20} />

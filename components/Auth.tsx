@@ -495,7 +495,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             <button
               type="button"
               onClick={() => {
-                const targetView = view === 'login' ? 'signup' : 'login';
+                const targetView = view === 'login' ? 'signup' : 'signin';
                 navigate(`/auth/${targetView}`);
                 setFieldErrors({}); 
                 setError(null); 
