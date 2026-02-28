@@ -95,7 +95,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         supabase.auth.signOut().then(() => {
           // We want to keep isBlocked as true so the App can show BlockedView
           // But we need to make sure we don't clear it in the listener
-        });
+        }).catch(e => console.error("Failed to sign out", e));
         setProfile(null);
         setLoading(false);
         isSyncing.current = false;
