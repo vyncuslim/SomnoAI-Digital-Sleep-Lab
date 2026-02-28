@@ -9,6 +9,7 @@ import {
 } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
+import { Logo } from './Logo.tsx';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { supabase } from '../services/supabaseService.ts';
 
@@ -153,11 +154,18 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
         </div>
       )}
 
-      <header className="flex items-center justify-between mb-12">
-        <div className="flex items-center gap-4">
+      <header className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12 relative grainy-bg">
+        <div className="absolute -left-12 top-1/2 -translate-y-1/2 w-1.5 h-16 bg-indigo-500 rounded-full blur-[2px] animate-pulse" />
+        <div className="flex items-center gap-6">
+          <div className="relative">
+            <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full animate-pulse" />
+            <Logo className="relative z-10 scale-110" />
+          </div>
           <div>
-            <h1 className="text-xl font-bold">{lang === 'zh' ? '欢迎回来' : 'Welcome back'}</h1>
-            <p className="text-xs text-slate-500 font-mono">{user?.email}</p>
+            <p className="micro-label mb-1">System Status: Operational // Neural Link: Stable</p>
+            <h1 className="text-3xl md:text-5xl font-black italic tracking-tighter uppercase">
+              {t.welcome || 'Command Center'}
+            </h1>
           </div>
         </div>
         <div className="flex items-center gap-4">
@@ -281,23 +289,32 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
         </div>
 
         <div className="space-y-6">
-          <GlassCard className="p-6 bg-gradient-to-br from-indigo-900/20 to-purple-900/20 border-indigo-500/20">
-            <div className="flex items-start justify-between mb-4">
-              <div className="p-3 bg-indigo-500 rounded-xl text-white shadow-lg shadow-indigo-500/30">
-                <Brain size={20} />
+          <GlassCard className="p-8 bg-slate-900/60 border-indigo-500/20 relative overflow-hidden group rounded-[2.5rem]">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/5 blur-3xl rounded-full group-hover:bg-indigo-500/10 transition-all" />
+            <div className="flex items-start justify-between mb-8 relative z-10">
+              <div className="space-y-1">
+                <p className="micro-label">Neural Analysis Engine</p>
+                <h4 className="font-black italic text-2xl uppercase tracking-tight flex items-center gap-3">
+                  <Brain size={24} className="text-indigo-400" />
+                  Optimal Recovery
+                </h4>
               </div>
-              <span className="px-2 py-1 bg-indigo-500/10 text-indigo-400 rounded text-[10px] font-bold uppercase tracking-wider">AI Insight</span>
+              <div className="px-3 py-1 bg-indigo-500/10 border border-indigo-500/20 rounded-full">
+                <span className="text-[8px] font-black text-indigo-400 uppercase tracking-widest">Active</span>
+              </div>
             </div>
-            <h4 className="font-bold text-lg mb-2">Optimal Recovery</h4>
-            <p className="text-sm text-slate-400 leading-relaxed mb-6">
+            
+            <div className="dashed-line mb-8 opacity-50" />
+            
+            <p className="text-sm text-slate-400 leading-relaxed italic font-medium mb-8 relative z-10">
               Your deep sleep ratio is 15% higher than your 30-day average. Cognitive performance is likely peaked today.
             </p>
             
-            <div className="relative group">
+            <div className="relative group z-10">
               <input 
                 type="text" 
                 placeholder={lang === 'zh' ? '询问关于睡眠的问题...' : 'Ask about your sleep...'}
-                className="w-full bg-black/40 border border-indigo-500/30 rounded-xl py-3 pl-4 pr-12 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none transition-all text-white placeholder-slate-500"
+                className="w-full bg-black/60 border border-white/5 rounded-2xl py-4 pl-5 pr-14 text-sm focus:border-indigo-500/50 focus:bg-black/80 outline-none transition-all text-white placeholder-slate-700 italic font-medium"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.currentTarget.value.trim()) {
                     setShowAIAssistant(true);
@@ -306,27 +323,30 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
               />
               <button 
                 onClick={() => setShowAIAssistant(true)}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 w-10 h-10 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl transition-all flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-110"
               >
-                <Sparkles size={14} />
+                <Sparkles size={16} />
               </button>
             </div>
           </GlassCard>
 
-          <GlassCard className="p-6">
-            <h4 className="font-bold text-sm uppercase tracking-wider text-slate-500 mb-4">Quick Actions</h4>
-            <div className="space-y-3">
-              <button onClick={() => setShowAIAssistant(true)} className="w-full p-4 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-left flex items-center justify-between group transition-all">
-                <span className="font-medium text-sm text-indigo-400 flex items-center gap-2"><Brain size={16} /> {lang === 'zh' ? 'AI 助手' : 'AI Assistant'}</span>
-                <ChevronRight size={16} className="text-indigo-500 group-hover:text-indigo-300 transition-colors" />
+          <GlassCard className="p-8 rounded-[2.5rem] border-white/5 bg-slate-900/40">
+            <div className="flex items-center justify-between mb-8">
+              <h4 className="micro-label">Quick Actions</h4>
+              <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-pulse" />
+            </div>
+            <div className="space-y-4">
+              <button onClick={() => setShowAIAssistant(true)} className="w-full p-5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 rounded-2xl text-left flex items-center justify-between group transition-all">
+                <span className="font-black italic text-xs uppercase tracking-widest text-indigo-400 flex items-center gap-3"><Brain size={18} /> {lang === 'zh' ? 'AI 助手' : 'AI Assistant'}</span>
+                <ChevronRight size={18} className="text-indigo-500 group-hover:translate-x-1 transition-all" />
               </button>
-              <button onClick={() => navigate('/experiment')} className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left flex items-center justify-between group transition-all">
-                <span className="font-medium text-sm">Start Experiment</span>
-                <ChevronRight size={16} className="text-slate-600 group-hover:text-white transition-colors" />
+              <button onClick={() => navigate('/experiment')} className="w-full p-5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-left flex items-center justify-between group transition-all">
+                <span className="font-black italic text-xs uppercase tracking-widest text-slate-400 flex items-center gap-3"><Zap size={18} /> Start Experiment</span>
+                <ChevronRight size={18} className="text-slate-600 group-hover:translate-x-1 transition-all group-hover:text-white" />
               </button>
-              <button onClick={() => navigate('/journal')} className="w-full p-4 bg-white/5 hover:bg-white/10 rounded-xl text-left flex items-center justify-between group transition-all">
-                <span className="font-medium text-sm">Log Journal</span>
-                <ChevronRight size={16} className="text-slate-600 group-hover:text-white transition-colors" />
+              <button onClick={() => navigate('/journal')} className="w-full p-5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-left flex items-center justify-between group transition-all">
+                <span className="font-black italic text-xs uppercase tracking-widest text-slate-400 flex items-center gap-3"><Activity size={18} /> Log Journal</span>
+                <ChevronRight size={18} className="text-slate-600 group-hover:translate-x-1 transition-all group-hover:text-white" />
               </button>
             </div>
           </GlassCard>

@@ -190,6 +190,11 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             return;
           }
           await supabase.rpc('reset_login_attempts', { target_email: email });
+          
+          // Send login notification with location
+          const location = await emailService.getLoginLocation();
+          await emailService.sendLoginNotification(email, location);
+
           navigate('/dashboard');
         }
         if (error) {
@@ -205,18 +210,6 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
 
           // Check if user should be blocked after failed attempt
           await checkAndBlockUser(email);
-        } else {
-           // Check if blocked after successful login just in case
-           const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
-           if (profile?.is_blocked) {
-             await supabase.auth.signOut();
-             setError(t.blocked);
-             setLoading(false);
-             resetCaptcha();
-             return;
-           }
-           await supabase.rpc('reset_login_attempts', { target_email: email });
-           navigate('/dashboard');
         }
       }
     }
@@ -249,29 +242,38 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   };
 
   return (
-    <div className="min-h-screen bg-[#01040a] text-white flex items-center justify-center p-6 relative overflow-hidden">
+    <div className="min-h-screen bg-[#01040a] text-white flex items-center justify-center p-6 relative overflow-hidden grainy-bg">
       {/* Background Effects */}
       <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-600/10 blur-[120px] rounded-full" />
-        <div className="absolute bottom-[-10%] left-[-10%] w-[500px] h-[500px] bg-purple-600/10 blur-[120px] rounded-full" />
+        <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-indigo-600/10 blur-[150px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-purple-600/10 blur-[150px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-blue-600/5 blur-[200px] rounded-full" />
       </div>
 
-      <GlassCard className="p-8 w-full max-w-md border-white/10 relative z-10 backdrop-blur-xl">
-        <div className="text-center mb-10 flex flex-col items-center">
-          <Logo className="mb-4" />
-          <p className="text-slate-500 text-[10px] uppercase tracking-[0.3em] font-bold">{view === 'login' ? t.loginTitle : t.signupTitle}</p>
+      <GlassCard className="p-10 w-full max-w-md border-white/5 relative z-10 backdrop-blur-2xl bg-slate-900/40 rounded-[2.5rem] shadow-2xl">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500/50 to-transparent" />
+        
+        <div className="text-center mb-12 flex flex-col items-center">
+          <div className="relative mb-6">
+            <div className="absolute inset-0 bg-indigo-500/20 blur-2xl rounded-full animate-pulse" />
+            <Logo className="relative z-10 scale-125" />
+          </div>
+          <div className="space-y-1">
+            <p className="micro-label">{view === 'login' ? t.loginTitle : t.signupTitle}</p>
+            <h2 className="text-2xl font-black italic tracking-tighter uppercase">Neural Access</h2>
+          </div>
         </div>
         
-        <div className="flex p-1 bg-white/5 rounded-xl mb-8">
+        <div className="flex p-1.5 bg-black/40 border border-white/5 rounded-2xl mb-10">
           <button
             onClick={() => { setMode('otp'); setFieldErrors({}); setError(null); resetCaptcha(); }}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${mode === 'otp' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] italic rounded-xl transition-all ${mode === 'otp' ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]' : 'text-slate-500 hover:text-white'}`}
           >
             {t.otpMode}
           </button>
           <button
             onClick={() => { setMode('password'); setFieldErrors({}); setError(null); resetCaptcha(); }}
-            className={`flex-1 py-2 text-xs font-bold uppercase tracking-wider rounded-lg transition-all ${mode === 'password' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+            className={`flex-1 py-3 text-[10px] font-black uppercase tracking-[0.2em] italic rounded-xl transition-all ${mode === 'password' ? 'bg-indigo-600 text-white shadow-[0_0_20px_rgba(79,70,229,0.4)]' : 'text-slate-500 hover:text-white'}`}
           >
             {t.passwordMode}
           </button>
@@ -295,7 +297,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
                     placeholder={t.fullName}
                     value={fullName}
                     onChange={(e) => { setFullName(e.target.value); if (fieldErrors.fullName) setFieldErrors({...fieldErrors, fullName: undefined}); }}
-                    className={`w-full bg-black/40 border rounded-xl pl-12 pr-4 py-4 outline-none transition-colors text-sm font-medium placeholder-slate-600 ${fieldErrors.fullName ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-indigo-500'}`}
+                    className={`w-full bg-black/60 border rounded-2xl pl-12 pr-4 py-4 outline-none transition-all text-sm font-medium placeholder-slate-700 ${fieldErrors.fullName ? 'border-rose-500/50 focus:border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-white/5 focus:border-indigo-500/50 focus:bg-black/80'}`}
                     disabled={loading}
                   />
                   <AnimatePresence>
@@ -327,7 +329,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
                   placeholder={t.email}
                   value={email}
                   onChange={(e) => { setEmail(e.target.value); if (fieldErrors.email) setFieldErrors({...fieldErrors, email: undefined}); }}
-                  className={`w-full bg-black/40 border rounded-xl pl-12 pr-4 py-4 outline-none transition-colors text-sm font-medium placeholder-slate-600 ${fieldErrors.email ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-indigo-500'}`}
+                  className={`w-full bg-black/60 border rounded-2xl pl-12 pr-4 py-4 outline-none transition-all text-sm font-medium placeholder-slate-700 ${fieldErrors.email ? 'border-rose-500/50 focus:border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-white/5 focus:border-indigo-500/50 focus:bg-black/80'}`}
                   disabled={loading}
                 />
                 <AnimatePresence>
@@ -359,7 +361,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
                     placeholder={t.password}
                     value={password}
                     onChange={(e) => { setPassword(e.target.value); if (fieldErrors.password) setFieldErrors({...fieldErrors, password: undefined}); }}
-                    className={`w-full bg-black/40 border rounded-xl pl-12 pr-4 py-4 outline-none transition-colors text-sm font-medium placeholder-slate-600 ${fieldErrors.password ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-indigo-500'}`}
+                    className={`w-full bg-black/60 border rounded-2xl pl-12 pr-4 py-4 outline-none transition-all text-sm font-medium placeholder-slate-700 ${fieldErrors.password ? 'border-rose-500/50 focus:border-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.1)]' : 'border-white/5 focus:border-indigo-500/50 focus:bg-black/80'}`}
                     disabled={loading}
                   />
                   <AnimatePresence>
@@ -453,15 +455,15 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           <button
             type="submit"
             disabled={loading || !captchaToken}
-            className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-xl font-bold uppercase tracking-widest text-xs transition-colors flex items-center justify-center gap-2 shadow-[0_0_20px_-5px_rgba(79,70,229,0.5)] group relative overflow-hidden"
+            className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl font-black uppercase tracking-[0.2em] italic text-xs transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_-5px_rgba(79,70,229,0.5)] group relative overflow-hidden"
           >
             {loading && (
               <div className="absolute inset-0 bg-indigo-700/50 flex items-center justify-center z-10">
                  <Loader2 className="animate-spin" />
               </div>
             )}
-            <span className={loading ? 'opacity-0' : 'opacity-100 flex items-center gap-2'}>
-              <Zap size={16} className="group-hover:text-yellow-300 transition-colors" />
+            <span className={loading ? 'opacity-0' : 'opacity-100 flex items-center gap-3'}>
+              <Zap size={18} className="group-hover:text-yellow-300 group-hover:scale-125 transition-all" />
               {view === 'login' ? t.loginBtn : t.signupBtn}
             </span>
           </button>

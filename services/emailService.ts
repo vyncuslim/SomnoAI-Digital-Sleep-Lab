@@ -93,6 +93,17 @@ export const emailService = {
     }
   },
 
+  getLoginLocation: async () => {
+    try {
+      const response = await fetch('https://ipapi.co/json/');
+      if (!response.ok) return 'Unknown Location';
+      const data = await response.json();
+      return `${data.city}, ${data.region}, ${data.country_name} (IP: ${data.ip})`;
+    } catch (e) {
+      return 'Unknown Location';
+    }
+  },
+
   sendBlockNotification: async (email: string, reason: string = 'Policy Violation') => {
     const subject = "Security Alert: Access Restricted - SomnoAI Digital Sleep Lab";
     const html = `
@@ -211,5 +222,41 @@ export const emailService = {
       </div>
     `;
     await emailService.sendSystemEmail(email, subject, html);
+  },
+
+  sendLoginNotification: async (email: string, location: string = 'Unknown Location') => {
+    const subject = "Security Alert: New Login Detected - SomnoAI Digital Sleep Lab";
+    const html = `
+      <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">👤 SomnoAI Digital Sleep Lab</h2>
+          <p style="font-size: 10px; color: #6366f1; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">Access Notification</p>
+        </div>
+        <div style="background: rgba(99, 102, 241, 0.05); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(99, 102, 241, 0.2);">
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+            A new login was detected for your account <strong>${email}</strong>.
+          </p>
+          <div style="background: rgba(99, 102, 241, 0.1); padding: 15px; border-radius: 12px; color: #818cf8; margin: 20px 0; font-size: 13px;">
+            <p style="margin: 0 0 8px 0; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; font-size: 11px;">Access Details</p>
+            <strong>Location:</strong> ${location}<br/>
+            <strong>Timestamp:</strong> ${new Date().toISOString()}<br/>
+            <strong>Status:</strong> SECURE HANDSHAKE COMPLETED
+          </div>
+          <p style="font-size: 13px; color: #94a3b8; font-style: italic;">
+            If this was not you, please secure your account immediately by changing your password or contacting support.
+          </p>
+        </div>
+        <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
+          SomnoAI Digital Sleep Lab • SECURE HUB: sleepsomno.com
+        </div>
+      </div>
+    `;
+    await emailService.sendSystemEmail(email, subject, html);
+    
+    // Also notify admin
+    await emailService.sendAdminAlert({
+      type: 'USER_LOGIN',
+      message: `Login Detected: ${email} from ${location}`
+    });
   }
 };

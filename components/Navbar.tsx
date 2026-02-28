@@ -68,14 +68,17 @@ export const Navbar: React.FC<NavbarProps> = ({
         <m.button 
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="flex items-center gap-4 cursor-pointer group bg-transparent border-none p-0 outline-none text-left" 
+          className="flex items-center gap-6 cursor-pointer group bg-transparent border-none p-0 outline-none text-left relative" 
           onClick={() => onNavigate(isAuthenticated ? 'dashboard' : '/')}
         >
-
-          <Logo className="group-hover:text-indigo-400 transition-colors" />
-          <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500 mt-1 ml-11">
-            {isZh ? '您的AI驱动睡眠伴侣' : 'Your AI-Powered Sleep Companion'}
-          </span>
+          <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
+          <Logo className="group-hover:text-indigo-400 transition-colors scale-110" />
+          <div className="flex flex-col">
+            <span className="text-[10px] font-black italic uppercase tracking-tighter text-white group-hover:text-indigo-400 transition-colors">SomnoAI</span>
+            <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500">
+              {isZh ? '您的AI驱动睡眠伴侣' : 'Neural Sleep Lab'}
+            </span>
+          </div>
         </m.button>
 
         <div className="hidden xl:flex items-center gap-8">
@@ -189,9 +192,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="xl:hidden absolute top-24 left-6 right-6 bg-[#01040a]/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl z-[200] max-h-[70vh] overflow-y-auto"
+            className="xl:hidden absolute top-24 left-6 right-6 bg-[#01040a]/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl z-[200] max-h-[70vh] overflow-y-auto grainy-bg"
           >
-            <div className="grid grid-cols-2 gap-4">
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/10 rounded-full mt-4" />
+            <div className="grid grid-cols-2 gap-4 mt-8">
               {links.map((item: any) => {
                 const id = item.id || item.view;
                 return (
@@ -201,8 +205,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                       onNavigate(id);
                       setIsMobileMenuOpen(false);
                     }}
-                    className={`flex flex-col items-center gap-3 p-6 rounded-3xl border transition-all ${activeView === id ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white'}`}
+                    className={`flex flex-col items-center gap-3 p-6 rounded-3xl border transition-all relative group ${activeView === id ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-white/5 border-white/5 text-slate-500 hover:text-white'}`}
                   >
+                    <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-100 transition-opacity">
+                      <span className="text-[6px] font-black font-mono">MOD_{id.toUpperCase().slice(0,3)}</span>
+                    </div>
                     <item.icon size={24} />
                     <span className="text-[10px] font-black uppercase tracking-widest italic">{item.label}</span>
                   </button>

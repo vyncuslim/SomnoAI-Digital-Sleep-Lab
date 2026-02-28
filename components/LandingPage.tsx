@@ -76,9 +76,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
   ];
 
   return (
-    <div className="min-h-screen bg-[#01040a] text-white font-sans selection:bg-indigo-500/30 overflow-x-hidden">
-      {/* Debug Indicator */}
-      <div className="fixed top-0 left-0 w-1 h-1 bg-indigo-500 z-[9999] opacity-50 pointer-events-none" />
+    <div className="min-h-screen bg-[#01040a] text-white font-sans selection:bg-indigo-500/30 overflow-x-hidden grainy-bg">
+      {/* Background Effects */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute top-[-20%] right-[-10%] w-[800px] h-[800px] bg-indigo-600/10 blur-[150px] rounded-full animate-pulse" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[800px] h-[800px] bg-purple-600/10 blur-[150px] rounded-full animate-pulse" style={{ animationDelay: '2s' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[1000px] h-[1000px] bg-blue-600/5 blur-[200px] rounded-full" />
+      </div>
       
       <AnimatePresence>
         {showBanner && (
@@ -255,21 +259,33 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
         </section>
 
         {/* Features Grid */}
-        <section className="max-w-7xl mx-auto px-6 py-32">
-          <div className="mb-16">
-            <h2 className="text-4xl font-black uppercase tracking-tighter mb-4">{lang === 'zh' ? '核心能力' : 'Core Capabilities'}</h2>
-            <p className="text-slate-400 max-w-xl">{lang === 'zh' ? '由 Gemini 2.5 Pro 模型驱动的高级遥测处理。' : 'Advanced telemetry processing powered by Gemini 2.5 Pro models.'}</p>
+        <section className="max-w-7xl mx-auto px-6 py-32 relative">
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          <div className="mb-24">
+            <p className="micro-label mb-4">Laboratory Modules</p>
+            <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-4 italic">{lang === 'zh' ? '核心能力' : 'Core Capabilities'}</h2>
+            <p className="text-xl text-slate-500 max-w-xl italic font-medium">{lang === 'zh' ? '由 Gemini 2.5 Pro 模型驱动的高级遥测处理。' : 'Advanced telemetry processing powered by Gemini 2.5 Pro models.'}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             {[
-              { icon: Activity, title: t.features?.biometric?.title || "Biometric Tracking", desc: t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles." },
-              { icon: Brain, title: t.features?.neural?.title || "Neural Insights", desc: t.features?.neural?.desc || "AI-driven interpretation of sleep stages and quality metrics." },
-              { icon: Zap, title: t.features?.recovery?.title || "Recovery Optimization", desc: t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep and recovery." }
+              { id: 'BIO', icon: Activity, title: t.features?.biometric?.title || "Biometric Tracking", desc: t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles." },
+              { id: 'NEU', icon: Brain, title: t.features?.neural?.title || "Neural Insights", desc: t.features?.neural?.desc || "AI-driven interpretation of sleep stages and quality metrics." },
+              { id: 'REC', icon: Zap, title: t.features?.recovery?.title || "Recovery Optimization", desc: t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep and recovery." }
             ].map((item, i) => (
-              <GlassCard key={i} className="p-8 hover:bg-white/[0.07] transition-colors group border-white/10">
-                <item.icon className="text-indigo-500 mb-6 group-hover:scale-110 transition-transform" size={32} />
-                <h3 className="text-xl font-bold mb-3">{item.title}</h3>
-                <p className="text-slate-400 leading-relaxed">{item.desc}</p>
+              <GlassCard key={i} className="p-10 rounded-[3rem] border-white/5 bg-slate-900/40 group hover:border-indigo-500/30 transition-all overflow-hidden relative">
+                <div className="absolute -right-8 -top-8 w-48 h-48 bg-indigo-500/5 blur-3xl rounded-full group-hover:bg-indigo-500/10 transition-all" />
+                <div className="relative z-10">
+                  <div className="w-20 h-20 bg-indigo-500/10 rounded-3xl mb-8 flex items-center justify-center border border-indigo-500/20 group-hover:scale-110 transition-transform shadow-inner">
+                    <item.icon size={40} className="text-indigo-400" />
+                  </div>
+                  <h3 className="text-3xl font-black italic uppercase tracking-tight text-white mb-4">{item.title}</h3>
+                  <p className="text-slate-400 leading-relaxed italic font-medium">{item.desc}</p>
+                  <div className="mt-10 dashed-line opacity-30" />
+                  <div className="mt-6 flex items-center gap-4">
+                    <span className="micro-label">Module: {item.id}</span>
+                    <div className="h-px flex-1 bg-white/5" />
+                  </div>
+                </div>
               </GlassCard>
             ))}
           </div>

@@ -92,6 +92,10 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
         }
         await supabase.rpc('reset_login_attempts', { target_email: email });
         
+        // Send login notification with location
+        const location = await emailService.getLoginLocation();
+        await emailService.sendLoginNotification(email, location);
+        
         // If it was a signup, send welcome email
         if (type === 'signup') {
           await emailService.sendSignupNotification(email, name || email.split('@')[0]);
