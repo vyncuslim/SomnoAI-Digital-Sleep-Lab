@@ -7,11 +7,14 @@ import {
 import { 
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
+import { motion, AnimatePresence } from 'framer-motion';
 import { GlassCard } from './GlassCard.tsx';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { supabase } from '../services/supabaseService.ts';
 
 
+
+import { AIAssistant } from './AIAssistant.tsx';
 
 interface DashboardProps {
   lang: Language;
@@ -26,6 +29,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
   const [showLogoutFeedback, setShowLogoutFeedback] = useState(false);
   const [feedbackText, setFeedbackText] = useState('');
   const [isSubmittingFeedback, setIsSubmittingFeedback] = useState(false);
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
   const [stats, setStats] = useState({
     score: null,
     hr: null,
@@ -290,17 +294,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
                 className="w-full bg-black/40 border border-indigo-500/30 rounded-xl py-3 pl-4 pr-12 text-sm focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 outline-none transition-all text-white placeholder-slate-500"
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && e.currentTarget.value.trim()) {
-                    navigate('/ai-assistant', { state: { initialQuery: e.currentTarget.value } });
+                    setShowAIAssistant(true);
                   }
                 }}
               />
               <button 
-                onClick={(e) => {
-                  const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                  if (input.value.trim()) {
-                    navigate('/ai-assistant', { state: { initialQuery: input.value } });
-                  }
-                }}
+                onClick={() => setShowAIAssistant(true)}
                 className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-lg transition-colors"
               >
                 <Sparkles size={14} />
@@ -311,7 +310,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
           <GlassCard className="p-6">
             <h4 className="font-bold text-sm uppercase tracking-wider text-slate-500 mb-4">Quick Actions</h4>
             <div className="space-y-3">
-              <button onClick={() => navigate('/ai-assistant')} className="w-full p-4 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-left flex items-center justify-between group transition-all">
+              <button onClick={() => setShowAIAssistant(true)} className="w-full p-4 bg-indigo-600/20 hover:bg-indigo-600/30 border border-indigo-500/30 rounded-xl text-left flex items-center justify-between group transition-all">
                 <span className="font-medium text-sm text-indigo-400 flex items-center gap-2"><Brain size={16} /> {lang === 'zh' ? 'AI 助手' : 'AI Assistant'}</span>
                 <ChevronRight size={16} className="text-indigo-500 group-hover:text-indigo-300 transition-colors" />
               </button>
@@ -327,6 +326,34 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
           </GlassCard>
         </div>
       </div>
+
+      {/* Floating AI Assistant Button */}
+      <button 
+        onClick={() => setShowAIAssistant(true)}
+        className="fixed bottom-8 right-8 w-16 h-16 bg-indigo-600 text-white rounded-full shadow-[0_0_30px_rgba(99,102,241,0.5)] flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-40 group"
+      >
+        <Brain size={28} className="group-hover:animate-pulse" />
+        <div className="absolute -top-1 -right-1 w-4 h-4 bg-emerald-500 rounded-full border-2 border-[#01040a] animate-bounce" />
+      </button>
+
+      {/* AI Assistant Modal */}
+      <AnimatePresence>
+        {showAIAssistant && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 md:p-8 bg-black/90 backdrop-blur-md">
+            <div className="w-full max-w-5xl h-full max-h-[90vh] relative flex flex-col">
+              <button 
+                onClick={() => setShowAIAssistant(false)}
+                className="absolute -top-12 right-0 text-white/60 hover:text-white flex items-center gap-2 text-xs font-bold uppercase tracking-widest transition-colors"
+              >
+                <X size={20} /> Close Assistant
+              </button>
+              <div className="flex-1 overflow-hidden rounded-[2.5rem] border border-white/10 shadow-2xl">
+                <AIAssistant lang={lang} data={sleepData[0] || null} history={sleepData} />
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

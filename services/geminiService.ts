@@ -165,7 +165,12 @@ export const startContextualCoach = async (
     `${r.date}: Score ${r.score}, Deep ${r.deepRatio}%`
   ).join(' | ');
 
-  const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。语气：高度专业、冷静、具有预见性。回复语言：English。`;
+  const systemInstruction = `你是 SomnoAI 首席研究官 (CRO)。语气：高度专业、冷静、具有预见性。回复语言：English。
+  
+  受试者最近的生物遥测数据：
+  ${bioBrief}
+  
+  你的任务是基于这些数据提供深度生理洞察和睡眠优化建议。如果受试者询问关于他们睡眠的问题，请参考上述数据。`;
 
   try {
     const contents = history.map(msg => ({

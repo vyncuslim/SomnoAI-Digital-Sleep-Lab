@@ -247,7 +247,13 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
       </header>
 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
-        {['overview', 'registry', 'signals', 'system', 'feedback', 'analytics'].map((tab) => (
+        {['overview', 'registry', 'signals', 'system', 'feedback', 'analytics']
+          .filter(tab => {
+            if (tab === 'analytics' || tab === 'system') return isOwner || isSuperOwner;
+            if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;
+            return true;
+          })
+          .map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab as AdminTab)}
@@ -255,7 +261,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
               activeTab === tab ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'
             }`}
           >
-            {tab}
+            {tab === 'analytics' ? 'GA4 Telemetry' : tab}
           </button>
         ))}
       </div>
@@ -263,7 +269,12 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
       <div className="space-y-8">
         {activeTab === 'overview' && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {DATABASE_SCHEMA.map((item) => (
+            {DATABASE_SCHEMA
+              .filter(item => {
+                if (item.id === 'audit_logs' || item.id === 'security_events') return isOwner || isSuperOwner;
+                return true;
+              })
+              .map((item) => (
               <GlassCard key={item.id} className="p-6 flex items-center gap-4">
                 <div className="p-4 bg-white/5 rounded-2xl text-indigo-400">
                   <item.icon size={24} />
@@ -298,7 +309,14 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                     </div>
                     <div>
                       <h4 className="font-bold">{user.email}</h4>
-                      <p className="text-xs text-slate-500 font-mono">{user.id}</p>
+                      <div className="flex items-center gap-2 mt-1">
+                        <p className="text-xs text-slate-500 font-mono">{user.id}</p>
+                        {isSuperOwner && user.failed_login_attempts > 0 && (
+                          <span className="text-[10px] font-bold bg-rose-500/20 text-rose-500 px-1.5 py-0.5 rounded border border-rose-500/30">
+                            {user.failed_login_attempts} Failed Attempts
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-4">

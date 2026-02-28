@@ -76,6 +76,12 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
         console.error("OTP Verification Error:", error);
         setError(error.message);
         await supabase.rpc('report_failed_login', { target_email: email });
+        
+        // Notify user about failed attempt
+        const { data: attemptData } = await supabase.from('login_attempts').select('attempts').eq('email', email).single();
+        if (attemptData) {
+          await emailService.sendFailedLoginNotification(email, attemptData.attempts);
+        }
       } else {
         const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
         if (profile?.is_blocked) {

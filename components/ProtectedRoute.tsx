@@ -3,7 +3,8 @@ import React, { useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LockKeyhole, Home, ShieldAlert } from 'lucide-react';
 
-import { logAuditLog } from '../services/supabaseService.ts';
+import { logAuditLog, supabase } from '../services/supabaseService.ts';
+import { emailService } from '../services/emailService.ts';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -22,10 +23,43 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, level 
   useEffect(() => {
     if (!loading && !hasAccess && profile && !attackLogged.current) {
       attackLogged.current = true;
-      logAuditLog('SECURITY_BREACH', 
-        `INTRUSION ATTEMPT: Node ${profile.email} attempted accessing level ${level.toUpperCase()}. Path: ${window.location.pathname}`, 
-        'CRITICAL'
-      );
+      
+      const trackAttack = async () => {
+        try {
+          // Log the security event
+          await logAuditLog('SECURITY_BREACH', 
+            `INTRUSION ATTEMPT: Node ${profile.email} attempted accessing level ${level.toUpperCase()}. Path: ${window.location.pathname}`, 
+            'CRITICAL'
+          );
+
+          // Increment failed attempts for this user (using a custom RPC or direct update)
+          const { data: currentProfile } = await supabase.from('profiles').select('failed_login_attempts').eq('id', profile.id).single();
+          const newAttempts = (currentProfile?.failed_login_attempts || 0) + 1;
+          
+          if (newAttempts >= 3) {
+            // Block user after 3 failed access attempts to restricted areas
+            await supabase.from('profiles').update({ 
+              is_blocked: true,
+              failed_login_attempts: newAttempts 
+            }).eq('id', profile.id);
+            
+            await supabase.rpc('block_user', { target_email: profile.email });
+            await emailService.sendBlockNotification(profile.email, `Repeated unauthorized access to ${level.toUpperCase()} restricted areas`);
+            
+            // Force logout
+            await supabase.auth.signOut();
+            window.location.href = '/';
+          } else {
+            await supabase.from('profiles').update({ 
+              failed_login_attempts: newAttempts 
+            }).eq('id', profile.id);
+          }
+        } catch (e) {
+          console.error("Security monitor failed:", e);
+        }
+      };
+
+      trackAttack();
     }
   }, [loading, hasAccess, profile, level]);
 
