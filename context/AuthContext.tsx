@@ -38,11 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     // 加急超时判定：3.5秒内必须释放首页加载锁定
     const timeoutId = setTimeout(() => {
-      if (loading) {
-        console.warn("AuthContext: Handshake timeout. Release load lock.");
-        setLoading(false);
-        isSyncing.current = false;
-      }
+      console.warn("AuthContext: Handshake timeout. Release load lock.");
+      setLoading(false);
+      isSyncing.current = false;
     }, 3500);
     
     try {
@@ -117,7 +115,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setLoading(false);
       isSyncing.current = false;
     }
-  }, [loading]);
+  }, []);
 
   useEffect(() => {
     fetchProfile();
