@@ -19,7 +19,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
 
   useEffect(() => {
     // 1. Dynamic Meta Update for SEO
-    updateMetadata(article.title, article.excerpt);
+    updateMetadata(article.title, article.excerpt, `/article/${article.slug}`);
 
     // 2. Advanced NewsArticle & Breadcrumb Schema
     const newsSchema = {

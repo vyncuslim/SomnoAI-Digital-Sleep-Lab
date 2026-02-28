@@ -10,6 +10,7 @@ import {
 import { GlassCard } from './GlassCard.tsx';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { Logo } from './Logo.tsx';
+import { updateMetadata } from '../services/navigation.ts';
 
 interface LandingPageProps {
   lang: Language;
@@ -20,6 +21,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
   const navigate = useNavigate();
   const [showBanner, setShowBanner] = useState(true);
   const t = getTranslation(lang, 'landing');
+
+  React.useEffect(() => {
+    updateMetadata(t.hero?.title || "AI-Powered Sleep Restoration", t.hero?.subtitle || "SomnoAI Digital Sleep Lab integrates physiological monitoring, AI deep insights, and health recommendations.", "/");
+  }, [lang, t]);
 
   console.log("LandingPage rendering, lang:", lang);
 

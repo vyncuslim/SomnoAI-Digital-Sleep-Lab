@@ -55,18 +55,11 @@ export const emailService = {
           </div>
           <div style="background: rgba(99, 102, 241, 0.03); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(99, 102, 241, 0.1);">
             <div style="font-size: 13px; line-height: 1.8; color: #cbd5e1;">
-              <p style="margin: 0 0 12px 0; font-size: 11px; color: #818cf8; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">🇬🇧 [ENGLISH]</p>
+              <p style="margin: 0 0 12px 0; font-size: 11px; color: #818cf8; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">SECURITY DISPATCH</p>
               <b>Event:</b> ${mapping.en}<br/>
               <b>Details:</b> <code style="color: #818cf8; font-family: monospace;">${rawDetails.replace(/\n/g, '<br/>')}</code><br/>
-              <b>UTC Timestamp:</b> ${isoTime}
-            </div>
-          </div>
-          <div style="background: rgba(99, 102, 241, 0.03); padding: 24px; border-radius: 20px; border: 1px solid rgba(99, 102, 241, 0.1);">
-            <div style="font-size: 13px; line-height: 1.8; color: #cbd5e1;">
-              <p style="margin: 0 0 12px 0; font-size: 11px; color: #818cf8; font-weight: 900; text-transform: uppercase; letter-spacing: 2px;">🇨🇳 [中文]</p>
-              <b>事件类型:</b> ${mapping.zh}<br/>
-              <b>详细日志:</b> <code style="color: #818cf8; font-family: monospace;">${rawDetails.replace(/\n/g, '<br/>')}</code><br/>
-              <b>当地时间:</b> ${mytTime}
+              <b>UTC Timestamp:</b> ${isoTime}<br/>
+              <b>Local Time:</b> ${mytTime}
             </div>
           </div>
           <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
@@ -101,19 +94,31 @@ export const emailService = {
   },
 
   sendBlockNotification: async (email: string, reason: string = 'Policy Violation') => {
-    const subject = "Account Security Alert: Access Blocked";
+    const subject = "Security Alert: Access Restricted - SomnoAI Digital Sleep Lab";
     const html = `
-      <div style="margin-bottom: 20px; font-family: sans-serif;">
-        <p style="font-size: 16px; font-weight: bold; color: #ef4444;">[Security Protocol Activated]</p>
-        <p>Your account <strong>${email}</strong> has been blocked by <strong>SomnoAI Security System</strong>.</p>
-        <p><strong>Reason:</strong> ${reason}</p>
-        <div style="background: #fee2e2; padding: 15px; border-radius: 8px; color: #b91c1c; font-weight: bold; margin: 15px 0;">
-          你违反了条款。如有问题，请联系 admin@sleepsomno.com
+      <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">🛡️ SOMNO LAB</h2>
+          <p style="font-size: 10px; color: #ef4444; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">Security Protocol Activated</p>
         </div>
-        <p>You have violated the terms. If you have any questions, please contact admin@sleepsomno.com</p>
+        <div style="background: rgba(239, 68, 68, 0.05); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(239, 68, 68, 0.2);">
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+            Your account <strong>${email}</strong> has been restricted by the <strong>SomnoAI Security Engine</strong>.
+          </p>
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+            <strong>Reason:</strong> ${reason}
+          </p>
+          <div style="background: rgba(239, 68, 68, 0.1); padding: 15px; border-radius: 12px; color: #f87171; font-weight: bold; margin: 20px 0; font-size: 13px; text-align: center;">
+            ACCESS DENIED: VIOLATION OF LABORATORY TERMS
+          </div>
+          <p style="font-size: 13px; color: #94a3b8; font-style: italic;">
+            If you believe this is an error, please contact our administrative core at admin@sleepsomno.com.
+          </p>
+        </div>
+        <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
+          SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: sleepsomno.com
+        </div>
       </div>
-      <p>If this was not you, your account may be under attack. Please secure your email address immediately.</p>
-      <p style="margin-top: 20px; font-weight: bold;">SomnoAI Digital Sleep Lab Security Team</p>
     `;
     
     // Send to user
@@ -125,13 +130,16 @@ export const emailService = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ 
         notifyAdmin: true,
-        subject: `Security Alert: User Blocked (${email})`,
+        subject: `[CRITICAL] Subject Node Blocked: ${email}`,
         html: `
-          <h2 style="color: #ef4444;">User Blocked</h2>
-          <p>User <strong>${email}</strong> has been blocked by the system.</p>
-          <p><strong>Reason:</strong> ${reason}</p>
-          <p><strong>Timestamp:</strong> ${new Date().toLocaleString()}</p>
-          <p><strong>Action:</strong> Account access has been restricted immediately.</p>
+          <div style="font-family: sans-serif; padding: 20px;">
+            <h2 style="color: #ef4444;">Node Restriction Logged</h2>
+            <p>Subject <strong>${email}</strong> has been automatically blocked by the security engine.</p>
+            <p><strong>Reason:</strong> ${reason}</p>
+            <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+            <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+            <p style="font-size: 12px; color: #666;">SomnoAI Digital Sleep Lab • Automated Security Dispatch</p>
+          </div>
         `
       }),
     });
@@ -142,5 +150,66 @@ export const emailService = {
       message: `USER_BLOCKED: ${email}\nReason: ${reason}`,
       source: 'Security Engine'
     });
+  },
+
+  sendSignupNotification: async (email: string, name: string) => {
+    const subject = "Welcome to the Lab: Node Registration Successful";
+    const html = `
+      <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">✨ SOMNO LAB</h2>
+          <p style="font-size: 10px; color: #10b981; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">Registration Confirmed</p>
+        </div>
+        <div style="background: rgba(16, 185, 129, 0.05); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(16, 185, 129, 0.2);">
+          <p style="font-size: 16px; font-weight: bold; color: #ffffff; margin-bottom: 16px;">Welcome, ${name}.</p>
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+            Your subject node has been successfully integrated into the <strong>SomnoAI Digital Sleep Lab</strong>.
+          </p>
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+            You now have access to our neural analysis engines, biometric tracking protocols, and sleep optimization insights.
+          </p>
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="https://sleepsomno.com/dashboard" style="background: #6366f1; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: bold; font-size: 14px; text-transform: uppercase; letter-spacing: 2px;">Enter Dashboard</a>
+          </div>
+        </div>
+        <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
+          SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: sleepsomno.com
+        </div>
+      </div>
+    `;
+    await emailService.sendSystemEmail(email, subject, html);
+    
+    // Notify Admin
+    await emailService.sendAdminAlert({
+      type: 'USER_SIGNUP',
+      message: `New Node Registered: ${email} (${name})`
+    });
+  },
+
+  sendFailedLoginNotification: async (email: string, attempts: number) => {
+    const subject = "Security Alert: Failed Login Attempt Detected";
+    const html = `
+      <div style="font-family: 'Plus Jakarta Sans', Arial, sans-serif; background-color: #020617; color: #f1f5f9; padding: 40px 20px; border-radius: 32px; border: 1px solid #1e293b; max-width: 600px; margin: auto;">
+        <div style="text-align: center; margin-bottom: 40px;">
+          <h2 style="color: #ffffff; margin: 0; font-style: italic; letter-spacing: -1px; font-size: 24px;">🛡️ SOMNO LAB</h2>
+          <p style="font-size: 10px; color: #f59e0b; text-transform: uppercase; letter-spacing: 5px; margin-top: 8px; font-weight: 800;">Security Warning</p>
+        </div>
+        <div style="background: rgba(245, 158, 11, 0.05); padding: 24px; border-radius: 20px; margin-bottom: 24px; border: 1px solid rgba(245, 158, 11, 0.2);">
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+            A failed login attempt was detected for your account <strong>${email}</strong>.
+          </p>
+          <p style="font-size: 14px; line-height: 1.6; color: #cbd5e1;">
+            <strong>Total Failed Attempts:</strong> ${attempts}/5
+          </p>
+          <p style="font-size: 13px; color: #94a3b8; font-style: italic; margin-top: 16px;">
+            If this was not you, please secure your account immediately. Your account will be automatically restricted after 5 failed attempts.
+          </p>
+        </div>
+        <div style="font-size: 9px; color: #475569; text-align: center; margin-top: 40px; border-top: 1px solid #1e293b; padding-top: 20px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px;">
+          SOMNO LAB DIGITAL SLEEP LAB • SECURE HUB: sleepsomno.com
+        </div>
+      </div>
+    `;
+    await emailService.sendSystemEmail(email, subject, html);
   }
 };

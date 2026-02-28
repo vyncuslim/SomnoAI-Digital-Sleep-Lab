@@ -144,11 +144,13 @@ CREATE TABLE IF NOT EXISTS public.app_settings (
 
 ALTER TABLE public.app_settings ENABLE ROW LEVEL SECURITY;
 
+DROP POLICY IF EXISTS "Admin manage settings" ON public.app_settings;
 CREATE POLICY "Admin manage settings" ON public.app_settings
 FOR ALL TO authenticated
 USING (public.is_admin_check(auth.uid()))
 WITH CHECK (public.is_admin_check(auth.uid()));
 
+DROP POLICY IF EXISTS "Public read settings" ON public.app_settings;
 CREATE POLICY "Public read settings" ON public.app_settings
 FOR SELECT TO anon, authenticated
 USING (true);
@@ -176,20 +178,24 @@ USING (
     public.is_admin_check(auth.uid())
 );
 
+DROP POLICY IF EXISTS "Profile self update" ON public.profiles;
 CREATE POLICY "Profile self update" ON public.profiles
 FOR UPDATE TO authenticated
 USING (auth.uid() = id)
 WITH CHECK (auth.uid() = id);
 
 DROP POLICY IF EXISTS "Admin audit access" ON public.audit_logs;
+DROP POLICY IF EXISTS "Anyone can insert logs" ON public.audit_logs;
 CREATE POLICY "Anyone can insert logs" ON public.audit_logs
 FOR INSERT TO authenticated
 WITH CHECK (true);
 
+DROP POLICY IF EXISTS "Admin view logs" ON public.audit_logs;
 CREATE POLICY "Admin view logs" ON public.audit_logs
 FOR SELECT TO authenticated
 USING (public.is_admin_check(auth.uid()));
 
+DROP POLICY IF EXISTS "Admin delete logs" ON public.audit_logs;
 CREATE POLICY "Admin delete logs" ON public.audit_logs
 FOR DELETE TO authenticated
 USING (public.is_admin_check(auth.uid()));

@@ -130,10 +130,17 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         resetCaptcha();
         await supabase.rpc('report_failed_login', { target_email: email });
         
+        // Notify user about failed attempt
+        const { data: attemptData } = await supabase.from('login_attempts').select('attempts').eq('email', email).single();
+        if (attemptData) {
+          await emailService.sendFailedLoginNotification(email, attemptData.attempts);
+        }
+
         // Check if user should be blocked after failed attempt
         await checkAndBlockUser(email);
       } else {
-        navigate(`/auth/verify?email=${encodeURIComponent(email)}${fullName ? `&name=${encodeURIComponent(fullName)}` : ''}`);
+        const typeParam = view === 'signup' ? '&type=signup' : '';
+        navigate(`/auth/verify?email=${encodeURIComponent(email)}${fullName ? `&name=${encodeURIComponent(fullName)}` : ''}${typeParam}`);
       }
     } else {
       // Password mode
@@ -151,10 +158,16 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           resetCaptcha();
           await supabase.rpc('report_failed_login', { target_email: email });
           
+          // Notify user about failed attempt
+          const { data: attemptData } = await supabase.from('login_attempts').select('attempts').eq('email', email).single();
+          if (attemptData) {
+            await emailService.sendFailedLoginNotification(email, attemptData.attempts);
+          }
+
           // Check if user should be blocked after failed attempt
           await checkAndBlockUser(email);
         } else {
-          navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup`);
+          navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup&name=${encodeURIComponent(fullName)}`);
         }
       } else {
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } } as any);
@@ -176,6 +189,12 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           resetCaptcha();
           await supabase.rpc('report_failed_login', { target_email: email });
           
+          // Notify user about failed attempt
+          const { data: attemptData } = await supabase.from('login_attempts').select('attempts').eq('email', email).single();
+          if (attemptData) {
+            await emailService.sendFailedLoginNotification(email, attemptData.attempts);
+          }
+
           // Check if user should be blocked after failed attempt
           await checkAndBlockUser(email);
         } else {

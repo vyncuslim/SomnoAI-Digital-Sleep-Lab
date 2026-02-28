@@ -19,7 +19,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ post, lang, onBack }
   const t = getTranslation(lang, 'blog');
 
   useEffect(() => {
-    updateMetadata(post.title, post.excerpt);
+    updateMetadata(post.title, post.excerpt, `/blog/${post.slug}`);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [post]);
 

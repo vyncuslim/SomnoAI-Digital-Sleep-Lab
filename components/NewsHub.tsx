@@ -5,6 +5,7 @@ import { Microscope, ArrowRight, Tag, Clock, Calendar, Sparkles, Newspaper, Land
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
 import { Language, getTranslation } from '../services/i18n.ts';
+import { updateMetadata } from '../services/navigation.ts';
 import { RESEARCH_ARTICLES } from '../data/mockData.ts';
 
 const m = motion as any;
@@ -16,6 +17,10 @@ interface NewsHubProps {
 
 export const NewsHub: React.FC<NewsHubProps> = ({ lang, onSelectArticle }) => {
   const t = getTranslation(lang, 'news');
+
+  React.useEffect(() => {
+    updateMetadata(t.title || "Research Hub", t.subtitle || "Latest sleep science and research from SomnoAI.", "/news");
+  }, [lang, t]);
 
   return (
     <div className="min-h-screen bg-[#01040a] pt-10 pb-40 px-6 font-sans text-left">

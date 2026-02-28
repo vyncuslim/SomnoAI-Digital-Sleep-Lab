@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '../services/supabaseService.ts';
+import { emailService } from '../services/emailService.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { Loader2, KeyRound, ArrowLeft } from 'lucide-react';
 import { Language, getTranslation } from '../services/i18n.ts';
@@ -12,6 +13,8 @@ interface AuthVerifyProps {
 export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
   const [searchParams] = useSearchParams();
   const email = searchParams.get('email') || '';
+  const type = searchParams.get('type') || '';
+  const name = searchParams.get('name') || '';
   const [otp, setOtp] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,11 +80,17 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
         const { data: profile } = await supabase.from('profiles').select('is_blocked').eq('email', email).single();
         if (profile?.is_blocked) {
           await supabase.auth.signOut();
-          setError(lang === 'zh' ? "您已被封禁。请联系 admin@sleepsomno.com" : "You have been banned. Please contact admin@sleepsomno.com");
+          setError(t.blocked);
           setLoading(false);
           return;
         }
         await supabase.rpc('reset_login_attempts', { target_email: email });
+        
+        // If it was a signup, send welcome email
+        if (type === 'signup') {
+          await emailService.sendSignupNotification(email, name || email.split('@')[0]);
+        }
+
         navigate('/dashboard');
       }
     } catch (err: any) {

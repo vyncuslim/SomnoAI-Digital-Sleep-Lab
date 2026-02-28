@@ -5,6 +5,7 @@ import { BookOpen, ArrowRight, Tag, Clock, Calendar, Sparkles, MessageCircle, Pe
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
 import { Language, getTranslation } from '../services/i18n.ts';
+import { updateMetadata } from '../services/navigation.ts';
 import { BLOG_POSTS } from '../data/mockData.ts';
 
 const m = motion as any;
@@ -16,6 +17,10 @@ interface BlogHubProps {
 
 export const BlogHub: React.FC<BlogHubProps> = ({ lang, onSelectPost }) => {
   const t = getTranslation(lang, 'blog');
+
+  React.useEffect(() => {
+    updateMetadata(t.title || "Laboratory Stories", t.subtitle || "Personal stories and insights from the SomnoAI community.", "/blog");
+  }, [lang, t]);
 
   return (
     <div className="min-h-screen bg-[#01040a] pt-10 pb-40 px-6 font-sans text-left">
