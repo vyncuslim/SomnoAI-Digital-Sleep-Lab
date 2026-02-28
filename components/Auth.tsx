@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext.tsx';
 import { supabase, logAuditLog } from '../services/supabaseService.ts';
 import { emailService } from '../services/emailService.ts';
 import { GlassCard } from './GlassCard.tsx';
@@ -15,9 +16,27 @@ interface AuthProps {
 }
 
 export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }) => {
+  const { profile, loading: authLoading } = useAuth();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (profile && !authLoading) {
+      if (profile.role === 'admin' || profile.role === 'owner' || profile.is_super_owner) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
+    }
+  }, [profile, authLoading, navigate]);
+
   const t = translations[lang]?.auth || translations.en.auth;
   const [mode, setMode] = useState<'otp' | 'password'>('otp');
   const [view, setView] = useState<'login' | 'signup'>(initialView);
+
+  useEffect(() => {
+    setView(initialView);
+  }, [initialView]);
+
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
@@ -26,7 +45,6 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   const [fieldErrors, setFieldErrors] = useState<{ email?: string; password?: string; fullName?: string; terms?: string }>({});
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
-  const navigate = useNavigate();
   const turnstileRef = useRef<TurnstileInstance>(null);
 
   const resetCaptcha = () => {
@@ -181,7 +199,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         const { data: signInData, error } = await supabase.auth.signInWithPassword({ email, password, options: { captchaToken } } as any);
 
         if (signInData.user) {
-          const { data: profile } = await supabase.from('profiles').select('is_blocked, role').eq('id', signInData.user.id).single();
+          const { data: profile } = await supabase.from('profiles').select('is_blocked, role, is_super_owner').eq('id', signInData.user.id).single();
           if (profile?.is_blocked) {
             await supabase.auth.signOut();
             setError(t.blocked);
@@ -190,12 +208,8 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
             return;
           }
           await supabase.rpc('reset_login_attempts', { target_email: email });
-          
-          // Send login notification with location
-          const location = await emailService.getLoginLocation();
-          await emailService.sendLoginNotification(email, location);
 
-          if (profile?.role === 'admin') {
+          if (profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner) {
             navigate('/admin');
           } else {
             navigate('/dashboard');
@@ -480,7 +494,13 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           <div className="text-center mt-6">
             <button
               type="button"
-              onClick={() => { setView(view === 'login' ? 'signup' : 'login'); setFieldErrors({}); setError(null); resetCaptcha(); }}
+              onClick={() => {
+                const targetView = view === 'login' ? 'signup' : 'login';
+                navigate(`/auth/${targetView}`);
+                setFieldErrors({}); 
+                setError(null); 
+                resetCaptcha(); 
+              }}
               className="text-xs font-bold uppercase tracking-widest text-slate-500 hover:text-indigo-400 transition-colors"
               disabled={loading}
             >

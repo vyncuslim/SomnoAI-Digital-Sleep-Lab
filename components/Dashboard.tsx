@@ -38,6 +38,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
     deep: null
   });
 
+  const [aiInsight, setAiInsight] = useState<string>('');
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+
   useEffect(() => {
     const fetchUserAndData = async () => {
       try {
@@ -53,14 +56,56 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
             .order('date', { ascending: false });
           
           if (!dataError && data && data.length > 0) {
-            setSleepData(data);
-            const latest = data[0];
+            // Map raw DB data to SleepRecord type
+            const mappedData = data.map((d: any) => ({
+              id: d.id,
+              date: d.date,
+              score: d.score,
+              heartRate: {
+                resting: d.heart_rate_resting,
+                min: d.heart_rate_min,
+                max: d.heart_rate_max,
+                average: d.heart_rate_avg
+              },
+              deepRatio: d.deep_sleep_duration / (d.total_duration || 480),
+              remRatio: d.rem_sleep_duration / (d.total_duration || 480),
+              totalDuration: d.total_duration,
+              efficiency: d.efficiency,
+              readiness: d.readiness,
+              aiInsights: d.ai_insights
+            }));
+
+            setSleepData(mappedData);
+            const latest = mappedData[0];
+            
+            // Calculate readiness if missing (simple heuristic)
+            const readiness = latest.readiness || Math.min(100, Math.max(0, Math.round(
+              (latest.score * 0.6) + ((100 - Math.abs(latest.heartRate.resting - 55) * 2) * 0.4)
+            )));
+
             setStats({
               score: latest.score,
-              hr: latest.heart_rate_resting,
-              readiness: latest.readiness,
-              deep: latest.deep_sleep_duration
+              hr: latest.heartRate.resting,
+              readiness: readiness,
+              deep: (latest.deepRatio * 100).toFixed(0) + '%'
             });
+
+            // Generate AI Insight if not present
+            if (latest) {
+              setIsAnalyzing(true);
+              import('../services/geminiService.ts').then(async ({ getQuickInsight }) => {
+                try {
+                  const insights = await getQuickInsight(latest, lang);
+                  if (insights && insights.length > 0) {
+                    setAiInsight(insights[0]);
+                  }
+                } catch (err) {
+                  console.error("AI Insight generation failed", err);
+                } finally {
+                  setIsAnalyzing(false);
+                }
+              });
+            }
           }
         } else {
           navigate('/auth');
@@ -72,7 +117,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
       }
     };
     fetchUserAndData();
-  }, [navigate]);
+  }, [navigate, lang]);
 
   const performLogout = async () => {
     await (supabase.auth as any).signOut();
@@ -306,8 +351,12 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
             
             <div className="dashed-line mb-8 opacity-50" />
             
-            <p className="text-sm text-slate-400 leading-relaxed italic font-medium mb-8 relative z-10">
-              Your deep sleep ratio is 15% higher than your 30-day average. Cognitive performance is likely peaked today.
+            <p className="text-sm text-slate-400 leading-relaxed italic font-medium mb-8 relative z-10 min-h-[4rem]">
+              {isAnalyzing ? (
+                <span className="animate-pulse">{lang === 'zh' ? '正在分析 Health Connect 数据...' : 'Analyzing Health Connect data...'}</span>
+              ) : (
+                aiInsight || (lang === 'zh' ? '暂无数据分析。请同步您的 Health Connect。' : 'No analysis available. Please sync your Health Connect data.')
+              )}
             </p>
             
             <div className="relative group z-10">
@@ -339,6 +388,10 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
               <button onClick={() => setShowAIAssistant(true)} className="w-full p-5 bg-indigo-600/10 hover:bg-indigo-600/20 border border-indigo-500/20 rounded-2xl text-left flex items-center justify-between group transition-all">
                 <span className="font-black italic text-xs uppercase tracking-widest text-indigo-400 flex items-center gap-3"><Brain size={18} /> {lang === 'zh' ? 'AI 助手' : 'AI Assistant'}</span>
                 <ChevronRight size={18} className="text-indigo-500 group-hover:translate-x-1 transition-all" />
+              </button>
+              <button className="w-full p-5 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/20 rounded-2xl text-left flex items-center justify-between group transition-all">
+                <span className="font-black italic text-xs uppercase tracking-widest text-emerald-400 flex items-center gap-3"><Activity size={18} /> Sync Health Connect</span>
+                <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
               </button>
               <button onClick={() => navigate('/experiment')} className="w-full p-5 bg-white/5 hover:bg-white/10 border border-white/5 rounded-2xl text-left flex items-center justify-between group transition-all">
                 <span className="font-black italic text-xs uppercase tracking-widest text-slate-400 flex items-center gap-3"><Zap size={18} /> Start Experiment</span>

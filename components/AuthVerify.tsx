@@ -83,7 +83,7 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
           await emailService.sendFailedLoginNotification(email, attemptData.attempts);
         }
       } else {
-        const { data: profile } = await supabase.from('profiles').select('is_blocked, role').eq('email', email).single();
+        const { data: profile } = await supabase.from('profiles').select('is_blocked, role, is_super_owner').eq('email', email).single();
         if (profile?.is_blocked) {
           await supabase.auth.signOut();
           setError(t.blocked);
@@ -92,16 +92,12 @@ export const AuthVerify: React.FC<AuthVerifyProps> = ({ lang = 'en' }) => {
         }
         await supabase.rpc('reset_login_attempts', { target_email: email });
         
-        // Send login notification with location
-        const location = await emailService.getLoginLocation();
-        await emailService.sendLoginNotification(email, location);
-        
         // If it was a signup, send welcome email
         if (type === 'signup') {
           await emailService.sendSignupNotification(email, name || email.split('@')[0]);
         }
 
-        if (profile?.role === 'admin') {
+        if (profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner) {
           navigate('/admin');
         } else {
           navigate('/dashboard');

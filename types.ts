@@ -15,6 +15,7 @@ export interface SleepRecord {
   remRatio: number;
   totalDuration: number;
   efficiency?: number;
+  readiness?: number;
   stages?: SleepStage[];
   aiInsights?: string[];
 }
@@ -81,4 +82,5 @@ export interface Profile {
   is_super_owner: boolean;
   is_blocked: boolean;
   full_name: string | null;
+  created_at?: string;
 }

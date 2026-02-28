@@ -201,7 +201,16 @@ export const startContextualCoach = async (
 
 export const getQuickInsight = async (data: SleepRecord, lang: Language = 'en'): Promise<string[]> => {
   const ai = getAIClient();
-  const prompt = `分析数据：分数 ${data.score}, RHR ${data.heartRate.resting}bpm。给出3条极其精简的优化方案（JSON 数组）。语言：${lang}`;
+  const prompt = `作为智能戒指 AI (Smart Ring AI)，分析 Health Connect 数据：
+  睡眠分数: ${data.score}
+  静息心率: ${data.heartRate.resting}bpm
+  深睡占比: ${(data.deepRatio * 100).toFixed(1)}%
+  
+  请给出 1 条极其简短、像智能戒指应用一样的每日洞察 (Daily Insight)。
+  例如："恢复极佳。今日适合挑战高强度训练。" 或 "心率偏高。建议今日专注于恢复。"
+  
+  输出格式：JSON 字符串数组，只包含这 1 条洞察。
+  语言：${lang === 'zh' ? '中文' : 'English'}`;
   
   try {
     const response = await ai.models.generateContent({

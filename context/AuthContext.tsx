@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { supabase } from '../services/supabaseService.ts';
 import { logAuditLog } from '../services/supabaseService.ts';
+import { emailService } from '../services/emailService.ts';
 import { Profile } from '../types.ts';
 
 interface AuthContextType {
@@ -107,6 +108,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         lastLoggedSessionId.current = currentSessionId;
         const logMsg = `[ACCESS_GRANTED] Subject: ${currentProfile.email}`;
         logAuditLog('USER_LOGIN', logMsg, 'INFO');
+        
+        // Send login notification
+        emailService.getLoginLocation().then(location => {
+          emailService.sendLoginNotification(currentProfile!.email, location);
+        });
+
+        // Check for new Google signup
+        const isGoogle = session.user.app_metadata.provider === 'google';
+        const createdAt = new Date(session.user.created_at);
+        const now = new Date();
+        const isNewUser = (now.getTime() - createdAt.getTime()) < 60000; // 1 minute window
+
+        if (isGoogle && isNewUser) {
+           emailService.sendSignupNotification(currentProfile.email, currentProfile.full_name || 'User');
+        }
       }
     } catch (err) {
       console.error("AuthContext: Terminal handshake crashed.");
