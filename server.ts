@@ -5,11 +5,17 @@ import path from "path";
 import { fileURLToPath } from "url";
 import nodemailer from "nodemailer";
 import { UAParser } from "ua-parser-js";
+import { createClient } from "@supabase/supabase-js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DB_FILE = path.join(__dirname, "data.json");
+
+// Supabase Configuration
+const supabaseUrl = process.env.VITE_SUPABASE_URL || '';
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 // SMTP Configuration for Resend
 const transporter = nodemailer.createTransport({
@@ -31,8 +37,7 @@ const readDB = () => {
       otp: {},
       blocked_ips: [], // { ip: string, blocked_until: number, reason: string }
       ip_activity: {},  // { [ip: string]: { failed_attempts: number, last_seen: number } }
-      login_history: [], // { user_id: string, ip: string, device: string, browser: string, location: string, timestamp: string }
-      notification_settings: {} // { [user_id: string]: boolean }
+      login_history: [] // { user_id: string, ip: string, device: string, browser: string, location: string, timestamp: string }
     }));
   }
   const data = JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
@@ -40,7 +45,6 @@ const readDB = () => {
   if (!data.blocked_ips) data.blocked_ips = [];
   if (!data.ip_activity) data.ip_activity = {};
   if (!data.login_history) data.login_history = [];
-  if (!data.notification_settings) data.notification_settings = {};
   return data;
 };
 
@@ -167,25 +171,6 @@ async function startServer() {
     res.json(history);
   });
 
-  // Notification Settings Endpoints
-  app.get("/api/auth/notification-settings/:userId", (req, res) => {
-    const { userId } = req.params;
-    const db = readDB();
-    // Default to true if not set
-    const enabled = db.notification_settings[userId] !== false;
-    res.json({ enabled });
-  });
-
-  app.post("/api/auth/notification-settings", (req, res) => {
-    const { userId, enabled } = req.body;
-    if (!userId) return res.status(400).json({ error: "Missing userId" });
-    
-    const db = readDB();
-    db.notification_settings[userId] = enabled;
-    writeDB(db);
-    res.json({ success: true, enabled });
-  });
-
   // Login Notification Endpoint
   app.post("/api/auth/login-notify", async (req, res) => {
     const { userId, email, userAgent } = req.body;
@@ -222,34 +207,72 @@ async function startServer() {
     }
 
     const db = readDB();
-    // Ensure login_history exists
     if (!db.login_history) db.login_history = [];
     
     const history = db.login_history.filter((h: any) => h.user_id === userId);
-    
-    // Check for new device/location
     const isNewDevice = !history.some((h: any) => h.device === deviceString && h.browser === browserString);
     
-    // Add to history
-    const newEntry = {
+    db.login_history.push({
       user_id: userId,
       ip,
       device: deviceString,
       browser: browserString,
       location,
       timestamp: new Date().toISOString()
-    };
-    db.login_history.push(newEntry);
+    });
     writeDB(db);
 
-    // Check if user has enabled notifications
-    if (db.notification_settings[userId] === false) {
-      console.log(`[SECURITY] Login alert skipped for ${email} (User disabled notifications)`);
-      return res.json({ success: true, skipped: true });
+    // Fetch User Settings from Supabase
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('login_alert_enabled, login_alert_mode, last_login_alert_sent_at')
+      .eq('id', userId)
+      .single();
+
+    if (profileError) {
+      console.error("Failed to fetch user profile for notifications:", profileError);
+      return res.status(500).json({ error: "Internal server error" });
     }
 
+    // Throttling: 10 minutes
+    const lastSent = profile.last_login_alert_sent_at ? new Date(profile.last_login_alert_sent_at).getTime() : 0;
+    const now = Date.now();
+    const isTooSoon = (now - lastSent < 600000);
+
+    if (profile.login_alert_enabled === false) {
+      return res.json({ success: true, skipped: true, reason: 'disabled' });
+    }
+
+    if (isTooSoon) {
+      return res.json({ success: true, skipped: true, reason: 'throttled' });
+    }
+
+    if (profile.login_alert_mode === 'NEW_DEVICE' && !isNewDevice) {
+      return res.json({ success: true, skipped: true, reason: 'known_device' });
+    }
+
+    // Update last sent timestamp in Supabase
+    await supabase.from('profiles').update({ last_login_alert_sent_at: new Date().toISOString() }).eq('id', userId);
+
+    // Add to Audit Logs
+    await supabase.from('audit_logs').insert([{
+      user_id: userId,
+      action: 'LOGIN_ALERT_SENT',
+      details: JSON.stringify({ ip, location, device: deviceString, isNewDevice }),
+      level: 'INFO'
+    }]);
+
     // Send Email Notification
-    const mytTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur', hour12: false });
+    const mytTime = new Date().toLocaleString('en-US', { 
+      timeZone: 'Asia/Kuala_Lumpur', 
+      hour12: false,
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit'
+    });
     const freezeLink = `${process.env.APP_URL || 'https://sleepsomno.com'}/auth/freeze?uid=${userId}&token=${Buffer.from(email).toString('base64')}`;
 
     try {
@@ -257,59 +280,67 @@ async function startServer() {
         from: 'SomnoAI Security <onboarding@resend.dev>',
         replyTo: 'security@sleepsomno.com',
         to: email,
-        subject: `[Security Alert] New Sign-in / 检测到新登录`,
+        subject: `[Security Alert] New Login from ${location.split(',')[0]} / 检测到新登录`,
         html: `
-          <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
-            <div style="background-color: #000000; padding: 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 20px; letter-spacing: 1px;">🔐 Security Alert</h1>
+          <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.05);">
+            <div style="background-color: #000000; padding: 32px; text-align: center;">
+              <div style="display: inline-block; padding: 12px; background: rgba(255,255,255,0.1); border-radius: 12px; margin-bottom: 16px;">
+                <span style="font-size: 32px;">🔐</span>
+              </div>
+              <h1 style="color: #ffffff; margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; text-transform: uppercase; font-style: italic;">Security Alert</h1>
+              <p style="color: rgba(255,255,255,0.6); margin-top: 8px; font-size: 12px; font-weight: 600; letter-spacing: 0.1em; text-transform: uppercase;">Neural Link Authentication</p>
             </div>
-            <div style="padding: 30px;">
-              <p style="color: #374151; font-size: 16px; line-height: 1.5;">
-                We detected a new sign-in to your account.<br/>
-                <span style="color: #6b7280; font-size: 14px;">我们检测到您的账号有新的登录。</span>
+            <div style="padding: 40px;">
+              <p style="color: #111827; font-size: 18px; font-weight: 700; margin-bottom: 8px;">
+                New login detected for your account.
+              </p>
+              <p style="color: #6b7280; font-size: 14px; margin-bottom: 32px;">
+                我们检测到您的账号有新的登录活动。如果这是您本人，请忽略此邮件。
               </p>
               
-              <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
+              <div style="background-color: #f9fafb; border: 1px solid #f3f4f6; padding: 24px; border-radius: 12px; margin-bottom: 32px;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Account / 账号</td>
-                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${email}</td>
+                    <td style="padding: 12px 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Account / 账号</td>
+                    <td style="padding: 12px 0; color: #111827; font-weight: 700; font-size: 14px; text-align: right;">${email}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Time / 时间</td>
-                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${mytTime} (MYT)</td>
+                    <td style="padding: 12px 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Time / 时间</td>
+                    <td style="padding: 12px 0; color: #111827; font-weight: 700; font-size: 14px; text-align: right;">${mytTime} (MYT)</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Device / 设备</td>
-                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${deviceString}</td>
+                    <td style="padding: 12px 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Location / 地点</td>
+                    <td style="padding: 12px 0; color: #111827; font-weight: 700; font-size: 14px; text-align: right;">${location}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Location / 地点</td>
-                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${location}</td>
+                    <td style="padding: 12px 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Device / 设备</td>
+                    <td style="padding: 12px 0; color: #111827; font-weight: 700; font-size: 14px; text-align: right;">${deviceString}</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 12px 0; color: #6b7280; font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Browser / 浏览器</td>
+                    <td style="padding: 12px 0; color: #111827; font-weight: 700; font-size: 14px; text-align: right;">${browserString}</td>
                   </tr>
                 </table>
               </div>
 
               ${isNewDevice ? `
-              <div style="background-color: #fff7ed; border: 1px solid #ffedd5; color: #c2410c; padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 20px; text-align: center;">
-                ⚠️ <strong>New Device Detected / 检测到新设备</strong>
+              <div style="background-color: #fff7ed; border: 1px solid #ffedd5; color: #c2410c; padding: 16px; border-radius: 8px; font-size: 14px; margin-bottom: 32px; text-align: center; font-weight: 600;">
+                ⚠️ New Device Detected / 检测到新设备
               </div>
               ` : ''}
 
-              <p style="color: #374151; font-size: 14px; margin-bottom: 20px;">
-                If this was you, you can ignore this email.<br/>
-                <span style="color: #6b7280;">如果是您本人操作，请忽略此邮件。</span>
-              </p>
-
-              <div style="text-align: center; margin-top: 30px;">
-                <a href="${freezeLink}" style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px;">
-                  ⛔ Not Me - Freeze Account / 冻结账号
+              <div style="text-align: center; margin-top: 40px;">
+                <p style="color: #ef4444; font-size: 14px; font-weight: 600; margin-bottom: 16px;">
+                  Wasn't you? Secure your account immediately:
+                </p>
+                <a href="${freezeLink}" style="display: inline-block; background-color: #ef4444; color: #ffffff; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 800; font-size: 14px; text-transform: uppercase; letter-spacing: 0.05em; transition: background-color 0.2s;">
+                  Freeze Account / 立即冻结账号
                 </a>
               </div>
             </div>
-            <div style="background-color: #f9fafb; padding: 15px; text-align: center; border-top: 1px solid #e5e7eb;">
-              <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                SomnoAI Security Team • security@sleepsomno.com
+            <div style="background-color: #f9fafb; padding: 24px; text-align: center; border-top: 1px solid #f3f4f6;">
+              <p style="color: #9ca3af; font-size: 11px; margin: 0; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600;">
+                SomnoAI Digital Sleep Lab • Neural Security Protocol
               </p>
             </div>
           </div>

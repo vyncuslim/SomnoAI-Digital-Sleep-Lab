@@ -12,8 +12,12 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     is_super_owner boolean DEFAULT false,
     is_blocked boolean DEFAULT false,
     failed_login_attempts int DEFAULT 0,
+    login_alert_enabled boolean DEFAULT true,
+    login_alert_mode text DEFAULT 'NEW_DEVICE',
+    last_login_alert_sent_at timestamptz,
     created_at timestamptz DEFAULT now(),
-    CONSTRAINT profiles_role_check CHECK (role IN ('user', 'editor', 'admin', 'owner'))
+    CONSTRAINT profiles_role_check CHECK (role IN ('user', 'editor', 'admin', 'owner')),
+    CONSTRAINT profiles_login_alert_mode_check CHECK (login_alert_mode IN ('NEW_DEVICE', 'EVERY_LOGIN'))
 );
 
 -- 2. 权限助手函数 (SECURITY DEFINER 以防止 RLS 递归)

@@ -33,7 +33,7 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang, onBack, onNaviga
   
   // Security State
   const [loginHistory, setLoginHistory] = useState<LoginHistoryItem[]>([]);
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [notifSettings, setNotifSettings] = useState({ enabled: true, mode: 'NEW_DEVICE' });
 
   const t = getTranslation(lang, 'settings');
 
@@ -47,19 +47,18 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang, onBack, onNaviga
       if (!user) return;
 
       const { data } = await userApi.getProfile(user.id);
-      if (data) setProfile(data);
+      if (data) {
+        setProfile(data);
+        setNotifSettings({
+          enabled: data.login_alert_enabled ?? true,
+          mode: data.login_alert_mode ?? 'NEW_DEVICE'
+        });
+      }
 
       // Fetch Login History
       const histRes = await fetch(`/api/auth/login-history/${user.id}`);
       if (histRes.ok) {
         setLoginHistory(await histRes.json());
-      }
-
-      // Fetch Notification Settings
-      const notifRes = await fetch(`/api/auth/notification-settings/${user.id}`);
-      if (notifRes.ok) {
-        const { enabled } = await notifRes.json();
-        setNotificationsEnabled(enabled);
       }
 
     } catch (error) {
@@ -91,19 +90,19 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang, onBack, onNaviga
     }
   };
 
-  const toggleNotifications = async () => {
-    const newState = !notificationsEnabled;
-    setNotificationsEnabled(newState);
+  const updateNotifSettings = async (updates: Partial<{ enabled: boolean, mode: string }>) => {
+    const newSettings = { ...notifSettings, ...updates };
+    setNotifSettings(newSettings);
     try {
-      await fetch('/api/auth/notification-settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: profile.id, enabled: newState })
+      const { error } = await userApi.updateProfile(profile.id, {
+        login_alert_enabled: newSettings.enabled,
+        login_alert_mode: newSettings.mode
       });
+      if (error) throw error;
     } catch (e) {
       console.error("Failed to update notification settings", e);
       // Revert on error
-      setNotificationsEnabled(!newState); 
+      setNotifSettings(notifSettings); 
     }
   };
 
@@ -252,24 +251,60 @@ export const UserProfile: React.FC<UserProfileProps> = ({ lang, onBack, onNaviga
 
           <div className="space-y-6">
             {/* Notification Toggle */}
-            <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
-              <div className="flex items-center gap-4">
-                <div className={`p-3 rounded-full ${notificationsEnabled ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-500/20 text-slate-400'}`}>
-                  <Bell size={20} />
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                <div className="flex items-center gap-4">
+                  <div className={`p-3 rounded-full ${notifSettings.enabled ? 'bg-indigo-500/20 text-indigo-400' : 'bg-slate-500/20 text-slate-400'}`}>
+                    <Bell size={20} />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-sm">{lang === 'zh' ? '登录通知' : 'Login Notifications'}</h4>
+                    <p className="text-xs text-slate-400">
+                      {lang === 'zh' ? '接收账号登录邮件提醒' : 'Receive email alerts for account sign-ins'}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-bold text-sm">{lang === 'zh' ? '登录通知' : 'Login Notifications'}</h4>
-                  <p className="text-xs text-slate-400">
-                    {lang === 'zh' ? '在新设备登录时接收邮件提醒' : 'Receive email alerts for new sign-ins'}
-                  </p>
-                </div>
+                <button 
+                  onClick={() => updateNotifSettings({ enabled: !notifSettings.enabled })}
+                  className={`w-12 h-6 rounded-full transition-colors relative ${notifSettings.enabled ? 'bg-indigo-600' : 'bg-slate-600'}`}
+                >
+                  <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${notifSettings.enabled ? 'left-7' : 'left-1'}`} />
+                </button>
               </div>
-              <button 
-                onClick={toggleNotifications}
-                className={`w-12 h-6 rounded-full transition-colors relative ${notificationsEnabled ? 'bg-indigo-600' : 'bg-slate-600'}`}
-              >
-                <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${notificationsEnabled ? 'left-7' : 'left-1'}`} />
-              </button>
+
+              {notifSettings.enabled && (
+                <m.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  className="p-4 bg-white/5 rounded-xl border border-white/10 space-y-3"
+                >
+                  <p className="text-[10px] font-bold uppercase text-slate-500 tracking-wider">
+                    {lang === 'zh' ? '通知模式' : 'Notification Mode'}
+                  </p>
+                  <div className="grid grid-cols-2 gap-2">
+                    <button 
+                      onClick={() => updateNotifSettings({ mode: 'NEW_DEVICE' })}
+                      className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                        notifSettings.mode === 'NEW_DEVICE' 
+                          ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' 
+                          : 'bg-black/20 border-white/5 text-slate-500 hover:border-white/10'
+                      }`}
+                    >
+                      {lang === 'zh' ? '仅限新设备' : 'New Device Only'}
+                    </button>
+                    <button 
+                      onClick={() => updateNotifSettings({ mode: 'EVERY_LOGIN' })}
+                      className={`px-3 py-2 rounded-lg text-xs font-bold transition-all border ${
+                        notifSettings.mode === 'EVERY_LOGIN' 
+                          ? 'bg-indigo-600/20 border-indigo-500 text-indigo-400' 
+                          : 'bg-black/20 border-white/5 text-slate-500 hover:border-white/10'
+                      }`}
+                    >
+                      {lang === 'zh' ? '每次登录' : 'Every Login'}
+                    </button>
+                  </div>
+                </m.div>
+              )}
             </div>
 
             {/* Login History */}
