@@ -31,7 +31,8 @@ const readDB = () => {
       otp: {},
       blocked_ips: [], // { ip: string, blocked_until: number, reason: string }
       ip_activity: {},  // { [ip: string]: { failed_attempts: number, last_seen: number } }
-      login_history: [] // { user_id: string, ip: string, device: string, browser: string, location: string, timestamp: string }
+      login_history: [], // { user_id: string, ip: string, device: string, browser: string, location: string, timestamp: string }
+      notification_settings: {} // { [user_id: string]: boolean }
     }));
   }
   const data = JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
@@ -39,6 +40,7 @@ const readDB = () => {
   if (!data.blocked_ips) data.blocked_ips = [];
   if (!data.ip_activity) data.ip_activity = {};
   if (!data.login_history) data.login_history = [];
+  if (!data.notification_settings) data.notification_settings = {};
   return data;
 };
 
@@ -154,6 +156,36 @@ async function startServer() {
     res.json({ status: "recorded", attempts: activity.failed_attempts });
   });
 
+  // Login History Endpoint
+  app.get("/api/auth/login-history/:userId", (req, res) => {
+    const { userId } = req.params;
+    const db = readDB();
+    const history = db.login_history
+      .filter((h: any) => h.user_id === userId)
+      .sort((a: any, b: any) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+      .slice(0, 20); // Limit to last 20
+    res.json(history);
+  });
+
+  // Notification Settings Endpoints
+  app.get("/api/auth/notification-settings/:userId", (req, res) => {
+    const { userId } = req.params;
+    const db = readDB();
+    // Default to true if not set
+    const enabled = db.notification_settings[userId] !== false;
+    res.json({ enabled });
+  });
+
+  app.post("/api/auth/notification-settings", (req, res) => {
+    const { userId, enabled } = req.body;
+    if (!userId) return res.status(400).json({ error: "Missing userId" });
+    
+    const db = readDB();
+    db.notification_settings[userId] = enabled;
+    writeDB(db);
+    res.json({ success: true, enabled });
+  });
+
   // Login Notification Endpoint
   app.post("/api/auth/login-notify", async (req, res) => {
     const { userId, email, userAgent } = req.body;
@@ -201,6 +233,12 @@ async function startServer() {
     };
     db.login_history.push(newEntry);
     writeDB(db);
+
+    // Check if user has enabled notifications
+    if (db.notification_settings[userId] === false) {
+      console.log(`[SECURITY] Login alert skipped for ${email} (User disabled notifications)`);
+      return res.json({ success: true, skipped: true });
+    }
 
     // Send Email Notification
     const mytTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' });
