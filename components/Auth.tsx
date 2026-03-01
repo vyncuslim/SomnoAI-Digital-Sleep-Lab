@@ -115,6 +115,18 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
     return isValid;
   };
 
+  const getErrorMessage = (error: string) => {
+    // Map Supabase error messages to user-friendly text
+    if (error.includes('Invalid login credentials')) return lang === 'zh' ? '邮箱或密码错误，请重试。' : 'Incorrect email or password. Please try again.';
+    if (error.includes('Email not confirmed')) return lang === 'zh' ? '请先验证您的邮箱地址。' : 'Please verify your email address before logging in.';
+    if (error.includes('User not found') || error.includes('Invalid grant')) return lang === 'zh' ? '账户不存在，请注册。' : 'Account not found. Please sign up.';
+    if (error.includes('Password should be at least 6 characters')) return lang === 'zh' ? '密码长度至少需要6个字符。' : 'Password must be at least 6 characters long.';
+    if (error.includes('Rate limit exceeded') || error.includes('Too many requests')) return lang === 'zh' ? '尝试次数过多，请稍后再试。' : 'Too many attempts. Please try again later.';
+    if (error.includes('Network request failed') || error.includes('fetch failed')) return lang === 'zh' ? '网络错误，请检查您的连接。' : 'Network error. Please check your connection.';
+    if (error.includes('captcha')) return lang === 'zh' ? '验证码验证失败，请重试。' : 'Captcha verification failed. Please try again.';
+    return error;
+  };
+
   const handleRequestToken = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -150,7 +162,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         }
       });
       if (error) {
-        setError(error.message);
+        setError(getErrorMessage(error.message));
         resetCaptcha();
         
         // Centralized security handling
@@ -171,7 +183,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           }
         });
         if (error) {
-          setError(error.message);
+          setError(getErrorMessage(error.message));
           resetCaptcha();
           
           // Centralized security handling
@@ -200,7 +212,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           }
         }
         if (error) {
-          setError(error.message);
+          setError(getErrorMessage(error.message));
           resetCaptcha();
           
           // Centralized security handling

@@ -8,6 +8,7 @@ import { AnalyticsProvider } from './components/AnalyticsProvider.tsx';
 import { supabase, logAuditLog } from './services/supabaseService.ts';
 import { SleepRecord } from './types.ts';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData.ts';
+import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 
 // Lazy load components
 const Auth = lazy(() => import('./components/Auth.tsx').then(module => ({ default: module.Auth })));
@@ -83,49 +84,6 @@ const ArticleWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
   return <ArticleView article={article} lang={lang} onBack={() => navigate('/news')} />;
 };
 
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { profile, loading } = useAuth();
-  
-  if (loading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
-  }
-  
-  if (!profile) {
-    return <Navigate to="/auth/signin" replace />;
-  }
-
-  return <>{children}</>;
-};
-
-const AdminRoute = ({ children }: { children: React.ReactNode }) => {
-  const { profile, loading, isAdmin, isOwner, isSuperOwner } = useAuth();
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    if (!loading && profile && !(isAdmin || isOwner || isSuperOwner)) {
-      // Log the unauthorized access attempt
-      logAuditLog('UNAUTHORIZED_ACCESS', `User ${profile.email} attempted to access Admin Route`, 'WARNING');
-      // Redirect to dashboard
-      navigate('/dashboard', { replace: true });
-    }
-  }, [loading, profile, isAdmin, isOwner, isSuperOwner, navigate]);
-
-  if (loading) {
-    return <div className="min-h-screen bg-black flex items-center justify-center text-white">Loading...</div>;
-  }
-  
-  if (!profile) {
-    return <Navigate to="/auth/signin" replace />;
-  }
-
-  if (!(isAdmin || isOwner || isSuperOwner)) {
-    // While redirect happens in useEffect, we return null to avoid flash of content
-    return null; 
-  }
-
-  return <>{children}</>;
-};
-
 interface AppRoutesProps {
   lang: Language;
   setLang: (lang: Language) => void;
@@ -198,7 +156,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
         </ProtectedRoute>
       } />
       <Route path="/admin" element={
-        <ProtectedRoute>
+        <ProtectedRoute level="admin">
           <AdminView lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />

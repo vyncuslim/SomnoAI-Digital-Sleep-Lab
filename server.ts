@@ -203,24 +203,32 @@ async function startServer() {
     const deviceString = `${device.vendor || ''} ${device.model || 'Desktop'} (${os.name || 'Unknown OS'})`.trim();
     const browserString = `${browser.name || 'Unknown Browser'} ${browser.version || ''}`.trim();
 
-    // Get Location (Mock for now, or use external API)
+    // Get Location (Using ipapi.co)
     let location = 'Unknown Location';
     try {
-      const geoRes = await fetch(`https://ipapi.co/${ip}/json/`);
+      // Use a public IP for testing if localhost
+      const queryIp = (ip === '::1' || ip === '127.0.0.1') ? '' : ip; 
+      const geoUrl = queryIp ? `https://ipapi.co/${queryIp}/json/` : 'https://ipapi.co/json/';
+      
+      const geoRes = await fetch(geoUrl);
       if (geoRes.ok) {
         const geoData = await geoRes.json();
-        location = `${geoData.city}, ${geoData.region}, ${geoData.country_name}`;
+        if (geoData.city && geoData.country_name) {
+          location = `${geoData.city}, ${geoData.region}, ${geoData.country_name}`;
+        }
       }
     } catch (e) {
       console.error("Geo lookup failed:", e);
     }
 
     const db = readDB();
+    // Ensure login_history exists
+    if (!db.login_history) db.login_history = [];
+    
     const history = db.login_history.filter((h: any) => h.user_id === userId);
     
     // Check for new device/location
     const isNewDevice = !history.some((h: any) => h.device === deviceString && h.browser === browserString);
-    const isNewLocation = !history.some((h: any) => h.location === location);
     
     // Add to history
     const newEntry = {
