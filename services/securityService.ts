@@ -63,10 +63,70 @@ export const securityService = {
   },
 
   /**
+   * Unblock a user and reset their login attempts.
+   */
+  unblockUser: async (userId: string, email: string, reason: string = 'Admin Manual Unblock') => {
+    try {
+      // 1. Update profile
+      const { error } = await supabase
+        .from('profiles')
+        .update({ is_blocked: false, failed_login_attempts: 0 })
+        .eq('id', userId);
+
+      if (error) throw error;
+
+      // 2. Log to Audit Logs
+      await logAuditLog(userId, 'USER_UNBLOCKED', {
+        reason,
+        timestamp: new Date().toISOString()
+      });
+
+      // 3. Log to Security Events
+      await supabase.from('security_events').insert([{
+        user_id: userId,
+        type: 'ACCOUNT_UNBLOCKED',
+        details: reason,
+        severity: 'LOW',
+        ip_address: 'Admin Console'
+      }]);
+
+      // 4. Reset RPC login attempts (if applicable)
+      try {
+        await supabase.rpc('reset_login_attempts', { target_email: email });
+      } catch (e) {
+        console.warn('RPC reset_login_attempts failed:', e);
+      }
+
+      return { success: true };
+    } catch (error) {
+      console.error('Unblock user failed:', error);
+      return { success: false, error };
+    }
+  },
+
+  /**
+   * Report suspicious activity to the server for IP tracking/blocking.
+   */
+  reportSuspiciousActivity: async (type: string) => {
+    try {
+      await fetch('/api/security/report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type })
+      });
+    } catch (e) {
+      console.error('Failed to report suspicious activity to server:', e);
+    }
+  },
+
+  /**
    * Monitor login attempts and block if threshold exceeded.
    * Should be called after a failed login attempt.
    */
   handleFailedLogin: async (email: string) => {
+    // Report to server for IP blocking
+    await securityService.reportSuspiciousActivity('failed_login');
+
     try {
       // 1. Get current profile to check attempts
       const { data: profiles, error } = await supabase

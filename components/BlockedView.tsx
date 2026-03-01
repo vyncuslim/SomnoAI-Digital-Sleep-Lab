@@ -22,10 +22,17 @@ export const BlockedView: React.FC = () => {
       </p>
       <a
         href="mailto:admin@sleepsomno.com"
-        className="px-8 py-4 bg-white/5 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-colors border border-white/10 flex items-center gap-3"
+        className="px-8 py-4 bg-white/5 text-white rounded-full font-bold text-lg hover:bg-white/10 transition-colors border border-white/10 flex items-center gap-3 mb-8"
       >
         <Mail size={20} />
         admin@sleepsomno.com
+      </a>
+
+      <a
+        href="/"
+        className="text-sm text-slate-500 hover:text-white transition-colors uppercase tracking-widest font-bold border-b border-transparent hover:border-white/20 pb-1"
+      >
+        Return to Home
       </a>
     </motion.div>
   );

@@ -47,6 +47,24 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const turnstileRef = useRef<TurnstileInstance>(null);
+  const [ipBlocked, setIpBlocked] = useState(false);
+  const [blockReason, setBlockReason] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Check if IP is blocked
+    fetch('/api/security/status')
+      .then(res => {
+        if (res.status === 403) {
+          setIpBlocked(true);
+          return res.json();
+        }
+        return null;
+      })
+      .then(data => {
+        if (data) setBlockReason(data.message);
+      })
+      .catch(console.error);
+  }, []);
 
   const resetCaptcha = () => {
     if (turnstileRef.current) {
@@ -56,6 +74,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
   };
 
   const validateForm = () => {
+    if (ipBlocked) return false;
     const errors: { email?: string; password?: string; fullName?: string; terms?: string } = {};
     let isValid = true;
 
@@ -242,6 +261,16 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           </div>
         </div>
         
+        {ipBlocked && (
+          <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/30 rounded-xl text-center">
+            <div className="flex justify-center mb-2 text-rose-500">
+              <Lock size={24} />
+            </div>
+            <h3 className="text-rose-400 font-bold uppercase text-xs tracking-widest mb-1">Access Denied</h3>
+            <p className="text-rose-300/80 text-xs">{blockReason || "Your IP has been temporarily blocked due to suspicious activity."}</p>
+          </div>
+        )}
+
         <div className="flex p-1.5 bg-black/40 border border-white/5 rounded-2xl mb-10">
           <button
             onClick={() => { setMode('otp'); setFieldErrors({}); setError(null); resetCaptcha(); }}
@@ -432,7 +461,7 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
           
           <button
             type="submit"
-            disabled={loading || !captchaToken || !agreedToTerms}
+            disabled={loading || !captchaToken || !agreedToTerms || ipBlocked}
             className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed rounded-2xl font-black uppercase tracking-[0.2em] italic text-xs transition-all flex items-center justify-center gap-3 shadow-[0_0_30px_-5px_rgba(79,70,229,0.5)] group relative overflow-hidden"
           >
             {loading && (

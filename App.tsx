@@ -1,38 +1,38 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext.tsx';
 import { trackPageView } from './services/analytics.ts';
 import { Language } from './types.ts';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
-import { Auth } from './components/Auth.tsx';
-import { AuthVerify } from './components/AuthVerify.tsx';
-import { Dashboard } from './components/Dashboard.tsx';
-import { AdminView } from './components/AdminView.tsx';
-import { UserProfile } from './components/UserProfile.tsx';
-import { FeedbackView } from './components/FeedbackView.tsx';
-import { LandingPage } from './components/LandingPage.tsx';
-import { AboutView } from './components/AboutView.tsx';
-import { ContactView } from './components/ContactView.tsx';
-import { AIAssistant } from './components/AIAssistant.tsx';
-import { ExperimentView } from './components/ExperimentView.tsx';
-import { DiaryView } from './components/DiaryView.tsx';
-import { BlogHub } from './components/BlogHub.tsx';
-import { BlogPostView } from './components/BlogPostView.tsx';
-import { NewsHub } from './components/NewsHub.tsx';
-import { ArticleView } from './components/ArticleView.tsx';
-import { OpenSourceView } from './components/OpenSourceView.tsx';
-import { ChangelogView } from './components/ChangelogView.tsx';
-import { LegalView } from './components/LegalView.tsx';
-import { SupportView } from './components/SupportView.tsx';
-import { FAQView } from './components/FAQView.tsx';
-import { ScienceView } from './components/ScienceView.tsx';
-import { getTranslation } from './services/i18n.ts';
+import { AnalyticsProvider } from './components/AnalyticsProvider.tsx';
+import { supabase } from './services/supabaseService.ts';
 import { SleepRecord } from './types.ts';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData.ts';
-import { BlockedView } from './components/BlockedView.tsx';
 
-import { supabase } from './services/supabaseService.ts';
-import { AnalyticsProvider } from './components/AnalyticsProvider.tsx';
+// Lazy load components
+const Auth = lazy(() => import('./components/Auth.tsx').then(module => ({ default: module.Auth })));
+const AuthVerify = lazy(() => import('./components/AuthVerify.tsx').then(module => ({ default: module.AuthVerify })));
+const Dashboard = lazy(() => import('./components/Dashboard.tsx').then(module => ({ default: module.Dashboard })));
+const AdminView = lazy(() => import('./components/AdminView.tsx').then(module => ({ default: module.AdminView })));
+const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(module => ({ default: module.UserProfile })));
+const FeedbackView = lazy(() => import('./components/FeedbackView.tsx').then(module => ({ default: module.FeedbackView })));
+const LandingPage = lazy(() => import('./components/LandingPage.tsx').then(module => ({ default: module.LandingPage })));
+const AboutView = lazy(() => import('./components/AboutView.tsx').then(module => ({ default: module.AboutView })));
+const ContactView = lazy(() => import('./components/ContactView.tsx').then(module => ({ default: module.ContactView })));
+const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(module => ({ default: module.AIAssistant })));
+const ExperimentView = lazy(() => import('./components/ExperimentView.tsx').then(module => ({ default: module.ExperimentView })));
+const DiaryView = lazy(() => import('./components/DiaryView.tsx').then(module => ({ default: module.DiaryView })));
+const BlogHub = lazy(() => import('./components/BlogHub.tsx').then(module => ({ default: module.BlogHub })));
+const BlogPostView = lazy(() => import('./components/BlogPostView.tsx').then(module => ({ default: module.BlogPostView })));
+const NewsHub = lazy(() => import('./components/NewsHub.tsx').then(module => ({ default: module.NewsHub })));
+const ArticleView = lazy(() => import('./components/ArticleView.tsx').then(module => ({ default: module.ArticleView })));
+const OpenSourceView = lazy(() => import('./components/OpenSourceView.tsx').then(module => ({ default: module.OpenSourceView })));
+const ChangelogView = lazy(() => import('./components/ChangelogView.tsx').then(module => ({ default: module.ChangelogView })));
+const LegalView = lazy(() => import('./components/LegalView.tsx').then(module => ({ default: module.LegalView })));
+const SupportView = lazy(() => import('./components/SupportView.tsx').then(module => ({ default: module.SupportView })));
+const FAQView = lazy(() => import('./components/FAQView.tsx').then(module => ({ default: module.FAQView })));
+const ScienceView = lazy(() => import('./components/ScienceView.tsx').then(module => ({ default: module.ScienceView })));
+const BlockedView = lazy(() => import('./components/BlockedView.tsx').then(module => ({ default: module.BlockedView })));
 
 // Initial Data
 const INITIAL_SLEEP_DATA: SleepRecord = {
@@ -120,11 +120,20 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
   const handleBack = () => navigate(-1);
 
   if (isBlocked) {
-    return <BlockedView />;
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-[#01040a]" />}>
+        <BlockedView />
+      </Suspense>
+    );
   }
 
   return (
     <React.Fragment>
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
     <Routes>
       {/* Public Routes */}
       <Route path="/" element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
@@ -192,6 +201,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </Suspense>
     </React.Fragment>
   );
 };

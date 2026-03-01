@@ -155,6 +155,21 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
     }
   };
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
     <div className="min-h-screen bg-[#01040a] text-white font-sans p-6 relative">
       {showLogoutFeedback && (
@@ -248,49 +263,67 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
         </div>
       </header>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-        <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-indigo-500/30 transition-all">
-          <div className="p-4 bg-indigo-500/10 text-indigo-500 rounded-2xl group-hover:scale-110 transition-transform">
-            <Moon size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">{t.scoreStatus || 'Sleep Score'}</p>
-            <h3 className="text-3xl font-black italic tracking-tighter">{stats.score ?? (t.void || 'Void')}</h3>
-          </div>
-        </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-emerald-500/30 transition-all">
-          <div className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl group-hover:scale-110 transition-transform">
-            <Activity size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">{t.status || 'Resting HR'}</p>
-            <h3 className="text-3xl font-black italic tracking-tighter">
-              {stats.hr ? `${stats.hr} bpm` : (t.void || 'Void')}
-            </h3>
-          </div>
-        </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-amber-500/30 transition-all">
-          <div className="p-4 bg-amber-500/10 text-amber-500 rounded-2xl group-hover:scale-110 transition-transform">
-            <Zap size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">Readiness</p>
-            <h3 className="text-3xl font-black italic tracking-tighter">{stats.readiness ? `${stats.readiness}%` : (t.void || 'Void')}</h3>
-          </div>
-        </GlassCard>
-        <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-purple-500/30 transition-all">
-          <div className="p-4 bg-purple-500/10 text-purple-500 rounded-2xl group-hover:scale-110 transition-transform">
-            <Brain size={24} />
-          </div>
-          <div>
-            <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">Deep Sleep</p>
-            <h3 className="text-3xl font-black italic tracking-tighter">{stats.deep ?? (t.void || 'Void')}</h3>
-          </div>
-        </GlassCard>
-      </div>
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12"
+      >
+        <motion.div variants={itemVariants}>
+          <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-indigo-500/30 transition-all h-full">
+            <div className="p-4 bg-indigo-500/10 text-indigo-500 rounded-2xl group-hover:scale-110 transition-transform">
+              <Moon size={24} />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">{t.scoreStatus || 'Sleep Score'}</p>
+              <h3 className="text-3xl font-black italic tracking-tighter">{stats.score ?? (t.void || 'Void')}</h3>
+            </div>
+          </GlassCard>
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-emerald-500/30 transition-all h-full">
+            <div className="p-4 bg-emerald-500/10 text-emerald-500 rounded-2xl group-hover:scale-110 transition-transform">
+              <Activity size={24} />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">{t.status || 'Resting HR'}</p>
+              <h3 className="text-3xl font-black italic tracking-tighter">
+                {stats.hr ? `${stats.hr} bpm` : (t.void || 'Void')}
+              </h3>
+            </div>
+          </GlassCard>
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-amber-500/30 transition-all h-full">
+            <div className="p-4 bg-amber-500/10 text-amber-500 rounded-2xl group-hover:scale-110 transition-transform">
+              <Zap size={24} />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">Readiness</p>
+              <h3 className="text-3xl font-black italic tracking-tighter">{stats.readiness ? `${stats.readiness}%` : (t.void || 'Void')}</h3>
+            </div>
+          </GlassCard>
+        </motion.div>
+        <motion.div variants={itemVariants}>
+          <GlassCard className="p-6 flex items-center gap-4 border-white/5 bg-slate-900/40 group hover:border-purple-500/30 transition-all h-full">
+            <div className="p-4 bg-purple-500/10 text-purple-500 rounded-2xl group-hover:scale-110 transition-transform">
+              <Brain size={24} />
+            </div>
+            <div>
+              <p className="text-[10px] text-slate-500 uppercase font-black tracking-[0.2em] italic">Deep Sleep</p>
+              <h3 className="text-3xl font-black italic tracking-tighter">{stats.deep ?? (t.void || 'Void')}</h3>
+            </div>
+          </GlassCard>
+        </motion.div>
+      </motion.div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-2 space-y-8">
+      <motion.div 
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+        className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+      >
+        <motion.div variants={itemVariants} className="lg:col-span-2 space-y-8">
           <GlassCard className="p-8 min-h-[400px]">
             <div className="flex items-center justify-between mb-8">
               <h3 className="text-xl font-black italic uppercase tracking-tight flex items-center gap-3">
