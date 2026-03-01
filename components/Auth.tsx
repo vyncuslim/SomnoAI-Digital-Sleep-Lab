@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext.tsx';
 import { supabase, logAuditLog } from '../services/supabaseService.ts';
 import { emailService } from '../services/emailService.ts';
+import { securityService } from '../services/securityService.ts';
 import { GlassCard } from './GlassCard.tsx';
 import { Logo } from './Logo.tsx';
 import { Loader2, Mail, Lock, Zap, User, Apple, AlertCircle } from 'lucide-react';
@@ -92,31 +93,6 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
     return isValid;
   };
 
-  const checkAndBlockUser = async (targetEmail: string) => {
-    try {
-      const { data: profile } = await supabase.from('profiles').select('id, failed_login_attempts').eq('email', targetEmail).single();
-      if (profile && profile.failed_login_attempts >= 5) {
-         await supabase.from('profiles').update({ is_blocked: true }).eq('email', targetEmail);
-         await supabase.rpc('block_user', { target_email: targetEmail });
-         
-         // Log the security event
-         await logAuditLog(profile.id, 'USER_BLOCKED', { 
-           reason: 'Excessive failed login attempts', 
-           target: targetEmail 
-         });
-
-         // Send email notification
-         await emailService.sendBlockNotification(targetEmail, 'Excessive failed login attempts');
-
-         setError(t.blocked);
-         return true;
-      }
-    } catch (e) {
-      // Ignore error if profile check fails
-    }
-    return false;
-  };
-
   const handleRequestToken = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -154,16 +130,9 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
       if (error) {
         setError(error.message);
         resetCaptcha();
-        await supabase.rpc('report_failed_login', { target_email: email });
         
-        // Notify user about failed attempt
-        const { data: attemptData } = await supabase.from('login_attempts').select('attempts').eq('email', email).single();
-        if (attemptData) {
-          await emailService.sendFailedLoginNotification(email, attemptData.attempts);
-        }
-
-        // Check if user should be blocked after failed attempt
-        await checkAndBlockUser(email);
+        // Centralized security handling
+        await securityService.handleFailedLogin(email);
       } else {
         const typeParam = view === 'signup' ? '&type=signup' : '';
         navigate(`/auth/verify?email=${encodeURIComponent(email)}${fullName ? `&name=${encodeURIComponent(fullName)}` : ''}${typeParam}`);
@@ -182,16 +151,9 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         if (error) {
           setError(error.message);
           resetCaptcha();
-          await supabase.rpc('report_failed_login', { target_email: email });
           
-          // Notify user about failed attempt
-          const { data: attemptData } = await supabase.from('login_attempts').select('attempts').eq('email', email).single();
-          if (attemptData) {
-            await emailService.sendFailedLoginNotification(email, attemptData.attempts);
-          }
-
-          // Check if user should be blocked after failed attempt
-          await checkAndBlockUser(email);
+          // Centralized security handling
+          await securityService.handleFailedLogin(email);
         } else {
           navigate(`/auth/verify?email=${encodeURIComponent(email)}&type=signup&name=${encodeURIComponent(fullName)}`);
         }
@@ -218,16 +180,9 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
         if (error) {
           setError(error.message);
           resetCaptcha();
-          await supabase.rpc('report_failed_login', { target_email: email });
           
-          // Notify user about failed attempt
-          const { data: attemptData } = await supabase.from('login_attempts').select('attempts').eq('email', email).single();
-          if (attemptData) {
-            await emailService.sendFailedLoginNotification(email, attemptData.attempts);
-          }
-
-          // Check if user should be blocked after failed attempt
-          await checkAndBlockUser(email);
+          // Centralized security handling
+          await securityService.handleFailedLogin(email);
         }
       }
     }

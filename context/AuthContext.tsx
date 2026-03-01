@@ -150,6 +150,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, [fetchProfile]);
 
+  useEffect(() => {
+    // Periodic security check
+    if (!profile) return;
+
+    const checkSecurityStatus = async () => {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_blocked')
+        .eq('id', profile.id)
+        .single();
+
+      if (data?.is_blocked) {
+        setIsBlocked(true);
+        await supabase.auth.signOut();
+        setProfile(null);
+      }
+    };
+
+    const intervalId = setInterval(checkSecurityStatus, 30000); // Check every 30 seconds
+    return () => clearInterval(intervalId);
+  }, [profile]);
+
   const value = {
     profile, loading, isBlocked,
     isAdmin: profile?.role === "admin" || profile?.role === "owner" || profile?.is_super_owner === true,

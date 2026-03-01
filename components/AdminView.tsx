@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
+import { securityService } from '../services/securityService.ts';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
@@ -335,10 +336,10 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                     <button 
                       onClick={async () => {
                         const newStatus = !user.is_blocked;
-                        await supabase.from('profiles').update({ is_blocked: newStatus }).eq('id', user.id);
                         if (newStatus) {
-                          await supabase.rpc('block_user', { target_email: user.email });
+                          await securityService.handleSecurityViolation(user.id, user.email, 'Admin Manual Block', 'HIGH');
                         } else {
+                          await supabase.from('profiles').update({ is_blocked: false }).eq('id', user.id);
                           await supabase.rpc('reset_login_attempts', { target_email: user.email });
                         }
                         fetchData();
