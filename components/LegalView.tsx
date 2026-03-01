@@ -94,6 +94,9 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                 <h2 className="text-xl font-bold italic tracking-tight">4. Security and Automatic Account Blocking</h2>
               </div>
               <p>To ensure the security of our platform and protect user data, we employ automated security measures. Your account may be automatically blocked if our systems detect suspicious activities, such as multiple failed login attempts, unauthorized access attempts to restricted areas, or other actions that violate our Terms of Service. This is a necessary security precaution to prevent unauthorized access and protect the laboratory infrastructure.</p>
+              <p className="text-rose-300 font-bold bg-rose-500/5 p-4 rounded-xl border border-rose-500/10">
+                Specific Warning: We monitor access patterns to restricted areas (e.g., Admin Dashboard). Unauthorized attempts trigger automated security protocols that block the offending account immediately.
+              </p>
             </section>
           </>
         ) : (
@@ -134,6 +137,9 @@ export const LegalView: React.FC<LegalViewProps> = ({ type, lang, onBack }) => {
                   <li>Unauthorized access or attempted access to administrative areas ("Honeypot" protection).</li>
                   <li>Actions that may harm the laboratory infrastructure or other users.</li>
                 </ul>
+                <p className="text-rose-300 font-bold bg-rose-500/5 p-4 rounded-xl border border-rose-500/10 mt-4">
+                  CRITICAL: Any attempt by non-administrative users to access the Admin Dashboard (/admin) will result in an immediate and permanent account block.
+                </p>
                 <p className="italic text-slate-400 mt-4">
                   If your account is blocked, you will see the following notice: 
                   <br/>

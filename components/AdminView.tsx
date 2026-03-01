@@ -145,20 +145,29 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
       // Automatic block for unauthorized admin access attempt
       const triggerBlock = async () => {
         try {
+          // 1. Block the user in the database
           await supabase.from('profiles').update({ is_blocked: true }).eq('id', profile.id);
-          await supabase.rpc('block_user', { target_email: profile.email });
           
-          await logAuditLog(profile.id, 'UNAUTHORIZED_ADMIN_ACCESS', { 
-            reason: 'Attempted to open admin console without clearance',
-            email: profile.email
-          });
+          // 2. Log the security violation
+          await securityService.handleSecurityViolation(
+            profile.id, 
+            profile.email, 
+            'UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT', 
+            'CRITICAL'
+          );
 
-          // Send notification
-          await emailService.sendBlockNotification(profile.email, 'Unauthorized access to restricted areas');
+          // 3. Send specific block notification
+          await emailService.sendBlockNotification(
+            profile.email, 
+            'Attempted unauthorized access to Admin Console. This is a restricted area.'
+          );
           
-          // Sign out
-          await supabase.auth.signOut();
-          window.location.reload();
+          // 4. Force sign out after a delay to let them see the message
+          setTimeout(async () => {
+            await supabase.auth.signOut();
+            window.location.href = '/';
+          }, 5000);
+          
         } catch (e) {
           console.error("Failed to trigger security block:", e);
         }
@@ -168,19 +177,34 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
   }, [isAdmin, authLoading, profile]);
 
   if (authLoading) return <div className="min-h-screen bg-[#01040a] flex items-center justify-center text-white">Authenticating...</div>;
-  if (!isAdmin) return <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white p-6 text-center">
-    <ShieldOff size={80} className="text-rose-500 mb-8 drop-shadow-lg" />
-    <h1 className="text-4xl font-black uppercase tracking-tighter mb-4 leading-tight">
-      Access <span className="text-rose-500">Denied</span>
-    </h1>
-    <p className="text-lg text-slate-400 max-w-xl mb-8 leading-relaxed">
-      你违反了条款。如有问题，请联系 admin@sleepsomno.com
-    </p>
-    <p className="text-sm text-slate-500 max-w-xl mb-12">
-      You have violated the terms. If you have any questions, please contact admin@sleepsomno.com
-    </p>
-    <button onClick={onBack} className="px-8 py-3 bg-indigo-600 rounded-full font-bold uppercase tracking-widest">Return to Base</button>
-  </div>;
+  
+  // Unauthorized View
+  if (!isAdmin) return (
+    <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white p-6 text-center relative overflow-hidden">
+      <div className="absolute inset-0 bg-rose-900/10 animate-pulse pointer-events-none" />
+      <ShieldOff size={80} className="text-rose-500 mb-8 drop-shadow-[0_0_30px_rgba(225,29,72,0.5)]" />
+      <h1 className="text-4xl md:text-5xl font-black uppercase tracking-tighter mb-4 leading-tight">
+        Restricted <span className="text-rose-500">Area</span>
+      </h1>
+      <div className="bg-rose-500/10 border border-rose-500/20 p-6 rounded-2xl max-w-xl mb-8 backdrop-blur-sm">
+        <h3 className="text-rose-400 font-bold uppercase tracking-widest mb-2 flex items-center justify-center gap-2">
+          <AlertTriangle size={18} /> Security Alert
+        </h3>
+        <p className="text-lg text-slate-300 leading-relaxed mb-4">
+          This is the <strong>Admin Console</strong>. You do not have permission to be here.
+        </p>
+        <p className="text-sm text-rose-300 font-bold">
+          Your account has been automatically blocked due to unauthorized access attempt.
+        </p>
+      </div>
+      <p className="text-sm text-slate-500 max-w-xl mb-12">
+        System has logged this incident. If this was a mistake, please contact admin@sleepsomno.com immediately.
+      </p>
+      <button onClick={onBack} className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full font-bold uppercase tracking-widest transition-all">
+        Return to Safety
+      </button>
+    </div>
+  );
 
   const fetchData = async () => {
     setIsSyncing(true);

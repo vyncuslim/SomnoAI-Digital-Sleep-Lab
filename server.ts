@@ -3,14 +3,23 @@ import { createServer as createViteServer } from "vite";
 import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import { Resend } from 'resend';
+import nodemailer from "nodemailer";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const DB_FILE = path.join(__dirname, "data.json");
-const RESEND_API_KEY = process.env.RESEND_API_KEY || 're_H4fb2SAp_PM8Lvmrax94nJeTuzndPiAmf';
-const resend = new Resend(RESEND_API_KEY);
+
+// SMTP Configuration for Resend
+const transporter = nodemailer.createTransport({
+  host: 'smtp.resend.com',
+  port: 465,
+  secure: true,
+  auth: {
+    user: 'resend',
+    pass: 're_H4fb2SAp_PM8Lvmrax94nJeTuzndPiAmf'
+  }
+});
 
 // Simple JSON Database
 const readDB = () => {
@@ -104,7 +113,7 @@ async function startServer() {
     res.json({ status: "recorded", attempts: activity.failed_attempts });
   });
 
-  // Email API Endpoint with Resend
+  // Email API Endpoint with SMTP (Resend)
   app.post("/api/send-email", async (req, res) => {
     const { to, subject, html, notifyAdmin } = req.body;
     
@@ -123,33 +132,32 @@ async function startServer() {
     }
 
     try {
-      const results = await Promise.all(recipients.map(recipient => 
-        resend.emails.send({
-          from: 'SomnoAI <onboarding@resend.dev>', // Use default Resend sender for testing
-          to: recipient,
-          subject: `[SomnoAI] ${subject}`,
-          html: `
-            <div style="font-family: sans-serif; color: #333;">
-              <div style="background-color: #01040a; padding: 20px; text-align: center;">
-                <h1 style="color: #fff; margin: 0;">SomnoAI Digital Sleep Lab</h1>
-                <p style="color: #818cf8; margin: 5px 0 0; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;">Neural Unix Access</p>
-              </div>
-              <div style="padding: 20px; background-color: #f9fafb;">
-                ${html}
-              </div>
-              <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #6b7280;">
-                <p>&copy; ${new Date().getFullYear()} SomnoAI Digital Sleep Lab. All rights reserved.</p>
-                <p>This is an automated notification from SomnoAI Digital Sleep Lab system.</p>
-              </div>
+      const promises = recipients.map(recipient => transporter.sendMail({
+        from: 'SomnoAI <onboarding@resend.dev>',
+        to: recipient,
+        subject: `[SomnoAI] ${subject}`,
+        html: `
+          <div style="font-family: sans-serif; color: #333;">
+            <div style="background-color: #01040a; padding: 20px; text-align: center;">
+              <h1 style="color: #fff; margin: 0;">SomnoAI Digital Sleep Lab</h1>
+              <p style="color: #818cf8; margin: 5px 0 0; font-size: 12px; letter-spacing: 2px; text-transform: uppercase;">Neural Unix Access</p>
             </div>
-          `
-        })
-      ));
+            <div style="padding: 20px; background-color: #f9fafb;">
+              ${html}
+            </div>
+            <div style="background-color: #f3f4f6; padding: 20px; text-align: center; font-size: 12px; color: #6b7280;">
+              <p>&copy; ${new Date().getFullYear()} SomnoAI Digital Sleep Lab. All rights reserved.</p>
+              <p>This is an automated notification from SomnoAI Digital Sleep Lab system.</p>
+            </div>
+          </div>
+        `
+      }));
 
-      console.log("Emails sent via Resend:", results);
-      res.json({ success: true, results });
+      const results = await Promise.all(promises);
+      console.log("Emails sent via SMTP:", results.map(r => r.messageId));
+      res.json({ success: true, messageIds: results.map(r => r.messageId) });
     } catch (error: any) {
-      console.error("Error sending email via Resend:", error);
+      console.error("Error sending email via SMTP:", error);
       res.status(500).json({ error: "Failed to send email", details: error.message });
     }
   });
