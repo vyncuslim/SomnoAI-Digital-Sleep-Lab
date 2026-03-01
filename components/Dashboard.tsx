@@ -369,7 +369,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
               )}
             </div>
           </GlassCard>
-        </div>
+        </motion.div>
 
         <div className="space-y-6">
           <GlassCard className="p-8 bg-slate-900/60 border-indigo-500/20 relative overflow-hidden group rounded-[2.5rem]">
@@ -442,7 +442,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ lang }) => {
             </div>
           </GlassCard>
         </div>
-      </div>
+      </motion.div>
 
       {/* Floating AI Assistant Button */}
       <button 

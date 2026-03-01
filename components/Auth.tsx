@@ -78,10 +78,13 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
     const errors: { email?: string; password?: string; fullName?: string; terms?: string } = {};
     let isValid = true;
 
+    // Enhanced Email Validation Regex
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+
     if (!email) {
       errors.email = t.emailRequired || 'Email is required';
       isValid = false;
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    } else if (!emailRegex.test(email)) {
       errors.email = t.emailInvalid || 'Invalid email format';
       isValid = false;
     }
@@ -222,6 +225,30 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
     setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/dashboard`,
+      },
+    });
+    if (error) {
+      setError(error.message);
+      setLoading(false);
+    }
+  };
+
+  const handleAppleLogin = async () => {
+    if (!agreedToTerms) {
+      setFieldErrors({ terms: lang === 'zh' ? '您必须同意条款和隐私政策' : 'You must agree to the Terms and Privacy Policy' });
+      return;
+    }
+
+    if (!import.meta.env.VITE_SUPABASE_URL) {
+      setError(lang === 'zh' ? '配置错误：缺少 Supabase URL。请检查 Vercel 环境变量设置。' : 'Configuration Error: Missing Supabase URL. Please check Vercel environment variables.');
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'apple',
       options: {
         redirectTo: `${window.location.origin}/dashboard`,
       },
@@ -508,13 +535,15 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
               {t.googleBtn}
             </button>
 
-            <div className="w-full py-4 bg-white/5 opacity-50 cursor-not-allowed rounded-xl font-bold text-[10px] uppercase tracking-wider flex flex-col items-center justify-center gap-1 border border-white/5 text-slate-500">
-              <div className="flex items-center gap-2">
-                <Apple size={16} />
-                Continue with Apple
-              </div>
-              <span className="text-[8px] text-rose-500 font-black">{t.appleWarning}</span>
-            </div>
+            <button
+              type="button"
+              onClick={handleAppleLogin}
+              disabled={loading || !agreedToTerms}
+              className="w-full py-4 bg-white/5 hover:bg-white/10 rounded-xl font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-3 border border-white/5 text-slate-300 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Apple size={18} />
+              Continue with Apple
+            </button>
           </div>
         </form>
         

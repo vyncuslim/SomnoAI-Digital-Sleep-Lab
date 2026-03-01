@@ -4,7 +4,7 @@ import {
   List, MessageSquare,
   AlertTriangle, Search, Lightbulb, Sparkles,
   Activity, Shield, Clock, Moon, BarChart3, Save,
-  TrendingUp, Globe, MousePointer2, ShieldOff
+  TrendingUp, Globe, MousePointer2, ShieldOff, Mail, Bell
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
 import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
@@ -14,7 +14,7 @@ import { useAuth } from '../context/AuthContext.tsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { emailService } from '../services/emailService.ts';
 
-type AdminTab = 'overview' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics';
+type AdminTab = 'overview' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity },
@@ -23,7 +23,8 @@ const DATABASE_SCHEMA = [
   { id: 'profiles', name: 'Subject Registry', group: 'Core', icon: Users },
   { id: 'sleep_records', name: 'Sleep Matrix', group: 'Biometrics', icon: Moon },
   { id: 'feedback', name: 'User Feedback', group: 'Support', icon: MessageSquare },
-  { id: 'app_settings', name: 'App Settings', group: 'Config', icon: BarChart3 }
+  { id: 'app_settings', name: 'App Settings', group: 'Config', icon: BarChart3 },
+  { id: 'communications', name: 'Comms Center', group: 'System', icon: Mail }
 ];
 
 interface MarketingData {
@@ -125,13 +126,22 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
     }
   };
 
-  const handleSaveSettings = async () => {
+  const handleSaveSettings = async (updates?: Record<string, any>) => {
     setSavingSettings(true);
     try {
-      await Promise.all(Object.entries(settings).map(([key, value]) => 
-        adminApi.updateSetting(key, value)
+      const newSettings = { ...settings, ...updates };
+      // Convert all values to strings for state consistency
+      const stringSettings: Record<string, string> = {};
+      Object.entries(newSettings).forEach(([k, v]) => stringSettings[k] = String(v));
+      
+      if (updates) setSettings(stringSettings);
+
+      const targetSettings = updates ? updates : settings;
+      await Promise.all(Object.entries(targetSettings).map(([key, value]) => 
+        adminApi.updateSetting(key, String(value))
       ));
-      alert('Settings saved successfully');
+      
+      if (!updates) alert('Settings saved successfully');
     } catch (error) {
       console.error("Failed to save settings:", error);
       alert('Failed to save settings');
@@ -272,9 +282,9 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
       </header>
 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
-        {['overview', 'registry', 'signals', 'system', 'feedback', 'analytics']
+        {['overview', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications']
           .filter(tab => {
-            if (tab === 'analytics' || tab === 'system') return isOwner || isSuperOwner;
+            if (tab === 'analytics' || tab === 'system' || tab === 'communications') return isOwner || isSuperOwner;
             if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;
             return true;
           })
@@ -286,7 +296,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
               activeTab === tab ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'
             }`}
           >
-            {tab === 'analytics' ? 'GA4 Telemetry' : tab}
+            {tab === 'analytics' ? 'GA4 Telemetry' : tab === 'communications' ? 'Comms Center' : tab}
           </button>
         ))}
       </div>
@@ -724,6 +734,136 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                 No marketing data available.
               </div>
             )}
+          </div>
+        )}
+        {activeTab === 'communications' && (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              {/* Transactional Emails (Security) */}
+              <GlassCard className="p-8 border-l-4 border-l-rose-500">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-rose-500/20 text-rose-500 rounded-xl">
+                    <Shield size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Security Alerts</h3>
+                    <p className="text-xs text-rose-400 font-mono uppercase tracking-wider">Transactional System</p>
+                  </div>
+                </div>
+                
+                <div className="space-y-6">
+                  <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                    <div>
+                      <h4 className="font-bold text-sm">Critical Security Alerts</h4>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Notify team on blocked IPs, unauthorized admin access, and suspicious patterns.
+                      </p>
+                    </div>
+                    <button 
+                      onClick={() => handleSaveSettings({ enable_security_alerts: settings.enable_security_alerts !== 'true' })}
+                      className={`w-12 h-6 rounded-full transition-colors relative ${settings.enable_security_alerts === 'true' ? 'bg-rose-600' : 'bg-slate-600'}`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.enable_security_alerts === 'true' ? 'left-7' : 'left-1'}`} />
+                    </button>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2">
+                      <Mail size={14} /> Security Team Email
+                    </label>
+                    <input 
+                      type="email" 
+                      value={settings.email_recipient_security || 'security@sleepsomno.com'}
+                      onChange={(e) => handleSaveSettings({ email_recipient_security: e.target.value })}
+                      className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-rose-500 outline-none transition-colors font-mono"
+                      placeholder="security@sleepsomno.com"
+                    />
+                  </div>
+                </div>
+              </GlassCard>
+
+              {/* Audience / Broadcast */}
+              <GlassCard className="p-8 border-l-4 border-l-indigo-500">
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="p-3 bg-indigo-500/20 text-indigo-500 rounded-xl">
+                    <Bell size={24} />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Broadcast Center</h3>
+                    <p className="text-xs text-indigo-400 font-mono uppercase tracking-wider">Audience System</p>
+                  </div>
+                </div>
+
+                <div className="space-y-6">
+                  <div className="p-4 bg-indigo-500/10 rounded-xl border border-indigo-500/20 text-sm text-indigo-200">
+                    <p className="mb-2 font-bold flex items-center gap-2"><Lightbulb size={14} /> Pro Tip</p>
+                    Use this channel for newsletters, product updates, and non-urgent announcements.
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2">
+                      <User size={14} /> Sender Name
+                    </label>
+                    <input 
+                      type="text" 
+                      value={settings.email_sender_name || 'SomnoAI Team'}
+                      onChange={(e) => handleSaveSettings({ email_sender_name: e.target.value })}
+                      className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors"
+                      placeholder="SomnoAI Team"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold uppercase text-slate-500 flex items-center gap-2">
+                      <Mail size={14} /> Support Email
+                    </label>
+                    <input 
+                      type="email" 
+                      value={settings.email_recipient_support || 'support@sleepsomno.com'}
+                      onChange={(e) => handleSaveSettings({ email_recipient_support: e.target.value })}
+                      className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors font-mono"
+                      placeholder="support@sleepsomno.com"
+                    />
+                  </div>
+                </div>
+              </GlassCard>
+            </div>
+
+            {/* User Notification Defaults */}
+            <GlassCard className="p-8">
+              <h3 className="text-lg font-bold mb-6">User Notification Defaults</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div>
+                    <h4 className="font-bold text-sm">New Device Alerts</h4>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Automatically subscribe new users to login alerts.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => handleSaveSettings({ default_notify_login: settings.default_notify_login === 'false' })}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${settings.default_notify_login !== 'false' ? 'bg-emerald-600' : 'bg-slate-600'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.default_notify_login !== 'false' ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+
+                <div className="flex items-center justify-between p-4 bg-white/5 rounded-xl border border-white/10">
+                  <div>
+                    <h4 className="font-bold text-sm">Marketing Emails</h4>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Default opt-in for newsletters during signup.
+                    </p>
+                  </div>
+                  <button 
+                    onClick={() => handleSaveSettings({ default_notify_marketing: settings.default_notify_marketing !== 'true' })}
+                    className={`w-12 h-6 rounded-full transition-colors relative ${settings.default_notify_marketing === 'true' ? 'bg-emerald-600' : 'bg-slate-600'}`}
+                  >
+                    <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-transform ${settings.default_notify_marketing === 'true' ? 'left-7' : 'left-1'}`} />
+                  </button>
+                </div>
+              </div>
+            </GlassCard>
           </div>
         )}
       </div>

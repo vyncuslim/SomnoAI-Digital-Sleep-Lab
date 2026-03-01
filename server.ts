@@ -87,7 +87,7 @@ async function startServer() {
     res.json({ status: "clean", ip: req.ip });
   });
 
-  app.post("/api/security/report", (req, res) => {
+  app.post("/api/security/report", async (req, res) => {
     const ip = req.ip || req.socket.remoteAddress || 'unknown';
     const { type } = req.body; // e.g., 'failed_login'
     
