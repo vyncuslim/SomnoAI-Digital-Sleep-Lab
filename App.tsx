@@ -33,6 +33,7 @@ const SupportView = lazy(() => import('./components/SupportView.tsx').then(modul
 const FAQView = lazy(() => import('./components/FAQView.tsx').then(module => ({ default: module.FAQView })));
 const ScienceView = lazy(() => import('./components/ScienceView.tsx').then(module => ({ default: module.ScienceView })));
 const BlockedView = lazy(() => import('./components/BlockedView.tsx').then(module => ({ default: module.BlockedView })));
+const FreezeAccount = lazy(() => import('./components/FreezeAccount.tsx').then(module => ({ default: module.FreezeAccount })));
 
 // Initial Data
 const INITIAL_SLEEP_DATA: SleepRecord = {
@@ -142,6 +143,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/auth/signin" element={<Auth lang={lang} initialView="login" />} />
       <Route path="/auth/signup" element={<Auth lang={lang} initialView="signup" />} />
       <Route path="/auth/verify" element={<AuthVerify lang={lang} />} />
+      <Route path="/auth/freeze" element={<FreezeAccount />} />
       <Route path="/about" element={<AboutView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
       <Route path="/contact" element={<ContactView lang={lang} onBack={handleBack} />} />
       <Route path="/faq" element={<FAQView lang={lang} onBack={handleBack} />} />

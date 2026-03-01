@@ -102,26 +102,38 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       setIsBlocked(false);
       
-      setProfile(currentProfile);
+      if (currentProfile) {
+        setProfile(currentProfile);
 
-      if (shouldLog && currentProfile) {
-        lastLoggedSessionId.current = currentSessionId;
-        const logMsg = `[ACCESS_GRANTED] Subject: ${currentProfile.email}`;
-        logAuditLog('USER_LOGIN', logMsg, 'INFO');
-        
-        // Send login notification
-        emailService.getLoginLocation().then(location => {
-          emailService.sendLoginNotification(currentProfile!.email, location);
-        });
+        if (shouldLog) {
+          lastLoggedSessionId.current = currentSessionId;
+          const logMsg = `[ACCESS_GRANTED] Subject: ${currentProfile.email}`;
+          logAuditLog('USER_LOGIN', logMsg, 'INFO');
+          
+          // Send login notification via new Server Endpoint
+          try {
+            fetch('/api/auth/login-notify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: currentProfile.id,
+                email: currentProfile.email,
+                userAgent: navigator.userAgent
+              })
+            });
+          } catch (e) {
+            console.error("Failed to trigger login notification:", e);
+          }
 
-        // Check for new Google signup
-        const isGoogle = session.user.app_metadata.provider === 'google';
-        const createdAt = new Date(session.user.created_at);
-        const now = new Date();
-        const isNewUser = (now.getTime() - createdAt.getTime()) < 60000; // 1 minute window
+          // Check for new Google signup
+          const isGoogle = session.user.app_metadata.provider === 'google';
+          const createdAt = new Date(session.user.created_at);
+          const now = new Date();
+          const isNewUser = (now.getTime() - createdAt.getTime()) < 60000; // 1 minute window
 
-        if (isGoogle && isNewUser) {
-           emailService.sendSignupNotification(currentProfile.email, currentProfile.full_name || 'User');
+          if (isGoogle && isNewUser) {
+             emailService.sendSignupNotification(currentProfile.email, currentProfile.full_name || 'User');
+          }
         }
       }
     } catch (err) {
