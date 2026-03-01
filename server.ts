@@ -241,68 +241,67 @@ async function startServer() {
     }
 
     // Send Email Notification
-    const mytTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur' });
+    const mytTime = new Date().toLocaleString('en-US', { timeZone: 'Asia/Kuala_Lumpur', hour12: false });
     const freezeLink = `${process.env.APP_URL || 'https://sleepsomno.com'}/auth/freeze?uid=${userId}&token=${Buffer.from(email).toString('base64')}`;
 
     try {
       await transporter.sendMail({
         from: 'SomnoAI Security <onboarding@resend.dev>',
+        replyTo: 'security@sleepsomno.com',
         to: email,
-        subject: `[Security Alert] New Sign-in Detected for ${email}`,
+        subject: `[Security Alert] New Sign-in / 检测到新登录`,
         html: `
           <div style="font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border: 1px solid #e5e7eb; border-radius: 8px; overflow: hidden;">
             <div style="background-color: #000000; padding: 20px; text-align: center;">
-              <h1 style="color: #ffffff; margin: 0; font-size: 20px; letter-spacing: 1px;">🔐 Account Login Alert</h1>
+              <h1 style="color: #ffffff; margin: 0; font-size: 20px; letter-spacing: 1px;">🔐 Security Alert</h1>
             </div>
             <div style="padding: 30px;">
               <p style="color: #374151; font-size: 16px; line-height: 1.5;">
-                We detected a new sign-in to your SomnoAI account <strong>${email}</strong>.
+                We detected a new sign-in to your account.<br/>
+                <span style="color: #6b7280; font-size: 14px;">我们检测到您的账号有新的登录。</span>
               </p>
               
               <div style="background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;">
                 <table style="width: 100%; border-collapse: collapse;">
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Time (MYT)</td>
-                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${mytTime}</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Account / 账号</td>
+                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${email}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Device</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Time / 时间</td>
+                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${mytTime} (MYT)</td>
+                  </tr>
+                  <tr>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Device / 设备</td>
                     <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${deviceString}</td>
                   </tr>
                   <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Browser</td>
-                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${browserString}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Location</td>
+                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">Location / 地点</td>
                     <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${location}</td>
-                  </tr>
-                  <tr>
-                    <td style="padding: 8px 0; color: #6b7280; font-size: 14px;">IP Address</td>
-                    <td style="padding: 8px 0; color: #111827; font-weight: bold; font-size: 14px; text-align: right;">${ip}</td>
                   </tr>
                 </table>
               </div>
 
               ${isNewDevice ? `
               <div style="background-color: #fff7ed; border: 1px solid #ffedd5; color: #c2410c; padding: 12px; border-radius: 6px; font-size: 13px; margin-bottom: 20px; text-align: center;">
-                ⚠️ <strong>New Device Detected:</strong> This device has not been used with your account before.
+                ⚠️ <strong>New Device Detected / 检测到新设备</strong>
               </div>
               ` : ''}
 
               <p style="color: #374151; font-size: 14px; margin-bottom: 20px;">
-                If this was you, you can ignore this email. If you don't recognize this activity, please secure your account immediately.
+                If this was you, you can ignore this email.<br/>
+                <span style="color: #6b7280;">如果是您本人操作，请忽略此邮件。</span>
               </p>
 
               <div style="text-align: center; margin-top: 30px;">
                 <a href="${freezeLink}" style="display: inline-block; background-color: #ef4444; color: #ffffff; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px;">
-                  ⛔ This Wasn't Me - Freeze Account
+                  ⛔ Not Me - Freeze Account / 冻结账号
                 </a>
               </div>
             </div>
             <div style="background-color: #f9fafb; padding: 15px; text-align: center; border-top: 1px solid #e5e7eb;">
               <p style="color: #9ca3af; font-size: 12px; margin: 0;">
-                SomnoAI Digital Sleep Lab • Security Team
+                SomnoAI Security Team • security@sleepsomno.com
               </p>
             </div>
           </div>
@@ -314,6 +313,40 @@ async function startServer() {
     }
 
     res.json({ success: true });
+  });
+
+  // Password Reset Request (Transactional)
+  app.post("/api/auth/password-reset", async (req, res) => {
+    const { email } = req.body;
+    // In a real app, generate a token and link. Here we mock it.
+    const resetLink = `${process.env.APP_URL || 'https://sleepsomno.com'}/auth/reset-password?token=mock_token`;
+    
+    try {
+      await transporter.sendMail({
+        from: 'SomnoAI Security <onboarding@resend.dev>',
+        to: email,
+        subject: "Reset Your Password / 重置密码",
+        html: `
+          <div style="font-family: sans-serif; padding: 20px;">
+            <h2>Password Reset Request</h2>
+            <p>Click the link below to reset your password:</p>
+            <a href="${resetLink}">Reset Password</a>
+            <p>If you didn't request this, please ignore.</p>
+          </div>
+        `
+      });
+      res.json({ success: true });
+    } catch (e) {
+      res.status(500).json({ error: "Failed to send email" });
+    }
+  });
+
+  // Newsletter Subscription (Audience/Broadcast)
+  app.post("/api/newsletter/subscribe", (req, res) => {
+    const { email } = req.body;
+    // In production, this would add the contact to a Resend Audience ID
+    console.log(`[AUDIENCE] Added ${email} to newsletter list`);
+    res.json({ success: true, message: "Subscribed to updates" });
   });
 
   // Freeze Account Endpoint
