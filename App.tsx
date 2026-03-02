@@ -5,6 +5,7 @@ import { trackPageView } from './services/analytics.ts';
 import { Language } from './types.ts';
 import { ErrorBoundary } from './components/ErrorBoundary.tsx';
 import { AnalyticsProvider } from './components/AnalyticsProvider.tsx';
+import RootLayout from './components/RootLayout.tsx';
 import { supabase, logAuditLog } from './services/supabaseService.ts';
 import { SleepRecord } from './types.ts';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData.ts';
@@ -265,18 +266,20 @@ const AppContent = () => {
     );
   }
   return (
-    <div className="min-h-screen bg-[#01040a]">
-      {!isSupabaseConfigured && (
-        <div className="relative w-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
-          ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
-        </div>
-      )}
-      <Routes>
-        <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-        <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-        <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-      </Routes>
-    </div>
+    <RootLayout>
+      <div className="min-h-screen bg-[#01040a]">
+        {!isSupabaseConfigured && (
+          <div className="relative w-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
+            ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
+          </div>
+        )}
+        <Routes>
+          <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+          <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+          <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        </Routes>
+      </div>
+    </RootLayout>
   );
 };
 

@@ -275,6 +275,23 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
         setReviews(revs);
       }
       
+      // Real Marketing Data from Windsor.ai (Mocked with user provided values)
+      const realMarketingData = [
+        { date: '2026-02-16', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0 },
+        { date: '2026-02-17', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0 },
+        { date: '2026-02-18', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 2, sessions: 0 },
+        { date: '2026-02-19', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0 },
+        { date: '2026-02-20', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0 },
+        { date: '2026-02-21', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0 },
+        { date: '2026-02-22', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0 },
+        { date: '2026-02-23', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 6, sessions: 0 },
+        { date: '2026-02-24', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 8, sessions: 0 },
+        { date: '2026-02-25', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 5, sessions: 0 },
+        { date: '2026-02-26', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 5, sessions: 0 },
+        { date: '2026-02-27', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 4, sessions: 0 },
+      ];
+      setMarketingData(realMarketingData);
+      
       if (setRes.status === 'fulfilled' && (setRes as any).value.data) {
         const settingsMap: Record<string, string> = {};
         (setRes as any).value.data.forEach((s: any) => settingsMap[s.key] = s.value);
@@ -617,7 +634,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                     <input 
                       type="text" 
                       placeholder="G-XXXXXXXXXX"
-                      value={settings.ga_measurement_id || ''}
+                      value={settings.ga_measurement_id || 'G-1WM4RE66ER'}
                       onChange={(e) => setSettings({...settings, ga_measurement_id: e.target.value})}
                       className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
                     />
@@ -632,7 +649,7 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
                     <input 
                       type="text" 
                       placeholder="HTML Tag Content (e.g., google-site-verification=...)"
-                      value={settings.google_site_verification || ''}
+                      value={settings.google_site_verification || 'google-site-verification=googlee47ef5d2eacdf45a'}
                       onChange={(e) => setSettings({...settings, google_site_verification: e.target.value})}
                       className="w-full bg-black/40 border border-white/10 rounded-xl pl-12 pr-4 py-4 outline-none focus:border-indigo-500 transition-colors text-sm font-mono"
                     />
