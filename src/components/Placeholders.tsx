@@ -1,0 +1,20 @@
+import React from 'react';
+import { PlaceholderView } from './PlaceholderView.tsx';
+
+export const NewsHub = () => <PlaceholderView title="News & Updates" />;
+export const ChangelogView = () => <PlaceholderView title="Changelog" />;
+export const OpenSourceView = () => <PlaceholderView title="Open Source" />;
+export const PolicyFrameworkView = () => <PlaceholderView title="Policy Framework" />;
+export const ScienceView = () => <PlaceholderView title="Sleep Science" />;
+export const BlockedView = () => <PlaceholderView title="Account Blocked" />;
+export const FreezeAccount = () => <PlaceholderView title="Freeze Account" />;
+export const ExperimentView = () => <PlaceholderView title="Sleep Experiments" />;
+export const DiaryView = () => <PlaceholderView title="Sleep Journal" />;
+export const AIAssistant = () => <PlaceholderView title="AI Assistant" />;
+export const ArticleView = () => <PlaceholderView title="Article" />;
+export const BlogPostView = () => <PlaceholderView title="Blog Post" />;
+export const AdminView = () => <PlaceholderView title="Admin Console" />;
+export const UserProfile = () => <PlaceholderView title="User Profile" />;
+export const FeedbackView = () => <PlaceholderView title="Feedback" />;
+export const AuthVerify = () => <PlaceholderView title="Verify Email" />;
+export const FAQView = () => <PlaceholderView title="FAQ" />;
