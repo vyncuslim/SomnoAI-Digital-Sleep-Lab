@@ -37,6 +37,7 @@ const PolicyFrameworkView = lazy(() => import('./components/PolicyFrameworkView'
 const SupportView = lazy(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
 const FAQView = lazy(() => import('./components/FAQView').then(module => ({ default: module.FAQView })));
 const ScienceView = lazy(() => import('./components/ScienceView').then(module => ({ default: module.ScienceView })));
+const SearchHub = lazy(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
 const BlockedView = lazy(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
 const FreezeAccount = lazy(() => import('./components/FreezeAccount').then(module => ({ default: module.FreezeAccount })));
 
@@ -140,10 +141,12 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/how-it-works" element={<InfoHub lang={lang} onBack={handleBack} type="how-it-works" />} />
       <Route path="/features" element={<InfoHub lang={lang} onBack={handleBack} type="features" />} />
       <Route path="/research" element={<InfoHub lang={lang} onBack={handleBack} type="research" />} />
+      <Route path="/founder" element={<InfoHub lang={lang} onBack={handleBack} type="founder" />} />
       <Route path="/contact" element={<InfoHub lang={lang} onBack={handleBack} type="contact" />} />
       <Route path="/faq" element={<InfoHub lang={lang} onBack={handleBack} type="faq" />} />
       <Route path="/status" element={<InfoHub lang={lang} onBack={handleBack} type="status" />} />
       <Route path="/science" element={<ScienceView lang={lang} onBack={handleBack} />} />
+      <Route path="/search" element={<SearchHub lang={lang} />} />
       
       {/* Blog & News */}
       <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
