@@ -7,7 +7,13 @@ export const BLOG_POSTS = [
     content: 'Full content here...',
     date: '2024-03-01',
     category: 'Science',
-    author: 'Dr. Sleep'
+    author: {
+      name: 'Dr. Sleep',
+      role: 'Researcher',
+      bio: 'Expert in circadian rhythms.'
+    },
+    tags: ['Science', 'Health'],
+    readTime: '5 min'
   },
   {
     id: '2',
@@ -17,7 +23,13 @@ export const BLOG_POSTS = [
     content: 'Full content here...',
     date: '2024-03-10',
     category: 'Technology',
-    author: 'Tech Team'
+    author: {
+      name: 'Tech Team',
+      role: 'Engineering',
+      bio: 'Building the future of sleep tech.'
+    },
+    tags: ['AI', 'Tech'],
+    readTime: '7 min'
   }
 ];
 
@@ -29,6 +41,14 @@ export const RESEARCH_ARTICLES = [
     excerpt: 'The impact of light exposure on your biological clock.',
     content: 'Full content here...',
     date: '2024-02-15',
+    category: 'Research',
+    author: {
+      name: 'Sleep Journal',
+      role: 'Source',
+      bio: 'Peer-reviewed publication.'
+    },
+    tags: ['Research', 'Biology'],
+    readTime: '10 min',
     source: 'Sleep Journal'
   }
 ];

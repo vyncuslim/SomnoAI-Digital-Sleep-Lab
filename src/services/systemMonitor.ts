@@ -2,6 +2,8 @@ import { supabase } from './supabaseService.ts';
 import { notifyAdmin } from './telegramService.ts';
 import { emailService } from './emailService.ts';
 
+declare const process: { env: { API_KEY: string } };
+
 /**
  * SOMNO LAB NEURAL PULSE MONITOR v1.5
  * Consolidates reports into mirrored non-redundant transmissions (TG + Email).

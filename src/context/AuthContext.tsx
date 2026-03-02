@@ -6,6 +6,9 @@ interface AuthContextType {
   profile: any;
   loading: boolean;
   isBlocked: boolean;
+  isAdmin: boolean;
+  isOwner: boolean;
+  isSuperOwner: boolean;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -17,6 +20,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
+
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner;
+  const isOwner = profile?.role === 'owner' || profile?.is_super_owner;
+  const isSuperOwner = profile?.is_super_owner;
 
   useEffect(() => {
     // Check active session
@@ -43,7 +50,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isBlocked, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, isBlocked, isAdmin, isOwner, isSuperOwner, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

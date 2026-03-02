@@ -3,6 +3,8 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
+declare const process: { env: { API_KEY: string } };
+
 export interface BiologicalReport {
   summary: string;
   patterns: string[];

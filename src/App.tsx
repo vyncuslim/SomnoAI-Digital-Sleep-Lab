@@ -1,96 +1,309 @@
-import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { GlassCard } from './components/GlassCard';
+import React, { useState, useEffect, Suspense, lazy } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext.tsx';
+import { trackPageView } from './services/analytics.ts';
+import { Language } from './types.ts';
+import { ErrorBoundary } from './components/ErrorBoundary.tsx';
+import { AnalyticsProvider } from './components/AnalyticsProvider.tsx';
+import RootLayout from './components/RootLayout.tsx';
+import { supabase, logAuditLog } from './services/supabaseService.ts';
+import { SleepRecord } from './types.ts';
+import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData.ts';
+import { ProtectedRoute } from './components/ProtectedRoute.tsx';
 
-const Home = () => (
-  <div className="min-h-screen bg-[#01040a] text-white p-8 flex flex-col items-center justify-center">
-    <h1 className="text-5xl font-bold mb-8">SomnoAI Digital Sleep Lab</h1>
-    <p className="text-xl text-slate-400 mb-12">AI-Powered Sleep Restoration</p>
-    <div className="flex gap-4">
-      <Link to="/login" className="px-6 py-3 bg-indigo-600 rounded-full hover:bg-indigo-700 transition">Login</Link>
-      <Link to="/signup" className="px-6 py-3 bg-white/10 rounded-full hover:bg-white/20 transition">Sign Up</Link>
-      <Link to="/dashboard" className="px-6 py-3 bg-emerald-600/20 text-emerald-400 rounded-full hover:bg-emerald-600/30 transition">Dashboard</Link>
-    </div>
-  </div>
-);
+// Lazy load components
+const Auth = lazy(() => import('./components/Auth.tsx').then(module => ({ default: module.Auth })));
+const AuthVerify = lazy(() => import('./components/AuthVerify.tsx').then(module => ({ default: module.AuthVerify })));
+const Dashboard = lazy(() => import('./components/Dashboard.tsx').then(module => ({ default: module.Dashboard })));
+const AdminView = lazy(() => import('./components/AdminView.tsx').then(module => ({ default: module.AdminView })));
+const UserProfile = lazy(() => import('./components/UserProfile.tsx').then(module => ({ default: module.UserProfile })));
+const FeedbackView = lazy(() => import('./components/FeedbackView.tsx').then(module => ({ default: module.FeedbackView })));
+const LandingPage = lazy(() => import('./components/LandingPage.tsx').then(module => ({ default: module.LandingPage })));
+const AboutView = lazy(() => import('./components/AboutView.tsx').then(module => ({ default: module.AboutView })));
+const ContactView = lazy(() => import('./components/ContactView.tsx').then(module => ({ default: module.ContactView })));
+const LegalHub = lazy(() => import('./components/LegalHub').then(module => ({ default: module.LegalHub })));
+const InfoHub = lazy(() => import('./components/InfoHub').then(module => ({ default: module.InfoHub })));
+const AIAssistant = lazy(() => import('./components/AIAssistant').then(module => ({ default: module.AIAssistant })));
+const ExperimentView = lazy(() => import('./components/ExperimentView.tsx').then(module => ({ default: module.ExperimentView })));
+const DiaryView = lazy(() => import('./components/DiaryView.tsx').then(module => ({ default: module.DiaryView })));
+const BlogHub = lazy(() => import('./components/BlogHub.tsx').then(module => ({ default: module.BlogHub })));
+const BlogPostView = lazy(() => import('./components/BlogPostView.tsx').then(module => ({ default: module.BlogPostView })));
+const NewsHub = lazy(() => import('./components/NewsHub.tsx').then(module => ({ default: module.NewsHub })));
+const ArticleView = lazy(() => import('./components/ArticleView.tsx').then(module => ({ default: module.ArticleView })));
+const OpenSourceView = lazy(() => import('./components/OpenSourceView.tsx').then(module => ({ default: module.OpenSourceView })));
+const ChangelogView = lazy(() => import('./components/ChangelogView.tsx').then(module => ({ default: module.ChangelogView })));
+const LegalView = lazy(() => import('./components/LegalView.tsx').then(module => ({ default: module.LegalView })));
+const PolicyFrameworkView = lazy(() => import('./components/PolicyFrameworkView.tsx').then(module => ({ default: module.PolicyFrameworkView })));
+const SupportView = lazy(() => import('./components/SupportView.tsx').then(module => ({ default: module.SupportView })));
+const FAQView = lazy(() => import('./components/FAQView.tsx').then(module => ({ default: module.FAQView })));
+const ScienceView = lazy(() => import('./components/ScienceView.tsx').then(module => ({ default: module.ScienceView })));
+const BlockedView = lazy(() => import('./components/BlockedView.tsx').then(module => ({ default: module.BlockedView })));
+const FreezeAccount = lazy(() => import('./components/FreezeAccount.tsx').then(module => ({ default: module.FreezeAccount })));
 
-const Login = () => (
-  <div className="min-h-screen bg-[#01040a] text-white p-8 flex items-center justify-center">
-    <GlassCard className="p-8 rounded-2xl w-full max-w-md">
-      <h2 className="text-3xl font-bold mb-6 text-center">Login</h2>
-      <form className="space-y-4">
-        <input type="email" placeholder="Email" className="w-full p-3 bg-white/5 rounded-lg border border-white/10 focus:border-indigo-500 outline-none" />
-        <input type="password" placeholder="Password" className="w-full p-3 bg-white/5 rounded-lg border border-white/10 focus:border-indigo-500 outline-none" />
-        <button type="submit" className="w-full py-3 bg-indigo-600 rounded-lg hover:bg-indigo-700 transition font-bold">Sign In</button>
-      </form>
-      <p className="mt-4 text-center text-slate-400 text-sm">
-        Don't have an account? <Link to="/signup" className="text-indigo-400 hover:text-indigo-300">Sign up</Link>
-      </p>
-    </GlassCard>
-  </div>
-);
+// Initial Data
+const INITIAL_SLEEP_DATA: SleepRecord = {
+  id: 'rec_7892345610',
+  date: new Date().toISOString(),
+  score: 85,
+  heartRate: {
+    resting: 58,
+    min: 52,
+    max: 110,
+    average: 65,
+    history: []
+  },
+  deepRatio: 0.18,
+  remRatio: 0.22,
+  totalDuration: 460, // minutes
+  efficiency: 0.92,
+  stages: [],
+  aiInsights: [
+    "Deep sleep duration is within optimal range.",
+    "REM cycles show good consistency.",
+    "Resting heart rate is excellent."
+  ]
+};
 
-const Signup = () => (
-  <div className="min-h-screen bg-[#01040a] text-white p-8 flex items-center justify-center">
-    <GlassCard className="p-8 rounded-2xl w-full max-w-md">
-      <h2 className="text-3xl font-bold mb-6 text-center">Sign Up</h2>
-      <form className="space-y-4">
-        <input type="text" placeholder="Full Name" className="w-full p-3 bg-white/5 rounded-lg border border-white/10 focus:border-indigo-500 outline-none" />
-        <input type="email" placeholder="Email" className="w-full p-3 bg-white/5 rounded-lg border border-white/10 focus:border-indigo-500 outline-none" />
-        <input type="password" placeholder="Password" className="w-full p-3 bg-white/5 rounded-lg border border-white/10 focus:border-indigo-500 outline-none" />
-        <button type="submit" className="w-full py-3 bg-indigo-600 rounded-lg hover:bg-indigo-700 transition font-bold">Create Account</button>
-      </form>
-      <p className="mt-4 text-center text-slate-400 text-sm">
-        Already have an account? <Link to="/login" className="text-indigo-400 hover:text-indigo-300">Login</Link>
-      </p>
-    </GlassCard>
-  </div>
-);
+const BlogPostWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const post = BLOG_POSTS.find(p => p.slug === slug);
 
-const Dashboard = () => (
-  <div className="min-h-screen bg-[#01040a] text-white p-8">
-    <header className="flex justify-between items-center mb-12">
-      <h1 className="text-3xl font-bold">Dashboard</h1>
-      <div className="flex gap-4">
-        <button className="w-10 h-10 rounded-full bg-white/10 flex items-center justify-center">🔔</button>
-        <div className="w-10 h-10 rounded-full bg-indigo-600 flex items-center justify-center">JD</div>
-      </div>
-    </header>
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <GlassCard className="p-6 rounded-2xl h-48 flex flex-col justify-between">
-        <h3 className="text-slate-400 uppercase text-xs font-bold tracking-widest">Sleep Score</h3>
-        <p className="text-6xl font-bold text-indigo-400">85</p>
-        <p className="text-emerald-400 text-sm">↑ 5% from last week</p>
-      </GlassCard>
-      <GlassCard className="p-6 rounded-2xl h-48 flex flex-col justify-between">
-        <h3 className="text-slate-400 uppercase text-xs font-bold tracking-widest">Deep Sleep</h3>
-        <p className="text-6xl font-bold text-white">1h 45m</p>
-        <p className="text-slate-400 text-sm">Optimal range</p>
-      </GlassCard>
-      <GlassCard className="p-6 rounded-2xl h-48 flex flex-col justify-between">
-        <h3 className="text-slate-400 uppercase text-xs font-bold tracking-widest">Heart Rate Dip</h3>
-        <p className="text-6xl font-bold text-white">12%</p>
-        <p className="text-slate-400 text-sm">Good recovery</p>
-      </GlassCard>
-    </div>
-  </div>
-);
+  if (!post) {
+    return <div className="min-h-screen flex items-center justify-center text-white">Post not found</div>;
+  }
 
-const App = () => {
+  return <BlogPostView post={post} lang={lang} onBack={() => navigate('/blog')} />;
+};
+
+const ArticleWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
+  const { slug } = useParams();
+  const navigate = useNavigate();
+  const article = RESEARCH_ARTICLES.find(a => a.slug === slug);
+
+  if (!article) {
+    return <div className="min-h-screen flex items-center justify-center text-white">Article not found</div>;
+  }
+
+  return <ArticleView article={article} lang={lang} onBack={() => navigate('/news')} />;
+};
+
+interface AppRoutesProps {
+  lang: Language;
+  setLang: (lang: Language) => void;
+  latestData: SleepRecord | null;
+  history: SleepRecord[];
+  profile: any; // TODO: Type this properly
+  handleNavigate: (path: string) => void;
+}
+
+const AppRoutes: React.FC<AppRoutesProps> = ({
+  lang,
+  setLang,
+  latestData,
+  history,
+  profile,
+  handleNavigate,
+}) => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { isBlocked } = useAuth();
+
+  const handleBack = () => navigate(-1);
+
+  if (isBlocked) {
+    return (
+      <Suspense fallback={<div className="min-h-screen bg-[#01040a]" />}>
+        <BlockedView />
+      </Suspense>
+    );
+  }
+
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/index.html" element={<Home />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/login.html" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/signup.html" element={<Signup />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/dashboard.html" element={<Dashboard />} />
-      </Routes>
-    </Router>
+    <React.Fragment>
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    }>
+    <Routes>
+      {/* Public Routes */}
+      <Route path="/" element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
+      <Route path="/auth" element={<Auth lang={lang} />} />
+      <Route path="/auth/login" element={<Auth lang={lang} initialView="login" />} />
+      <Route path="/auth/signin" element={<Auth lang={lang} initialView="login" />} />
+      <Route path="/auth/signup" element={<Auth lang={lang} initialView="signup" />} />
+      <Route path="/auth/verify" element={<AuthVerify lang={lang} />} />
+      <Route path="/auth/freeze" element={<AuthVerify lang={lang} />} />
+      <Route path="/about" element={<InfoHub lang={lang} onBack={handleBack} type="about" />} />
+      <Route path="/product" element={<InfoHub lang={lang} onBack={handleBack} type="product" />} />
+      <Route path="/how-it-works" element={<InfoHub lang={lang} onBack={handleBack} type="how-it-works" />} />
+      <Route path="/features" element={<InfoHub lang={lang} onBack={handleBack} type="features" />} />
+      <Route path="/research" element={<InfoHub lang={lang} onBack={handleBack} type="research" />} />
+      <Route path="/contact" element={<InfoHub lang={lang} onBack={handleBack} type="contact" />} />
+      <Route path="/faq" element={<InfoHub lang={lang} onBack={handleBack} type="faq" />} />
+      <Route path="/status" element={<InfoHub lang={lang} onBack={handleBack} type="status" />} />
+      <Route path="/science" element={<ScienceView lang={lang} onBack={handleBack} />} />
+      
+      {/* Blog & News */}
+      <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
+      <Route path="/blog/:slug" element={<BlogPostWrapper lang={lang} />} />
+      <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
+      <Route path="/news/:slug" element={<ArticleWrapper lang={lang} />} />
+      <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
+
+      {/* Legal & Support */}
+      <Route path="/legal/:type" element={<LegalHub lang={lang} onBack={handleBack} />} />
+      <Route path="/privacy" element={<Navigate to="/legal/privacy" replace />} />
+      <Route path="/terms" element={<Navigate to="/legal/terms" replace />} />
+      <Route path="/policy" element={<PolicyFrameworkView lang={lang} onBack={handleBack} />} />
+      <Route path="/opensource" element={<OpenSourceView lang={lang} onBack={handleBack} />} />
+      <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+      <Route path="/report-abuse" element={<InfoHub lang={lang} onBack={handleBack} type="report-abuse" />} />
+
+      {/* Protected Routes */}
+      <Route path="/dashboard" element={
+        <ProtectedRoute>
+          <Dashboard lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/admin" element={
+        <ProtectedRoute level="admin">
+          <AdminView lang={lang} onBack={handleBack} />
+        </ProtectedRoute>
+      } />
+      <Route path="/settings" element={
+        <ProtectedRoute>
+          <UserProfile lang={lang} onBack={handleBack} onNavigate={handleNavigate} />
+        </ProtectedRoute>
+      } />
+
+      <Route path="/feedback" element={
+        <ProtectedRoute>
+          <FeedbackView lang={lang} onBack={handleBack} />
+        </ProtectedRoute>
+      } />
+      <Route path="/experiment" element={
+        <ProtectedRoute>
+          <ExperimentView data={latestData} lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/journal" element={
+        <ProtectedRoute>
+          <DiaryView lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="/ai-assistant" element={
+        <ProtectedRoute>
+          <AIAssistant lang={lang} data={latestData} history={history} />
+        </ProtectedRoute>
+      } />
+
+      {/* Fallback */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+    </Suspense>
+    </React.Fragment>
   );
 };
+
+const AppContent = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { profile, loading } = useAuth();
+  const [lang, setLang] = useState<Language>('en'); // Default language to English
+  const [latestData, setLatestData] = useState<SleepRecord | null>(null);
+  const [history, setHistory] = useState<SleepRecord[]>([]);
+  const isSupabaseConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+  useEffect(() => {
+    trackPageView(location.pathname, document.title);
+  }, [location]);
+
+  useEffect(() => {
+    if (profile) {
+      supabase.from('sleep_records')
+        .select('*')
+        .eq('user_id', profile.id)
+        .order('date', { ascending: false })
+        .then(({ data }: { data: any[] | null }) => {
+          if (data && data.length > 0) {
+            const mapped = data.map((d: any) => ({
+              id: d.id,
+              date: d.date,
+              score: d.score,
+              heartRate: {
+                resting: d.heart_rate_resting,
+                min: d.heart_rate_min,
+                max: d.heart_rate_max,
+                average: d.heart_rate_avg,
+                history: []
+              },
+              deepRatio: d.deep_sleep_duration / (d.total_duration || 1),
+              remRatio: d.rem_sleep_duration / (d.total_duration || 1),
+              totalDuration: d.total_duration,
+              efficiency: d.efficiency,
+              stages: [],
+              aiInsights: d.ai_insights || []
+            }));
+            setLatestData(mapped[0]);
+            setHistory(mapped);
+          }
+        });
+    }
+  }, [profile]);
+
+  const handleLanguageChange = (newLang: Language) => {
+    setLang(newLang);
+    const currentPath = window.location.pathname;
+    const pathWithoutLang = currentPath.replace(/^\/(cn|en)/, '');
+    navigate(`/${newLang === 'zh' ? 'cn' : 'en'}${pathWithoutLang}`);
+  };
+
+  const handleNavigate = (path: string) => {
+    navigate(path);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">Neural Handshake in Progress...</p>
+        </div>
+      </div>
+    );
+  }
+  return (
+    <RootLayout>
+      <div className="min-h-screen bg-[#01040a]">
+        {!isSupabaseConfigured && (
+          <div className="relative w-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
+            ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
+          </div>
+        )}
+        <Routes>
+          <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+          <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+          <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+        </Routes>
+      </div>
+    </RootLayout>
+  );
+};
+
+function App() {
+  return (
+    <ErrorBoundary>
+      <AuthProvider>
+        <AnalyticsProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AnalyticsProvider>
+      </AuthProvider>
+    </ErrorBoundary>
+  );
+}
 
 export default App;
