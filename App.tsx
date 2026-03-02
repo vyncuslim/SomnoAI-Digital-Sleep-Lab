@@ -30,6 +30,7 @@ const ArticleView = lazy(() => import('./components/ArticleView.tsx').then(modul
 const OpenSourceView = lazy(() => import('./components/OpenSourceView.tsx').then(module => ({ default: module.OpenSourceView })));
 const ChangelogView = lazy(() => import('./components/ChangelogView.tsx').then(module => ({ default: module.ChangelogView })));
 const LegalView = lazy(() => import('./components/LegalView.tsx').then(module => ({ default: module.LegalView })));
+const PolicyFrameworkView = lazy(() => import('./components/PolicyFrameworkView.tsx').then(module => ({ default: module.PolicyFrameworkView })));
 const SupportView = lazy(() => import('./components/SupportView.tsx').then(module => ({ default: module.SupportView })));
 const FAQView = lazy(() => import('./components/FAQView.tsx').then(module => ({ default: module.FAQView })));
 const ScienceView = lazy(() => import('./components/ScienceView.tsx').then(module => ({ default: module.ScienceView })));
@@ -145,6 +146,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       {/* Legal & Support */}
       <Route path="/privacy" element={<LegalView type="privacy" lang={lang} onBack={handleBack} />} />
       <Route path="/terms" element={<LegalView type="terms" lang={lang} onBack={handleBack} />} />
+      <Route path="/policy" element={<PolicyFrameworkView lang={lang} onBack={handleBack} />} />
       <Route path="/opensource" element={<OpenSourceView lang={lang} onBack={handleBack} />} />
       <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
       <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />

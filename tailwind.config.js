@@ -2,8 +2,11 @@
 export default {
   content: [
     "./index.html",
+    "./dashboard.html",
+    "./login.html",
+    "./signup.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}"
+    "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {

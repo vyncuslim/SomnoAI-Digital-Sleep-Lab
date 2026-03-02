@@ -568,13 +568,19 @@ export const Auth: React.FC<AuthProps> = ({ lang = 'en', initialView = 'login' }
               onClick={() => navigate('/terms')}
               className="text-[9px] text-slate-500 hover:text-indigo-400 uppercase tracking-widest font-bold transition-colors"
             >
-              Terms of Service
+              {lang === 'zh' ? '服务条款' : 'Terms of Service'}
             </button>
             <button 
               onClick={() => navigate('/privacy')}
               className="text-[9px] text-slate-500 hover:text-indigo-400 uppercase tracking-widest font-bold transition-colors"
             >
-              Privacy Policy
+              {lang === 'zh' ? '隐私政策' : 'Privacy Policy'}
+            </button>
+            <button 
+              onClick={() => navigate('/policy')}
+              className="text-[9px] text-slate-500 hover:text-indigo-400 uppercase tracking-widest font-bold transition-colors"
+            >
+              {lang === 'zh' ? '政策与法律框架' : 'Policy Framework'}
             </button>
           </div>
         </div>

@@ -447,6 +447,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
             <ul className="space-y-4 text-sm text-slate-500">
               <li><a href="/privacy" className="hover:text-white transition-colors">{t.footer?.privacy}</a></li>
               <li><a href="/terms" className="hover:text-white transition-colors">{t.footer?.terms}</a></li>
+              <li><a href="/policy" className="hover:text-white transition-colors">{t.footer?.policy}</a></li>
               <li><a href="/opensource" className="hover:text-white transition-colors">{t.footer?.opensource}</a></li>
             </ul>
           </div>
