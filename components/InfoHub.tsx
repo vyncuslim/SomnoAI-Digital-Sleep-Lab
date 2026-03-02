@@ -10,18 +10,19 @@ import { Logo } from './Logo';
 interface InfoHubProps {
   lang: Language;
   onBack: () => void;
+  type?: string;
 }
 
-export const InfoHub: React.FC<InfoHubProps> = ({ lang, onBack }) => {
-  const { type } = useParams<{ type: string }>();
-  const navigate = useNavigate();
-  const content = INFO_CONTENT[type as keyof typeof INFO_CONTENT];
+export const InfoHub: React.FC<InfoHubProps> = ({ lang, onBack, type }) => {
+  const { type: paramType } = useParams<{ type: string }>();
+  const activeType = type || paramType;
+  const content = INFO_CONTENT[activeType as keyof typeof INFO_CONTENT];
 
   useEffect(() => {
-    if (content) {
-      updateMetadata(`${content.title} - SomnoAI Digital Sleep Lab`, content.content.substring(0, 150), `/${type}`);
+    if (content && activeType) {
+      updateMetadata(`${content.title} - SomnoAI Digital Sleep Lab`, content.content.substring(0, 150), `/${activeType}`);
     }
-  }, [type, content]);
+  }, [activeType, content]);
 
   if (!content) {
     return (

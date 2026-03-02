@@ -135,14 +135,14 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/auth/signup" element={<Auth lang={lang} initialView="signup" />} />
       <Route path="/auth/verify" element={<AuthVerify lang={lang} />} />
       <Route path="/auth/freeze" element={<AuthVerify lang={lang} />} />
-      <Route path="/about" element={<InfoHub lang={lang} onBack={handleBack} />} />
-      <Route path="/product" element={<InfoHub lang={lang} onBack={handleBack} />} />
-      <Route path="/how-it-works" element={<InfoHub lang={lang} onBack={handleBack} />} />
-      <Route path="/features" element={<InfoHub lang={lang} onBack={handleBack} />} />
-      <Route path="/research" element={<InfoHub lang={lang} onBack={handleBack} />} />
-      <Route path="/contact" element={<InfoHub lang={lang} onBack={handleBack} />} />
-      <Route path="/faq" element={<InfoHub lang={lang} onBack={handleBack} />} />
-      <Route path="/status" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/about" element={<InfoHub lang={lang} onBack={handleBack} type="about" />} />
+      <Route path="/product" element={<InfoHub lang={lang} onBack={handleBack} type="product" />} />
+      <Route path="/how-it-works" element={<InfoHub lang={lang} onBack={handleBack} type="how-it-works" />} />
+      <Route path="/features" element={<InfoHub lang={lang} onBack={handleBack} type="features" />} />
+      <Route path="/research" element={<InfoHub lang={lang} onBack={handleBack} type="research" />} />
+      <Route path="/contact" element={<InfoHub lang={lang} onBack={handleBack} type="contact" />} />
+      <Route path="/faq" element={<InfoHub lang={lang} onBack={handleBack} type="faq" />} />
+      <Route path="/status" element={<InfoHub lang={lang} onBack={handleBack} type="status" />} />
       <Route path="/science" element={<ScienceView lang={lang} onBack={handleBack} />} />
       
       {/* Blog & News */}
@@ -159,7 +159,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/policy" element={<PolicyFrameworkView lang={lang} onBack={handleBack} />} />
       <Route path="/opensource" element={<OpenSourceView lang={lang} onBack={handleBack} />} />
       <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
-      <Route path="/report-abuse" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/report-abuse" element={<InfoHub lang={lang} onBack={handleBack} type="report-abuse" />} />
 
       {/* Protected Routes */}
       <Route path="/dashboard" element={
