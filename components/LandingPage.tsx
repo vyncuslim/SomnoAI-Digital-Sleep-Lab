@@ -430,23 +430,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
           
           <div>
             <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">{t.footer?.links}</h4>
-            <ul className="space-y-4 text-sm text-slate-500">
+            <ul className="grid grid-cols-2 gap-4 text-sm text-slate-500">
               <li><a href="/about" className="hover:text-white transition-colors">{t.footer?.about}</a></li>
-              <li><a href="/auth/signin" className="hover:text-white transition-colors">{lang === 'zh' ? '登录' : 'Login'}</a></li>
-              <li><a href="/auth/signup" className="hover:text-white transition-colors">{lang === 'zh' ? '注册' : 'Sign Up'}</a></li>
+              <li><a href="/product" className="hover:text-white transition-colors">{lang === 'zh' ? '产品' : 'Product'}</a></li>
+              <li><a href="/how-it-works" className="hover:text-white transition-colors">{lang === 'zh' ? '原理' : 'How it Works'}</a></li>
+              <li><a href="/features" className="hover:text-white transition-colors">{lang === 'zh' ? '功能' : 'Features'}</a></li>
+              <li><a href="/research" className="hover:text-white transition-colors">{lang === 'zh' ? '研究' : 'Research'}</a></li>
               <li><a href="/science" className="hover:text-white transition-colors">{lang === 'zh' ? '科学' : 'Science'}</a></li>
               <li><a href="/blog" className="hover:text-white transition-colors">{t.blog?.title || 'Blog'}</a></li>
-              <li><a href="/news" className="hover:text-white transition-colors">{t.news?.title || 'Research'}</a></li>
+              <li><a href="/news" className="hover:text-white transition-colors">{t.news?.title || 'News'}</a></li>
               <li><a href="/faq" className="hover:text-white transition-colors">{lang === 'zh' ? '常见问题' : 'FAQ'}</a></li>
+              <li><a href="/status" className="hover:text-white transition-colors">{lang === 'zh' ? '系统状态' : 'Status'}</a></li>
               <li><a href="/contact" className="hover:text-white transition-colors">{t.support?.title || 'Contact'}</a></li>
+              <li><a href="/support" className="hover:text-white transition-colors">{lang === 'zh' ? '支持' : 'Support'}</a></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">{t.footer?.legal}</h4>
-            <ul className="space-y-4 text-sm text-slate-500">
-              <li><a href="/privacy" className="hover:text-white transition-colors">{t.footer?.privacy}</a></li>
-              <li><a href="/terms" className="hover:text-white transition-colors">{t.footer?.terms}</a></li>
+            <ul className="grid grid-cols-2 gap-4 text-sm text-slate-500">
+              <li><a href="/legal/privacy" className="hover:text-white transition-colors">{t.footer?.privacy}</a></li>
+              <li><a href="/legal/terms" className="hover:text-white transition-colors">{t.footer?.terms}</a></li>
+              <li><a href="/legal/cookies" className="hover:text-white transition-colors">{lang === 'zh' ? 'Cookie 政策' : 'Cookies'}</a></li>
+              <li><a href="/legal/security" className="hover:text-white transition-colors">{lang === 'zh' ? '安全政策' : 'Security'}</a></li>
+              <li><a href="/legal/acceptable-use" className="hover:text-white transition-colors">{lang === 'zh' ? '使用政策' : 'Acceptable Use'}</a></li>
+              <li><a href="/legal/ai-disclaimer" className="hover:text-white transition-colors">{lang === 'zh' ? 'AI 免责' : 'AI Disclaimer'}</a></li>
+              <li><a href="/legal/medical-disclaimer" className="hover:text-white transition-colors">{lang === 'zh' ? '医疗免责' : 'Medical Disclaimer'}</a></li>
+              <li><a href="/legal/data-processing" className="hover:text-white transition-colors">{lang === 'zh' ? '数据处理' : 'Data Processing'}</a></li>
+              <li><a href="/report-abuse" className="hover:text-white transition-colors">{lang === 'zh' ? '举报滥用' : 'Abuse Policy'}</a></li>
+              <li><a href="/legal/account-blocking" className="hover:text-white transition-colors">{lang === 'zh' ? '封禁政策' : 'Account Blocking'}</a></li>
               <li><a href="/policy" className="hover:text-white transition-colors">{t.footer?.policy}</a></li>
               <li><a href="/opensource" className="hover:text-white transition-colors">{t.footer?.opensource}</a></li>
             </ul>

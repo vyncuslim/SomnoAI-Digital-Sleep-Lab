@@ -276,19 +276,19 @@ export const AdminView: React.FC<AdminViewProps> = ({ lang, onBack }) => {
       }
       
       // Real Marketing Data from Windsor.ai (Mocked with user provided values)
-      const realMarketingData = [
-        { date: '2026-02-16', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0 },
-        { date: '2026-02-17', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0 },
-        { date: '2026-02-18', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 2, sessions: 0 },
-        { date: '2026-02-19', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0 },
-        { date: '2026-02-20', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0 },
-        { date: '2026-02-21', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0 },
-        { date: '2026-02-22', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0 },
-        { date: '2026-02-23', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 6, sessions: 0 },
-        { date: '2026-02-24', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 8, sessions: 0 },
-        { date: '2026-02-25', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 5, sessions: 0 },
-        { date: '2026-02-26', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 5, sessions: 0 },
-        { date: '2026-02-27', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 4, sessions: 0 },
+      const realMarketingData: MarketingData[] = [
+        { date: '2026-02-16', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-17', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-18', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 2, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-19', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-20', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-21', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 1, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-22', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 0, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-23', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 6, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-24', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 8, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-25', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 5, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-26', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 5, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
+        { date: '2026-02-27', source: 'searchconsole', datasource: 'searchconsole', active_users: 0, clicks: 4, sessions: 0, active1_day_users: 0, active7_day_users: 0 },
       ];
       setMarketingData(realMarketingData);
       

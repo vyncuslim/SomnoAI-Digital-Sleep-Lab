@@ -21,7 +21,9 @@ const FeedbackView = lazy(() => import('./components/FeedbackView.tsx').then(mod
 const LandingPage = lazy(() => import('./components/LandingPage.tsx').then(module => ({ default: module.LandingPage })));
 const AboutView = lazy(() => import('./components/AboutView.tsx').then(module => ({ default: module.AboutView })));
 const ContactView = lazy(() => import('./components/ContactView.tsx').then(module => ({ default: module.ContactView })));
-const AIAssistant = lazy(() => import('./components/AIAssistant.tsx').then(module => ({ default: module.AIAssistant })));
+const LegalHub = lazy(() => import('./components/LegalHub').then(module => ({ default: module.LegalHub })));
+const InfoHub = lazy(() => import('./components/InfoHub').then(module => ({ default: module.InfoHub })));
+const AIAssistant = lazy(() => import('./components/AIAssistant').then(module => ({ default: module.AIAssistant })));
 const ExperimentView = lazy(() => import('./components/ExperimentView.tsx').then(module => ({ default: module.ExperimentView })));
 const DiaryView = lazy(() => import('./components/DiaryView.tsx').then(module => ({ default: module.DiaryView })));
 const BlogHub = lazy(() => import('./components/BlogHub.tsx').then(module => ({ default: module.BlogHub })));
@@ -132,10 +134,15 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/auth/signin" element={<Auth lang={lang} initialView="login" />} />
       <Route path="/auth/signup" element={<Auth lang={lang} initialView="signup" />} />
       <Route path="/auth/verify" element={<AuthVerify lang={lang} />} />
-      <Route path="/auth/freeze" element={<FreezeAccount />} />
-      <Route path="/about" element={<AboutView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
-      <Route path="/contact" element={<ContactView lang={lang} onBack={handleBack} />} />
-      <Route path="/faq" element={<FAQView lang={lang} onBack={handleBack} />} />
+      <Route path="/auth/freeze" element={<AuthVerify lang={lang} />} />
+      <Route path="/about" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/product" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/how-it-works" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/features" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/research" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/contact" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/faq" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/status" element={<InfoHub lang={lang} onBack={handleBack} />} />
       <Route path="/science" element={<ScienceView lang={lang} onBack={handleBack} />} />
       
       {/* Blog & News */}
@@ -143,14 +150,16 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/blog/:slug" element={<BlogPostWrapper lang={lang} />} />
       <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
       <Route path="/news/:slug" element={<ArticleWrapper lang={lang} />} />
+      <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
 
       {/* Legal & Support */}
-      <Route path="/privacy" element={<LegalView type="privacy" lang={lang} onBack={handleBack} />} />
-      <Route path="/terms" element={<LegalView type="terms" lang={lang} onBack={handleBack} />} />
+      <Route path="/legal/:type" element={<LegalHub lang={lang} onBack={handleBack} />} />
+      <Route path="/privacy" element={<Navigate to="/legal/privacy" replace />} />
+      <Route path="/terms" element={<Navigate to="/legal/terms" replace />} />
       <Route path="/policy" element={<PolicyFrameworkView lang={lang} onBack={handleBack} />} />
       <Route path="/opensource" element={<OpenSourceView lang={lang} onBack={handleBack} />} />
-      <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
       <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+      <Route path="/report-abuse" element={<InfoHub lang={lang} onBack={handleBack} />} />
 
       {/* Protected Routes */}
       <Route path="/dashboard" element={
