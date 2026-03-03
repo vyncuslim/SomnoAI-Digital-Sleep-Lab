@@ -1,5 +1,5 @@
 /**
- * SomnoAI Safe Navigation Utility (v107.0)
+ * SomnoAI Digital Sleep Lab Safe Navigation Utility (v107.0)
  * Optimized for DNS Stability and SPA Routing Persistence.
  */
 

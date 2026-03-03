@@ -66,7 +66,7 @@ export default async function handler(req, res) {
   try {
     // 5. 执行发送 (Include Trustpilot BCC for high value events like Signup)
     const info = await transporter.sendMail({
-      from: `"SomnoAI Digital Lab" <${smtpUser}>`,
+      from: `"SomnoAI Digital Sleep Lab" <${smtpUser}>`,
       to,
       bcc: isHighValueEvent ? TRUSTPILOT_BCC : undefined,
       subject: `[SOMNO-LAB] ${subject}`,

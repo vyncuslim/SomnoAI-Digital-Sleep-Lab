@@ -78,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
           <Logo className="group-hover:text-indigo-400 transition-colors scale-110" />
           <div className="flex flex-col">
-            <span className="text-[10px] font-black italic uppercase tracking-tighter text-white group-hover:text-indigo-400 transition-colors">SomnoAI</span>
+            <span className="text-[10px] font-black italic uppercase tracking-tighter text-white group-hover:text-indigo-400 transition-colors">SomnoAI Digital Sleep Lab</span>
             <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500">
               {isZh ? '您的AI驱动睡眠伴侣' : 'Neural Sleep Lab'}
             </span>

@@ -99,7 +99,7 @@ export const translations: Record<Language, any> = {
     },
     landing: {
       ctaSecondary: 'Learn More',
-      heroTitle: 'SOMNOAI DIGITAL SLEEP LAB',
+      heroTitle: 'SomnoAI Digital Sleep Lab',
       heroSubtitle: 'Integrating physiological monitoring, AI deep insights, and health recommendations to provide users with a comprehensive digital sleep laboratory experience.',
       ctaPrimary: 'Start Analysis',
       stats: {
@@ -148,7 +148,7 @@ export const translations: Record<Language, any> = {
       },
       footer: {
         about: 'About',
-        mission: 'Our mission is to decode human sleep through neural interfaces and advanced AI telemetry.',
+        mission: 'Our mission is to decode human sleep through neural interfaces and advanced AI telemetry at the SomnoAI Digital Sleep Lab.',
         links: 'Quick Links',
         legal: 'Legal',
         privacy: 'Privacy Policy',
@@ -451,7 +451,7 @@ export const translations: Record<Language, any> = {
     },
     landing: {
       ctaSecondary: '了解更多',
-      heroTitle: 'SomnoAI 数字睡眠实验室',
+      heroTitle: 'SomnoAI Digital Sleep Lab',
       heroSubtitle: '整合生理监测、AI 深度洞察和健康建议，为用户提供全面的数字睡眠实验室体验。',
       ctaPrimary: '开始分析',
       stats: {
@@ -487,7 +487,7 @@ export const translations: Record<Language, any> = {
         noResults: "未找到结果。",
         resultsFound: "找到结果"
       },
-      banner: '加入 SomnoAI 数字睡眠实验室早期访问 — 限量测试访问',
+      banner: '加入 SomnoAI Digital Sleep Lab 早期访问 — 限量测试访问',
       features: {
         biometric: { title: '生物识别追踪', desc: '睡眠周期内的实时心率和运动分析。' },
         neural: { title: '神经洞察', desc: 'AI 驱动的睡眠阶段和质量指标解读。' },
@@ -500,7 +500,7 @@ export const translations: Record<Language, any> = {
       },
       footer: {
         about: '关于',
-        mission: '我们的使命是通过神经接口和先进的 AI 遥测技术解码人类睡眠。',
+        mission: '我们的使命是在 SomnoAI Digital Sleep Lab 通过神经接口和先进... AI 遥测技术解码人类睡眠。',
         links: '快速链接',
         legal: '法律',
         privacy: '隐私政策',
@@ -570,7 +570,7 @@ export const translations: Record<Language, any> = {
       subtitle: '官方政策文件',
       security: {
         title: '🔐 安全政策',
-        intro: 'SomnoAI 数字睡眠实验室致力于维护其系统和用户数据的机密性、完整性和可用性。',
+        intro: 'SomnoAI Digital Sleep Lab 致力于维护其系统和用户数据的机密性、完整性和可用性。',
         safeguardsTitle: '我们实施行业标准的技术和组织保障措施，包括但不限于：',
         safeguards: [
           '加密通信 (HTTPS/TLS)',
@@ -606,7 +606,7 @@ export const translations: Record<Language, any> = {
           '利用平台进行非法监视或活动',
           '以可能损害基础设施或其他用户的方式使用服务'
         ],
-        footer: 'SomnoAI 数字睡眠实验室保留暂停或终止违反此政策的账户的权利。'
+        footer: 'SomnoAI Digital Sleep Lab 保留暂停或终止违反此政策的账户的权利。'
       },
       aiDisclaimer: {
         title: '🤖 AI 使用免责声明',
@@ -620,11 +620,11 @@ export const translations: Record<Language, any> = {
           '仅供参考和研究之用'
         ],
         responsibility: '用户负责独立评估 AI 生成的信息。',
-        footer: 'SomnoAI 数字睡眠实验室不对 AI 输出针对任何特定目的的准确性、可靠性或适用性作任何保证。'
+        footer: 'SomnoAI Digital Sleep Lab 不对 AI 输出针对任何特定目的的准确性、可靠性或适用性作任何保证。'
       },
       medicalDisclaimer: {
         title: '🩺 医疗免责声明',
-        intro: 'SomnoAI 数字睡眠实验室不提供医疗建议、诊断或治疗。',
+        intro: 'SomnoAI Digital Sleep Lab 不提供医疗建议、诊断或治疗。',
         recommendationsTitle: '提供的任何信息、分析或建议：',
         recommendations: [
           '不能替代专业的医疗咨询',
@@ -637,7 +637,7 @@ export const translations: Record<Language, any> = {
       },
       dataProcessing: {
         title: '🧾 数据处理声明',
-        intro: 'SomnoAI 数字睡眠实验室处理个人和技术数据，以提供、维护和改进其服务。',
+        intro: 'SomnoAI Digital Sleep Lab 处理个人和技术数据，以提供、维护和改进其服务。',
         typesTitle: '处理的数据类型可能包括：',
         types: [
           '账户和联系信息',
@@ -659,7 +659,7 @@ export const translations: Record<Language, any> = {
       },
       cookie: {
         title: '🍪 Cookie 政策',
-        intro: 'SomnoAI 数字睡眠实验室使用 Cookie 和类似技术来增强功能和用户体验。',
+        intro: 'SomnoAI Digital Sleep Lab 使用 Cookie 和类似技术来增强功能和用户体验。',
         purposesTitle: 'Cookie 可用于：',
         purposes: [
           '身份验证和会话管理',
@@ -683,7 +683,7 @@ export const translations: Record<Language, any> = {
           '违反平台政策'
         ],
         detail: '举报应包含足够的细节以便调查。',
-        actionsTitle: 'SomnoAI 数字睡眠实验室保留调查并采取适当行动的权利，包括：',
+        actionsTitle: 'SomnoAI Digital Sleep Lab 保留调查并采取适当行动的权利，包括：',
         actions: [
           '账户暂停或终止',
           '访问限制',
@@ -702,7 +702,7 @@ export const translations: Record<Language, any> = {
           '可能损害实验室基础设施或其他用户的行为'
         ],
         notification: '如果您的账户被封禁，您将通过电子邮件收到通知，并在尝试登录时看到通知。',
-        footer: '这种自动封禁机制的存在是为了保护 SomnoAI 数字睡眠实验室平台的完整性、安全性和稳定性。'
+        footer: '这种自动封禁机制的存在是为了保护 SomnoAI Digital Sleep Lab 平台的完整性、安全性和稳定性。'
       }
     }
   }

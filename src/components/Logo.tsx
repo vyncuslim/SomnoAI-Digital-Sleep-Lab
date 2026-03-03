@@ -16,7 +16,7 @@ export const Logo: React.FC<{ className?: string }> = ({ className = "" }) => {
         </svg>
       </div>
       <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">
-        Somno
+        SomnoAI Digital Sleep Lab
       </span>
     </motion.div>
   );

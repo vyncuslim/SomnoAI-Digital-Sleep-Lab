@@ -8,7 +8,7 @@ interface PlaceholderProps {
   [key: string]: any;
 }
 
-export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Coming Soon', onBack, ...props }) => {
+export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Accessing Laboratory Node...', onBack, ...props }) => {
   const navigate = useNavigate();
   const handleBack = onBack || (() => navigate(-1));
 
@@ -23,7 +23,7 @@ export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Coming So
         </button>
       </div>
       <h1 className="text-3xl font-bold mb-4">{title}</h1>
-      <p className="text-slate-500">This feature is currently under development.</p>
+      <p className="text-slate-500 italic">Accessing laboratory data node...</p>
     </div>
   );
 };

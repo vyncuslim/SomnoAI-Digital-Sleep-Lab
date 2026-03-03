@@ -231,8 +231,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               transition={{ duration: 0.8 }}
               className="text-6xl md:text-9xl font-black tracking-tighter leading-[0.85] mb-8 uppercase italic"
             >
-              {lang === 'zh' ? 'SomnoAI 数字' : 'SomnoAI Digital'} <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-purple-400">{lang === 'zh' ? '睡眠实验室' : 'Sleep Lab'}</span>
+              {lang === 'zh' ? 'SomnoAI Digital Sleep Lab' : 'SomnoAI Digital Sleep Lab'}
             </motion.h1>
             <motion.p 
               initial={{ opacity: 0, y: 20 }}
@@ -276,7 +275,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               <div className="w-3 h-3 rounded-full bg-rose-500/50" />
               <div className="w-3 h-3 rounded-full bg-amber-500/50" />
               <div className="w-3 h-3 rounded-full bg-emerald-500/50" />
-              <div className="ml-4 text-xs font-mono text-slate-500">somnoai-analysis-report.json</div>
+              <div className="ml-4 text-xs font-mono text-slate-500">somnoai-digital-sleep-lab-report.json</div>
             </div>
             <div className="p-8 pt-20 grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="col-span-2 space-y-6">
@@ -414,7 +413,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
           <div className="mb-24 text-center">
             <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter mb-4 italic">{lang === 'zh' ? '为谁设计？' : 'Who is it for?'}</h2>
-            <p className="text-xl text-slate-500 max-w-xl mx-auto italic font-medium">{lang === 'zh' ? '无论您的目标是什么，SomnoAI 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI provides customized recovery strategies.'}</p>
+            <p className="text-xl text-slate-500 max-w-xl mx-auto italic font-medium">{lang === 'zh' ? '无论您的目标是什么，SomnoAI Digital Sleep Lab 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI Digital Sleep Lab provides customized recovery strategies.'}</p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
             <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-slate-900/40 group hover:border-indigo-500/30 transition-all overflow-hidden relative">
@@ -504,8 +503,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
                     </div>
                     <p className="text-lg text-slate-400 leading-relaxed max-w-2xl italic font-medium">
                        {lang === 'zh' 
-                         ? 'SomnoAI 由 Vyncus Lim 创立，旨在通过 AI 解码人类睡眠的复杂性。' 
-                         : 'Founded by Vyncus Lim, SomnoAI is driven by a mission to decode the complexities of human sleep through artificial intelligence.'}
+                         ? 'SomnoAI Digital Sleep Lab 由 Vyncus Lim 创立，旨在通过 AI 解码人类睡眠的复杂性。' 
+                         : 'Founded by Vyncus Lim, SomnoAI Digital Sleep Lab is driven by a mission to decode the complexities of human sleep through artificial intelligence.'}
                     </p>
                     <button 
                        onClick={() => navigate('/founder')}
@@ -564,7 +563,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               {t.footer?.mission}
             </p>
             <div className="space-y-1 text-xs text-slate-600 font-mono pt-4 border-t border-white/5">
-              <p>SomnoAI Labs Inc.</p>
+              <p>SomnoAI Digital Sleep Lab Inc.</p>
               <p>100 Innovation Drive, Suite 400</p>
               <p>San Francisco, CA 94105</p>
             </div>
@@ -591,18 +590,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
           <div>
             <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">Legal</h4>
             <ul className="grid grid-cols-2 gap-4 text-sm text-slate-500">
-              <li><a href="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="/legal/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
+              <li><a href="/legal/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a></li>
+              <li><a href="/legal/terms-of-service" className="hover:text-white transition-colors">Terms of Service</a></li>
               <li><a href="/legal/cookies" className="hover:text-white transition-colors">Cookies</a></li>
               <li><a href="/legal/security" className="hover:text-white transition-colors">Security</a></li>
               <li><a href="/legal/acceptable-use" className="hover:text-white transition-colors">Acceptable Use</a></li>
               <li><a href="/legal/ai-disclaimer" className="hover:text-white transition-colors">AI Disclaimer</a></li>
               <li><a href="/legal/medical-disclaimer" className="hover:text-white transition-colors">Medical Disclaimer</a></li>
               <li><a href="/legal/data-processing" className="hover:text-white transition-colors">Data Processing</a></li>
-              <li><a href="/report-abuse" className="hover:text-white transition-colors">Abuse Policy</a></li>
+              <li><a href="/legal/abuse-policy" className="hover:text-white transition-colors">Abuse Policy</a></li>
               <li><a href="/legal/account-blocking" className="hover:text-white transition-colors">Account Blocking</a></li>
-              <li><a href="/policy" className="hover:text-white transition-colors">Policy Framework</a></li>
-              <li><a href="/opensource" className="hover:text-white transition-colors">Open Source</a></li>
+              <li><a href="/legal/policy-framework" className="hover:text-white transition-colors">Policy Framework</a></li>
+              <li><a href="/legal/open-source" className="hover:text-white transition-colors">Open Source</a></li>
             </ul>
           </div>
         </div>

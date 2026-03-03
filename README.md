@@ -8,19 +8,19 @@
 
 ## 🚀 Dual-Node Strategy (半开源架构)
 
-SomnoAI adopts a **"Strategic Physical Isolation"** model to balance community transparency with core intellectual property protection.
+SomnoAI Digital Sleep Lab adopts a **"Strategic Physical Isolation"** model to balance community transparency with core intellectual property protection.
 
-### 1. SomnoAI-frontend (Public Node)
+### 1. SomnoAI-Digital-Sleep-Lab-frontend (Public Node)
 - **Status**: [PUBLIC] MIT License
 - **Scope**: UI/UX, data visualization, client-side routing, and Gemini API orchestration.
 - **Goal**: Provide a professional, high-performance interface for laboratory subjects.
 
-### 2. SomnoAI-core (Sovereign Node)
+### 2. SomnoAI-Digital-Sleep-Lab-core (Sovereign Node)
 - **Status**: [PRIVATE] Proprietary
 - **Scope**: Neural synthesis algorithms, proprietary prompt engineering, model weights, and sensitive data processing logic.
-- **Goal**: The "Engine" of SomnoAI. Protected to ensure long-term competitive advantage.
+- **Goal**: The "Engine" of SomnoAI Digital Sleep Lab. Protected to ensure long-term competitive advantage.
 
-### 3. SomnoAI-docs (Public Node)
+### 3. SomnoAI-Digital-Sleep-Lab-docs (Public Node)
 - **Status**: [PUBLIC]
 - **Scope**: Architecture diagrams, Whitepapers, and Protocol Documentation.
 - **Goal**: Strategic display of system capabilities.

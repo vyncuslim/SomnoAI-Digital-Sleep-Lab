@@ -46,7 +46,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
             {t.title}
           </h1>
           <p className="text-[10px] text-slate-500 font-mono font-bold uppercase tracking-[0.4em] mt-2">
-            SomnoAI Laboratory Support Interface
+            SomnoAI Digital Sleep Lab Support Interface
           </p>
         </div>
       </header>
@@ -80,7 +80,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
                <ExternalLink size={22} className="text-indigo-500/40 group-hover:text-indigo-400 transition-colors" />
             </div>
             <h3 className="text-2xl font-black italic text-white uppercase tracking-tight mb-4">Laboratory Community</h3>
-            <p className="text-xs text-slate-200 leading-relaxed italic font-bold">🚀 Join the SomnoAI Blog community on Discord!</p>
+            <p className="text-xs text-slate-200 leading-relaxed italic font-bold">🚀 Join the SomnoAI Digital Sleep Lab community on Discord!</p>
             <p className="text-[10px] text-slate-500 leading-relaxed italic font-medium opacity-80 mt-2">💬 Discuss articles, share ideas, and select your favorite topics.</p>
           </GlassCard>
         </div>
