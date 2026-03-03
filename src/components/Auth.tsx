@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Github, Chrome, Brain, ShieldCheck } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { Language, getTranslation } from '../services/i18n';
@@ -171,7 +171,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
                 />
                 <label htmlFor="terms" className="text-xs text-slate-400">
-                  I approve <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">terms</a> and <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">privacy</a>.
+                  I approve <Link to="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">terms</Link> and <Link to="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">privacy</Link>.
                 </label>
               </div>
             )}
