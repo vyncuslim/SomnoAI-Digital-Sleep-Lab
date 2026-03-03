@@ -45,25 +45,24 @@ const FreezeAccount = lazy(() => import('./components/Placeholders').then(module
 const INITIAL_SLEEP_DATA: SleepRecord = {
   id: 'rec_7892345610',
   date: new Date().toISOString(),
-  duration: 7.6, // in hours
-  quality: 85, // 0-100
-  deepSleep: 1.5, // in hours
-  remSleep: 1.8, // in hours
-  lightSleep: 4.0, // in hours
-  awake: 0.3, // in hours
-  heartRate: 65, // average bpm
-  hrv: 45, // heart rate variability
-  respiratoryRate: 14, // breaths per minute
-  temperature: -0.2, // deviation from baseline
-  notes: "Felt well rested",
-  tags: ["good", "rested"],
-  factors: {
-    caffeine: false,
-    alcohol: false,
-    exercise: true,
-    stress: false,
-    screenTime: true
-  }
+  score: 85,
+  heartRate: {
+    resting: 58,
+    min: 52,
+    max: 110,
+    average: 65,
+    history: []
+  },
+  deepRatio: 0.18,
+  remRatio: 0.22,
+  totalDuration: 460, // minutes
+  efficiency: 0.92,
+  stages: [],
+  aiInsights: [
+    "Deep sleep duration is within optimal range.",
+    "REM cycles show good consistency.",
+    "Resting heart rate is excellent."
+  ]
 };
 
 const BlogPostWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
@@ -150,9 +149,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/search" element={<SearchHub lang={lang} />} />
       
       {/* Blog & News */}
-      <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post) => navigate(`/blog/${post.slug}`)} />} />
+      <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post: any) => navigate(`/blog/${post.slug}`)} />} />
       <Route path="/blog/:slug" element={<BlogPostWrapper lang={lang} />} />
-      <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article) => navigate(`/news/${article.slug}`)} />} />
+      <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article: any) => navigate(`/news/${article.slug}`)} />} />
       <Route path="/news/:slug" element={<ArticleWrapper lang={lang} />} />
       <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
 
@@ -172,7 +171,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
         </ProtectedRoute>
       } />
       <Route path="/admin" element={
-        <ProtectedRoute level="admin">
+        <ProtectedRoute>
           <AdminView lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
@@ -221,7 +220,7 @@ const AppContent = () => {
   const isSupabaseConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   useEffect(() => {
-    trackPageView(location.pathname, document.title);
+    trackPageView(location.pathname);
   }, [location]);
 
   useEffect(() => {
@@ -232,22 +231,23 @@ const AppContent = () => {
         .order('date', { ascending: false })
         .then(({ data }: { data: any[] | null }) => {
           if (data && data.length > 0) {
-            const mapped = data.map((d: any) => ({
+            const mapped: SleepRecord[] = data.map((d: any) => ({
               id: d.id,
               date: d.date,
-              duration: (d.total_duration || 0) / 60, // assuming total_duration is in minutes
-              quality: d.score || 0,
-              deepSleep: (d.deep_sleep_duration || 0) / 60,
-              remSleep: (d.rem_sleep_duration || 0) / 60,
-              lightSleep: (d.light_sleep_duration || 0) / 60,
-              awake: (d.awake_duration || 0) / 60,
-              heartRate: d.heart_rate_avg || 0,
-              hrv: d.hrv || 0,
-              respiratoryRate: d.respiratory_rate || 0,
-              temperature: d.temperature || 0,
-              notes: d.notes || "",
-              tags: d.tags || [],
-              factors: d.factors || {}
+              score: d.score || 0,
+              heartRate: {
+                resting: d.heart_rate_resting || 60,
+                min: d.heart_rate_min || 50,
+                max: d.heart_rate_max || 100,
+                average: d.heart_rate_avg || 70,
+                history: d.heart_rate_history || []
+              },
+              deepRatio: d.deep_ratio || 0.2,
+              remRatio: d.rem_ratio || 0.2,
+              totalDuration: d.total_duration || 480,
+              efficiency: d.efficiency || 0.9,
+              stages: d.stages || [],
+              aiInsights: d.ai_insights || []
             }));
             setLatestData(mapped[0]);
             setHistory(mapped);

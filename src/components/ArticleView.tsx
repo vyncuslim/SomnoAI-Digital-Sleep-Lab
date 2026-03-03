@@ -140,7 +140,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
            </div>
         </section>
 
-        <GlassCard className="p-12 rounded-[4rem] border-white/5 bg-slate-900/40 mt-32" intensity={1.1}>
+        <GlassCard className="p-12 rounded-[4rem] border-white/5 bg-slate-900/40 mt-32" intensity="high">
            <div className="flex flex-col md:flex-row gap-12 items-start md:items-center">
               <div className="w-28 h-28 rounded-[3rem] bg-indigo-600 flex items-center justify-center text-white text-5xl font-black italic shadow-2xl shrink-0 group relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-indigo-700" />

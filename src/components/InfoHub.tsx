@@ -61,7 +61,7 @@ export const InfoHub: React.FC<InfoHubProps> = ({ lang, onBack, type }) => {
       </header>
 
       <div className="max-w-4xl mx-auto px-4 relative z-10">
-        <GlassCard className="p-12 md:p-16 rounded-[4rem] border-white/5 bg-slate-900/40" intensity={1.2}>
+        <GlassCard className="p-12 md:p-16 rounded-[4rem] border-white/5 bg-slate-900/40" intensity="high">
           <div className="space-y-8 text-slate-300 text-lg leading-relaxed italic font-medium whitespace-pre-wrap">
             {content.content}
           </div>

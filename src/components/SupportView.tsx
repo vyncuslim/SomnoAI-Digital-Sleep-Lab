@@ -56,7 +56,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           <GlassCard 
             onClick={() => onNavigate('feedback')}
             className="p-12 rounded-[4rem] border-white/5 cursor-pointer group hover:bg-indigo-600/[0.02] transition-all shadow-2xl"
-            intensity={1.2}
+            intensity="high"
           >
             <div className="flex items-center justify-between mb-10">
                <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform">
@@ -71,7 +71,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           <GlassCard 
             onClick={() => window.open('https://discord.com/invite/9EXJtRmju', '_blank')}
             className="p-12 rounded-[4rem] border-indigo-500/20 bg-indigo-600/[0.02] cursor-pointer group hover:bg-indigo-500/[0.05] transition-all shadow-2xl"
-            intensity={1.2}
+            intensity="high"
           >
             <div className="flex items-center justify-between mb-10">
                <div className="p-4 bg-indigo-500/10 rounded-2xl text-indigo-400 group-hover:scale-110 transition-transform">

@@ -5,9 +5,10 @@ import { ChevronLeft } from 'lucide-react';
 interface PlaceholderProps {
   title?: string;
   onBack?: () => void;
+  [key: string]: any;
 }
 
-export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Coming Soon', onBack }) => {
+export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Coming Soon', onBack, ...props }) => {
   const navigate = useNavigate();
   const handleBack = onBack || (() => navigate(-1));
 
