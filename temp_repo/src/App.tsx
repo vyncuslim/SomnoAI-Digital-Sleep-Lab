@@ -12,58 +12,57 @@ import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 // Lazy load components
-const Auth = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AuthVerify }))); // Fallback for Auth
-const AuthVerify = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AuthVerify })));
-const Dashboard = lazy(() => import('./components/Placeholders').then(module => ({ default: module.Dashboard || module.PlaceholderView }))); // Fallback
-const AdminView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AdminView })));
-const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
-const FeedbackView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
+const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
+const AuthVerify = lazy(() => import('./components/AuthVerify').then(module => ({ default: module.AuthVerify })));
+const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
+const AdminView = lazy(() => import('./components/AdminView').then(module => ({ default: module.AdminView })));
+const UserProfile = lazy(() => import('./components/UserProfile').then(module => ({ default: module.UserProfile })));
+const FeedbackView = lazy(() => import('./components/FeedbackView').then(module => ({ default: module.FeedbackView })));
 const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
-const AboutView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
-const ContactView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
-const LegalHub = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
+const AboutView = lazy(() => import('./components/AboutView').then(module => ({ default: module.AboutView })));
+const ContactView = lazy(() => import('./components/ContactView').then(module => ({ default: module.ContactView })));
+const LegalHub = lazy(() => import('./components/LegalHub').then(module => ({ default: module.LegalHub })));
 const InfoHub = lazy(() => import('./components/InfoHub').then(module => ({ default: module.InfoHub })));
-const AIAssistant = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AIAssistant })));
-const ExperimentView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ExperimentView })));
-const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
-const BlogHub = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
+const AIAssistant = lazy(() => import('./components/AIAssistant').then(module => ({ default: module.AIAssistant })));
+const ExperimentView = lazy(() => import('./components/ExperimentView').then(module => ({ default: module.ExperimentView })));
+const DiaryView = lazy(() => import('./components/DiaryView').then(module => ({ default: module.DiaryView })));
+const BlogHub = lazy(() => import('./components/BlogHub').then(module => ({ default: module.BlogHub })));
 const BlogPostView = lazy(() => import('./components/BlogPostView').then(module => ({ default: module.BlogPostView })));
-const NewsHub = lazy(() => import('./components/Placeholders').then(module => ({ default: module.NewsHub })));
+const NewsHub = lazy(() => import('./components/NewsHub').then(module => ({ default: module.NewsHub })));
 const ArticleView = lazy(() => import('./components/ArticleView').then(module => ({ default: module.ArticleView })));
-const OpenSourceView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.OpenSourceView })));
-const ChangelogView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ChangelogView })));
-const LegalView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
-const PolicyFrameworkView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PolicyFrameworkView })));
+const OpenSourceView = lazy(() => import('./components/OpenSourceView').then(module => ({ default: module.OpenSourceView })));
+const ChangelogView = lazy(() => import('./components/ChangelogView').then(module => ({ default: module.ChangelogView })));
+const LegalView = lazy(() => import('./components/LegalView').then(module => ({ default: module.LegalView })));
+const PolicyFrameworkView = lazy(() => import('./components/PolicyFrameworkView').then(module => ({ default: module.PolicyFrameworkView })));
 const SupportView = lazy(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
 const FAQView = lazy(() => import('./components/FAQView').then(module => ({ default: module.FAQView })));
-const ScienceView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ScienceView })));
+const ScienceView = lazy(() => import('./components/ScienceView').then(module => ({ default: module.ScienceView })));
 const SearchHub = lazy(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
-const BlockedView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.BlockedView })));
-const FreezeAccount = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FreezeAccount })));
+const BlockedView = lazy(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
+const FreezeAccount = lazy(() => import('./components/FreezeAccount').then(module => ({ default: module.FreezeAccount })));
 
 // Initial Data
 const INITIAL_SLEEP_DATA: SleepRecord = {
   id: 'rec_7892345610',
   date: new Date().toISOString(),
-  duration: 7.6, // in hours
-  quality: 85, // 0-100
-  deepSleep: 1.5, // in hours
-  remSleep: 1.8, // in hours
-  lightSleep: 4.0, // in hours
-  awake: 0.3, // in hours
-  heartRate: 65, // average bpm
-  hrv: 45, // heart rate variability
-  respiratoryRate: 14, // breaths per minute
-  temperature: -0.2, // deviation from baseline
-  notes: "Felt well rested",
-  tags: ["good", "rested"],
-  factors: {
-    caffeine: false,
-    alcohol: false,
-    exercise: true,
-    stress: false,
-    screenTime: true
-  }
+  score: 85,
+  heartRate: {
+    resting: 58,
+    min: 52,
+    max: 110,
+    average: 65,
+    history: []
+  },
+  deepRatio: 0.18,
+  remRatio: 0.22,
+  totalDuration: 460, // minutes
+  efficiency: 0.92,
+  stages: [],
+  aiInsights: [
+    "Deep sleep duration is within optimal range.",
+    "REM cycles show good consistency.",
+    "Resting heart rate is excellent."
+  ]
 };
 
 const BlogPostWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
@@ -235,19 +234,20 @@ const AppContent = () => {
             const mapped = data.map((d: any) => ({
               id: d.id,
               date: d.date,
-              duration: (d.total_duration || 0) / 60, // assuming total_duration is in minutes
-              quality: d.score || 0,
-              deepSleep: (d.deep_sleep_duration || 0) / 60,
-              remSleep: (d.rem_sleep_duration || 0) / 60,
-              lightSleep: (d.light_sleep_duration || 0) / 60,
-              awake: (d.awake_duration || 0) / 60,
-              heartRate: d.heart_rate_avg || 0,
-              hrv: d.hrv || 0,
-              respiratoryRate: d.respiratory_rate || 0,
-              temperature: d.temperature || 0,
-              notes: d.notes || "",
-              tags: d.tags || [],
-              factors: d.factors || {}
+              score: d.score,
+              heartRate: {
+                resting: d.heart_rate_resting,
+                min: d.heart_rate_min,
+                max: d.heart_rate_max,
+                average: d.heart_rate_avg,
+                history: []
+              },
+              deepRatio: d.deep_sleep_duration / (d.total_duration || 1),
+              remRatio: d.rem_sleep_duration / (d.total_duration || 1),
+              totalDuration: d.total_duration,
+              efficiency: d.efficiency,
+              stages: [],
+              aiInsights: d.ai_insights || []
             }));
             setLatestData(mapped[0]);
             setHistory(mapped);

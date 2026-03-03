@@ -111,80 +111,15 @@ All systems are currently operational.`
       content: `To report misuse, security concerns, or policy violations, contact our support team with detailed information. We review all reports and may take appropriate action.`
     },
     founder: {
-      title: "Founder",
-      subtitle: "Vyncus Lim",
-      content: `Vyncus Lim is the Founder of SomnoAI Digital Sleep Lab, an independent digital sleep technology initiative focused on applying artificial intelligence and data-driven methods to help people better understand sleep, recovery, and wellbeing through everyday devices.
+      title: "Founder's Vision",
+      subtitle: "The Architect Behind SomnoAI",
+      content: `SomnoAI Digital Sleep Lab was founded by Vyncus Lim, a visionary technologist with a deep background in artificial intelligence and physiological data analysis.
 
-SomnoAI Digital Sleep Lab was created from a simple observation: sleep is one of the most important foundations of health, yet most people only see fragmented metrics and generic advice. Vyncus founded the lab to build a more systematic, transparent, and practical approach—one that translates raw signals into insights that are understandable, privacy-aware, and actionable.
+Driven by a personal mission to decode the complexities of human rest, Vyncus assembled a team of neuroscientists, data engineers, and sleep specialists to build a platform that bridges the gap between clinical sleep science and consumer wearable technology.
 
-Mission
+"We are not just building a tracker; we are building a digital nervous system that understands what your body is trying to tell you," says Vyncus. "Our goal is to democratize access to high-fidelity sleep analysis, making the invisible visible for everyone."
 
-Vyncus’s work centers on one goal:
-make advanced sleep intelligence more accessible, more explainable, and more useful for real people in real life.
-
-That means:
-
-Designing systems that work with widely available devices rather than requiring proprietary hardware
-
-Prioritizing interpretability and clarity over “mystery scores”
-
-Building trust through responsible data handling and transparent policies
-
-Treating the platform as a living research environment that improves continuously
-
-Focus Areas
-
-Vyncus leads SomnoAI Digital Sleep Lab across product direction, research exploration, and platform architecture. Current areas of focus include:
-
-AI-assisted sleep analysis using real-world consumer data
-
-Long-term trend understanding (sleep, recovery, and behavioral patterns)
-
-Evidence-informed insights and explainable outputs
-
-Responsible AI practices for health-adjacent use cases
-
-Privacy-first design and governance frameworks for data processing
-
-Philosophy
-
-SomnoAI Digital Sleep Lab is built on a simple principle:
-
-Health technology should earn trust through clarity, consistency, and responsibility.
-
-The platform does not attempt to replace clinical care. Instead, it aims to help users become more informed and more aware of patterns over time—while being transparent about the limits of AI and consumer-grade data.
-
-Collaboration
-
-Vyncus welcomes meaningful collaborations with researchers, developers, educators, and partners who share an interest in responsible digital health innovation. Collaboration topics may include:
-
-Research exploration and experimental validation
-
-Product development and platform engineering
-
-Ethical and policy frameworks for applied AI
-
-Community education and public knowledge sharing
-
-Official Profiles & Links
-
-For verification and official updates, please refer to the channels below:
-
-Founder (LinkedIn): https://www.linkedin.com/in/vyncuslim-lim-761300375
-Company (LinkedIn): https://www.linkedin.com/company/somnoai-digital-sleep-lab
-Website: https://sleepsomno.com
-Crunchbase: https://www.crunchbase.com/organization/somnoai-digital-sleep-lab
-Instagram: https://www.instagram.com/somnoaidigitalsleep/
-TikTok: https://www.tiktok.com/@somnoaidigitalsleeplab
-Facebook: https://www.facebook.com/profile.php?id=61587027632695
-YouTube: https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og
-Discord: https://discord.gg/McrBeJXG8
-Telegram: https://t.me/somnoaidigitalsleeplab
-WhatsApp Channel: https://whatsapp.com/channel/0029Vb6lxT11SWt4YLKSVG39
-
-Contact
-
-For partnership inquiries, interviews, or collaboration proposals, please use the Contact page on this website to reach the official team channel.`
+Under his leadership, SomnoAI has grown from a research prototype into a comprehensive digital laboratory, processing millions of hours of sleep data while maintaining an unwavering commitment to user privacy and scientific rigor.`
     }
   },
   zh: {
@@ -299,80 +234,15 @@ United States
       content: `要举报滥用、安全问题或违反政策的行为，请联系我们的支持团队并提供详细信息。我们会审查所有报告并可能采取适当行动。`
     },
     founder: {
-      title: "创始人",
-      subtitle: "Vyncus Lim",
-      content: `Vyncus Lim 是 SomnoAI 数字睡眠实验室的创始人，这是一项独立的数字睡眠技术计划，专注于应用人工智能和数据驱动的方法，帮助人们通过日常设备更好地了解睡眠、恢复和健康。
+      title: "创始人愿景",
+      subtitle: "SomnoAI 幕后的架构师",
+      content: `SomnoAI 数字睡眠实验室由 Vyncus Lim 创立，他是一位在人工智能和生理数据分析方面拥有深厚背景的富有远见的技术专家。
 
-SomnoAI 数字睡眠实验室源于一个简单的观察：睡眠是健康最重要的基础之一，但大多数人只看到零碎的指标和通用的建议。Vyncus 创立该实验室旨在建立一种更系统、透明和实用的方法——将原始信号转化为易于理解、注重隐私且可操作的见解。
+出于解码人类休息复杂性的个人使命，Vyncus 组建了一支由神经科学家、数据工程师和睡眠专家组成的团队，以建立一个连接临床睡眠科学与消费者可穿戴技术的平台。
 
-使命
+“我们不仅仅是在制造一个追踪器；我们正在建立一个数字神经系统，它能理解你的身体试图告诉你什么，”Vyncus 说。“我们的目标是让每个人都能获得高保真的睡眠分析，让不可见的事物变得可见。”
 
-Vyncus 的工作集中在一个目标上：
-让高级睡眠智能更容易获得、更易于解释，并且对现实生活中的真实人群更有用。
-
-这意味着：
-
-设计可与广泛使用的设备配合使用的系统，而不需要专有硬件
-
-将可解释性和清晰度置于“神秘分数”之上
-
-通过负责任的数据处理和透明的政策建立信任
-
-将平台视为一个不断改进的活体研究环境
-
-重点领域
-
-Vyncus 领导 SomnoAI 数字睡眠实验室的产品方向、研究探索和平台架构。目前的重点领域包括：
-
-使用真实世界消费者数据的 AI 辅助睡眠分析
-
-长期趋势理解（睡眠、恢复和行为模式）
-
-基于证据的见解和可解释的输出
-
-适用于健康相关用例的负责任 AI 实践
-
-隐私优先的设计和数据处理治理框架
-
-理念
-
-SomnoAI 数字睡眠实验室建立在一个简单的原则之上：
-
-健康技术应通过清晰、一致和负责任来赢得信任。
-
-该平台不试图取代临床护理。相反，它旨在帮助用户随着时间的推移变得更加知情并更加了解模式——同时对 AI 和消费级数据的局限性保持透明。
-
-合作
-
-Vyncus 欢迎与对负责任的数字健康创新感兴趣的研究人员、开发人员、教育工作者和合作伙伴进行有意义的合作。合作主题可能包括：
-
-研究探索和实验验证
-
-产品开发和平台工程
-
-应用 AI 的道德和政策框架
-
-社区教育和公共知识共享
-
-官方资料和链接
-
-如需验证和官方更新，请参考以下渠道：
-
-创始人 (LinkedIn): https://www.linkedin.com/in/vyncuslim-lim-761300375
-公司 (LinkedIn): https://www.linkedin.com/company/somnoai-digital-sleep-lab
-网站: https://sleepsomno.com
-Crunchbase: https://www.crunchbase.com/organization/somnoai-digital-sleep-lab
-Instagram: https://www.instagram.com/somnoaidigitalsleep/
-TikTok: https://www.tiktok.com/@somnoaidigitalsleeplab
-Facebook: https://www.facebook.com/profile.php?id=61587027632695
-YouTube: https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og
-Discord: https://discord.gg/McrBeJXG8
-Telegram: https://t.me/somnoaidigitalsleeplab
-WhatsApp 频道: https://whatsapp.com/channel/0029Vb6lxT11SWt4YLKSVG39
-
-联系方式
-
-有关合作伙伴关系咨询、采访或合作提案，请使用本网站上的“联系我们”页面与官方团队渠道取得联系。`
+在他的领导下，SomnoAI 已从一个研究原型成长为一个全面的数字实验室，处理数百万小时的睡眠数据，同时保持对用户隐私和科学严谨性的坚定承诺。`
     }
   }
 };

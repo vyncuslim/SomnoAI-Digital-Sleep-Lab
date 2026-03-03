@@ -1,8 +1,6 @@
 import React from 'react';
-import { PlaceholderView } from './PlaceholderView';
+import { PlaceholderView } from './PlaceholderView.tsx';
 
-export { PlaceholderView };
-export const Dashboard = () => <PlaceholderView title="Dashboard" />;
 export const NewsHub = () => <PlaceholderView title="News & Updates" />;
 export const ChangelogView = () => <PlaceholderView title="Changelog" />;
 export const OpenSourceView = () => <PlaceholderView title="Open Source" />;

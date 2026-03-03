@@ -85,24 +85,6 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
           </GlassCard>
         </div>
 
-        {/* AI Support Assistant */}
-        <div className="space-y-8">
-           <div className="flex items-center gap-4 px-6">
-              <MessageSquare size={18} className="text-indigo-400" />
-              <h2 className="text-xs font-black uppercase text-slate-600 tracking-[0.3em] italic">AI Support Assistant</h2>
-           </div>
-           <GlassCard className="p-0 rounded-[3rem] border-white/5 overflow-hidden bg-slate-900/40">
-              <iframe
-                src="https://app.livechatai.com/aibot-iframe/cmm94ogp70001ju044o63bgyk"
-                style={{ border: '1px solid #EAEAEA' }}
-                width="100%"
-                height="680"
-                frameBorder="0"
-                allow="microphone"
-              ></iframe>
-           </GlassCard>
-        </div>
-
         {/* ECO SYSTEM SECTION */}
         <div className="space-y-8">
            <div className="flex items-center gap-4 px-6">

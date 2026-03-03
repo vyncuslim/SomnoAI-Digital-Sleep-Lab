@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+<channel>
+  <title>SomnoAI Neural Research Hub</title>
+  <link>https://sleepsomno.com/news</link>
+  <description>Deep insights into AI-powered sleep architecture and neurological recovery.</description>
+  <language>en-us</language>
+  <lastBuildDate>Sun, 15 Feb 2026 10:00:00 +0800</lastBuildDate>
+  <pubDate>Sun, 15 Feb 2026 10:00:00 +0800</pubDate>
+  <ttl>60</ttl>
+  <item>
+    <title>How Gemini AI Decodes Sleep Architecture in 2026</title>
+    <link>https://sleepsomno.com/article/ai-driven-sleep-optimization-2026</link>
+    <description>Latest neural research reveals how multi-modal biological telemetry is synthesized into actionable recovery protocols.</description>
+    <pubDate>Sun, 15 Feb 2026 10:00:00 +0800</pubDate>
+    <guid>https://sleepsomno.com/article/ai-driven-sleep-optimization-2026</guid>
+  </item>
+  <item>
+    <title>Neurological Recovery: Deep Sleep vs. REM Paradox</title>
+    <link>https://sleepsomno.com/article/deep-sleep-rem-recovery-2026</link>
+    <description>A comprehensive study on which sleep architecture phase yields the highest performance gains.</description>
+    <pubDate>Mon, 10 Feb 2026 14:30:00 +0800</pubDate>
+    <guid>https://sleepsomno.com/article/deep-sleep-rem-recovery-2026</guid>
+  </item>
+</channel>
+</rss>

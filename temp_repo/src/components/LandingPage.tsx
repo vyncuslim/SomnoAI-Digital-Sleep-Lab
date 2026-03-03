@@ -524,22 +524,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
            <div className="max-w-4xl mx-auto px-6 text-center space-y-8 relative z-10">
               <h3 className="text-2xl font-black uppercase tracking-tight italic">{t.newsletter?.title || "Stay Updated"}</h3>
               <p className="text-slate-400 italic font-medium">{t.newsletter?.subtitle || "Join our newsletter for the latest sleep science and AI updates."}</p>
-              <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" onSubmit={(e) => { 
-                e.preventDefault(); 
-                const btn = e.currentTarget.querySelector('button');
-                if (btn) {
-                  const originalText = btn.innerText;
-                  btn.innerText = "Subscribed!";
-                  btn.classList.add('bg-emerald-600');
-                  btn.classList.remove('bg-indigo-600');
-                  setTimeout(() => {
-                    btn.innerText = originalText;
-                    btn.classList.remove('bg-emerald-600');
-                    btn.classList.add('bg-indigo-600');
-                    (e.target as HTMLFormElement).reset();
-                  }, 3000);
-                }
-              }}>
+              <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" onSubmit={(e) => { e.preventDefault(); alert(t.newsletter?.success || "Subscribed!"); }}>
                  <input 
                    type="email" 
                    placeholder={t.newsletter?.placeholder || "Enter your email"} 
@@ -571,55 +556,49 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
           </div>
           
           <div>
-            <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">Quick Links</h4>
+            <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">{t.footer?.links}</h4>
             <ul className="grid grid-cols-2 gap-4 text-sm text-slate-500">
-              <li><a href="/about" className="hover:text-white transition-colors">About</a></li>
-              <li><a href="/product" className="hover:text-white transition-colors">Product</a></li>
-              <li><a href="/how-it-works" className="hover:text-white transition-colors">How it Works</a></li>
-              <li><a href="/features" className="hover:text-white transition-colors">Features</a></li>
-              <li><a href="/research" className="hover:text-white transition-colors">Research</a></li>
-              <li><a href="/science" className="hover:text-white transition-colors">Science</a></li>
-              <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
-              <li><a href="/news" className="hover:text-white transition-colors">News</a></li>
-              <li><a href="/faq" className="hover:text-white transition-colors">FAQ</a></li>
-              <li><a href="/status" className="hover:text-white transition-colors">Status</a></li>
-              <li><a href="/contact" className="hover:text-white transition-colors">Contact</a></li>
-              <li><a href="/support" className="hover:text-white transition-colors">Support</a></li>
+              <li><a href="/about" className="hover:text-white transition-colors">{t.footer?.about}</a></li>
+              <li><a href="/product" className="hover:text-white transition-colors">{lang === 'zh' ? '产品' : 'Product'}</a></li>
+              <li><a href="/how-it-works" className="hover:text-white transition-colors">{lang === 'zh' ? '原理' : 'How it Works'}</a></li>
+              <li><a href="/features" className="hover:text-white transition-colors">{lang === 'zh' ? '功能' : 'Features'}</a></li>
+              <li><a href="/research" className="hover:text-white transition-colors">{lang === 'zh' ? '研究' : 'Research'}</a></li>
+              <li><a href="/science" className="hover:text-white transition-colors">{lang === 'zh' ? '科学' : 'Science'}</a></li>
+              <li><a href="/blog" className="hover:text-white transition-colors">{t.blog?.title || 'Blog'}</a></li>
+              <li><a href="/news" className="hover:text-white transition-colors">{t.news?.title || 'News'}</a></li>
+              <li><a href="/faq" className="hover:text-white transition-colors">{lang === 'zh' ? '常见问题' : 'FAQ'}</a></li>
+              <li><a href="/status" className="hover:text-white transition-colors">{lang === 'zh' ? '系统状态' : 'Status'}</a></li>
+              <li><a href="/contact" className="hover:text-white transition-colors">{t.support?.title || 'Contact'}</a></li>
+              <li><a href="/support" className="hover:text-white transition-colors">{lang === 'zh' ? '支持' : 'Support'}</a></li>
             </ul>
           </div>
 
           <div>
-            <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">Legal</h4>
+            <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">{t.footer?.legal}</h4>
             <ul className="grid grid-cols-2 gap-4 text-sm text-slate-500">
-              <li><a href="/legal/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="/legal/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="/legal/cookies" className="hover:text-white transition-colors">Cookies</a></li>
-              <li><a href="/legal/security" className="hover:text-white transition-colors">Security</a></li>
-              <li><a href="/legal/acceptable-use" className="hover:text-white transition-colors">Acceptable Use</a></li>
-              <li><a href="/legal/ai-disclaimer" className="hover:text-white transition-colors">AI Disclaimer</a></li>
-              <li><a href="/legal/medical-disclaimer" className="hover:text-white transition-colors">Medical Disclaimer</a></li>
-              <li><a href="/legal/data-processing" className="hover:text-white transition-colors">Data Processing</a></li>
-              <li><a href="/report-abuse" className="hover:text-white transition-colors">Abuse Policy</a></li>
-              <li><a href="/legal/account-blocking" className="hover:text-white transition-colors">Account Blocking</a></li>
-              <li><a href="/policy" className="hover:text-white transition-colors">Policy Framework</a></li>
-              <li><a href="/opensource" className="hover:text-white transition-colors">Open Source</a></li>
+              <li><a href="/legal/privacy" className="hover:text-white transition-colors">{t.footer?.privacy}</a></li>
+              <li><a href="/legal/terms" className="hover:text-white transition-colors">{t.footer?.terms}</a></li>
+              <li><a href="/legal/cookies" className="hover:text-white transition-colors">{lang === 'zh' ? 'Cookie 政策' : 'Cookies'}</a></li>
+              <li><a href="/legal/security" className="hover:text-white transition-colors">{lang === 'zh' ? '安全政策' : 'Security'}</a></li>
+              <li><a href="/legal/acceptable-use" className="hover:text-white transition-colors">{lang === 'zh' ? '使用政策' : 'Acceptable Use'}</a></li>
+              <li><a href="/legal/ai-disclaimer" className="hover:text-white transition-colors">{lang === 'zh' ? 'AI 免责' : 'AI Disclaimer'}</a></li>
+              <li><a href="/legal/medical-disclaimer" className="hover:text-white transition-colors">{lang === 'zh' ? '医疗免责' : 'Medical Disclaimer'}</a></li>
+              <li><a href="/legal/data-processing" className="hover:text-white transition-colors">{lang === 'zh' ? '数据处理' : 'Data Processing'}</a></li>
+              <li><a href="/report-abuse" className="hover:text-white transition-colors">{lang === 'zh' ? '举报滥用' : 'Abuse Policy'}</a></li>
+              <li><a href="/legal/account-blocking" className="hover:text-white transition-colors">{lang === 'zh' ? '封禁政策' : 'Account Blocking'}</a></li>
+              <li><a href="/policy" className="hover:text-white transition-colors">{t.footer?.policy}</a></li>
+              <li><a href="/opensource" className="hover:text-white transition-colors">{t.footer?.opensource}</a></li>
             </ul>
           </div>
         </div>
 
         <div className="max-w-7xl mx-auto pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6">
-          <p className="text-xs text-slate-600 font-mono">© 2026 SOMNOAI DIGITAL SLEEP LAB. ALL RIGHTS RESERVED.</p>
+          <p className="text-xs text-slate-600 font-mono">© 2026 SOMNOAI DIGITAL SLEEP LAB. {t.footer?.rights}.</p>
           <div className="flex items-center gap-6 text-slate-600">
             <a href="#" className="hover:text-white transition-colors"><Github size={18} /></a>
             <a href="#" className="hover:text-white transition-colors"><Twitter size={18} /></a>
             <a href="#" className="hover:text-white transition-colors"><Linkedin size={18} /></a>
           </div>
-        </div>
-        
-        <div className="max-w-7xl mx-auto mt-12 pt-8 border-t border-white/5 text-center">
-          <p className="text-xs text-slate-500 italic max-w-4xl mx-auto leading-relaxed">
-            <strong className="text-slate-400">Transparency Note:</strong> SomnoAI Digital Sleep Lab is an evolving project. The platform may introduce experimental features and research prototypes over time. AI-generated insights are provided for informational purposes and should not be interpreted as medical diagnosis or treatment advice.
-          </p>
         </div>
       </footer>
     </div>

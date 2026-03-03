@@ -1,0 +1,66 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="630" fill="#01040a"/>
+  <circle cx="600" cy="315" r="250" fill="#6366f1" fill-opacity="0.05"/>
+  
+  <g transform="translate(450, 100) scale(3)">
+    <defs>
+      <linearGradient id="planetGrad" x1="20%" y1="20%" x2="80%" y2="80%">
+        <stop offset="0%" stop-color="#FFD700" />
+        <stop offset="20%" stop-color="#FF8C00" />
+        <stop offset="50%" stop-color="#C71585" />
+        <stop offset="100%" stop-color="#191970" />
+      </linearGradient>
+      <linearGradient id="ringGrad" x1="0%" y1="100%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#FF69B4" />
+        <stop offset="50%" stop-color="#E0FFFF" />
+        <stop offset="100%" stop-color="#00BFFF" />
+      </linearGradient>
+      <linearGradient id="swirl1Grad" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#E0FFFF" />
+        <stop offset="20%" stop-color="#00FFFF" />
+        <stop offset="60%" stop-color="#1E90FF" />
+        <stop offset="100%" stop-color="#4B0082" />
+      </linearGradient>
+      <linearGradient id="swirl2Grad" x1="0%" y1="100%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="#FFD700" />
+        <stop offset="20%" stop-color="#FF8C00" />
+        <stop offset="50%" stop-color="#FF1493" />
+        <stop offset="80%" stop-color="#8A2BE2" />
+        <stop offset="100%" stop-color="#0000CD" />
+      </linearGradient>
+    </defs>
+
+    <!-- Bottom/Left Swirl -->
+    <path d="M 75 75 C 50 95, 10 85, 10 50 C 10 35, 18 22, 30 15 C 15 30, 15 55, 35 70 C 50 80, 70 75, 80 60 C 80 65, 78 70, 75 75 Z" fill="url(#swirl2Grad)" />
+    
+    <!-- Back of Ring -->
+    <path d="M 22 58 C 30 45, 65 38, 78 48" fill="none" stroke="url(#ringGrad)" stroke-width="1.5" stroke-linecap="round" />
+
+    <!-- Planet -->
+    <circle cx="50" cy="50" r="18" fill="url(#planetGrad)" />
+    <!-- Planet Highlight -->
+    <circle cx="42" cy="42" r="5" fill="#FFF" opacity="0.4" filter="blur(1px)" />
+
+    <!-- Front of Ring -->
+    <path d="M 18 58 C 30 72, 75 65, 82 48" fill="none" stroke="url(#ringGrad)" stroke-width="2.5" stroke-linecap="round" />
+
+    <!-- Top/Right Swirl -->
+    <path d="M 25 25 C 50 5, 90 15, 90 50 C 90 65, 82 78, 70 85 C 85 70, 85 45, 65 30 C 50 20, 30 25, 20 40 C 20 35, 22 30, 25 25 Z" fill="url(#swirl1Grad)" />
+
+    <!-- Inner Swirl Accents -->
+    <path d="M 35 25 C 60 15, 80 30, 75 50 C 80 35, 65 25, 45 30 Z" fill="#00FFFF" opacity="0.6" />
+    <path d="M 65 75 C 40 85, 20 70, 25 50 C 20 65, 35 75, 55 70 Z" fill="#FF1493" opacity="0.6" />
+
+    <!-- Stars -->
+    <circle cx="25" cy="25" r="1" fill="#FFF" opacity="0.8" />
+    <circle cx="80" cy="20" r="1.5" fill="#00FFFF" opacity="0.8" />
+    <circle cx="85" cy="75" r="1" fill="#FF69B4" opacity="0.8" />
+    <circle cx="20" cy="80" r="1.5" fill="#FFF" opacity="0.6" />
+    <circle cx="15" cy="45" r="1" fill="#FFD700" opacity="0.8" />
+    <circle cx="75" cy="85" r="0.8" fill="#FFF" opacity="0.5" />
+    <circle cx="35" cy="15" r="0.8" fill="#FFF" opacity="0.5" />
+  </g>
+
+  <text x="600" y="480" font-family="sans-serif" font-size="80" font-weight="900" fill="white" text-anchor="middle" letter-spacing="0.05em" style="text-transform: uppercase; font-style: italic;">SomnoAI</text>
+  <text x="600" y="550" font-family="monospace" font-size="30" font-weight="bold" fill="#6366f1" text-anchor="middle" letter-spacing="0.3em">DIGITAL SLEEP LAB</text>
+</svg>
