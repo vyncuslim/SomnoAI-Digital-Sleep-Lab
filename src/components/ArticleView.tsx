@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Clock, Calendar, User, ShieldCheck, Tag, Share2, Info, ArrowUpRight } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
 import { Language, getTranslation } from '../services/i18n.ts';
@@ -158,9 +159,9 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
                       <ShieldCheck size={12} className="text-emerald-500" /> IDENTITY VERIFIED
                     </span>
-                    <a href="/about" className="text-[10px] font-black text-indigo-500 hover:text-white uppercase tracking-widest flex items-center gap-2 transition-all">
+                    <Link to="/about" className="text-[10px] font-black text-indigo-500 hover:text-white uppercase tracking-widest flex items-center gap-2 transition-all">
                       EDITORIAL POLICY <ArrowUpRight size={12} />
-                    </a>
+                    </Link>
                  </div>
               </div>
            </div>

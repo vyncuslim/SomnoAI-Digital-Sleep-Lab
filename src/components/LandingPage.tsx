@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowRight, Brain, Activity, Zap, X, 
   CheckCircle2, Users, Database, ShieldCheck,
@@ -572,36 +572,36 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
           <div>
             <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">Quick Links</h4>
             <ul className="grid grid-cols-2 gap-4 text-sm text-slate-500">
-              <li><a href="/about" className="hover:text-white transition-colors">About</a></li>
-              <li><a href="/product" className="hover:text-white transition-colors">Product</a></li>
-              <li><a href="/how-it-works" className="hover:text-white transition-colors">How it Works</a></li>
-              <li><a href="/features" className="hover:text-white transition-colors">Features</a></li>
-              <li><a href="/research" className="hover:text-white transition-colors">Research</a></li>
-              <li><a href="/science" className="hover:text-white transition-colors">Science</a></li>
-              <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
-              <li><a href="/news" className="hover:text-white transition-colors">News</a></li>
-              <li><a href="/faq" className="hover:text-white transition-colors">FAQ</a></li>
-              <li><a href="/status" className="hover:text-white transition-colors">Status</a></li>
-              <li><a href="/contact" className="hover:text-white transition-colors">Contact</a></li>
-              <li><a href="/support" className="hover:text-white transition-colors">Support</a></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/about`} className="hover:text-white transition-colors">About</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/product`} className="hover:text-white transition-colors">Product</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/how-it-works`} className="hover:text-white transition-colors">How it Works</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/features`} className="hover:text-white transition-colors">Features</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/research`} className="hover:text-white transition-colors">Research</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/science`} className="hover:text-white transition-colors">Science</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/blog`} className="hover:text-white transition-colors">Blog</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/news`} className="hover:text-white transition-colors">News</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/faq`} className="hover:text-white transition-colors">FAQ</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/status`} className="hover:text-white transition-colors">Status</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/contact`} className="hover:text-white transition-colors">Contact</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/support`} className="hover:text-white transition-colors">Support</Link></li>
             </ul>
           </div>
 
           <div>
             <h4 className="font-bold uppercase tracking-widest text-xs mb-6 text-slate-400">Legal</h4>
             <ul className="grid grid-cols-2 gap-4 text-sm text-slate-500">
-              <li><a href="/legal/privacy-policy" className="hover:text-white transition-colors">Privacy Policy</a></li>
-              <li><a href="/legal/terms-of-service" className="hover:text-white transition-colors">Terms of Service</a></li>
-              <li><a href="/legal/cookies" className="hover:text-white transition-colors">Cookies</a></li>
-              <li><a href="/legal/security" className="hover:text-white transition-colors">Security</a></li>
-              <li><a href="/legal/acceptable-use" className="hover:text-white transition-colors">Acceptable Use</a></li>
-              <li><a href="/legal/ai-disclaimer" className="hover:text-white transition-colors">AI Disclaimer</a></li>
-              <li><a href="/legal/medical-disclaimer" className="hover:text-white transition-colors">Medical Disclaimer</a></li>
-              <li><a href="/legal/data-processing" className="hover:text-white transition-colors">Data Processing</a></li>
-              <li><a href="/legal/abuse-policy" className="hover:text-white transition-colors">Abuse Policy</a></li>
-              <li><a href="/legal/account-blocking" className="hover:text-white transition-colors">Account Blocking</a></li>
-              <li><a href="/legal/policy-framework" className="hover:text-white transition-colors">Policy Framework</a></li>
-              <li><a href="/legal/open-source" className="hover:text-white transition-colors">Open Source</a></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/privacy-policy`} className="hover:text-white transition-colors">Privacy Policy</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/terms-of-service`} className="hover:text-white transition-colors">Terms of Service</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/cookies`} className="hover:text-white transition-colors">Cookies</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/security`} className="hover:text-white transition-colors">Security</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/acceptable-use`} className="hover:text-white transition-colors">Acceptable Use</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/ai-disclaimer`} className="hover:text-white transition-colors">AI Disclaimer</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/medical-disclaimer`} className="hover:text-white transition-colors">Medical Disclaimer</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/data-processing`} className="hover:text-white transition-colors">Data Processing</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/abuse-policy`} className="hover:text-white transition-colors">Abuse Policy</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/account-blocking`} className="hover:text-white transition-colors">Account Blocking</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/policy-framework`} className="hover:text-white transition-colors">Policy Framework</Link></li>
+              <li><Link to={`${lang === 'zh' ? '/cn' : ''}/legal/open-source`} className="hover:text-white transition-colors">Open Source</Link></li>
             </ul>
           </div>
         </div>

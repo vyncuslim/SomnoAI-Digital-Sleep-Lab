@@ -171,7 +171,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
                 />
                 <label htmlFor="terms" className="text-xs text-slate-400">
-                  I approve term and privacy.
+                  I approve <a href="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">terms</a> and <a href="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">privacy</a>.
                 </label>
               </div>
             )}
