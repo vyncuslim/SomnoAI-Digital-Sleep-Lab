@@ -18,6 +18,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [termsApproved, setTermsApproved] = useState(false);
+  const [otpMode, setOtpMode] = useState(false);
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
   const t = getTranslation(lang, 'landing');
 
   const [error, setError] = useState<string | null>(null);
@@ -28,26 +32,48 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setError(null);
 
     try {
-      if (view === 'login') {
-        const { error: authError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (authError) throw authError;
-        navigate('/dashboard');
+      if (view === 'signup' && !termsApproved) {
+        throw new Error('You must approve the terms and privacy policy.');
+      }
+
+      if (otpMode) {
+        if (!otpSent) {
+          const { error: authError } = await supabase.auth.signInWithOtp({
+            email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/dashboard`,
+            }
+          });
+          if (authError) throw authError;
+          setOtpSent(true);
+        } else {
+          const { error: authError } = await supabase.auth.verifyOtp({
+            email,
+            token: otpCode,
+            type: 'email',
+          });
+          if (authError) throw authError;
+          navigate('/dashboard');
+        }
       } else {
-        const { error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/auth/verify`,
-          },
-        });
-        if (authError) throw authError;
-        // For demo/simplicity, we'll just navigate to dashboard if no error
-        // In a real app, we might show a "check your email" message, 
-        // but the user explicitly asked to remove "Verify Email" messages.
-        navigate('/dashboard');
+        if (view === 'login') {
+          const { error: authError } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (authError) throw authError;
+          navigate('/dashboard');
+        } else {
+          const { error: authError } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              emailRedirectTo: `${window.location.origin}/auth/verify`,
+            },
+          });
+          if (authError) throw authError;
+          navigate('/dashboard');
+        }
       }
     } catch (err: any) {
       console.error('Auth error:', err);
@@ -96,24 +122,59 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-700"
                   placeholder="name@example.com"
                   required
+                  disabled={otpMode && otpSent}
                 />
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-700"
-                  placeholder="••••••••"
-                  required
-                />
+            {!otpMode && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-700"
+                    placeholder="••••••••"
+                    required={!otpMode}
+                  />
+                </div>
               </div>
-            </div>
+            )}
+
+            {otpMode && otpSent && (
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">OTP Code</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                  <input 
+                    type="text" 
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value)}
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-700"
+                    placeholder="123456"
+                    required={otpMode && otpSent}
+                  />
+                </div>
+              </div>
+            )}
+
+            {view === 'signup' && (
+              <div className="flex items-center gap-3 ml-2">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={termsApproved}
+                  onChange={(e) => setTermsApproved(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                />
+                <label htmlFor="terms" className="text-xs text-slate-400">
+                  I approve term and privacy.
+                </label>
+              </div>
+            )}
 
             <button 
               type="submit"
@@ -124,7 +185,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  {view === 'login' ? (lang === 'zh' ? '登录' : 'Sign In') : (lang === 'zh' ? '注册' : 'Create Account')}
+                  {otpMode ? (otpSent ? 'Verify OTP' : 'Send OTP') : (view === 'login' ? (lang === 'zh' ? '登录' : 'Sign In') : (lang === 'zh' ? '注册' : 'Create Account'))}
                   <ArrowRight size={18} />
                 </>
               )}
@@ -141,11 +202,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           </div>
 
           <div className="mt-8 grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all">
-              <Github size={18} className="text-slate-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest">GitHub</span>
+            <button 
+              type="button"
+              onClick={() => {
+                setOtpMode(!otpMode);
+                setOtpSent(false);
+                setError(null);
+              }}
+              className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all"
+            >
+              <Mail size={18} className="text-slate-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest">{otpMode ? 'Password' : 'OTP Login'}</span>
             </button>
-            <button className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all">
+            <button type="button" className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all">
               <Chrome size={18} className="text-slate-400" />
               <span className="text-[10px] font-black uppercase tracking-widest">Google</span>
             </button>

@@ -9,10 +9,50 @@ export const Logo: React.FC<{ className?: string }> = ({ className = "" }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="relative w-8 h-8 flex items-center justify-center">
+      <div className="relative w-10 h-10 flex items-center justify-center">
         <div className="absolute inset-0 bg-indigo-500 rounded-full opacity-20 blur-md"></div>
-        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-6 h-6 text-indigo-400 relative z-10">
-          <path d="M12 3V21M3 12H21M6.343 6.343L17.657 17.657M6.343 17.657L17.657 6.343" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 relative z-10">
+          <defs>
+            <linearGradient id="planetGrad" x1="30" y1="30" x2="70" y2="70" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#FFB067" />
+              <stop offset="0.4" stopColor="#FF4B6B" />
+              <stop offset="1" stopColor="#2A0845" />
+            </linearGradient>
+            <linearGradient id="ringGrad" x1="15" y1="50" x2="85" y2="50" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#FF4B6B" />
+              <stop offset="1" stopColor="#4A90E2" />
+            </linearGradient>
+            <linearGradient id="swooshBlue" x1="50" y1="10" x2="50" y2="90" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#00E5FF" />
+              <stop offset="0.5" stopColor="#2979FF" />
+              <stop offset="1" stopColor="#D500F9" />
+            </linearGradient>
+            <linearGradient id="swooshOrange" x1="10" y1="50" x2="90" y2="50" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#FFEA00" />
+              <stop offset="0.3" stopColor="#FF9100" />
+              <stop offset="1" stopColor="#F50057" />
+            </linearGradient>
+          </defs>
+          
+          {/* Outer Swoosh Blue/Purple */}
+          <path d="M 60 15 C 85 15, 95 40, 80 65 C 65 90, 30 95, 15 85 C 35 95, 75 85, 85 55 C 90 35, 75 20, 60 15 Z" fill="url(#swooshBlue)" />
+          
+          {/* Outer Swoosh Orange/Pink */}
+          <path d="M 40 85 C 15 85, 5 60, 20 35 C 35 10, 70 5, 85 15 C 65 5, 25 15, 15 45 C 10 65, 25 80, 40 85 Z" fill="url(#swooshOrange)" />
+          
+          {/* Inner Planet */}
+          <circle cx="50" cy="50" r="16" fill="url(#planetGrad)" />
+          
+          {/* Planet Ring */}
+          <ellipse cx="50" cy="50" rx="28" ry="6" transform="rotate(-25 50 50)" stroke="url(#ringGrad)" strokeWidth="3" fill="none" />
+          
+          {/* Stars */}
+          <circle cx="25" cy="25" r="1.5" fill="#FFEA00" opacity="0.8" />
+          <circle cx="80" cy="25" r="1" fill="#00E5FF" opacity="0.6" />
+          <circle cx="20" cy="75" r="1" fill="#D500F9" opacity="0.9" />
+          <circle cx="75" cy="75" r="1.5" fill="#FFF" opacity="0.7" />
+          <circle cx="85" cy="50" r="0.8" fill="#FFF" opacity="0.5" />
+          <circle cx="15" cy="50" r="0.8" fill="#FFF" opacity="0.5" />
         </svg>
       </div>
       <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">
