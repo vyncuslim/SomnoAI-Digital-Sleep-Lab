@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 
-export const Logo: React.FC<{ className?: string }> = ({ className = "" }) => {
+export const Logo: React.FC<{ className?: string; showText?: boolean }> = ({ className = "", showText = true }) => {
   return (
     <motion.div 
       className={`flex items-center gap-2 ${className}`}
@@ -9,55 +9,87 @@ export const Logo: React.FC<{ className?: string }> = ({ className = "" }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="relative w-10 h-10 flex items-center justify-center">
-        <div className="absolute inset-0 bg-indigo-500 rounded-full opacity-20 blur-md"></div>
-        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-10 h-10 relative z-10">
+      <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+        <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full h-full relative z-10 drop-shadow-lg">
           <defs>
-            <linearGradient id="planetGrad" x1="30" y1="30" x2="70" y2="70" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#FFB067" />
-              <stop offset="0.4" stopColor="#FF4B6B" />
-              <stop offset="1" stopColor="#2A0845" />
+            {/* Planet Gradient */}
+            <radialGradient id="planetGrad" cx="35" cy="35" r="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#FFE066" />
+              <stop offset="0.3" stopColor="#FF7A00" />
+              <stop offset="0.6" stopColor="#D50032" />
+              <stop offset="1" stopColor="#1A0033" />
+            </radialGradient>
+            
+            {/* Ring Gradient */}
+            <linearGradient id="ringGrad" x1="20" y1="60" x2="80" y2="40" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#FF3366" />
+              <stop offset="0.5" stopColor="#FF99CC" />
+              <stop offset="1" stopColor="#33CCFF" />
             </linearGradient>
-            <linearGradient id="ringGrad" x1="15" y1="50" x2="85" y2="50" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#FF4B6B" />
-              <stop offset="1" stopColor="#4A90E2" />
+
+            {/* Top Right Swoosh Gradient */}
+            <linearGradient id="swooshTopRight" x1="50" y1="10" x2="80" y2="80" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#CCFFFF" />
+              <stop offset="0.2" stopColor="#00E5FF" />
+              <stop offset="0.5" stopColor="#0055FF" />
+              <stop offset="1" stopColor="#1A0066" />
             </linearGradient>
-            <linearGradient id="swooshBlue" x1="50" y1="10" x2="50" y2="90" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#00E5FF" />
-              <stop offset="0.5" stopColor="#2979FF" />
-              <stop offset="1" stopColor="#D500F9" />
+
+            {/* Bottom Swoosh Gradient */}
+            <linearGradient id="swooshBottom" x1="80" y1="50" x2="20" y2="90" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#FF3399" />
+              <stop offset="0.5" stopColor="#CC00FF" />
+              <stop offset="1" stopColor="#330099" />
             </linearGradient>
-            <linearGradient id="swooshOrange" x1="10" y1="50" x2="90" y2="50" gradientUnits="userSpaceOnUse">
-              <stop stopColor="#FFEA00" />
-              <stop offset="0.3" stopColor="#FF9100" />
-              <stop offset="1" stopColor="#F50057" />
+
+            {/* Left Swoosh Gradient */}
+            <linearGradient id="swooshLeft" x1="20" y1="80" x2="40" y2="10" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#FF99CC" />
+              <stop offset="0.3" stopColor="#FF5500" />
+              <stop offset="0.7" stopColor="#FFCC00" />
+              <stop offset="1" stopColor="#FFFFCC" />
             </linearGradient>
           </defs>
           
-          {/* Outer Swoosh Blue/Purple */}
-          <path d="M 60 15 C 85 15, 95 40, 80 65 C 65 90, 30 95, 15 85 C 35 95, 75 85, 85 55 C 90 35, 75 20, 60 15 Z" fill="url(#swooshBlue)" />
+          {/* Left Swoosh (Orange/Yellow/Pink) */}
+          <path d="M 55 15 C 20 15, 5 40, 15 70 C 20 85, 45 95, 60 90 C 30 85, 15 55, 30 30 C 40 15, 55 15, 55 15 Z" fill="url(#swooshLeft)" />
           
-          {/* Outer Swoosh Orange/Pink */}
-          <path d="M 40 85 C 15 85, 5 60, 20 35 C 35 10, 70 5, 85 15 C 65 5, 25 15, 15 45 C 10 65, 25 80, 40 85 Z" fill="url(#swooshOrange)" />
+          {/* Bottom Swoosh (Magenta/Purple) */}
+          <path d="M 90 40 C 95 70, 65 95, 25 85 C 10 80, 10 80, 10 80 C 40 100, 85 85, 95 50 C 100 35, 90 40, 90 40 Z" fill="url(#swooshBottom)" />
           
-          {/* Inner Planet */}
-          <circle cx="50" cy="50" r="16" fill="url(#planetGrad)" />
+          {/* Top Right Swoosh (Cyan/Blue) */}
+          <path d="M 40 15 C 75 10, 100 30, 85 70 C 80 85, 80 85, 80 85 C 100 50, 80 15, 50 10 C 40 8, 40 15, 40 15 Z" fill="url(#swooshTopRight)" />
+
+          {/* Back part of the ring */}
+          <path d="M 30 55 C 35 45, 65 35, 70 45" stroke="url(#ringGrad)" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.4" />
+
+          {/* Central Planet */}
+          <circle cx="48" cy="48" r="14" fill="url(#planetGrad)" />
           
-          {/* Planet Ring */}
-          <ellipse cx="50" cy="50" rx="28" ry="6" transform="rotate(-25 50 50)" stroke="url(#ringGrad)" strokeWidth="3" fill="none" />
+          {/* Planet Crater/Highlight */}
+          <circle cx="53" cy="44" r="3" fill="#FF99CC" opacity="0.6" />
+          <circle cx="42" cy="42" r="1.5" fill="#FFFFFF" opacity="0.8" />
+
+          {/* Front part of the ring */}
+          <path d="M 28 55 C 35 65, 70 55, 72 45" stroke="url(#ringGrad)" strokeWidth="3" fill="none" strokeLinecap="round" />
           
           {/* Stars */}
-          <circle cx="25" cy="25" r="1.5" fill="#FFEA00" opacity="0.8" />
-          <circle cx="80" cy="25" r="1" fill="#00E5FF" opacity="0.6" />
-          <circle cx="20" cy="75" r="1" fill="#D500F9" opacity="0.9" />
-          <circle cx="75" cy="75" r="1.5" fill="#FFF" opacity="0.7" />
-          <circle cx="85" cy="50" r="0.8" fill="#FFF" opacity="0.5" />
-          <circle cx="15" cy="50" r="0.8" fill="#FFF" opacity="0.5" />
+          <circle cx="25" cy="25" r="1.5" fill="#FFCC00" opacity="0.9" />
+          <path d="M 25 21 L 25 29 M 21 25 L 29 25" stroke="#FFCC00" strokeWidth="0.5" opacity="0.8" />
+          
+          <circle cx="80" cy="20" r="1" fill="#33CCFF" opacity="0.8" />
+          <circle cx="15" cy="75" r="1" fill="#CC00FF" opacity="0.8" />
+          <circle cx="85" cy="65" r="1.5" fill="#FFFFFF" opacity="0.9" />
+          <circle cx="75" cy="80" r="1" fill="#FFFFFF" opacity="0.6" />
+          <circle cx="65" cy="85" r="0.8" fill="#FFFFFF" opacity="0.4" />
+          <circle cx="35" cy="45" r="0.8" fill="#FFCC00" opacity="0.8" />
         </svg>
       </div>
-      <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200">
-        SomnoAI Digital Sleep Lab
-      </span>
+      {showText && (
+        <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-indigo-200 whitespace-nowrap">
+          SomnoAI Digital Sleep Lab
+        </span>
+      )}
     </motion.div>
   );
 };
