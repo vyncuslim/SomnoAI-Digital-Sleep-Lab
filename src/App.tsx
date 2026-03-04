@@ -20,10 +20,11 @@ const AdminView = lazy(() => import('./components/Placeholders').then(module => 
 const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
 const FeedbackView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
 const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
-const AboutView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
-const ContactView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
-const LegalHub = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
-const InfoHub = lazy(() => import('./components/InfoHub').then(module => ({ default: module.InfoHub })));
+const About = lazy(() => import('./pages/About').then(module => ({ default: module.About })));
+const Product = lazy(() => import('./pages/Product').then(module => ({ default: module.Product })));
+const HowItWorks = lazy(() => import('./pages/HowItWorks').then(module => ({ default: module.HowItWorks })));
+const LegalHub = lazy(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
+const DynamicPage = lazy(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
 const AIAssistant = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AIAssistant })));
 const ExperimentView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ExperimentView })));
 const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
@@ -136,17 +137,17 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/auth/signin" element={<Auth lang={lang} initialView="login" />} />
       <Route path="/auth/signup" element={<Auth lang={lang} initialView="signup" />} />
       <Route path="/auth/verify" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/auth/freeze" element={<InfoHub lang={lang} onBack={handleBack} type="account-blocking" />} />
-      <Route path="/about" element={<InfoHub lang={lang} onBack={handleBack} type="about" />} />
-      <Route path="/product" element={<InfoHub lang={lang} onBack={handleBack} type="product" />} />
-      <Route path="/how-it-works" element={<InfoHub lang={lang} onBack={handleBack} type="how-it-works" />} />
-      <Route path="/features" element={<InfoHub lang={lang} onBack={handleBack} type="features" />} />
-      <Route path="/research" element={<InfoHub lang={lang} onBack={handleBack} type="research" />} />
-      <Route path="/founder" element={<InfoHub lang={lang} onBack={handleBack} type="founder" />} />
-      <Route path="/contact" element={<InfoHub lang={lang} onBack={handleBack} type="contact" />} />
-      <Route path="/faq" element={<InfoHub lang={lang} onBack={handleBack} type="faq" />} />
-      <Route path="/status" element={<InfoHub lang={lang} onBack={handleBack} type="status" />} />
-      <Route path="/science" element={<InfoHub lang={lang} onBack={handleBack} type="science" />} />
+      <Route path="/auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
+      <Route path="/about" element={<About />} />
+      <Route path="/product" element={<Product />} />
+      <Route path="/how-it-works" element={<HowItWorks />} />
+      <Route path="/features" element={<DynamicPage lang={lang} type="features" />} />
+      <Route path="/research" element={<DynamicPage lang={lang} type="research" />} />
+      <Route path="/founder" element={<DynamicPage lang={lang} type="founder" />} />
+      <Route path="/contact" element={<DynamicPage lang={lang} type="contact" />} />
+      <Route path="/faq" element={<DynamicPage lang={lang} type="faq" />} />
+      <Route path="/status" element={<DynamicPage lang={lang} type="status" />} />
+      <Route path="/science" element={<DynamicPage lang={lang} type="science" />} />
       <Route path="/search" element={<SearchHub lang={lang} />} />
       
       {/* Blog & News */}
@@ -157,7 +158,8 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
 
       {/* Legal & Support */}
-      <Route path="/legal/:type" element={<InfoHub lang={lang} onBack={handleBack} />} />
+      <Route path="/legal" element={<LegalHub />} />
+      <Route path="/legal/:type" element={<DynamicPage lang={lang} />} />
       <Route path="/privacy" element={<Navigate to="/legal/privacy-policy" replace />} />
       <Route path="/terms" element={<Navigate to="/legal/terms-of-service" replace />} />
       <Route path="/policy" element={<Navigate to="/legal/policy-framework" replace />} />
