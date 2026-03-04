@@ -51,8 +51,11 @@ export const Section: React.FC<{ title?: string; description?: string; children:
 );
 
 // --- Card ---
-export const Card: React.FC<{ title: string; description: string; icon?: React.ReactNode; className?: string; children?: React.ReactNode }> = ({ title, description, icon, className = "", children }) => (
-  <div className={`p-8 rounded-2xl bg-slate-900/50 border border-white/5 hover:border-white/10 transition-colors ${className}`}>
+export const Card: React.FC<{ title: string; description: string; icon?: React.ReactNode; className?: string; children?: React.ReactNode; onClick?: () => void }> = ({ title, description, icon, className = "", children, onClick }) => (
+  <div 
+    onClick={onClick}
+    className={`p-8 rounded-2xl bg-slate-900/50 border border-white/5 hover:border-white/10 transition-colors ${onClick ? 'cursor-pointer' : ''} ${className}`}
+  >
     {icon && <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-6">{icon}</div>}
     <h3 className="text-xl font-semibold text-white mb-3">{title}</h3>
     <p className="text-slate-400 leading-relaxed mb-4">{description}</p>
@@ -117,12 +120,12 @@ export const Tabs: React.FC<{ tabs: { id: string; label: string; content: React.
 };
 
 // --- Timeline ---
-export const Timeline: React.FC<{ events: { date: string; title: string; description: string; tag?: string }[] }> = ({ events }) => (
+export const Timeline: React.FC<{ events: { date: string; title: string; description: string; tag?: string; icon?: React.ReactNode }[] }> = ({ events }) => (
   <div className="space-y-8 relative before:absolute before:inset-0 before:ml-5 before:-translate-x-px md:before:mx-auto md:before:translate-x-0 before:h-full before:w-0.5 before:bg-gradient-to-b before:from-transparent before:via-white/10 before:to-transparent">
     {events.map((event, idx) => (
       <div key={idx} className="relative flex items-center justify-between md:justify-normal md:odd:flex-row-reverse group is-active">
         <div className="flex items-center justify-center w-10 h-10 rounded-full border border-white/10 bg-slate-900 text-slate-500 group-hover:text-indigo-400 group-hover:border-indigo-500/50 transition-colors shrink-0 md:order-1 md:group-odd:-translate-x-1/2 md:group-even:translate-x-1/2 shadow-[0_0_0_4px_#01040a]">
-          <div className="w-2 h-2 bg-current rounded-full" />
+          {event.icon ? <div className="scale-75">{event.icon}</div> : <div className="w-2 h-2 bg-current rounded-full" />}
         </div>
         <div className="w-[calc(100%-4rem)] md:w-[calc(50%-2.5rem)] p-6 rounded-2xl bg-slate-900/50 border border-white/5 hover:border-white/10 transition-colors">
           <div className="flex items-center gap-3 mb-2">

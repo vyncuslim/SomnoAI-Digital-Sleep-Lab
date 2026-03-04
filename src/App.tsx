@@ -139,16 +139,16 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/auth/signup" element={<Auth lang={lang} initialView="signup" />} />
       <Route path="/auth/verify" element={<Navigate to="/dashboard" replace />} />
       <Route path="/auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
-      <Route path="/about" element={<About />} />
-      <Route path="/product" element={<Product />} />
-      <Route path="/how-it-works" element={<HowItWorks />} />
-      <Route path="/features" element={<Features />} />
-      <Route path="/research" element={<Research />} />
-      <Route path="/science" element={<Science />} />
-      <Route path="/founder" element={<Founder />} />
-      <Route path="/contact" element={<Contact />} />
-      <Route path="/faq" element={<FAQ />} />
-      <Route path="/status" element={<Status />} />
+      <Route path="/about" element={<About lang={lang} />} />
+      <Route path="/product" element={<Product lang={lang} />} />
+      <Route path="/how-it-works" element={<HowItWorks lang={lang} />} />
+      <Route path="/features" element={<Features lang={lang} />} />
+      <Route path="/research" element={<Research lang={lang} />} />
+      <Route path="/science" element={<Science lang={lang} />} />
+      <Route path="/founder" element={<Founder lang={lang} />} />
+      <Route path="/contact" element={<Contact lang={lang} />} />
+      <Route path="/faq" element={<FAQ lang={lang} />} />
+      <Route path="/status" element={<Status lang={lang} />} />
       <Route path="/search" element={<SearchHub lang={lang} />} />
       
       {/* Blog & News */}
@@ -159,7 +159,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
 
       {/* Legal & Support */}
-      <Route path="/legal" element={<LegalHub />} />
+      <Route path="/legal" element={<LegalHub lang={lang} />} />
       <Route path="/legal/:type" element={<DynamicPage lang={lang} />} />
       <Route path="/privacy" element={<Navigate to="/legal/privacy-policy" replace />} />
       <Route path="/terms" element={<Navigate to="/legal/terms-of-service" replace />} />
@@ -293,7 +293,8 @@ const AppContent = () => {
   const activeView = location.pathname.split('/').pop() || 'dashboard';
 
   return (
-    <RootLayout>
+    <ErrorBoundary lang={lang}>
+      <RootLayout>
       <div className="min-h-screen bg-[#01040a]">
         {!isSupabaseConfigured && (
           <div className="relative w-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
@@ -317,23 +318,22 @@ const AppContent = () => {
             <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
           </Routes>
         </div>
-        {showNavbar && <Footer />}
+        {showNavbar && <Footer lang={lang} />}
       </div>
     </RootLayout>
-  );
+  </ErrorBoundary>
+);
 };
 
 function App() {
   return (
-    <ErrorBoundary>
-      <AuthProvider>
-        <AnalyticsProvider>
-          <Router>
-            <AppContent />
-          </Router>
-        </AnalyticsProvider>
-      </AuthProvider>
-    </ErrorBoundary>
+    <AuthProvider>
+      <AnalyticsProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </AnalyticsProvider>
+    </AuthProvider>
   );
 }
 

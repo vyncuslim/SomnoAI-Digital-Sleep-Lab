@@ -8,7 +8,7 @@ import {
   Microscope, Binary, Search
 } from 'lucide-react';
 
-import { Language, getTranslation } from '../services/i18n.ts';
+import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
 
 const m = motion as any;
@@ -77,13 +77,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             className="flex items-center gap-6 cursor-pointer group bg-transparent border-none p-0 outline-none text-left relative" 
           >
             <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
-            <Logo className="group-hover:text-indigo-400 transition-colors scale-110" />
-            <div className="flex flex-col">
-              <span className="text-[10px] font-black italic uppercase tracking-tighter text-white group-hover:text-indigo-400 transition-colors">SomnoAI Digital Sleep Lab</span>
-              <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500">
-                {isZh ? '您的AI驱动睡眠伴侣' : 'Neural Sleep Lab'}
-              </span>
-            </div>
+            <Logo lang={lang} className="group-hover:text-indigo-400 transition-colors scale-110" />
           </m.div>
         </Link>
 
