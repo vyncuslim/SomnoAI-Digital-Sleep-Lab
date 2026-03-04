@@ -4,15 +4,15 @@ import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Info, ArrowRight 
 import { motion, AnimatePresence } from 'framer-motion';
 
 // --- Hero ---
-export const Hero: React.FC<{ title: string; subtitle: string; ctaPrimary?: { text: string; link: string }; ctaSecondary?: { text: string; link: string } }> = ({ title, subtitle, ctaPrimary, ctaSecondary }) => (
+export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrimary?: { text: string; link: string }; ctaSecondary?: { text: string; link: string } }> = ({ title, subtitle, ctaPrimary, ctaSecondary }) => (
   <div className="py-20 md:py-32 flex flex-col items-center text-center max-w-4xl mx-auto relative">
     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
-    <motion.h1 
+    <motion.div 
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-      className="text-5xl md:text-7xl font-bold tracking-tight text-white mb-6 leading-tight"
+      className="mb-6"
     >
       {title}
-    </motion.h1>
+    </motion.div>
     <motion.p 
       initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
       className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl leading-relaxed"
@@ -54,11 +54,11 @@ export const Section: React.FC<{ title?: string; description?: string; children:
 export const Card: React.FC<{ title: string; description: string; icon?: React.ReactNode; className?: string; children?: React.ReactNode; onClick?: () => void }> = ({ title, description, icon, className = "", children, onClick }) => (
   <div 
     onClick={onClick}
-    className={`p-8 rounded-2xl bg-slate-900/50 border border-white/5 hover:border-white/10 transition-colors ${onClick ? 'cursor-pointer' : ''} ${className}`}
+    className={`p-8 rounded-3xl bg-slate-900/40 border border-white/10 hover:border-indigo-500/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(79,70,229,0.1)] ${onClick ? 'cursor-pointer' : ''} ${className}`}
   >
-    {icon && <div className="w-12 h-12 rounded-xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-6">{icon}</div>}
-    <h3 className="text-xl font-semibold text-white mb-3">{title}</h3>
-    <p className="text-slate-400 leading-relaxed mb-4">{description}</p>
+    {icon && <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-8">{icon}</div>}
+    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-4">{title}</h3>
+    <p className="text-slate-400 leading-relaxed mb-6">{description}</p>
     {children}
   </div>
 );

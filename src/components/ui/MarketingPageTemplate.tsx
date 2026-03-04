@@ -3,7 +3,7 @@ import { PageLayout } from './PageLayout';
 import { Hero, Section, Card, InlineCTA } from './Components';
 
 interface MarketingPageTemplateProps {
-  title: string;
+  title: React.ReactNode;
   subtitle: string;
   ctaPrimary?: { text: string; link: string };
   ctaSecondary?: { text: string; link: string };

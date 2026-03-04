@@ -69,11 +69,32 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
 
   return (
     <MarketingPageTemplate
-      title={t.heroTitle || "SomnoAI Digital Sleep Lab"}
+      title={
+        <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter text-white mb-6">
+          SOMNOAI <br />
+          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+            DIGITAL SLEEP LAB
+          </span>
+        </h1>
+      }
       subtitle={t.heroSubtitle || "Connect your wearable → Get AI recovery intelligence. Upload your sleep data, let our AI analyze it, and wake up to actionable recovery protocols."}
       ctaPrimary={{ text: t.ctaPrimary || "Start Analysis", link: "/auth/signup" }}
       ctaSecondary={{ text: t.ctaSecondary || "Learn More", link: "/about" }}
     >
+      {/* Visual Report Preview */}
+      <Section className="py-12">
+        <div className="rounded-[2rem] border border-white/10 bg-slate-900/50 p-4 shadow-2xl shadow-indigo-500/10">
+          <div className="bg-slate-950 rounded-2xl p-6 border border-white/5">
+            <div className="flex justify-between items-center mb-6">
+              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Recovery Score</h3>
+              <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold">87</div>
+            </div>
+            <div className="h-48 bg-gradient-to-r from-indigo-900/20 to-purple-900/20 rounded-xl flex items-center justify-center text-slate-500 italic">
+              [Report Visualization]
+            </div>
+          </div>
+        </div>
+      </Section>
       {/* Stats Section */}
       <Section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -115,17 +136,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
         title={lang === 'zh' ? '协议流程' : 'The Protocol'} 
         description={lang === 'zh' ? '实现全面认知恢复的四个步骤。' : 'Four steps to total cognitive restoration.'}
       >
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-          {steps.map((step, i) => (
-            <div key={i} className="flex flex-col items-center text-center gap-6 p-6 rounded-3xl bg-slate-900/30 border border-white/5">
-              <div className="w-16 h-16 rounded-full bg-indigo-500/10 flex items-center justify-center text-indigo-400 font-black text-xl">
-                {step.step}
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-white">{step.title}</h3>
-                <p className="text-sm text-slate-400 leading-relaxed">{step.desc}</p>
-              </div>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {[
+            { icon: Activity, title: t.features?.biometric?.title || "Biometric Tracking", desc: t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles." },
+            { icon: Brain, title: t.features?.neural?.title || "Neural Insights", desc: t.features?.neural?.desc || "AI-driven interpretation of sleep stages and quality metrics." },
+            { icon: Zap, title: t.features?.recovery?.title || "Recovery Optimization", desc: t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep and recovery." }
+          ].map((item, i) => (
+            <Card 
+              key={i}
+              title={item.title}
+              description={item.desc}
+              icon={<item.icon size={40} strokeWidth={1.5} />}
+            />
           ))}
         </div>
       </Section>
@@ -136,23 +158,18 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
         description={lang === 'zh' ? '无论您的目标是什么，SomnoAI Digital Sleep Lab 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI Digital Sleep Lab provides customized recovery strategies.'}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card 
-            title={lang === 'zh' ? '高强度运动员' : 'Elite Athletes'}
-            description={lang === 'zh' ? '优化训练负荷，预测疲劳，并在比赛日达到最佳状态。' : 'Optimize training load, predict fatigue, and peak on race day.'}
-            icon={<Activity size={32} className="text-indigo-400" />}
-          />
-          <Card 
-            title={lang === 'zh' ? '知识工作者' : 'Knowledge Workers'}
-            description={lang === 'zh' ? '最大化深度睡眠，提高白天的认知清晰度和专注力。' : 'Maximize deep sleep to improve daytime cognitive clarity and focus.'}
-            icon={<Brain size={32} className="text-emerald-400" />}
-            className="border-emerald-500/20"
-          />
-          <Card 
-            title={lang === 'zh' ? '失眠改善者' : 'Sleep Improvers'}
-            description={lang === 'zh' ? '识别破坏睡眠的隐藏因素，建立健康的作息规律。' : 'Identify hidden factors disrupting sleep and establish healthy routines.'}
-            icon={<ShieldCheck size={32} className="text-rose-400" />}
-            className="border-rose-500/20"
-          />
+          {[
+            { title: lang === 'zh' ? '高强度运动员' : 'Elite Athletes', desc: lang === 'zh' ? '优化训练负荷，预测疲劳，并在比赛日达到最佳状态。' : 'Optimize training load, predict fatigue, and peak on race day.', icon: Activity },
+            { title: lang === 'zh' ? '知识工作者' : 'Knowledge Workers', desc: lang === 'zh' ? '最大化深度睡眠，提高白天的认知清晰度和专注力。' : 'Maximize deep sleep to improve daytime cognitive clarity and focus.', icon: Brain },
+            { title: lang === 'zh' ? '失眠改善者' : 'Sleep Improvers', desc: lang === 'zh' ? '识别破坏睡眠的隐藏因素，建立健康的作息规律。' : 'Identify hidden factors disrupting sleep and establish healthy routines.', icon: ShieldCheck }
+          ].map((item, i) => (
+            <Card 
+              key={i}
+              title={item.title}
+              description={item.desc}
+              icon={<item.icon size={40} strokeWidth={1.5} />}
+            />
+          ))}
         </div>
       </Section>
 
