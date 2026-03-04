@@ -9,13 +9,7 @@ We believe that modern consumer devices already capture valuable physiological s
 
 Our platform focuses on accessibility, transparency, and responsible innovation. We are committed to developing tools that empower users with knowledge while maintaining strict safeguards for privacy, security, and ethical use of data.
 
-SomnoAI Digital Sleep Lab operates as an informational and research-oriented platform and does not provide medical services.
-
-**Corporate Headquarters:**
-SomnoAI Digital Sleep Lab Inc.
-100 Innovation Drive, Suite 400
-San Francisco, CA 94105
-United States`
+SomnoAI Digital Sleep Lab operates as an informational and research-oriented platform and does not provide medical services.`
     },
     product: {
       title: "Platform Overview",
@@ -68,12 +62,6 @@ This platform is not a clinical research facility and does not conduct medical t
       title: "Contact Us",
       subtitle: "Get in Touch",
       content: `For general inquiries, support requests, or collaboration opportunities, please contact our team.
-
-**Mailing Address:**
-SomnoAI Digital Sleep Lab
-100 Innovation Drive, Suite 400
-San Francisco, CA 94105
-United States
 
 **Digital Channels:**
 📧 General Support: support@sleepsomno.com
@@ -397,13 +385,7 @@ For partnership inquiries, interviews, or collaboration proposals, please use th
 
 我们的平台专注于可访问性、透明度和负责任的创新。我们致力于开发能够赋予用户知识的工具，同时对隐私、安全和数据的道德使用保持严格的保障措施。
 
-SomnoAI Digital Sleep Lab 作为一个信息和研究导向的平台运营，不提供医疗服务。
-
-**公司总部：**
-SomnoAI Digital Sleep Lab Inc.
-100 Innovation Drive, Suite 400
-San Francisco, CA 94105
-United States`
+SomnoAI Digital Sleep Lab 作为一个信息和研究导向的平台运营，不提供医疗服务。`
     },
     product: {
       title: "平台概览",
@@ -456,12 +438,6 @@ United States`
       title: "联系我们",
       subtitle: "取得联系",
       content: `有关一般查询、支持请求或合作机会，请联系我们的团队。
-
-**邮寄地址：**
-SomnoAI Digital Sleep Lab
-100 Innovation Drive, Suite 400
-San Francisco, CA 94105
-United States
 
 **数字渠道：**
 📧 一般支持：support@sleepsomno.com

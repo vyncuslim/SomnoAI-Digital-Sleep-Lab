@@ -563,9 +563,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
               {t.footer?.mission}
             </p>
             <div className="space-y-1 text-xs text-slate-600 font-mono pt-4 border-t border-white/5">
-              <p>SomnoAI Digital Sleep Lab Inc.</p>
-              <p>100 Innovation Drive, Suite 400</p>
-              <p>San Francisco, CA 94105</p>
+              <p>SomnoAI Digital Sleep Lab</p>
             </div>
           </div>
           
