@@ -11,6 +11,7 @@ import { SleepRecord } from './types';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navbar } from './components/Navbar';
+import { Footer } from './components/Footer';
 
 // Lazy load components
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
@@ -22,6 +23,7 @@ const LandingPage = lazy(() => import('./components/LandingPage').then(module =>
 const About = lazy(() => import('./pages/About').then(module => ({ default: module.About })));
 const Product = lazy(() => import('./pages/Product').then(module => ({ default: module.Product })));
 const HowItWorks = lazy(() => import('./pages/HowItWorks').then(module => ({ default: module.HowItWorks })));
+const Features = lazy(() => import('./pages/Features').then(module => ({ default: module.Features })));
 const LegalHub = lazy(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
 const DynamicPage = lazy(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
 const AIAssistant = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AIAssistant })));
@@ -134,7 +136,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/about" element={<About />} />
       <Route path="/product" element={<Product />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
-      <Route path="/features" element={<DynamicPage lang={lang} type="features" />} />
+      <Route path="/features" element={<Features />} />
       <Route path="/research" element={<DynamicPage lang={lang} type="research" />} />
       <Route path="/founder" element={<DynamicPage lang={lang} type="founder" />} />
       <Route path="/contact" element={<DynamicPage lang={lang} type="contact" />} />
@@ -310,6 +312,7 @@ const AppContent = () => {
             <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
           </Routes>
         </div>
+        {showNavbar && <Footer />}
       </div>
     </RootLayout>
   );
