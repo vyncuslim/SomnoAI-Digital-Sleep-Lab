@@ -1,43 +1,70 @@
 <svg viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
-    <linearGradient id="planetGrad" x1="30" y1="30" x2="70" y2="70" gradientUnits="userSpaceOnUse">
-      <stop stopColor="#FFB067" />
-      <stop offset="0.4" stopColor="#FF4B6B" />
-      <stop offset="1" stopColor="#2A0845" />
+    <!-- Planet Gradient -->
+    <radialGradient id="planetGrad" cx="35" cy="35" r="45" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor="#FFD166" />
+      <stop offset="0.3" stopColor="#EF476F" />
+      <stop offset="0.7" stopColor="#118AB2" />
+      <stop offset="1" stopColor="#073B4C" />
+    </radialGradient>
+    
+    <!-- Ring Gradient -->
+    <linearGradient id="ringGrad" x1="20" y1="60" x2="80" y2="40" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor="#FF5470" />
+      <stop offset="1" stopColor="#FDE24F" />
     </linearGradient>
-    <linearGradient id="ringGrad" x1="15" y1="50" x2="85" y2="50" gradientUnits="userSpaceOnUse">
-      <stop stopColor="#FF4B6B" />
-      <stop offset="1" stopColor="#4A90E2" />
+
+    <!-- Top Right Swoosh Gradient (Cyan/Blue) -->
+    <linearGradient id="swooshTopRight" x1="30" y1="10" x2="80" y2="70" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor="#48CAE4" />
+      <stop offset="0.5" stopColor="#0077B6" />
+      <stop offset="1" stopColor="#023E8A" />
     </linearGradient>
-    <linearGradient id="swooshBlue" x1="50" y1="10" x2="50" y2="90" gradientUnits="userSpaceOnUse">
-      <stop stopColor="#00E5FF" />
-      <stop offset="0.5" stopColor="#2979FF" />
-      <stop offset="1" stopColor="#D500F9" />
+
+    <!-- Bottom Swoosh Gradient (Magenta/Purple) -->
+    <linearGradient id="swooshBottom" x1="80" y1="40" x2="20" y2="90" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor="#F72585" />
+      <stop offset="0.5" stopColor="#7209B7" />
+      <stop offset="1" stopColor="#3A0CA3" />
     </linearGradient>
-    <linearGradient id="swooshOrange" x1="10" y1="50" x2="90" y2="50" gradientUnits="userSpaceOnUse">
-      <stop stopColor="#FFEA00" />
-      <stop offset="0.3" stopColor="#FF9100" />
-      <stop offset="1" stopColor="#F50057" />
+
+    <!-- Left Swoosh Gradient (Orange/Pink) -->
+    <linearGradient id="swooshLeft" x1="20" y1="80" x2="50" y2="20" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stopColor="#FEE440" />
+      <stop offset="0.3" stopColor="#F15BB5" />
+      <stop offset="0.7" stopColor="#9B5DE5" />
+      <stop offset="1" stopColor="#3A0CA3" />
     </linearGradient>
   </defs>
   
-  <!-- Outer Swoosh Blue/Purple -->
-  <path d="M 60 15 C 85 15, 95 40, 80 65 C 65 90, 30 95, 15 85 C 35 95, 75 85, 85 55 C 90 35, 75 20, 60 15 Z" fill="url(#swooshBlue)" />
+  <!-- Left Swoosh (Orange/Yellow/Pink) -->
+  <path d="M 50 15 C 20 20, 10 50, 25 75 C 30 85, 45 95, 65 90 C 35 85, 20 60, 30 35 C 35 25, 45 20, 60 25 C 55 20, 52 15, 50 15 Z" fill="url(#swooshLeft)" />
   
-  <!-- Outer Swoosh Orange/Pink -->
-  <path d="M 40 85 C 15 85, 5 60, 20 35 C 35 10, 70 5, 85 15 C 65 5, 25 15, 15 45 C 10 65, 25 80, 40 85 Z" fill="url(#swooshOrange)" />
+  <!-- Bottom Swoosh (Magenta/Purple) -->
+  <path d="M 85 45 C 95 70, 75 95, 40 90 C 25 85, 15 80, 15 80 C 45 105, 90 90, 95 55 C 97 45, 90 40, 85 45 Z" fill="url(#swooshBottom)" />
   
-  <!-- Inner Planet -->
+  <!-- Top Right Swoosh (Cyan/Blue) -->
+  <path d="M 40 20 C 60 5, 90 20, 85 60 C 80 75, 75 80, 75 80 C 95 50, 80 10, 45 10 C 35 10, 30 15, 40 20 Z" fill="url(#swooshTopRight)" />
+
+  <!-- Back part of the ring -->
+  <path d="M 25 55 C 30 45, 65 35, 75 45" stroke="url(#ringGrad)" strokeWidth="2.5" fill="none" strokeLinecap="round" opacity="0.5" />
+
+  <!-- Central Planet -->
   <circle cx="50" cy="50" r="16" fill="url(#planetGrad)" />
   
-  <!-- Planet Ring -->
-  <ellipse cx="50" cy="50" rx="28" ry="6" transform="rotate(-25 50 50)" stroke="url(#ringGrad)" strokeWidth="3" fill="none" />
+  <!-- Planet Crater/Highlight -->
+  <circle cx="44" cy="42" r="4" fill="#FFFFFF" opacity="0.8" />
+  <circle cx="56" cy="46" r="2" fill="#FFFFFF" opacity="0.4" />
+
+  <!-- Front part of the ring -->
+  <path d="M 22 55 C 30 68, 70 58, 78 45" stroke="url(#ringGrad)" strokeWidth="3" fill="none" strokeLinecap="round" />
   
   <!-- Stars -->
-  <circle cx="25" cy="25" r="1.5" fill="#FFEA00" opacity="0.8" />
-  <circle cx="80" cy="25" r="1" fill="#00E5FF" opacity="0.6" />
-  <circle cx="20" cy="75" r="1" fill="#D500F9" opacity="0.9" />
-  <circle cx="75" cy="75" r="1.5" fill="#FFF" opacity="0.7" />
-  <circle cx="85" cy="50" r="0.8" fill="#FFF" opacity="0.5" />
-  <circle cx="15" cy="50" r="0.8" fill="#FFF" opacity="0.5" />
+  <circle cx="25" cy="25" r="1.5" fill="#FFCC00" opacity="0.9" />
+  <circle cx="80" cy="20" r="1" fill="#33CCFF" opacity="0.8" />
+  <circle cx="15" cy="75" r="1" fill="#CC00FF" opacity="0.8" />
+  <circle cx="85" cy="65" r="1.5" fill="#FFFFFF" opacity="0.9" />
+  <circle cx="75" cy="80" r="1" fill="#FFFFFF" opacity="0.6" />
+  <circle cx="65" cy="85" r="0.8" fill="#FFFFFF" opacity="0.4" />
+  <circle cx="35" cy="45" r="0.8" fill="#FFCC00" opacity="0.8" />
 </svg>

@@ -177,7 +177,7 @@ DROP POLICY IF EXISTS "Profiles visibility" ON public.profiles;
 CREATE POLICY "Profiles visibility" ON public.profiles
 FOR SELECT TO authenticated
 USING (
-    auth.uid() = id 
+    (auth.uid() = id AND is_blocked = false)
     OR 
     public.is_admin_check(auth.uid())
 );
@@ -185,8 +185,8 @@ USING (
 DROP POLICY IF EXISTS "Profile self update" ON public.profiles;
 CREATE POLICY "Profile self update" ON public.profiles
 FOR UPDATE TO authenticated
-USING (auth.uid() = id)
-WITH CHECK (auth.uid() = id);
+USING (auth.uid() = id AND is_blocked = false)
+WITH CHECK (auth.uid() = id AND is_blocked = false);
 
 DROP POLICY IF EXISTS "Admin audit access" ON public.audit_logs;
 DROP POLICY IF EXISTS "Anyone can insert logs" ON public.audit_logs;

@@ -10,6 +10,7 @@ import { supabase, logAuditLog } from './services/supabaseService';
 import { SleepRecord } from './types';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
+import { Navbar } from './components/Navbar';
 
 // Lazy load components
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
@@ -213,7 +214,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { profile, loading } = useAuth();
+  const { user, profile, loading, isAdmin, signOut } = useAuth();
   const [lang, setLang] = useState<Language>('en'); // Default language to English
   const [latestData, setLatestData] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
@@ -267,6 +268,11 @@ const AppContent = () => {
     navigate(path);
   };
 
+  const handleLogout = async () => {
+    await signOut();
+    navigate('/');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
@@ -277,6 +283,13 @@ const AppContent = () => {
       </div>
     );
   }
+
+  const isAuthPage = location.pathname.includes('/auth');
+  const isLandingPage = location.pathname === '/' || location.pathname === '/en' || location.pathname === '/cn';
+  const showNavbar = !isAuthPage && !isLandingPage;
+
+  const activeView = location.pathname.split('/').pop() || 'dashboard';
+
   return (
     <RootLayout>
       <div className="min-h-screen bg-[#01040a]">
@@ -285,11 +298,23 @@ const AppContent = () => {
             ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
           </div>
         )}
-        <Routes>
-          <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-          <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-          <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-        </Routes>
+        {showNavbar && (
+          <Navbar 
+            lang={lang} 
+            activeView={activeView} 
+            onNavigate={handleNavigate} 
+            isAuthenticated={!!user} 
+            isAdmin={isAdmin} 
+            onLogout={handleLogout} 
+          />
+        )}
+        <div className={showNavbar ? "pt-20" : ""}>
+          <Routes>
+            <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+            <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+            <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+          </Routes>
+        </div>
       </div>
     </RootLayout>
   );

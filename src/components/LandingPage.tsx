@@ -132,7 +132,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
 
       <nav className="max-w-7xl mx-auto px-6 py-6 flex items-center justify-between relative z-40">
         <div className="flex items-center gap-3">
-          <Logo />
+          <Link to="/">
+            <Logo />
+          </Link>
         </div>
         <div className="flex items-center gap-6">
           <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10">
@@ -557,7 +559,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onLanguageChange
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-3 gap-12 mb-12">
           <div className="space-y-6">
             <div className="flex items-center gap-3">
-              <Logo />
+              <Link to="/">
+                <Logo />
+              </Link>
             </div>
             <p className="text-sm text-slate-500 leading-relaxed italic">
               {t.footer?.mission}

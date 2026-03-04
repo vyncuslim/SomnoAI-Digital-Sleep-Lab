@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Menu, X, LogIn, LogOut, User, Settings as SettingsIcon, Shield,
@@ -69,21 +70,22 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 h-20 flex items-center justify-between ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl' : 'bg-transparent'}`}>
       <div className="flex items-center gap-10">
-        <m.button 
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          className="flex items-center gap-6 cursor-pointer group bg-transparent border-none p-0 outline-none text-left relative" 
-          onClick={() => onNavigate(isAuthenticated ? 'dashboard' : '/')}
-        >
-          <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
-          <Logo className="group-hover:text-indigo-400 transition-colors scale-110" />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black italic uppercase tracking-tighter text-white group-hover:text-indigo-400 transition-colors">SomnoAI Digital Sleep Lab</span>
-            <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500">
-              {isZh ? '您的AI驱动睡眠伴侣' : 'Neural Sleep Lab'}
-            </span>
-          </div>
-        </m.button>
+        <Link to="/">
+          <m.div 
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            className="flex items-center gap-6 cursor-pointer group bg-transparent border-none p-0 outline-none text-left relative" 
+          >
+            <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
+            <Logo className="group-hover:text-indigo-400 transition-colors scale-110" />
+            <div className="flex flex-col">
+              <span className="text-[10px] font-black italic uppercase tracking-tighter text-white group-hover:text-indigo-400 transition-colors">SomnoAI Digital Sleep Lab</span>
+              <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500">
+                {isZh ? '您的AI驱动睡眠伴侣' : 'Neural Sleep Lab'}
+              </span>
+            </div>
+          </m.div>
+        </Link>
 
         <div className="hidden xl:flex items-center gap-8">
           {links.map((link: any) => {

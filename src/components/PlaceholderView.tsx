@@ -1,6 +1,7 @@
 import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface PlaceholderProps {
   title?: string;
@@ -22,6 +23,9 @@ export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Accessing
           <ChevronLeft size={24} />
         </button>
       </div>
+      <Link to="/">
+        <Logo className="mb-8 scale-150" />
+      </Link>
       <h1 className="text-3xl font-bold mb-4">{title}</h1>
       <p className="text-slate-500 italic">Accessing laboratory data node...</p>
     </div>

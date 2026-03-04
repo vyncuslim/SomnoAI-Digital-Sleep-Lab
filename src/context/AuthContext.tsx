@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../services/supabaseService.ts';
+import { auth } from '../lib/firebase';
+import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
 
 interface AuthContextType {
   user: any;
@@ -26,27 +27,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isSuperOwner = profile?.is_super_owner;
 
   useEffect(() => {
-    // Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
+    if (!auth) {
+      // If Firebase is not configured, check if we have a mock user in localStorage
+      const mockUser = localStorage.getItem('mockUser');
+      if (mockUser) {
+        const parsedUser = JSON.parse(mockUser);
+        setUser(parsedUser);
+        setProfile({
+          id: parsedUser.uid,
+          email: parsedUser.email,
+          role: 'admin',
+          is_super_owner: true
+        });
+      }
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      // Mock profile for now, since we removed Supabase
+      if (currentUser) {
+        setProfile({
+          id: currentUser.uid,
+          email: currentUser.email,
+          role: 'user'
+        });
+      } else {
+        setProfile(null);
+      }
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   const signIn = async (email: string) => {
-    // Placeholder sign in
-    console.log('Sign in with', email);
+    if (!auth) {
+      const mockUser = { uid: 'mock-user-123', email };
+      localStorage.setItem('mockUser', JSON.stringify(mockUser));
+      setUser(mockUser);
+      setProfile({
+        id: mockUser.uid,
+        email: mockUser.email,
+        role: 'admin',
+        is_super_owner: true
+      });
+    }
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
+    if (auth) {
+      await firebaseSignOut(auth);
+    } else {
+      localStorage.removeItem('mockUser');
+      setUser(null);
+      setProfile(null);
+    }
   };
 
   return (

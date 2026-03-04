@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { Link, useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Globe, Target, Layers, Sparkles, Binary, Smartphone, Mail, Github, MessageSquare, Linkedin, Youtube, ShieldCheck, Activity, UserCheck, AlertCircle, Zap, Moon, Watch, Smartphone as SmartphoneIcon, Cloud, ArrowRight } from 'lucide-react';
 import { Language } from '../types';
 import { INFO_CONTENT } from '../data/infoContent';
@@ -48,7 +48,9 @@ export const InfoHub: React.FC<InfoHubProps> = ({ lang, onBack, type }) => {
           </button>
         </div>
         <div className="absolute top-0 right-4">
-          <Logo />
+          <Link to="/">
+            <Logo />
+          </Link>
         </div>
         <div className="flex items-center justify-center gap-4 mt-8">
           <h1 className="text-4xl md:text-6xl font-black italic tracking-tighter text-white uppercase leading-none">
