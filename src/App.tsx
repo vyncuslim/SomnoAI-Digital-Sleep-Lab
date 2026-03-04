@@ -24,6 +24,12 @@ const About = lazy(() => import('./pages/About').then(module => ({ default: modu
 const Product = lazy(() => import('./pages/Product').then(module => ({ default: module.Product })));
 const HowItWorks = lazy(() => import('./pages/HowItWorks').then(module => ({ default: module.HowItWorks })));
 const Features = lazy(() => import('./pages/Features').then(module => ({ default: module.Features })));
+const Research = lazy(() => import('./pages/Research').then(module => ({ default: module.Research })));
+const Science = lazy(() => import('./pages/Science').then(module => ({ default: module.Science })));
+const Founder = lazy(() => import('./pages/Founder').then(module => ({ default: module.Founder })));
+const FAQ = lazy(() => import('./pages/FAQ').then(module => ({ default: module.FAQ })));
+const Status = lazy(() => import('./pages/Status').then(module => ({ default: module.Status })));
+const Contact = lazy(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
 const LegalHub = lazy(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
 const DynamicPage = lazy(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
 const AIAssistant = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AIAssistant })));
@@ -137,12 +143,12 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="/product" element={<Product />} />
       <Route path="/how-it-works" element={<HowItWorks />} />
       <Route path="/features" element={<Features />} />
-      <Route path="/research" element={<DynamicPage lang={lang} type="research" />} />
-      <Route path="/founder" element={<DynamicPage lang={lang} type="founder" />} />
-      <Route path="/contact" element={<DynamicPage lang={lang} type="contact" />} />
-      <Route path="/faq" element={<DynamicPage lang={lang} type="faq" />} />
-      <Route path="/status" element={<DynamicPage lang={lang} type="status" />} />
-      <Route path="/science" element={<DynamicPage lang={lang} type="science" />} />
+      <Route path="/research" element={<Research />} />
+      <Route path="/science" element={<Science />} />
+      <Route path="/founder" element={<Founder />} />
+      <Route path="/contact" element={<Contact />} />
+      <Route path="/faq" element={<FAQ />} />
+      <Route path="/status" element={<Status />} />
       <Route path="/search" element={<SearchHub lang={lang} />} />
       
       {/* Blog & News */}
@@ -282,8 +288,7 @@ const AppContent = () => {
   }
 
   const isAuthPage = location.pathname.includes('/auth');
-  const isLandingPage = location.pathname === '/' || location.pathname === '/en' || location.pathname === '/cn';
-  const showNavbar = !isAuthPage && !isLandingPage;
+  const showNavbar = !isAuthPage;
 
   const activeView = location.pathname.split('/').pop() || 'dashboard';
 
