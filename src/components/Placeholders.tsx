@@ -5,11 +5,7 @@ export { PlaceholderView };
 export const Dashboard = (props: any) => <PlaceholderView title="Dashboard" {...props} />;
 export const NewsHub = (props: any) => <PlaceholderView title="News & Updates" {...props} />;
 export const ChangelogView = (props: any) => <PlaceholderView title="Changelog" {...props} />;
-export const OpenSourceView = (props: any) => <PlaceholderView title="Open Source" {...props} />;
-export const PolicyFrameworkView = (props: any) => <PlaceholderView title="Policy Framework" {...props} />;
-export const ScienceView = (props: any) => <PlaceholderView title="Sleep Science" {...props} />;
 export const BlockedView = (props: any) => <PlaceholderView title="Account Blocked" {...props} />;
-export const FreezeAccount = (props: any) => <PlaceholderView title="Freeze Account" {...props} />;
 export const ExperimentView = (props: any) => <PlaceholderView title="Sleep Experiments" {...props} />;
 export const DiaryView = (props: any) => <PlaceholderView title="Sleep Journal" {...props} />;
 export const AIAssistant = (props: any) => <PlaceholderView title="AI Assistant" {...props} />;
@@ -19,4 +15,3 @@ export const AdminView = (props: any) => <PlaceholderView title="Admin Console" 
 export const UserProfile = (props: any) => <PlaceholderView title="User Profile" {...props} />;
 export const FeedbackView = (props: any) => <PlaceholderView title="Feedback" {...props} />;
 export const AuthVerify = (props: any) => <PlaceholderView title="Verify Email" {...props} />;
-export const FAQView = (props: any) => <PlaceholderView title="FAQ" {...props} />;

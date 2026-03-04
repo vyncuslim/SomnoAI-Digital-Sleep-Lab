@@ -32,16 +32,10 @@ const BlogHub = lazy(() => import('./components/Placeholders').then(module => ({
 const BlogPostView = lazy(() => import('./components/BlogPostView').then(module => ({ default: module.BlogPostView })));
 const NewsHub = lazy(() => import('./components/Placeholders').then(module => ({ default: module.NewsHub })));
 const ArticleView = lazy(() => import('./components/ArticleView').then(module => ({ default: module.ArticleView })));
-const OpenSourceView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.OpenSourceView })));
 const ChangelogView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ChangelogView })));
-const LegalView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
-const PolicyFrameworkView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PolicyFrameworkView })));
 const SupportView = lazy(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
-const FAQView = lazy(() => import('./components/FAQView').then(module => ({ default: module.FAQView })));
-const ScienceView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ScienceView })));
 const SearchHub = lazy(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
 const BlockedView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.BlockedView })));
-const FreezeAccount = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FreezeAccount })));
 
 // Initial Data
 const INITIAL_SLEEP_DATA: SleepRecord = {
