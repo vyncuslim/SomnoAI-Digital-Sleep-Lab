@@ -9,9 +9,6 @@ export const BlockedView = (props: any) => <PlaceholderView title="Account Block
 export const ExperimentView = (props: any) => <PlaceholderView title="Sleep Experiments" {...props} />;
 export const DiaryView = (props: any) => <PlaceholderView title="Sleep Journal" {...props} />;
 export const AIAssistant = (props: any) => <PlaceholderView title="AI Assistant" {...props} />;
-export const ArticleView = (props: any) => <PlaceholderView title="Article" {...props} />;
-export const BlogPostView = (props: any) => <PlaceholderView title="Blog Post" {...props} />;
 export const AdminView = (props: any) => <PlaceholderView title="Admin Console" {...props} />;
 export const UserProfile = (props: any) => <PlaceholderView title="User Profile" {...props} />;
 export const FeedbackView = (props: any) => <PlaceholderView title="Feedback" {...props} />;
-export const AuthVerify = (props: any) => <PlaceholderView title="Verify Email" {...props} />;

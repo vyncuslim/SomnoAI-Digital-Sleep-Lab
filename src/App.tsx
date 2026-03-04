@@ -14,7 +14,6 @@ import { Navbar } from './components/Navbar';
 
 // Lazy load components
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
-const AuthVerify = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AuthVerify })));
 const Dashboard = lazy(() => import('./components/Placeholders').then(module => ({ default: module.Dashboard || module.PlaceholderView }))); // Fallback
 const AdminView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AdminView })));
 const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
