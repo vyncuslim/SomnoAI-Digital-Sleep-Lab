@@ -46,10 +46,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     { label: isZh ? '产品' : 'Product', view: 'product', icon: Sparkles },
     { label: isZh ? '原理' : 'How it Works', view: 'how-it-works', icon: Binary },
     { label: isZh ? '研究' : 'Research', view: 'research', icon: Microscope },
-    { label: t.landing.nav.science, view: 'science', icon: FlaskConical },
-    { label: t.landing.nav.news, view: 'news', icon: Newspaper },
-    { label: t.landing.nav.faq, view: 'faq', icon: HelpCircle },
-    { label: t.landing.nav.project, view: 'about', icon: Info },
+    { label: t.nav.science, view: 'science', icon: FlaskConical },
+    { label: t.nav.news, view: 'news', icon: Newspaper },
+    { label: t.nav.faq, view: 'faq', icon: HelpCircle },
+    { label: t.nav.project, view: 'about', icon: Info },
   ];
 
   const authLinks = [
@@ -169,7 +169,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         ) : (
           <div className="hidden sm:flex items-center gap-6">
             <button onClick={() => onNavigate('signup')} className="text-[10px] font-black text-slate-500 hover:text-white transition-all tracking-[0.2em] uppercase italic">
-              {t.landing.nav.signup}
+              {t.nav.signup}
             </button>
             <m.button 
               whileHover={{ scale: 1.05 }} 
@@ -177,7 +177,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onNavigate('login')} 
               className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-500 transition-all italic flex items-center gap-3 shadow-lg"
             >
-              <LogIn size={14} /> {t.landing.nav.enter}
+              <LogIn size={14} /> {t.nav.enter}
             </m.button>
           </div>
         )}
@@ -269,10 +269,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <div className="flex flex-col gap-4">
                   <button onClick={() => onNavigate('signup')} className="w-full py-4 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest italic text-slate-400">
-                    {t.landing.nav.signup}
+                    {t.nav.signup}
                   </button>
                   <button onClick={() => onNavigate('login')} className="w-full py-4 bg-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest italic text-white shadow-xl">
-                    {t.landing.nav.enter}
+                    {t.nav.enter}
                   </button>
                 </div>
               )}

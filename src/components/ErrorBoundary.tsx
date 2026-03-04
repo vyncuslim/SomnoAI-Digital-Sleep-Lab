@@ -33,15 +33,23 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
           </h1>
           <p className="text-slate-400 max-w-md mb-8 leading-relaxed">
             {isZh 
-              ? "我们在加载此实验室节点时遇到了意外错误。请尝试刷新页面或稍后再试。" 
+              ? "我们在加载此实验室节点时遇到了意外错误。请尝试刷新页面或联系支持团队。" 
               : "We encountered an unexpected error while loading this laboratory node. Please try refreshing the page or contact support if the issue persists."}
           </p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-bold transition-all shadow-lg shadow-indigo-500/20"
-          >
-            {isZh ? "刷新页面" : "Refresh Page"}
-          </button>
+          <div className="flex gap-4">
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-8 py-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-bold transition-all shadow-lg shadow-indigo-500/20"
+            >
+              {isZh ? "刷新页面" : "Refresh Page"}
+            </button>
+            <a 
+              href="/contact" 
+              className="px-8 py-3 bg-white/5 hover:bg-white/10 text-white rounded-full font-bold transition-all border border-white/10"
+            >
+              {isZh ? "联系支持" : "Contact Support"}
+            </a>
+          </div>
         </div>
       );
     }

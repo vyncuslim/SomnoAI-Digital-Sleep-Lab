@@ -1,10 +1,10 @@
 <svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="planetGrad" x1="20%" y1="20%" x2="80%" y2="80%">
-      <stop offset="0%" stop-color="#FFD700" />
-      <stop offset="20%" stop-color="#FF8C00" />
-      <stop offset="50%" stop-color="#C71585" />
-      <stop offset="100%" stop-color="#191970" />
+      <stop offset="0%" stop-color="#4B0082" />
+      <stop offset="20%" stop-color="#8A2BE2" />
+      <stop offset="50%" stop-color="#4169E1" />
+      <stop offset="100%" stop-color="#000080" />
     </linearGradient>
     <linearGradient id="ringGrad" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#FF69B4" />
