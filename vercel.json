@@ -1,5 +1,7 @@
 {
   "version": 2,
+  "cleanUrls": true,
+  "trailingSlash": false,
   "headers": [
     {
       "source": "/(.*)",
@@ -8,39 +10,18 @@
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
         { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(self), payment=(self)" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' https:;" }
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://unpkg.com/@elevenlabs/convai-widget-embed; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https: wss:; frame-src 'self' https://www.google.com/recaptcha/;" }
       ]
     }
   ],
   "redirects": [
-    { "source": "/.env", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/.env.local", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/.env.production", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/.git/(.*)", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/.htaccess", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/wp-config.php", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/backup.sql", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/database.sql", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/dump.sql", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/config.js", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/config.json", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/phpinfo.php", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/phpmyadmin", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/adminer.php", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/backup.zip", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/admin", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/wp-admin", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/web.config", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/server-status", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/server-info", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/package.json", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/crossdomain.xml", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/.DS_Store", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/Thumbs.db", "destination": "/404.html", "permanent": false, "statusCode": 404 },
-    { "source": "/composer.json", "destination": "/404.html", "permanent": false, "statusCode": 404 }
+    { "source": "/.env", "destination": "/404", "permanent": false },
+    { "source": "/.git/(.*)", "destination": "/404", "permanent": false },
+    { "source": "/wp-config.php", "destination": "/404", "permanent": false },
+    { "source": "/package.json", "destination": "/404", "permanent": false }
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    { "source": "/((?!api/|favicon.svg|manifest.json|robots.txt|og-image.svg|sw.js).*)", "destination": "/index.html" }
   ]
 }
