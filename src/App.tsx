@@ -176,7 +176,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       } />
       <Route path="admin" element={
         <ProtectedRoute adminOnly>
-          <AdminView />
+          <AdminView lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
       <Route path="settings" element={

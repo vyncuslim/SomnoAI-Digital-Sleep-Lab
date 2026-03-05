@@ -1,6 +1,6 @@
 # Supabase Environment Setup Guide
 
-This guide explains how to configure Supabase for the SomnoAI Digital Sleep Lab project.
+This guide explains how to configure Supabase for the Digital Sleep Lab project.
 
 ## Prerequisites
 

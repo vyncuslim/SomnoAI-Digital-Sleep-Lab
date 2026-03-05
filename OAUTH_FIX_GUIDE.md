@@ -1,6 +1,6 @@
 # Google OAuth Login Fix Guide
 
-This guide provides troubleshooting steps for resolving "Failed to fetch" or other errors during Google OAuth login in the SomnoAI Digital Sleep Lab project.
+This guide provides troubleshooting steps for resolving "Failed to fetch" or other errors during Google OAuth login in the Digital Sleep Lab project.
 
 ## Common Issues and Solutions
 

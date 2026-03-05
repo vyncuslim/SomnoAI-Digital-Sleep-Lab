@@ -1,6 +1,6 @@
 
 -- ==========================================
--- SOMNO LAB CORE SCHEMA (V11.2)
+-- DIGITAL SLEEP LAB CORE SCHEMA (V11.2)
 -- ==========================================
 
 -- 1. Profiles Table (核心注册表)
