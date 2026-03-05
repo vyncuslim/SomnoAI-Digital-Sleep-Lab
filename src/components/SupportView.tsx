@@ -174,10 +174,10 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang, onBack, onNaviga
                     {[
                       { id: 'duitnow', label: 'TNG / DUITNOW', value: '+60 187807388' }, 
                       { id: 'paypal', label: 'PAYPAL DISPATCH', value: 'vyncuslim@icloud.com' },
-                      { id: 'support_email', label: 'SUPPORT NODE', value: 'support@digitalsleeplab.com' },
-                      { id: 'info_email', label: 'INFO NODE', value: 'info@digitalsleeplab.com' },
-                      { id: 'admin_email', label: 'ADMIN NODE', value: 'admin@digitalsleeplab.com' },
-                      { id: 'legal_email', label: 'LEGAL NODE', value: 'termandcondition@digitalsleeplab.com' }
+                      { id: 'support_email', label: 'SUPPORT NODE', value: 'support@sleepsomno.com' },
+                      { id: 'contact_email', label: 'CONTACT NODE', value: 'contact@sleepsomno.com' },
+                      { id: 'admin_email', label: 'ADMIN NODE', value: 'admin@sleepsomno.com' },
+                      { id: 'legal_email', label: 'LEGAL NODE', value: 'legal@sleepsomno.com' }
                     ].map((item) => (
                       <div key={item.id} className="p-6 bg-slate-900 border border-white/5 rounded-[2rem] flex items-center justify-between group hover:border-indigo-500/40 transition-all shadow-inner">
                         <div className="space-y-1">

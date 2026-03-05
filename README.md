@@ -35,5 +35,5 @@ Digital Sleep Lab adopts a **"Strategic Physical Isolation"** model to balance c
 
 ---
 
-**Developer**: [contact@digitalsleeplab.com](mailto:contact@digitalsleeplab.com)  
+**Developer**: [contact@sleepsomno.com](mailto:contact@sleepsomno.com)  
 **Domain**: [https://digitalsleeplab.com](https://digitalsleeplab.com)

@@ -201,7 +201,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
         </p>
       </div>
       <p className="text-sm text-slate-500 max-w-xl mb-12">
-        System has logged this incident. If this was a mistake, please contact admin@digitalsleeplab.com immediately.
+        System has logged this incident. If this was a mistake, please contact admin@sleepsomno.com immediately.
       </p>
       <button onClick={onBack} className="px-8 py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full font-bold uppercase tracking-widest transition-all">
         Return to Safety
@@ -264,8 +264,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       const revs = rRes.status === 'fulfilled' ? (rRes as any).value.data || [] : [];
       if (revs.length === 0) {
         setReviews([
-          { id: '1', rating: 5, comment: 'Incredible sleep insights. The AI analysis is spot on!', user_email: 'demo@digitalsleeplab.com', created_at: new Date().toISOString() },
-          { id: '2', rating: 4, comment: 'Very helpful for tracking my recovery.', user_email: 'tester@digitalsleeplab.com', created_at: new Date(Date.now() - 86400000).toISOString() },
+          { id: '1', rating: 5, comment: 'Incredible sleep insights. The AI analysis is spot on!', user_email: 'demo@sleepsomno.com', created_at: new Date().toISOString() },
+          { id: '2', rating: 4, comment: 'Very helpful for tracking my recovery.', user_email: 'tester@sleepsomno.com', created_at: new Date(Date.now() - 86400000).toISOString() },
           { id: '3', rating: 5, comment: 'Best sleep app I have used so far.', user_email: 'sleepy@example.com', created_at: new Date(Date.now() - 172800000).toISOString() }
         ]);
       } else {
@@ -753,10 +753,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     </label>
                     <input 
                       type="email" 
-                      value={settings.email_recipient_security || 'security@digitalsleeplab.com'}
+                      value={settings.email_recipient_security || 'admin@sleepsomno.com'}
                       onChange={(e) => handleSaveSettings({ email_recipient_security: e.target.value })}
                       className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-rose-500 outline-none transition-colors font-mono"
-                      placeholder="security@digitalsleeplab.com"
+                      placeholder="admin@sleepsomno.com"
                     />
                   </div>
                 </div>
@@ -793,10 +793,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     </label>
                     <input 
                       type="email" 
-                      value={settings.email_recipient_support || 'support@digitalsleeplab.com'}
+                      value={settings.email_recipient_support || 'support@sleepsomno.com'}
                       onChange={(e) => handleSaveSettings({ email_recipient_support: e.target.value })}
                       className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors font-mono"
-                      placeholder="support@digitalsleeplab.com"
+                      placeholder="support@sleepsomno.com"
                     />
                   </div>
                 </div>
