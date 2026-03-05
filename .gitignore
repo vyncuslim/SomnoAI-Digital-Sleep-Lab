@@ -22,3 +22,24 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Sensitive files and directories
+.env*
+.git/
+backup.sql
+database.sql
+dump.sql
+wp-config.php
+config.js
+config.json
+phpinfo.php
+phpmyadmin
+adminer.php
+backup.zip
+web.config
+server-status
+server-info
+composer.json
+crossdomain.xml
+Thumbs.db
+.htaccess

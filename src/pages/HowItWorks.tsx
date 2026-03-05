@@ -11,8 +11,8 @@ interface HowItWorksProps {
 export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
   return (
     <MarketingPageTemplate
-      title={lang === 'zh' ? "SomnoAI Digital Sleep Lab 平台的工作原理" : "How the SomnoAI Digital Sleep Lab Platform Works"}
-      subtitle={lang === 'zh' ? "SomnoAI Digital Sleep Lab 平台通过结构化的分析过程分析睡眠相关信息，旨在将原始行为信号转化为可解释的见解。" : "The SomnoAI Digital Sleep Lab platform analyzes sleep-related information through a structured analytical process designed to transform raw behavioral signals into interpretable insights."}
+      title={lang === 'zh' ? "Digital Sleep Lab 平台的工作原理" : "How the Digital Sleep Lab Platform Works"}
+      subtitle={lang === 'zh' ? "Digital Sleep Lab 平台通过结构化的分析过程分析睡眠相关信息，旨在将原始行为信号转化为可解释的见解。" : "The Digital Sleep Lab platform analyzes sleep-related information through a structured analytical process designed to transform raw behavioral signals into interpretable insights."}
       ctaPrimary={{ text: lang === 'zh' ? "查看方法" : "See Method", link: "/science" }}
       ctaSecondary={{ text: lang === 'zh' ? "阅读研究" : "Read Research", link: "/research" }}
     >
@@ -21,8 +21,8 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
           <Section title={lang === 'zh' ? "分析过程" : "The Analytical Process"}>
             <p className="text-lg text-slate-400 leading-relaxed mb-12">
               {lang === 'zh'
-                ? "这一过程涉及多个阶段，共同从数据中提取有意义的模式。通过这种多阶段分析工作流程，SomnoAI Digital Sleep Lab 寻求通过将复杂数据转化为可解释的观察结果，提供对睡眠行为的更深入理解。"
-                : "This process involves several stages that work together to extract meaningful patterns from data. Through this multi-stage analytical workflow, SomnoAI Digital Sleep Lab seeks to provide a deeper understanding of sleep behavior by transforming complex data into interpretable observations."}
+                ? "这一过程涉及多个阶段，共同从数据中提取有意义的模式。通过这种多阶段分析工作流程，Digital Sleep Lab 寻求通过将复杂数据转化为可解释的观察结果，提供对睡眠行为的更深入理解。"
+                : "This process involves several stages that work together to extract meaningful patterns from data. Through this multi-stage analytical workflow, Digital Sleep Lab seeks to provide a deeper understanding of sleep behavior by transforming complex data into interpretable observations."}
             </p>
 
             <div className="space-y-12 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-indigo-500/50 before:via-indigo-500/20 before:to-transparent">
@@ -60,8 +60,8 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
                   <h3 className="text-2xl font-bold text-white mb-4">{lang === 'zh' ? "2. 信号处理" : "2. Signal Processing"}</h3>
                   <p className="text-slate-400 leading-relaxed mb-6">
                     {lang === 'zh'
-                      ? "数据收集完成后，SomnoAI Digital Sleep Lab 系统开始信号处理。在此阶段，平台组织传入的数据并为计算分析做好准备。原始信号可能包含噪声、不规则性或不一致性。预处理技术有助于确保数据能够可靠地解释。"
-                      : "Once data is collected, the SomnoAI Digital Sleep Lab system begins signal processing. In this stage, the platform organizes incoming data and prepares it for computational analysis. Raw signals may contain noise, irregularities, or inconsistencies. Pre-processing techniques help ensure that the data can be interpreted reliably."}
+                      ? "数据收集完成后，Digital Sleep Lab 系统开始信号处理。在此阶段，平台组织传入的数据并为计算分析做好准备。原始信号可能包含噪声、不规则性或不一致性。预处理技术有助于确保数据能够可靠地解释。"
+                      : "Once data is collected, the Digital Sleep Lab system begins signal processing. In this stage, the platform organizes incoming data and prepares it for computational analysis. Raw signals may contain noise, irregularities, or inconsistencies. Pre-processing techniques help ensure that the data can be interpreted reliably."}
                   </p>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20">
@@ -131,8 +131,8 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
           <Section>
             <AlertBanner title={lang === 'zh' ? "模型局限性" : "Model Limitations"} type="warning">
               {lang === 'zh'
-                ? "SomnoAI Digital Sleep Lab 使用的分析过程侧重于观察性见解，而非临床结论。虽然计算模型可以揭示行为数据中令人感兴趣的模式，但它们不能取代专业的医疗评估。"
-                : "The analytical process used by SomnoAI Digital Sleep Lab focuses on observational insights rather than clinical conclusions. While computational models can reveal interesting patterns within behavioral data, they cannot replace professional medical evaluation."}
+                ? "Digital Sleep Lab 使用的分析过程侧重于观察性见解，而非临床结论。虽然计算模型可以揭示行为数据中令人感兴趣的模式，但它们不能取代专业的医疗评估。"
+                : "The analytical process used by Digital Sleep Lab focuses on observational insights rather than clinical conclusions. While computational models can reveal interesting patterns within behavioral data, they cannot replace professional medical evaluation."}
             </AlertBanner>
           </Section>
         </div>

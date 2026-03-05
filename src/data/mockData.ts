@@ -19,7 +19,7 @@ export const BLOG_POSTS = [
     id: '2',
     slug: 'ai-in-sleep',
     title: 'How AI Analyzes Your Rest',
-    excerpt: 'Exploring the algorithms behind SomnoAI Digital Sleep Lab\'s insights.',
+    excerpt: 'Exploring the algorithms behind Digital Sleep Lab\'s insights.',
     content: 'Full content here...',
     date: '2024-03-10',
     category: 'Technology',

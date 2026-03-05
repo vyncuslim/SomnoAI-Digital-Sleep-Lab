@@ -1,26 +1,26 @@
-# SomnoAI Digital Sleep Lab 🌙
+# Digital Sleep Lab 🌙
 
-**SomnoAI Digital Sleep Lab** integrates physiological indicator monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep lab experience.
+**Digital Sleep Lab** integrates physiological indicator monitoring, AI deep insights, and health advice to provide users with a comprehensive digital sleep lab experience.
 
-**SomnoAI Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。**
+**Digital Sleep Lab 将生理指标监控、AI 深度洞察与健康建议融为一体，为用户提供全方位的数字化睡眠实验室体验。**
 
 ---
 
 ## 🚀 Dual-Node Strategy (半开源架构)
 
-SomnoAI Digital Sleep Lab adopts a **"Strategic Physical Isolation"** model to balance community transparency with core intellectual property protection.
+Digital Sleep Lab adopts a **"Strategic Physical Isolation"** model to balance community transparency with core intellectual property protection.
 
-### 1. SomnoAI-Digital-Sleep-Lab-frontend (Public Node)
+### 1. Digital-Sleep-Lab-frontend (Public Node)
 - **Status**: [PUBLIC] MIT License
 - **Scope**: UI/UX, data visualization, client-side routing, and Gemini API orchestration.
 - **Goal**: Provide a professional, high-performance interface for laboratory subjects.
 
-### 2. SomnoAI-Digital-Sleep-Lab-core (Sovereign Node)
+### 2. Digital-Sleep-Lab-core (Sovereign Node)
 - **Status**: [PRIVATE] Proprietary
 - **Scope**: Neural synthesis algorithms, proprietary prompt engineering, model weights, and sensitive data processing logic.
-- **Goal**: The "Engine" of SomnoAI Digital Sleep Lab. Protected to ensure long-term competitive advantage.
+- **Goal**: The "Engine" of Digital Sleep Lab. Protected to ensure long-term competitive advantage.
 
-### 3. SomnoAI-Digital-Sleep-Lab-docs (Public Node)
+### 3. Digital-Sleep-Lab-docs (Public Node)
 - **Status**: [PUBLIC]
 - **Scope**: Architecture diagrams, Whitepapers, and Protocol Documentation.
 - **Goal**: Strategic display of system capabilities.
@@ -35,5 +35,5 @@ SomnoAI Digital Sleep Lab adopts a **"Strategic Physical Isolation"** model to b
 
 ---
 
-**Developer**: [contact@sleepsomno.com](mailto:contact@sleepsomno.com)  
-**Domain**: [https://sleepsomno.com](https://sleepsomno.com)
+**Developer**: [contact@digitalsleeplab.com](mailto:contact@digitalsleeplab.com)  
+**Domain**: [https://digitalsleeplab.com](https://digitalsleeplab.com)

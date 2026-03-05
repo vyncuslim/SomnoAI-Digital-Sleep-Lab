@@ -19,10 +19,10 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true, lan
       {showText && (
         <div className="flex flex-col">
           <span className="text-xl font-black italic tracking-tighter text-white leading-none">
-            SOMNO<span className="text-indigo-500">AI</span>
+            DIGITAL<span className="text-indigo-500"> SLEEP LAB</span>
           </span>
           <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-slate-500 leading-none mt-1">
-            {lang === 'zh' ? "您的AI驱动睡眠伴侣" : "Digital Sleep Lab"}
+            {lang === 'zh' ? "您的AI驱动睡眠伴侣" : "AI Powered Analysis"}
           </span>
         </div>
       )}

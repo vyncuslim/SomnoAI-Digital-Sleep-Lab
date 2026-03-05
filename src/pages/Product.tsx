@@ -13,8 +13,8 @@ export const Product: React.FC<ProductProps> = ({ lang }) => {
   
   return (
     <MarketingPageTemplate
-      title={lang === 'zh' ? "SomnoAI Digital Sleep Lab 平台" : "SomnoAI Digital Sleep Lab Platform"}
-      subtitle={lang === 'zh' ? "SomnoAI Digital Sleep Lab 平台旨在分析睡眠相关信息，并生成有关行为睡眠模式的见解。" : "The SomnoAI Digital Sleep Lab platform is designed to analyze sleep-related information and generate insights about behavioral sleep patterns."}
+      title={lang === 'zh' ? "Digital Sleep Lab 平台" : "Digital Sleep Lab Platform"}
+      subtitle={lang === 'zh' ? "Digital Sleep Lab 平台旨在分析睡眠相关信息，并生成有关行为睡眠模式的见解。" : "The Digital Sleep Lab platform is designed to analyze sleep-related information and generate insights about behavioral sleep patterns."}
       ctaPrimary={{ text: lang === 'zh' ? "查看功能" : "View Features", link: "/features" }}
       ctaSecondary={{ text: t.nav?.signup || "Join Waitlist", link: "/auth/signup" }}
     >
@@ -27,8 +27,8 @@ export const Product: React.FC<ProductProps> = ({ lang }) => {
               <div className="prose prose-invert max-w-none text-slate-300">
                 <p className="text-lg leading-relaxed">
                   {lang === 'zh' 
-                    ? "传统的健康仪表板通常侧重于基本指标，如总睡眠时间或活动水平。虽然这些测量提供了有用的信息，但它们很少揭示影响睡眠质量的深层行为模式。SomnoAI Digital Sleep Lab 试图通过应用计算分析来检测睡眠数据中的趋势、相关性和不规则性，从而超越简单的测量。"
-                    : "Traditional health dashboards often focus on basic metrics such as total sleep duration or activity levels. While these measurements provide useful information, they rarely reveal the deeper behavioral patterns that influence sleep quality. SomnoAI Digital Sleep Lab attempts to move beyond simple measurements by applying computational analysis to detect trends, correlations, and irregularities within sleep data."}
+                    ? "传统的健康仪表板通常侧重于基本指标，如总睡眠时间或活动水平。虽然这些测量提供了有用的信息，但它们很少揭示影响睡眠质量的深层行为模式。Digital Sleep Lab 试图通过应用计算分析来检测睡眠数据中的趋势、相关性和不规则性，从而超越简单的测量。"
+                    : "Traditional health dashboards often focus on basic metrics such as total sleep duration or activity levels. While these measurements provide useful information, they rarely reveal the deeper behavioral patterns that influence sleep quality. Digital Sleep Lab attempts to move beyond simple measurements by applying computational analysis to detect trends, correlations, and irregularities within sleep data."}
                 </p>
                 <p className="text-lg leading-relaxed">
                   {lang === 'zh'
@@ -45,8 +45,8 @@ export const Product: React.FC<ProductProps> = ({ lang }) => {
               <div className="prose prose-invert max-w-none text-slate-300">
                 <p className="text-lg leading-relaxed">
                   {lang === 'zh'
-                    ? "该平台可以分析从兼容设备、数字健康生态系统或用户提供的数据记录中获得的信息。利用统计模型和人工智能技术，SomnoAI Digital Sleep Lab 处理这些信号，以识别传统仪表板可能无法看到的行为模式。"
-                    : "The platform may analyze information obtained from compatible devices, digital health ecosystems, or user-provided data records. Using statistical models and artificial intelligence techniques, SomnoAI Digital Sleep Lab processes these signals to identify behavioral patterns that may not be visible through traditional dashboards."}
+                    ? "该平台可以分析从兼容设备、数字健康生态系统或用户提供的数据记录中获得的信息。利用统计模型和人工智能技术，Digital Sleep Lab 处理这些信号，以识别传统仪表板可能无法看到的行为模式。"
+                    : "The platform may analyze information obtained from compatible devices, digital health ecosystems, or user-provided data records. Using statistical models and artificial intelligence techniques, Digital Sleep Lab processes these signals to identify behavioral patterns that may not be visible through traditional dashboards."}
                 </p>
               </div>
             )
@@ -58,8 +58,8 @@ export const Product: React.FC<ProductProps> = ({ lang }) => {
               <div className="prose prose-invert max-w-none text-slate-300">
                 <p className="text-lg leading-relaxed">
                   {lang === 'zh'
-                    ? "SomnoAI Digital Sleep Lab 平台的一个核心设计原则是可解释性。数据见解应该是易于理解的，而不是压倒性的。系统试图生成关于睡眠一致性、休息周期和行为节奏的清晰观察，而不是呈现大量的原始数字。"
-                    : "A key design principle of the SomnoAI Digital Sleep Lab platform is interpretability. Data insights should be understandable rather than overwhelming. Instead of presenting large volumes of raw numbers, the system attempts to generate clear observations about sleep consistency, rest cycles, and behavioral rhythms."}
+                    ? "Digital Sleep Lab 平台的一个核心设计原则是可解释性。数据见解应该是易于理解的，而不是压倒性的。系统试图生成关于睡眠一致性、休息周期和行为节奏的清晰观察，而不是呈现大量的原始数字。"
+                    : "A key design principle of the Digital Sleep Lab platform is interpretability. Data insights should be understandable rather than overwhelming. Instead of presenting large volumes of raw numbers, the system attempts to generate clear observations about sleep consistency, rest cycles, and behavioral rhythms."}
                 </p>
               </div>
             )
@@ -153,8 +153,8 @@ export const Product: React.FC<ProductProps> = ({ lang }) => {
             <h4 className="font-semibold text-white mb-2">{lang === 'zh' ? "这是一个医疗诊断工具吗？" : "Is this a medical diagnostic tool?"}</h4>
             <p className="text-slate-400 text-sm">
               {lang === 'zh'
-                ? "SomnoAI Digital Sleep Lab 并非旨在取代专业的医疗评估或临床睡眠实验室。相反，该平台专注于教育见解。"
-                : "SomnoAI Digital Sleep Lab is not intended to replace professional medical evaluation or clinical sleep laboratories. Instead, the platform focuses on educational insights."}
+                ? "Digital Sleep Lab 并非旨在取代专业的医疗评估或临床睡眠实验室。相反，该平台专注于教育见解。"
+                : "Digital Sleep Lab is not intended to replace professional medical evaluation or clinical sleep laboratories. Instead, the platform focuses on educational insights."}
             </p>
           </div>
           <div className="p-6 rounded-2xl bg-slate-900/50 border border-white/5">

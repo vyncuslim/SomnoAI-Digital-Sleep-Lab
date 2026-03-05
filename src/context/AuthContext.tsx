@@ -63,7 +63,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async (email: string) => {
+    console.log('signIn called', { email, authConfigured: !!auth });
     if (!auth) {
+      console.log('Firebase not configured, using mock login');
       const mockUser = { uid: 'mock-user-123', email };
       localStorage.setItem('mockUser', JSON.stringify(mockUser));
       setUser(mockUser);

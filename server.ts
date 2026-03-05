@@ -14,9 +14,24 @@ async function startServer() {
   // Security headers
   app.use(helmet());
 
+  // IP Whitelisting for admin paths
+  app.use((req, res, next) => {
+    const adminPaths = ['/admin', '/wp-admin'];
+    if (adminPaths.some(path => req.path.startsWith(path))) {
+      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress;
+      const allowedIp = process.env.ALLOWED_ADMIN_IP;
+
+      if (!allowedIp || clientIp !== allowedIp) {
+        res.status(403).send('Forbidden: Access Denied');
+        return;
+      }
+    }
+    next();
+  });
+
   // CORS configuration
   app.use(cors({
-    origin: ['https://sleepsomno.com'],
+    origin: ['https://digitalsleeplab.com'],
     credentials: true
   }));
 

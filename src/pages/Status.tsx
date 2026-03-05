@@ -48,7 +48,7 @@ export const Status: React.FC<StatusProps> = ({ lang }) => {
   return (
     <MarketingPageTemplate
       title={lang === 'zh' ? "系统状态" : "System Status"}
-      subtitle={lang === 'zh' ? "SomnoAI Digital Sleep Lab 服务性能和可用性的实时信息。" : "Real-time information on the performance and availability of SomnoAI Digital Sleep Lab services."}
+      subtitle={lang === 'zh' ? "Digital Sleep Lab 服务性能和可用性的实时信息。" : "Real-time information on the performance and availability of Digital Sleep Lab services."}
     >
       <Section title={lang === 'zh' ? "当前状态" : "Current Status"}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

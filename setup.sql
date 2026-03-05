@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS public.notification_recipients (
 
 -- 初始化默认接收节点
 INSERT INTO public.notification_recipients (email, label) 
-VALUES ('contact@sleepsomno.com', 'Primary Lab Admin')
+VALUES ('contact@digitalsleeplab.com', 'Primary Lab Admin')
 ON CONFLICT (email) DO NOTHING;
 
 -- 6. 登录尝试记录
@@ -119,12 +119,12 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- RPC: 封禁用户
-CREATE OR REPLACE FUNCTION public.block_user(target_email text)
+CREATE OR REPLACE FUNCTION public.block_user(user_id uuid)
 RETURNS void AS $$
 BEGIN
   UPDATE public.profiles 
   SET is_blocked = true 
-  WHERE email = target_email;
+  WHERE id = user_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
@@ -185,8 +185,16 @@ USING (
 DROP POLICY IF EXISTS "Profile self update" ON public.profiles;
 CREATE POLICY "Profile self update" ON public.profiles
 FOR UPDATE TO authenticated
-USING (auth.uid() = id AND is_blocked = false)
-WITH CHECK (auth.uid() = id AND is_blocked = false);
+USING (
+    (auth.uid() = id AND is_blocked = false)
+    OR
+    public.is_admin_check(auth.uid())
+)
+WITH CHECK (
+    (auth.uid() = id AND is_blocked = false)
+    OR
+    public.is_admin_check(auth.uid())
+);
 
 DROP POLICY IF EXISTS "Admin audit access" ON public.audit_logs;
 DROP POLICY IF EXISTS "Anyone can insert logs" ON public.audit_logs;

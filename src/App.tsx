@@ -16,7 +16,7 @@ import { Footer } from './components/Footer';
 // Lazy load components
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
 const Dashboard = lazy(() => import('./components/Placeholders').then(module => ({ default: module.Dashboard || module.PlaceholderView }))); // Fallback
-const AdminView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AdminView })));
+const AdminView = lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
 const FeedbackView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
 const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
@@ -132,75 +132,75 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
     }>
     <Routes>
       {/* Public Routes */}
-      <Route path="/" element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
-      <Route path="/auth" element={<Auth lang={lang} />} />
-      <Route path="/auth/login" element={<Auth lang={lang} initialView="login" />} />
-      <Route path="/auth/signin" element={<Auth lang={lang} initialView="login" />} />
-      <Route path="/auth/signup" element={<Auth lang={lang} initialView="signup" />} />
-      <Route path="/auth/verify" element={<Navigate to="/dashboard" replace />} />
-      <Route path="/auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
-      <Route path="/about" element={<About lang={lang} />} />
-      <Route path="/product" element={<Product lang={lang} />} />
-      <Route path="/how-it-works" element={<HowItWorks lang={lang} />} />
-      <Route path="/features" element={<Features lang={lang} />} />
-      <Route path="/research" element={<Research lang={lang} />} />
-      <Route path="/science" element={<Science lang={lang} />} />
-      <Route path="/founder" element={<Founder lang={lang} />} />
-      <Route path="/contact" element={<Contact lang={lang} />} />
-      <Route path="/faq" element={<FAQ lang={lang} />} />
-      <Route path="/status" element={<Status lang={lang} />} />
-      <Route path="/search" element={<SearchHub lang={lang} />} />
+      <Route index element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
+      <Route path="auth" element={<Auth lang={lang} />} />
+      <Route path="auth/login" element={<Auth lang={lang} initialView="login" />} />
+      <Route path="auth/signin" element={<Auth lang={lang} initialView="login" />} />
+      <Route path="auth/signup" element={<Auth lang={lang} initialView="signup" />} />
+      <Route path="auth/verify" element={<Navigate to="/dashboard" replace />} />
+      <Route path="auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
+      <Route path="about" element={<About lang={lang} />} />
+      <Route path="product" element={<Product lang={lang} />} />
+      <Route path="how-it-works" element={<HowItWorks lang={lang} />} />
+      <Route path="features" element={<Features lang={lang} />} />
+      <Route path="research" element={<Research lang={lang} />} />
+      <Route path="science" element={<Science lang={lang} />} />
+      <Route path="founder" element={<Founder lang={lang} />} />
+      <Route path="contact" element={<Contact lang={lang} />} />
+      <Route path="faq" element={<FAQ lang={lang} />} />
+      <Route path="status" element={<Status lang={lang} />} />
+      <Route path="search" element={<SearchHub lang={lang} />} />
       
       {/* Blog & News */}
-      <Route path="/blog" element={<BlogHub lang={lang} onSelectPost={(post: any) => navigate(`/blog/${post.slug}`)} />} />
-      <Route path="/blog/:slug" element={<BlogPostWrapper lang={lang} />} />
-      <Route path="/news" element={<NewsHub lang={lang} onSelectArticle={(article: any) => navigate(`/news/${article.slug}`)} />} />
-      <Route path="/news/:slug" element={<ArticleWrapper lang={lang} />} />
-      <Route path="/changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
+      <Route path="blog" element={<BlogHub lang={lang} onSelectPost={(post: any) => navigate(`/blog/${post.slug}`)} />} />
+      <Route path="blog/:slug" element={<BlogPostWrapper lang={lang} />} />
+      <Route path="news" element={<NewsHub lang={lang} onSelectArticle={(article: any) => navigate(`/news/${article.slug}`)} />} />
+      <Route path="news/:slug" element={<ArticleWrapper lang={lang} />} />
+      <Route path="changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
 
       {/* Legal & Support */}
-      <Route path="/legal" element={<LegalHub lang={lang} />} />
-      <Route path="/legal/:type" element={<DynamicPage lang={lang} />} />
-      <Route path="/privacy" element={<Navigate to="/legal/privacy-policy" replace />} />
-      <Route path="/terms" element={<Navigate to="/legal/terms-of-service" replace />} />
-      <Route path="/policy" element={<Navigate to="/legal/policy-framework" replace />} />
-      <Route path="/opensource" element={<Navigate to="/legal/open-source" replace />} />
-      <Route path="/support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
-      <Route path="/report-abuse" element={<Navigate to="/legal/abuse-policy" replace />} />
+      <Route path="legal" element={<LegalHub lang={lang} />} />
+      <Route path="legal/:type" element={<DynamicPage lang={lang} />} />
+      <Route path="privacy" element={<Navigate to="/legal/privacy-policy" replace />} />
+      <Route path="terms" element={<Navigate to="/legal/terms-of-service" replace />} />
+      <Route path="policy" element={<Navigate to="/legal/policy-framework" replace />} />
+      <Route path="opensource" element={<Navigate to="/legal/open-source" replace />} />
+      <Route path="support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
+      <Route path="report-abuse" element={<Navigate to="/legal/abuse-policy" replace />} />
 
       {/* Protected Routes */}
-      <Route path="/dashboard" element={
+      <Route path="dashboard" element={
         <ProtectedRoute>
           <Dashboard lang={lang} />
         </ProtectedRoute>
       } />
-      <Route path="/admin" element={
-        <ProtectedRoute>
-          <AdminView lang={lang} onBack={handleBack} />
+      <Route path="admin" element={
+        <ProtectedRoute adminOnly>
+          <AdminView />
         </ProtectedRoute>
       } />
-      <Route path="/settings" element={
+      <Route path="settings" element={
         <ProtectedRoute>
           <UserProfile lang={lang} onBack={handleBack} onNavigate={handleNavigate} />
         </ProtectedRoute>
       } />
 
-      <Route path="/feedback" element={
+      <Route path="feedback" element={
         <ProtectedRoute>
           <FeedbackView lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
-      <Route path="/experiment" element={
+      <Route path="experiment" element={
         <ProtectedRoute>
           <ExperimentView data={latestData} lang={lang} />
         </ProtectedRoute>
       } />
-      <Route path="/journal" element={
+      <Route path="journal" element={
         <ProtectedRoute>
           <DiaryView lang={lang} />
         </ProtectedRoute>
       } />
-      <Route path="/ai-assistant" element={
+      <Route path="ai-assistant" element={
         <ProtectedRoute>
           <AIAssistant lang={lang} data={latestData} history={history} />
         </ProtectedRoute>

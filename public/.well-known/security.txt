@@ -1,7 +1,7 @@
-Contact: mailto:security@sleepsomno.com
+Contact: mailto:security@digitalsleeplab.com
 Expires: 2027-02-21T08:00:00.000Z
-Encryption: https://sleepsomno.com/pgp-key.txt
-Acknowledgments: https://sleepsomno.com/hall-of-fame
-Policy: https://sleepsomno.com/security-policy
-Hiring: https://sleepsomno.com/careers
+Encryption: https://digitalsleeplab.com/pgp-key.txt
+Acknowledgments: https://digitalsleeplab.com/hall-of-fame
+Policy: https://digitalsleeplab.com/security-policy
+Hiring: https://digitalsleeplab.com/careers
 Preferred-Languages: en, zh

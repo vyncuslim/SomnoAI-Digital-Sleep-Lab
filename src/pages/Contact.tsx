@@ -18,11 +18,11 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card 
             title={lang === 'zh' ? "一般查询" : "General Inquiries"} 
-            description={lang === 'zh' ? "关于 SomnoAI Digital Sleep Lab 平台的一般问题。" : "For general questions about the SomnoAI Digital Sleep Lab platform."}
+            description={lang === 'zh' ? "关于 Digital Sleep Lab 平台的一般问题。" : "For general questions about the Digital Sleep Lab platform."}
             icon={<Globe />}
           >
             <div className="mt-4 pt-4 border-t border-white/5">
-              <a href="mailto:info@somnoai.com" className="text-indigo-400 hover:text-indigo-300 transition-colors text-sm font-medium">info@somnoai.com</a>
+              <a href="mailto:info@digitalsleeplab.com" className="text-indigo-400 hover:text-indigo-300 transition-colors text-sm font-medium">info@digitalsleeplab.com</a>
             </div>
           </Card>
           <Card 
@@ -31,7 +31,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
             icon={<MessageSquare />}
           >
             <div className="mt-4 pt-4 border-t border-white/5">
-              <a href="mailto:research@somnoai.com" className="text-indigo-400 hover:text-indigo-300 transition-colors text-sm font-medium">research@somnoai.com</a>
+              <a href="mailto:research@digitalsleeplab.com" className="text-indigo-400 hover:text-indigo-300 transition-colors text-sm font-medium">research@digitalsleeplab.com</a>
             </div>
           </Card>
           <Card 
@@ -40,7 +40,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
             icon={<Mail />}
           >
             <div className="mt-4 pt-4 border-t border-white/5">
-              <a href="mailto:support@somnoai.com" className="text-indigo-400 hover:text-indigo-300 transition-colors text-sm font-medium">support@somnoai.com</a>
+              <a href="mailto:support@digitalsleeplab.com" className="text-indigo-400 hover:text-indigo-300 transition-colors text-sm font-medium">support@digitalsleeplab.com</a>
             </div>
           </Card>
           <Card 

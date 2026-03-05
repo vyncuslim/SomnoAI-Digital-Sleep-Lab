@@ -6,6 +6,7 @@ import { GlassCard } from './GlassCard';
 import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
 import { auth } from '../lib/firebase';
+import { supabase } from '../services/supabaseService';
 import { useAuth } from '../context/AuthContext';
 import { 
   createUserWithEmailAndPassword, 
@@ -27,22 +28,45 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
+  const [privacyApproved, setPrivacyApproved] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
   const t = getTranslation(lang, 'landing');
+
+  const getPasswordStrength = (pass: string) => {
+    if (!pass) return 0;
+    let score = 0;
+    if (pass.length >= 6) score += 1;
+    if (pass.length >= 10) score += 1;
+    if (/[A-Z]/.test(pass)) score += 1;
+    if (/[0-9]/.test(pass)) score += 1;
+    if (/[^A-Za-z0-9]/.test(pass)) score += 1;
+    return score;
+  };
+
+  const strength = getPasswordStrength(password);
 
   const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    console.log('handleSubmit called', { view, email, termsApproved });
     
     setLoading(true);
     setError(null);
 
     try {
-      if (view === 'signup' && !termsApproved) {
-        throw new Error('You must approve the terms and privacy policy.');
+      if (view === 'signup') {
+        if (!termsApproved || !privacyApproved) {
+          console.log('Terms or Privacy not approved');
+          throw new Error('You must approve the Terms of Service and Privacy Policy.');
+        }
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match.');
+        }
       }
 
       if (!auth) {
+        console.log('Firebase not configured, using mock login');
         // Mock login if Firebase is not configured
         await signIn(email);
         navigate('/dashboard');
@@ -68,6 +92,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
     } catch (err: any) {
       console.error('Auth error:', err);
+      
+      // Report failed login to Supabase if it's a login attempt
+      if (view === 'login') {
+        try {
+          await supabase.rpc('report_failed_login', { target_email: email });
+        } catch (rpcErr) {
+          console.error('Failed to report login attempt:', rpcErr);
+        }
+      }
+
       // Make Firebase error messages more user-friendly
       let errorMessage = err.message || 'Authentication failed';
       if (err.code === 'auth/invalid-credential') {
@@ -129,7 +163,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             {view === 'login' ? (lang === 'zh' ? '欢迎回来' : 'Welcome Back') : (lang === 'zh' ? '加入实验室' : 'Join the Lab')}
           </h1>
           <p className="text-slate-500 text-xs font-mono uppercase tracking-[0.3em] mt-2">
-            SomnoAI Digital Sleep Lab • Neural Access
+            Digital Sleep Lab • Neural Access
           </p>
         </div>
 
@@ -171,17 +205,63 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             </div>
 
             {view === 'signup' && (
-              <div className="flex items-center gap-3 ml-2">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={termsApproved}
-                  onChange={(e) => setTermsApproved(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
-                />
-                <label htmlFor="terms" className="text-xs text-slate-400">
-                  I approve <Link to="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">terms</Link> and <Link to="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">privacy</Link>.
-                </label>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">Confirm Password</label>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                  <input 
+                    type="password" 
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-700"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
+                
+                {password && (
+                  <div className="px-4 pt-2">
+                    <div className="flex gap-1 h-1 mb-1">
+                      <div className={`flex-1 rounded-full transition-all duration-300 ${strength >= 1 ? 'bg-rose-500' : 'bg-slate-800'}`} />
+                      <div className={`flex-1 rounded-full transition-all duration-300 ${strength >= 2 ? 'bg-orange-500' : 'bg-slate-800'}`} />
+                      <div className={`flex-1 rounded-full transition-all duration-300 ${strength >= 3 ? 'bg-yellow-500' : 'bg-slate-800'}`} />
+                      <div className={`flex-1 rounded-full transition-all duration-300 ${strength >= 4 ? 'bg-lime-500' : 'bg-slate-800'}`} />
+                      <div className={`flex-1 rounded-full transition-all duration-300 ${strength >= 5 ? 'bg-emerald-500' : 'bg-slate-800'}`} />
+                    </div>
+                    <p className="text-[10px] text-slate-500 text-right font-mono uppercase tracking-wider">
+                      {strength < 2 ? 'Weak' : strength < 4 ? 'Medium' : 'Strong'}
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {view === 'signup' && (
+              <div className="space-y-3 ml-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={termsApproved}
+                    onChange={(e) => setTermsApproved(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                  />
+                  <label htmlFor="terms" className="text-xs text-slate-400">
+                    I agree to the <Link to="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Terms of Service</Link>.
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="privacy"
+                    checked={privacyApproved}
+                    onChange={(e) => setPrivacyApproved(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                  />
+                  <label htmlFor="privacy" className="text-xs text-slate-400">
+                    I agree to the <Link to="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Privacy Policy</Link>.
+                  </label>
+                </div>
               </div>
             )}
 

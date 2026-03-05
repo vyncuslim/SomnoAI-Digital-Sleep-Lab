@@ -150,7 +150,7 @@ export const Features: React.FC<FeaturesProps> = ({ lang }) => {
         </div>
       </Section>
 
-      <Section title={lang === 'zh' ? "传统仪表板 vs SomnoAI Digital Sleep Lab" : "Traditional Dashboards vs SomnoAI Digital Sleep Lab"}>
+      <Section title={lang === 'zh' ? "传统仪表板 vs Digital Sleep Lab" : "Traditional Dashboards vs Digital Sleep Lab"}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5">
             <h3 className="text-xl font-bold text-slate-300 mb-6">{lang === 'zh' ? "传统仪表板" : "Traditional Dashboards"}</h3>
@@ -170,7 +170,7 @@ export const Features: React.FC<FeaturesProps> = ({ lang }) => {
             </ul>
           </div>
           <div className="p-8 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
-            <h3 className="text-xl font-bold text-indigo-400 mb-6">SomnoAI Digital Sleep Lab</h3>
+            <h3 className="text-xl font-bold text-indigo-400 mb-6">Digital Sleep Lab</h3>
             <ul className="space-y-4 text-indigo-200/80">
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />

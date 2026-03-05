@@ -10,6 +10,7 @@ import {
 import { MarketingPageTemplate } from './ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA } from './ui/Components';
 import { Language, getTranslation } from '../services/i18n';
+import { useAuth } from '../context/AuthContext';
 
 interface LandingPageProps {
   lang: Language;
@@ -18,6 +19,7 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
   const t = getTranslation(lang, 'landing');
 
   const stats = [
@@ -70,12 +72,23 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
   return (
     <MarketingPageTemplate
       title={
-        <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter text-white mb-6">
-          SOMNOAI <br />
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
-            DIGITAL SLEEP LAB
-          </span>
-        </h1>
+        <div className="mb-6">
+          {user && (
+            <motion.p 
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-indigo-400 font-bold uppercase tracking-widest text-sm mb-2"
+            >
+              {lang === 'zh' ? '欢迎回来,' : 'Welcome back,'} {profile?.email || user.email}
+            </motion.p>
+          )}
+          <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter text-white">
+            DIGITAL SLEEP LAB <br />
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
+              AI ANALYSIS
+            </span>
+          </h1>
+        </div>
       }
       subtitle={t.heroSubtitle || "Connect your wearable → Get AI recovery intelligence. Upload your sleep data, let our AI analyze it, and wake up to actionable recovery protocols."}
       ctaPrimary={{ text: t.ctaPrimary || "Start Analysis", link: "/auth/signup" }}
@@ -155,7 +168,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
       {/* Who is it for? */}
       <Section 
         title={lang === 'zh' ? '为谁设计？' : 'Who is it for?'} 
-        description={lang === 'zh' ? '无论您的目标是什么，SomnoAI Digital Sleep Lab 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI Digital Sleep Lab provides customized recovery strategies.'}
+        description={lang === 'zh' ? '无论您的目标是什么，Digital Sleep Lab 都能提供定制化的恢复策略。' : 'Whatever your goal, Digital Sleep Lab provides customized recovery strategies.'}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
@@ -209,8 +222,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
               </div>
               <p className="text-lg text-slate-400 leading-relaxed max-w-2xl italic font-medium">
                 {lang === 'zh' 
-                  ? 'SomnoAI Digital Sleep Lab 由 Vyncus Lim 创立，旨在通过 AI 解码人类睡眠的复杂性。' 
-                  : 'Founded by Vyncus Lim, SomnoAI Digital Sleep Lab is driven by a mission to decode the complexities of human sleep through artificial intelligence.'}
+                  ? 'Digital Sleep Lab 由 Vyncus Lim 创立，旨在通过 AI 解码人类睡眠的复杂性。' 
+                  : 'Founded by Vyncus Lim, Digital Sleep Lab is driven by a mission to decode the complexities of human sleep through artificial intelligence.'}
               </p>
               <InlineCTA text={t.founder?.readMore || "Read Founder's Vision"} link="/founder" />
             </div>

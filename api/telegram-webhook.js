@@ -35,7 +35,7 @@ export default async function handler(req, res) {
     // FIXED: Exclusive process.env.API_KEY usage
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     
-    const systemInstruction = `You are the SomnoAI Digital Sleep Lab Chief Research Officer (CRO).
+    const systemInstruction = `You are the Digital Sleep Lab Chief Research Officer (CRO).
     
     RESPONSE PROTOCOL (STRICT):
     - Provide response in THREE languages: 🇬🇧 [ENGLISH], 🇪🇸 [ESPAÑOL], 🇨🇳 [中文].

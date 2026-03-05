@@ -10,16 +10,16 @@ interface FAQProps {
 export const FAQ: React.FC<FAQProps> = ({ lang }) => {
   const faqItems = [
     {
-      title: lang === 'zh' ? "什么是 SomnoAI Digital Sleep Lab？" : "What is SomnoAI Digital Sleep Lab?",
+      title: lang === 'zh' ? "什么是 Digital Sleep Lab？" : "What is Digital Sleep Lab?",
       content: lang === 'zh' 
-        ? "SomnoAI Digital Sleep Lab 是一项以研究为导向的技术倡议，致力于探索人工智能和先进的数据分析如何加深对人类睡眠的理解。我们将来自可穿戴设备的原始行为信号转化为关于休息、恢复和节律的有意义的见解。"
-        : "SomnoAI Digital Sleep Lab is a research-driven technology initiative dedicated to exploring how artificial intelligence and advanced data analysis can deepen the understanding of human sleep. We transform raw behavioral signals from wearable devices into meaningful insights about rest, recovery, and rhythms."
+        ? "Digital Sleep Lab 是一项以研究为导向的技术倡议，致力于探索人工智能和先进的数据分析如何加深对人类睡眠的理解。我们将来自可穿戴设备的原始行为信号转化为关于休息、恢复和节律的有意义的见解。"
+        : "Digital Sleep Lab is a research-driven technology initiative dedicated to exploring how artificial intelligence and advanced data analysis can deepen the understanding of human sleep. We transform raw behavioral signals from wearable devices into meaningful insights about rest, recovery, and rhythms."
     },
     {
       title: lang === 'zh' ? "这是一种医疗设备吗？" : "Is this a medical device?",
       content: lang === 'zh'
-        ? "不。SomnoAI Digital Sleep Lab 是一个信息和研究平台。它不旨在诊断、治疗或预防任何医疗状况。对于与睡眠相关的医疗问题，请务必咨询医疗保健专业人员。"
-        : "No. SomnoAI Digital Sleep Lab is an informational and research platform. It is not intended to diagnose, treat, or prevent any medical condition. Always consult with a healthcare professional for medical concerns related to sleep."
+        ? "不。Digital Sleep Lab 是一个信息和研究平台。它不旨在诊断、治疗或预防任何医疗状况。对于与睡眠相关的医疗问题，请务必咨询医疗保健专业人员。"
+        : "No. Digital Sleep Lab is an informational and research platform. It is not intended to diagnose, treat, or prevent any medical condition. Always consult with a healthcare professional for medical concerns related to sleep."
     },
     {
       title: lang === 'zh' ? "我如何连接我的设备？" : "How do I connect my devices?",
@@ -50,7 +50,7 @@ export const FAQ: React.FC<FAQProps> = ({ lang }) => {
   return (
     <MarketingPageTemplate
       title={lang === 'zh' ? "常见问题解答" : "Frequently Asked Questions"}
-      subtitle={lang === 'zh' ? "查找有关 SomnoAI Digital Sleep Lab 平台、研究和数据实践的常见问题解答。" : "Find answers to common questions about the SomnoAI Digital Sleep Lab platform, research, and data practices."}
+      subtitle={lang === 'zh' ? "查找有关 Digital Sleep Lab 平台、研究和数据实践的常见问题解答。" : "Find answers to common questions about the Digital Sleep Lab platform, research, and data practices."}
     >
       <Section className="max-w-3xl mx-auto">
         <Accordion items={faqItems} />

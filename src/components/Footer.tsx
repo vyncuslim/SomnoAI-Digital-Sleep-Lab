@@ -51,11 +51,11 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
         </div>
       </div>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500">
-        <p>© {new Date().getFullYear()} SomnoAI Digital Sleep Lab. {isZh ? "保留所有权利。" : "All rights reserved."}</p>
+        <p>© {new Date().getFullYear()} Digital Sleep Lab. {isZh ? "保留所有权利。" : "All rights reserved."}</p>
         <div className="flex items-center gap-4 mt-4 md:mt-0">
-          <a href="https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
+          <a href="https://github.com/vyncuslim/Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
           <a href="https://discord.com/invite/9EXJtRmju" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
-          <a href="https://www.linkedin.com/company/somnoai-digital-sleep-lab" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LinkedIn</a>
+          <a href="https://www.linkedin.com/company/digital-sleep-lab" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LinkedIn</a>
         </div>
       </div>
     </footer>

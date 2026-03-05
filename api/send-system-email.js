@@ -2,7 +2,7 @@ import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * SOMNOAI NATIVE SMTP DISPATCHER v1.8
+ * NATIVE SMTP DISPATCHER v1.8
  * Optimized: Enforces a 5-minute cooldown per target recipient to prevent flooding.
  * Trustpilot AFS: Includes BCC support for automated feedback invitations.
  */
@@ -66,10 +66,10 @@ export default async function handler(req, res) {
   try {
     // 5. 执行发送 (Include Trustpilot BCC for high value events like Signup)
     const info = await transporter.sendMail({
-      from: `"SomnoAI Digital Sleep Lab" <${smtpUser}>`,
+      from: `"Digital Sleep Lab" <${smtpUser}>`,
       to,
       bcc: isHighValueEvent ? TRUSTPILOT_BCC : undefined,
-      subject: `[SOMNO-LAB] ${subject}`,
+      subject: `[DIGITAL-SLEEP-LAB] ${subject}`,
       html,
     });
 

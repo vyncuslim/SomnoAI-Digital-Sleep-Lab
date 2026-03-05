@@ -37,7 +37,7 @@ export const analyzeBiologicalTrends = async (
     `Date:${h.date}, Score:${h.score}, Deep:${h.deepRatio}%, RHR:${h.heartRate.resting}bpm`
   ).join('\n');
 
-  const systemInstruction = `你是 SomnoAI Digital Sleep Lab 首席研究官 (CRO)。分析受试者的多日生物遥测数据。
+  const systemInstruction = `你是 Digital Sleep Lab 首席研究官 (CRO)。分析受试者的多日生物遥测数据。
   数据来源：安卓 Health Connect (通过智能手表采集)。
   分析目标：提供等同于高端智能戒指 (Smart Ring) 级别的深度生理洞察。
   识别异常模式，并提供基于神经科学的建议。
@@ -167,7 +167,7 @@ export const startContextualCoach = async (
     `${r.date}: Score ${r.score}, Deep ${r.deepRatio}%`
   ).join(' | ');
 
-  const systemInstruction = `你是 SomnoAI Digital Sleep Lab 首席研究官 (CRO)。语气：高度专业、冷静、具有预见性。回复语言：English。
+  const systemInstruction = `你是 Digital Sleep Lab 首席研究官 (CRO)。语气：高度专业、冷静、具有预见性。回复语言：English。
   
   受试者最近的生物遥测数据：
   ${bioBrief}
@@ -247,7 +247,7 @@ export const designExperiment = async (
       model: MODEL_PRO,
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
-        systemInstruction: "你是 SomnoAI Digital Sleep Lab 首席研究官 (CRO)。输出 JSON。",
+        systemInstruction: "你是 Digital Sleep Lab 首席研究官 (CRO)。输出 JSON。",
         thinkingConfig: { thinkingBudget: 4000 },
         responseMimeType: "application/json",
         responseSchema: {
