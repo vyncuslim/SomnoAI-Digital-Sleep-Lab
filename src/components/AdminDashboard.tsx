@@ -702,7 +702,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                 <GlassCard className="p-6 rounded-[2rem] border-white/5 overflow-hidden">
                   <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400 mb-6">Traffic Trend (Last 14 Days)</h3>
                   <div className="h-64 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                    <ResponsiveContainer width="100%" height="100%" debounce={50}>
                       <LineChart data={marketingData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="#ffffff10" />
                         <XAxis dataKey="date" stroke="#64748b" fontSize={10} tickFormatter={(val) => new Date(val).toLocaleDateString(undefined, {month:'short', day:'numeric'})} />
@@ -845,21 +845,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
             </div>
           </div>
         )}
-
-        <footer className="pt-12 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-6 opacity-40">
-          <div className="flex items-center gap-4">
-            <button 
-              onClick={() => onBack()}
-              className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest hover:text-indigo-400 transition-colors"
-            >
-              <HelpCircle size={16} />
-              {t.needHelp}
-            </button>
-          </div>
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] italic text-slate-500">
-            {t.poweredBy}
-          </div>
-        </footer>
       </div>
     </div>
   );

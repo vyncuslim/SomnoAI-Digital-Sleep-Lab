@@ -8,6 +8,7 @@ interface AuthContextType {
   profile: UserProfile | null;
   loading: boolean;
   isBlocked: boolean;
+  blockedReason?: string;
   isAdmin: boolean;
   isOwner: boolean;
   isSuperOwner: boolean;
@@ -22,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [blockedReason, setBlockedReason] = useState<string | undefined>(undefined);
 
   const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner || false;
   const isOwner = profile?.role === 'owner' || profile?.is_super_owner || false;
@@ -41,6 +43,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         setProfile(data);
+        setIsBlocked(data.is_blocked || false);
+        setBlockedReason(data.blocked_reason);
       } else {
         // Fallback profile if not found in DB yet
         setProfile({
@@ -48,6 +52,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           email: email || '',
           role: 'user'
         });
+        setIsBlocked(false);
+        setBlockedReason(undefined);
       }
     } catch (err) {
       console.error('Error in fetchProfile:', err);
@@ -74,6 +80,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         fetchProfile(session.user.id, session.user.email);
       } else {
         setProfile(null);
+        setIsBlocked(false);
+        setBlockedReason(undefined);
         setLoading(false);
       }
     });
@@ -91,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isBlocked, isAdmin, isOwner, isSuperOwner, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, isBlocked, blockedReason, isAdmin, isOwner, isSuperOwner, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

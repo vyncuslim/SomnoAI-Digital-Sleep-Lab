@@ -209,9 +209,7 @@ export const translations: Record<Language, any> = {
         analytics: 'GA4 Telemetry',
         communications: 'Comms Center',
         reviews: 'Reviews'
-      },
-      needHelp: 'Need help?',
-      poweredBy: 'Powered by ElevenLabs Agents'
+      }
     },
     policy: {
       title: 'Legal & Policy Framework',
@@ -561,9 +559,7 @@ export const translations: Record<Language, any> = {
         analytics: 'GA4 遥测',
         communications: '通讯中心',
         reviews: '评论'
-      },
-      needHelp: '需要帮助？',
-      poweredBy: '由 ElevenLabs Agents 提供支持'
+      }
     },
     policy: {
       title: '法律与政策框架',

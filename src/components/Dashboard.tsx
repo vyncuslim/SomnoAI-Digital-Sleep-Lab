@@ -400,8 +400,6 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         <AlertCircle size={18} className="shrink-0 mt-0.5" />
         <p>{t.disclaimer}</p>
       </div>
-
-      <elevenlabs-convai agent-id="agent_1401kjfc5d63ess97ktcvef39957"></elevenlabs-convai>
     </div>
   );
 };

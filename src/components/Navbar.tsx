@@ -62,6 +62,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
     { label: t.nav.faq, view: 'faq', icon: HelpCircle },
     { label: t.nav.project, view: 'about', icon: Info },
     { label: isZh ? '创始人' : 'Founder', view: 'founder', icon: User },
+    { label: isZh ? '媒体资源' : 'Media', view: 'media', icon: BookOpen },
   ];
 
   const authLinks: NavLink[] = [
@@ -75,6 +76,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
     { id: 'faq', icon: HelpCircle, label: isZh ? '帮助' : 'Help' },
     { id: 'blog', icon: PenTool, label: isZh ? '博文' : 'Blog' },
     { id: 'diary', icon: BookOpen, label: isZh ? '日志' : 'Log' },
+    { id: 'media', icon: BookOpen, label: isZh ? '媒体资源' : 'Media' },
   ];
 
   const links = isAuthenticated ? authLinks : guestLinks;

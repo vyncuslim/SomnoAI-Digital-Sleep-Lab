@@ -37,6 +37,7 @@ export interface UserProfile {
   role?: 'user' | 'editor' | 'admin' | 'owner' | 'super_owner';
   is_super_owner?: boolean;
   is_blocked?: boolean;
+  blocked_reason?: string;
   created_at?: string;
   updated_at?: string;
   full_name?: string;

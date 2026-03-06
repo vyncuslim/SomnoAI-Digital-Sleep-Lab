@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
@@ -15,15 +15,19 @@ interface AuthProps {
   initialView?: 'login' | 'signup';
 }
 
+type AuthView = 'login' | 'signup' | 'forgot-password' | 'otp';
+
 export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const { langPrefix } = useLanguage();
-  const [view, setView] = useState<'login' | 'signup'>(initialView);
+  const [view, setView] = useState<AuthView>(initialView);
   
   // Sync view with initialView prop when it changes (e.g. via routing)
   React.useEffect(() => {
-    setView(initialView);
+    if (initialView === 'login' || initialView === 'signup') {
+      setView(initialView);
+    }
   }, [initialView]);
 
   const [email, setEmail] = useState('');
@@ -31,21 +35,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [loading, setLoading] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
   const [privacyApproved, setPrivacyApproved] = useState(false);
+  const [isRobotChecked, setIsRobotChecked] = useState(false);
   const [confirmPassword, setConfirmPassword] = useState('');
   const t = getTranslation(lang, 'landing');
-
-  React.useEffect(() => {
-    // Load ElevenLabs Widget Script
-    const script = document.createElement('script');
-    script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
-    script.async = true;
-    script.type = "text/javascript";
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
-    }
-  }, []);
 
   const getPasswordStrength = (pass: string) => {
     if (!pass) return 0;
@@ -61,6 +53,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const strength = getPasswordStrength(password);
 
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,10 +61,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     
     setLoading(true);
     setError(null);
+    setSuccessMessage(null);
 
     try {
-      if (!termsApproved || !privacyApproved) {
+      if ((view === 'signup' || view === 'login') && (!termsApproved || !privacyApproved)) {
         throw new Error('You must approve the Terms of Service and Privacy Policy.');
+      }
+
+      if ((view === 'signup' || view === 'login') && !isRobotChecked) {
+        throw new Error('Please confirm you are not a robot.');
       }
 
       if (view === 'signup') {
@@ -92,7 +90,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         notificationService.sendLoginNotification(email);
         
         navigate('/dashboard');
-      } else {
+      } else if (view === 'signup') {
         const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -101,6 +99,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (signUpError) throw signUpError;
         
         navigate('/dashboard');
+      } else if (view === 'forgot-password') {
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: `${window.location.origin}/auth/reset-password`,
+        });
+        
+        if (resetError) throw resetError;
+        
+        setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
+      } else if (view === 'otp') {
+        const { error: otpError } = await supabase.auth.signInWithOtp({
+          email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+          },
+        });
+        
+        if (otpError) throw otpError;
+        
+        setSuccessMessage(lang === 'zh' ? '登录链接已发送到您的邮箱，请查收。' : 'Magic link sent to your email. Check your inbox to log in.');
       }
     } catch (err: any) {
       console.error('Auth error:', err);
@@ -152,40 +169,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     }
   };
 
-  const handleOtpLogin = async () => {
-    if (!email) {
-      setError('Please enter your email address first.');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      setError(null);
-      
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/dashboard`,
-        },
-      });
-      
-      if (error) throw error;
-      
-      alert(lang === 'zh' ? '登录链接已发送到您的邮箱，请查收。' : 'Magic link sent to your email. Check your inbox to log in.');
-      
-    } catch (err: any) {
-      console.error('OTP Login error:', err);
-      setError(err.message || 'Failed to send magic link');
-    } finally {
-      setLoading(false);
-    }
+  const getTitle = () => {
+    if (view === 'login') return lang === 'zh' ? '欢迎回来' : 'Welcome Back';
+    if (view === 'signup') return lang === 'zh' ? '加入实验室' : 'Join the Lab';
+    if (view === 'forgot-password') return lang === 'zh' ? '重置密码' : 'Reset Password';
+    if (view === 'otp') return lang === 'zh' ? '无密码登录' : 'Passwordless Login';
+    return '';
   };
 
   return (
     <div className="min-h-screen bg-[#01040a] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden grainy-bg">
       {/* Background Effects */}
-      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/10 blur-[120px] rounded-full" />
-      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-purple-600/10 blur-[120px] rounded-full" />
+      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
 
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -197,19 +193,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             <Logo className="mb-6 scale-125" />
           </Link>
           <h1 className="text-3xl font-black italic uppercase tracking-tighter text-white">
-            {view === 'login' ? (lang === 'zh' ? '欢迎回来' : 'Welcome Back') : (lang === 'zh' ? '加入实验室' : 'Join the Lab')}
+            {getTitle()}
           </h1>
           <p className="text-slate-500 text-xs font-mono uppercase tracking-[0.3em] mt-2">
             SomnoAI Digital Sleep Lab • Neural Access
           </p>
         </div>
 
-        <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-slate-900/40 shadow-2xl" intensity="high">
+        <GlassCard className="p-10 rounded-[3rem] border-white/5 bg-slate-900/40 shadow-2xl backdrop-blur-xl" intensity="high">
           {error && (
             <div className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold uppercase tracking-widest text-center animate-in fade-in slide-in-from-top-2">
               {error}
             </div>
           )}
+          {successMessage && (
+            <div className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-500 text-xs font-bold uppercase tracking-widest text-center animate-in fade-in slide-in-from-top-2">
+              {successMessage}
+            </div>
+          )}
+          
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">Email Address</label>
@@ -226,49 +228,77 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">Password</label>
-              <div className="relative">
-                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
-                <input 
-                  type="password" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-700"
-                  placeholder="••••••••"
-                  required
-                />
+            {(view === 'login' || view === 'signup') && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center ml-4 mr-1">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Password</label>
+                  {view === 'login' && (
+                    <button 
+                      type="button"
+                      onClick={() => setView('forgot-password')}
+                      className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors"
+                    >
+                      {lang === 'zh' ? '忘记密码？' : 'Forgot Password?'}
+                    </button>
+                  )}
+                </div>
+                <div className="relative">
+                  <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600" size={18} />
+                  <input 
+                    type="password" 
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-black/40 border border-white/5 rounded-2xl py-4 pl-12 pr-4 text-sm focus:outline-none focus:border-indigo-500 transition-all placeholder-slate-700"
+                    placeholder="••••••••"
+                    required
+                  />
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="space-y-3 ml-2">
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="terms"
-                  checked={termsApproved}
-                  onChange={(e) => setTermsApproved(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
-                  required
-                />
-                <label htmlFor="terms" className="text-xs text-slate-400">
-                  {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/terms-of-service`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">{lang === 'zh' ? '服务条款' : 'Terms of Service'}</Link>.
-                </label>
+            {(view === 'login' || view === 'signup') && (
+              <div className="space-y-3 ml-2">
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="terms"
+                    checked={termsApproved}
+                    onChange={(e) => setTermsApproved(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                    required
+                  />
+                  <label htmlFor="terms" className="text-xs text-slate-400">
+                    {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/terms-of-service`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">{lang === 'zh' ? '服务条款' : 'Terms of Service'}</Link>.
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="privacy"
+                    checked={privacyApproved}
+                    onChange={(e) => setPrivacyApproved(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                    required
+                  />
+                  <label htmlFor="privacy" className="text-xs text-slate-400">
+                    {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
+                  </label>
+                </div>
+                <div className="flex items-center gap-3">
+                  <input
+                    type="checkbox"
+                    id="robot-check"
+                    checked={isRobotChecked}
+                    onChange={(e) => setIsRobotChecked(e.target.checked)}
+                    className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                    required
+                  />
+                  <label htmlFor="robot-check" className="text-xs text-slate-400">
+                    {lang === 'zh' ? '我不是机器人' : 'I am not a robot'}
+                  </label>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <input
-                  type="checkbox"
-                  id="privacy"
-                  checked={privacyApproved}
-                  onChange={(e) => setPrivacyApproved(e.target.checked)}
-                  className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
-                  required
-                />
-                <label htmlFor="privacy" className="text-xs text-slate-400">
-                  {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
-                </label>
-              </div>
-            </div>
+            )}
 
             {view === 'signup' && (
               <div className="space-y-2">
@@ -311,53 +341,75 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                 <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               ) : (
                 <>
-                  {view === 'login' ? (lang === 'zh' ? '登录' : 'Sign In') : (lang === 'zh' ? '注册' : 'Create Account')}
+                  {view === 'login' && (lang === 'zh' ? '登录' : 'Sign In')}
+                  {view === 'signup' && (lang === 'zh' ? '注册' : 'Create Account')}
+                  {view === 'forgot-password' && (lang === 'zh' ? '发送重置链接' : 'Send Reset Link')}
+                  {view === 'otp' && (lang === 'zh' ? '发送登录链接' : 'Send Magic Link')}
                   <ArrowRight size={18} />
                 </>
               )}
             </button>
           </form>
 
-          <div className="mt-10 relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-white/5"></div>
-            </div>
-            <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
-              <span className="bg-[#0f172a] px-4 text-slate-600">Or Continue With</span>
-            </div>
-          </div>
+          {(view === 'login' || view === 'signup') && (
+            <>
+              <div className="mt-10 relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-white/5"></div>
+                </div>
+                <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                  <span className="bg-[#0f172a] px-4 text-slate-600">Or Continue With</span>
+                </div>
+              </div>
 
-          <div className="mt-8 grid grid-cols-2 gap-4">
-            <button 
-              type="button" 
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50"
-            >
-              <Chrome size={18} className="text-slate-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Google</span>
-            </button>
-            <button 
-              type="button" 
-              onClick={handleOtpLogin}
-              disabled={loading || !email}
-              className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50"
-            >
-              <Mail size={18} className="text-slate-400" />
-              <span className="text-[10px] font-black uppercase tracking-widest">Magic Link</span>
-            </button>
-          </div>
+              <div className="mt-8 grid grid-cols-2 gap-4">
+                <button 
+                  type="button" 
+                  onClick={handleGoogleSignIn}
+                  disabled={loading}
+                  className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50"
+                >
+                  <Chrome size={18} className="text-slate-400" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">Google</span>
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setView('otp')}
+                  disabled={loading}
+                  className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50"
+                >
+                  <KeyRound size={18} className="text-slate-400" />
+                  <span className="text-[10px] font-black uppercase tracking-widest">OTP / Magic Link</span>
+                </button>
+              </div>
+            </>
+          )}
         </GlassCard>
 
         <div className="mt-10 text-center space-y-4">
           <p className="text-sm text-slate-500">
-            {view === 'login' ? (lang === 'zh' ? '还没有账户？' : "Don't have an account?") : (lang === 'zh' ? '已经有账户了？' : "Already have an account?")}{' '}
-            <button 
-              onClick={() => setView(view === 'login' ? 'signup' : 'login')}
-              className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors"
-            >
-              {view === 'login' ? (lang === 'zh' ? '立即注册' : 'Sign Up') : (lang === 'zh' ? '立即登录' : 'Sign In')}
-            </button>
+            {view === 'login' && (
+              <>
+                {lang === 'zh' ? '还没有账户？' : "Don't have an account?"}{' '}
+                <button onClick={() => setView('signup')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
+                  {lang === 'zh' ? '立即注册' : 'Sign Up'}
+                </button>
+              </>
+            )}
+            {view === 'signup' && (
+              <>
+                {lang === 'zh' ? '已经有账户了？' : "Already have an account?"}{' '}
+                <button onClick={() => setView('login')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
+                  {lang === 'zh' ? '立即登录' : 'Sign In'}
+                </button>
+              </>
+            )}
+            {(view === 'forgot-password' || view === 'otp') && (
+              <button onClick={() => setView('login')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors flex items-center justify-center gap-2 mx-auto">
+                <ArrowLeft size={14} />
+                {lang === 'zh' ? '返回登录' : 'Back to Login'}
+              </button>
+            )}
           </p>
           <button 
             onClick={() => navigate(langPrefix)}
@@ -374,7 +426,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           <span className="text-[8px] font-mono uppercase tracking-widest">AES-256 Encrypted</span>
         </div>
       </motion.div>
-      <elevenlabs-convai agent-id="agent_1401kjfc5d63ess97ktcvef39957"></elevenlabs-convai>
     </div>
   );
 };
