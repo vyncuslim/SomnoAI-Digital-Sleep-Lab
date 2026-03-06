@@ -1,5 +1,17 @@
 export type Language = 'en' | 'zh';
 
+export interface HeartRateData {
+  time: string;
+  value: number;
+}
+
+export interface SleepStage {
+  stage: 'Deep' | 'Light' | 'REM' | 'Awake';
+  duration: number; // minutes
+  startTime: string;
+  endTime: string;
+}
+
 export interface SleepRecord {
   id: string;
   date: string;
@@ -9,27 +21,27 @@ export interface SleepRecord {
     min: number;
     max: number;
     average: number;
-    history: any[];
+    history: HeartRateData[];
   };
   deepRatio: number;
   remRatio: number;
   totalDuration: number; // minutes
   efficiency: number;
-  stages: any[];
-  aiInsights?: any;
+  stages: SleepStage[];
+  aiInsights?: string[];
 }
 
 export interface UserProfile {
   id: string;
-  name: string;
   email: string;
-  age?: number;
-  gender?: 'male' | 'female' | 'other' | 'none';
-  height?: number; // in cm
-  weight?: number; // in kg
-  goals?: string[];
-  devices?: string[];
-  joinDate: string;
+  role?: 'user' | 'editor' | 'admin' | 'owner' | 'super_owner';
+  is_super_owner?: boolean;
+  is_blocked?: boolean;
+  created_at?: string;
+  updated_at?: string;
+  full_name?: string;
+  avatar_url?: string;
+  preferences?: Record<string, any>;
 }
 
 export interface Article {
@@ -42,6 +54,7 @@ export interface Article {
     name: string;
     role: string;
     bio: string;
+    avatar?: string;
   };
   date: string;
   readTime: string;
@@ -53,11 +66,48 @@ export interface Article {
 
 export interface Feedback {
   id: string;
-  userId: string;
-  type: 'report' | 'suggestion' | 'improvement';
+  userId?: string;
+  email?: string;
+  type: 'report' | 'suggestion' | 'compliment' | 'other';
   content: string;
+  created_at: string;
+  status?: 'open' | 'in-progress' | 'resolved';
+}
+
+export interface AuditLog {
+  id: string;
+  action: string;
+  user_id: string;
+  details: string | Record<string, any>;
+  created_at: string;
+}
+
+export interface SecurityEvent {
+  id: string;
+  type: 'INFO' | 'WARNING' | 'BLOCK' | 'CRITICAL';
+  details: string;
+  ip_address: string;
+  created_at: string;
+  user_id?: string;
+}
+
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  user_email?: string;
+  created_at: string;
+}
+
+export interface MarketingData {
   date: string;
-  status: 'open' | 'in-progress' | 'resolved';
+  datasource: string;
+  source: string;
+  active_users: number;
+  clicks: number;
+  sessions: number;
+  active1_day_users: number;
+  active7_day_users: number;
 }
 
 export interface SystemStatus {

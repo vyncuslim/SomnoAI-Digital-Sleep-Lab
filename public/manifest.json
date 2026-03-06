@@ -1,6 +1,6 @@
 {
-  "name": "Digital Sleep Lab",
-  "short_name": "Digital Sleep Lab",
+  "name": "SomnoAI Digital Sleep Lab",
+  "short_name": "SomnoAI Digital Sleep Lab",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#01040a",

@@ -5,7 +5,7 @@ import {
   Menu, X, LogIn, LogOut, User, Settings as SettingsIcon, Shield,
   FlaskConical, Newspaper, HelpCircle, Info, LayoutDashboard, 
   TrendingUp, Sparkles, ImageIcon, Mic, BookOpen, PenTool,
-  Microscope, Binary, Search
+  Microscope, Binary, Search, LucideIcon
 } from 'lucide-react';
 
 import { Language, getTranslation } from '../services/i18n';
@@ -22,13 +22,21 @@ interface NavbarProps {
   onLogout?: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({ 
+interface NavLink {
+  id?: string;
+  view?: string;
+  label: string;
+  icon: LucideIcon;
+}
+
+export const Navbar: React.FC<NavbarProps & { className?: string }> = ({ 
   lang, 
   activeView, 
   onNavigate, 
   isAuthenticated, 
   isAdmin,
-  onLogout 
+  onLogout,
+  className = ""
 }) => {
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -42,7 +50,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const guestLinks = [
+  const guestLinks: NavLink[] = [
     { label: isZh ? '产品' : 'Product', view: 'product', icon: Sparkles },
     { label: isZh ? '原理' : 'How it Works', view: 'how-it-works', icon: Binary },
     { label: isZh ? '研究' : 'Research', view: 'research', icon: Microscope },
@@ -52,7 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { label: t.nav.project, view: 'about', icon: Info },
   ];
 
-  const authLinks = [
+  const authLinks: NavLink[] = [
     { id: 'dashboard', icon: LayoutDashboard, label: isZh ? '实验室' : 'Lab' },
     { id: 'calendar', icon: TrendingUp, label: isZh ? '分析' : 'Atlas' },
     { id: 'experiment', icon: FlaskConical, label: isZh ? '实验' : 'Trials' },
@@ -68,7 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   const links = isAuthenticated ? authLinks : guestLinks;
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 h-20 flex items-center justify-between ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl' : 'bg-transparent'}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 h-20 flex items-center justify-between ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl' : 'bg-transparent'} ${className}`}>
       <div className="flex items-center gap-10">
         <Link to="/">
           <m.div 
@@ -82,8 +90,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         </Link>
 
         <div className="hidden xl:flex items-center gap-8">
-          {links.map((link: any) => {
-            const id = link.id || link.view;
+          {links.map((link) => {
+            const id = link.id || link.view || '';
             const isActive = activeView === id;
             return (
               <m.button 
@@ -203,8 +211,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           >
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/10 rounded-full mt-4" />
             <div className="grid grid-cols-2 gap-4 mt-8">
-              {links.map((item: any) => {
-                const id = item.id || item.view;
+              {links.map((item) => {
+                const id = item.id || item.view || '';
                 return (
                   <button 
                     key={id} 

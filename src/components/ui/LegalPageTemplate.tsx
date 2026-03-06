@@ -1,6 +1,6 @@
 import React from 'react';
 import { PageLayout } from './PageLayout';
-import { Hero, LastUpdated, Breadcrumbs, AlertBanner, InlineCTA } from './Components';
+import { LastUpdated, Breadcrumbs, InlineCTA } from './Components';
 
 interface LegalPageTemplateProps {
   title: string;
@@ -34,8 +34,16 @@ export const LegalPageTemplate: React.FC<LegalPageTemplateProps> = ({ title, las
         <h1 className="text-4xl md:text-5xl font-bold text-white mb-6 tracking-tight">{title}</h1>
         <LastUpdated date={lastUpdated} version={version} />
       </div>
-      <div className="prose prose-invert prose-slate max-w-none prose-headings:text-white prose-a:text-indigo-400 hover:prose-a:text-indigo-300 prose-strong:text-white">
+      <div className="prose prose-invert prose-slate max-w-none prose-headings:text-white prose-a:text-indigo-400 hover:prose-a:text-indigo-300 prose-strong:text-white pb-12">
         {children}
+      </div>
+      
+      <div className="text-center pt-12 border-t border-white/5">
+        <div className="flex items-center justify-center gap-6">
+          <InlineCTA text="Contact Legal" link="/contact" />
+          <span className="text-white/20">|</span>
+          <InlineCTA text="Support" link="/support" />
+        </div>
       </div>
     </PageLayout>
   );

@@ -8,11 +8,12 @@ import helmet from "helmet";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 async function startServer() {
+  process.env.NODE_ENV = 'development';
   const app = express();
   const PORT = 3000;
 
   // Security headers
-  app.use(helmet());
+  // app.use(helmet());
 
   // IP Whitelisting for admin paths
   app.use((req, res, next) => {
@@ -30,10 +31,7 @@ async function startServer() {
   });
 
   // CORS configuration
-  app.use(cors({
-    origin: ['https://digitalsleeplab.com'],
-    credentials: true
-  }));
+  // app.use(cors());
 
   // API routes
   app.get("/api/health", (req, res) => {
@@ -41,8 +39,10 @@ async function startServer() {
   });
 
   // Vite middleware for development
+  let vite: any;
   if (process.env.NODE_ENV !== "production") {
-    const vite = await createViteServer({
+    vite = await createViteServer({
+      root: process.cwd(),
       server: { middlewareMode: true },
       appType: "spa",
     });
@@ -50,10 +50,31 @@ async function startServer() {
   } else {
     // Serve static files in production
     app.use(express.static(path.resolve(__dirname, "dist")));
-    app.get("*", (req, res) => {
-      res.sendFile(path.resolve(__dirname, "dist", "index.html"));
-    });
   }
+
+  // SPA fallback: Serve index.html for all non-API routes
+  app.use(async (req, res, next) => {
+    if (req.method !== "GET" || req.path.startsWith("/api")) {
+      return next();
+    }
+    
+    try {
+      if (process.env.NODE_ENV !== "production") {
+        const fs = await import("fs/promises");
+        const filePath = path.join(process.cwd(), "index.html");
+        let html = await fs.readFile(filePath, "utf-8");
+        html = await vite.transformIndexHtml(req.originalUrl, html);
+        res.status(200).set({ "Content-Type": "text/html" }).end(html);
+      } else {
+        const filePath = path.join(process.cwd(), "dist/index.html");
+        res.sendFile(filePath);
+      }
+    } catch (e: any) {
+      vite?.ssrFixStacktrace(e);
+      console.error(e);
+      res.status(500).end(e.message);
+    }
+  });
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);

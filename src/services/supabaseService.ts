@@ -1,5 +1,6 @@
 /// <reference types="vite/client" />
 import { createClient } from '@supabase/supabase-js';
+import { UserProfile } from '../types';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://placeholder.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'placeholder';
@@ -14,7 +15,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 // Audit Log Helper
-export const logAuditLog = async (userId: string, action: string, details: any) => {
+export const logAuditLog = async (userId: string, action: string, details: string | Record<string, any>) => {
   try {
     const { error } = await supabase.from('audit_logs').insert([{
       user_id: userId,
@@ -50,7 +51,7 @@ export const feedbackApi = {
 // Diary API
 export const diaryApi = {
   getEntries: async (userId: string) => supabase.from('diary_entries').select('*').eq('user_id', userId),
-  saveEntry: async (userId: string, entry: any) => supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]),
+  saveEntry: async (userId: string, entry: Record<string, any>) => supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]),
   deleteEntry: async (id: string) => supabase.from('diary_entries').delete().eq('id', id)
 };
 
@@ -62,11 +63,11 @@ export const authApi = {
 // User API
 export const userApi = {
   getProfile: async (id: string) => supabase.from('profiles').select('*').eq('id', id).single(),
-  updateProfile: async (id: string, updates: any) => supabase.from('profiles').update(updates).eq('id', id)
+  updateProfile: async (id: string, updates: Partial<UserProfile>) => supabase.from('profiles').update(updates).eq('id', id)
 };
 
 // User Data API
 export const userDataApi = {
-  saveInitialSetup: async (userId: string, data: any) => supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId),
-  completeSetup: async (userId: string, data: any) => supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId)
+  saveInitialSetup: async (userId: string, data: Partial<UserProfile>) => supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId),
+  completeSetup: async (userId: string, data: Partial<UserProfile>) => supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId)
 };

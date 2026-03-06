@@ -4,7 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   ArrowRight, Brain, Activity, Zap, 
   CheckCircle2, Users, Database, ShieldCheck,
-  Smartphone, BarChart3, MessageSquare, Heart
+  Smartphone, BarChart3, MessageSquare, Heart,
+  Mail
 } from 'lucide-react';
 
 import { MarketingPageTemplate } from './ui/MarketingPageTemplate';
@@ -83,7 +84,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
             </motion.p>
           )}
           <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter text-white">
-            DIGITAL SLEEP LAB <br />
+            SOMNOAI DIGITAL SLEEP LAB <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
               AI ANALYSIS
             </span>
@@ -94,20 +95,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
       ctaPrimary={{ text: t.ctaPrimary || "Start Analysis", link: "/auth/signup" }}
       ctaSecondary={{ text: t.ctaSecondary || "Learn More", link: "/about" }}
     >
-      {/* Visual Report Preview */}
-      <Section className="py-12">
-        <div className="rounded-[2rem] border border-white/10 bg-slate-900/50 p-4 shadow-2xl shadow-indigo-500/10">
-          <div className="bg-slate-950 rounded-2xl p-6 border border-white/5">
-            <div className="flex justify-between items-center mb-6">
-              <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest">Recovery Score</h3>
-              <div className="px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-400 text-xs font-bold">87</div>
-            </div>
-            <div className="h-48 bg-gradient-to-r from-indigo-900/20 to-purple-900/20 rounded-xl flex items-center justify-center text-slate-500 italic">
-              [Report Visualization]
-            </div>
-          </div>
-        </div>
-      </Section>
       {/* Stats Section */}
       <Section>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
@@ -149,18 +136,28 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
         title={lang === 'zh' ? '协议流程' : 'The Protocol'} 
         description={lang === 'zh' ? '实现全面认知恢复的四个步骤。' : 'Four steps to total cognitive restoration.'}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: Activity, title: t.features?.biometric?.title || "Biometric Tracking", desc: t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles." },
-            { icon: Brain, title: t.features?.neural?.title || "Neural Insights", desc: t.features?.neural?.desc || "AI-driven interpretation of sleep stages and quality metrics." },
-            { icon: Zap, title: t.features?.recovery?.title || "Recovery Optimization", desc: t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep and recovery." }
-          ].map((item, i) => (
-            <Card 
-              key={i}
-              title={item.title}
-              description={item.desc}
-              icon={<item.icon size={40} strokeWidth={1.5} />}
-            />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          {steps.map((step, i) => (
+            <div key={i} className="flex flex-col gap-4 p-6 rounded-3xl border border-white/5 bg-slate-900/30">
+              <div className="text-4xl font-black text-indigo-500">{step.step}</div>
+              <div className="p-3 bg-indigo-500/10 rounded-full w-fit text-indigo-400">
+                <step.icon size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-white">{step.title}</h3>
+              <p className="text-sm text-slate-400">{step.desc}</p>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* Compatible with Major Devices */}
+      <Section className="text-center">
+        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-8">Compatible with Major Devices</h3>
+        <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 hover:opacity-100 transition-opacity duration-500">
+          {['Apple Watch', 'Oura', 'Garmin', 'Fitbit', 'Whoop'].map((device) => (
+            <span key={device} className="text-2xl md:text-3xl font-black italic tracking-tighter text-white hover:text-indigo-400 transition-colors cursor-default select-none">
+              {device}
+            </span>
           ))}
         </div>
       </Section>
@@ -168,7 +165,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
       {/* Who is it for? */}
       <Section 
         title={lang === 'zh' ? '为谁设计？' : 'Who is it for?'} 
-        description={lang === 'zh' ? '无论您的目标是什么，Digital Sleep Lab 都能提供定制化的恢复策略。' : 'Whatever your goal, Digital Sleep Lab provides customized recovery strategies.'}
+        description={lang === 'zh' ? '无论您的目标是什么，SomnoAI Digital Sleep Lab 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI Digital Sleep Lab provides customized recovery strategies.'}
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
@@ -207,64 +204,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
         </div>
       </Section>
 
-      {/* Founder Section */}
-      <Section>
-        <div className="p-12 rounded-[3rem] border border-white/10 bg-slate-900/40 relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-[600px] h-[600px] bg-indigo-600/10 blur-[150px] rounded-full pointer-events-none" />
-          <div className="relative z-10 flex flex-col md:flex-row items-center gap-12">
-            <div className="w-40 h-40 rounded-full bg-slate-800 border-4 border-indigo-500/30 flex items-center justify-center overflow-hidden shadow-2xl shrink-0">
-              <span className="text-4xl font-black text-indigo-500 italic">VL</span>
-            </div>
-            <div className="flex-1 space-y-6 text-center md:text-left">
-              <div>
-                <p className="text-indigo-400 font-bold uppercase tracking-widest text-xs mb-2">{t.founder?.subtitle || "Visionary Leadership"}</p>
-                <h2 className="text-4xl md:text-5xl font-black italic text-white uppercase tracking-tighter">{t.founder?.title || "Meet the Founder"}</h2>
-              </div>
-              <p className="text-lg text-slate-400 leading-relaxed max-w-2xl italic font-medium">
-                {lang === 'zh' 
-                  ? 'Digital Sleep Lab 由 Vyncus Lim 创立，旨在通过 AI 解码人类睡眠的复杂性。' 
-                  : 'Founded by Vyncus Lim, Digital Sleep Lab is driven by a mission to decode the complexities of human sleep through artificial intelligence.'}
-              </p>
-              <InlineCTA text={t.founder?.readMore || "Read Founder's Vision"} link="/founder" />
-            </div>
-          </div>
-        </div>
-      </Section>
-
-      {/* Newsletter */}
-      <Section>
-        <div className="p-12 rounded-[3rem] bg-indigo-600/5 border border-indigo-500/10 text-center space-y-8">
-          <h3 className="text-3xl font-black uppercase tracking-tight italic text-white">{t.newsletter?.title || "Stay Updated"}</h3>
-          <p className="text-slate-400 italic font-medium max-w-xl mx-auto">{t.newsletter?.subtitle || "Join our newsletter for the latest sleep science and AI updates."}</p>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" onSubmit={(e) => { 
-            e.preventDefault(); 
-            const btn = e.currentTarget.querySelector('button');
-            if (btn) {
-              const originalText = btn.innerText;
-              btn.innerText = "Subscribed!";
-              btn.classList.add('bg-emerald-600');
-              btn.classList.remove('bg-indigo-600');
-              setTimeout(() => {
-                btn.innerText = originalText;
-                btn.classList.remove('bg-emerald-600');
-                btn.classList.add('bg-indigo-600');
-                (e.target as HTMLFormElement).reset();
-              }, 3000);
-            }
-          }}>
-            <input 
-              type="email" 
-              placeholder={t.newsletter?.placeholder || "Enter your email"} 
-              className="flex-1 px-6 py-4 bg-slate-900 border border-white/10 rounded-full focus:outline-none focus:border-indigo-500 transition-colors text-sm text-white placeholder-slate-600"
-              required
-            />
-            <button type="submit" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20">
-              {t.newsletter?.button || "Subscribe"}
-            </button>
-          </form>
-        </div>
-      </Section>
-
       {/* Final CTA */}
       <Section className="text-center">
         <div className="space-y-8">
@@ -279,6 +218,54 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
           >
             {lang === 'zh' ? '立即开始' : 'Get Started Now'}
           </button>
+        </div>
+      </Section>
+
+      {/* Newsletter */}
+      <Section>
+        <div className="p-12 rounded-[3rem] bg-indigo-600/5 border border-indigo-500/10 text-center space-y-8">
+          <div className="inline-block p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 mb-4">
+            <Mail size={32} />
+          </div>
+          <h3 className="text-3xl font-black uppercase tracking-tight italic text-white">{t.newsletter?.title || "Stay Updated"}</h3>
+          <p className="text-slate-400 italic font-medium max-w-xl mx-auto">{t.newsletter?.subtitle || "Join our newsletter for the latest sleep science and AI updates."}</p>
+          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" onSubmit={(e) => { 
+            e.preventDefault(); 
+            const btn = e.currentTarget.querySelector('button');
+            const input = e.currentTarget.querySelector('input');
+            if (btn && input) {
+              const originalText = btn.innerText;
+              btn.disabled = true;
+              btn.innerText = lang === 'zh' ? "正在订阅..." : "Subscribing...";
+              
+              setTimeout(() => {
+                btn.innerText = lang === 'zh' ? "已订阅！" : "Subscribed!";
+                btn.classList.add('bg-emerald-600');
+                btn.classList.remove('bg-indigo-600');
+                input.value = '';
+                
+                setTimeout(() => {
+                  btn.innerText = originalText;
+                  btn.classList.remove('bg-emerald-600');
+                  btn.classList.add('bg-indigo-600');
+                  btn.disabled = false;
+                }, 5000);
+              }, 1500);
+            }
+          }}>
+            <input 
+              type="email" 
+              placeholder={t.newsletter?.placeholder || (lang === 'zh' ? "输入您的电子邮件" : "Enter your email")} 
+              className="flex-1 px-6 py-4 bg-slate-900 border border-white/10 rounded-full focus:outline-none focus:border-indigo-500 transition-colors text-sm text-white placeholder-slate-600"
+              required
+            />
+            <button type="submit" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+              {t.newsletter?.button || (lang === 'zh' ? "订阅" : "Subscribe")}
+            </button>
+          </form>
+          <p className="text-[10px] text-slate-600 uppercase tracking-widest">
+            {lang === 'zh' ? "您可以随时取消订阅。查看我们的隐私政策。" : "You can unsubscribe at any time. View our Privacy Policy."}
+          </p>
         </div>
       </Section>
     </MarketingPageTemplate>

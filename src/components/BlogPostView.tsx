@@ -29,25 +29,25 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ post, lang, onBack }
       "@type": "BlogPosting",
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": `https://digitalsleeplab.com/blog/${post.slug}`
+        "@id": `https://sleepsomno.com/blog/${post.slug}`
       },
       "headline": post.title,
       "description": post.excerpt,
-      "image": ["https://digitalsleeplab.com/favicon.svg"],
+      "image": ["https://sleepsomno.com/favicon.svg"],
       "datePublished": `${post.date}T10:00:00+08:00`,
       "dateModified": `${post.date}T10:00:00+08:00`,
       "author": {
         "@type": "Person",
         "name": post.author.name,
         "jobTitle": post.author.role,
-        "url": "https://digitalsleeplab.com/about"
+        "url": "https://sleepsomno.com/about"
       },
       "publisher": {
         "@type": "Organization",
-        "name": "Digital Sleep Lab",
+        "name": "SomnoAI Digital Sleep Lab",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://digitalsleeplab.com/favicon.svg"
+          "url": "https://sleepsomno.com/favicon.svg"
         }
       },
       "keywords": post.tags.join(', ')

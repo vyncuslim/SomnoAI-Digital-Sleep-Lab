@@ -3,12 +3,14 @@ import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA } from '../components/ui/Components';
 import { Activity, Brain, Clock, Shield, BarChart3, Lock, Zap, Eye } from 'lucide-react';
 import { Language, getTranslation } from '../services/i18n';
+import { INFO_CONTENT } from '../data/infoContent';
 
 interface FeaturesProps {
   lang: Language;
 }
 
 export const Features: React.FC<FeaturesProps> = ({ lang }) => {
+  const content = INFO_CONTENT[lang]?.features || INFO_CONTENT['en'].features;
   const [activeFilter, setActiveFilter] = useState('All');
   
   const filters = lang === 'zh' 
@@ -84,11 +86,15 @@ export const Features: React.FC<FeaturesProps> = ({ lang }) => {
 
   return (
     <MarketingPageTemplate
-      title={lang === 'zh' ? "平台功能" : "Platform Features"}
-      subtitle={lang === 'zh' ? "探索旨在帮助您了解睡眠模式的工具和功能。" : "Discover the tools and capabilities designed to help you understand your sleep patterns."}
+      title={content.title}
+      subtitle={content.subtitle}
       ctaPrimary={{ text: lang === 'zh' ? "探索产品" : "Explore Product", link: "/product" }}
     >
       <Section>
+        <div className="prose prose-invert max-w-none text-slate-300 whitespace-pre-wrap text-lg leading-relaxed mb-12">
+          {content.content}
+        </div>
+
         <div className="flex flex-wrap gap-2 mb-12 justify-center">
           {filters.map(filter => (
             <button
@@ -118,74 +124,6 @@ export const Features: React.FC<FeaturesProps> = ({ lang }) => {
               </div>
             </Card>
           ))}
-        </div>
-      </Section>
-
-      <Section title={lang === 'zh' ? "使用场景" : "Use Cases"}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-8 rounded-2xl bg-slate-900/50 border border-white/5 hover:border-white/10 transition-colors">
-            <h3 className="text-xl font-bold text-white mb-3">{lang === 'zh' ? "运动恢复" : "Athletic Recovery"}</h3>
-            <p className="text-slate-400 leading-relaxed">
-              {lang === 'zh' 
-                ? "通过了解不同的锻炼如何影响您的睡眠结构和恢复指标，优化训练时间表。"
-                : "Optimize training schedules by understanding how different workouts impact your sleep architecture and recovery metrics."}
-            </p>
-          </div>
-          <div className="p-8 rounded-2xl bg-slate-900/50 border border-white/5 hover:border-white/10 transition-colors">
-            <h3 className="text-xl font-bold text-white mb-3">{lang === 'zh' ? "轮班工作管理" : "Shift Work Management"}</h3>
-            <p className="text-slate-400 leading-relaxed">
-              {lang === 'zh'
-                ? "通过跟踪昼夜节律对齐并识别最具恢复性的睡眠窗口，应对不规则的时间表。"
-                : "Navigate irregular schedules by tracking circadian alignment and identifying the most restorative sleep windows."}
-            </p>
-          </div>
-          <div className="p-8 rounded-2xl bg-slate-900/50 border border-white/5 hover:border-white/10 transition-colors">
-            <h3 className="text-xl font-bold text-white mb-3">{lang === 'zh' ? "生活方式优化" : "Lifestyle Optimization"}</h3>
-            <p className="text-slate-400 leading-relaxed">
-              {lang === 'zh'
-                ? "发现日常习惯、咖啡因摄入量和屏幕时间如何与您的整体睡眠质量和一致性相关联。"
-                : "Discover how daily habits, caffeine intake, and screen time correlate with your overall sleep quality and consistency."}
-            </p>
-          </div>
-        </div>
-      </Section>
-
-      <Section title={lang === 'zh' ? "传统仪表板 vs Digital Sleep Lab" : "Traditional Dashboards vs Digital Sleep Lab"}>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5">
-            <h3 className="text-xl font-bold text-slate-300 mb-6">{lang === 'zh' ? "传统仪表板" : "Traditional Dashboards"}</h3>
-            <ul className="space-y-4 text-slate-400">
-              <li className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-600 mt-2 shrink-0" />
-                <span>{lang === 'zh' ? "侧重于原始数字和基本指标（例如，总睡眠小时数）。" : "Focus on raw numbers and basic metrics (e.g., total hours slept)."}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-600 mt-2 shrink-0" />
-                <span>{lang === 'zh' ? "提供孤立的每日快照，缺乏长期背景。" : "Provide isolated daily snapshots without long-term context."}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-slate-600 mt-2 shrink-0" />
-                <span>{lang === 'zh' ? "要求用户解释复杂的图表并自行寻找模式。" : "Require users to interpret complex graphs and find their own patterns."}</span>
-              </li>
-            </ul>
-          </div>
-          <div className="p-8 rounded-2xl bg-indigo-500/10 border border-indigo-500/20">
-            <h3 className="text-xl font-bold text-indigo-400 mb-6">Digital Sleep Lab</h3>
-            <ul className="space-y-4 text-indigo-200/80">
-              <li className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />
-                <span>{lang === 'zh' ? "侧重于行为模式、一致性和节奏。" : "Focuses on behavioral patterns, consistency, and rhythm."}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />
-                <span>{lang === 'zh' ? "分析长期趋势以揭示隐藏的相关性。" : "Analyzes long-term trends to reveal hidden correlations."}</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 mt-2 shrink-0" />
-                <span>{lang === 'zh' ? "以通俗易懂的语言生成清晰、可操作的见解。" : "Generates clear, actionable insights in plain language."}</span>
-              </li>
-            </ul>
-          </div>
         </div>
       </Section>
 

@@ -17,45 +17,65 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
           <Logo lang={lang} showText={true} className="scale-75 origin-left" />
           <p className="text-sm text-slate-500 leading-relaxed">
             {isZh 
-              ? "以研究为导向的技术倡议，探索人工智能和数据分析如何加深对人类睡眠的理解。"
-              : "Research-driven technology initiative exploring how AI and data analysis can deepen the understanding of human sleep."}
+              ? "我们的使命是在 SomnoAI Digital Sleep Lab 通过神经接口和先进的 AI 遥测技术解码人类睡眠。"
+              : "Our mission is to decode human sleep through neural interfaces and advanced AI telemetry at the SomnoAI Digital Sleep Lab."}
           </p>
+          <div className="text-[10px] text-slate-600 font-mono space-y-1">
+            <p>SomnoAI Digital Sleep Lab Inc.</p>
+            <p>100 Innovation Drive, Suite 400</p>
+            <p>San Francisco, CA 94105</p>
+          </div>
         </div>
         <div>
-          <h4 className="text-white font-medium mb-4">{isZh ? "平台" : "Platform"}</h4>
-          <ul className="space-y-2 text-sm text-slate-400">
-            <li><Link to="/product" className="hover:text-white transition-colors">{isZh ? "产品概览" : "Product Overview"}</Link></li>
+          <h4 className="text-white font-medium mb-4">{isZh ? "快速链接" : "Quick Links"}</h4>
+          <ul className="grid grid-cols-2 gap-2 text-sm text-slate-400">
+            <li><Link to="/about" className="hover:text-white transition-colors">{isZh ? "关于" : "About"}</Link></li>
+            <li><Link to="/product" className="hover:text-white transition-colors">{isZh ? "产品" : "Product"}</Link></li>
             <li><Link to="/how-it-works" className="hover:text-white transition-colors">{isZh ? "工作原理" : "How it Works"}</Link></li>
             <li><Link to="/features" className="hover:text-white transition-colors">{isZh ? "功能" : "Features"}</Link></li>
-            <li><Link to="/status" className="hover:text-white transition-colors">{isZh ? "系统状态" : "System Status"}</Link></li>
-          </ul>
-        </div>
-        <div>
-          <h4 className="text-white font-medium mb-4">{isZh ? "资源" : "Resources"}</h4>
-          <ul className="space-y-2 text-sm text-slate-400">
             <li><Link to="/research" className="hover:text-white transition-colors">{isZh ? "研究" : "Research"}</Link></li>
             <li><Link to="/science" className="hover:text-white transition-colors">{isZh ? "科学" : "Science"}</Link></li>
             <li><Link to="/blog" className="hover:text-white transition-colors">{isZh ? "博客" : "Blog"}</Link></li>
+            <li><Link to="/news" className="hover:text-white transition-colors">{isZh ? "新闻" : "News"}</Link></li>
             <li><Link to="/faq" className="hover:text-white transition-colors">{isZh ? "常见问题" : "FAQ"}</Link></li>
+            <li><Link to="/status" className="hover:text-white transition-colors">{isZh ? "状态" : "Status"}</Link></li>
+            <li><Link to="/contact" className="hover:text-white transition-colors">{isZh ? "联系我们" : "Contact"}</Link></li>
+            <li><Link to="/support" className="hover:text-white transition-colors">{isZh ? "支持" : "Support"}</Link></li>
           </ul>
         </div>
-        <div>
-          <h4 className="text-white font-medium mb-4">{isZh ? "法律与支持" : "Legal & Support"}</h4>
-          <ul className="space-y-2 text-sm text-slate-400">
-            <li><Link to="/legal" className="hover:text-white transition-colors">{isZh ? "法律中心" : "Legal Center"}</Link></li>
+        <div className="md:col-span-2">
+          <h4 className="text-white font-medium mb-4">{isZh ? "法律" : "Legal"}</h4>
+          <ul className="grid grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-slate-400">
+            <li><Link to="/legal" className="hover:text-white transition-colors">{isZh ? "法律中心" : "Legal"}</Link></li>
             <li><Link to="/privacy" className="hover:text-white transition-colors">{isZh ? "隐私政策" : "Privacy Policy"}</Link></li>
             <li><Link to="/terms" className="hover:text-white transition-colors">{isZh ? "服务条款" : "Terms of Service"}</Link></li>
-            <li><Link to="/support" className="hover:text-white transition-colors">{isZh ? "支持" : "Support"}</Link></li>
-            <li><Link to="/contact" className="hover:text-white transition-colors">{isZh ? "联系我们" : "Contact Us"}</Link></li>
+            <li><Link to="/legal/cookies" className="hover:text-white transition-colors">{isZh ? "Cookie 政策" : "Cookies"}</Link></li>
+            <li><Link to="/legal/security" className="hover:text-white transition-colors">{isZh ? "安全政策" : "Security"}</Link></li>
+            <li><Link to="/legal/acceptable-use" className="hover:text-white transition-colors">{isZh ? "可接受使用" : "Acceptable Use"}</Link></li>
+            <li><Link to="/legal/ai-disclaimer" className="hover:text-white transition-colors">{isZh ? "AI 免责声明" : "AI Disclaimer"}</Link></li>
+            <li><Link to="/legal/medical-disclaimer" className="hover:text-white transition-colors">{isZh ? "医疗免责声明" : "Medical Disclaimer"}</Link></li>
+            <li><Link to="/legal/data-processing" className="hover:text-white transition-colors">{isZh ? "数据处理" : "Data Processing"}</Link></li>
+            <li><Link to="/legal/abuse-policy" className="hover:text-white transition-colors">{isZh ? "滥用政策" : "Abuse Policy"}</Link></li>
+            <li><Link to="/legal/account-blocking" className="hover:text-white transition-colors">{isZh ? "账户封禁" : "Account Blocking"}</Link></li>
+            <li><Link to="/legal/policy-framework" className="hover:text-white transition-colors">{isZh ? "政策框架" : "Policy Framework"}</Link></li>
+            <li><Link to="/legal/open-source" className="hover:text-white transition-colors">{isZh ? "开源" : "Open Source"}</Link></li>
           </ul>
         </div>
       </div>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between text-xs text-slate-500">
-        <p>© {new Date().getFullYear()} Digital Sleep Lab. {isZh ? "保留所有权利。" : "All rights reserved."}</p>
-        <div className="flex items-center gap-4 mt-4 md:mt-0">
-          <a href="https://github.com/vyncuslim/Digital-Sleep-Lab" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GitHub</a>
-          <a href="https://discord.com/invite/9EXJtRmju" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
-          <a href="https://www.linkedin.com/company/digital-sleep-lab" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LinkedIn</a>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-16 pt-8 border-t border-white/5 space-y-8">
+        <div className="flex flex-col md:flex-row items-center justify-between text-xs text-slate-500">
+          <p>© {new Date().getFullYear()} SOMNOAI DIGITAL SLEEP LAB. {isZh ? "保留所有权利。" : "ALL RIGHTS RESERVED."}</p>
+          <div className="flex items-center gap-4 mt-4 md:mt-0">
+            <a href="https://discord.com/invite/9EXJtRmju" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">Discord</a>
+            <a href="https://www.linkedin.com/company/digital-sleep-lab" target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LinkedIn</a>
+          </div>
+        </div>
+        <div className="text-[10px] text-slate-600 leading-relaxed max-w-4xl">
+          <p>
+            {isZh 
+              ? "透明度说明：SomnoAI Digital Sleep Lab 是一个不断发展的项目。平台可能会随着时间的推移引入实验性功能和研究原型。AI 生成的见解仅供参考，不应被视为医疗建议。"
+              : "Transparency Note: SomnoAI Digital Sleep Lab is an evolving project. The platform may introduce experimental features and research prototypes over time. AI-generated insights are provided for informational purposes and should not be considered medical advice."}
+          </p>
         </div>
       </div>
     </footer>

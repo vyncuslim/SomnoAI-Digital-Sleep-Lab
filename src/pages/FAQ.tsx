@@ -2,24 +2,27 @@ import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Accordion, InlineCTA } from '../components/ui/Components';
 import { Language, getTranslation } from '../services/i18n';
+import { INFO_CONTENT } from '../data/infoContent';
 
 interface FAQProps {
   lang: Language;
 }
 
 export const FAQ: React.FC<FAQProps> = ({ lang }) => {
+  const content = INFO_CONTENT[lang]?.faq || INFO_CONTENT['en'].faq;
+  
   const faqItems = [
     {
-      title: lang === 'zh' ? "什么是 Digital Sleep Lab？" : "What is Digital Sleep Lab?",
+      title: lang === 'zh' ? "什么是 SomnoAI Digital Sleep Lab？" : "What is SomnoAI Digital Sleep Lab?",
       content: lang === 'zh' 
-        ? "Digital Sleep Lab 是一项以研究为导向的技术倡议，致力于探索人工智能和先进的数据分析如何加深对人类睡眠的理解。我们将来自可穿戴设备的原始行为信号转化为关于休息、恢复和节律的有意义的见解。"
-        : "Digital Sleep Lab is a research-driven technology initiative dedicated to exploring how artificial intelligence and advanced data analysis can deepen the understanding of human sleep. We transform raw behavioral signals from wearable devices into meaningful insights about rest, recovery, and rhythms."
+        ? "SomnoAI Digital Sleep Lab 是一项以研究为导向的技术倡议，致力于探索人工智能和先进的数据分析如何加深对人类睡眠的理解。我们将来自可穿戴设备的原始行为信号转化为关于休息、恢复和节律的有意义的见解。"
+        : "SomnoAI Digital Sleep Lab is a research-driven technology initiative dedicated to exploring how artificial intelligence and advanced data analysis can deepen the understanding of human sleep. We transform raw behavioral signals from wearable devices into meaningful insights about rest, recovery, and rhythms."
     },
     {
       title: lang === 'zh' ? "这是一种医疗设备吗？" : "Is this a medical device?",
       content: lang === 'zh'
-        ? "不。Digital Sleep Lab 是一个信息和研究平台。它不旨在诊断、治疗或预防任何医疗状况。对于与睡眠相关的医疗问题，请务必咨询医疗保健专业人员。"
-        : "No. Digital Sleep Lab is an informational and research platform. It is not intended to diagnose, treat, or prevent any medical condition. Always consult with a healthcare professional for medical concerns related to sleep."
+        ? "不。SomnoAI Digital Sleep Lab 是一个信息和研究平台。它不旨在诊断、治疗或预防任何医疗状况。对于与睡眠相关的医疗问题，请务必咨询医疗保健专业人员。"
+        : "No. SomnoAI Digital Sleep Lab is an informational and research platform. It is not intended to diagnose, treat, or prevent any medical condition. Always consult with a healthcare professional for medical concerns related to sleep."
     },
     {
       title: lang === 'zh' ? "我如何连接我的设备？" : "How do I connect my devices?",
@@ -44,13 +47,19 @@ export const FAQ: React.FC<FAQProps> = ({ lang }) => {
       content: lang === 'zh'
         ? "在我们的研究阶段，参与者可以免费使用该平台的基础功能。随着平台的发展，我们将来可能会推出高级功能或订阅模型。"
         : "During our research phase, basic access to the platform is free for participants. We may introduce premium features or subscription models in the future as the platform evolves."
+    },
+    {
+      title: lang === 'zh' ? "AI 预测会出错吗？" : "Can AI predictions be wrong?",
+      content: lang === 'zh'
+        ? "是的。AI 输出是概率性的，不应被视为明确的结论。我们的模型正在不断完善，但它们并非万无一失。"
+        : "Yes. AI outputs are probabilistic and should not be treated as definitive conclusions. Our models are constantly being refined, but they are not infallible."
     }
   ];
 
   return (
     <MarketingPageTemplate
-      title={lang === 'zh' ? "常见问题解答" : "Frequently Asked Questions"}
-      subtitle={lang === 'zh' ? "查找有关 Digital Sleep Lab 平台、研究和数据实践的常见问题解答。" : "Find answers to common questions about the Digital Sleep Lab platform, research, and data practices."}
+      title={content.title}
+      subtitle={content.subtitle}
     >
       <Section className="max-w-3xl mx-auto">
         <Accordion items={faqItems} />

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
+import { X } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { trackPageView } from './services/analytics';
 import { Language } from './types';
@@ -7,15 +8,16 @@ import { ErrorBoundary } from './components/ErrorBoundary';
 import { AnalyticsProvider } from './components/AnalyticsProvider';
 import RootLayout from './components/RootLayout';
 import { supabase, logAuditLog } from './services/supabaseService';
-import { SleepRecord } from './types';
+import { SleepRecord, UserProfile as UserProfileType } from './types';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Navbar } from './components/Navbar';
 import { Footer } from './components/Footer';
+import { SchemaMarkup } from './components/SchemaMarkup';
 
 // Lazy load components
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
-const Dashboard = lazy(() => import('./components/Placeholders').then(module => ({ default: module.Dashboard || module.PlaceholderView }))); // Fallback
+const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
 const AdminView = lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
 const FeedbackView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
@@ -35,9 +37,9 @@ const DynamicPage = lazy(() => import('./pages/DynamicPage').then(module => ({ d
 const AIAssistant = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AIAssistant })));
 const ExperimentView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ExperimentView })));
 const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
-const BlogHub = lazy(() => import('./components/Placeholders').then(module => ({ default: module.PlaceholderView }))); // Fallback
+const BlogHub = lazy(() => import('./pages/BlogHub').then(module => ({ default: module.BlogHub })));
 const BlogPostView = lazy(() => import('./components/BlogPostView').then(module => ({ default: module.BlogPostView })));
-const NewsHub = lazy(() => import('./components/Placeholders').then(module => ({ default: module.NewsHub })));
+const NewsHub = lazy(() => import('./pages/NewsHub').then(module => ({ default: module.NewsHub })));
 const ArticleView = lazy(() => import('./components/ArticleView').then(module => ({ default: module.ArticleView })));
 const ChangelogView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ChangelogView })));
 const SupportView = lazy(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
@@ -97,7 +99,7 @@ interface AppRoutesProps {
   setLang: (lang: Language) => void;
   latestData: SleepRecord | null;
   history: SleepRecord[];
-  profile: any; // TODO: Type this properly
+  profile: UserProfileType | null;
   handleNavigate: (path: string) => void;
 }
 
@@ -137,6 +139,8 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="auth/login" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signin" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signup" element={<Auth lang={lang} initialView="signup" />} />
+      <Route path="login" element={<Navigate to="/auth/login" replace />} />
+      <Route path="signup" element={<Navigate to="/auth/signup" replace />} />
       <Route path="auth/verify" element={<Navigate to="/dashboard" replace />} />
       <Route path="auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
       <Route path="about" element={<About lang={lang} />} />
@@ -221,6 +225,7 @@ const AppContent = () => {
   const [lang, setLang] = useState<Language>('en'); // Default language to English
   const [latestData, setLatestData] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
+  const [showBanner, setShowBanner] = useState(true);
   const isSupabaseConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   useEffect(() => {
@@ -295,12 +300,38 @@ const AppContent = () => {
   return (
     <ErrorBoundary lang={lang}>
       <RootLayout>
+      <SchemaMarkup />
       <div className="min-h-screen bg-[#01040a]">
         {!isSupabaseConfigured && (
-          <div className="relative w-full bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
+          <div className="fixed top-0 left-0 right-0 bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
             ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
           </div>
         )}
+        
+        {showBanner && (
+          <a 
+            href="https://docs.google.com/forms/d/e/1FAIpQLSf1LB5wOAUW8PioG5HiUW8MYC_a9_Rp4Eb9wjYpaQM2U9SJ4A/viewform"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="fixed top-0 left-0 right-0 h-8 bg-gradient-to-r from-indigo-600 via-purple-600 to-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] flex items-center justify-center z-[9999] shadow-xl hover:brightness-110 transition-all"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+              <span>Join SomnoAI Digital Sleep Lab Early Access — Limited Beta Access</span>
+            </div>
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setShowBanner(false);
+              }}
+              className="absolute right-4 text-white/70 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full"
+            >
+              <X size={12} />
+            </button>
+          </a>
+        )}
+
         {showNavbar && (
           <Navbar 
             lang={lang} 
@@ -308,10 +339,11 @@ const AppContent = () => {
             onNavigate={handleNavigate} 
             isAuthenticated={!!user} 
             isAdmin={isAdmin} 
-            onLogout={handleLogout} 
+            onLogout={handleLogout}
+            className={`transition-all duration-300 ${showBanner ? '!top-8' : '!top-0'}`} 
           />
         )}
-        <div className={showNavbar ? "pt-20" : ""}>
+        <div className={`transition-all duration-300 ${showNavbar ? (showBanner ? "pt-28" : "pt-20") : "pt-8"}`}>
           <Routes>
             <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
             <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />

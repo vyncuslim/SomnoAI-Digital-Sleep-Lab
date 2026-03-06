@@ -38,8 +38,8 @@ export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrima
 );
 
 // --- Section ---
-export const Section: React.FC<{ title?: string; description?: string; children: React.ReactNode; className?: string }> = ({ title, description, children, className = "" }) => (
-  <section className={`py-16 ${className}`}>
+export const Section: React.FC<{ title?: string; description?: string; children: React.ReactNode; className?: string; id?: string }> = ({ title, description, children, className = "", id }) => (
+  <section id={id} className={`py-16 ${className}`}>
     {(title || description) && (
       <div className="mb-12 max-w-3xl">
         {title && <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">{title}</h2>}

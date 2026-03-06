@@ -28,25 +28,25 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
       "@type": "NewsArticle",
       "mainEntityOfPage": {
         "@type": "WebPage",
-        "@id": `https://digitalsleeplab.com/article/${article.slug}`
+        "@id": `https://sleepsomno.com/article/${article.slug}`
       },
       "headline": article.title,
       "description": article.excerpt,
-      "image": ["https://digitalsleeplab.com/favicon.svg"],
+      "image": ["https://sleepsomno.com/favicon.svg"],
       "datePublished": `${article.date}T10:00:00+08:00`,
       "dateModified": `${article.date}T10:00:00+08:00`,
       "author": {
         "@type": "Person",
         "name": article.author.name,
         "jobTitle": article.author.role,
-        "url": "https://digitalsleeplab.com/about"
+        "url": "https://sleepsomno.com/about"
       },
       "publisher": {
         "@type": "Organization",
-        "name": "Digital Sleep Lab",
+        "name": "SomnoAI Digital Sleep Lab",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://digitalsleeplab.com/favicon.svg"
+          "url": "https://sleepsomno.com/favicon.svg"
         }
       }
     };
@@ -55,9 +55,9 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       "itemListElement": [
-        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://digitalsleeplab.com/" },
-        { "@type": "ListItem", "position": 2, "name": "Research Hub", "item": "https://digitalsleeplab.com/news" },
-        { "@type": "ListItem", "position": 3, "name": article.title, "item": `https://digitalsleeplab.com/article/${article.slug}` }
+        { "@type": "ListItem", "position": 1, "name": "Home", "item": "https://sleepsomno.com/" },
+        { "@type": "ListItem", "position": 2, "name": "Research Hub", "item": "https://sleepsomno.com/news" },
+        { "@type": "ListItem", "position": 3, "name": article.title, "item": `https://sleepsomno.com/article/${article.slug}` }
       ]
     };
 

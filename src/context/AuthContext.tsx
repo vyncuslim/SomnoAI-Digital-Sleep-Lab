@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { auth } from '../lib/firebase';
-import { onAuthStateChanged, signOut as firebaseSignOut } from 'firebase/auth';
+import { supabase } from '../services/supabaseService';
+import { User } from '@supabase/supabase-js';
+import { UserProfile } from '../types';
 
 interface AuthContextType {
-  user: any;
-  profile: any;
+  user: User | null;
+  profile: UserProfile | null;
   loading: boolean;
   isBlocked: boolean;
   isAdmin: boolean;
@@ -17,75 +18,76 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<any>(null);
-  const [profile, setProfile] = useState<any>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner;
-  const isOwner = profile?.role === 'owner' || profile?.is_super_owner;
-  const isSuperOwner = profile?.is_super_owner;
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner || false;
+  const isOwner = profile?.role === 'owner' || profile?.is_super_owner || false;
+  const isSuperOwner = profile?.is_super_owner || false;
 
-  useEffect(() => {
-    if (!auth) {
-      // If Firebase is not configured, check if we have a mock user in localStorage
-      const mockUser = localStorage.getItem('mockUser');
-      if (mockUser) {
-        const parsedUser = JSON.parse(mockUser);
-        setUser(parsedUser);
-        setProfile({
-          id: parsedUser.uid,
-          email: parsedUser.email,
-          role: 'admin',
-          is_super_owner: true
-        });
+  const fetchProfile = async (userId: string, email?: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching profile:', error);
       }
-      setLoading(false);
-      return;
-    }
 
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      // Mock profile for now, since we removed Supabase
-      if (currentUser) {
+      if (data) {
+        setProfile(data);
+      } else {
+        // Fallback profile if not found in DB yet
         setProfile({
-          id: currentUser.uid,
-          email: currentUser.email,
+          id: userId,
+          email: email || '',
           role: 'user'
         });
-      } else {
-        setProfile(null);
       }
+    } catch (err) {
+      console.error('Error in fetchProfile:', err);
+    } finally {
       setLoading(false);
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  const signIn = async (email: string) => {
-    console.log('signIn called', { email, authConfigured: !!auth });
-    if (!auth) {
-      console.log('Firebase not configured, using mock login');
-      const mockUser = { uid: 'mock-user-123', email };
-      localStorage.setItem('mockUser', JSON.stringify(mockUser));
-      setUser(mockUser);
-      setProfile({
-        id: mockUser.uid,
-        email: mockUser.email,
-        role: 'admin',
-        is_super_owner: true
-      });
     }
   };
 
+  useEffect(() => {
+    // Check active sessions and sets the user
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id, session.user.email);
+      } else {
+        setLoading(false);
+      }
+    });
+
+    // Listen for changes on auth state (logged in, signed out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      if (session?.user) {
+        fetchProfile(session.user.id, session.user.email);
+      } else {
+        setProfile(null);
+        setLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signIn = async (email: string) => {
+    // Mock signIn for compatibility if needed, but we'll use Supabase directly in Auth.tsx
+    console.log('signIn called', { email });
+  };
+
   const signOut = async () => {
-    if (auth) {
-      await firebaseSignOut(auth);
-    } else {
-      localStorage.removeItem('mockUser');
-      setUser(null);
-      setProfile(null);
-    }
+    await supabase.auth.signOut();
   };
 
   return (

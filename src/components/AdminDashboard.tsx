@@ -14,6 +14,7 @@ import { Language, getTranslation } from '../services/i18n.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { emailService } from '../services/emailService.ts';
+import { UserProfile, Feedback, AuditLog, SecurityEvent, Review, MarketingData } from '../types';
 
 type AdminTab = 'overview' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews';
 
@@ -29,17 +30,6 @@ const DATABASE_SCHEMA = [
   { id: 'reviews', name: 'Product Reviews', group: 'Sentiment', icon: Star }
 ];
 
-interface MarketingData {
-  date: string;
-  datasource: string;
-  source: string;
-  active_users: number;
-  clicks: number;
-  sessions: number;
-  active1_day_users: number;
-  active7_day_users: number;
-}
-
 interface AdminDashboardProps {
   lang: Language;
   onBack: () => void;
@@ -49,11 +39,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
   const { profile, isAdmin, isOwner, isSuperOwner, loading: authLoading } = useAuth();
   const t = getTranslation(lang, 'admin');
   const [activeTab, setActiveTab] = useState<AdminTab>('overview');
-  const [users, setUsers] = useState<any[]>([]);
-  const [feedback, setFeedback] = useState<any[]>([]);
-  const [auditLogs, setAuditLogs] = useState<any[]>([]);
-  const [securityEvents, setSecurityEvents] = useState<any[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserProfile[]>([]);
+  const [feedback, setFeedback] = useState<Feedback[]>([]);
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
+  const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
   
   const [marketingData, setMarketingData] = useState<MarketingData[]>([]);
@@ -93,7 +83,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
     }
   };
 
-  const canManage = (targetUser: any) => {
+  const canManage = (targetUser: UserProfile) => {
     if (!profile) return false;
     
     if (profile.id === targetUser.id) return false;
@@ -212,7 +202,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
   const fetchData = async () => {
     setIsSyncing(true);
     try {
-      const { data: { user }, error } = await (supabase.auth as any).getUser();
+      const { data: { user }, error } = await supabase.auth.getUser();
       if (error) throw error;
       if (!user) return;
 
@@ -399,22 +389,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                   {[...auditLogs, ...securityEvents]
                     .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
                     .slice(0, 3)
-                    .map((item, i) => (
-                    <div key={i} className="flex items-start gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
-                      <div className={`mt-1 w-1.5 h-1.5 rounded-full ${item.type ? 'bg-rose-500' : 'bg-slate-500'}`} />
-                      <div>
-                        <p className="text-sm font-bold text-white mb-1">
-                          {item.action || item.type || 'System Event'}
-                        </p>
-                        <p className="text-xs text-slate-400 mb-2 line-clamp-1">
-                          {item.details}
-                        </p>
-                        <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
-                          {new Date(item.created_at).toLocaleString()}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    .map((item, i) => {
+                      const isSecurity = 'type' in item;
+                      const title = isSecurity ? (item as SecurityEvent).type : (item as AuditLog).action;
+                      const details = typeof item.details === 'string' ? item.details : JSON.stringify(item.details);
+                      
+                      return (
+                        <div key={i} className="flex items-start gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
+                          <div className={`mt-1 w-1.5 h-1.5 rounded-full ${isSecurity ? 'bg-rose-500' : 'bg-slate-500'}`} />
+                          <div>
+                            <p className="text-sm font-bold text-white mb-1">
+                              {title || 'System Event'}
+                            </p>
+                            <p className="text-xs text-slate-400 mb-2 line-clamp-1">
+                              {details}
+                            </p>
+                            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
+                              {new Date(item.created_at).toLocaleString()}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               </GlassCard>
             </div>
@@ -780,10 +776,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     </label>
                     <input 
                       type="text" 
-                      value={settings.email_sender_name || 'Digital Sleep Lab Team'}
+                      value={settings.email_sender_name || 'SomnoAI Digital Sleep Lab Team'}
                       onChange={(e) => handleSaveSettings({ email_sender_name: e.target.value })}
                       className="w-full bg-black/20 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-indigo-500 outline-none transition-colors"
-                      placeholder="Digital Sleep Lab Team"
+                      placeholder="SomnoAI Digital Sleep Lab Team"
                     />
                   </div>
 

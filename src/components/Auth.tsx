@@ -1,19 +1,12 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Github, Chrome, Brain, ShieldCheck } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
-import { auth } from '../lib/firebase';
 import { supabase } from '../services/supabaseService';
 import { useAuth } from '../context/AuthContext';
-import { 
-  createUserWithEmailAndPassword, 
-  signInWithEmailAndPassword,
-  GoogleAuthProvider,
-  signInWithPopup
-} from 'firebase/auth';
 
 interface AuthProps {
   lang: Language;
@@ -24,6 +17,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
   const [view, setView] = useState<'login' | 'signup'>(initialView);
+  
+  // Sync view with initialView prop when it changes (e.g. via routing)
+  React.useEffect(() => {
+    setView(initialView);
+  }, [initialView]);
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -57,7 +56,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     try {
       if (view === 'signup') {
         if (!termsApproved || !privacyApproved) {
-          console.log('Terms or Privacy not approved');
           throw new Error('You must approve the Terms of Service and Privacy Policy.');
         }
         if (password !== confirmPassword) {
@@ -65,29 +63,23 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         }
       }
 
-      if (!auth) {
-        console.log('Firebase not configured, using mock login');
-        // Mock login if Firebase is not configured
-        await signIn(email);
-        navigate('/dashboard');
-        return;
-      }
-
       if (view === 'login') {
-        try {
-          await signInWithEmailAndPassword(auth, email, password);
-        } catch (err: any) {
-          console.warn('Firebase login failed, falling back to mock login:', err);
-          await signIn(email);
-        }
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+        
+        if (signInError) throw signInError;
+        
         navigate('/dashboard');
       } else {
-        try {
-          await createUserWithEmailAndPassword(auth, email, password);
-        } catch (err: any) {
-          console.warn('Firebase signup failed, falling back to mock login:', err);
-          await signIn(email);
-        }
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+        
+        if (signUpError) throw signUpError;
+        
         navigate('/dashboard');
       }
     } catch (err: any) {
@@ -102,13 +94,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         }
       }
 
-      // Make Firebase error messages more user-friendly
+      // Make error messages more user-friendly
       let errorMessage = err.message || 'Authentication failed';
-      if (err.code === 'auth/invalid-credential') {
+      
+      if (err.message === 'Invalid login credentials') {
         errorMessage = 'Invalid email or password.';
-      } else if (err.code === 'auth/email-already-in-use') {
+      } else if (err.message === 'User already registered') {
         errorMessage = 'An account with this email already exists.';
-      } else if (err.code === 'auth/weak-password') {
+      } else if (err.message && err.message.includes('Password should be at least')) {
         errorMessage = 'Password should be at least 6 characters.';
       }
       setError(errorMessage);
@@ -118,24 +111,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!auth) {
-      // Mock login if Firebase is not configured
-      await signIn('google-user@example.com');
-      navigate('/dashboard');
-      return;
-    }
-    
     try {
       setLoading(true);
       setError(null);
-      const provider = new GoogleAuthProvider();
-      try {
-        await signInWithPopup(auth, provider);
-      } catch (err) {
-        console.warn('Firebase Google login failed, falling back to mock login:', err);
-        await signIn('google-user@example.com');
-      }
-      navigate('/dashboard');
+      
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/dashboard`
+        }
+      });
+      
+      if (error) throw error;
+      
     } catch (err: any) {
       console.error('Google Auth error:', err);
       setError(err.message || 'Google sign-in failed');
@@ -163,7 +151,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             {view === 'login' ? (lang === 'zh' ? '欢迎回来' : 'Welcome Back') : (lang === 'zh' ? '加入实验室' : 'Join the Lab')}
           </h1>
           <p className="text-slate-500 text-xs font-mono uppercase tracking-[0.3em] mt-2">
-            Digital Sleep Lab • Neural Access
+            SomnoAI Digital Sleep Lab • Neural Access
           </p>
         </div>
 
@@ -317,7 +305,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             onClick={() => navigate('/')}
             className="text-[10px] font-black text-slate-700 hover:text-slate-400 uppercase tracking-[0.3em] transition-all"
           >
-            ← Back to Laboratory
+            ← Back to SomnoAI Digital Sleep Lab
           </button>
         </div>
 
