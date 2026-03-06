@@ -34,6 +34,7 @@ const FAQ = lazy(() => import('./pages/FAQ').then(module => ({ default: module.F
 const Status = lazy(() => import('./pages/Status').then(module => ({ default: module.Status })));
 const Contact = lazy(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
 const LegalHub = lazy(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
+const MediaResources = lazy(() => import('./pages/MediaResources').then(module => ({ default: module.MediaResources })));
 const DynamicPage = lazy(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
 const AIAssistant = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AIAssistant })));
 const ExperimentView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ExperimentView })));
@@ -166,6 +167,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 
       {/* Legal & Support */}
       <Route path="legal" element={<LegalHub lang={lang} />} />
+      <Route path="media" element={<MediaResources lang={lang} />} />
       <Route path="legal/:type" element={<DynamicPage lang={lang} />} />
       <Route path="privacy" element={<Navigate to={`${langPrefix}/legal/privacy-policy`} replace />} />
       <Route path="terms" element={<Navigate to={`${langPrefix}/legal/terms-of-service`} replace />} />
