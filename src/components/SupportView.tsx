@@ -11,7 +11,7 @@ interface SupportViewProps {
   onNavigate: (view: any) => void;
 }
 
-export const SupportView: React.FC<SupportViewProps> = ({ lang }) => {
+export const SupportView: React.FC<SupportViewProps> = ({ lang, onNavigate }) => {
   const isZh = lang === 'zh';
 
   return (

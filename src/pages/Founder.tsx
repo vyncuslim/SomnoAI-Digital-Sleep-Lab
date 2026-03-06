@@ -1,8 +1,8 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
-import { Section, Card, InlineCTA } from '../components/ui/Components';
-import { Quote, Linkedin, Github, Twitter, Globe, MessageSquare } from 'lucide-react';
-import { Language, getTranslation } from '../services/i18n';
+import { Section, InlineCTA } from '../components/ui/Components';
+import { Linkedin, Globe, MessageSquare } from 'lucide-react';
+import { Language } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';
 
 interface FounderProps {

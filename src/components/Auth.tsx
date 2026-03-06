@@ -7,6 +7,7 @@ import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
 import { supabase } from '../services/supabaseService';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/useLanguage';
 
 interface AuthProps {
   lang: Language;
@@ -16,6 +17,7 @@ interface AuthProps {
 export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const navigate = useNavigate();
   const { signIn } = useAuth();
+  const { langPrefix } = useLanguage();
   const [view, setView] = useState<'login' | 'signup'>(initialView);
   
   // Sync view with initialView prop when it changes (e.g. via routing)
@@ -54,10 +56,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setError(null);
 
     try {
+      if (!termsApproved || !privacyApproved) {
+        throw new Error('You must approve the Terms of Service and Privacy Policy.');
+      }
+
       if (view === 'signup') {
-        if (!termsApproved || !privacyApproved) {
-          throw new Error('You must approve the Terms of Service and Privacy Policy.');
-        }
         if (password !== confirmPassword) {
           throw new Error('Passwords do not match.');
         }
@@ -144,7 +147,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         className="w-full max-w-md relative z-10"
       >
         <div className="flex flex-col items-center mb-12">
-          <Link to="/">
+          <Link to={langPrefix}>
             <Logo className="mb-6 scale-125" />
           </Link>
           <h1 className="text-3xl font-black italic uppercase tracking-tighter text-white">
@@ -192,6 +195,35 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               </div>
             </div>
 
+            <div className="space-y-3 ml-2">
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="terms"
+                  checked={termsApproved}
+                  onChange={(e) => setTermsApproved(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                  required
+                />
+                <label htmlFor="terms" className="text-xs text-slate-400">
+                  {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/terms-of-service`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">{lang === 'zh' ? '服务条款' : 'Terms of Service'}</Link>.
+                </label>
+              </div>
+              <div className="flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="privacy"
+                  checked={privacyApproved}
+                  onChange={(e) => setPrivacyApproved(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
+                  required
+                />
+                <label htmlFor="privacy" className="text-xs text-slate-400">
+                  {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
+                </label>
+              </div>
+            </div>
+
             {view === 'signup' && (
               <div className="space-y-2">
                 <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">Confirm Password</label>
@@ -221,35 +253,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     </p>
                   </div>
                 )}
-              </div>
-            )}
-
-            {view === 'signup' && (
-              <div className="space-y-3 ml-2">
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="terms"
-                    checked={termsApproved}
-                    onChange={(e) => setTermsApproved(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
-                  />
-                  <label htmlFor="terms" className="text-xs text-slate-400">
-                    I agree to the <Link to="/legal/terms-of-service" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Terms of Service</Link>.
-                  </label>
-                </div>
-                <div className="flex items-center gap-3">
-                  <input
-                    type="checkbox"
-                    id="privacy"
-                    checked={privacyApproved}
-                    onChange={(e) => setPrivacyApproved(e.target.checked)}
-                    className="w-4 h-4 rounded border-white/10 bg-black/40 text-indigo-500 focus:ring-indigo-500 focus:ring-offset-0"
-                  />
-                  <label htmlFor="privacy" className="text-xs text-slate-400">
-                    I agree to the <Link to="/legal/privacy-policy" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:underline">Privacy Policy</Link>.
-                  </label>
-                </div>
               </div>
             )}
 
@@ -302,7 +305,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             </button>
           </p>
           <button 
-            onClick={() => navigate('/')}
+            onClick={() => navigate(langPrefix)}
             className="text-[10px] font-black text-slate-700 hover:text-slate-400 uppercase tracking-[0.3em] transition-all"
           >
             ← Back to SomnoAI Digital Sleep Lab

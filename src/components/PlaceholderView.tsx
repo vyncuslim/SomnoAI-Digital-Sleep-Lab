@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { ChevronLeft } from 'lucide-react';
 import { Logo } from './Logo';
+import { useLanguage } from '../context/useLanguage';
 
 interface PlaceholderProps {
   title?: string;
@@ -11,6 +12,7 @@ interface PlaceholderProps {
 
 export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Accessing Laboratory Node...', onBack, ...props }) => {
   const navigate = useNavigate();
+  const { langPrefix } = useLanguage();
   const handleBack = onBack || (() => navigate(-1));
 
   return (
@@ -23,7 +25,7 @@ export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Accessing
           <ChevronLeft size={24} />
         </button>
       </div>
-      <Link to="/">
+      <Link to={langPrefix}>
         <Logo className="mb-8 scale-150" />
       </Link>
       <h1 className="text-3xl font-bold mb-4">{title}</h1>

@@ -9,6 +9,7 @@ interface FooterProps {
 
 export const Footer: React.FC<FooterProps> = ({ lang }) => {
   const isZh = lang === 'zh';
+  const langPrefix = isZh ? '/cn' : '/en';
   
   return (
     <footer className="border-t border-white/5 bg-[#01040a] py-16 mt-auto">
@@ -29,36 +30,37 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
         <div>
           <h4 className="text-white font-medium mb-4">{isZh ? "快速链接" : "Quick Links"}</h4>
           <ul className="grid grid-cols-2 gap-2 text-sm text-slate-400">
-            <li><Link to="/about" className="hover:text-white transition-colors">{isZh ? "关于" : "About"}</Link></li>
-            <li><Link to="/product" className="hover:text-white transition-colors">{isZh ? "产品" : "Product"}</Link></li>
-            <li><Link to="/how-it-works" className="hover:text-white transition-colors">{isZh ? "工作原理" : "How it Works"}</Link></li>
-            <li><Link to="/features" className="hover:text-white transition-colors">{isZh ? "功能" : "Features"}</Link></li>
-            <li><Link to="/research" className="hover:text-white transition-colors">{isZh ? "研究" : "Research"}</Link></li>
-            <li><Link to="/science" className="hover:text-white transition-colors">{isZh ? "科学" : "Science"}</Link></li>
-            <li><Link to="/blog" className="hover:text-white transition-colors">{isZh ? "博客" : "Blog"}</Link></li>
-            <li><Link to="/news" className="hover:text-white transition-colors">{isZh ? "新闻" : "News"}</Link></li>
-            <li><Link to="/faq" className="hover:text-white transition-colors">{isZh ? "常见问题" : "FAQ"}</Link></li>
-            <li><Link to="/status" className="hover:text-white transition-colors">{isZh ? "状态" : "Status"}</Link></li>
-            <li><Link to="/contact" className="hover:text-white transition-colors">{isZh ? "联系我们" : "Contact"}</Link></li>
-            <li><Link to="/support" className="hover:text-white transition-colors">{isZh ? "支持" : "Support"}</Link></li>
+            <li><Link to={`${langPrefix}/about`} className="hover:text-white transition-colors">{isZh ? "关于" : "About"}</Link></li>
+            <li><Link to={`${langPrefix}/product`} className="hover:text-white transition-colors">{isZh ? "产品" : "Product"}</Link></li>
+            <li><Link to={`${langPrefix}/how-it-works`} className="hover:text-white transition-colors">{isZh ? "工作原理" : "How it Works"}</Link></li>
+            <li><Link to={`${langPrefix}/features`} className="hover:text-white transition-colors">{isZh ? "功能" : "Features"}</Link></li>
+            <li><Link to={`${langPrefix}/research`} className="hover:text-white transition-colors">{isZh ? "研究" : "Research"}</Link></li>
+            <li><Link to={`${langPrefix}/science`} className="hover:text-white transition-colors">{isZh ? "科学" : "Science"}</Link></li>
+            <li><Link to={`${langPrefix}/founder`} className="hover:text-white transition-colors">{isZh ? "创始人" : "Founder"}</Link></li>
+            <li><Link to={`${langPrefix}/blog`} className="hover:text-white transition-colors">{isZh ? "博客" : "Blog"}</Link></li>
+            <li><Link to={`${langPrefix}/news`} className="hover:text-white transition-colors">{isZh ? "新闻" : "News"}</Link></li>
+            <li><Link to={`${langPrefix}/faq`} className="hover:text-white transition-colors">{isZh ? "常见问题" : "FAQ"}</Link></li>
+            <li><Link to={`${langPrefix}/status`} className="hover:text-white transition-colors">{isZh ? "状态" : "Status"}</Link></li>
+            <li><Link to={`${langPrefix}/contact`} className="hover:text-white transition-colors">{isZh ? "联系我们" : "Contact"}</Link></li>
+            <li><Link to={`${langPrefix}/support`} className="hover:text-white transition-colors">{isZh ? "支持" : "Support"}</Link></li>
           </ul>
         </div>
         <div className="md:col-span-2">
           <h4 className="text-white font-medium mb-4">{isZh ? "法律" : "Legal"}</h4>
           <ul className="grid grid-cols-2 lg:grid-cols-3 gap-2 text-sm text-slate-400">
-            <li><Link to="/legal" className="hover:text-white transition-colors">{isZh ? "法律中心" : "Legal"}</Link></li>
-            <li><Link to="/privacy" className="hover:text-white transition-colors">{isZh ? "隐私政策" : "Privacy Policy"}</Link></li>
-            <li><Link to="/terms" className="hover:text-white transition-colors">{isZh ? "服务条款" : "Terms of Service"}</Link></li>
-            <li><Link to="/legal/cookies" className="hover:text-white transition-colors">{isZh ? "Cookie 政策" : "Cookies"}</Link></li>
-            <li><Link to="/legal/security" className="hover:text-white transition-colors">{isZh ? "安全政策" : "Security"}</Link></li>
-            <li><Link to="/legal/acceptable-use" className="hover:text-white transition-colors">{isZh ? "可接受使用" : "Acceptable Use"}</Link></li>
-            <li><Link to="/legal/ai-disclaimer" className="hover:text-white transition-colors">{isZh ? "AI 免责声明" : "AI Disclaimer"}</Link></li>
-            <li><Link to="/legal/medical-disclaimer" className="hover:text-white transition-colors">{isZh ? "医疗免责声明" : "Medical Disclaimer"}</Link></li>
-            <li><Link to="/legal/data-processing" className="hover:text-white transition-colors">{isZh ? "数据处理" : "Data Processing"}</Link></li>
-            <li><Link to="/legal/abuse-policy" className="hover:text-white transition-colors">{isZh ? "滥用政策" : "Abuse Policy"}</Link></li>
-            <li><Link to="/legal/account-blocking" className="hover:text-white transition-colors">{isZh ? "账户封禁" : "Account Blocking"}</Link></li>
-            <li><Link to="/legal/policy-framework" className="hover:text-white transition-colors">{isZh ? "政策框架" : "Policy Framework"}</Link></li>
-            <li><Link to="/legal/open-source" className="hover:text-white transition-colors">{isZh ? "开源" : "Open Source"}</Link></li>
+            <li><Link to={`${langPrefix}/legal`} className="hover:text-white transition-colors">{isZh ? "法律中心" : "Legal"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/privacy-policy`} className="hover:text-white transition-colors">{isZh ? "隐私政策" : "Privacy Policy"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/terms-of-service`} className="hover:text-white transition-colors">{isZh ? "服务条款" : "Terms of Service"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/cookies`} className="hover:text-white transition-colors">{isZh ? "Cookie 政策" : "Cookies"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/security`} className="hover:text-white transition-colors">{isZh ? "安全政策" : "Security"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/acceptable-use`} className="hover:text-white transition-colors">{isZh ? "可接受使用" : "Acceptable Use"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/ai-disclaimer`} className="hover:text-white transition-colors">{isZh ? "AI 免责声明" : "AI Disclaimer"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/medical-disclaimer`} className="hover:text-white transition-colors">{isZh ? "医疗免责声明" : "Medical Disclaimer"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/data-processing`} className="hover:text-white transition-colors">{isZh ? "数据处理" : "Data Processing"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/abuse-policy`} className="hover:text-white transition-colors">{isZh ? "滥用政策" : "Abuse Policy"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/account-blocking`} className="hover:text-white transition-colors">{isZh ? "账户封禁" : "Account Blocking"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/policy-framework`} className="hover:text-white transition-colors">{isZh ? "政策框架" : "Policy Framework"}</Link></li>
+            <li><Link to={`${langPrefix}/legal/open-source`} className="hover:text-white transition-colors">{isZh ? "开源" : "Open Source"}</Link></li>
           </ul>
         </div>
       </div>

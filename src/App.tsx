@@ -4,6 +4,7 @@ import { X } from 'lucide-react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { trackPageView } from './services/analytics';
 import { Language } from './types';
+import { LanguageProvider } from './context/LanguageProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AnalyticsProvider } from './components/AnalyticsProvider';
 import RootLayout from './components/RootLayout';
@@ -114,6 +115,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { isBlocked } = useAuth();
+  const langPrefix = lang === 'zh' ? '/cn' : '/en';
 
   const handleBack = () => navigate(-1);
 
@@ -134,14 +136,14 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
     }>
     <Routes>
       {/* Public Routes */}
-      <Route index element={<LandingPage lang={lang} onLanguageChange={setLang} />} />
+      <Route index element={<LandingPage lang={lang} onLanguageChange={setLang} onNavigate={handleNavigate} />} />
       <Route path="auth" element={<Auth lang={lang} />} />
       <Route path="auth/login" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signin" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signup" element={<Auth lang={lang} initialView="signup" />} />
-      <Route path="login" element={<Navigate to="/auth/login" replace />} />
-      <Route path="signup" element={<Navigate to="/auth/signup" replace />} />
-      <Route path="auth/verify" element={<Navigate to="/dashboard" replace />} />
+      <Route path="login" element={<Navigate to={`${langPrefix}/auth/login`} replace />} />
+      <Route path="signup" element={<Navigate to={`${langPrefix}/auth/signup`} replace />} />
+      <Route path="auth/verify" element={<Navigate to={`${langPrefix}/dashboard`} replace />} />
       <Route path="auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
       <Route path="about" element={<About lang={lang} />} />
       <Route path="product" element={<Product lang={lang} />} />
@@ -165,12 +167,12 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       {/* Legal & Support */}
       <Route path="legal" element={<LegalHub lang={lang} />} />
       <Route path="legal/:type" element={<DynamicPage lang={lang} />} />
-      <Route path="privacy" element={<Navigate to="/legal/privacy-policy" replace />} />
-      <Route path="terms" element={<Navigate to="/legal/terms-of-service" replace />} />
-      <Route path="policy" element={<Navigate to="/legal/policy-framework" replace />} />
-      <Route path="opensource" element={<Navigate to="/legal/open-source" replace />} />
-      <Route path="support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={(view) => navigate(`/${view}`)} />} />
-      <Route path="report-abuse" element={<Navigate to="/legal/abuse-policy" replace />} />
+      <Route path="privacy" element={<Navigate to={`${langPrefix}/legal/privacy-policy`} replace />} />
+      <Route path="terms" element={<Navigate to={`${langPrefix}/legal/terms-of-service`} replace />} />
+      <Route path="policy" element={<Navigate to={`${langPrefix}/legal/policy-framework`} replace />} />
+      <Route path="opensource" element={<Navigate to={`${langPrefix}/legal/open-source`} replace />} />
+      <Route path="support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={handleNavigate} />} />
+      <Route path="report-abuse" element={<Navigate to={`${langPrefix}/legal/abuse-policy`} replace />} />
 
       {/* Protected Routes */}
       <Route path="dashboard" element={
@@ -222,7 +224,10 @@ const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, profile, loading, isAdmin, signOut } = useAuth();
-  const [lang, setLang] = useState<Language>('en'); // Default language to English
+  
+  // Derive language from URL
+  const lang: Language = location.pathname.startsWith('/cn') ? 'zh' : 'en';
+  
   const [latestData, setLatestData] = useState<SleepRecord | null>(null);
   const [history, setHistory] = useState<SleepRecord[]>([]);
   const [showBanner, setShowBanner] = useState(true);
@@ -230,7 +235,7 @@ const AppContent = () => {
 
   useEffect(() => {
     trackPageView(location.pathname);
-  }, [location]);
+  }, [location.pathname]);
 
   useEffect(() => {
     if (profile) {
@@ -266,19 +271,30 @@ const AppContent = () => {
   }, [profile]);
 
   const handleLanguageChange = (newLang: Language) => {
-    setLang(newLang);
     const currentPath = window.location.pathname;
-    const pathWithoutLang = currentPath.replace(/^\/(cn|en)/, '');
-    navigate(`/${newLang === 'zh' ? 'cn' : 'en'}${pathWithoutLang}`);
+    const pathWithoutLang = currentPath.replace(/^\/(cn|en)/, '') || '/';
+    const targetLang = newLang === 'zh' ? 'cn' : 'en';
+    navigate(`/${targetLang}${pathWithoutLang === '/' ? '' : pathWithoutLang}`);
   };
 
   const handleNavigate = (path: string) => {
-    navigate(path);
+    // If it's a relative path (no leading slash), prefix it with current language
+    if (!path.startsWith('/') && !path.startsWith('http')) {
+      const prefix = lang === 'zh' ? '/cn' : '/en';
+      navigate(`${prefix}/${path}`);
+    } else if (path.startsWith('/') && !path.startsWith('/en') && !path.startsWith('/cn')) {
+      // If it's an absolute path but missing language prefix, add it
+      const prefix = lang === 'zh' ? '/cn' : '/en';
+      navigate(`${prefix}${path}`);
+    } else {
+      navigate(path);
+    }
   };
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/');
+    const prefix = lang === 'zh' ? '/cn' : '/en';
+    navigate(prefix);
   };
 
   if (loading) {
@@ -337,6 +353,7 @@ const AppContent = () => {
             lang={lang} 
             activeView={activeView} 
             onNavigate={handleNavigate} 
+            onLanguageChange={handleLanguageChange}
             isAuthenticated={!!user} 
             isAdmin={isAdmin} 
             onLogout={handleLogout}
@@ -344,11 +361,13 @@ const AppContent = () => {
           />
         )}
         <div className={`transition-all duration-300 ${showNavbar ? (showBanner ? "pt-28" : "pt-20") : "pt-8"}`}>
-          <Routes>
-            <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-            <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-            <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-          </Routes>
+          <LanguageProvider lang={lang}>
+            <Routes>
+              <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+              <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+              <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+            </Routes>
+          </LanguageProvider>
         </div>
         {showNavbar && <Footer lang={lang} />}
       </div>

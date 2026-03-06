@@ -16,10 +16,10 @@ import { useAuth } from '../context/AuthContext';
 interface LandingPageProps {
   lang: Language;
   onLanguageChange: (lang: Language) => void;
+  onNavigate: (path: string) => void;
 }
 
-export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
-  const navigate = useNavigate();
+export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) => {
   const { user, profile } = useAuth();
   const t = getTranslation(lang, 'landing');
 
@@ -213,7 +213,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang }) => {
           </h2>
           <p className="text-xl text-slate-400">{lang === 'zh' ? '加入下一代睡眠工程的候补名单。' : 'Join the waitlist for the next generation of sleep engineering.'}</p>
           <button 
-            onClick={() => navigate('/auth/signup')}
+            onClick={() => onNavigate('/auth/signup')}
             className="px-12 py-5 bg-white text-black rounded-full font-black text-lg uppercase tracking-widest hover:scale-105 transition-transform shadow-2xl"
           >
             {lang === 'zh' ? '立即开始' : 'Get Started Now'}

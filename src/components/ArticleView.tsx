@@ -6,6 +6,7 @@ import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { updateMetadata } from '../services/navigation.ts';
+import { useLanguage } from '../context/useLanguage';
 
 const m = motion as any;
 
@@ -17,6 +18,7 @@ interface ArticleViewProps {
 
 export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack }) => {
   const t = getTranslation(lang, 'news');
+  const { langPrefix } = useLanguage();
 
   useEffect(() => {
     // 1. Dynamic Meta Update for SEO
@@ -159,7 +161,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">
                       <ShieldCheck size={12} className="text-emerald-500" /> IDENTITY VERIFIED
                     </span>
-                    <Link to="/about" className="text-[10px] font-black text-indigo-500 hover:text-white uppercase tracking-widest flex items-center gap-2 transition-all">
+                    <Link to={`${langPrefix}/about`} className="text-[10px] font-black text-indigo-500 hover:text-white uppercase tracking-widest flex items-center gap-2 transition-all">
                       EDITORIAL POLICY <ArrowUpRight size={12} />
                     </Link>
                  </div>

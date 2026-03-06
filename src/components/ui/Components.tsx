@@ -1,41 +1,45 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Info, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useLanguage } from '../../context/useLanguage';
 
 // --- Hero ---
-export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrimary?: { text: string; link: string }; ctaSecondary?: { text: string; link: string } }> = ({ title, subtitle, ctaPrimary, ctaSecondary }) => (
-  <div className="py-20 md:py-32 flex flex-col items-center text-center max-w-4xl mx-auto relative">
-    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-      className="mb-6"
-    >
-      {title}
-    </motion.div>
-    <motion.p 
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-      className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl leading-relaxed"
-    >
-      {subtitle}
-    </motion.p>
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-      className="flex flex-col sm:flex-row items-center gap-4"
-    >
-      {ctaPrimary && (
-        <Link to={ctaPrimary.link} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-full transition-all shadow-[0_0_30px_rgba(79,70,229,0.3)] flex items-center gap-2 w-full sm:w-auto justify-center">
-          {ctaPrimary.text} <ArrowRight size={18} />
-        </Link>
-      )}
-      {ctaSecondary && (
-        <Link to={ctaSecondary.link} className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-full transition-all border border-white/10 w-full sm:w-auto justify-center">
-          {ctaSecondary.text}
-        </Link>
-      )}
-    </motion.div>
-  </div>
-);
+export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrimary?: { text: string; link: string }; ctaSecondary?: { text: string; link: string } }> = ({ title, subtitle, ctaPrimary, ctaSecondary }) => {
+  const { langPrefix } = useLanguage();
+  return (
+    <div className="py-20 md:py-32 flex flex-col items-center text-center max-w-4xl mx-auto relative">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
+        className="mb-6"
+      >
+        {title}
+      </motion.div>
+      <motion.p 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
+        className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl leading-relaxed"
+      >
+        {subtitle}
+      </motion.p>
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
+        className="flex flex-col sm:flex-row items-center gap-4"
+      >
+        {ctaPrimary && (
+          <Link to={`${langPrefix}${ctaPrimary.link}`} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-full transition-all shadow-[0_0_30px_rgba(79,70,229,0.3)] flex items-center gap-2 w-full sm:w-auto justify-center">
+            {ctaPrimary.text} <ArrowRight size={18} />
+          </Link>
+        )}
+        {ctaSecondary && (
+          <Link to={`${langPrefix}${ctaSecondary.link}`} className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-full transition-all border border-white/10 w-full sm:w-auto justify-center">
+            {ctaSecondary.text}
+          </Link>
+        )}
+      </motion.div>
+    </div>
+  );
+};
 
 // --- Section ---
 export const Section: React.FC<{ title?: string; description?: string; children: React.ReactNode; className?: string; id?: string }> = ({ title, description, children, className = "", id }) => (
@@ -185,25 +189,31 @@ export const LastUpdated: React.FC<{ date: string; version?: string }> = ({ date
 );
 
 // --- Breadcrumbs ---
-export const Breadcrumbs: React.FC<{ items: { label: string; link?: string }[] }> = ({ items }) => (
-  <nav className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-8">
-    <Link to="/" className="hover:text-white transition-colors">Home</Link>
-    {items.map((item, idx) => (
-      <React.Fragment key={idx}>
-        <ChevronRight size={14} className="text-slate-700" />
-        {item.link ? (
-          <Link to={item.link} className="hover:text-white transition-colors">{item.label}</Link>
-        ) : (
-          <span className="text-slate-300">{item.label}</span>
-        )}
-      </React.Fragment>
-    ))}
-  </nav>
-);
+export const Breadcrumbs: React.FC<{ items: { label: string; link?: string }[] }> = ({ items }) => {
+  const { langPrefix } = useLanguage();
+  return (
+    <nav className="flex items-center gap-2 text-sm font-medium text-slate-500 mb-8">
+      <Link to={langPrefix} className="hover:text-white transition-colors">Home</Link>
+      {items.map((item, idx) => (
+        <React.Fragment key={idx}>
+          <ChevronRight size={14} className="text-slate-700" />
+          {item.link ? (
+            <Link to={`${langPrefix}${item.link}`} className="hover:text-white transition-colors">{item.label}</Link>
+          ) : (
+            <span className="text-slate-300">{item.label}</span>
+          )}
+        </React.Fragment>
+      ))}
+    </nav>
+  );
+};
 
 // --- Inline CTA ---
-export const InlineCTA: React.FC<{ text: string; link: string; icon?: React.ReactNode }> = ({ text, link, icon }) => (
-  <Link to={link} className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 font-medium transition-colors group">
-    {text} {icon || <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
-  </Link>
-);
+export const InlineCTA: React.FC<{ text: string; link: string; icon?: React.ReactNode }> = ({ text, link, icon }) => {
+  const { langPrefix } = useLanguage();
+  return (
+    <Link to={`${langPrefix}${link}`} className="inline-flex items-center gap-2 text-indigo-400 hover:text-indigo-300 font-medium transition-colors group">
+      {text} {icon || <ArrowRight size={16} className="group-hover:translate-x-1 transition-transform" />}
+    </Link>
+  );
+};

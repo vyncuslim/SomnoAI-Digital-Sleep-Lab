@@ -17,6 +17,7 @@ interface NavbarProps {
   lang: Language;
   activeView: string;
   onNavigate: (view: string) => void;
+  onLanguageChange: (lang: Language) => void;
   isAuthenticated: boolean;
   isAdmin?: boolean;
   onLogout?: () => void;
@@ -33,6 +34,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
   lang, 
   activeView, 
   onNavigate, 
+  onLanguageChange,
   isAuthenticated, 
   isAdmin,
   onLogout,
@@ -43,6 +45,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
   
   const t = getTranslation(lang, 'landing');
   const isZh = lang === 'zh';
+  const langPrefix = isZh ? '/cn' : '/en';
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -58,6 +61,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
     { label: t.nav.news, view: 'news', icon: Newspaper },
     { label: t.nav.faq, view: 'faq', icon: HelpCircle },
     { label: t.nav.project, view: 'about', icon: Info },
+    { label: isZh ? '创始人' : 'Founder', view: 'founder', icon: User },
   ];
 
   const authLinks: NavLink[] = [
@@ -78,7 +82,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
   return (
     <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 h-20 flex items-center justify-between ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl' : 'bg-transparent'} ${className}`}>
       <div className="flex items-center gap-10">
-        <Link to="/">
+        <Link to={langPrefix}>
           <m.div 
             whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
@@ -135,13 +139,13 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
 
         <div className="flex items-center bg-white/5 rounded-full p-1 border border-white/10 mr-2">
           <button 
-            onClick={() => onNavigate('/en')}
+            onClick={() => onLanguageChange('en')}
             className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'en' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
           >
             EN
           </button>
           <button 
-            onClick={() => onNavigate('/cn')}
+            onClick={() => onLanguageChange('zh')}
             className={`px-3 py-1 rounded-full text-[10px] font-black transition-all ${lang === 'zh' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-white'}`}
           >
             CN
@@ -250,7 +254,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
                   <button 
                     key={l} 
                     onClick={() => {
-                      onNavigate(l === 'en' ? '/en' : '/cn');
+                      onLanguageChange(l as Language);
                       setIsMobileMenuOpen(false);
                     }}
                     className={`flex-1 py-3 rounded-full text-[10px] font-black uppercase tracking-widest transition-all ${lang === l ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-600/20' : 'text-slate-500 hover:text-slate-300'}`}
