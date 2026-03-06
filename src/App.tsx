@@ -45,7 +45,7 @@ const ArticleView = lazy(() => import('./components/ArticleView').then(module =>
 const ChangelogView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ChangelogView })));
 const SupportView = lazy(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
 const SearchHub = lazy(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
-const BlockedView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.BlockedView })));
+const BlockedView = lazy(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
 
 // Initial Data
 const INITIAL_SLEEP_DATA: SleepRecord = {
@@ -362,11 +362,14 @@ const AppContent = () => {
         )}
         <div className={`transition-all duration-300 ${showNavbar ? (showBanner ? "pt-28" : "pt-20") : "pt-8"}`}>
           <LanguageProvider lang={lang}>
-            <Routes>
-              <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-              <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-              <Route path="/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-            </Routes>
+            {/^\/(cn|en)(\/|$)/.test(location.pathname) ? (
+              <Routes>
+                <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+                <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+              </Routes>
+            ) : (
+              <AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />
+            )}
           </LanguageProvider>
         </div>
         {showNavbar && <Footer lang={lang} />}

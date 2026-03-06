@@ -4,7 +4,7 @@ import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, Histo
 import { GoogleGenAI } from '@google/genai';
 
 // Initialize Gemini API
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
 
 interface SleepInput {
   duration: number;
@@ -53,6 +53,17 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       } catch (e) {
         console.error('Failed to parse history', e);
       }
+    }
+
+    // Load ElevenLabs Widget Script
+    const script = document.createElement('script');
+    script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
+    script.async = true;
+    script.type = "text/javascript";
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
     }
   }, []);
 
@@ -389,6 +400,8 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         <AlertCircle size={18} className="shrink-0 mt-0.5" />
         <p>{t.disclaimer}</p>
       </div>
+
+      <elevenlabs-convai agent-id="agent_1401kjfc5d63ess97ktcvef39957"></elevenlabs-convai>
     </div>
   );
 };

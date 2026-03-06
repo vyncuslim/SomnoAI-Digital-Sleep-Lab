@@ -33,6 +33,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const t = getTranslation(lang, 'landing');
 
+  React.useEffect(() => {
+    // Load ElevenLabs Widget Script
+    const script = document.createElement('script');
+    script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
+    script.async = true;
+    script.type = "text/javascript";
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    }
+  }, []);
+
   const getPasswordStrength = (pass: string) => {
     if (!pass) return 0;
     let score = 0;
@@ -130,6 +143,35 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     } catch (err: any) {
       console.error('Google Auth error:', err);
       setError(err.message || 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleOtpLogin = async () => {
+    if (!email) {
+      setError('Please enter your email address first.');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/dashboard`,
+        },
+      });
+      
+      if (error) throw error;
+      
+      alert(lang === 'zh' ? '登录链接已发送到您的邮箱，请查收。' : 'Magic link sent to your email. Check your inbox to log in.');
+      
+    } catch (err: any) {
+      console.error('OTP Login error:', err);
+      setError(err.message || 'Failed to send magic link');
     } finally {
       setLoading(false);
     }
@@ -281,7 +323,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             </div>
           </div>
 
-          <div className="mt-8 grid grid-cols-1 gap-4">
+          <div className="mt-8 grid grid-cols-2 gap-4">
             <button 
               type="button" 
               onClick={handleGoogleSignIn}
@@ -290,6 +332,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             >
               <Chrome size={18} className="text-slate-400" />
               <span className="text-[10px] font-black uppercase tracking-widest">Google</span>
+            </button>
+            <button 
+              type="button" 
+              onClick={handleOtpLogin}
+              disabled={loading || !email}
+              className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50"
+            >
+              <Mail size={18} className="text-slate-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Magic Link</span>
             </button>
           </div>
         </GlassCard>
@@ -319,6 +370,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           <span className="text-[8px] font-mono uppercase tracking-widest">AES-256 Encrypted</span>
         </div>
       </motion.div>
+      <elevenlabs-convai agent-id="agent_1401kjfc5d63ess97ktcvef39957"></elevenlabs-convai>
     </div>
   );
 };
