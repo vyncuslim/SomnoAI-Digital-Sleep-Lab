@@ -4,13 +4,31 @@ import path from "path";
 import { fileURLToPath } from "url";
 import cors from "cors";
 import helmet from "helmet";
+import nodemailer from "nodemailer";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Mock email transporter (logs to console in dev)
+const transporter = nodemailer.createTransport({
+  jsonTransport: true
+});
+
+async function sendEmail(to: string, subject: string, text: string) {
+  console.log(`[EMAIL MOCK] Sending email to ${to}`);
+  console.log(`Subject: ${subject}`);
+  console.log(`Body: ${text}`);
+  
+  // In a real app, you would use a real SMTP service like SendGrid, Mailgun, or AWS SES
+  // await transporter.sendMail({ from: 'noreply@somno.ai', to, subject, text });
+  return { success: true, messageId: 'mock-id-' + Date.now() };
+}
 
 async function startServer() {
   process.env.NODE_ENV = 'development';
   const app = express();
   const PORT = 3000;
+
+  app.use(express.json());
 
   // Security headers
   // app.use(helmet());
@@ -36,6 +54,57 @@ async function startServer() {
   // API routes
   app.get("/api/health", (req, res) => {
     res.json({ status: "ok" });
+  });
+
+  app.post("/api/notify-login", async (req, res) => {
+    const { email, device, time, location } = req.body;
+    const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress;
+    
+    const subject = "New Login Detected - SomnoAI";
+    const text = `
+      Hello,
+      
+      A new login was detected for your account (${email}).
+      
+      Time: ${time}
+      Device: ${device}
+      Location: ${location} (IP: ${clientIp})
+      
+      If this wasn't you, please contact support immediately.
+    `;
+
+    await sendEmail(email, subject, text);
+    res.json({ success: true });
+  });
+
+  app.post("/api/notify-block", async (req, res) => {
+    const { email, reason } = req.body;
+    
+    const subject = "Account Security Alert - SomnoAI";
+    const text = `
+      Hello,
+      
+      Your account (${email}) has been temporarily blocked due to security concerns.
+      
+      Reason: ${reason}
+      
+      Please contact support to resolve this issue.
+    `;
+
+    await sendEmail(email, subject, text);
+    res.json({ success: true });
+  });
+
+  app.post("/api/contact", async (req, res) => {
+    const { subject, email, message } = req.body;
+    
+    // Send to support team
+    await sendEmail("support@somno.ai", `Contact Form: ${subject}`, `From: ${email}\n\n${message}`);
+    
+    // Send confirmation to user
+    await sendEmail(email, "We received your message - SomnoAI", "Thank you for contacting us. We will get back to you shortly.");
+
+    res.json({ success: true });
   });
 
   // Vite middleware for development

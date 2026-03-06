@@ -8,6 +8,7 @@ import { Logo } from './Logo';
 import { supabase } from '../services/supabaseService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/useLanguage';
+import { notificationService } from '../services/notificationService';
 
 interface AuthProps {
   lang: Language;
@@ -86,6 +87,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         });
         
         if (signInError) throw signInError;
+        
+        // Send login notification
+        notificationService.sendLoginNotification(email);
         
         navigate('/dashboard');
       } else {
