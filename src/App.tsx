@@ -36,7 +36,7 @@ const Contact = lazy(() => import('./pages/Contact').then(module => ({ default: 
 const LegalHub = lazy(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
 const MediaResources = lazy(() => import('./pages/MediaResources').then(module => ({ default: module.MediaResources })));
 const DynamicPage = lazy(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
-const AIAssistant = lazy(() => import('./components/Placeholders').then(module => ({ default: module.AIAssistant })));
+const AIAssistant = lazy(() => import('./components/AIAssistant').then(module => ({ default: module.AIAssistant })));
 const ExperimentView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ExperimentView })));
 const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
 const BlogHub = lazy(() => import('./pages/BlogHub').then(module => ({ default: module.BlogHub })));

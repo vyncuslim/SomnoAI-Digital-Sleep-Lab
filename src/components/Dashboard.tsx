@@ -4,7 +4,7 @@ import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, Histo
 import { GoogleGenAI } from '@google/genai';
 
 // Initialize Gemini API
-const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_GEMINI_API_KEY });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
 interface SleepInput {
   duration: number;
@@ -105,7 +105,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-lite',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',

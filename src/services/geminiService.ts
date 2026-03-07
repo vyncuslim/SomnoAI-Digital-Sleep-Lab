@@ -1,9 +1,9 @@
 
-import { GoogleGenAI, Type } from "@google/genai";
+import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
-declare const process: { env: { API_KEY: string } };
+declare const process: { env: { GEMINI_API_KEY: string } };
 
 export interface BiologicalReport {
   summary: string;
@@ -12,16 +12,15 @@ export interface BiologicalReport {
 }
 
 /**
- * FIXED: Guidelines enforce exclusive process.env.API_KEY usage.
- * The API key must not be obtained from localStorage or user input.
+ * FIXED: Guidelines enforce exclusive process.env.GEMINI_API_KEY usage.
  */
 const getAIClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.API_KEY });
+  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 };
 
 // Use stable production models instead of previews for system logic paths
-const MODEL_PRO = 'gemini-2.5-pro';
-const MODEL_FLASH = 'gemini-2.5-flash';
+const MODEL_PRO = 'gemini-3.1-pro-preview';
+const MODEL_FLASH = 'gemini-3-flash-preview';
 const MODEL_IMAGE = 'gemini-2.5-flash-image';
 const MODEL_IMAGE_PRO = 'gemini-3-pro-image-preview';
 
@@ -59,7 +58,7 @@ export const analyzeBiologicalTrends = async (
       config: {
         systemInstruction,
         responseMimeType: "application/json",
-        thinkingConfig: { thinkingBudget: 4000 },
+        thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
         responseSchema: {
           type: Type.OBJECT,
           properties: {
@@ -187,7 +186,7 @@ export const startContextualCoach = async (
 
     // Only add thinking config for Pro models
     if (modelName.includes('pro')) {
-      config.thinkingConfig = { thinkingBudget: 2000 };
+      config.thinkingConfig = { thinkingLevel: ThinkingLevel.HIGH };
     }
 
     return await ai.models.generateContentStream({
@@ -248,7 +247,7 @@ export const designExperiment = async (
       contents: [{ role: 'user', parts: [{ text: prompt }] }],
       config: {
         systemInstruction: "你是 Digital Sleep Lab 首席研究官 (CRO)。输出 JSON。",
-        thinkingConfig: { thinkingBudget: 4000 },
+        thinkingConfig: { thinkingLevel: ThinkingLevel.HIGH },
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,

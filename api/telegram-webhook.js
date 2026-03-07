@@ -32,8 +32,8 @@ export default async function handler(req, res) {
   if (chatId !== ADMIN_CHAT_ID) return res.status(200).send('OK');
 
   try {
-    // FIXED: Exclusive process.env.API_KEY usage
-    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+    // FIXED: Exclusive process.env.GEMINI_API_KEY usage
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     
     const systemInstruction = `You are the Digital Sleep Lab Chief Research Officer (CRO).
     
@@ -44,9 +44,9 @@ export default async function handler(req, res) {
     const response = await ai.models.generateContent({
         /**
          * FIXED: Production path requirement: avoid preview models.
-         * Defaulting to Gemini 2.5 Pro for complex text analysis.
+         * Defaulting to Gemini 3.1 Pro for complex text analysis.
          */
-        model: "gemini-2.5-pro",
+        model: "gemini-3.1-pro-preview",
         contents: [{ parts: [{ text: `Admin Input: ${text}` }] }],
         config: { systemInstruction }
     });
