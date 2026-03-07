@@ -178,38 +178,38 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 
       {/* Protected Routes */}
       <Route path="dashboard" element={
-        <ProtectedRoute>
+        <ProtectedRoute lang={lang}>
           <Dashboard lang={lang} />
         </ProtectedRoute>
       } />
       <Route path="admin" element={
-        <ProtectedRoute adminOnly>
+        <ProtectedRoute adminOnly lang={lang}>
           <AdminView lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
       <Route path="settings" element={
-        <ProtectedRoute>
+        <ProtectedRoute lang={lang}>
           <UserProfile lang={lang} onBack={handleBack} onNavigate={handleNavigate} />
         </ProtectedRoute>
       } />
 
       <Route path="feedback" element={
-        <ProtectedRoute>
+        <ProtectedRoute lang={lang}>
           <FeedbackView lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
       <Route path="experiment" element={
-        <ProtectedRoute>
+        <ProtectedRoute lang={lang}>
           <ExperimentView data={latestData} lang={lang} />
         </ProtectedRoute>
       } />
       <Route path="journal" element={
-        <ProtectedRoute>
+        <ProtectedRoute lang={lang}>
           <DiaryView lang={lang} />
         </ProtectedRoute>
       } />
       <Route path="ai-assistant" element={
-        <ProtectedRoute>
+        <ProtectedRoute lang={lang}>
           <AIAssistant lang={lang} data={latestData} history={history} />
         </ProtectedRoute>
       } />

@@ -111,7 +111,7 @@ async function startServer() {
   let vite: any;
   const distPath = path.join(process.cwd(), "dist");
   const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(distPath);
-  console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}, distPath: ${distPath}, isProduction: ${isProduction}`);
+  console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}, distPath: ${distPath}, isProduction: ${isProduction}, cwd: ${process.cwd()}`);
   
   if (!isProduction) {
     vite = await createViteServer({
@@ -138,10 +138,10 @@ async function startServer() {
     });
   } else {
     // Serve static files in production
-    app.use(express.static(path.resolve(__dirname, "dist")));
+    app.use(express.static(path.join(process.cwd(), "dist")));
     // Fallback to index.html for production
     app.get('*', (req, res) => {
-      res.sendFile(path.resolve(__dirname, "dist", "index.html"));
+      res.sendFile(path.join(process.cwd(), "dist", "index.html"));
     });
   }
 

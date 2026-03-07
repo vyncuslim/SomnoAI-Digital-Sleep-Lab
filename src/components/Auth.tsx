@@ -89,7 +89,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         // Send login notification
         notificationService.sendLoginNotification(email);
         
-        navigate('/dashboard');
+        navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
         const { error: signUpError } = await supabase.auth.signUp({
           email,
@@ -98,7 +98,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         
         if (signUpError) throw signUpError;
         
-        navigate('/dashboard');
+        navigate(`${langPrefix}/dashboard`);
       } else if (view === 'forgot-password') {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -155,7 +155,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/dashboard`
+          redirectTo: `${window.location.origin}${langPrefix}/dashboard`
         }
       });
       

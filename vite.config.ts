@@ -7,9 +7,10 @@ export default defineConfig({
   root: process.cwd(),
   plugins: [react()],
   build: {
+    outDir: 'dist',
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: resolve(process.cwd(), 'index.html'),
       },
     },
   },
