@@ -28,32 +28,23 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
-
-  // Security headers
-  // app.use(helmet());
-
-  // IP Whitelisting for admin paths
-  app.use((req, res, next) => {
-    const adminPaths = ['/admin', '/wp-admin'];
-    if (adminPaths.some(path => req.path.startsWith(path))) {
-      const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress;
-      const allowedIp = process.env.ALLOWED_ADMIN_IP;
-
-      if (!allowedIp || clientIp !== allowedIp) {
-        res.status(403).send('Forbidden: Access Denied');
-        return;
-      }
-    }
-    next();
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
   });
 
-  // CORS configuration
-  // app.use(cors());
+  app.get("/ping", (req, res) => {
+    res.send("pong");
+  });
+
+  app.use(express.json());
 
   // API routes
   app.get("/api/health", (req, res) => {
-    res.json({ status: "ok" });
+    res.json({ status: "ok", env: process.env.NODE_ENV });
+  });
+
+  app.get("/debug", (req, res) => {
+    res.send("Server is alive!");
   });
 
   app.post("/api/notify-login", async (req, res) => {
@@ -108,46 +99,53 @@ async function startServer() {
   });
 
   // Vite middleware for development
-  let vite: any;
-  const distPath = path.join(process.cwd(), "dist");
-  const isProduction = process.env.NODE_ENV === "production" || fs.existsSync(distPath);
-  console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}, distPath: ${distPath}, isProduction: ${isProduction}, cwd: ${process.cwd()}`);
+  const root = process.cwd();
+  const distPath = path.resolve(root, "dist");
+  const isProduction = process.env.NODE_ENV === "production" && fs.existsSync(distPath);
+  
+  console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}, isProduction: ${isProduction}, root: ${root}`);
   
   if (!isProduction) {
-    vite = await createViteServer({
-      root: process.cwd(),
+    const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "spa",
+      appType: "custom",
+      root: root
     });
     app.use(vite.middlewares);
     
     // Development fallback
     app.get('*', async (req, res, next) => {
-        if (req.path.startsWith('/api')) return next();
+        const url = req.originalUrl;
+        if (url.startsWith('/api') || url.startsWith('/debug') || url === '/ping') return next();
+        if (path.extname(url)) return next();
+        
         try {
-            const fs = await import("fs/promises");
-            const filePath = path.join(process.cwd(), "index.html");
-            let html = await fs.readFile(filePath, "utf-8");
-            html = await vite.transformIndexHtml(req.originalUrl, html);
+            const templatePath = path.resolve(root, "index.html");
+            if (!fs.existsSync(templatePath)) {
+                return res.status(404).send("index.html not found");
+            }
+            const template = fs.readFileSync(templatePath, "utf-8");
+            const html = await vite.transformIndexHtml(url, template);
             res.status(200).set({ "Content-Type": "text/html" }).end(html);
         } catch (e: any) {
             vite?.ssrFixStacktrace(e);
-            console.error(e);
+            console.error(`[SERVER] Error transforming HTML for ${url}:`, e);
             res.status(500).end(e.message);
         }
     });
   } else {
     // Serve static files in production
-    app.use(express.static(path.join(process.cwd(), "dist")));
+    app.use(express.static(distPath));
     // Fallback to index.html for production
     app.get('*', (req, res) => {
-      res.sendFile(path.join(process.cwd(), "dist", "index.html"));
+      const indexPath = path.resolve(distPath, "index.html");
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else {
+        res.status(404).send("Production build found but index.html is missing in dist/");
+      }
     });
   }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
 }
 
 startServer();
