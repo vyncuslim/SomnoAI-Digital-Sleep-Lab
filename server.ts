@@ -135,7 +135,7 @@ async function startServer() {
     });
   } else {
     // Serve static files in production
-    app.use(express.static(distPath));
+    app.use(express.static(distPath, { extensions: ['html'] }));
     // Fallback to index.html for production
     app.get(/.*/, (req, res) => {
       const indexPath = path.resolve(distPath, "index.html");
