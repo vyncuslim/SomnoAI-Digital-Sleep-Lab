@@ -28,12 +28,12 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
+  app.get("/test-redirect", (req, res) => {
+    res.status(302).setHeader('Location', '/en').end();
   });
 
   app.get("/ping", (req, res) => {
-    res.send("pong");
+    res.send("pong-v2");
   });
 
   app.use(express.json());
@@ -114,7 +114,7 @@ async function startServer() {
     app.use(vite.middlewares);
     
     // Development fallback
-    app.get('*', async (req, res, next) => {
+    app.get(/.*/, async (req, res, next) => {
         const url = req.originalUrl;
         if (url.startsWith('/api') || url.startsWith('/debug') || url === '/ping') return next();
         if (path.extname(url)) return next();
@@ -137,7 +137,7 @@ async function startServer() {
     // Serve static files in production
     app.use(express.static(distPath));
     // Fallback to index.html for production
-    app.get('*', (req, res) => {
+    app.get(/.*/, (req, res) => {
       const indexPath = path.resolve(distPath, "index.html");
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
@@ -146,6 +146,10 @@ async function startServer() {
       }
     });
   }
+
+  app.listen(PORT, "0.0.0.0", () => {
+    console.log(`Server running on http://localhost:${PORT}`);
+  });
 }
 
 startServer();
