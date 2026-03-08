@@ -55,6 +55,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
 
   const guestLinks: NavLink[] = [
     { label: isZh ? '产品' : 'Product', view: 'product', icon: Sparkles },
+    { label: isZh ? '定价' : 'Pricing', view: 'pricing', icon: Sparkles },
     { label: isZh ? '原理' : 'How it Works', view: 'how-it-works', icon: Binary },
     { label: isZh ? '研究' : 'Research', view: 'research', icon: Microscope },
     { label: t.nav.science, view: 'science', icon: FlaskConical },

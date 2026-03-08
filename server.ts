@@ -6,8 +6,19 @@ import { fileURLToPath } from "url";
 import cors from "cors";
 import helmet from "helmet";
 import nodemailer from "nodemailer";
+import Stripe from 'stripe';
+import admin from 'firebase-admin';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
+// Initialize Firebase Admin
+admin.initializeApp({
+  credential: admin.credential.applicationDefault()
+});
+const db = admin.firestore();
+
+// Initialize Stripe
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 
 // Mock email transporter (logs to console in dev)
 const transporter = nodemailer.createTransport({
@@ -98,6 +109,43 @@ async function startServer() {
     res.json({ success: true });
   });
 
+  app.post("/api/stripe/webhook", express.raw({type: 'application/json'}), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
+    } catch (err: any) {
+      res.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    // Handle the event
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as any;
+        const userId = session.client_reference_id;
+        const plan = session.metadata.plan;
+        if (userId && plan) {
+          await db.collection('users').doc(userId).update({ plan });
+        }
+        break;
+      }
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as any;
+        const userIdDeleted = subscription.metadata.userId;
+        if (userIdDeleted) {
+          await db.collection('users').doc(userIdDeleted).update({ plan: 'free' });
+        }
+        break;
+      }
+      default:
+        console.log(`Unhandled event type ${event.type}`);
+    }
+
+    res.json({received: true});
+  });
+
   // Vite middleware for development
   const root = process.cwd();
   const distPath = path.resolve(root, "dist");
@@ -105,33 +153,28 @@ async function startServer() {
   
   console.log(`[SERVER] NODE_ENV: ${process.env.NODE_ENV}, isProduction: ${isProduction}, root: ${root}`);
   
+  app.use((req, res, next) => {
+    console.log(`[SERVER] ${req.method} ${req.url}`);
+    next();
+  });
+
   if (!isProduction) {
     const vite = await createViteServer({
       server: { middlewareMode: true },
-      appType: "custom",
+      appType: "spa",
       root: root
     });
     app.use(vite.middlewares);
-    
-    // Development fallback
-    app.get(/.*/, async (req, res, next) => {
-        const url = req.originalUrl;
-        if (url.startsWith('/api') || url.startsWith('/debug') || url === '/ping') return next();
-        if (path.extname(url)) return next();
-        
-        try {
-            const templatePath = path.resolve(root, "index.html");
-            if (!fs.existsSync(templatePath)) {
-                return res.status(404).send("index.html not found");
-            }
-            const template = fs.readFileSync(templatePath, "utf-8");
-            const html = await vite.transformIndexHtml(url, template);
-            res.status(200).set({ "Content-Type": "text/html" }).end(html);
-        } catch (e: any) {
-            vite?.ssrFixStacktrace(e);
-            console.error(`[SERVER] Error transforming HTML for ${url}:`, e);
-            res.status(500).end(e.message);
-        }
+    app.use('*', async (req, res) => {
+      const url = req.originalUrl;
+      try {
+        let template = fs.readFileSync(path.resolve(root, 'index.html'), 'utf-8');
+        template = await vite.transformIndexHtml(url, template);
+        res.status(200).set({ 'Content-Type': 'text/html' }).end(template);
+      } catch (e: any) {
+        vite.ssrFixStacktrace(e);
+        res.status(500).end(e.message);
+      }
     });
   } else {
     // Serve static files in production

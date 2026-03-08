@@ -162,6 +162,15 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </div>
       </Section>
 
+      {/* Pricing Section */}
+      <Section title="Pricing" description="Choose the plan that fits your needs.">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <Card title="Go" description="Basic plan" icon={<Zap size={32} />} onClick={() => window.location.href = 'https://checkout.sleepsomno.com/b/5kQcN50ry8Pl9U28gNcwg03'} />
+          <Card title="Pro" description="Pro plan" icon={<Zap size={32} />} onClick={() => window.location.href = 'https://checkout.sleepsomno.com/b/5kQaEXcagc1x8PYfJfcwg02'} />
+          <Card title="Plus" description="Plus plan" icon={<Zap size={32} />} onClick={() => window.location.href = 'https://checkout.sleepsomno.com/b/4gM7sL3DK9Tp7LUeFbcwg01'} />
+        </div>
+      </Section>
+
       {/* Who is it for? */}
       <Section 
         title={lang === 'zh' ? '为谁设计？' : 'Who is it for?'} 

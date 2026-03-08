@@ -23,6 +23,7 @@ const AdminView = lazy(() => import('./components/AdminDashboard').then(module =
 const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
 const FeedbackView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
 const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
+const Pricing = lazy(() => import('./pages/Pricing').then(module => ({ default: module.Pricing })));
 const About = lazy(() => import('./pages/About').then(module => ({ default: module.About })));
 const Product = lazy(() => import('./pages/Product').then(module => ({ default: module.Product })));
 const HowItWorks = lazy(() => import('./pages/HowItWorks').then(module => ({ default: module.HowItWorks })));
@@ -147,6 +148,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="auth/verify" element={<Navigate to={`${langPrefix}/dashboard`} replace />} />
       <Route path="auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
       <Route path="about" element={<About lang={lang} />} />
+      <Route path="pricing" element={<Pricing lang={lang} />} />
       <Route path="product" element={<Product lang={lang} />} />
       <Route path="how-it-works" element={<HowItWorks lang={lang} />} />
       <Route path="features" element={<Features lang={lang} />} />
