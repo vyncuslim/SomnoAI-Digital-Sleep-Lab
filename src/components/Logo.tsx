@@ -91,6 +91,7 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true, lan
           <span className="text-xl font-black italic tracking-tighter text-white leading-none">
             SomnoAI<span className="text-indigo-500"> Digital Sleep Lab</span>
           </span>
+          <span className="micro-label opacity-40 mt-1">NEURAL_TELEMETRY_V4.2</span>
         </div>
       )}
     </div>

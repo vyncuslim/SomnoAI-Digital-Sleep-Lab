@@ -4,6 +4,46 @@ import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Info, ArrowRight 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../context/useLanguage';
 
+// --- Grid Background ---
+export const GridBackground: React.FC = () => (
+  <div className="absolute inset-0 pointer-events-none overflow-hidden z-0">
+    <div className="absolute inset-0 opacity-[0.03]" 
+         style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+    <div className="absolute inset-0 bg-gradient-to-b from-[#01040a] via-transparent to-[#01040a]" />
+    <div className="absolute top-0 left-0 w-full h-px dashed-line opacity-10" />
+    <div className="absolute bottom-0 left-0 w-full h-px dashed-line opacity-10" />
+    <div className="absolute top-0 left-0 h-full w-px dashed-line-v opacity-10" />
+    <div className="absolute top-0 right-0 h-full w-px dashed-line-v opacity-10" />
+  </div>
+);
+
+// --- Telemetry Stream ---
+export const TelemetryStream: React.FC = () => {
+  const [data, setData] = useState<number[]>(Array.from({ length: 20 }, () => Math.random() * 100));
+  
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setData(prev => [...prev.slice(1), Math.random() * 100]);
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex items-end gap-1 h-12 px-4 py-2 bg-black/40 border border-white/5 rounded-xl overflow-hidden relative group">
+      <div className="absolute top-1 left-2 micro-label opacity-30 group-hover:opacity-60 transition-opacity">LIVE_TELEMETRY</div>
+      {data.map((val, i) => (
+        <motion.div 
+          key={i}
+          initial={false}
+          animate={{ height: `${val}%` }}
+          className="w-1 bg-indigo-500/40 rounded-full"
+        />
+      ))}
+      <div className="absolute inset-0 data-stream opacity-5" />
+    </div>
+  );
+};
+
 // --- Hero ---
 export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrimary?: { text: string; link: string }; ctaSecondary?: { text: string; link: string } }> = ({ title, subtitle, ctaPrimary, ctaSecondary }) => {
   const { langPrefix } = useLanguage();
@@ -59,6 +99,10 @@ export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrima
         <div className="absolute top-10 right-10 w-20 h-20 border-r border-t border-white/20" />
         <div className="absolute bottom-10 left-10 w-20 h-20 border-l border-b border-white/20" />
         <div className="absolute bottom-10 right-10 w-20 h-20 border-r border-b border-white/20" />
+        
+        {/* HUD Circles */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[120%] h-[120%] border border-white/[0.02] rounded-full animate-spin-slow" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[140%] h-[140%] border border-dashed border-white/[0.01] rounded-full animate-spin-slow" style={{ animationDirection: 'reverse', animationDuration: '20s' }} />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { PageLayout } from './PageLayout';
-import { Hero, Section, Card, InlineCTA } from './Components';
+import { Hero, Section, Card, InlineCTA, GridBackground } from './Components';
 
 interface MarketingPageTemplateProps {
   title: React.ReactNode;
@@ -13,9 +13,12 @@ interface MarketingPageTemplateProps {
 export const MarketingPageTemplate: React.FC<MarketingPageTemplateProps> = ({ title, subtitle, ctaPrimary, ctaSecondary, children }) => {
   return (
     <PageLayout>
-      <Hero title={title} subtitle={subtitle} ctaPrimary={ctaPrimary} ctaSecondary={ctaSecondary} />
-      <div className="space-y-24 pb-24">
-        {children}
+      <div className="relative">
+        <GridBackground />
+        <Hero title={title} subtitle={subtitle} ctaPrimary={ctaPrimary} ctaSecondary={ctaSecondary} />
+        <div className="space-y-24 pb-24 relative z-10">
+          {children}
+        </div>
       </div>
     </PageLayout>
   );

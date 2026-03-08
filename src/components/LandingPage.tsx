@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 import { MarketingPageTemplate } from './ui/MarketingPageTemplate';
-import { Section, Card, InlineCTA, HardwareWidget } from './ui/Components';
+import { Section, Card, InlineCTA, HardwareWidget, GridBackground, TelemetryStream } from './ui/Components';
 import { Language, getTranslation } from '../services/i18n';
 import { useAuth } from '../context/AuthContext';
 
@@ -104,7 +104,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
               {lang === 'zh' ? '欢迎回来,' : 'Welcome back,'} {profile?.email || user.email}
             </motion.p>
           )}
-          <h1 className="text-6xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.9]">
+          <h1 className="text-6xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.85] animate-float">
             SOMNOAI <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
               SLEEP LAB
@@ -118,6 +118,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
     >
       {/* Stats Section */}
       <Section moduleID="STATS_01">
+        <div className="flex justify-between items-center mb-12">
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+          <div className="px-8">
+            <TelemetryStream />
+          </div>
+          <div className="h-px flex-1 bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+        </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {stats.map((stat, i) => (
             <HardwareWidget 
@@ -138,20 +145,56 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         title={lang === 'zh' ? '核心能力' : 'Core Capabilities'} 
         description={lang === 'zh' ? '由 Gemini 2.5 Pro 模型驱动的高级遥测处理。' : 'Advanced telemetry processing powered by Gemini 2.5 Pro models.'}
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {[
-            { icon: Activity, title: t.features?.biometric?.title || "Biometric Tracking", desc: t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles.", label: "TELEMETRY" },
-            { icon: Brain, title: t.features?.neural?.title || "Neural Insights", desc: t.features?.neural?.desc || "AI-driven interpretation of sleep stages and quality metrics.", label: "COGNITIVE" },
-            { icon: Zap, title: t.features?.recovery?.title || "Recovery Optimization", desc: t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep and recovery.", label: "PROTOCOL" }
-          ].map((item, i) => (
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+          <div className="md:col-span-8">
             <Card 
-              key={i}
-              title={item.title}
-              description={item.desc}
-              icon={<item.icon size={32} />}
-              label={item.label}
+              title={t.features?.biometric?.title || "Biometric Tracking"}
+              description={t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles."}
+              icon={<Activity size={32} />}
+              label="TELEMETRY"
+              className="h-full"
+            >
+              <div className="mt-8 p-6 bg-black/40 rounded-2xl border border-white/5 relative overflow-hidden">
+                <div className="flex justify-between items-center mb-4">
+                  <span className="micro-label">HEART_RATE_VARIABILITY</span>
+                  <span className="text-indigo-400 font-mono text-xs">84ms</span>
+                </div>
+                <div className="flex gap-1 h-12 items-end">
+                  {Array.from({ length: 40 }).map((_, i) => (
+                    <div key={i} className="flex-1 bg-indigo-500/20 rounded-full" style={{ height: `${Math.random() * 100}%` }} />
+                  ))}
+                </div>
+                <div className="absolute inset-0 data-stream opacity-5" />
+              </div>
+            </Card>
+          </div>
+          <div className="md:col-span-4">
+            <Card 
+              title={t.features?.neural?.title || "Neural Insights"}
+              description={t.features?.neural?.desc || "AI-driven interpretation of sleep stages."}
+              icon={<Brain size={32} />}
+              label="COGNITIVE"
+              className="h-full"
             />
-          ))}
+          </div>
+          <div className="md:col-span-4">
+            <Card 
+              title={t.features?.recovery?.title || "Recovery Optimization"}
+              description={t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep."}
+              icon={<Zap size={32} />}
+              label="PROTOCOL"
+              className="h-full"
+            />
+          </div>
+          <div className="md:col-span-8">
+            <Card 
+              title={lang === 'zh' ? '安全加密' : 'Secure Encryption'}
+              description={lang === 'zh' ? '您的数据在传输和存储过程中均经过 AES-256 加密。' : 'Your data is encrypted with AES-256 during transit and at rest.'}
+              icon={<ShieldCheck size={32} />}
+              label="SECURITY"
+              className="h-full bg-emerald-500/[0.02] border-emerald-500/10"
+            />
+          </div>
         </div>
       </Section>
 

@@ -76,16 +76,24 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
       <div className="max-w-7xl mx-auto px-6 md:px-12 mt-24 pt-12 border-t border-white/5 space-y-12">
         <div className="flex flex-col md:flex-row items-center justify-between gap-8">
           <div className="flex flex-col items-center md:items-start gap-2">
+            <div className="hardware-label text-[8px]">SYSTEM STATUS</div>
+            <div className="flex items-center gap-2 px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full">
+              <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[9px] font-black text-emerald-400 uppercase tracking-widest">All Systems Operational</span>
+            </div>
+          </div>
+          <div className="flex flex-col items-center md:items-end gap-2">
             <div className="hardware-label text-[8px]">COPYRIGHT NOTICE</div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 italic">
               © {new Date().getFullYear()} SOMNOAI DIGITAL SLEEP LAB. {isZh ? "保留所有权利。" : "ALL RIGHTS RESERVED."}
             </p>
           </div>
-          <div className="flex items-center gap-8">
-            <a href="https://discord.com/invite/9EXJtRmju" target="_blank" rel="noopener noreferrer" className="hardware-label text-[10px] hover:text-indigo-400 transition-colors">DISCORD</a>
-            <div className="w-px h-4 bg-white/10" />
-            <a href="https://www.linkedin.com/company/digital-sleep-lab" target="_blank" rel="noopener noreferrer" className="hardware-label text-[10px] hover:text-indigo-400 transition-colors">LINKEDIN</a>
-          </div>
+        </div>
+        
+        <div className="flex items-center justify-center gap-8">
+          <a href="https://discord.com/invite/9EXJtRmju" target="_blank" rel="noopener noreferrer" className="hardware-label text-[10px] hover:text-indigo-400 transition-colors">DISCORD</a>
+          <div className="w-px h-4 bg-white/10" />
+          <a href="https://www.linkedin.com/company/digital-sleep-lab" target="_blank" rel="noopener noreferrer" className="hardware-label text-[10px] hover:text-indigo-400 transition-colors">LINKEDIN</a>
         </div>
         
         <div className="hardware-panel p-6 bg-white/[0.02]">
