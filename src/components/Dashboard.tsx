@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Crown, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, LayoutDashboard, Settings, LogOut } from 'lucide-react';
-import { GoogleGenAI } from '@google/genai';
+import { GoogleGenAI, Type } from '@google/genai';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import { GridBackground, TelemetryStream, HardwareWidget } from './ui/Components';
@@ -132,12 +132,23 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              overview: { type: Type.STRING },
+              insights: { type: Type.ARRAY, items: { type: Type.STRING } },
+              recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+              tomorrowOptimization: { type: Type.STRING }
+            },
+            required: ["overview", "insights", "recommendations", "tomorrowOptimization"]
+          }
         },
       });
 
       const resultText = response.text;
       if (resultText) {
-        const parsedResult = JSON.parse(resultText) as AIAnalysis;
+        const cleanedText = resultText.replace(/```json\n?|\n?```/g, '').trim();
+        const parsedResult = JSON.parse(cleanedText) as AIAnalysis;
         setAnalysis(parsedResult);
         saveToHistory(parsedResult);
       }

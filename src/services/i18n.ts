@@ -350,17 +350,15 @@ export const translations: Record<Language, any> = {
         ]
       },
       blocking: {
-        title: '🛡️ Account Blocking Policy (Section 5)',
-        intro: 'We reserve the right to automatically block or terminate access to the website and services at our sole discretion, without prior notice, for any reason, including but not limited to:',
+        title: '🛡️ Account Blocking Policy',
+        intro: 'SomnoAI Digital Sleep Lab reserves the right to ban accounts for reasons including:',
         reasons: [
-          'Violation of these Terms of Service',
-          'Suspicious or fraudulent activity',
-          'Multiple failed login attempts (security protection)',
-          'Unauthorized access or attempted access to administrative areas (“Honeypot” protection)',
-          'Actions that may harm the laboratory infrastructure or other users'
+          'Security violations or suspicious activity.',
+          'Violation of our Terms of Service or Acceptable Use Policy.',
+          'Actions that threaten the stability of our infrastructure.'
         ],
-        notification: 'If your account is blocked, you will be notified via email and will see a notice upon attempting to log in.',
-        footer: 'This automated blocking mechanism exists to protect the integrity, security, and stability of the SomnoAI Digital Sleep Lab platform.'
+        notification: 'Banned users will be notified via their registered email.',
+        footer: ''
       }
     }
   },
@@ -712,17 +710,15 @@ export const translations: Record<Language, any> = {
         ]
       },
       blocking: {
-        title: '🛡️ 账户封禁政策（第5节）',
-        intro: '我们保留自行决定在不事先通知的情况下自动阻止或终止访问网站和服务的权利，原因包括但不限于：',
+        title: '🛡️ 账户封禁政策',
+        intro: 'SomnoAI Digital Sleep Lab 保留封禁账户的权利，原因包括：',
         reasons: [
-          '违反这些服务条款',
-          '可疑或欺诈活动',
-          '多次登录失败（安全保护）',
-          '未经授权访问或尝试访问管理区域（“蜜罐”保护）',
-          '可能损害实验室基础设施或其他用户的行为'
+          '安全违规或可疑活动。',
+          '违反我们的服务条款或可接受使用政策。',
+          '威胁我们基础设施稳定性的行为。'
         ],
-        notification: '如果您的账户被封禁，您将通过电子邮件收到通知，并在尝试登录时看到通知。',
-        footer: '这种自动封禁机制的存在是为了保护 SomnoAI Digital Sleep Lab 平台的完整性、安全性和稳定性。'
+        notification: '被封禁的用户将通过其注册邮箱收到通知。',
+        footer: ''
       }
     }
   }

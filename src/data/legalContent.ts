@@ -14,7 +14,16 @@ export const LEGAL_CONTENT = {
     lastUpdated: "2024-03-15",
     content: `Use of the platform constitutes acceptance of all applicable terms, policies, and disclaimers. Users must comply with all rules governing acceptable use, security, and data handling.
 
-Full terms govern access rights, limitations of liability, and user responsibilities.`
+Full terms govern access rights, limitations of liability, and user responsibilities.
+
+**Account Banning**
+SomnoAI Digital Sleep Lab reserves the right to ban accounts for reasons including:
+
+• Security violations or suspicious activity.
+• Violation of our Terms of Service or Acceptable Use Policy.
+• Actions that threaten the stability of our infrastructure.
+
+Banned users will be notified via their registered email.`
   },
   "acceptable-use": {
     title: "Acceptable Use Policy",

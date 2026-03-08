@@ -174,7 +174,16 @@ SomnoAI Digital Sleep Lab reserves the right to modify platform functionality, i
 
 Users must not attempt to misuse the platform or interfere with its normal operation. Actions such as attempting to exploit system vulnerabilities, automated abuse of services, or deliberate disruption of platform functionality are considered violations of these terms.
 
-Violations of the Terms of Service may result in restrictions on access to the platform or other protective measures designed to maintain system stability.`
+Violations of the Terms of Service may result in restrictions on access to the platform or other protective measures designed to maintain system stability.
+
+**Account Banning**
+SomnoAI Digital Sleep Lab reserves the right to ban accounts for reasons including:
+
+• Security violations or suspicious activity.
+• Violation of our Terms of Service or Acceptable Use Policy.
+• Actions that threaten the stability of our infrastructure.
+
+Banned users will be notified via their registered email.`
     },
     cookies: {
       title: "SomnoAI Digital Sleep Lab Cookies Policy",
@@ -283,13 +292,13 @@ SomnoAI Digital Sleep Lab reserves the right to investigate suspicious activity 
     "account-blocking": {
       title: "Account Blocking Policy",
       subtitle: "Protecting the Ecosystem",
-      content: `Accounts may be temporarily or permanently restricted if they violate platform policies or engage in activities that threaten system integrity.
+      content: `SomnoAI Digital Sleep Lab reserves the right to ban accounts for reasons including:
 
-Account blocking mechanisms exist in order to maintain a stable and secure platform environment. These protections help prevent misuse that could negatively affect the experience of other users or disrupt system functionality.
+• Security violations or suspicious activity.
+• Violation of our Terms of Service or Acceptable Use Policy.
+• Actions that threaten the stability of our infrastructure.
 
-Account restrictions may be applied in situations including repeated violations of platform policies, attempts to bypass system protections, automated misuse of services, or actions that compromise platform security.
-
-Restrictions may range from temporary suspensions to permanent account blocking depending on the severity and nature of the violation.`
+Banned users will be notified via their registered email.`
     },
     "policy-framework": {
       title: "Policy Framework",
@@ -504,7 +513,16 @@ SomnoAI Digital Sleep Lab 是一个信息和研究平台。它不是获得许可
 用户不得尝试对平台进行逆向工程、绕过安全措施或将服务用于非法目的。
 
 **责任限制**
-SomnoAI Digital Sleep Lab 按“原样”提供，不提供任何形式的保证。我们对基于 AI 生成的见解做出的任何决定不承担责任。`
+SomnoAI Digital Sleep Lab 按“原样”提供，不提供任何形式的保证。我们对基于 AI 生成的见解做出的任何决定不承担责任。
+
+**账户封禁**
+SomnoAI Digital Sleep Lab 保留封禁账户的权利，原因包括：
+
+• 安全违规或可疑活动。
+• 违反我们的服务条款或可接受使用政策。
+• 威胁我们基础设施稳定性的行为。
+
+被封禁的用户将通过其注册邮箱收到通知。`
     },
     cookies: {
       title: "Cookie 政策",
