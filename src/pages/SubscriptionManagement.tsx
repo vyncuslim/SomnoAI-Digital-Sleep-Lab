@@ -57,12 +57,17 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
   };
 
   const getPaymentUrl = (baseUrl: string, planName: string) => {
-    const params = new URLSearchParams();
-    if (profile?.id) params.append('client_reference_id', profile.id);
-    if (profile?.email) params.append('prefilled_email', profile.email);
-    // Add metadata specifying the plan name
-    params.append('plan', planName);
-    return `${baseUrl}?${params.toString()}`;
+    try {
+      const url = new URL(baseUrl);
+      if (profile?.id) url.searchParams.append('client_reference_id', profile.id);
+      if (profile?.email) url.searchParams.append('prefilled_email', profile.email);
+      // Add metadata specifying the plan name
+      url.searchParams.append('plan', planName);
+      return url.toString();
+    } catch (e) {
+      console.error('Invalid payment URL:', baseUrl);
+      return baseUrl;
+    }
   };
 
   return (
