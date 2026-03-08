@@ -69,16 +69,16 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
   ];
 
   const authLinks: NavLink[] = [
-    { id: 'dashboard', icon: LayoutDashboard, label: isZh ? '实验室' : 'Lab' },
-    { id: 'calendar', icon: TrendingUp, label: isZh ? '分析' : 'Atlas' },
+    { id: 'dashboard', icon: LayoutDashboard, label: '全部可以Lab' },
+    { id: 'atlas', icon: TrendingUp, label: isZh ? '分析' : 'Atlas' },
     { id: 'experiment', icon: FlaskConical, label: isZh ? '实验' : 'Trials' },
-    { id: 'assistant', icon: Sparkles, label: isZh ? 'AI 助手' : 'AI Assist' },
+    { id: 'ai-assistant', icon: Sparkles, label: isZh ? 'AI 助手' : 'AI Assist' },
     { id: 'dreams', icon: ImageIcon, label: isZh ? '投影' : 'Dreams' },
     { id: 'voice', icon: Mic, label: isZh ? '语音' : 'Voice' },
     { id: 'news', icon: Newspaper, label: isZh ? '科研' : 'Research' },
     { id: 'faq', icon: HelpCircle, label: isZh ? '帮助' : 'Help' },
     { id: 'blog', icon: PenTool, label: isZh ? '博文' : 'Blog' },
-    { id: 'diary', icon: BookOpen, label: isZh ? '日志' : 'Log' },
+    { id: 'journal', icon: BookOpen, label: isZh ? '日志' : 'Log' },
     { id: 'media', icon: BookOpen, label: isZh ? '媒体资源' : 'Media' },
   ];
 

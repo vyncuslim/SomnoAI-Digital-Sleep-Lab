@@ -6,6 +6,10 @@ import { resolve } from 'path';
 export default defineConfig({
   root: process.cwd(),
   plugins: [react()],
+  define: {
+    'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || ''),
+    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ''),
+  },
   build: {
     outDir: 'dist',
     rollupOptions: {

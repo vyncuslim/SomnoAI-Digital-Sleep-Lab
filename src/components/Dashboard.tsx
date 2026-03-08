@@ -152,9 +152,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         setAnalysis(parsedResult);
         saveToHistory(parsedResult);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating analysis:', error);
-      alert(lang === 'zh' ? '生成分析时出错，请重试。' : 'Error generating analysis, please try again.');
+      alert(lang === 'zh' ? `生成分析时出错，请重试。(${error.message})` : `Error generating analysis, please try again. (${error.message})`);
     } finally {
       setIsAnalyzing(false);
     }

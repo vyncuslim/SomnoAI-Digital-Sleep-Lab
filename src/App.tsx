@@ -38,8 +38,12 @@ const Contact = lazy(() => import('./pages/Contact').then(module => ({ default: 
 const LegalHub = lazy(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
 const MediaResources = lazy(() => import('./pages/MediaResources').then(module => ({ default: module.MediaResources })));
 const DynamicPage = lazy(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
+const Atlas = lazy(() => import('./pages/Atlas').then(module => ({ default: module.Atlas })));
+const Dreams = lazy(() => import('./pages/Dreams').then(module => ({ default: module.Dreams })));
+const Voice = lazy(() => import('./pages/Voice').then(module => ({ default: module.Voice })));
+const GenericFeature = lazy(() => import('./pages/GenericFeature').then(module => ({ default: module.GenericFeature })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(module => ({ default: module.AIAssistant })));
-const ExperimentView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ExperimentView })));
+const Trials = lazy(() => import('./pages/Trials').then(module => ({ default: module.Trials })));
 const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
 const BlogHub = lazy(() => import('./pages/BlogHub').then(module => ({ default: module.BlogHub })));
 const BlogPostView = lazy(() => import('./components/BlogPostView').then(module => ({ default: module.BlogPostView })));
@@ -205,12 +209,27 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       } />
       <Route path="experiment" element={
         <ProtectedRoute lang={lang}>
-          <ExperimentView data={latestData} lang={lang} />
+          <Trials lang={lang} onBack={handleBack} />
+        </ProtectedRoute>
+      } />
+      <Route path="atlas" element={
+        <ProtectedRoute lang={lang}>
+          <Atlas lang={lang} onBack={handleBack} />
+        </ProtectedRoute>
+      } />
+      <Route path="dreams" element={
+        <ProtectedRoute lang={lang}>
+          <Dreams lang={lang} onBack={handleBack} />
+        </ProtectedRoute>
+      } />
+      <Route path="voice" element={
+        <ProtectedRoute lang={lang}>
+          <Voice lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
       <Route path="journal" element={
         <ProtectedRoute lang={lang}>
-          <DiaryView lang={lang} />
+          <GenericFeature lang={lang} onBack={handleBack} title={lang === 'zh' ? '日志' : 'Log'} description={lang === 'zh' ? '这里是睡眠日志。' : 'Welcome to your sleep log.'} />
         </ProtectedRoute>
       } />
       <Route path="ai-assistant" element={
