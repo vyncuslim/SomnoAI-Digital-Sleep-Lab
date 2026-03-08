@@ -8,6 +8,7 @@ import helmet from "helmet";
 import nodemailer from "nodemailer";
 import Stripe from 'stripe';
 import admin from 'firebase-admin';
+import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -16,6 +17,9 @@ admin.initializeApp({
   credential: admin.credential.applicationDefault()
 });
 const db = admin.firestore();
+
+// Initialize Supabase
+const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '');
 
 // Initialize Stripe
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
@@ -127,7 +131,7 @@ async function startServer() {
         const userId = session.client_reference_id;
         const plan = session.metadata.plan;
         if (userId && plan) {
-          await db.collection('users').doc(userId).update({ plan });
+          await supabase.from('profiles').update({ subscription_plan: plan }).eq('id', userId);
         }
         break;
       }
@@ -135,7 +139,7 @@ async function startServer() {
         const subscription = event.data.object as any;
         const userIdDeleted = subscription.metadata.userId;
         if (userIdDeleted) {
-          await db.collection('users').doc(userIdDeleted).update({ plan: 'free' });
+          await supabase.from('profiles').update({ subscription_plan: 'free' }).eq('id', userIdDeleted);
         }
         break;
       }

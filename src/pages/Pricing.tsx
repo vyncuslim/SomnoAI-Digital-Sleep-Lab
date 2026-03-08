@@ -24,6 +24,9 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
             icon={<Check className="text-indigo-500" />}
           >
             <div className="text-4xl font-bold mt-4">$0</div>
+            <a href="https://checkout.sleepsomno.com/b/5kQcN50ry8Pl9U28gNcwg03" className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg">
+              {isZh ? "选择" : "Select"}
+            </a>
           </Card>
           <Card 
             title={isZh ? "专业版" : "Pro"} 
@@ -31,6 +34,9 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
             icon={<Check className="text-indigo-500" />}
           >
             <div className="text-4xl font-bold mt-4">$9.99/mo</div>
+            <a href="https://checkout.sleepsomno.com/b/5kQaEXcagc1x8PYfJfcwg02" className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg">
+              {isZh ? "选择" : "Select"}
+            </a>
           </Card>
           <Card 
             title={isZh ? "企业版" : "Enterprise"} 
@@ -38,6 +44,9 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
             icon={<Check className="text-indigo-500" />}
           >
             <div className="text-4xl font-bold mt-4">Custom</div>
+            <a href="https://checkout.sleepsomno.com/b/4gM7sL3DK9Tp7LUeFbcwg01" className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg">
+              {isZh ? "联系我们" : "Contact Us"}
+            </a>
           </Card>
         </div>
       </Section>
