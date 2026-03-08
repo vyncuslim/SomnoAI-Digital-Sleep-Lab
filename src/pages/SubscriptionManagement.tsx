@@ -27,7 +27,7 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 text-white">
       <h1 className="text-3xl font-bold mb-8">{lang === 'zh' ? '订阅管理' : 'Subscription Management'}</h1>
-      <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+      <div className="bg-white/5 p-6 rounded-xl border border-white/10 mb-8">
         <h2 className="text-xl font-semibold mb-4">{lang === 'zh' ? '当前计划' : 'Current Plan'}</h2>
         <p className="text-2xl font-bold text-indigo-400 mb-6">{plan}</p>
         <button 
@@ -37,6 +37,16 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
         >
           {loading ? (lang === 'zh' ? '加载中...' : 'Loading...') : (lang === 'zh' ? '管理订阅' : 'Manage Subscription')}
         </button>
+      </div>
+
+      <div className="bg-white/5 p-6 rounded-xl border border-white/10">
+        <h2 className="text-xl font-semibold mb-4">{lang === 'zh' ? '升级计划' : 'Upgrade Plan'}</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Note: Ensure these links are configured with metadata 'plan=go', 'plan=pro', 'plan=plus' in Stripe Dashboard */}
+          <a href="YOUR_STRIPE_PAYMENT_LINK_GO" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors">Go</a>
+          <a href="YOUR_STRIPE_PAYMENT_LINK_PRO" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors">Pro</a>
+          <a href="YOUR_STRIPE_PAYMENT_LINK_PLUS" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors">Plus</a>
+        </div>
       </div>
     </div>
   );
