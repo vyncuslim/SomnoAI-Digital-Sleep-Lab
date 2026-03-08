@@ -7,7 +7,7 @@ interface BlockedViewProps {
 }
 
 export const BlockedView: React.FC<BlockedViewProps> = ({ reason }) => {
-  const { lang } = useLanguage();
+  const { lang, langPrefix } = useLanguage();
   const isZh = lang === 'zh';
 
   return (
@@ -65,7 +65,7 @@ export const BlockedView: React.FC<BlockedViewProps> = ({ reason }) => {
             {isZh ? "联系支持团队" : "Contact Support"}
           </a>
           <a 
-            href="/help" 
+            href={`${langPrefix}/support`} 
             className="flex-1 px-8 py-4 bg-white/5 hover:bg-white/10 border border-white/10 text-white rounded-xl font-bold transition-all flex items-center justify-center gap-2"
           >
             <ExternalLink size={18} />

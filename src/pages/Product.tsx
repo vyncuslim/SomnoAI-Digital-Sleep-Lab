@@ -1,7 +1,7 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
-import { Section, Card, InlineCTA } from '../components/ui/Components';
-import { Activity, Brain, Clock, Shield, Smartphone, Watch, Cloud, CheckCircle2 } from 'lucide-react';
+import { Section, Card, InlineCTA, HardwareButton, TechnicalLabel } from '../components/ui/Components';
+import { Activity, Brain, Clock, Shield, Smartphone, Watch, Cloud, CheckCircle2, ArrowRight } from 'lucide-react';
 import { Language, getTranslation } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';
 
@@ -62,15 +62,17 @@ export const Product: React.FC<ProductProps> = ({ lang }) => {
       </Section>
 
       <Section title={lang === 'zh' ? "支持的集成" : "Supported Integrations"}>
-        <div className="flex flex-wrap gap-6 items-center justify-center py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 py-12">
           {[
-            { icon: Watch, label: lang === 'zh' ? "可穿戴设备" : "Wearables" },
-            { icon: Smartphone, label: lang === 'zh' ? "健康应用" : "Health Apps" },
-            { icon: Cloud, label: lang === 'zh' ? "云生态系统" : "Cloud Ecosystems" }
+            { icon: Watch, label: lang === 'zh' ? "可穿戴设备" : "Wearables", id: "DEV_01" },
+            { icon: Smartphone, label: lang === 'zh' ? "健康应用" : "Health Apps", id: "APP_01" },
+            { icon: Cloud, label: lang === 'zh' ? "云生态系统" : "Cloud Ecosystems", id: "CLD_01" }
           ].map((item, i) => (
-            <div key={i} className="flex items-center gap-4 px-8 py-4 rounded-2xl bg-slate-900/50 border border-white/10 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-all group">
-              <item.icon size={24} className="group-hover:scale-110 transition-transform" />
-              <span className="font-black uppercase tracking-widest text-xs">{item.label}</span>
+            <div key={i} className="flex flex-col items-center gap-6 p-10 rounded-3xl bg-slate-900/50 border border-white/5 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-all group relative overflow-hidden">
+              <div className="scanline opacity-0 group-hover:opacity-100" />
+              <TechnicalLabel label="MODULE" value={item.id} className="mb-4" />
+              <item.icon size={48} strokeWidth={1} className="group-hover:scale-110 transition-transform mb-4" />
+              <span className="font-black uppercase tracking-[0.2em] text-xs text-center">{item.label}</span>
             </div>
           ))}
         </div>

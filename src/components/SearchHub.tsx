@@ -7,6 +7,7 @@ import { Section, Card } from './ui/Components';
 import { Language } from '../types';
 import { updateMetadata } from '../services/navigation';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from '../data/mockData';
+import { useLanguage } from '../context/useLanguage';
 
 interface SearchHubProps {
   lang: Language;
@@ -15,6 +16,7 @@ interface SearchHubProps {
 export const SearchHub: React.FC<SearchHubProps> = ({ lang }) => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { langPrefix } = useLanguage();
   const query = searchParams.get('q') || '';
   const [results, setResults] = useState<any[]>([]);
   const [filter, setFilter] = useState<'all' | 'blog' | 'research'>('all');
@@ -62,13 +64,13 @@ export const SearchHub: React.FC<SearchHubProps> = ({ lang }) => {
               type="text" 
               value={localQuery}
               onChange={(e) => setLocalQuery(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && navigate(`/search?q=${encodeURIComponent(localQuery)}`)}
+              onKeyDown={(e) => e.key === 'Enter' && navigate(`${langPrefix}/search?q=${encodeURIComponent(localQuery)}`)}
               placeholder="Search articles, research, and insights..."
               className="w-full bg-slate-900 border border-white/10 rounded-2xl px-6 py-4 text-xl text-white placeholder-slate-600 focus:outline-none focus:border-indigo-500 transition-colors"
               autoFocus
             />
             <button 
-              onClick={() => navigate(`/search?q=${encodeURIComponent(localQuery)}`)}
+              onClick={() => navigate(`${langPrefix}/search?q=${encodeURIComponent(localQuery)}`)}
               className="absolute right-4 top-1/2 -translate-y-1/2 p-2 bg-indigo-600 rounded-xl text-white hover:bg-indigo-500 transition-colors"
             >
               <ArrowRight size={20} />
@@ -105,7 +107,7 @@ export const SearchHub: React.FC<SearchHubProps> = ({ lang }) => {
                 key={i}
                 title={item.title}
                 description={item.excerpt}
-                onClick={() => navigate(item.type === 'blog' ? `/blog/${item.slug}` : `/news/${item.slug}`)}
+                onClick={() => navigate(item.type === 'blog' ? `${langPrefix}/blog/${item.slug}` : `${langPrefix}/news/${item.slug}`)}
                 className="cursor-pointer group"
               >
                 <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">

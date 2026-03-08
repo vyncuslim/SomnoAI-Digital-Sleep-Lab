@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Info, ArrowRight } from 'lucide-react';
+import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Info, ArrowRight, Cpu, ShieldCheck, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../context/useLanguage';
 
@@ -349,6 +349,58 @@ export const Breadcrumbs: React.FC<{ items: { label: string; link?: string }[] }
     </nav>
   );
 };
+
+// --- Hardware Button ---
+export const HardwareButton: React.FC<{ 
+  children: React.ReactNode; 
+  onClick?: (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => void; 
+  href?: string; 
+  className?: string; 
+  variant?: 'primary' | 'secondary' | 'outline' | 'ghost';
+  disabled?: boolean;
+  icon?: React.ReactNode;
+  type?: 'button' | 'submit' | 'reset';
+}> = ({ children, onClick, href, className = "", variant = 'primary', disabled, icon, type = 'button' }) => {
+  const baseStyles = "relative px-8 py-4 rounded-2xl font-black uppercase tracking-widest text-[10px] transition-all flex items-center justify-center gap-3 group/btn overflow-hidden";
+  
+  const variants = {
+    primary: "bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_10px_30px_rgba(79,70,229,0.3)]",
+    secondary: "bg-white text-black hover:scale-[1.02]",
+    outline: "bg-white/5 hover:bg-white/10 border border-white/10 text-white",
+    ghost: "bg-transparent hover:bg-white/5 text-slate-400 hover:text-white"
+  };
+
+  const content = (
+    <>
+      <div className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/10 to-white/0 -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000 ease-in-out" />
+      {icon}
+      {children}
+      <ChevronRight size={14} className="group-hover/btn:translate-x-1 transition-transform" />
+    </>
+  );
+
+  if (href) {
+    return (
+      <a href={href} onClick={onClick} className={`${baseStyles} ${variants[variant]} ${className}`}>
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <button type={type} onClick={onClick as any} disabled={disabled} className={`${baseStyles} ${variants[variant]} ${className} disabled:opacity-50`}>
+      {content}
+    </button>
+  );
+};
+
+// --- Technical Label ---
+export const TechnicalLabel: React.FC<{ label: string; value: string; className?: string }> = ({ label, value, className = "" }) => (
+  <div className={`flex flex-col gap-1 ${className}`}>
+    <span className="micro-label opacity-40">{label}</span>
+    <span className="text-[10px] font-black text-white uppercase tracking-widest italic">{value}</span>
+  </div>
+);
 
 // --- Inline CTA ---
 export const InlineCTA: React.FC<{ text: string; link: string; icon?: React.ReactNode }> = ({ text, link, icon }) => {

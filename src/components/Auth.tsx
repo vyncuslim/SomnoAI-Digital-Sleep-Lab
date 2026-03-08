@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2 } from 'lucide-react';
 import { GlassCard } from './GlassCard';
+import { HardwareButton, TechnicalLabel } from './ui/Components';
 import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
 import { supabase } from '../services/supabaseService';
@@ -332,13 +333,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               </div>
             )}
 
-            <button 
+            <HardwareButton 
               type="submit"
               disabled={loading}
-              className="w-full py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-2xl font-black uppercase tracking-widest transition-all flex items-center justify-center gap-3 shadow-lg shadow-indigo-500/20 disabled:opacity-50"
+              variant="primary"
+              className="w-full !py-4"
             >
               {loading ? (
-                <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
                 <>
                   {view === 'login' && (lang === 'zh' ? '登录' : 'Sign In')}
@@ -348,7 +350,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   <ArrowRight size={18} />
                 </>
               )}
-            </button>
+            </HardwareButton>
           </form>
 
           {(view === 'login' || view === 'signup') && (
@@ -363,24 +365,26 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               </div>
 
               <div className="mt-8 grid grid-cols-2 gap-4">
-                <button 
+                <HardwareButton 
                   type="button" 
                   onClick={handleGoogleSignIn}
                   disabled={loading}
-                  className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50"
+                  variant="outline"
+                  className="!py-3"
+                  icon={<Chrome size={18} className="text-slate-400" />}
                 >
-                  <Chrome size={18} className="text-slate-400" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">Google</span>
-                </button>
-                <button 
+                  Google
+                </HardwareButton>
+                <HardwareButton 
                   type="button" 
                   onClick={() => setView('otp')}
                   disabled={loading}
-                  className="flex items-center justify-center gap-3 py-3 bg-white/5 border border-white/5 rounded-2xl hover:bg-white/10 transition-all disabled:opacity-50"
+                  variant="outline"
+                  className="!py-3"
+                  icon={<KeyRound size={18} className="text-slate-400" />}
                 >
-                  <KeyRound size={18} className="text-slate-400" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">OTP / Magic Link</span>
-                </button>
+                  OTP
+                </HardwareButton>
               </div>
             </>
           )}

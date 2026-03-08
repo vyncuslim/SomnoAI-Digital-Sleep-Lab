@@ -1,7 +1,7 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
-import { Section, Card, InlineCTA } from '../components/ui/Components';
-import { Shield, Lock, Brain, Activity, LineChart, Lightbulb } from 'lucide-react';
+import { Section, Card, InlineCTA, HardwareButton, TechnicalLabel } from '../components/ui/Components';
+import { Shield, Lock, Brain, Activity, LineChart, Lightbulb, ExternalLink } from 'lucide-react';
 import { AlertBanner } from '../components/ui/Components';
 import { Language, getTranslation } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';
@@ -57,18 +57,20 @@ export const About: React.FC<AboutProps> = ({ lang }) => {
       </Section>
 
       <Section>
-        <div className="text-center py-12 hardware-panel">
-            <p className="hardware-label mb-4">
-                {lang === 'zh' ? "SomnoAI Digital Sleep Lab 也被收录在 Grokpedia：" : "SomnoAI Digital Sleep Lab is also listed in Grokpedia:"}
+        <div className="text-center py-12 hardware-panel relative overflow-hidden">
+            <div className="scanline" />
+            <TechnicalLabel label="EXTERNAL_RESOURCE" value="GROKPEDIA" className="justify-center mb-6" />
+            <p className="text-slate-400 mb-8 max-w-lg mx-auto text-sm">
+                {lang === 'zh' ? "SomnoAI Digital Sleep Lab 也被收录在 Grokpedia，这是一个致力于记录前沿科技与创新的百科全书。" : "SomnoAI Digital Sleep Lab is also listed in Grokpedia, an encyclopedia dedicated to documenting cutting-edge technology and innovation."}
             </p>
-            <a 
-                href="https://grokipedia.com/page/SomnoAI_Digital_Sleep_Lab#somnoai-digital-sleep-lab" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="text-2xl font-black italic text-indigo-400 hover:text-indigo-300 transition-colors break-all tracking-tighter"
+            <HardwareButton 
+                onClick={() => window.open("https://grokipedia.com/page/SomnoAI_Digital_Sleep_Lab#somnoai-digital-sleep-lab", "_blank")}
+                variant="outline"
+                icon={<ExternalLink size={16} />}
+                className="mx-auto"
             >
                 grokipedia.com/somnoai
-            </a>
+            </HardwareButton>
         </div>
       </Section>
 

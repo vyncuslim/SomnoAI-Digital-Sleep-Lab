@@ -4,7 +4,7 @@ import { INFO_CONTENT } from '../data/infoContent';
 import { Language } from '../types';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { LegalPageTemplate } from '../components/ui/LegalPageTemplate';
-import { Section } from '../components/ui/Components';
+import { Section, HardwareButton } from '../components/ui/Components';
 
 interface DynamicPageProps {
   lang: Language;
@@ -22,7 +22,7 @@ export const DynamicPage: React.FC<DynamicPageProps> = ({ lang, type }) => {
     return (
       <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white p-8">
         <h1 className="text-4xl font-black italic mb-4">404 - Page Not Found</h1>
-        <button onClick={() => navigate(-1)} className="px-8 py-3 bg-indigo-600 rounded-full font-bold">Return</button>
+        <HardwareButton onClick={() => navigate(-1)}>Return</HardwareButton>
       </div>
     );
   }

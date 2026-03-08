@@ -78,24 +78,26 @@ const BlogPostWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const post = BLOG_POSTS.find(p => p.slug === slug);
+  const langPrefix = lang === 'zh' ? '/cn' : '/en';
 
   if (!post) {
     return <div className="min-h-screen flex items-center justify-center text-white">Post not found</div>;
   }
 
-  return <BlogPostView post={post} lang={lang} onBack={() => navigate('/blog')} />;
+  return <BlogPostView post={post} lang={lang} onBack={() => navigate(`${langPrefix}/blog`)} />;
 };
 
 const ArticleWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
   const { slug } = useParams();
   const navigate = useNavigate();
   const article = RESEARCH_ARTICLES.find(a => a.slug === slug);
+  const langPrefix = lang === 'zh' ? '/cn' : '/en';
 
   if (!article) {
     return <div className="min-h-screen flex items-center justify-center text-white">Article not found</div>;
   }
 
-  return <ArticleView article={article} lang={lang} onBack={() => navigate('/news')} />;
+  return <ArticleView article={article} lang={lang} onBack={() => navigate(`${langPrefix}/news`)} />;
 };
 
 interface AppRoutesProps {
@@ -162,9 +164,9 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="search" element={<SearchHub lang={lang} />} />
       
       {/* Blog & News */}
-      <Route path="blog" element={<BlogHub lang={lang} onSelectPost={(post: any) => navigate(`/blog/${post.slug}`)} />} />
+      <Route path="blog" element={<BlogHub lang={lang} onSelectPost={(post: any) => navigate(`${langPrefix}/blog/${post.slug}`)} />} />
       <Route path="blog/:slug" element={<BlogPostWrapper lang={lang} />} />
-      <Route path="news" element={<NewsHub lang={lang} onSelectArticle={(article: any) => navigate(`/news/${article.slug}`)} />} />
+      <Route path="news" element={<NewsHub lang={lang} onSelectArticle={(article: any) => navigate(`${langPrefix}/news/${article.slug}`)} />} />
       <Route path="news/:slug" element={<ArticleWrapper lang={lang} />} />
       <Route path="changelog" element={<ChangelogView lang={lang} onBack={handleBack} />} />
 
