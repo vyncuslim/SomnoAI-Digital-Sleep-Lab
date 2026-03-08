@@ -361,8 +361,16 @@ async function startServer() {
       root: root
     });
     app.use(vite.middlewares);
-    app.use('*', async (req, res) => {
+    
+    // SPA fallback for development
+    app.get('*', async (req, res, next) => {
       const url = req.originalUrl;
+      
+      // Skip API routes and static assets that Vite should have handled
+      if (url.startsWith('/api/') || url.includes('.')) {
+        return next();
+      }
+
       try {
         let template = fs.readFileSync(path.resolve(root, 'index.html'), 'utf-8');
         template = await vite.transformIndexHtml(url, template);
@@ -376,22 +384,13 @@ async function startServer() {
     // Serve static files in production
     app.use(express.static(distPath, { extensions: ['html'] }));
     
-    // Explicitly handle SPA routes for /en/* and /cn/*
-    app.get(['/en/*', '/cn/*', '/dashboard', '/admin', '/settings'], (req, res) => {
-      const indexPath = path.resolve(distPath, "index.html");
-      const appPath = path.resolve(distPath, "app.html");
-      
-      if (fs.existsSync(indexPath)) {
-        res.sendFile(indexPath);
-      } else if (fs.existsSync(appPath)) {
-        res.sendFile(appPath);
-      } else {
-        res.status(404).send("Production build found but index.html/app.html is missing in dist/");
+    // SPA fallback for production - catch all routes and serve index.html
+    app.get('*', (req, res, next) => {
+      // Skip API routes
+      if (req.url.startsWith('/api/')) {
+        return next();
       }
-    });
 
-    // Fallback to index.html for production
-    app.get(/.*/, (req, res) => {
       const indexPath = path.resolve(distPath, "index.html");
       const appPath = path.resolve(distPath, "app.html");
       
@@ -400,7 +399,7 @@ async function startServer() {
       } else if (fs.existsSync(appPath)) {
         res.sendFile(appPath);
       } else {
-        res.status(404).send("Production build found but index.html/app.html is missing in dist/");
+        res.status(404).send("Production build found but index.html/app.html is missing in dist/. Please run 'npm run build'.");
       }
     });
   }
