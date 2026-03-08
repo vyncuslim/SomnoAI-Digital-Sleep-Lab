@@ -30,6 +30,7 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
         <div>
           <h4 className="text-white font-medium mb-4">{isZh ? "快速链接" : "Quick Links"}</h4>
           <ul className="grid grid-cols-2 gap-2 text-sm text-slate-400">
+            <li><Link to={`${langPrefix}/pricing`} className="hover:text-white transition-colors">{isZh ? "定价" : "Pricing"}</Link></li>
             <li><Link to={`${langPrefix}/about`} className="hover:text-white transition-colors">{isZh ? "关于" : "About"}</Link></li>
             <li><Link to={`${langPrefix}/product`} className="hover:text-white transition-colors">{isZh ? "产品" : "Product"}</Link></li>
             <li><Link to={`${langPrefix}/how-it-works`} className="hover:text-white transition-colors">{isZh ? "工作原理" : "How it Works"}</Link></li>

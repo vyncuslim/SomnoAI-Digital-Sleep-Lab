@@ -17,6 +17,7 @@ import { Footer } from './components/Footer';
 import { SchemaMarkup } from './components/SchemaMarkup';
 
 // Lazy load components
+const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement').then(module => ({ default: module.SubscriptionManagement })));
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
 const AdminView = lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
@@ -213,6 +214,11 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="ai-assistant" element={
         <ProtectedRoute lang={lang}>
           <AIAssistant lang={lang} data={latestData} history={history} />
+        </ProtectedRoute>
+      } />
+      <Route path="subscription" element={
+        <ProtectedRoute lang={lang}>
+          <SubscriptionManagement lang={lang} />
         </ProtectedRoute>
       } />
 
