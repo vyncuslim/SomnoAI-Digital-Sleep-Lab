@@ -35,6 +35,14 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
     }
   };
 
+  const handlePlanSelect = (url: string) => {
+    if (!user) {
+      onNavigate('/auth/login');
+      return;
+    }
+    window.location.href = url;
+  };
+
   const stats = [
     { label: t.stats?.analyzed || "Hours Analyzed", value: "10M+", icon: Database },
     { label: t.stats?.accuracy || "Sleep Accuracy", value: "98.4%", icon: CheckCircle2 },
@@ -177,9 +185,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       {/* Pricing Section */}
       <Section title="Pricing" description="Choose the plan that fits your needs.">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card title="Go" description="Basic plan" icon={<Zap size={32} />} onClick={() => window.location.href = getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go')} />
-          <Card title="Pro" description="Pro plan" icon={<Zap size={32} />} onClick={() => window.location.href = getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro')} />
-          <Card title="Plus" description="Plus plan" icon={<Zap size={32} />} onClick={() => window.location.href = getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus')} />
+          <Card title="Go" description="Basic plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go'))} />
+          <Card title="Pro" description="Pro plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro'))} />
+          <Card title="Plus" description="Plus plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus'))} />
         </div>
       </Section>
 

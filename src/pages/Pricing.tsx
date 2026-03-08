@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card } from '../components/ui/Components';
 import { Check } from 'lucide-react';
@@ -11,7 +12,8 @@ interface PricingProps {
 
 const Pricing: React.FC<PricingProps> = ({ lang }) => {
   const isZh = lang === 'zh';
-  const { profile } = useAuth();
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
 
   const getPaymentLink = (baseUrl: string, planName: string) => {
     const params = new URLSearchParams();
@@ -19,6 +21,14 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
     if (profile?.email) params.append('prefilled_email', profile.email);
     params.append('plan', planName);
     return `${baseUrl}?${params.toString()}`;
+  };
+
+  const handlePlanSelect = (e: React.MouseEvent<HTMLAnchorElement>, url: string) => {
+    if (!user) {
+      e.preventDefault();
+      const prefix = lang === 'zh' ? '/cn' : '/en';
+      navigate(`${prefix}/auth/login`);
+    }
   };
   
   return (
@@ -36,7 +46,8 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
             <div className="text-4xl font-bold mt-4">$0</div>
             <a 
               href={getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go')} 
-              className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg"
+              onClick={(e) => handlePlanSelect(e, getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go'))}
+              className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors"
             >
               {isZh ? "选择" : "Select"}
             </a>
@@ -49,7 +60,8 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
             <div className="text-4xl font-bold mt-4">$9.99/mo</div>
             <a 
               href={getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro')} 
-              className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg"
+              onClick={(e) => handlePlanSelect(e, getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro'))}
+              className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors"
             >
               {isZh ? "选择" : "Select"}
             </a>
@@ -62,7 +74,8 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
             <div className="text-4xl font-bold mt-4">Custom</div>
             <a 
               href={getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus')} 
-              className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg"
+              onClick={(e) => handlePlanSelect(e, getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus'))}
+              className="mt-4 block bg-indigo-600 text-white text-center py-2 rounded-lg cursor-pointer hover:bg-indigo-700 transition-colors"
             >
               {isZh ? "联系我们" : "Contact Us"}
             </a>
