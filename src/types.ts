@@ -44,6 +44,9 @@ export interface UserProfile {
   avatar_url?: string;
   preferences?: Record<string, any>;
   subscription_plan?: string;
+  subscription_id?: string;
+  subscription_status?: string;
+  stripe_customer_id?: string;
 }
 
 export interface Article {

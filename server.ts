@@ -51,6 +51,233 @@ async function startServer() {
     res.send("pong-v2");
   });
 
+  // Stripe webhook - MUST be defined before express.json() middleware
+  app.post("/api/stripe/webhook", express.raw({type: 'application/json'}), async (req, res) => {
+    const sig = req.headers['stripe-signature'];
+    let event: Stripe.Event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
+    } catch (err: any) {
+      console.error(`Webhook Error: ${err.message}`);
+      res.status(400).send(`Webhook Error: ${err.message}`);
+      return;
+    }
+
+    const supabaseAdmin = createClient(
+      process.env.SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    );
+
+    // Mapping of Stripe Price IDs to Plan Names
+    // TODO: Replace these placeholders with your actual Stripe Price IDs from your Dashboard
+    const PLAN_BY_PRICE_ID: Record<string, string> = {
+      'price_go_monthly': 'go',
+      'price_pro_monthly': 'pro',
+      'price_plus_monthly': 'plus',
+      // Add your actual IDs here, e.g., 'price_1Q2w3e...': 'pro'
+    };
+
+    function getPlanFromPriceId(priceId: string | undefined): string {
+      if (!priceId) return 'free';
+      return PLAN_BY_PRICE_ID[priceId] || 'pro'; // Default fallback
+    }
+
+    try {
+      console.log(`Processing event: ${event.type}`);
+      
+      switch (event.type) {
+        case 'checkout.session.completed': {
+          const session = event.data.object as Stripe.Checkout.Session;
+          const userId = session.client_reference_id;
+          const subscriptionId = session.subscription as string;
+          const customerId = session.customer as string;
+          
+          if (!userId) {
+            console.log('No client_reference_id in session, skipping user mapping.');
+            break;
+          }
+
+          // Retrieve full subscription details
+          const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+          const priceId = subscription.items.data[0]?.price.id;
+          const plan = session.metadata?.plan || getPlanFromPriceId(priceId);
+          
+          // Upsert into subscriptions table
+          const { error: subError } = await supabaseAdmin.from('subscriptions').upsert({
+            user_id: userId,
+            stripe_subscription_id: subscriptionId,
+            stripe_price_id: priceId,
+            plan_name: plan,
+            status: subscription.status,
+            current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+            current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+            cancel_at_period_end: subscription.cancel_at_period_end
+          }, { onConflict: 'stripe_subscription_id' });
+
+          if (subError) {
+            console.error('Error updating subscriptions table:', subError);
+            // Fallback: Update profiles directly if subscriptions table fails (e.g. not created yet)
+            await supabaseAdmin.from('profiles').update({
+              subscription_plan: plan,
+              subscription_id: subscriptionId,
+              subscription_status: subscription.status,
+              stripe_customer_id: customerId
+            }).eq('id', userId);
+          } else {
+            // If subscriptions update succeeded, the Trigger (if installed) will update profiles.
+            // But to be safe (if trigger missing), we can also update profiles here explicitly.
+            await supabaseAdmin.from('profiles').update({
+              stripe_customer_id: customerId
+            }).eq('id', userId);
+          }
+          
+          console.log(`Checkout completed for user ${userId}, plan: ${plan}`);
+          break;
+        }
+
+        case 'customer.subscription.created':
+        case 'customer.subscription.updated': {
+          const subscription = event.data.object as Stripe.Subscription;
+          const priceId = subscription.items.data[0]?.price.id;
+          const plan = getPlanFromPriceId(priceId);
+          
+          // We need to find the user_id. 
+          // 1. Try metadata from subscription (if passed from checkout)
+          // 2. Try looking up the subscription in our DB
+          let userId = subscription.metadata?.userId;
+
+          if (!userId) {
+             const { data: subData } = await supabaseAdmin
+               .from('subscriptions')
+               .select('user_id')
+               .eq('stripe_subscription_id', subscription.id)
+               .single();
+             userId = subData?.user_id;
+          }
+
+          if (!userId) {
+            // Fallback: Look up profile by customer ID if we stored it
+             const { data: profileData } = await supabaseAdmin
+               .from('profiles')
+               .select('id')
+               .eq('stripe_customer_id', subscription.customer)
+               .single();
+             userId = profileData?.id;
+          }
+
+          if (userId) {
+            await supabaseAdmin.from('subscriptions').upsert({
+              user_id: userId,
+              stripe_subscription_id: subscription.id,
+              stripe_price_id: priceId,
+              plan_name: plan,
+              status: subscription.status,
+              current_period_start: new Date(subscription.current_period_start * 1000).toISOString(),
+              current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+              cancel_at_period_end: subscription.cancel_at_period_end
+            }, { onConflict: 'stripe_subscription_id' });
+            
+            console.log(`Subscription updated for user ${userId}: ${status}`);
+          } else {
+            console.log(`Could not find user for subscription ${subscription.id}`);
+          }
+          break;
+        }
+
+        case 'customer.subscription.deleted': {
+          const subscription = event.data.object as Stripe.Subscription;
+          
+          // Update status to canceled
+          const { data: subData } = await supabaseAdmin
+             .from('subscriptions')
+             .select('user_id')
+             .eq('stripe_subscription_id', subscription.id)
+             .single();
+             
+          if (subData?.user_id) {
+            await supabaseAdmin.from('subscriptions').update({
+              status: 'canceled',
+              plan_name: 'free' // Optional: mark as free immediately or keep plan name for history
+            }).eq('stripe_subscription_id', subscription.id);
+            
+            console.log(`Subscription deleted/canceled for user ${subData.user_id}`);
+          }
+          break;
+        }
+
+        case 'invoice.payment_failed': {
+          const invoice = event.data.object as Stripe.Invoice;
+          const subscriptionId = invoice.subscription as string;
+          
+          if (subscriptionId) {
+             await supabaseAdmin.from('subscriptions').update({
+               status: 'past_due' // Or whatever logic you want
+             }).eq('stripe_subscription_id', subscriptionId);
+             console.log(`Payment failed for subscription ${subscriptionId}`);
+             
+             // TODO: Send email notification to user
+          }
+          break;
+        }
+        
+        case 'invoice.paid': {
+           const invoice = event.data.object as Stripe.Invoice;
+           const subscriptionId = invoice.subscription as string;
+           
+           // Usually subscription.updated handles the dates, but invoice.paid confirms good standing
+           if (subscriptionId) {
+             await supabaseAdmin.from('subscriptions').update({
+               status: 'active'
+             }).eq('stripe_subscription_id', subscriptionId);
+             console.log(`Invoice paid for subscription ${subscriptionId}`);
+           }
+           break;
+        }
+
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+    } catch (error: any) {
+      console.error('Error processing webhook:', error);
+      res.status(500).send(`Webhook processing error: ${error.message}`);
+      return;
+    }
+
+    res.json({received: true});
+  });
+
+  app.post('/api/stripe/create-portal-session', async (req, res) => {
+    try {
+      const { userId } = req.body;
+      
+      if (!userId) {
+        return res.status(400).json({ error: 'User ID is required' });
+      }
+
+      // Get customer ID from profiles table
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('stripe_customer_id')
+        .eq('id', userId)
+        .single();
+      
+      if (!profile?.stripe_customer_id) {
+         return res.status(404).json({ error: 'No billing account found. Please subscribe first.' });
+      }
+  
+      const session = await stripe.billingPortal.sessions.create({
+        customer: profile.stripe_customer_id,
+        return_url: `${req.headers.origin || 'https://sleepsomno.com'}/subscription`,
+      });
+  
+      res.json({ url: session.url });
+    } catch (error: any) {
+      console.error('Error creating portal session:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.use(express.json());
 
   // API routes
@@ -113,42 +340,7 @@ async function startServer() {
     res.json({ success: true });
   });
 
-  app.post("/api/stripe/webhook", express.raw({type: 'application/json'}), async (req, res) => {
-    const sig = req.headers['stripe-signature'];
-    let event;
 
-    try {
-      event = stripe.webhooks.constructEvent(req.body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
-    } catch (err: any) {
-      res.status(400).send(`Webhook Error: ${err.message}`);
-      return;
-    }
-
-    // Handle the event
-    switch (event.type) {
-      case 'checkout.session.completed': {
-        const session = event.data.object as any;
-        const userId = session.client_reference_id;
-        const plan = session.metadata.plan;
-        if (userId && plan) {
-          await supabase.from('profiles').update({ subscription_plan: plan }).eq('id', userId);
-        }
-        break;
-      }
-      case 'customer.subscription.deleted': {
-        const subscription = event.data.object as any;
-        const userIdDeleted = subscription.metadata.userId;
-        if (userIdDeleted) {
-          await supabase.from('profiles').update({ subscription_plan: 'free' }).eq('id', userIdDeleted);
-        }
-        break;
-      }
-      default:
-        console.log(`Unhandled event type ${event.type}`);
-    }
-
-    res.json({received: true});
-  });
 
   // Vite middleware for development
   const root = process.cwd();

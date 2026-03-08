@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles } from 'lucide-react';
+import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Crown } from 'lucide-react';
 import { GoogleGenAI } from '@google/genai';
+import { useAuth } from '../context/AuthContext';
+import { Link } from 'react-router-dom';
 
 // Initialize Gemini API
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -31,6 +33,15 @@ interface HistoryRecord {
 }
 
 export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
+  const { profile } = useAuth();
+  const rawPlan = profile?.subscription_plan || 'go';
+  // Normalize plan name: 'free' maps to 'go'
+  const plan = rawPlan.toLowerCase() === 'free' ? 'go' : rawPlan.toLowerCase();
+  const isFree = plan === 'go';
+  
+  // Helper to capitalize first letter
+  const displayPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
+
   const [input, setInput] = useState<SleepInput>({
     duration: 7,
     bedtime: '23:00',
@@ -145,13 +156,53 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     tomorrow: lang === 'zh' ? '明日优化方向' : 'Tomorrow Optimization',
     history: lang === 'zh' ? '历史记录' : 'History',
     disclaimer: lang === 'zh' ? '免责声明：此分析仅供参考，不构成医疗建议。' : 'Disclaimer: This analysis is for informational purposes only and does not constitute medical advice.',
+    upgradeTitle: lang === 'zh' ? '升级到 Pro' : 'Upgrade to Pro',
+    upgradeDesc: lang === 'zh' ? '解锁高级 AI 洞察和无限历史记录。' : 'Unlock advanced AI insights and unlimited history.',
+    upgradeBtn: lang === 'zh' ? '立即升级' : 'Upgrade Now',
+    currentPlan: lang === 'zh' ? '当前计划' : 'Current Plan',
   };
 
   return (
     <div className="max-w-4xl mx-auto p-4 md:p-8 space-y-8 text-slate-200">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
-        <p className="text-slate-400">Track your sleep and get AI-powered insights.</p>
+      {isFree && (
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-lg shadow-indigo-900/20"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-white/10 rounded-lg">
+              <Crown className="text-yellow-300" size={24} />
+            </div>
+            <div>
+              <h3 className="text-white font-bold text-lg">{t.upgradeTitle}</h3>
+              <p className="text-indigo-100 text-sm">{t.upgradeDesc}</p>
+            </div>
+          </div>
+          <Link 
+            to="/subscription" 
+            className="whitespace-nowrap bg-white text-indigo-600 px-6 py-2 rounded-lg font-bold hover:bg-indigo-50 transition-colors shadow-sm"
+          >
+            {t.upgradeBtn}
+          </Link>
+        </motion.div>
+      )}
+
+      <div className="mb-8 flex items-end justify-between">
+        <div>
+          <h1 className="text-3xl font-bold text-white mb-2">{t.title}</h1>
+          <p className="text-slate-400">Track your sleep and get AI-powered insights.</p>
+        </div>
+        <div className="hidden sm:block text-right">
+          <p className="text-xs text-slate-500 uppercase tracking-wider mb-1">{t.currentPlan}</p>
+          <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide border ${
+            isFree 
+              ? 'bg-slate-800 text-slate-400 border-slate-700' 
+              : 'bg-indigo-500/20 text-indigo-300 border-indigo-500/50'
+          }`}>
+            {displayPlan}
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
