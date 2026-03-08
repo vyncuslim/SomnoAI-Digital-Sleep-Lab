@@ -375,13 +375,32 @@ async function startServer() {
   } else {
     // Serve static files in production
     app.use(express.static(distPath, { extensions: ['html'] }));
+    
+    // Explicitly handle SPA routes for /en/* and /cn/*
+    app.get(['/en/*', '/cn/*', '/dashboard', '/admin', '/settings'], (req, res) => {
+      const indexPath = path.resolve(distPath, "index.html");
+      const appPath = path.resolve(distPath, "app.html");
+      
+      if (fs.existsSync(indexPath)) {
+        res.sendFile(indexPath);
+      } else if (fs.existsSync(appPath)) {
+        res.sendFile(appPath);
+      } else {
+        res.status(404).send("Production build found but index.html/app.html is missing in dist/");
+      }
+    });
+
     // Fallback to index.html for production
     app.get(/.*/, (req, res) => {
       const indexPath = path.resolve(distPath, "index.html");
+      const appPath = path.resolve(distPath, "app.html");
+      
       if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
+      } else if (fs.existsSync(appPath)) {
+        res.sendFile(appPath);
       } else {
-        res.status(404).send("Production build found but index.html is missing in dist/");
+        res.status(404).send("Production build found but index.html/app.html is missing in dist/");
       }
     });
   }
