@@ -7,9 +7,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { GridBackground, TelemetryStream, HardwareWidget } from './ui/Components';
 import { useLanguage } from '../context/useLanguage';
 
-// Initialize Gemini API
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 interface SleepInput {
   duration: number;
   bedtime: string;
@@ -64,7 +61,10 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     const savedHistory = localStorage.getItem('sleepHistory');
     if (savedHistory) {
       try {
-        setHistory(JSON.parse(savedHistory));
+        const parsed = JSON.parse(savedHistory);
+        if (Array.isArray(parsed)) {
+          setHistory(parsed);
+        }
       } catch (e) {
         console.error('Failed to parse history', e);
       }
@@ -78,7 +78,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     document.body.appendChild(script);
 
     return () => {
-      document.body.removeChild(script);
+      if (document.body.contains(script)) {
+        document.body.removeChild(script);
+      }
     }
   }, []);
 
@@ -102,6 +104,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const generateAnalysis = async () => {
     setIsAnalyzing(true);
     try {
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const prompt = `
         As a sleep expert, analyze the following sleep data and provide insights.
         Language: ${lang === 'zh' ? 'Chinese' : 'English'}
@@ -449,7 +452,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                           {t.insights}
                         </h3>
                         <ul className="space-y-4">
-                          {analysis.insights.map((insight, idx) => (
+                          {analysis.insights?.map((insight, idx) => (
                             <motion.li 
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
@@ -470,7 +473,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                           {t.recommendations}
                         </h3>
                         <ul className="space-y-4">
-                          {analysis.recommendations.map((rec, idx) => (
+                          {analysis.recommendations?.map((rec, idx) => (
                             <motion.li 
                               initial={{ opacity: 0, x: -10 }}
                               animate={{ opacity: 1, x: 0 }}
@@ -552,7 +555,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                         <div className="h-8 w-px bg-white/5" />
                         <div className="flex flex-col">
                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Duration</span>
-                          <span className="text-sm font-mono text-white">{record.input.duration}h</span>
+                          <span className="text-sm font-mono text-white">{record.input?.duration || 0}h</span>
                         </div>
                       </div>
                       
@@ -560,11 +563,11 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                         <div className="text-right">
                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Energy</span>
                           <span className={`px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest italic border ${
-                            record.input.energyScore >= 8 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 
-                            record.input.energyScore >= 5 ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 
+                            (record.input?.energyScore || 0) >= 8 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 
+                            (record.input?.energyScore || 0) >= 5 ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 
                             'bg-rose-500/10 text-rose-400 border-rose-500/30'
                           }`}>
-                            {record.input.energyScore}/10
+                            {record.input?.energyScore || 0}/10
                           </span>
                         </div>
                         <ChevronRight size={16} className="text-slate-700 group-hover:text-indigo-400 transition-colors" />
