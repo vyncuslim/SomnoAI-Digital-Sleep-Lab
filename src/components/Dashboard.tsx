@@ -255,89 +255,104 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
               </div>
 
               <div className="space-y-8">
-                <div className="group/input">
-                  <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Clock size={14} />
-                      {t.duration}
+                {/* Time Metrics Group */}
+                <div className="space-y-6 relative before:absolute before:-left-4 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-indigo-500/50 before:to-transparent">
+                  <div className="group/input pl-4">
+                    <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Clock size={14} />
+                        {t.duration}
+                      </div>
+                      <span className="text-indigo-500/50">VAL_HRS</span>
+                    </label>
+                    <div className="relative">
+                      <input 
+                        type="number" 
+                        value={input.duration}
+                        onChange={(e) => setInput({ ...input, duration: Number(e.target.value) })}
+                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono text-lg hover:border-white/10"
+                        min="0" max="24" step="0.5"
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600 uppercase">Hours</div>
                     </div>
-                    <span className="text-indigo-500/50">VAL_HRS</span>
-                  </label>
-                  <div className="relative">
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-6 pl-4">
+                    <div className="group/input">
+                      <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
+                        <Moon size={14} />
+                        {t.bedtime}
+                      </label>
+                      <input 
+                        type="time" 
+                        value={input.bedtime}
+                        onChange={(e) => setInput({ ...input, bedtime: e.target.value })}
+                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono hover:border-white/10"
+                      />
+                    </div>
+                    <div className="group/input">
+                      <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
+                        <Sun size={14} />
+                        {t.wakeTime}
+                      </label>
+                      <input 
+                        type="time" 
+                        value={input.wakeTime}
+                        onChange={(e) => setInput({ ...input, wakeTime: e.target.value })}
+                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono hover:border-white/10"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Quality Metrics Group */}
+                <div className="space-y-6 relative before:absolute before:-left-4 before:top-2 before:bottom-2 before:w-px before:bg-gradient-to-b before:from-purple-500/50 before:to-transparent">
+                  <div className="group/input pl-4">
+                    <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-purple-400 transition-colors">
+                      <div className="flex items-center gap-2">
+                        <Activity size={14} />
+                        {t.awakenings}
+                      </div>
+                      <span className="text-purple-500/50">VAL_COUNT</span>
+                    </label>
                     <input 
                       type="number" 
-                      value={input.duration}
-                      onChange={(e) => setInput({ ...input, duration: Number(e.target.value) })}
-                      className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono text-lg"
-                      min="0" max="24" step="0.5"
+                      value={input.awakenings}
+                      onChange={(e) => setInput({ ...input, awakenings: Number(e.target.value) })}
+                      className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-purple-500/50 transition-all font-mono hover:border-white/10"
+                      min="0"
                     />
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-600 uppercase">Hours</div>
                   </div>
-                </div>
 
-                <div className="grid grid-cols-2 gap-6">
-                  <div className="group/input">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
-                      <Moon size={14} />
-                      {t.bedtime}
-                    </label>
-                    <input 
-                      type="time" 
-                      value={input.bedtime}
-                      onChange={(e) => setInput({ ...input, bedtime: e.target.value })}
-                      className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono"
-                    />
-                  </div>
-                  <div className="group/input">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
-                      <Sun size={14} />
-                      {t.wakeTime}
-                    </label>
-                    <input 
-                      type="time" 
-                      value={input.wakeTime}
-                      onChange={(e) => setInput({ ...input, wakeTime: e.target.value })}
-                      className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono"
-                    />
-                  </div>
-                </div>
-
-                <div className="group/input">
-                  <label className="flex items-center justify-between text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
-                    <div className="flex items-center gap-2">
-                      <Activity size={14} />
-                      {t.awakenings}
+                  <div className="group/input pl-4">
+                    <div className="flex justify-between items-center mb-3">
+                      <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest group-focus-within/input:text-emerald-400 transition-colors">
+                        <Zap size={14} />
+                        {t.energy}
+                      </label>
+                      <span className="text-lg font-black italic text-emerald-400">{input.energyScore}/10</span>
                     </div>
-                    <span className="text-indigo-500/50">VAL_COUNT</span>
-                  </label>
-                  <input 
-                    type="number" 
-                    value={input.awakenings}
-                    onChange={(e) => setInput({ ...input, awakenings: Number(e.target.value) })}
-                    className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono"
-                    min="0"
-                  />
-                </div>
-
-                <div className="group/input">
-                  <div className="flex justify-between items-center mb-3">
-                    <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest group-focus-within/input:text-indigo-400 transition-colors">
-                      <Zap size={14} />
-                      {t.energy}
-                    </label>
-                    <span className="text-lg font-black italic text-indigo-400">{input.energyScore}/10</span>
+                    <div className="flex gap-1 h-8">
+                      {[...Array(10)].map((_, i) => (
+                        <button
+                          key={i}
+                          onClick={() => setInput({ ...input, energyScore: i + 1 })}
+                          className={`flex-1 rounded-sm transition-all duration-300 ${
+                            i < input.energyScore 
+                              ? i < 3 ? 'bg-rose-500 shadow-[0_0_10px_rgba(244,63,94,0.5)]' 
+                              : i < 7 ? 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.5)]' 
+                              : 'bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)]'
+                              : 'bg-slate-800 hover:bg-slate-700'
+                          }`}
+                        />
+                      ))}
+                    </div>
                   </div>
-                  <input 
-                    type="range" 
-                    value={input.energyScore}
-                    onChange={(e) => setInput({ ...input, energyScore: Number(e.target.value) })}
-                    className="w-full h-1.5 bg-slate-800 rounded-lg appearance-none cursor-pointer accent-indigo-500"
-                    min="1" max="10"
-                  />
                 </div>
 
+                {/* Factors Group */}
                 <div className="grid grid-cols-1 gap-4">
-                  <div className="flex items-center justify-between p-5 bg-black/40 rounded-2xl border border-white/5 group/toggle">
+                  <div className="flex items-center justify-between p-5 bg-black/40 rounded-2xl border border-white/5 group/toggle hover:border-white/10 transition-colors">
                     <label className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
                       <Smartphone size={16} className="text-indigo-500" />
                       {t.screen}
@@ -345,34 +360,34 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                     <div className="flex p-1 bg-slate-900 rounded-xl border border-white/5">
                       <button 
                         onClick={() => setInput({ ...input, screenTime: true })}
-                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${input.screenTime ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${input.screenTime ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'text-slate-500 hover:text-slate-300'}`}
                       >
                         {t.yes}
                       </button>
                       <button 
                         onClick={() => setInput({ ...input, screenTime: false })}
-                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!input.screenTime ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!input.screenTime ? 'bg-indigo-600 text-white shadow-[0_0_15px_rgba(79,70,229,0.5)]' : 'text-slate-500 hover:text-slate-300'}`}
                       >
                         {t.no}
                       </button>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between p-5 bg-black/40 rounded-2xl border border-white/5 group/toggle">
+                  <div className="flex items-center justify-between p-5 bg-black/40 rounded-2xl border border-white/5 group/toggle hover:border-white/10 transition-colors">
                     <label className="flex items-center gap-3 text-[10px] font-black text-slate-400 uppercase tracking-widest">
-                      <Coffee size={16} className="text-indigo-500" />
+                      <Coffee size={16} className="text-amber-500" />
                       {t.caffeine}
                     </label>
                     <div className="flex p-1 bg-slate-900 rounded-xl border border-white/5">
                       <button 
                         onClick={() => setInput({ ...input, caffeine: true })}
-                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${input.caffeine ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${input.caffeine ? 'bg-amber-600 text-white shadow-[0_0_15px_rgba(217,119,6,0.5)]' : 'text-slate-500 hover:text-slate-300'}`}
                       >
                         {t.yes}
                       </button>
                       <button 
                         onClick={() => setInput({ ...input, caffeine: false })}
-                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!input.caffeine ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                        className={`px-4 py-1.5 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all ${!input.caffeine ? 'bg-amber-600 text-white shadow-[0_0_15px_rgba(217,119,6,0.5)]' : 'text-slate-500 hover:text-slate-300'}`}
                       >
                         {t.no}
                       </button>
@@ -383,14 +398,20 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                 <button 
                   onClick={generateAnalysis}
                   disabled={isAnalyzing}
-                  className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black uppercase tracking-[0.2em] text-sm transition-all flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(79,70,229,0.3)] group/btn"
+                  className="w-full py-5 bg-indigo-600 hover:bg-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-2xl font-black uppercase tracking-[0.2em] text-sm transition-all flex items-center justify-center gap-3 shadow-[0_10px_30px_rgba(79,70,229,0.3)] group/btn relative overflow-hidden"
                 >
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover/btn:translate-x-full transition-transform duration-1000" />
                   {isAnalyzing ? (
-                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      <span className="animate-pulse">{t.analyzing}</span>
+                    </>
                   ) : (
-                    <Sparkles size={20} className="group-hover:rotate-12 transition-transform" />
+                    <>
+                      <Sparkles size={20} className="group-hover/btn:rotate-12 transition-transform" />
+                      {t.generate}
+                    </>
                   )}
-                  {isAnalyzing ? t.analyzing : t.generate}
                 </button>
               </div>
             </motion.div>
@@ -438,8 +459,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                   </div>
                   
                   <div className="space-y-10 relative z-10">
-                    <div className="p-6 bg-black/40 rounded-3xl border border-white/5 relative group">
-                      <div className="absolute -top-3 left-6 px-3 py-1 bg-slate-900 border border-white/10 rounded-full micro-label text-indigo-400 uppercase tracking-widest">
+                    <div className="p-6 bg-black/40 rounded-3xl border border-white/5 relative group hover:border-indigo-500/30 transition-colors">
+                      <div className="absolute -top-3 left-6 px-3 py-1 bg-slate-900 border border-indigo-500/30 rounded-full micro-label text-indigo-400 uppercase tracking-widest flex items-center gap-2 shadow-[0_0_10px_rgba(79,70,229,0.2)]">
+                        <Activity size={10} className="animate-pulse" />
                         {t.overview}
                       </div>
                       <p className="text-lg text-slate-200 leading-relaxed font-medium italic">"{analysis.overview}"</p>
@@ -489,17 +511,19 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                       </div>
                     </div>
 
-                    <div className="bg-indigo-500/10 border border-indigo-500/20 rounded-3xl p-8 relative group overflow-hidden">
-                      <div className="absolute inset-0 data-stream opacity-5" />
+                    <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/10 border border-indigo-500/30 rounded-3xl p-8 relative group overflow-hidden shadow-[0_0_30px_rgba(79,70,229,0.15)]">
+                      <div className="absolute inset-0 data-stream opacity-10" />
+                      <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-indigo-400 to-transparent opacity-50" />
                       <div className="relative z-10">
                         <h3 className="text-[10px] font-black text-indigo-300 mb-4 uppercase tracking-[0.3em] flex items-center gap-2">
-                          <Zap size={14} className="animate-pulse" />
+                          <Zap size={14} className="animate-pulse text-yellow-400" />
                           {t.tomorrow}
                         </h3>
-                        <p className="text-xl text-white font-black italic uppercase tracking-tight leading-tight group-hover:text-indigo-300 transition-colors">
+                        <p className="text-xl md:text-2xl text-white font-black italic uppercase tracking-tight leading-tight group-hover:text-indigo-200 transition-colors drop-shadow-md">
                           {analysis.tomorrowOptimization}
                         </p>
                       </div>
+                      <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/20 blur-3xl rounded-full group-hover:bg-indigo-400/30 transition-colors duration-700" />
                     </div>
                   </div>
                 </motion.div>
@@ -545,32 +569,35 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                   {history.map((record) => (
                     <div 
                       key={record.id} 
-                      className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-indigo-500/30 transition-all group cursor-default"
+                      className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group cursor-default relative overflow-hidden"
                     >
-                      <div className="flex items-center gap-6">
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500/0 group-hover:bg-indigo-500 transition-colors" />
+                      <div className="flex items-center gap-6 pl-2">
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Date</span>
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-indigo-400 transition-colors">Date</span>
                           <span className="text-sm font-mono text-white">{new Date(record.date).toLocaleDateString()}</span>
                         </div>
-                        <div className="h-8 w-px bg-white/5" />
+                        <div className="h-8 w-px bg-white/5 group-hover:bg-indigo-500/20 transition-colors" />
                         <div className="flex flex-col">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Duration</span>
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-indigo-400 transition-colors">Duration</span>
                           <span className="text-sm font-mono text-white">{record.input?.duration || 0}h</span>
                         </div>
                       </div>
                       
                       <div className="flex items-center gap-6">
                         <div className="text-right">
-                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1">Energy</span>
+                          <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest block mb-1 group-hover:text-indigo-400 transition-colors">Energy</span>
                           <span className={`px-3 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest italic border ${
-                            (record.input?.energyScore || 0) >= 8 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30' : 
-                            (record.input?.energyScore || 0) >= 5 ? 'bg-amber-500/10 text-amber-400 border-amber-500/30' : 
-                            'bg-rose-500/10 text-rose-400 border-rose-500/30'
+                            (record.input?.energyScore || 0) >= 8 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/30 shadow-[0_0_10px_rgba(16,185,129,0.2)]' : 
+                            (record.input?.energyScore || 0) >= 5 ? 'bg-amber-500/10 text-amber-400 border-amber-500/30 shadow-[0_0_10px_rgba(245,158,11,0.2)]' : 
+                            'bg-rose-500/10 text-rose-400 border-rose-500/30 shadow-[0_0_10px_rgba(244,63,94,0.2)]'
                           }`}>
                             {record.input?.energyScore || 0}/10
                           </span>
                         </div>
-                        <ChevronRight size={16} className="text-slate-700 group-hover:text-indigo-400 transition-colors" />
+                        <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center group-hover:bg-indigo-500/20 transition-colors">
+                          <ChevronRight size={16} className="text-slate-500 group-hover:text-indigo-400 transition-colors group-hover:translate-x-0.5" />
+                        </div>
                       </div>
                     </div>
                   ))}
