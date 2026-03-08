@@ -71,6 +71,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       } else {
         setLoading(false);
       }
+    }).catch((err) => {
+      console.error('Error getting session:', err);
+      setLoading(false);
     });
 
     // Listen for changes on auth state (logged in, signed out, etc.)

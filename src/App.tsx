@@ -225,7 +225,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, loading, isAdmin, signOut } = useAuth();
+  const { user, profile, isAdmin, signOut } = useAuth();
   
   // Derive language from URL
   const lang: Language = location.pathname.startsWith('/cn') ? 'zh' : 'en';
@@ -299,17 +299,6 @@ const AppContent = () => {
     navigate(prefix);
   };
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">Neural Handshake in Progress...</p>
-        </div>
-      </div>
-    );
-  }
-
   const isAuthPage = location.pathname.includes('/auth');
   const showNavbar = !isAuthPage;
 
@@ -337,16 +326,16 @@ const AppContent = () => {
               <div className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
               <span>Join SomnoAI Digital Sleep Lab Early Access — Limited Beta Access</span>
             </div>
-            <button 
+            <div 
               onClick={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
                 setShowBanner(false);
               }}
-              className="absolute right-4 text-white/70 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full"
+              className="absolute right-4 text-white/70 hover:text-white transition-colors p-1 hover:bg-white/10 rounded-full cursor-pointer"
             >
               <X size={12} />
-            </button>
+            </div>
           </a>
         )}
 

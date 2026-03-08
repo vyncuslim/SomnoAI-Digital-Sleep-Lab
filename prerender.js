@@ -44,13 +44,20 @@ const routesToPrerender = [
 async function prerender() {
   console.log('Starting prerendering...');
   
+  // Rename index.html to app.html to preserve the empty shell
+  const indexHtmlPath = path.resolve(distPath, 'index.html');
+  const appHtmlPath = path.resolve(distPath, 'app.html');
+  if (fs.existsSync(indexHtmlPath)) {
+    fs.renameSync(indexHtmlPath, appHtmlPath);
+  }
+
   // Start a local server to serve the dist folder
   const app = express();
   app.use(express.static(distPath));
   
-  // Fallback to index.html for client-side routing
+  // Fallback to app.html for client-side routing
   app.use((req, res) => {
-    res.sendFile(path.resolve(distPath, 'index.html'));
+    res.sendFile(appHtmlPath);
   });
   
   const server = app.listen(3001, async () => {
