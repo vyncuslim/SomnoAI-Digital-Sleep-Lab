@@ -66,11 +66,12 @@ export const FAQ: React.FC<FAQProps> = ({ lang }) => {
       </Section>
 
       <Section title={lang === 'zh' ? "还有其他问题吗？" : "Still have questions?"}>
-        <div className="bg-slate-900/50 border border-white/5 p-8 rounded-2xl text-center">
-          <p className="text-slate-400 mb-6">{lang === 'zh' ? "如果您找不到所需的答案，请随时联系我们的团队。" : "If you couldn't find the answer you were looking for, please feel free to reach out to our team."}</p>
-          <div className="flex items-center justify-center gap-6">
+        <div className="hardware-panel p-12 text-center">
+          <div className="hardware-label mb-6">SUPPORT CENTER</div>
+          <p className="text-slate-400 mb-8 max-w-xl mx-auto">{lang === 'zh' ? "如果您找不到所需的答案，请随时联系我们的团队。" : "If you couldn't find the answer you were looking for, please feel free to reach out to our team."}</p>
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-8">
             <InlineCTA text={lang === 'zh' ? "联系支持" : "Contact Support"} link="/support" />
-            <span className="text-white/20">|</span>
+            <div className="hidden sm:block w-px h-8 bg-white/10" />
             <InlineCTA text={lang === 'zh' ? "给我们发邮件" : "Email Us"} link="/contact" />
           </div>
         </div>

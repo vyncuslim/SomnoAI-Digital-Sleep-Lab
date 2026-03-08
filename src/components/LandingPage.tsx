@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 import { MarketingPageTemplate } from './ui/MarketingPageTemplate';
-import { Section, Card, InlineCTA } from './ui/Components';
+import { Section, Card, InlineCTA, HardwareWidget } from './ui/Components';
 import { Language, getTranslation } from '../services/i18n';
 import { useAuth } from '../context/AuthContext';
 
@@ -44,10 +44,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
   };
 
   const stats = [
-    { label: t.stats?.analyzed || "Hours Analyzed", value: "10M+", icon: Database },
-    { label: t.stats?.accuracy || "Sleep Accuracy", value: "98.4%", icon: CheckCircle2 },
-    { label: t.stats?.users || "Active Users", value: "50k+", icon: Users },
-    { label: t.stats?.encrypted || "Data Encrypted", value: "100%", icon: ShieldCheck },
+    { label: t.stats?.analyzed || "Hours Analyzed", value: "10M+", unit: "HRS", icon: Database },
+    { label: t.stats?.accuracy || "Sleep Accuracy", value: "98.4", unit: "%", icon: CheckCircle2 },
+    { label: t.stats?.users || "Active Users", value: "50", unit: "K+", icon: Users },
+    { label: t.stats?.encrypted || "Data Encrypted", value: "100", unit: "%", icon: ShieldCheck },
   ];
 
   const steps = [
@@ -98,15 +98,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             <motion.p 
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-indigo-400 font-bold uppercase tracking-widest text-sm mb-2"
+              className="text-indigo-400 font-bold uppercase tracking-widest text-sm mb-4 flex items-center justify-center gap-2"
             >
+              <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
               {lang === 'zh' ? '欢迎回来,' : 'Welcome back,'} {profile?.email || user.email}
             </motion.p>
           )}
-          <h1 className="text-6xl md:text-8xl font-black italic uppercase tracking-tighter text-white">
-            SOMNOAI DIGITAL SLEEP LAB <br />
+          <h1 className="text-6xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.9]">
+            SOMNOAI <br />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500">
-              AI ANALYSIS
+              SLEEP LAB
             </span>
           </h1>
         </div>
@@ -117,15 +118,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
     >
       {/* Stats Section */}
       <Section>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {stats.map((stat, i) => (
-            <div key={i} className="flex flex-col items-center text-center gap-2">
-              <div className="p-3 bg-indigo-500/10 rounded-full text-indigo-400 mb-2">
-                <stat.icon size={20} />
-              </div>
-              <h3 className="text-3xl font-black tracking-tight text-white">{stat.value}</h3>
-              <p className="text-xs font-bold uppercase tracking-widest text-slate-500">{stat.label}</p>
-            </div>
+            <HardwareWidget 
+              key={i}
+              label={stat.label}
+              value={stat.value}
+              unit={stat.unit}
+              icon={<stat.icon size={24} />}
+              status={i === 0 ? 'active' : 'idle'}
+            />
           ))}
         </div>
       </Section>
@@ -137,15 +139,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { icon: Activity, title: t.features?.biometric?.title || "Biometric Tracking", desc: t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles." },
-            { icon: Brain, title: t.features?.neural?.title || "Neural Insights", desc: t.features?.neural?.desc || "AI-driven interpretation of sleep stages and quality metrics." },
-            { icon: Zap, title: t.features?.recovery?.title || "Recovery Optimization", desc: t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep and recovery." }
+            { icon: Activity, title: t.features?.biometric?.title || "Biometric Tracking", desc: t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles.", label: "TELEMETRY" },
+            { icon: Brain, title: t.features?.neural?.title || "Neural Insights", desc: t.features?.neural?.desc || "AI-driven interpretation of sleep stages and quality metrics.", label: "COGNITIVE" },
+            { icon: Zap, title: t.features?.recovery?.title || "Recovery Optimization", desc: t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep and recovery.", label: "PROTOCOL" }
           ].map((item, i) => (
             <Card 
               key={i}
               title={item.title}
               description={item.desc}
               icon={<item.icon size={32} />}
+              label={item.label}
             />
           ))}
         </div>
@@ -156,15 +159,17 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         title={lang === 'zh' ? '协议流程' : 'The Protocol'} 
         description={lang === 'zh' ? '实现全面认知恢复的四个步骤。' : 'Four steps to total cognitive restoration.'}
       >
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {steps.map((step, i) => (
-            <div key={i} className="flex flex-col gap-4 p-6 rounded-3xl border border-white/5 bg-slate-900/30">
-              <div className="text-4xl font-black text-indigo-500">{step.step}</div>
-              <div className="p-3 bg-indigo-500/10 rounded-full w-fit text-indigo-400">
-                <step.icon size={24} />
+            <div key={i} className="flex flex-col gap-6 p-8 rounded-[2rem] border border-white/5 bg-slate-900/30 hover:bg-slate-900/50 transition-colors group">
+              <div className="text-5xl font-black text-indigo-500/20 group-hover:text-indigo-500/40 transition-colors font-mono">{step.step}</div>
+              <div className="p-4 bg-indigo-500/10 rounded-2xl w-fit text-indigo-400 group-hover:scale-110 transition-transform">
+                <step.icon size={28} />
               </div>
-              <h3 className="text-xl font-bold text-white">{step.title}</h3>
-              <p className="text-sm text-slate-400">{step.desc}</p>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">{step.title}</h3>
+                <p className="text-sm text-slate-400 leading-relaxed">{step.desc}</p>
+              </div>
             </div>
           ))}
         </div>
@@ -172,22 +177,39 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
       {/* Compatible with Major Devices */}
       <Section className="text-center">
-        <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-8">Compatible with Major Devices</h3>
-        <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 hover:opacity-100 transition-opacity duration-500">
+        <div className="hardware-label mb-12 opacity-50">Compatible Ecosystem</div>
+        <div className="flex flex-wrap justify-center gap-8 md:gap-20">
           {['Apple Watch', 'Oura', 'Garmin', 'Fitbit', 'Whoop'].map((device) => (
-            <span key={device} className="text-2xl md:text-3xl font-black italic tracking-tighter text-white hover:text-indigo-400 transition-colors cursor-default select-none">
+            <span key={device} className="text-2xl md:text-4xl font-black italic tracking-tighter text-white/20 hover:text-indigo-400 transition-all duration-500 cursor-default select-none hover:scale-110">
               {device}
             </span>
           ))}
         </div>
       </Section>
 
+      {/* Technical Specifications */}
+      <Section 
+        title={lang === 'zh' ? '技术规格' : 'Technical Specifications'} 
+        description={lang === 'zh' ? 'SomnoAI 实验室的底层架构与遥测指标。' : 'The underlying architecture and telemetry metrics of SomnoAI Lab.'}
+      >
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <HardwareWidget label="MODEL_VERSION" value="G2.5" unit="PRO" status="active" />
+          <HardwareWidget label="LATENCY_MS" value="120" unit="AVG" status="active" />
+          <HardwareWidget label="ENCRYPTION" value="AES" unit="256" status="active" />
+          <HardwareWidget label="UPTIME" value="99.9" unit="%" status="active" />
+          <HardwareWidget label="SAMPLING_RATE" value="1" unit="HZ" />
+          <HardwareWidget label="NEURAL_LAYERS" value="128" unit="CORE" />
+          <HardwareWidget label="DATA_POINTS" value="1.2" unit="M/D" />
+          <HardwareWidget label="RECOVERY_INDEX" value="V4" unit="BETA" status="active" />
+        </div>
+      </Section>
+
       {/* Pricing Section */}
       <Section title="Pricing" description="Choose the plan that fits your needs.">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card title="Go" description="Basic plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go'))} />
-          <Card title="Pro" description="Pro plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro'))} />
-          <Card title="Plus" description="Plus plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus'))} />
+          <Card title="Go" description="Basic plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go'))} label="STARTER" />
+          <Card title="Pro" description="Pro plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro'))} label="MOST POPULAR" className="border-indigo-500/30 bg-indigo-500/5" />
+          <Card title="Plus" description="Plus plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus'))} label="ENTERPRISE" />
         </div>
       </Section>
 
@@ -198,15 +220,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {[
-            { title: lang === 'zh' ? '高强度运动员' : 'Elite Athletes', desc: lang === 'zh' ? '优化训练负荷，预测疲劳，并在比赛日达到最佳状态。' : 'Optimize training load, predict fatigue, and peak on race day.', icon: Activity },
-            { title: lang === 'zh' ? '知识工作者' : 'Knowledge Workers', desc: lang === 'zh' ? '最大化深度睡眠，提高白天的认知清晰度和专注力。' : 'Maximize deep sleep to improve daytime cognitive clarity and focus.', icon: Brain },
-            { title: lang === 'zh' ? '失眠改善者' : 'Sleep Improvers', desc: lang === 'zh' ? '识别破坏睡眠的隐藏因素，建立健康的作息规律。' : 'Identify hidden factors disrupting sleep and establish healthy routines.', icon: ShieldCheck }
+            { title: lang === 'zh' ? '高强度运动员' : 'Elite Athletes', desc: lang === 'zh' ? '优化训练负荷，预测疲劳，并在比赛日达到最佳状态。' : 'Optimize training load, predict fatigue, and peak on race day.', icon: Activity, label: "PERFORMANCE" },
+            { title: lang === 'zh' ? '知识工作者' : 'Knowledge Workers', desc: lang === 'zh' ? '最大化深度睡眠，提高白天的认知清晰度和专注力。' : 'Maximize deep sleep to improve daytime cognitive clarity and focus.', icon: Brain, label: "COGNITION" },
+            { title: lang === 'zh' ? '失眠改善者' : 'Sleep Improvers', desc: lang === 'zh' ? '识别破坏睡眠的隐藏因素，建立健康的作息规律。' : 'Identify hidden factors disrupting sleep and establish healthy routines.', icon: ShieldCheck, label: "WELLNESS" }
           ].map((item, i) => (
             <Card 
               key={i}
               title={item.title}
               description={item.desc}
               icon={<item.icon size={40} strokeWidth={1.5} />}
+              label={item.label}
             />
           ))}
         </div>
@@ -216,16 +239,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       <Section>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {testimonials.map((t, i) => (
-            <div key={i} className="p-10 rounded-3xl bg-slate-900/30 border border-white/5 relative">
-              <MessageSquare size={24} className="text-indigo-500 mb-6 opacity-50" />
-              <p className="text-xl font-medium italic leading-relaxed mb-8 text-slate-200">"{t.quote}"</p>
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 rounded-full bg-indigo-500/20 flex items-center justify-center font-bold text-indigo-400">
+            <div key={i} className="p-12 rounded-[2.5rem] bg-slate-900/30 border border-white/5 relative group hover:border-indigo-500/20 transition-all duration-500">
+              <MessageSquare size={32} className="text-indigo-500 mb-8 opacity-20 group-hover:opacity-50 transition-opacity" />
+              <p className="text-2xl font-medium italic leading-relaxed mb-10 text-slate-200">"{t.quote}"</p>
+              <div className="flex items-center gap-5">
+                <div className="w-14 h-14 rounded-2xl bg-indigo-500/10 flex items-center justify-center font-black text-xl text-indigo-400 border border-indigo-500/20">
                   {t.author[0]}
                 </div>
                 <div>
-                  <h4 className="font-bold text-white">{t.author}</h4>
-                  <p className="text-xs text-slate-500 uppercase tracking-widest">{t.role}</p>
+                  <h4 className="font-bold text-lg text-white">{t.author}</h4>
+                  <p className="text-[10px] text-slate-500 uppercase tracking-[0.2em] font-black">{t.role}</p>
                 </div>
               </div>
             </div>
@@ -235,30 +258,34 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
       {/* Final CTA */}
       <Section className="text-center">
-        <div className="space-y-8">
-          <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tighter leading-none text-white">
+        <div className="space-y-12 py-12">
+          <h2 className="text-6xl md:text-9xl font-black uppercase tracking-tighter leading-[0.85] text-white">
             {lang === 'zh' ? '准备好' : 'Ready to'} <br />
             <span className="text-indigo-500">{lang === 'zh' ? '优化了吗？' : 'Optimize?'}</span>
           </h2>
-          <p className="text-xl text-slate-400">{lang === 'zh' ? '加入下一代睡眠工程的候补名单。' : 'Join the waitlist for the next generation of sleep engineering.'}</p>
+          <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto font-medium">{lang === 'zh' ? '加入下一代睡眠工程的候补名单。' : 'Join the waitlist for the next generation of sleep engineering.'}</p>
           <button 
             onClick={() => onNavigate('/auth/signup')}
-            className="px-12 py-5 bg-white text-black rounded-full font-black text-lg uppercase tracking-widest hover:scale-105 transition-transform shadow-2xl"
+            className="group px-16 py-6 bg-white text-black rounded-full font-black text-xl uppercase tracking-widest hover:scale-105 transition-all shadow-[0_20px_60px_rgba(255,255,255,0.15)] flex items-center gap-4 mx-auto"
           >
             {lang === 'zh' ? '立即开始' : 'Get Started Now'}
+            <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform" />
           </button>
         </div>
       </Section>
 
       {/* Newsletter */}
       <Section>
-        <div className="p-12 rounded-[3rem] bg-indigo-600/5 border border-indigo-500/10 text-center space-y-8">
-          <div className="inline-block p-3 rounded-2xl bg-indigo-500/10 text-indigo-400 mb-4">
-            <Mail size={32} />
+        <div className="p-16 rounded-[4rem] bg-indigo-600/5 border border-indigo-500/10 text-center space-y-10 relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 dashed-line opacity-10" />
+          <div className="inline-block p-4 rounded-2xl bg-indigo-500/10 text-indigo-400 mb-4">
+            <Mail size={40} />
           </div>
-          <h3 className="text-3xl font-black uppercase tracking-tight italic text-white">{t.newsletter?.title || "Stay Updated"}</h3>
-          <p className="text-slate-400 italic font-medium max-w-xl mx-auto">{t.newsletter?.subtitle || "Join our newsletter for the latest sleep science and AI updates."}</p>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-md mx-auto" onSubmit={(e) => { 
+          <div className="space-y-4">
+            <h3 className="text-4xl font-black uppercase tracking-tight italic text-white">{t.newsletter?.title || "Stay Updated"}</h3>
+            <p className="text-xl text-slate-400 italic font-medium max-w-xl mx-auto">{t.newsletter?.subtitle || "Join our newsletter for the latest sleep science and AI updates."}</p>
+          </div>
+          <form className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto" onSubmit={(e) => { 
             e.preventDefault(); 
             const btn = e.currentTarget.querySelector('button');
             const input = e.currentTarget.querySelector('input');
@@ -285,16 +312,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             <input 
               type="email" 
               placeholder={t.newsletter?.placeholder || (lang === 'zh' ? "输入您的电子邮件" : "Enter your email")} 
-              className="flex-1 px-6 py-4 bg-slate-900 border border-white/10 rounded-full focus:outline-none focus:border-indigo-500 transition-colors text-sm text-white placeholder-slate-600"
+              className="flex-1 px-8 py-5 bg-slate-900 border border-white/10 rounded-full focus:outline-none focus:border-indigo-500 transition-colors text-lg text-white placeholder-slate-600"
               required
             />
-            <button type="submit" className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-bold text-xs uppercase tracking-widest transition-all shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
+            <button type="submit" className="px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full font-black text-sm uppercase tracking-widest transition-all shadow-xl shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed">
               {t.newsletter?.button || (lang === 'zh' ? "订阅" : "Subscribe")}
             </button>
           </form>
-          <p className="text-[10px] text-slate-600 uppercase tracking-widest">
+          <div className="hardware-label opacity-30">
             {lang === 'zh' ? "您可以随时取消订阅。查看我们的隐私政策。" : "You can unsubscribe at any time. View our Privacy Policy."}
-          </p>
+          </div>
         </div>
       </Section>
     </MarketingPageTemplate>

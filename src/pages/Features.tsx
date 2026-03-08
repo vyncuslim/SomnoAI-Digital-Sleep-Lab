@@ -95,15 +95,15 @@ export const Features: React.FC<FeaturesProps> = ({ lang }) => {
           {content.content}
         </div>
 
-        <div className="flex flex-wrap gap-2 mb-12 justify-center">
+        <div className="flex flex-wrap gap-3 mb-16 justify-center">
           {filters.map(filter => (
             <button
               key={filter}
               onClick={() => setActiveFilter(filter)}
-              className={`px-6 py-2 rounded-full text-sm font-medium transition-all ${
+              className={`px-8 py-3 rounded-full text-xs font-black uppercase tracking-widest transition-all ${
                 activeFilter === filter 
-                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/25' 
-                  : 'bg-slate-900 border border-white/10 text-slate-400 hover:text-white hover:border-white/20'
+                  ? 'bg-indigo-600 text-white shadow-[0_0_30px_rgba(79,70,229,0.4)]' 
+                  : 'bg-slate-900 border border-white/10 text-slate-500 hover:text-white hover:border-white/20'
               }`}
             >
               {filter}
@@ -118,11 +118,8 @@ export const Features: React.FC<FeaturesProps> = ({ lang }) => {
               title={feature.title}
               description={feature.description}
               icon={feature.icon}
-            >
-              <div className="mt-4 pt-4 border-t border-white/5">
-                <span className="text-xs font-mono text-indigo-400 uppercase tracking-wider">{categoryMap[feature.category]}</span>
-              </div>
-            </Card>
+              label={categoryMap[feature.category].toUpperCase()}
+            />
           ))}
         </div>
       </Section>

@@ -53,8 +53,11 @@ export const Status: React.FC<StatusProps> = ({ lang }) => {
       <Section title={lang === 'zh' ? "当前状态" : "Current Status"}>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {systems.map((system, idx) => (
-            <div key={idx} className="p-6 rounded-2xl bg-slate-900/50 border border-white/5 flex items-center justify-between">
-              <span className="text-white font-medium">{system.name}</span>
+            <div key={idx} className="p-6 hardware-panel flex items-center justify-between group hover:border-indigo-500/30 transition-colors">
+              <div className="flex flex-col">
+                <div className="hardware-label mb-1 text-[8px]">SYSTEM NODE {idx + 1}</div>
+                <span className="text-white font-bold tracking-tight">{system.name}</span>
+              </div>
               <StatusBadge status={system.status} />
             </div>
           ))}
@@ -62,31 +65,36 @@ export const Status: React.FC<StatusProps> = ({ lang }) => {
       </Section>
 
       <Section title={lang === 'zh' ? "事件历史" : "Incident History"}>
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-3xl mx-auto hardware-panel p-8">
+          <div className="hardware-label mb-8">LOG HISTORY</div>
           <Timeline events={incidents} />
         </div>
       </Section>
 
       <Section title={lang === 'zh' ? "运行时间统计" : "Uptime Stats"}>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5 text-center">
-            <div className="text-3xl font-bold text-white mb-2">99.98%</div>
-            <div className="text-sm text-slate-500 uppercase tracking-wider">{lang === 'zh' ? "过去 30 天" : "Last 30 Days"}</div>
+          <div className="p-10 hardware-panel text-center group hover:border-indigo-500/30 transition-colors">
+            <div className="hardware-label mb-4">AVAILABILITY</div>
+            <div className="text-4xl font-black italic italic uppercase tracking-tighter text-white mb-2 group-hover:text-indigo-400 transition-colors">99.98%</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{lang === 'zh' ? "过去 30 天" : "Last 30 Days"}</div>
           </div>
-          <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5 text-center">
-            <div className="text-3xl font-bold text-white mb-2">99.95%</div>
-            <div className="text-sm text-slate-500 uppercase tracking-wider">{lang === 'zh' ? "过去 90 天" : "Last 90 Days"}</div>
+          <div className="p-10 hardware-panel text-center group hover:border-indigo-500/30 transition-colors">
+            <div className="hardware-label mb-4">RELIABILITY</div>
+            <div className="text-4xl font-black italic italic uppercase tracking-tighter text-white mb-2 group-hover:text-indigo-400 transition-colors">99.95%</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{lang === 'zh' ? "过去 90 天" : "Last 90 Days"}</div>
           </div>
-          <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5 text-center">
-            <div className="text-3xl font-bold text-white mb-2">0</div>
-            <div className="text-sm text-slate-500 uppercase tracking-wider">{lang === 'zh' ? "重大故障" : "Major Outages"}</div>
+          <div className="p-10 hardware-panel text-center group hover:border-indigo-500/30 transition-colors">
+            <div className="hardware-label mb-4">INCIDENTS</div>
+            <div className="text-4xl font-black italic italic uppercase tracking-tighter text-white mb-2 group-hover:text-indigo-400 transition-colors">0</div>
+            <div className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">{lang === 'zh' ? "重大故障" : "Major Outages"}</div>
           </div>
         </div>
       </Section>
 
-      <div className="text-center pt-12 border-t border-white/5">
-        <p className="text-slate-500 text-sm mb-6">{lang === 'zh' ? "想要接收事件通知吗？" : "Want to be notified of incidents?"}</p>
-        <button className="px-8 py-3 bg-white text-black font-bold rounded-full hover:bg-slate-200 transition-colors">
+      <div className="text-center pt-16 border-t border-white/5">
+        <div className="hardware-label mb-6">NOTIFICATIONS</div>
+        <p className="text-slate-500 text-sm mb-8 max-w-md mx-auto">{lang === 'zh' ? "想要接收事件通知吗？订阅我们的状态更新。" : "Want to be notified of incidents? Subscribe to our real-time status updates."}</p>
+        <button className="px-10 py-4 bg-white text-black font-black uppercase tracking-widest text-xs rounded-full hover:bg-indigo-500 hover:text-white transition-all hover:shadow-[0_0_30px_rgba(255,255,255,0.2)]">
           {lang === 'zh' ? "订阅更新" : "Subscribe to Updates"}
         </button>
       </div>

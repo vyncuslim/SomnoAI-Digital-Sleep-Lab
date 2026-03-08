@@ -30,13 +30,14 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
           <Section title={lang === 'zh' ? "分析过程" : "The Analytical Process"}>
             <div className="space-y-12 relative before:absolute before:inset-0 before:ml-6 before:-translate-x-px before:h-full before:w-0.5 before:bg-gradient-to-b before:from-indigo-500/50 before:via-indigo-500/20 before:to-transparent">
               {/* Step 1 */}
-              <div className="relative flex items-start gap-6">
-                <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-indigo-500 flex items-center justify-center text-indigo-400 shrink-0 z-10 shadow-[0_0_0_8px_#01040a]">
+              <div className="relative flex items-start gap-8 group">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-indigo-500/50 flex items-center justify-center text-indigo-400 shrink-0 z-10 shadow-[0_0_20px_rgba(79,70,229,0.2)] group-hover:scale-110 transition-transform">
                   <Database size={20} />
                 </div>
-                <div className="bg-slate-900/50 border border-white/5 p-8 rounded-2xl flex-grow">
-                  <h3 className="text-2xl font-bold text-white mb-4">{lang === 'zh' ? "1. 数据输入" : "1. Data Input"}</h3>
-                  <p className="text-slate-400 leading-relaxed mb-6">
+                <div className="hardware-panel p-8 flex-grow group-hover:border-indigo-500/30 transition-colors">
+                  <div className="hardware-label mb-4">PHASE 01</div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-4">{lang === 'zh' ? "数据输入" : "Data Input"}</h3>
+                  <p className="text-slate-400 leading-relaxed">
                     {lang === 'zh'
                       ? "用户可以提供来自兼容可穿戴设备、健康平台或手动记录的活动日志的睡眠相关数据。这些信号通常包括运动模式、休息周期或可用于推断睡眠趋势的行为时间指标。"
                       : "Users may provide sleep-related data from compatible wearable devices, health platforms, or manually recorded activity logs. These signals often include movement patterns, rest cycles, or behavioral timing indicators that can be used to infer sleep trends."}
@@ -45,13 +46,14 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
               </div>
 
               {/* Step 2 */}
-              <div className="relative flex items-start gap-6">
-                <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-indigo-500 flex items-center justify-center text-indigo-400 shrink-0 z-10 shadow-[0_0_0_8px_#01040a]">
+              <div className="relative flex items-start gap-8 group">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-indigo-500/50 flex items-center justify-center text-indigo-400 shrink-0 z-10 shadow-[0_0_20px_rgba(79,70,229,0.2)] group-hover:scale-110 transition-transform">
                   <Cpu size={20} />
                 </div>
-                <div className="bg-slate-900/50 border border-white/5 p-8 rounded-2xl flex-grow">
-                  <h3 className="text-2xl font-bold text-white mb-4">{lang === 'zh' ? "2. 信号处理" : "2. Signal Processing"}</h3>
-                  <p className="text-slate-400 leading-relaxed mb-6">
+                <div className="hardware-panel p-8 flex-grow group-hover:border-indigo-500/30 transition-colors">
+                  <div className="hardware-label mb-4">PHASE 02</div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-4">{lang === 'zh' ? "信号处理" : "Signal Processing"}</h3>
+                  <p className="text-slate-400 leading-relaxed">
                     {lang === 'zh'
                       ? "数据收集完成后，SomnoAI Digital Sleep Lab 系统开始信号处理。在此阶段，平台组织传入的数据并为计算分析做好准备。"
                       : "Once data is collected, the SomnoAI Digital Sleep Lab system begins signal processing. In this stage, the platform organizes incoming data and prepares it for computational analysis."}
@@ -60,13 +62,14 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
               </div>
 
               {/* Step 3 */}
-              <div className="relative flex items-start gap-6">
-                <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-indigo-500 flex items-center justify-center text-indigo-400 shrink-0 z-10 shadow-[0_0_0_8px_#01040a]">
+              <div className="relative flex items-start gap-8 group">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-indigo-500/50 flex items-center justify-center text-indigo-400 shrink-0 z-10 shadow-[0_0_20px_rgba(79,70,229,0.2)] group-hover:scale-110 transition-transform">
                   <BrainCircuit size={20} />
                 </div>
-                <div className="bg-slate-900/50 border border-white/5 p-8 rounded-2xl flex-grow">
-                  <h3 className="text-2xl font-bold text-white mb-4">{lang === 'zh' ? "3. 模式检测" : "3. Pattern Detection"}</h3>
-                  <p className="text-slate-400 leading-relaxed mb-6">
+                <div className="hardware-panel p-8 flex-grow group-hover:border-indigo-500/30 transition-colors">
+                  <div className="hardware-label mb-4">PHASE 03</div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-4">{lang === 'zh' ? "模式检测" : "Pattern Detection"}</h3>
+                  <p className="text-slate-400 leading-relaxed">
                     {lang === 'zh'
                       ? "人工智能算法和统计模型评估行为信号中的短期和长期趋势。这些模型在数据中寻找可能表明稳定睡眠节奏或不规则模式的重复结构。"
                       : "Artificial intelligence algorithms and statistical models evaluate both short-term and long-term trends in behavioral signals. These models look for recurring structures within the data that may indicate stable sleep rhythms or irregular patterns."}
@@ -75,13 +78,14 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
               </div>
 
               {/* Step 4 */}
-              <div className="relative flex items-start gap-6">
-                <div className="w-12 h-12 rounded-full bg-slate-900 border-2 border-indigo-500 flex items-center justify-center text-indigo-400 shrink-0 z-10 shadow-[0_0_0_8px_#01040a]">
+              <div className="relative flex items-start gap-8 group">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-indigo-500/50 flex items-center justify-center text-indigo-400 shrink-0 z-10 shadow-[0_0_20px_rgba(79,70,229,0.2)] group-hover:scale-110 transition-transform">
                   <LineChart size={20} />
                 </div>
-                <div className="bg-slate-900/50 border border-white/5 p-8 rounded-2xl flex-grow">
-                  <h3 className="text-2xl font-bold text-white mb-4">{lang === 'zh' ? "4. 洞察与可视化" : "4. Insights & Visualization"}</h3>
-                  <p className="text-slate-400 leading-relaxed mb-6">
+                <div className="hardware-panel p-8 flex-grow group-hover:border-indigo-500/30 transition-colors">
+                  <div className="hardware-label mb-4">PHASE 04</div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-4">{lang === 'zh' ? "洞察与可视化" : "Insights & Visualization"}</h3>
+                  <p className="text-slate-400 leading-relaxed">
                     {lang === 'zh'
                       ? "识别出模式后，平台会生成见解。系统不是呈现原始数据流，而是生成旨在突出相关行为观察结果的结构化摘要。"
                       : "After patterns have been identified, the platform generates insights. Instead of presenting raw data streams, the system produces structured summaries designed to highlight relevant behavioral observations."}

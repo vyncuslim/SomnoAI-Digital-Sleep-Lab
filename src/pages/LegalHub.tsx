@@ -42,6 +42,7 @@ export const LegalHub: React.FC<LegalHubProps> = ({ lang }) => {
                 title={doc.title}
                 description={doc.description}
                 icon={doc.icon}
+                label="LEGAL NODE"
                 className="h-full cursor-pointer hover:border-indigo-500/50 transition-colors"
               />
             </Link>

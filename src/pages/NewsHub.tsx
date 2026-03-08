@@ -41,12 +41,20 @@ export const NewsHub: React.FC<NewsHubProps> = ({ lang, onSelectArticle }) => {
           {announcements.map((item, idx) => (
             <div 
               key={idx} 
-              className="p-6 rounded-2xl bg-slate-900/50 border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 cursor-pointer hover:border-white/20 transition-colors"
+              className="hardware-panel p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-6 cursor-pointer hover:border-indigo-500/50 transition-all group"
               onClick={() => onSelectArticle(item)}
             >
-              <div>
-                <h3 className="text-lg font-bold text-white mb-2">{item.title}</h3>
-                <p className="text-slate-500 text-sm font-mono">{item.date}</p>
+              <div className="flex items-start gap-6">
+                <div className="hardware-label text-[8px] mt-1 opacity-50">NEWS_{idx + 1}</div>
+                <div>
+                  <h3 className="text-xl font-black text-white mb-2 uppercase tracking-tight italic group-hover:text-indigo-400 transition-colors">
+                    {item.title}
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2 h-2 rounded-full bg-indigo-500/50" />
+                    <p className="text-slate-500 text-[10px] font-black uppercase tracking-widest italic">{item.date}</p>
+                  </div>
+                </div>
               </div>
               <InlineCTA text={isZh ? "阅读公告" : "Read Announcement"} link={`/news/${item.slug}`} />
             </div>
@@ -56,17 +64,32 @@ export const NewsHub: React.FC<NewsHubProps> = ({ lang, onSelectArticle }) => {
 
       <Section title={isZh ? "媒体资源" : "Media Resources"} id="press-kit">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5 text-center cursor-pointer hover:bg-slate-900/50 transition-colors">
-            <h4 className="text-white font-bold mb-2">{isZh ? "品牌资产" : "Brand Assets"}</h4>
-            <p className="text-slate-500 text-sm">{isZh ? "徽标、颜色和指南。" : "Logos, colors, and guidelines."}</p>
+          <div className="hardware-panel p-10 text-center cursor-pointer hover:border-indigo-500/50 transition-all group">
+            <div className="hardware-label mb-6 opacity-50">ASSETS_01</div>
+            <h4 className="text-xl font-black text-white mb-3 uppercase tracking-tight italic group-hover:text-indigo-400 transition-colors">
+              {isZh ? "品牌资产" : "Brand Assets"}
+            </h4>
+            <p className="text-slate-500 text-[11px] font-medium uppercase tracking-wider italic">
+              {isZh ? "徽标、颜色和指南。" : "Logos, colors, and guidelines."}
+            </p>
           </div>
-          <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5 text-center cursor-pointer hover:bg-slate-900/50 transition-colors">
-            <h4 className="text-white font-bold mb-2">{isZh ? "高管简介" : "Executive Bios"}</h4>
-            <p className="text-slate-500 text-sm">{isZh ? "领导团队的背景信息。" : "Background information on leadership."}</p>
+          <div className="hardware-panel p-10 text-center cursor-pointer hover:border-indigo-500/50 transition-all group">
+            <div className="hardware-label mb-6 opacity-50">BIOS_02</div>
+            <h4 className="text-xl font-black text-white mb-3 uppercase tracking-tight italic group-hover:text-indigo-400 transition-colors">
+              {isZh ? "高管简介" : "Executive Bios"}
+            </h4>
+            <p className="text-slate-500 text-[11px] font-medium uppercase tracking-wider italic">
+              {isZh ? "领导团队的背景信息。" : "Background information on leadership."}
+            </p>
           </div>
-          <div className="p-8 rounded-2xl bg-slate-900/30 border border-white/5 text-center cursor-pointer hover:bg-slate-900/50 transition-colors">
-            <h4 className="text-white font-bold mb-2">{isZh ? "情况说明书" : "Fact Sheet"}</h4>
-            <p className="text-slate-500 text-sm">{isZh ? "关键统计数据和公司概览。" : "Key statistics and company overview."}</p>
+          <div className="hardware-panel p-10 text-center cursor-pointer hover:border-indigo-500/50 transition-all group">
+            <div className="hardware-label mb-6 opacity-50">FACTS_03</div>
+            <h4 className="text-xl font-black text-white mb-3 uppercase tracking-tight italic group-hover:text-indigo-400 transition-colors">
+              {isZh ? "情况说明书" : "Fact Sheet"}
+            </h4>
+            <p className="text-slate-500 text-[11px] font-medium uppercase tracking-wider italic">
+              {isZh ? "关键统计数据和公司概览。" : "Key statistics and company overview."}
+            </p>
           </div>
         </div>
       </Section>

@@ -56,29 +56,38 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
         <div className="space-y-8">
           <Section title={lang === 'zh' ? "联系方式" : "Contact Methods"}>
             <div className="space-y-4">
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                <Mail className="w-6 h-6 text-indigo-400 mt-1" />
+              <div className="flex items-start gap-6 p-6 hardware-panel group hover:border-indigo-500/30 transition-colors">
+                <div className="p-3 bg-white/5 rounded-xl text-indigo-400 group-hover:bg-indigo-500/10 transition-colors">
+                  <Mail className="w-6 h-6" />
+                </div>
                 <div>
-                  <h4 className="text-white font-bold mb-1">{lang === 'zh' ? "一般咨询" : "General Inquiries"}</h4>
-                  <a href="mailto:admin@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block">admin@sleepsomno.com</a>
-                  <a href="mailto:contact@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block">contact@sleepsomno.com</a>
+                  <div className="hardware-label mb-2">INQUIRIES</div>
+                  <h4 className="text-white font-bold mb-2">{lang === 'zh' ? "一般咨询" : "General Inquiries"}</h4>
+                  <a href="mailto:admin@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">admin@sleepsomno.com</a>
+                  <a href="mailto:contact@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">contact@sleepsomno.com</a>
                 </div>
               </div>
               
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                <MessageSquare className="w-6 h-6 text-indigo-400 mt-1" />
+              <div className="flex items-start gap-6 p-6 hardware-panel group hover:border-indigo-500/30 transition-colors">
+                <div className="p-3 bg-white/5 rounded-xl text-indigo-400 group-hover:bg-indigo-500/10 transition-colors">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
                 <div>
-                  <h4 className="text-white font-bold mb-1">{lang === 'zh' ? "用户支持" : "User Support"}</h4>
-                  <a href="mailto:support@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block">support@sleepsomno.com</a>
+                  <div className="hardware-label mb-2">SUPPORT</div>
+                  <h4 className="text-white font-bold mb-2">{lang === 'zh' ? "用户支持" : "User Support"}</h4>
+                  <a href="mailto:support@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">support@sleepsomno.com</a>
                 </div>
               </div>
 
-              <div className="flex items-start gap-4 p-4 rounded-xl bg-white/5 border border-white/10">
-                <Globe className="w-6 h-6 text-indigo-400 mt-1" />
+              <div className="flex items-start gap-6 p-6 hardware-panel group hover:border-indigo-500/30 transition-colors">
+                <div className="p-3 bg-white/5 rounded-xl text-indigo-400 group-hover:bg-indigo-500/10 transition-colors">
+                  <Globe className="w-6 h-6" />
+                </div>
                 <div>
-                  <h4 className="text-white font-bold mb-1">{lang === 'zh' ? "合作与法律" : "Partnerships & Legal"}</h4>
-                  <a href="mailto:partners@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block">partners@sleepsomno.com</a>
-                  <a href="mailto:legal@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block">legal@sleepsomno.com</a>
+                  <div className="hardware-label mb-2">LEGAL</div>
+                  <h4 className="text-white font-bold mb-2">{lang === 'zh' ? "合作与法律" : "Partnerships & Legal"}</h4>
+                  <a href="mailto:partners@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">partners@sleepsomno.com</a>
+                  <a href="mailto:legal@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">legal@sleepsomno.com</a>
                 </div>
               </div>
             </div>
@@ -87,6 +96,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
           <Card 
             title={lang === 'zh' ? "合作机会" : "Collaboration"} 
             description={lang === 'zh' ? "我们欢迎来自研究人员、开发人员和公众的咨询、反馈和合作机会。请在联系时提供明确的信息，以便我们提供适当的回复。" : "We welcome inquiries, feedback, and collaboration opportunities from researchers, developers, and members of the public. Please provide clear information so we can respond appropriately."}
+            label="PARTNERSHIP"
           />
         </div>
 
@@ -94,31 +104,34 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
         <div>
           <Section title={lang === 'zh' ? "发送消息" : "Send a Message"}>
             {success ? (
-              <div className="bg-white/5 p-8 rounded-2xl border border-white/10 text-center space-y-4">
-                <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle className="text-emerald-500" size={32} />
+              <div className="hardware-panel p-12 text-center space-y-6">
+                <div className="w-20 h-20 bg-emerald-500/10 rounded-2xl flex items-center justify-center mx-auto border border-emerald-500/20">
+                  <CheckCircle className="text-emerald-500" size={40} />
                 </div>
-                <h3 className="text-xl font-bold text-white">
-                  {lang === 'zh' ? '消息已发送' : 'Message Sent'}
-                </h3>
+                <div>
+                  <div className="hardware-label mb-2 text-emerald-500">SUCCESS</div>
+                  <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white">
+                    {lang === 'zh' ? '消息已发送' : 'Message Sent'}
+                  </h3>
+                </div>
                 <p className="text-slate-400">
                   {lang === 'zh' ? '我们会尽快回复您的邮件。' : 'We will get back to you shortly via email.'}
                 </p>
                 <button
                   onClick={() => setSuccess(false)}
-                  className="mt-4 text-indigo-400 hover:text-indigo-300 text-sm font-bold uppercase tracking-wider"
+                  className="mt-4 text-indigo-400 hover:text-indigo-300 text-xs font-black uppercase tracking-widest"
                 >
                   {lang === 'zh' ? '发送另一条消息' : 'Send Another Message'}
                 </button>
               </div>
             ) : (
-              <form className="space-y-4 bg-white/5 p-6 rounded-2xl border border-white/10" onSubmit={handleSubmit}>
+              <form className="space-y-6 hardware-panel p-8" onSubmit={handleSubmit}>
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">{lang === 'zh' ? "主题" : "Subject"}</label>
+                  <label className="hardware-label mb-2 block">{lang === 'zh' ? "主题" : "Subject"}</label>
                   <select 
                     value={formData.subject}
                     onChange={(e) => setFormData({ ...formData, subject: e.target.value })}
-                    className="w-full bg-[#01040a] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors"
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm font-medium"
                   >
                     <option value="General Inquiry">{lang === 'zh' ? "一般咨询" : "General Inquiry"}</option>
                     <option value="Research Collaboration">{lang === 'zh' ? "研究合作" : "Research Collaboration"}</option>
@@ -128,44 +141,44 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">{lang === 'zh' ? "您的邮箱" : "Your Email"}</label>
+                  <label className="hardware-label mb-2 block">{lang === 'zh' ? "您的邮箱" : "Your Email"}</label>
                   <input 
                     type="email" 
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                     placeholder="email@example.com" 
                     required
-                    className="w-full bg-[#01040a] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors" 
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-indigo-500 transition-colors text-sm font-medium" 
                   />
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-slate-400 mb-1">{lang === 'zh' ? "消息内容" : "Message Content"}</label>
+                  <label className="hardware-label mb-2 block">{lang === 'zh' ? "消息内容" : "Message Content"}</label>
                   <textarea 
                     rows={5} 
                     value={formData.message}
                     onChange={(e) => setFormData({ ...formData, message: e.target.value })}
                     placeholder={lang === 'zh' ? "请在此输入您的消息..." : "Please enter your message here..."} 
                     required
-                    className="w-full bg-[#01040a] border border-white/10 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none"
+                    className="w-full bg-slate-900 border border-white/10 rounded-xl px-4 py-4 text-white focus:outline-none focus:border-indigo-500 transition-colors resize-none text-sm font-medium"
                   ></textarea>
                 </div>
 
-                <div className="flex items-start gap-3 py-2">
+                <div className="flex items-start gap-4 py-2">
                   <button 
                     type="button"
                     onClick={() => setFormData({ ...formData, privacyAgreed: !formData.privacyAgreed })}
-                    className={`mt-1 w-5 h-5 rounded border flex items-center justify-center transition-colors ${formData.privacyAgreed ? 'bg-indigo-500 border-indigo-500' : 'bg-[#01040a] border-white/20'}`}
+                    className={`mt-1 w-6 h-6 rounded-lg border flex items-center justify-center transition-all ${formData.privacyAgreed ? 'bg-indigo-500 border-indigo-500 shadow-[0_0_15px_rgba(79,70,229,0.4)]' : 'bg-slate-900 border-white/20'}`}
                   >
-                    {formData.privacyAgreed && <Check className="w-3 h-3 text-white" />}
+                    {formData.privacyAgreed && <Check className="w-4 h-4 text-white" />}
                   </button>
-                  <span className="text-sm text-slate-400 cursor-pointer" onClick={() => setFormData({ ...formData, privacyAgreed: !formData.privacyAgreed })}>
+                  <span className="text-xs font-medium text-slate-500 cursor-pointer leading-relaxed" onClick={() => setFormData({ ...formData, privacyAgreed: !formData.privacyAgreed })}>
                     {lang === 'zh' ? "我同意隐私政策并允许处理我的联系信息。" : "I agree to the Privacy Policy and consent to the processing of my contact information."}
                   </span>
                 </div>
 
                 {error && (
-                  <div className="flex items-center gap-2 text-rose-500 text-xs font-bold uppercase tracking-wide bg-rose-500/10 p-3 rounded-lg border border-rose-500/20">
+                  <div className="flex items-center gap-3 text-rose-500 text-[10px] font-black uppercase tracking-widest bg-rose-500/5 p-4 rounded-xl border border-rose-500/20">
                     <AlertCircle size={16} />
                     {error}
                   </div>
@@ -174,7 +187,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                 <button 
                   type="submit" 
                   disabled={loading || !formData.privacyAgreed}
-                  className={`w-full py-3 rounded-lg font-bold transition-all flex items-center justify-center gap-2 ${formData.privacyAgreed ? 'bg-indigo-600 hover:bg-indigo-500 text-white' : 'bg-white/5 text-slate-500 cursor-not-allowed'}`}
+                  className={`w-full py-4 rounded-full font-black uppercase tracking-widest text-xs transition-all flex items-center justify-center gap-2 ${formData.privacyAgreed ? 'bg-indigo-600 hover:bg-indigo-500 text-white shadow-[0_0_30px_rgba(79,70,229,0.3)]' : 'bg-white/5 text-slate-600 cursor-not-allowed'}`}
                 >
                   {loading ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />

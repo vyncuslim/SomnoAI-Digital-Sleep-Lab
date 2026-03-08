@@ -32,35 +32,47 @@ export const Product: React.FC<ProductProps> = ({ lang }) => {
             title={lang === 'zh' ? "模式检测" : "Pattern Detection"} 
             description={lang === 'zh' ? "应用计算分析来检测睡眠数据中的趋势、相关性和不规则性。" : "Applying computational analysis to detect trends, correlations, and irregularities within sleep data."} 
             icon={<Brain />} 
+            label="ANALYSIS"
           />
           <Card 
             title={lang === 'zh' ? "长期一致性" : "Long-term Consistency"} 
             description={lang === 'zh' ? "识别可能影响个人长期睡眠 and 恢复的周期性趋势。" : "Identifying recurring trends that may influence how individuals sleep and recover over extended periods."} 
             icon={<Clock />} 
+            label="TEMPORAL"
           />
           <Card 
             title={lang === 'zh' ? "可解释性" : "Interpretability"} 
             description={lang === 'zh' ? "生成清晰的观察结果，而不是呈现大量原始、压倒性的数字。" : "Generating clear observations rather than presenting large volumes of raw, overwhelming numbers."} 
             icon={<CheckCircle2 />} 
+            label="COGNITION"
           />
           <Card 
             title={lang === 'zh' ? "行为节奏" : "Behavioral Rhythms"} 
             description={lang === 'zh' ? "了解常规、环境条件和生活方式选择如何影响人类睡眠。" : "Understanding how routines, environmental conditions, and lifestyle choices influence human sleep."} 
             icon={<Activity />} 
+            label="BIOMETRIC"
           />
           <Card 
             title={lang === 'zh' ? "隐私感知架构" : "Privacy-Aware Architecture"} 
             description={lang === 'zh' ? "安全实践和数据保护原则直接融入系统。" : "Security practices and data protection principles are incorporated directly into the system."} 
             icon={<Shield />} 
+            label="SECURITY"
           />
         </div>
       </Section>
 
       <Section title={lang === 'zh' ? "支持的集成" : "Supported Integrations"}>
-        <div className="flex flex-wrap gap-4 items-center justify-center py-8">
-          <div className="flex items-center gap-2 px-6 py-3 rounded-full bg-slate-900 border border-white/10 text-slate-400"><Watch size={20} /> {lang === 'zh' ? "可穿戴设备" : "Wearables"}</div>
-          <div className="flex items-center gap-2 px-6 py-3 rounded-full bg-slate-900 border border-white/10 text-slate-400"><Smartphone size={20} /> {lang === 'zh' ? "健康应用" : "Health Apps"}</div>
-          <div className="flex items-center gap-2 px-6 py-3 rounded-full bg-slate-900 border border-white/10 text-slate-400"><Cloud size={20} /> {lang === 'zh' ? "云生态系统" : "Cloud Ecosystems"}</div>
+        <div className="flex flex-wrap gap-6 items-center justify-center py-12">
+          {[
+            { icon: Watch, label: lang === 'zh' ? "可穿戴设备" : "Wearables" },
+            { icon: Smartphone, label: lang === 'zh' ? "健康应用" : "Health Apps" },
+            { icon: Cloud, label: lang === 'zh' ? "云生态系统" : "Cloud Ecosystems" }
+          ].map((item, i) => (
+            <div key={i} className="flex items-center gap-4 px-8 py-4 rounded-2xl bg-slate-900/50 border border-white/10 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-all group">
+              <item.icon size={24} className="group-hover:scale-110 transition-transform" />
+              <span className="font-black uppercase tracking-widest text-xs">{item.label}</span>
+            </div>
+          ))}
         </div>
       </Section>
 

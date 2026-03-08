@@ -28,16 +28,19 @@ export const Science: React.FC<ScienceProps> = ({ lang }) => {
             title={lang === 'zh' ? "昼夜节律" : "Circadian Rhythm"} 
             description={lang === 'zh' ? "调节睡眠-觉醒周期的内部 24 小时时钟，主要受光照 and 温度影响。它决定了您何时感到警觉，何时感到困倦。" : "The internal 24-hour clock that regulates the sleep-wake cycle, primarily influenced by light and temperature. It dictates when you feel alert and when you feel sleepy."}
             icon={<Sun />}
+            label="BIOLOGICAL"
           />
           <Card 
             title={lang === 'zh' ? "睡眠结构" : "Sleep Architecture"} 
             description={lang === 'zh' ? "整夜在不同睡眠阶段（浅睡、深睡 and REM）之间的周期性进展。每个阶段都有其独特的恢复功能。" : "The cyclical progression through different stages of sleep (Light, Deep, and REM) throughout the night. Each stage serves a distinct restorative function."}
             icon={<Moon />}
+            label="STRUCTURAL"
           />
           <Card 
             title={lang === 'zh' ? "生理恢复" : "Physiological Recovery"} 
             description={lang === 'zh' ? "身体在睡眠期间修复组织、巩固记忆 and 调节新陈代谢的过程，通常反映在静息心率等指标中。" : "The process by which the body repairs tissue, consolidates memories, and regulates metabolism during sleep, often reflected in metrics like resting heart rate."}
             icon={<Activity />}
+            label="RESTORATIVE"
           />
         </div>
       </Section>

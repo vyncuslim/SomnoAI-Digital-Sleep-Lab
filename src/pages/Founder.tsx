@@ -31,17 +31,26 @@ export const Founder: React.FC<FounderProps> = ({ lang }) => {
             </div>
             
             <div className="space-y-4">
-              <div className="p-6 rounded-2xl bg-white/5 border border-white/5">
-                <h4 className="text-white font-bold mb-4 text-sm uppercase tracking-widest">{lang === 'zh' ? "官方渠道" : "Official Channels"}</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <a href="https://www.linkedin.com/in/vyncuslim-lim-761300375" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-indigo-400 transition-colors text-xs">
-                    <Linkedin size={14} /> LinkedIn
+              <div className="p-8 hardware-panel">
+                <h4 className="hardware-label mb-6">{lang === 'zh' ? "官方渠道" : "Official Channels"}</h4>
+                <div className="grid grid-cols-1 gap-4">
+                  <a href="https://www.linkedin.com/in/vyncuslim-lim-761300375" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium group">
+                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-500/10 transition-colors">
+                      <Linkedin size={16} />
+                    </div>
+                    LinkedIn
                   </a>
-                  <a href="https://sleepsomno.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-indigo-400 transition-colors text-xs">
-                    <Globe size={14} /> Website
+                  <a href="https://sleepsomno.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium group">
+                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-500/10 transition-colors">
+                      <Globe size={16} />
+                    </div>
+                    Website
                   </a>
-                  <a href="https://discord.gg/McrBeJXG8" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-slate-400 hover:text-indigo-400 transition-colors text-xs">
-                    <MessageSquare size={14} /> Discord
+                  <a href="https://discord.gg/McrBeJXG8" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 text-slate-400 hover:text-indigo-400 transition-colors text-sm font-medium group">
+                    <div className="p-2 bg-white/5 rounded-lg group-hover:bg-indigo-500/10 transition-colors">
+                      <MessageSquare size={16} />
+                    </div>
+                    Discord
                   </a>
                 </div>
               </div>

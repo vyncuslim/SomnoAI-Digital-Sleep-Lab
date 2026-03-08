@@ -33,16 +33,19 @@ export const About: React.FC<AboutProps> = ({ lang }) => {
             title={lang === 'zh' ? "透明度" : "Transparency"} 
             description={lang === 'zh' ? "我们致力于创建易于访问且易于理解的工具，确保用户确切了解其数据的使用和分析方式。" : "We aim to create tools that are accessible and understandable, ensuring users know exactly how their data is being used and analyzed."}
             icon={<Shield />}
+            label="ETHICS"
           />
           <Card 
             title={lang === 'zh' ? "隐私" : "Privacy"} 
             description={lang === 'zh' ? "数据被视为敏感资源，必须以负责任且尊重用户的方式处理。我们对道德数据实践有着坚定的承诺。" : "Data is treated as a sensitive resource that must be handled responsibly and with respect for users. We maintain strong commitments to ethical data practices."}
             icon={<Lock />}
+            label="SECURITY"
           />
           <Card 
             title={lang === 'zh' ? "负责任的 AI" : "Responsible AI"} 
             description={lang === 'zh' ? "我们构建分析框架，揭示隐藏在大量行为数据中的模式，始终优先考虑可解释性和科学完整性。" : "We build analytical frameworks that reveal patterns hidden within large volumes of behavioral data, always prioritizing interpretability and scientific integrity."}
             icon={<Brain />}
+            label="INTELLIGENCE"
           />
         </div>
       </Section>
@@ -54,17 +57,17 @@ export const About: React.FC<AboutProps> = ({ lang }) => {
       </Section>
 
       <Section>
-        <div className="text-center py-6 border border-white/10 rounded-xl bg-white/5">
-            <p className="text-slate-400 mb-2">
+        <div className="text-center py-12 hardware-panel">
+            <p className="hardware-label mb-4">
                 {lang === 'zh' ? "SomnoAI Digital Sleep Lab 也被收录在 Grokpedia：" : "SomnoAI Digital Sleep Lab is also listed in Grokpedia:"}
             </p>
             <a 
                 href="https://grokipedia.com/page/SomnoAI_Digital_Sleep_Lab#somnoai-digital-sleep-lab" 
                 target="_blank" 
                 rel="noopener noreferrer"
-                className="text-indigo-400 hover:text-indigo-300 underline transition-colors break-all"
+                className="text-2xl font-black italic text-indigo-400 hover:text-indigo-300 transition-colors break-all tracking-tighter"
             >
-                https://grokipedia.com/page/SomnoAI_Digital_Sleep_Lab
+                grokipedia.com/somnoai
             </a>
         </div>
       </Section>

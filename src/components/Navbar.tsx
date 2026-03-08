@@ -85,7 +85,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
   const links = isAuthenticated ? authLinks : guestLinks;
 
   return (
-    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 h-20 flex items-center justify-between ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/80 backdrop-blur-3xl border-b border-white/5 shadow-2xl' : 'bg-transparent'} ${className}`}>
+    <nav className={`fixed top-0 left-0 right-0 z-[100] transition-all duration-500 px-6 md:px-12 h-20 flex items-center justify-between ${scrolled || isMobileMenuOpen ? 'bg-[#01040a]/90 backdrop-blur-3xl border-b border-white/10 shadow-[0_10px_40px_rgba(0,0,0,0.5)]' : 'bg-transparent'} ${className}`}>
       <div className="flex items-center gap-10">
         <Link to={langPrefix}>
           <m.div 
@@ -93,7 +93,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
             whileTap={{ scale: 0.98 }}
             className="flex items-center gap-6 cursor-pointer group bg-transparent border-none p-0 outline-none text-left relative" 
           >
-            <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
+            <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all shadow-[0_0_15px_#6366f1]" />
             <Logo lang={lang} className="group-hover:text-indigo-400 transition-colors scale-110" />
           </m.div>
         </Link>
@@ -105,18 +105,18 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
             return (
               <m.button 
                 key={id} 
-                whileHover={{ y: -2 }}
+                whileHover={{ y: -1 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
                   onNavigate(id);
                   setIsMobileMenuOpen(false);
                 }}
-                className={`group relative text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 italic ${isActive ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
+                className={`group relative text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 italic ${isActive ? 'text-indigo-400' : 'text-slate-500 hover:text-white'}`}
               >
-                <link.icon size={14} className={isActive ? 'animate-pulse' : ''} /> 
+                <link.icon size={14} className={isActive ? 'animate-pulse' : 'opacity-50 group-hover:opacity-100 transition-opacity'} /> 
                 {link.label}
                 {isActive && (
-                  <m.div layoutId="nav-glow" className="absolute -bottom-7 left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_15px_#6366f1]" />
+                  <m.div layoutId="nav-glow" className="absolute -bottom-7 left-0 right-0 h-[2px] bg-indigo-500 shadow-[0_0_20px_#6366f1]" />
                 )}
               </m.button>
             );
@@ -126,7 +126,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => onNavigate('admin')}
-              className={`group relative text-[9px] font-black uppercase tracking-[0.15em] transition-all flex items-center gap-2 italic ${activeView === 'admin' ? 'text-rose-400' : 'text-slate-500 hover:text-rose-400'}`}
+              className={`group relative text-[10px] font-black uppercase tracking-[0.2em] transition-all flex items-center gap-2 italic ${activeView === 'admin' ? 'text-rose-400' : 'text-slate-500 hover:text-rose-400'}`}
             >
               <Shield size={14} /> ADMIN
             </m.button>
@@ -136,7 +136,8 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
 
       <div className="flex items-center gap-4">
         {isAuthenticated && profile?.subscription_plan && (
-          <div className="hidden sm:flex items-center px-3 py-1 bg-indigo-900/30 border border-indigo-500/30 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-400">
+          <div className="hidden sm:flex items-center px-4 py-1.5 bg-indigo-900/20 border border-indigo-500/30 rounded-full text-[9px] font-black uppercase tracking-[0.2em] text-indigo-400 shadow-[0_0_15px_rgba(79,70,229,0.1)]">
+            <div className="w-1.5 h-1.5 rounded-full bg-indigo-500 animate-pulse mr-2" />
             {profile.subscription_plan}
           </div>
         )}

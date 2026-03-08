@@ -38,21 +38,32 @@ export const BlogHub: React.FC<BlogHubProps> = ({ lang, onSelectPost }) => {
     >
       <Section title={isZh ? "精选文章" : "Featured Post"}>
         <div 
-          className="p-8 rounded-3xl bg-indigo-500/10 border border-indigo-500/20 cursor-pointer hover:border-indigo-500/50 transition-colors"
+          className="hardware-panel p-10 cursor-pointer hover:border-indigo-500/50 transition-all group relative overflow-hidden"
           onClick={() => onSelectPost({ slug: 'hidden-impact-social-jetlag' })}
         >
-          <div className="inline-block px-3 py-1 bg-indigo-500/20 text-indigo-400 text-xs font-bold uppercase tracking-wider rounded-full mb-4">
-            {isZh ? "精选" : "Featured"}
+          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-30 transition-opacity">
+            <div className="text-[40px] font-black italic">FEATURED</div>
           </div>
-          <h3 className="text-2xl md:text-3xl font-bold text-white mb-4">
+          
+          <div className="hardware-label mb-6 text-indigo-400">
+            {isZh ? "精选文章" : "FEATURED ARTICLE"}
+          </div>
+          
+          <h3 className="text-3xl md:text-4xl font-black text-white mb-6 uppercase tracking-tight italic leading-none">
             {isZh ? "社交时差对认知表现的隐藏影响" : "The Hidden Impact of Social Jetlag on Cognitive Performance"}
           </h3>
-          <p className="text-slate-400 text-lg leading-relaxed mb-6">
+          
+          <p className="text-slate-400 text-lg leading-relaxed mb-8 max-w-3xl font-medium">
             {isZh 
               ? "探索不规律的周末睡眠时间表如何影响您在工作日处理信息的能力。" 
               : "Explore how irregular weekend sleep schedules affect your brain's ability to process information during the workweek."}
           </p>
-          <InlineCTA text={isZh ? "阅读全文" : "Read Full Article"} link={`/blog/hidden-impact-social-jetlag`} />
+          
+          <div className="flex items-center gap-4">
+            <InlineCTA text={isZh ? "阅读全文" : "Read Full Article"} link={`/blog/hidden-impact-social-jetlag`} />
+            <div className="h-px flex-1 bg-white/5" />
+            <div className="text-[10px] text-slate-600 font-mono">REF: BLOG_001</div>
+          </div>
         </div>
       </Section>
 
@@ -61,12 +72,19 @@ export const BlogHub: React.FC<BlogHubProps> = ({ lang, onSelectPost }) => {
           {recentPosts.map((post, idx) => (
             <div 
               key={idx} 
-              className="p-6 rounded-2xl bg-slate-900/50 border border-white/5 cursor-pointer hover:border-white/20 transition-colors"
+              className="hardware-panel p-8 cursor-pointer hover:border-white/20 transition-all flex flex-col h-full group"
               onClick={() => onSelectPost(post)}
             >
-              <h4 className="text-lg font-bold text-white mb-3">{post.title}</h4>
-              <p className="text-slate-400 text-sm mb-4">{post.description}</p>
-              <InlineCTA text={isZh ? "阅读" : "Read"} link={`/blog/${post.slug}`} />
+              <div className="hardware-label mb-4 text-[8px] opacity-50">ENTRY_{idx + 2}</div>
+              <h4 className="text-xl font-black text-white mb-4 uppercase tracking-tight italic leading-tight group-hover:text-indigo-400 transition-colors">
+                {post.title}
+              </h4>
+              <p className="text-slate-500 text-sm mb-8 flex-grow font-medium leading-relaxed">
+                {post.description}
+              </p>
+              <div className="pt-4 border-t border-white/5">
+                <InlineCTA text={isZh ? "阅读" : "Read"} link={`/blog/${post.slug}`} />
+              </div>
             </div>
           ))}
         </div>
@@ -75,7 +93,10 @@ export const BlogHub: React.FC<BlogHubProps> = ({ lang, onSelectPost }) => {
       <Section title={isZh ? "类别" : "Categories"}>
         <div className="flex flex-wrap gap-4">
           {['Science', 'Technology', 'Lifestyle', 'Company News'].map((cat, idx) => (
-            <div key={idx} className="px-6 py-3 rounded-full bg-slate-900 border border-white/10 text-slate-300 hover:text-white hover:border-white/30 cursor-pointer transition-colors">
+            <div 
+              key={idx} 
+              className="px-6 py-3 rounded-xl bg-white/5 border border-white/10 text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-white hover:border-indigo-500/50 hover:bg-indigo-500/5 cursor-pointer transition-all italic"
+            >
               {isZh ? (cat === 'Science' ? '科学' : cat === 'Technology' ? '技术' : cat === 'Lifestyle' ? '生活方式' : '公司新闻') : cat}
             </div>
           ))}

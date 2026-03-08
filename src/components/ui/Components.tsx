@@ -8,63 +8,150 @@ import { useLanguage } from '../../context/useLanguage';
 export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrimary?: { text: string; link: string }; ctaSecondary?: { text: string; link: string } }> = ({ title, subtitle, ctaPrimary, ctaSecondary }) => {
   const { langPrefix } = useLanguage();
   return (
-    <div className="py-20 md:py-32 flex flex-col items-center text-center max-w-4xl mx-auto relative">
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-indigo-500/10 blur-[120px] rounded-full pointer-events-none" />
+    <div className="py-20 md:py-32 flex flex-col items-center text-center max-w-5xl mx-auto relative px-4">
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 blur-[160px] rounded-full pointer-events-none" />
+      
       <motion.div 
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}
-        className="mb-6"
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+        className="relative z-10"
       >
-        {title}
+        <div className="mb-6">
+          {title}
+        </div>
+        <motion.p 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+          className="text-lg md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed font-medium"
+        >
+          {subtitle}
+        </motion.p>
+        
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.4 }}
+          className="flex flex-col sm:flex-row items-center justify-center gap-6"
+        >
+          {ctaPrimary && (
+            <Link to={`${langPrefix}${ctaPrimary.link}`} className="group px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-full transition-all shadow-[0_0_40px_rgba(79,70,229,0.4)] flex items-center gap-3 w-full sm:w-auto justify-center uppercase tracking-widest text-sm">
+              {ctaPrimary.text} 
+              <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            </Link>
+          )}
+          {ctaSecondary && (
+            <Link to={`${langPrefix}${ctaSecondary.link}`} className="px-10 py-5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full transition-all border border-white/10 w-full sm:w-auto justify-center uppercase tracking-widest text-sm backdrop-blur-sm">
+              {ctaSecondary.text}
+            </Link>
+          )}
+        </motion.div>
       </motion.div>
-      <motion.p 
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.1 }}
-        className="text-lg md:text-xl text-slate-400 mb-10 max-w-2xl leading-relaxed"
-      >
-        {subtitle}
-      </motion.p>
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: 0.2 }}
-        className="flex flex-col sm:flex-row items-center gap-4"
-      >
-        {ctaPrimary && (
-          <Link to={`${langPrefix}${ctaPrimary.link}`} className="px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white font-medium rounded-full transition-all shadow-[0_0_30px_rgba(79,70,229,0.3)] flex items-center gap-2 w-full sm:w-auto justify-center">
-            {ctaPrimary.text} <ArrowRight size={18} />
-          </Link>
-        )}
-        {ctaSecondary && (
-          <Link to={`${langPrefix}${ctaSecondary.link}`} className="px-8 py-4 bg-white/5 hover:bg-white/10 text-white font-medium rounded-full transition-all border border-white/10 w-full sm:w-auto justify-center">
-            {ctaSecondary.text}
-          </Link>
-        )}
-      </motion.div>
+
+      {/* Hardware Accents */}
+      <div className="absolute top-0 left-0 w-full h-full pointer-events-none opacity-20">
+        <div className="absolute top-10 left-10 w-20 h-20 border-l border-t border-white/20" />
+        <div className="absolute top-10 right-10 w-20 h-20 border-r border-t border-white/20" />
+        <div className="absolute bottom-10 left-10 w-20 h-20 border-l border-b border-white/20" />
+        <div className="absolute bottom-10 right-10 w-20 h-20 border-r border-b border-white/20" />
+      </div>
     </div>
   );
 };
 
-// --- Section ---
-export const Section: React.FC<{ title?: string; description?: string; children: React.ReactNode; className?: string; id?: string }> = ({ title, description, children, className = "", id }) => (
-  <section id={id} className={`py-16 ${className}`}>
-    {(title || description) && (
-      <div className="mb-12 max-w-3xl">
-        {title && <h2 className="text-3xl md:text-4xl font-bold text-white mb-4 tracking-tight">{title}</h2>}
-        {description && <p className="text-lg text-slate-400 leading-relaxed">{description}</p>}
+// --- Hardware Widget ---
+export const HardwareWidget: React.FC<{ label: string; value: string; unit?: string; icon?: React.ReactNode; status?: 'active' | 'idle' }> = ({ label, value, unit, icon, status = 'idle' }) => (
+  <div className="p-6 hardware-panel relative overflow-hidden group bg-slate-900/60">
+    <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
+    <div className="flex justify-between items-start mb-6">
+      <div className="hardware-label flex items-center gap-2">
+        <div className={`w-1 h-1 rounded-full ${status === 'active' ? 'bg-indigo-500 shadow-[0_0_8px_#6366f1]' : 'bg-slate-700'}`} />
+        {label}
+      </div>
+      <div className={`px-2 py-0.5 rounded text-[8px] font-black uppercase tracking-widest italic border ${status === 'active' ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400 animate-pulse' : 'bg-slate-800 border-slate-700 text-slate-500'}`}>
+        {status === 'active' ? 'ONLINE' : 'IDLE'}
+      </div>
+    </div>
+    <div className="flex items-baseline gap-2 relative z-10">
+      <span className="text-4xl font-black italic tracking-tighter text-white group-hover:text-indigo-400 transition-colors duration-500">{value}</span>
+      {unit && <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] italic">{unit}</span>}
+    </div>
+    {icon && (
+      <div className="absolute bottom-4 right-4 text-white/5 group-hover:text-indigo-500/20 transition-all duration-700 group-hover:scale-125 group-hover:rotate-6">
+        {icon}
       </div>
     )}
-    {children}
+    <div className="absolute bottom-0 left-0 w-full h-0.5 dashed-line opacity-20" />
+    <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+  </div>
+);
+
+// --- Section ---
+export const Section: React.FC<{ title?: string; description?: string; children: React.ReactNode; className?: string; id?: string }> = ({ title, description, children, className = "", id }) => (
+  <section id={id} className={`py-24 relative ${className}`}>
+    {(title || description) && (
+      <div className="mb-20 max-w-4xl relative z-10">
+        {title && (
+          <div className="flex items-center gap-6 mb-8">
+            <div className="flex flex-col gap-1">
+              <div className="w-8 h-1 bg-indigo-500 rounded-full shadow-[0_0_10px_#6366f1]" />
+              <div className="w-4 h-1 bg-indigo-500/30 rounded-full" />
+            </div>
+            <h2 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-white shrink-0 leading-none">{title}</h2>
+            <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+          </div>
+        )}
+        {description && <p className="text-xl text-slate-400 leading-relaxed font-medium border-l-2 border-indigo-500/20 pl-8 ml-4">{description}</p>}
+      </div>
+    )}
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, margin: "-100px" }}
+      transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+    >
+      {children}
+    </motion.div>
   </section>
 );
 
 // --- Card ---
-export const Card: React.FC<{ title: string; description: string; icon?: React.ReactNode; className?: string; children?: React.ReactNode; onClick?: () => void }> = ({ title, description, icon, className = "", children, onClick }) => (
-  <div 
+export const Card: React.FC<{ title: string; description: string; icon?: React.ReactNode; className?: string; children?: React.ReactNode; onClick?: () => void; label?: string }> = ({ title, description, icon, className = "", children, onClick, label }) => (
+  <motion.div 
+    whileHover={{ y: -8, scale: 1.01 }}
     onClick={onClick}
-    className={`p-8 rounded-3xl bg-slate-900/40 border border-white/10 hover:border-indigo-500/30 transition-all duration-300 hover:shadow-[0_0_30px_rgba(79,70,229,0.1)] ${onClick ? 'cursor-pointer' : ''} ${className}`}
+    className={`p-10 rounded-[2.5rem] bg-slate-900/40 border border-white/10 hover:border-indigo-500/40 transition-all duration-700 hover:shadow-[0_30px_60px_rgba(0,0,0,0.4)] relative group overflow-hidden ${onClick ? 'cursor-pointer' : ''} ${className}`}
   >
-    {icon && <div className="w-16 h-16 rounded-2xl bg-indigo-500/10 flex items-center justify-center text-indigo-400 mb-8">{icon}</div>}
-    <h3 className="text-2xl font-black italic uppercase tracking-tighter text-white mb-4">{title}</h3>
-    <p className="text-slate-400 leading-relaxed mb-6">{description}</p>
+    <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
+    
+    {label && (
+      <div className="absolute top-8 right-10 hardware-label opacity-30 group-hover:opacity-100 group-hover:text-indigo-400 transition-all duration-500 flex items-center gap-2">
+        <div className="w-1 h-1 rounded-full bg-indigo-500 scale-0 group-hover:scale-100 transition-transform" />
+        {label}
+      </div>
+    )}
+    
+    {icon && (
+      <div className="w-20 h-20 rounded-3xl bg-indigo-500/5 border border-white/5 flex items-center justify-center text-indigo-400 mb-10 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700 shadow-inner">
+        {React.cloneElement(icon as React.ReactElement, { size: 32 })}
+      </div>
+    )}
+    
+    <h3 className="text-2xl md:text-3xl font-black italic uppercase tracking-tighter text-white mb-6 group-hover:text-indigo-400 transition-colors duration-500 leading-none">
+      {title}
+    </h3>
+    
+    <p className="text-slate-400 leading-relaxed mb-8 group-hover:text-slate-200 transition-colors duration-500 font-medium text-lg">
+      {description}
+    </p>
+    
     {children}
-  </div>
+    
+    <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500/40 to-transparent scale-x-0 group-hover:scale-x-100 transition-transform duration-1000 ease-out" />
+    
+    <div className="absolute -bottom-4 -right-4 w-24 h-24 bg-indigo-500/5 blur-3xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+  </motion.div>
 );
 
 // --- Accordion ---
