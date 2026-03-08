@@ -9,8 +9,7 @@
         { "key": "X-Content-Type-Options", "value": "nosniff" },
         { "key": "X-Frame-Options", "value": "DENY" },
         { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(self), payment=(self)" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/ https://unpkg.com/@elevenlabs/convai-widget-embed; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: https:; font-src 'self' https:; connect-src 'self' https: wss:; frame-src 'self' https://www.google.com/recaptcha/;" }
+        { "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=(self), payment=(self)" }
       ]
     }
   ],
@@ -23,6 +22,6 @@
   ],
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
-    { "source": "/((?!api/|_next/|static/|.*\\..*).*)", "destination": "/app.html" }
+    { "source": "/((?!api/|static/|assets/|.*\\..*).*)", "destination": "/index.html" }
   ]
 }
