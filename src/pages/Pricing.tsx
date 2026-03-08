@@ -8,7 +8,7 @@ interface PricingProps {
   lang: Language;
 }
 
-export const Pricing: React.FC<PricingProps> = ({ lang }) => {
+const Pricing: React.FC<PricingProps> = ({ lang }) => {
   const isZh = lang === 'zh';
   
   return (
@@ -44,3 +44,5 @@ export const Pricing: React.FC<PricingProps> = ({ lang }) => {
     </MarketingPageTemplate>
   );
 };
+
+export default Pricing;
