@@ -117,7 +117,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       ctaSecondary={{ text: t.ctaSecondary || "Learn More", link: "/about" }}
     >
       {/* Stats Section */}
-      <Section>
+      <Section moduleID="STATS_01">
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
           {stats.map((stat, i) => (
             <HardwareWidget 
@@ -134,6 +134,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
       {/* Core Capabilities */}
       <Section 
+        moduleID="CORE_01"
         title={lang === 'zh' ? '核心能力' : 'Core Capabilities'} 
         description={lang === 'zh' ? '由 Gemini 2.5 Pro 模型驱动的高级遥测处理。' : 'Advanced telemetry processing powered by Gemini 2.5 Pro models.'}
       >
@@ -156,6 +157,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
       {/* The Protocol */}
       <Section 
+        moduleID="PROC_01"
         title={lang === 'zh' ? '协议流程' : 'The Protocol'} 
         description={lang === 'zh' ? '实现全面认知恢复的四个步骤。' : 'Four steps to total cognitive restoration.'}
       >
@@ -176,7 +178,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       </Section>
 
       {/* Compatible with Major Devices */}
-      <Section className="text-center">
+      <Section moduleID="ECO_01" className="text-center">
         <div className="hardware-label mb-12 opacity-50">Compatible Ecosystem</div>
         <div className="flex flex-wrap justify-center gap-8 md:gap-20">
           {['Apple Watch', 'Oura', 'Garmin', 'Fitbit', 'Whoop'].map((device) => (
@@ -189,23 +191,24 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
       {/* Technical Specifications */}
       <Section 
-        title={lang === 'zh' ? '技术规格' : 'Technical Specifications'} 
-        description={lang === 'zh' ? 'SomnoAI 实验室的底层架构与遥测指标。' : 'The underlying architecture and telemetry metrics of SomnoAI Lab.'}
+        moduleID="TECH_01"
+        title={t.techSpecs?.title || (lang === 'zh' ? '技术规格' : 'Technical Specifications')} 
+        description={t.techSpecs?.subtitle || (lang === 'zh' ? 'SomnoAI 实验室的底层架构与遥测指标。' : 'The underlying architecture and telemetry metrics of SomnoAI Lab.')}
       >
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          <HardwareWidget label="MODEL_VERSION" value="G2.5" unit="PRO" status="active" />
-          <HardwareWidget label="LATENCY_MS" value="120" unit="AVG" status="active" />
-          <HardwareWidget label="ENCRYPTION" value="AES" unit="256" status="active" />
-          <HardwareWidget label="UPTIME" value="99.9" unit="%" status="active" />
-          <HardwareWidget label="SAMPLING_RATE" value="1" unit="HZ" />
-          <HardwareWidget label="NEURAL_LAYERS" value="128" unit="CORE" />
-          <HardwareWidget label="DATA_POINTS" value="1.2" unit="M/D" />
-          <HardwareWidget label="RECOVERY_INDEX" value="V4" unit="BETA" status="active" />
+          <HardwareWidget label={t.techSpecs?.modelVersion || "MODEL_VERSION"} value="G2.5" unit="PRO" status="active" />
+          <HardwareWidget label={t.techSpecs?.latency || "LATENCY_MS"} value="120" unit="AVG" status="active" />
+          <HardwareWidget label={t.techSpecs?.encryption || "ENCRYPTION"} value="AES" unit="256" status="active" />
+          <HardwareWidget label={t.techSpecs?.uptime || "UPTIME"} value="99.9" unit="%" status="active" />
+          <HardwareWidget label={t.techSpecs?.samplingRate || "SAMPLING_RATE"} value="1" unit="HZ" />
+          <HardwareWidget label={t.techSpecs?.neuralLayers || "NEURAL_LAYERS"} value="128" unit="CORE" />
+          <HardwareWidget label={t.techSpecs?.dataPoints || "DATA_POINTS"} value="1.2" unit="M/D" />
+          <HardwareWidget label={t.techSpecs?.recoveryIndex || "RECOVERY_INDEX"} value="V4" unit="BETA" status="active" />
         </div>
       </Section>
 
       {/* Pricing Section */}
-      <Section title="Pricing" description="Choose the plan that fits your needs.">
+      <Section moduleID="PRIC_01" title="Pricing" description="Choose the plan that fits your needs.">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           <Card title="Go" description="Basic plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go'))} label="STARTER" />
           <Card title="Pro" description="Pro plan" icon={<Zap size={32} />} onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro'))} label="MOST POPULAR" className="border-indigo-500/30 bg-indigo-500/5" />
@@ -215,6 +218,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
 
       {/* Who is it for? */}
       <Section 
+        moduleID="USER_01"
         title={lang === 'zh' ? '为谁设计？' : 'Who is it for?'} 
         description={lang === 'zh' ? '无论您的目标是什么，SomnoAI Digital Sleep Lab 都能提供定制化的恢复策略。' : 'Whatever your goal, SomnoAI Digital Sleep Lab provides customized recovery strategies.'}
       >
@@ -236,7 +240,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       </Section>
 
       {/* Testimonials */}
-      <Section>
+      <Section moduleID="TEST_01">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {testimonials.map((t, i) => (
             <div key={i} className="p-12 rounded-[2.5rem] bg-slate-900/30 border border-white/5 relative group hover:border-indigo-500/20 transition-all duration-500">

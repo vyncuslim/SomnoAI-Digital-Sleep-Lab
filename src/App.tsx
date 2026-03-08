@@ -310,7 +310,14 @@ const AppContent = () => {
   const isAuthPage = location.pathname.includes('/auth');
   const showNavbar = !isAuthPage;
 
-  const activeView = location.pathname.split('/').pop() || 'dashboard';
+  const getActiveView = () => {
+    const parts = location.pathname.split('/').filter(Boolean);
+    if (parts.length === 0) return 'home';
+    if (parts.length === 1 && (parts[0] === 'en' || parts[0] === 'cn')) return 'home';
+    return parts[parts.length - 1];
+  };
+
+  const activeView = getActiveView();
 
   return (
     <ErrorBoundary lang={lang}>

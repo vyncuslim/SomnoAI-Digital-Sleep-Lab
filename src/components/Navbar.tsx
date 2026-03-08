@@ -224,6 +224,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
             exit={{ opacity: 0, y: -20 }}
             className="xl:hidden absolute top-24 left-6 right-6 bg-[#01040a]/95 backdrop-blur-3xl border border-white/10 rounded-[2.5rem] p-8 shadow-2xl z-[200] max-h-[70vh] overflow-y-auto grainy-bg"
           >
+            <div className="scanline" />
             <div className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-1 bg-white/10 rounded-full mt-4" />
             <div className="grid grid-cols-2 gap-4 mt-8">
               {links.map((item) => {
@@ -240,6 +241,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
                     <div className="absolute top-2 right-2 opacity-20 group-hover:opacity-100 transition-opacity">
                       <span className="text-[6px] font-black font-mono">MOD_{id.toUpperCase().slice(0,3)}</span>
                     </div>
+                    <div className="absolute bottom-0 left-0 w-full h-0.5 data-stream opacity-0 group-hover:opacity-10 transition-opacity" />
                     <item.icon size={24} />
                     <span className="text-[10px] font-black uppercase tracking-widest italic">{item.label}</span>
                   </button>

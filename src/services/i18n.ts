@@ -136,6 +136,18 @@ export const translations: Record<Language, any> = {
         resultsFound: "Results found"
       },
       banner: 'Join SomnoAI Digital Sleep Lab Early Access — Limited Beta Access',
+      techSpecs: {
+        title: 'Technical Specifications',
+        subtitle: 'The underlying architecture and telemetry metrics of SomnoAI Lab.',
+        modelVersion: 'MODEL_VERSION',
+        latency: 'LATENCY_MS',
+        encryption: 'ENCRYPTION',
+        uptime: 'UPTIME',
+        samplingRate: 'SAMPLING_RATE',
+        neuralLayers: 'NEURAL_LAYERS',
+        dataPoints: 'DATA_POINTS',
+        recoveryIndex: 'RECOVERY_INDEX'
+      },
       features: {
         biometric: { title: 'Biometric Tracking', desc: 'Real-time heart rate and movement analysis during sleep cycles.' },
         neural: { title: 'Neural Insights', desc: 'AI-driven interpretation of sleep stages and quality metrics.' },
@@ -486,6 +498,18 @@ export const translations: Record<Language, any> = {
         resultsFound: "找到结果"
       },
       banner: '加入 SomnoAI Digital Sleep Lab 早期访问 — 限量测试访问',
+      techSpecs: {
+        title: '技术规格',
+        subtitle: 'SomnoAI 实验室的底层架构与遥测指标。',
+        modelVersion: '模型版本',
+        latency: '延迟 (MS)',
+        encryption: '加密协议',
+        uptime: '运行时间',
+        samplingRate: '采样率',
+        neuralLayers: '神经层',
+        dataPoints: '数据点',
+        recoveryIndex: '恢复指数'
+      },
       features: {
         biometric: { title: '生物识别追踪', desc: '睡眠周期内的实时心率和运动分析。' },
         neural: { title: '神经洞察', desc: 'AI 驱动的睡眠阶段和质量指标解读。' },

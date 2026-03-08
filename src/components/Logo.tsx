@@ -10,6 +10,11 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true, lan
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+        {/* HUD Elements */}
+        <div className="absolute inset-0 border border-indigo-500/20 rounded-full animate-pulse-soft" />
+        <div className="absolute inset-[-4px] border border-dashed border-indigo-500/10 rounded-full animate-spin" style={{ animationDuration: '10s' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-500 rounded-full shadow-[0_0_8px_#6366f1]" />
+        
         <svg viewBox="0 0 100 100" className="w-full h-full drop-shadow-[0_0_8px_rgba(129,140,248,0.4)]">
           <defs>
             <linearGradient id="blueSwirl" x1="0%" y1="0%" x2="100%" y2="100%">

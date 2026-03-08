@@ -8,8 +8,12 @@ import { useLanguage } from '../../context/useLanguage';
 export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrimary?: { text: string; link: string }; ctaSecondary?: { text: string; link: string } }> = ({ title, subtitle, ctaPrimary, ctaSecondary }) => {
   const { langPrefix } = useLanguage();
   return (
-    <div className="py-20 md:py-32 flex flex-col items-center text-center max-w-5xl mx-auto relative px-4">
+    <div className="py-20 md:py-32 flex flex-col items-center text-center max-w-5xl mx-auto relative px-4 overflow-hidden">
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 blur-[160px] rounded-full pointer-events-none" />
+      
+      {/* Background Grid */}
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(circle, white 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
@@ -63,6 +67,7 @@ export const Hero: React.FC<{ title: React.ReactNode; subtitle: string; ctaPrima
 // --- Hardware Widget ---
 export const HardwareWidget: React.FC<{ label: string; value: string; unit?: string; icon?: React.ReactNode; status?: 'active' | 'idle' }> = ({ label, value, unit, icon, status = 'idle' }) => (
   <div className="p-6 hardware-panel relative overflow-hidden group bg-slate-900/60">
+    <div className="scanline" />
     <div className="absolute top-0 left-0 w-full h-px bg-gradient-to-r from-transparent via-white/10 to-transparent" />
     <div className="flex justify-between items-start mb-6">
       <div className="hardware-label flex items-center gap-2">
@@ -82,16 +87,21 @@ export const HardwareWidget: React.FC<{ label: string; value: string; unit?: str
         {icon}
       </div>
     )}
+    <div className="absolute bottom-0 left-0 w-full h-0.5 data-stream opacity-10" />
     <div className="absolute bottom-0 left-0 w-full h-0.5 dashed-line opacity-20" />
     <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
   </div>
 );
 
 // --- Section ---
-export const Section: React.FC<{ title?: string; description?: string; children: React.ReactNode; className?: string; id?: string }> = ({ title, description, children, className = "", id }) => (
+export const Section: React.FC<{ title?: string; description?: string; children: React.ReactNode; className?: string; id?: string; moduleID?: string }> = ({ title, description, children, className = "", id, moduleID }) => (
   <section id={id} className={`py-24 relative ${className}`}>
     {(title || description) && (
       <div className="mb-20 max-w-4xl relative z-10">
+        <div className="flex items-center gap-4 mb-4">
+          {moduleID && <span className="micro-label opacity-40">MOD_ID: {moduleID}</span>}
+          <div className="h-px w-12 bg-white/5" />
+        </div>
         {title && (
           <div className="flex items-center gap-6 mb-8">
             <div className="flex flex-col gap-1">
@@ -123,6 +133,7 @@ export const Card: React.FC<{ title: string; description: string; icon?: React.R
     onClick={onClick}
     className={`p-10 rounded-[2.5rem] bg-slate-900/40 border border-white/10 hover:border-indigo-500/40 transition-all duration-700 hover:shadow-[0_30px_60px_rgba(0,0,0,0.4)] relative group overflow-hidden ${onClick ? 'cursor-pointer' : ''} ${className}`}
   >
+    <div className="absolute inset-1 border border-white/[0.02] rounded-[2.2rem] pointer-events-none" />
     <div className="absolute top-0 left-0 w-full h-full bg-gradient-to-br from-indigo-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
     
     {label && (
