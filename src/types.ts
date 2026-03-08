@@ -43,6 +43,7 @@ export interface UserProfile {
   full_name?: string;
   avatar_url?: string;
   preferences?: Record<string, any>;
+  subscription_plan?: string;
 }
 
 export interface Article {
