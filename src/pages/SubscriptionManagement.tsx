@@ -24,6 +24,17 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
     setLoading(false);
   };
 
+  const getPaymentLink = (baseUrl: string, planName: string) => {
+    const params = new URLSearchParams();
+    if (profile?.id) params.append('client_reference_id', profile.id);
+    if (profile?.email) params.append('prefilled_email', profile.email);
+    // Note: 'plan' is added as a URL parameter for reference. 
+    // For the webhook to receive this in session.metadata, the Payment Link must be configured 
+    // in the Stripe Dashboard with this metadata, as URL params don't automatically map to metadata.
+    params.append('plan', planName);
+    return `${baseUrl}?${params.toString()}`;
+  };
+
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 text-white">
       <h1 className="text-3xl font-bold mb-8">{lang === 'zh' ? '订阅管理' : 'Subscription Management'}</h1>
@@ -42,10 +53,24 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
       <div className="bg-white/5 p-6 rounded-xl border border-white/10">
         <h2 className="text-xl font-semibold mb-4">{lang === 'zh' ? '升级计划' : 'Upgrade Plan'}</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Note: Ensure these links are configured with metadata 'plan=go', 'plan=pro', 'plan=plus' in Stripe Dashboard */}
-          <a href="YOUR_STRIPE_PAYMENT_LINK_GO" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors">Go</a>
-          <a href="YOUR_STRIPE_PAYMENT_LINK_PRO" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors">Pro</a>
-          <a href="YOUR_STRIPE_PAYMENT_LINK_PLUS" className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors">Plus</a>
+          <a 
+            href={getPaymentLink('https://checkout.sleepsomno.com/b/5kQcN50ry8Pl9U28gNcwg03', 'go')}
+            className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors"
+          >
+            Go
+          </a>
+          <a 
+            href={getPaymentLink('https://checkout.sleepsomno.com/b/5kQaEXcagc1x8PYfJfcwg02', 'pro')}
+            className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors"
+          >
+            Pro
+          </a>
+          <a 
+            href={getPaymentLink('https://checkout.sleepsomno.com/b/4gM7sL3DK9Tp7LUeFbcwg01', 'plus')}
+            className="bg-white/10 hover:bg-white/20 p-4 rounded-lg text-center transition-colors"
+          >
+            Plus
+          </a>
         </div>
       </div>
     </div>

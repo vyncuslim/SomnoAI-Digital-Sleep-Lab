@@ -1,5 +1,6 @@
 import React from 'react';
 import { PlaceholderView } from './PlaceholderView';
+import { UserProfileView } from './UserProfileView';
 
 export { PlaceholderView };
 export const Dashboard = (props: any) => <PlaceholderView title="Dashboard" {...props} />;
@@ -9,5 +10,5 @@ export const BlockedView = (props: any) => <PlaceholderView title="Account Block
 export const ExperimentView = (props: any) => <PlaceholderView title="Sleep Experiments" {...props} />;
 export const DiaryView = (props: any) => <PlaceholderView title="Sleep Journal" {...props} />;
 export const AdminView = (props: any) => <PlaceholderView title="Admin Console" {...props} />;
-export const UserProfile = (props: any) => <PlaceholderView title="User Profile" {...props} />;
+export const UserProfile = (props: any) => <UserProfileView {...props} />;
 export const FeedbackView = (props: any) => <PlaceholderView title="Feedback" {...props} />;

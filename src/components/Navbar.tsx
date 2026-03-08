@@ -10,6 +10,7 @@ import {
 
 import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
+import { useAuth } from '../context/AuthContext';
 
 const m = motion as any;
 
@@ -42,6 +43,7 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
 }) => {
   const [scrolled, setScrolled] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const { profile } = useAuth();
   
   const t = getTranslation(lang, 'landing');
   const isZh = lang === 'zh';
@@ -133,6 +135,11 @@ export const Navbar: React.FC<NavbarProps & { className?: string }> = ({
       </div>
 
       <div className="flex items-center gap-4">
+        {isAuthenticated && profile?.subscription_plan && (
+          <div className="hidden sm:flex items-center px-3 py-1 bg-indigo-900/30 border border-indigo-500/30 rounded-full text-[10px] font-black uppercase tracking-widest text-indigo-400">
+            {profile.subscription_plan}
+          </div>
+        )}
         <button 
           onClick={() => onNavigate('/search')}
           className="p-2 text-slate-500 hover:text-white transition-colors"
