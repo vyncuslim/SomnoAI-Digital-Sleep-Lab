@@ -375,16 +375,13 @@ async function startServer() {
   } else {
     // Serve static files in production
     app.use(express.static(distPath, { extensions: ['html'] }));
-    // Fallback to app.html for production
+    // Fallback to index.html for production
     app.get(/.*/, (req, res) => {
-      const appPath = path.resolve(distPath, "app.html");
       const indexPath = path.resolve(distPath, "index.html");
-      if (fs.existsSync(appPath)) {
-        res.sendFile(appPath);
-      } else if (fs.existsSync(indexPath)) {
+      if (fs.existsSync(indexPath)) {
         res.sendFile(indexPath);
       } else {
-        res.status(404).send("Production build found but app.html is missing in dist/");
+        res.status(404).send("Production build found but index.html is missing in dist/");
       }
     });
   }
