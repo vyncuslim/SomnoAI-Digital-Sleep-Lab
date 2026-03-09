@@ -6,7 +6,7 @@ import { GlassCard } from './GlassCard';
 import { HardwareButton } from './ui/Components';
 import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
-import { supabase } from '../services/supabaseService';
+import { supabase, logAuditLog } from '../services/supabaseService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/useLanguage';
 import { notificationService } from '../services/notificationService';
@@ -126,12 +126,27 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
 
       if (view === 'login') {
-        const { error: signInError } = await supabase.auth.signInWithPassword({
+        const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
         
         if (signInError) throw signInError;
+        
+        if (data.user) {
+          // Check if user is blocked
+          const { data: profileData } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
+          
+          if (profileData?.is_blocked) {
+             // Log the attempt
+             await logAuditLog(data.user.id, 'BLOCKED_LOGIN_ATTEMPT', `Blocked user attempted login. Code: ${profileData.block_code || 'N/A'}`);
+             // Sign out immediately
+             await supabase.auth.signOut();
+             throw new Error(`Account blocked. Please contact support and provide this code: ${profileData.block_code || 'N/A'}`);
+          }
+
+          await logAuditLog(data.user.id, 'USER_LOGIN', 'Successful login');
+        }
         
         notificationService.sendLoginNotification(email);
         navigate(`${langPrefix}/dashboard`);

@@ -123,7 +123,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { isBlocked, blockedReason } = useAuth();
+  const { isBlocked, blockedReason, blockCode } = useAuth();
   const langPrefix = lang === 'zh' ? '/cn' : '/en';
 
   const handleBack = () => navigate(-1);
@@ -131,7 +131,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
   if (isBlocked) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-[#01040a]" />}>
-        <BlockedView reason={blockedReason} />
+        <BlockedView reason={blockedReason} blockCode={blockCode} />
       </Suspense>
     );
   }

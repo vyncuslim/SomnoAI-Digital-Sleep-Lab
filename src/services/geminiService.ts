@@ -3,8 +3,6 @@ import { GoogleGenAI, Type, ThinkingLevel } from "@google/genai";
 import { SleepRecord } from "../types.ts";
 import { Language } from "./i18n.ts";
 
-declare const process: { env: { GEMINI_API_KEY_1: string } };
-
 export interface BiologicalReport {
   summary: string;
   patterns: string[];
@@ -12,10 +10,14 @@ export interface BiologicalReport {
 }
 
 /**
- * FIXED: Guidelines enforce exclusive process.env.GEMINI_API_KEY_1 usage.
+ * FIXED: Guidelines enforce exclusive process.env.GEMINI_API_KEY usage.
  */
 const getAIClient = () => {
-  return new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY_1 });
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    throw new Error('GEMINI_API_KEY environment variable is required');
+  }
+  return new GoogleGenAI({ apiKey });
 };
 
 // Use stable production models instead of previews for system logic paths

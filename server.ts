@@ -7,16 +7,9 @@ import cors from "cors";
 import helmet from "helmet";
 import nodemailer from "nodemailer";
 import Stripe from 'stripe';
-import admin from 'firebase-admin';
 import { createClient } from '@supabase/supabase-js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Initialize Firebase Admin
-admin.initializeApp({
-  credential: admin.credential.applicationDefault()
-});
-const db = admin.firestore();
 
 // Initialize Supabase
 const supabase = createClient(process.env.SUPABASE_URL || '', process.env.SUPABASE_SERVICE_ROLE_KEY || '');

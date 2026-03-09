@@ -1,6 +1,10 @@
 import { supabase, logAuditLog } from './supabaseService';
 import { emailService } from './emailService';
 
+const generateBlockCode = () => {
+  return 'BLOCK-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+};
+
 export const securityService = {
   /**
    * Handles a failed login attempt by logging it and blocking the user if threshold is reached.
@@ -35,8 +39,10 @@ export const securityService = {
       
       // If critical or high, block the user
       if (severity === 'CRITICAL' || severity === 'HIGH') {
+        const blockCode = generateBlockCode();
+        await supabase.from('profiles').update({ is_blocked: true, block_code: blockCode }).eq('id', userId);
         await supabase.rpc('block_user', { user_id: userId });
-        await emailService.sendBlockNotification(email, `Security violation detected: ${type}`);
+        await emailService.sendBlockNotification(email, `Security violation detected: ${type}. Your block code is: ${blockCode}`);
       }
       
       await logAuditLog(userId, 'SECURITY_VIOLATION', { type, severity });
@@ -53,7 +59,8 @@ export const securityService = {
       // Update profile status
       await supabase.from('profiles').update({ 
         is_blocked: false, 
-        failed_login_attempts: 0 
+        failed_login_attempts: 0,
+        block_code: null
       }).eq('id', userId);
       
       // Reset login attempts in the tracking table

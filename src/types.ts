@@ -38,6 +38,7 @@ export interface UserProfile {
   is_super_owner?: boolean;
   is_blocked?: boolean;
   blocked_reason?: string;
+  block_code?: string;
   created_at?: string;
   updated_at?: string;
   full_name?: string;

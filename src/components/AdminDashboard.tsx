@@ -436,6 +436,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">User</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Role</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Status</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Block Code</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -475,6 +476,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                             <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">Active</span>
                           )}
                         </div>
+                      </td>
+                      <td className="p-4 text-xs font-mono text-slate-400">
+                        {user.block_code || '-'}
                       </td>
                       <td className="p-4 text-right">
                         <button 

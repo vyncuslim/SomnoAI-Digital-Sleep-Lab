@@ -4,9 +4,10 @@ import { useLanguage } from '../context/useLanguage';
 
 interface BlockedViewProps {
   reason?: string;
+  blockCode?: string;
 }
 
-export const BlockedView: React.FC<BlockedViewProps> = ({ reason }) => {
+export const BlockedView: React.FC<BlockedViewProps> = ({ reason, blockCode }) => {
   const { lang, langPrefix } = useLanguage();
   const isZh = lang === 'zh';
 
@@ -35,9 +36,9 @@ export const BlockedView: React.FC<BlockedViewProps> = ({ reason }) => {
           <div className="flex items-center gap-3 text-sm text-slate-300 mb-4">
             <div className="w-2 h-2 rounded-full bg-rose-500 animate-ping" />
             <span className="font-mono uppercase tracking-wider text-xs text-slate-500 font-bold">
-              {isZh ? "状态代码" : "Status Code"}
+              {isZh ? "封禁代码" : "Block Code"}
             </span>
-            <span className="font-mono text-rose-400 ml-auto bg-rose-500/10 px-2 py-1 rounded text-xs border border-rose-500/20">ACCESS_DENIED_0x92</span>
+            <span className="font-mono text-rose-400 ml-auto bg-rose-500/10 px-2 py-1 rounded text-xs border border-rose-500/20">{blockCode || 'N/A'}</span>
           </div>
           
           {reason && (
@@ -50,9 +51,8 @@ export const BlockedView: React.FC<BlockedViewProps> = ({ reason }) => {
           )}
 
           <div className="h-px bg-slate-800 my-3" />
-          <p className="text-xs text-slate-500 flex justify-between items-center">
-            <span>{isZh ? "参考 ID" : "Reference ID"}</span>
-            <span className="font-mono text-slate-400">{Math.random().toString(36).substring(7).toUpperCase()}</span>
+          <p className="text-xs text-slate-500 flex justify-center items-center gap-2">
+            <span>{isZh ? "请在联系支持时提供此代码" : "Please provide this code when contacting support"}</span>
           </p>
         </div>
 
