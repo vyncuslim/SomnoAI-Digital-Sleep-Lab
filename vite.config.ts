@@ -7,7 +7,7 @@ export default defineConfig({
   root: process.cwd(),
   plugins: [react()],
   define: {
-    'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || ''),
+    'process.env.GEMINI_API_KEY_1': JSON.stringify(process.env.GEMINI_API_KEY_1 || ''),
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ''),
   },
   build: {
