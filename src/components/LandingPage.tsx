@@ -115,6 +115,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       subtitle={t.heroSubtitle || "Connect your wearable → Get AI recovery intelligence. Upload your sleep data, let our AI analyze it, and wake up to actionable recovery protocols."}
       ctaPrimary={{ text: t.ctaPrimary || "Start Analysis", link: "/auth/signup" }}
       ctaSecondary={{ text: t.ctaSecondary || "Learn More", link: "/about" }}
+      ctaTertiary={{ text: lang === 'zh' ? "立即登录" : "Sign In", link: "/auth/login" }}
     >
       {/* Stats Section */}
       <Section moduleID="STATS_01">

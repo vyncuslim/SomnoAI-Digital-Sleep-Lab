@@ -115,7 +115,7 @@ export const translations: Record<Language, any> = {
         project: 'Project',
         founder: 'Founder',
         signup: 'JOIN NOW',
-        enter: 'LOGIN'
+        enter: 'SIGN IN'
       },
       founder: {
         title: "Meet the Founder",
