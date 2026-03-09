@@ -96,6 +96,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [token, setToken] = useState('');
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
   const [privacyApproved, setPrivacyApproved] = useState(false);
@@ -120,6 +122,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
 
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    setShowOtpInput(false);
+    setToken('');
+    setSuccessMessage(null);
+    setError(null);
+  }, [view]);
 
   const validateEmail = (email: string) => {
     const fakePatterns = ['@ddd', '@ds', '@123'];
@@ -226,6 +235,23 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (resetError) throw resetError;
         setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
       } else if (view === 'otp') {
+        if (showOtpInput) {
+          const { data, error: verifyError } = await supabase.auth.verifyOtp({
+            email,
+            token,
+            type: 'email',
+          });
+          
+          if (verifyError) throw verifyError;
+          
+          if (data.user) {
+            await logAuditLog(data.user.id, 'USER_LOGIN_OTP', 'Successful OTP login');
+          }
+          
+          navigate(`${langPrefix}/dashboard`);
+          return;
+        }
+
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email,
           options: {
@@ -235,7 +261,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         });
         
         if (otpError) throw otpError;
-        setSuccessMessage(lang === 'zh' ? '登录链接已发送到您的邮箱，请查收。' : 'Magic link sent to your email. Check your inbox to log in.');
+        setShowOtpInput(true);
+        setSuccessMessage(lang === 'zh' ? '验证码/登录链接已发送到您的邮箱，请查收。' : 'Verification code or magic link sent to your email. Check your inbox.');
       }
     } catch (err: any) {
       console.error('Auth error:', err);
@@ -447,8 +474,37 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                       onChange={(e: any) => setEmail(e.target.value)}
                       placeholder="name@example.com"
                       required
+                      disabled={showOtpInput}
                     />
                   </motion.div>
+
+                  {view === 'otp' && showOtpInput && (
+                    <motion.div variants={itemVariants}>
+                      <InputField
+                        icon={KeyRound}
+                        label={lang === 'zh' ? '验证码' : 'Verification Code'}
+                        type="text"
+                        value={token}
+                        onChange={(e: any) => setToken(e.target.value)}
+                        placeholder="123456"
+                        required
+                        autoFocus
+                      />
+                      <div className="flex justify-end mt-2">
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            setShowOtpInput(false);
+                            setToken('');
+                            setSuccessMessage(null);
+                          }}
+                          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors"
+                        >
+                          {lang === 'zh' ? '更改邮箱' : 'Change Email'}
+                        </button>
+                      </div>
+                    </motion.div>
+                  )}
 
                   {(view === 'login' || view === 'signup') && (
                     <motion.div variants={itemVariants}>
@@ -546,7 +602,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                           {view === 'login' && (lang === 'zh' ? '登录' : 'Sign In')}
                           {view === 'signup' && (lang === 'zh' ? '注册' : 'Create Account')}
                           {view === 'forgot-password' && (lang === 'zh' ? '发送重置链接' : 'Send Reset Link')}
-                          {view === 'otp' && (lang === 'zh' ? '发送登录链接' : 'Send Magic Link')}
+                          {view === 'otp' && (
+                            showOtpInput 
+                              ? (lang === 'zh' ? '验证验证码' : 'Verify Code') 
+                              : (lang === 'zh' ? '发送登录链接' : 'Send Magic Link')
+                          )}
                           <ArrowRight size={18} />
                         </>
                       )}
