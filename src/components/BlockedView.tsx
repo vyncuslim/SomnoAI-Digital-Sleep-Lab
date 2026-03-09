@@ -11,6 +11,34 @@ export const BlockedView: React.FC<BlockedViewProps> = ({ reason, blockCode }) =
   const { lang, langPrefix } = useLanguage();
   const isZh = lang === 'zh';
 
+  const [inputCode, setInputCode] = React.useState('');
+  const [isSubmitting, setIsSubmitting] = React.useState(false);
+  const [submitted, setSubmitted] = React.useState(false);
+
+  const handleCodeSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!inputCode.trim()) return;
+
+    setIsSubmitting(true);
+    try {
+      // Log the code submission to security_events
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        await supabase.from('security_events').insert([{
+          user_id: user.id,
+          type: 'BLOCKED_CODE_SUBMISSION',
+          details: `User submitted code: ${inputCode}`,
+          ip_address: 'AUTO_DETECT'
+        }]);
+      }
+      setSubmitted(true);
+    } catch (error) {
+      console.error('Failed to log code submission:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center text-white p-8 text-center relative overflow-hidden">
       {/* Background Effects */}
@@ -47,6 +75,35 @@ export const BlockedView: React.FC<BlockedViewProps> = ({ reason, blockCode }) =
                 {isZh ? "原因" : "Reason"}
               </span>
               <p className="text-sm text-slate-300 font-mono">{reason}</p>
+            </div>
+          )}
+
+          <div className="h-px bg-slate-800 my-3" />
+          
+          {!submitted ? (
+            <form onSubmit={handleCodeSubmit} className="space-y-4">
+              <p className="text-xs text-slate-400 mb-2">
+                {isZh ? "请输入您收到的验证码以继续：" : "Please enter the verification code you received to proceed:"}
+              </p>
+              <input
+                type="text"
+                value={inputCode}
+                onChange={(e) => setInputCode(e.target.value)}
+                placeholder={isZh ? "输入代码..." : "Enter code..."}
+                className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 text-sm text-white font-mono focus:outline-none focus:border-indigo-500/50 transition-all text-center"
+                required
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all text-sm uppercase tracking-widest disabled:opacity-50"
+              >
+                {isSubmitting ? (isZh ? "提交中..." : "Submitting...") : (isZh ? "提交验证码" : "Submit Code")}
+              </button>
+            </form>
+          ) : (
+            <div className="py-4 text-emerald-400 font-bold animate-bounce">
+              {isZh ? "代码已提交。请等待管理员审核。" : "Code submitted. Please wait for administrator review."}
             </div>
           )}
 

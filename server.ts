@@ -283,9 +283,22 @@ async function startServer() {
   });
 
   app.post("/api/notify-login", async (req, res) => {
-    const { email, device, time, location } = req.body;
+    const { email, device, time, location, userId } = req.body;
     const clientIp = (req.headers['x-forwarded-for'] as string)?.split(',')[0] || req.socket.remoteAddress;
     
+    // Update profile with last login and location
+    if (userId) {
+      try {
+        const country = location?.split(',')?.pop()?.trim() || 'Unknown';
+        await supabase.from('profiles').update({ 
+          last_login: new Date().toISOString(),
+          country: country
+        }).eq('id', userId);
+      } catch (err) {
+        console.error('Failed to update profile on login:', err);
+      }
+    }
+
     const subject = "New Login Detected - SomnoAI";
     const text = `
       Hello,
@@ -301,6 +314,37 @@ async function startServer() {
 
     await sendEmail(email, subject, text);
     res.json({ success: true });
+  });
+
+  // Admin Analytics API
+  app.get("/api/admin/founder-stats", async (req, res) => {
+    try {
+      const { data, error } = await supabase.rpc('get_founder_stats');
+      if (error) throw error;
+      res.json(data);
+    } catch (error: any) {
+      console.error('Error fetching founder stats:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/security-events", async (req, res) => {
+    try {
+      const { data, error } = await supabase
+        .from('security_events')
+        .select(`
+          *,
+          profiles:user_id (email, full_name)
+        `)
+        .order('created_at', { ascending: false })
+        .limit(100);
+      
+      if (error) throw error;
+      res.json(data);
+    } catch (error: any) {
+      console.error('Error fetching security events:', error);
+      res.status(500).json({ error: error.message });
+    }
   });
 
   app.post("/api/notify-block", async (req, res) => {

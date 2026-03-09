@@ -3,7 +3,7 @@ import { UAParser } from 'ua-parser-js';
 const API_URL = '/api';
 
 export const notificationService = {
-  sendLoginNotification: async (email: string) => {
+  sendLoginNotification: async (email: string, userId?: string) => {
     try {
       const parser = new UAParser();
       const result = parser.getResult();
@@ -22,6 +22,7 @@ export const notificationService = {
           email,
           device,
           time,
+          userId,
           location: 'Unknown Location' // Backend can try to resolve this
         }),
       });

@@ -16,7 +16,9 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { emailService } from '../services/emailService.ts';
 import { UserProfile, Feedback, AuditLog, SecurityEvent, Review, MarketingData } from '../types';
 
-type AdminTab = 'overview' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews';
+import { FounderDashboard } from './FounderDashboard';
+
+type AdminTab = 'overview' | 'founder' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity },
@@ -59,6 +61,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
     if (!authLoading && isAdmin) {
       fetchData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, authLoading]);
 
   useEffect(() => {
@@ -199,6 +202,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
     </div>
   );
 
+  const fetchSecurityEvents = async () => {
+    try {
+      const response = await fetch('/api/admin/security-events');
+      if (!response.ok) throw new Error('Failed to fetch security events');
+      const data = await response.json();
+      setSecurityEvents(data);
+    } catch (error) {
+      console.error("Failed to fetch security events:", error);
+    }
+  };
+
   const fetchData = async () => {
     setIsSyncing(true);
     try {
@@ -210,7 +224,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
         adminApi.getUsers(),
         adminApi.getFeedback(),
         adminApi.getAuditLogs(),
-        adminApi.getSecurityEvents(),
+        fetchSecurityEvents(),
         adminApi.getSettings(),
         supabase.from('reviews').select('*').order('created_at', { ascending: false })
       ]);
@@ -308,9 +322,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       </header>
 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
-        {['overview', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews']
+        {['overview', 'founder', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews']
           .filter(tab => {
-            if (tab === 'analytics' || tab === 'system' || tab === 'communications') return isOwner || isSuperOwner;
+            if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder') return isOwner || isSuperOwner;
             if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;
             return true;
           })
@@ -322,12 +336,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
               activeTab === tab ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'
             }`}
           >
-            {t.tabs[tab as keyof typeof t.tabs]}
+            {tab === 'founder' ? 'Founder' : t.tabs[tab as keyof typeof t.tabs]}
           </button>
         ))}
       </div>
 
       <div className="space-y-8">
+        {activeTab === 'founder' && <FounderDashboard />}
         {activeTab === 'overview' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -513,19 +528,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                 <thead>
                   <tr className="bg-white/5 border-b border-white/10">
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Type</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">User</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Details</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">IP Address</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Date</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {securityEvents.map((event) => (
+                  {securityEvents.map((event: any) => (
                     <tr key={event.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                       <td className="p-4">
                         <div className="flex items-center gap-2">
                           <Shield size={14} className="text-rose-500" />
                           <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">{event.type}</span>
                         </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-xs font-bold text-white">{event.profiles?.email || 'System'}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">{event.user_id || 'N/A'}</div>
                       </td>
                       <td className="p-4 text-sm text-slate-300">{event.details}</td>
                       <td className="p-4 text-xs font-mono text-slate-500">{event.ip_address}</td>

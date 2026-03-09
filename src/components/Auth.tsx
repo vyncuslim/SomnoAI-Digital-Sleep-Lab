@@ -103,6 +103,28 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  const validateEmail = (email: string) => {
+    const fakePatterns = ['@ddd', '@ds', '@123'];
+    if (fakePatterns.some(pattern => email.includes(pattern))) {
+      return { valid: false, message: 'Please use a valid email address.' };
+    }
+
+    const validDomains = ['gmail.com', 'outlook.com', 'yahoo.com', '.edu'];
+    const domain = email.split('@')[1];
+    
+    // If it's a common domain or ends with .edu, it's valid
+    if (validDomains.some(d => domain?.endsWith(d))) {
+      return { valid: true };
+    }
+
+    // Otherwise, check if it looks like a company domain (has a dot and not too short)
+    if (domain && domain.includes('.') && domain.length > 4) {
+      return { valid: true };
+    }
+
+    return { valid: false, message: 'Please use a valid email domain (e.g., gmail.com, outlook.com, or a company domain).' };
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
@@ -120,6 +142,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
 
       if (view === 'signup') {
+        const emailValidation = validateEmail(email);
+        if (!emailValidation.valid) {
+          throw new Error(emailValidation.message);
+        }
+
         if (password !== confirmPassword) {
           throw new Error('Passwords do not match.');
         }
@@ -134,6 +161,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (signInError) throw signInError;
         
         if (data.user) {
+          // Check if email is verified
+          if (!data.user.email_confirmed_at) {
+            await supabase.auth.signOut();
+            throw new Error('Please verify your email address before logging in. Check your inbox for the verification link.');
+          }
+
           // Check if user is blocked
           const { data: profileData } = await supabase.from('profiles').select('*').eq('id', data.user.id).single();
           
@@ -148,16 +181,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           await logAuditLog(data.user.id, 'USER_LOGIN', 'Successful login');
         }
         
-        notificationService.sendLoginNotification(email);
+        notificationService.sendLoginNotification(email, data.user?.id);
         navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
         });
         
         if (signUpError) throw signUpError;
-        navigate(`${langPrefix}/dashboard`);
+        
+        setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
+        setView('login');
       } else if (view === 'forgot-password') {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/reset-password`,
