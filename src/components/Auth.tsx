@@ -250,7 +250,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
 
       let errorMessage = err.message || 'Authentication failed';
       
-      if (err.message === 'Invalid login credentials') {
+      if (err.message && err.message.includes('invalid-input-secret')) {
+        errorMessage = 'CAPTCHA configuration error: The secret key is invalid. Please check your Supabase Auth settings.';
+      } else if (err.message === 'Invalid login credentials') {
         errorMessage = 'Invalid email or password.';
       } else if (err.message === 'User already registered') {
         errorMessage = 'An account with this email already exists.';
@@ -485,7 +487,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                       <div className="pt-2">
                         <Turnstile 
                           ref={turnstileRef}
-                          siteKey="0x4AAAAAACoUL8JmO5UfF_6N" 
+                          siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAACoUL8JmO5UfF_6N"} 
                           onSuccess={(token) => setTurnstileToken(token)}
                           onError={() => setError('Security verification failed. Please try again.')}
                           onExpire={() => setTurnstileToken(null)}
