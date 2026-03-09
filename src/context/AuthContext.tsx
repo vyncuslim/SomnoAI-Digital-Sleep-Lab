@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../services/supabaseService';
+import { supabase, logAuditLog, logSecurityEvent } from '../services/supabaseService';
 import { User } from '@supabase/supabase-js';
 import { UserProfile } from '../types';
 
@@ -83,11 +83,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
 
     // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       setUser(session?.user ?? null);
       if (session?.user) {
+        if (event === 'SIGNED_IN') {
+          logSecurityEvent(session.user.id, 'USER_LOGIN', `User signed in via ${event}`);
+          logAuditLog(session.user.id, 'USER_LOGIN', `User signed in via ${event}`);
+        }
         fetchProfile(session.user.id, session.user.email);
       } else {
+        if (event === 'SIGNED_OUT') {
+          logSecurityEvent(null, 'USER_LOGOUT', 'User signed out');
+        }
         setProfile(null);
         setIsBlocked(false);
         setBlockedReason(undefined);

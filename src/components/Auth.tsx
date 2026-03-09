@@ -7,10 +7,11 @@ import { GlassCard } from './GlassCard';
 import { HardwareButton } from './ui/Components';
 import { Language, getTranslation } from '../services/i18n';
 import { Logo } from './Logo';
-import { supabase, logAuditLog } from '../services/supabaseService';
+import { supabase, logAuditLog, logSecurityEvent } from '../services/supabaseService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/useLanguage';
 import { notificationService } from '../services/notificationService';
+import { securityService } from '../services/securityService';
 
 interface AuthProps {
   lang: Language;
@@ -209,6 +210,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           }
 
           await logAuditLog(data.user.id, 'USER_LOGIN', 'Successful login');
+          await logSecurityEvent(data.user.id, 'USER_LOGIN', 'Successful login');
         }
         
         notificationService.sendLoginNotification(email, data.user?.id);
@@ -224,6 +226,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         
         if (signUpError) throw signUpError;
         
+        if (signUpData.user) {
+          await logSecurityEvent(signUpData.user.id, 'USER_SIGNUP', 'New user registration');
+          await logAuditLog(signUpData.user.id, 'USER_SIGNUP', 'New user registration');
+        }
+
         setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
         setView('verification-pending');
       } else if (view === 'forgot-password') {
@@ -233,6 +240,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         });
         
         if (resetError) throw resetError;
+
+        const { data: profile } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
+        await logSecurityEvent(profile?.id || null, 'PASSWORD_RESET_REQUEST', `Password reset requested for email: ${email}`);
+
         setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
       } else if (view === 'otp') {
         if (showOtpInput) {
@@ -246,6 +257,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           
           if (data.user) {
             await logAuditLog(data.user.id, 'USER_LOGIN_OTP', 'Successful OTP login');
+            await logSecurityEvent(data.user.id, 'USER_LOGIN_OTP', 'Successful OTP login');
           }
           
           navigate(`${langPrefix}/dashboard`);
@@ -261,6 +273,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         });
         
         if (otpError) throw otpError;
+
+        const { data: profile } = await supabase.from('profiles').select('id').eq('email', email).maybeSingle();
+        await logSecurityEvent(profile?.id || null, 'OTP_REQUEST', `OTP login requested for email: ${email}`);
+
         setShowOtpInput(true);
         setSuccessMessage(lang === 'zh' ? '验证码/登录链接已发送到您的邮箱，请查收。' : 'Verification code or magic link sent to your email. Check your inbox.');
       }
@@ -269,9 +285,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       
       if (view === 'login') {
         try {
-          await supabase.rpc('report_failed_login', { target_email: email });
-        } catch (rpcErr) {
-          console.error('Failed to report login attempt:', rpcErr);
+          await securityService.handleFailedLogin(email);
+        } catch (securityErr) {
+          console.error('Failed to report login attempt:', securityErr);
         }
       }
 
