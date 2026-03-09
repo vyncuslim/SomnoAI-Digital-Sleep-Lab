@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check, ShieldAlert } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { GlassCard } from './GlassCard';
@@ -17,7 +17,7 @@ interface AuthProps {
   initialView?: 'login' | 'signup';
 }
 
-type AuthView = 'login' | 'signup' | 'forgot-password' | 'otp';
+type AuthView = 'login' | 'signup' | 'forgot-password' | 'otp' | 'verification-pending';
 
 const InputField = ({ icon: Icon, label, rightElement, ...props }: any) => {
   const [isFocused, setIsFocused] = useState(false);
@@ -69,10 +69,25 @@ const CheckboxField = ({ id, checked, onChange, children }: any) => (
 
 export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const location = useLocation();
+  const { signIn, user, isVerified } = useAuth();
   const { langPrefix } = useLanguage();
   const [view, setView] = useState<AuthView>(initialView);
   
+  React.useEffect(() => {
+    if (user && isVerified) {
+      navigate(`${langPrefix}/dashboard`);
+    }
+  }, [user, isVerified, navigate, langPrefix]);
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const errorParam = params.get('error');
+    if (errorParam === 'unverified') {
+      setError('Please verify your email address before logging in. Check your inbox for the verification link.');
+    }
+  }, [location.search]);
+
   React.useEffect(() => {
     if (initialView === 'login' || initialView === 'signup') {
       setView(initialView);
@@ -201,7 +216,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (signUpError) throw signUpError;
         
         setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
-        setView('login');
+        setView('verification-pending');
       } else if (view === 'forgot-password') {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -274,11 +289,35 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     }
   };
 
+  const handleResendVerification = async () => {
+    if (!email) {
+      setError('Please enter your email address.');
+      return;
+    }
+    
+    setLoading(true);
+    setError(null);
+    setSuccessMessage(null);
+    try {
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: email,
+      });
+      if (error) throw error;
+      setSuccessMessage('Verification email resent! Please check your inbox.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to resend verification email.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const getTitle = () => {
     if (view === 'login') return lang === 'zh' ? '欢迎回来' : 'Welcome Back';
     if (view === 'signup') return lang === 'zh' ? '加入实验室' : 'Join the Lab';
     if (view === 'forgot-password') return lang === 'zh' ? '重置密码' : 'Reset Password';
     if (view === 'otp') return lang === 'zh' ? '无密码登录' : 'Passwordless Login';
+    if (view === 'verification-pending') return lang === 'zh' ? '等待验证' : 'Verification Pending';
     return '';
   };
 
@@ -332,190 +371,229 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-purple-500/30 rounded-br-[2.5rem]" />
 
           <AnimatePresence mode="wait">
-            {error && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0, y: -10 }}
-                animate={{ opacity: 1, height: 'auto', y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -10 }}
-                className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold uppercase tracking-widest text-center"
+            {view === 'verification-pending' ? (
+              <motion.div
+                key="verification-pending"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                className="space-y-6 text-center"
               >
-                {error}
+                <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+                  <Mail className="text-indigo-400 w-10 h-10" />
+                </div>
+                <h2 className="text-xl font-bold text-white uppercase tracking-tight">Check Your Email</h2>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  We've sent a verification link to <span className="text-white font-mono">{email}</span>. 
+                  Please click the link in the email to verify your account and complete registration.
+                </p>
+                
+                <div className="pt-4 space-y-4">
+                  <HardwareButton 
+                    onClick={handleResendVerification}
+                    disabled={loading}
+                    variant="outline"
+                    className="w-full"
+                  >
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Resend Verification Email'}
+                  </HardwareButton>
+                  
+                  <button 
+                    onClick={() => setView('login')}
+                    className="text-xs text-indigo-400 font-bold hover:text-indigo-300 uppercase tracking-widest transition-colors"
+                  >
+                    Back to Login
+                  </button>
+                </div>
               </motion.div>
-            )}
-            {successMessage && (
-              <motion.div 
-                initial={{ opacity: 0, height: 0, y: -10 }}
-                animate={{ opacity: 1, height: 'auto', y: 0 }}
-                exit={{ opacity: 0, height: 0, y: -10 }}
-                className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-500 text-xs font-bold uppercase tracking-widest text-center"
-              >
-                {successMessage}
+            ) : (
+              <motion.div key="auth-form">
+                {error && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0, y: -10 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -10 }}
+                    className="mb-6 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl text-rose-500 text-xs font-bold uppercase tracking-widest text-center"
+                  >
+                    {error}
+                  </motion.div>
+                )}
+                {successMessage && (
+                  <motion.div 
+                    initial={{ opacity: 0, height: 0, y: -10 }}
+                    animate={{ opacity: 1, height: 'auto', y: 0 }}
+                    exit={{ opacity: 0, height: 0, y: -10 }}
+                    className="mb-6 p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl text-emerald-500 text-xs font-bold uppercase tracking-widest text-center"
+                  >
+                    {successMessage}
+                  </motion.div>
+                )}
+                
+                <motion.form 
+                  variants={containerVariants}
+                  initial="hidden"
+                  animate="show"
+                  onSubmit={handleSubmit} 
+                  className="space-y-6"
+                >
+                  <motion.div variants={itemVariants}>
+                    <InputField
+                      icon={Mail}
+                      label="Email Address"
+                      type="email"
+                      value={email}
+                      onChange={(e: any) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      required
+                    />
+                  </motion.div>
+
+                  {(view === 'login' || view === 'signup') && (
+                    <motion.div variants={itemVariants}>
+                      <InputField
+                        icon={Lock}
+                        label="Password"
+                        type="password"
+                        value={password}
+                        onChange={(e: any) => setPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                        rightElement={
+                          view === 'login' && (
+                            <button 
+                              type="button"
+                              onClick={() => setView('forgot-password')}
+                              className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors"
+                            >
+                              {lang === 'zh' ? '忘记密码？' : 'Forgot Password?'}
+                            </button>
+                          )
+                        }
+                      />
+                    </motion.div>
+                  )}
+
+                  {(view === 'login' || view === 'signup') && (
+                    <motion.div variants={itemVariants} className="space-y-4 ml-2 pt-2">
+                      <CheckboxField id="terms" checked={termsApproved} onChange={setTermsApproved}>
+                        {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/terms-of-service`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '服务条款' : 'Terms of Service'}</Link>.
+                      </CheckboxField>
+                      <CheckboxField id="privacy" checked={privacyApproved} onChange={setPrivacyApproved}>
+                        {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
+                      </CheckboxField>
+                      
+                      <div className="pt-2">
+                        <Turnstile 
+                          ref={turnstileRef}
+                          siteKey="0x4AAAAAACoUL8JmO5UfF_6N" 
+                          onSuccess={(token) => setTurnstileToken(token)}
+                          onError={() => setError('Security verification failed. Please try again.')}
+                          onExpire={() => setTurnstileToken(null)}
+                          options={{
+                            theme: 'dark',
+                            size: 'normal',
+                          }}
+                        />
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {view === 'signup' && (
+                    <motion.div variants={itemVariants}>
+                      <InputField
+                        icon={Lock}
+                        label="Confirm Password"
+                        type="password"
+                        value={confirmPassword}
+                        onChange={(e: any) => setConfirmPassword(e.target.value)}
+                        placeholder="••••••••"
+                        required
+                      />
+                      
+                      {password && (
+                        <div className="px-4 pt-3">
+                          <div className="flex gap-1 h-1.5 mb-2">
+                            <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 1 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-slate-800'}`} />
+                            <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 2 ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-slate-800'}`} />
+                            <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 3 ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'bg-slate-800'}`} />
+                            <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 4 ? 'bg-lime-500 shadow-[0_0_8px_rgba(132,204,22,0.5)]' : 'bg-slate-800'}`} />
+                            <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 5 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-800'}`} />
+                          </div>
+                          <p className="text-[10px] text-slate-500 text-right font-mono uppercase tracking-wider flex justify-end items-center gap-2">
+                            <span className="opacity-50">Strength:</span>
+                            <span className={`font-bold ${strength < 2 ? 'text-rose-500' : strength < 4 ? 'text-yellow-500' : 'text-emerald-500'}`}>
+                              {strength < 2 ? 'Weak' : strength < 4 ? 'Medium' : 'Strong'}
+                            </span>
+                          </p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
+
+                  <motion.div variants={itemVariants} className="pt-2">
+                    <HardwareButton 
+                      type="submit"
+                      disabled={loading}
+                      variant="primary"
+                      className="w-full !py-4"
+                    >
+                      {loading ? (
+                        <Loader2 className="w-5 h-5 animate-spin" />
+                      ) : (
+                        <>
+                          {view === 'login' && (lang === 'zh' ? '登录' : 'Sign In')}
+                          {view === 'signup' && (lang === 'zh' ? '注册' : 'Create Account')}
+                          {view === 'forgot-password' && (lang === 'zh' ? '发送重置链接' : 'Send Reset Link')}
+                          {view === 'otp' && (lang === 'zh' ? '发送登录链接' : 'Send Magic Link')}
+                          <ArrowRight size={18} />
+                        </>
+                      )}
+                    </HardwareButton>
+                  </motion.div>
+                </motion.form>
+
+                {(view === 'login' || view === 'signup') && (
+                  <motion.div 
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ delay: 0.4 }}
+                  >
+                    <div className="mt-10 relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/5"></div>
+                      </div>
+                      <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                        <span className="bg-[#0f172a] px-4 text-slate-500">Or Continue With</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-8 grid grid-cols-2 gap-4">
+                      <HardwareButton 
+                        type="button" 
+                        onClick={handleGoogleSignIn}
+                        disabled={loading}
+                        variant="outline"
+                        className="!py-3"
+                        icon={<Chrome size={18} className="text-slate-400 group-hover/btn:text-white transition-colors" />}
+                      >
+                        Google
+                      </HardwareButton>
+                      <HardwareButton 
+                        type="button" 
+                        onClick={() => setView('otp')}
+                        disabled={loading}
+                        variant="outline"
+                        className="!py-3"
+                        icon={<KeyRound size={18} className="text-slate-400 group-hover/btn:text-white transition-colors" />}
+                      >
+                        OTP
+                      </HardwareButton>
+                    </div>
+                  </motion.div>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
-          
-          <motion.form 
-            variants={containerVariants}
-            initial="hidden"
-            animate="show"
-            onSubmit={handleSubmit} 
-            className="space-y-6"
-          >
-            <motion.div variants={itemVariants}>
-              <InputField
-                icon={Mail}
-                label="Email Address"
-                type="email"
-                value={email}
-                onChange={(e: any) => setEmail(e.target.value)}
-                placeholder="name@example.com"
-                required
-              />
-            </motion.div>
-
-            {(view === 'login' || view === 'signup') && (
-              <motion.div variants={itemVariants}>
-                <InputField
-                  icon={Lock}
-                  label="Password"
-                  type="password"
-                  value={password}
-                  onChange={(e: any) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                  rightElement={
-                    view === 'login' && (
-                      <button 
-                        type="button"
-                        onClick={() => setView('forgot-password')}
-                        className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors"
-                      >
-                        {lang === 'zh' ? '忘记密码？' : 'Forgot Password?'}
-                      </button>
-                    )
-                  }
-                />
-              </motion.div>
-            )}
-
-            {(view === 'login' || view === 'signup') && (
-              <motion.div variants={itemVariants} className="space-y-4 ml-2 pt-2">
-                <CheckboxField id="terms" checked={termsApproved} onChange={setTermsApproved}>
-                  {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/terms-of-service`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '服务条款' : 'Terms of Service'}</Link>.
-                </CheckboxField>
-                <CheckboxField id="privacy" checked={privacyApproved} onChange={setPrivacyApproved}>
-                  {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
-                </CheckboxField>
-                
-                <div className="pt-2">
-                  <Turnstile 
-                    ref={turnstileRef}
-                    siteKey="0x4AAAAAACoUL8JmO5UfF_6N" 
-                    onSuccess={(token) => setTurnstileToken(token)}
-                    onError={() => setError('Security verification failed. Please try again.')}
-                    onExpire={() => setTurnstileToken(null)}
-                    options={{
-                      theme: 'dark',
-                      size: 'normal',
-                    }}
-                  />
-                </div>
-              </motion.div>
-            )}
-
-            {view === 'signup' && (
-              <motion.div variants={itemVariants}>
-                <InputField
-                  icon={Lock}
-                  label="Confirm Password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e: any) => setConfirmPassword(e.target.value)}
-                  placeholder="••••••••"
-                  required
-                />
-                
-                {password && (
-                  <div className="px-4 pt-3">
-                    <div className="flex gap-1 h-1.5 mb-2">
-                      <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 1 ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 'bg-slate-800'}`} />
-                      <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 2 ? 'bg-orange-500 shadow-[0_0_8px_rgba(249,115,22,0.5)]' : 'bg-slate-800'}`} />
-                      <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 3 ? 'bg-yellow-500 shadow-[0_0_8px_rgba(234,179,8,0.5)]' : 'bg-slate-800'}`} />
-                      <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 4 ? 'bg-lime-500 shadow-[0_0_8px_rgba(132,204,22,0.5)]' : 'bg-slate-800'}`} />
-                      <div className={`flex-1 rounded-full transition-all duration-500 ${strength >= 5 ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 'bg-slate-800'}`} />
-                    </div>
-                    <p className="text-[10px] text-slate-500 text-right font-mono uppercase tracking-wider flex justify-end items-center gap-2">
-                      <span className="opacity-50">Strength:</span>
-                      <span className={`font-bold ${strength < 2 ? 'text-rose-500' : strength < 4 ? 'text-yellow-500' : 'text-emerald-500'}`}>
-                        {strength < 2 ? 'Weak' : strength < 4 ? 'Medium' : 'Strong'}
-                      </span>
-                    </p>
-                  </div>
-                )}
-              </motion.div>
-            )}
-
-            <motion.div variants={itemVariants} className="pt-2">
-              <HardwareButton 
-                type="submit"
-                disabled={loading}
-                variant="primary"
-                className="w-full !py-4"
-              >
-                {loading ? (
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                  <>
-                    {view === 'login' && (lang === 'zh' ? '登录' : 'Sign In')}
-                    {view === 'signup' && (lang === 'zh' ? '注册' : 'Create Account')}
-                    {view === 'forgot-password' && (lang === 'zh' ? '发送重置链接' : 'Send Reset Link')}
-                    {view === 'otp' && (lang === 'zh' ? '发送登录链接' : 'Send Magic Link')}
-                    <ArrowRight size={18} />
-                  </>
-                )}
-              </HardwareButton>
-            </motion.div>
-          </motion.form>
-
-          {(view === 'login' || view === 'signup') && (
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div className="mt-10 relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-white/5"></div>
-                </div>
-                <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
-                  <span className="bg-[#0f172a] px-4 text-slate-500">Or Continue With</span>
-                </div>
-              </div>
-
-              <div className="mt-8 grid grid-cols-2 gap-4">
-                <HardwareButton 
-                  type="button" 
-                  onClick={handleGoogleSignIn}
-                  disabled={loading}
-                  variant="outline"
-                  className="!py-3"
-                  icon={<Chrome size={18} className="text-slate-400 group-hover/btn:text-white transition-colors" />}
-                >
-                  Google
-                </HardwareButton>
-                <HardwareButton 
-                  type="button" 
-                  onClick={() => setView('otp')}
-                  disabled={loading}
-                  variant="outline"
-                  className="!py-3"
-                  icon={<KeyRound size={18} className="text-slate-400 group-hover/btn:text-white transition-colors" />}
-                >
-                  OTP
-                </HardwareButton>
-              </div>
-            </motion.div>
-          )}
         </GlassCard>
 
         <motion.div 
@@ -536,6 +614,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             {view === 'signup' && (
               <>
                 {lang === 'zh' ? '已经有账户了？' : "Already have an account?"}{' '}
+                <button onClick={() => setView('login')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
+                  {lang === 'zh' ? '立即登录' : 'Sign In'}
+                </button>
+              </>
+            )}
+            {view === 'verification-pending' && (
+              <>
+                {lang === 'zh' ? '已经验证？' : "Already verified?"}{' '}
                 <button onClick={() => setView('login')} className="text-indigo-400 font-bold hover:text-indigo-300 transition-colors">
                   {lang === 'zh' ? '立即登录' : 'Sign In'}
                 </button>

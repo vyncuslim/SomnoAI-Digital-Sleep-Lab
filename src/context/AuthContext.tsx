@@ -13,6 +13,7 @@ interface AuthContextType {
   isAdmin: boolean;
   isOwner: boolean;
   isSuperOwner: boolean;
+  isVerified: boolean;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
@@ -30,6 +31,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner || false;
   const isOwner = profile?.role === 'owner' || profile?.is_super_owner || false;
   const isSuperOwner = profile?.is_super_owner || false;
+  const isVerified = !!user?.email_confirmed_at;
 
   const fetchProfile = async (userId: string, email?: string) => {
     try {
@@ -107,7 +109,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isBlocked, blockedReason, blockCode, isAdmin, isOwner, isSuperOwner, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, isBlocked, blockedReason, blockCode, isAdmin, isOwner, isSuperOwner, isVerified, signIn, signOut }}>
       {children}
     </AuthContext.Provider>
   );

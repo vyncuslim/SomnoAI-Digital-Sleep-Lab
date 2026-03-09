@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { Language } from '../types';
 
 export const ProtectedRoute: React.FC<{ children: React.ReactNode, adminOnly?: boolean, lang: Language }> = ({ children, adminOnly, lang }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, isVerified } = useAuth();
   const langPrefix = lang === 'zh' ? '/cn' : '/en';
 
   if (loading) return (
@@ -16,6 +16,10 @@ export const ProtectedRoute: React.FC<{ children: React.ReactNode, adminOnly?: b
     </div>
   );
   if (!user) return <Navigate to={`${langPrefix}/auth/login`} />;
+  
+  if (!isVerified) {
+    return <Navigate to={`${langPrefix}/auth/login?error=unverified`} />;
+  }
   
   if (adminOnly && !isAdmin) {
     return <Navigate to={`${langPrefix}/dashboard`} />;
