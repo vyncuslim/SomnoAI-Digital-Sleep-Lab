@@ -451,7 +451,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">User</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Role</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Status</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Block Code</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Subscription</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Country</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Provider</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Last Sign In</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Actions</th>
                   </tr>
                 </thead>
@@ -460,11 +463,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     <tr key={user.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                       <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 bg-indigo-600/20 text-indigo-400 rounded-full flex items-center justify-center font-bold text-xs">
-                            {user.email?.[0].toUpperCase()}
-                          </div>
+                          {user.avatar_url ? (
+                            <img src={user.avatar_url} alt="" className="w-8 h-8 rounded-full border border-white/10" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="w-8 h-8 bg-indigo-600/20 text-indigo-400 rounded-full flex items-center justify-center font-bold text-xs">
+                              {user.email?.[0].toUpperCase()}
+                            </div>
+                          )}
                           <div>
-                            <div className="font-bold text-sm text-white">{user.email}</div>
+                            <div className="font-bold text-sm text-white">{user.full_name || user.email}</div>
                             <div className="text-[10px] text-slate-500 font-mono">{user.id}</div>
                           </div>
                         </div>
@@ -484,16 +491,50 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                         </select>
                       </td>
                       <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          {user.is_blocked ? (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/20 text-rose-500 border border-rose-500/30">Blocked</span>
-                          ) : (
-                            <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">Active</span>
+                        <div className="flex flex-col gap-1">
+                          <div className="flex items-center gap-2">
+                            {user.is_blocked ? (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/20 text-rose-500 border border-rose-500/30">Blocked</span>
+                            ) : (
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">Active</span>
+                            )}
+                          </div>
+                          {user.block_code && <span className="text-[9px] text-rose-400 font-mono uppercase">{user.block_code}</span>}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex flex-col gap-1">
+                          <select
+                            value={user.subscription_plan || 'Free'}
+                            onChange={async (e) => {
+                              const newPlan = e.target.value;
+                              await supabase.from('profiles').update({ 
+                                subscription_plan: newPlan,
+                                is_paying: newPlan !== 'Free'
+                              }).eq('id', user.id);
+                              fetchData();
+                            }}
+                            disabled={!canManage(user)}
+                            className={`bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider outline-none focus:border-indigo-500 transition-colors ${!canManage(user) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            <option value="Free">Free</option>
+                            <option value="Pro">Pro</option>
+                            <option value="Elite">Elite</option>
+                            <option value="Enterprise">Enterprise</option>
+                          </select>
+                          {user.subscription_status && (
+                            <span className="text-[9px] text-slate-600 font-mono uppercase">{user.subscription_status}</span>
                           )}
                         </div>
                       </td>
                       <td className="p-4 text-xs font-mono text-slate-400">
-                        {user.block_code || '-'}
+                        {user.country || '-'}
+                      </td>
+                      <td className="p-4">
+                        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">{user.provider || 'email'}</span>
+                      </td>
+                      <td className="p-4 text-xs font-mono text-slate-500">
+                        {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : '-'}
                       </td>
                       <td className="p-4 text-right">
                         <button 

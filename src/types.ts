@@ -35,19 +35,26 @@ export interface UserProfile {
   id: string;
   email: string;
   role?: 'user' | 'editor' | 'admin' | 'owner' | 'super_owner';
-  is_super_owner?: boolean;
-  is_blocked?: boolean;
-  blocked_reason?: string;
-  block_code?: string;
-  created_at?: string;
-  updated_at?: string;
   full_name?: string;
+  is_blocked?: boolean;
+  is_initialized?: boolean;
+  has_app_data?: boolean;
+  created_at?: string;
+  phone?: string;
   avatar_url?: string;
-  preferences?: Record<string, any>;
-  subscription_plan?: string;
-  subscription_id?: string;
-  subscription_status?: string;
+  provider?: string;
+  last_sign_in_at?: string;
+  updated_at?: string;
+  is_super_owner?: boolean;
   stripe_customer_id?: string;
+  subscription_id?: string;
+  subscription_plan?: string;
+  subscription_status?: string;
+  block_code?: string;
+  country?: string;
+  last_login?: string;
+  is_paying?: boolean;
+  preferences?: Record<string, any>;
 }
 
 export interface Article {

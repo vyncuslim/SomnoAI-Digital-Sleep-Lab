@@ -11,6 +11,21 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     role text DEFAULT 'user' NOT NULL,
     is_super_owner boolean DEFAULT false,
     is_blocked boolean DEFAULT false,
+    is_initialized boolean DEFAULT false,
+    has_app_data boolean DEFAULT false,
+    phone text,
+    avatar_url text,
+    provider text,
+    last_sign_in_at timestamptz,
+    updated_at timestamptz DEFAULT now(),
+    stripe_customer_id text,
+    subscription_id text,
+    subscription_plan text,
+    subscription_status text,
+    block_code text,
+    country text,
+    last_login timestamptz,
+    is_paying boolean DEFAULT false,
     failed_login_attempts int DEFAULT 0,
     login_alert_enabled boolean DEFAULT true,
     login_alert_mode text DEFAULT 'NEW_DEVICE',
@@ -45,11 +60,13 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, full_name, role)
+    INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role)
     VALUES (
         new.id, 
         new.email, 
         new.raw_user_meta_data->>'full_name',
+        new.raw_user_meta_data->>'avatar_url',
+        new.app_metadata->>'provider',
         'user'
     );
     RETURN new;

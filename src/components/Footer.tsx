@@ -50,6 +50,7 @@ export const Footer: React.FC<FooterProps> = ({ lang }) => {
             <li><Link to={`${langPrefix}/status`} className="hover:text-indigo-400 transition-colors">{isZh ? "状态" : "Status"}</Link></li>
             <li><Link to={`${langPrefix}/contact`} className="hover:text-indigo-400 transition-colors">{isZh ? "联系我们" : "Contact"}</Link></li>
             <li><Link to={`${langPrefix}/support`} className="hover:text-indigo-400 transition-colors">{isZh ? "支持" : "Support"}</Link></li>
+            <li><Link to={`${langPrefix}/auth/login`} className="hover:text-indigo-400 transition-colors">{isZh ? "登录" : "Sign In"}</Link></li>
           </ul>
         </div>
 
