@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check, ShieldAlert } from 'lucide-react';
+import { Turnstile } from '@marsidev/react-turnstile';
 import { GlassCard } from './GlassCard';
 import { HardwareButton } from './ui/Components';
 import { Language, getTranslation } from '../services/i18n';
@@ -84,6 +85,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [termsApproved, setTermsApproved] = useState(false);
   const [privacyApproved, setPrivacyApproved] = useState(false);
   const [isRobotChecked, setIsRobotChecked] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const t = getTranslation(lang, 'landing');
 
@@ -137,8 +139,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         throw new Error('You must approve the Terms of Service and Privacy Policy.');
       }
 
-      if ((view === 'signup' || view === 'login') && !isRobotChecked) {
-        throw new Error('Please confirm you are not a robot.');
+      if ((view === 'signup' || view === 'login') && !turnstileToken) {
+        throw new Error('Please complete the security verification.');
       }
 
       if (view === 'signup') {
@@ -391,9 +393,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                 <CheckboxField id="privacy" checked={privacyApproved} onChange={setPrivacyApproved}>
                   {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
                 </CheckboxField>
-                <CheckboxField id="robot-check" checked={isRobotChecked} onChange={setIsRobotChecked}>
-                  {lang === 'zh' ? '我不是机器人' : 'I am not a robot'}
-                </CheckboxField>
+                
+                <div className="pt-2">
+                  <Turnstile 
+                    siteKey="1x00000000000000000000AA" // Testing key
+                    onSuccess={(token) => setTurnstileToken(token)}
+                    onError={() => setError('Security verification failed. Please try again.')}
+                    onExpire={() => setTurnstileToken(null)}
+                    options={{
+                      theme: 'dark',
+                      size: 'normal',
+                    }}
+                  />
+                </div>
               </motion.div>
             )}
 

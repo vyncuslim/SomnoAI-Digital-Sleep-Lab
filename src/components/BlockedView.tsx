@@ -1,6 +1,7 @@
 import React from 'react';
 import { ShieldAlert, Mail, ExternalLink } from 'lucide-react';
 import { useLanguage } from '../context/useLanguage';
+import { supabase } from '../services/supabaseService';
 
 interface BlockedViewProps {
   reason?: string;
