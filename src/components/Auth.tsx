@@ -86,6 +86,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [privacyApproved, setPrivacyApproved] = useState(false);
   const [isRobotChecked, setIsRobotChecked] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const turnstileRef = React.useRef<any>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const t = getTranslation(lang, 'landing');
 
@@ -158,6 +159,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
+          options: {
+            captchaToken: turnstileToken || undefined,
+          },
         });
         
         if (signInError) throw signInError;
@@ -189,6 +193,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            captchaToken: turnstileToken || undefined,
+          },
         });
         
         if (signUpError) throw signUpError;
@@ -198,6 +205,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       } else if (view === 'forgot-password') {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/reset-password`,
+          captchaToken: turnstileToken || undefined,
         });
         
         if (resetError) throw resetError;
@@ -207,6 +215,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           email,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
+            captchaToken: turnstileToken || undefined,
           },
         });
         
@@ -234,6 +243,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         errorMessage = 'Password should be at least 6 characters.';
       }
       setError(errorMessage);
+      // Reset Turnstile on error
+      if (turnstileRef.current) {
+        turnstileRef.current.reset();
+      }
     } finally {
       setLoading(false);
     }
@@ -396,7 +409,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                 
                 <div className="pt-2">
                   <Turnstile 
-                    siteKey="1x00000000000000000000AA" // Testing key
+                    ref={turnstileRef}
+                    siteKey="0x4AAAAAACoUL8JmO5UfF_6N" 
                     onSuccess={(token) => setTurnstileToken(token)}
                     onError={() => setError('Security verification failed. Please try again.')}
                     onExpire={() => setTurnstileToken(null)}
