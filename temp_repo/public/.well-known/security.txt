@@ -1,0 +1,7 @@
+Contact: mailto:security@sleepsomno.com
+Expires: 2027-02-21T08:00:00.000Z
+Encryption: https://sleepsomno.com/pgp-key.txt
+Acknowledgments: https://sleepsomno.com/hall-of-fame
+Policy: https://sleepsomno.com/security-policy
+Hiring: https://sleepsomno.com/careers
+Preferred-Languages: en, zh

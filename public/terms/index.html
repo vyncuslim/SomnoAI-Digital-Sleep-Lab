@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=G-1WM4RE66ER"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+
+    var safeLocation = 'https://digitalsleeplab.com/terms';
+    try {
+      safeLocation = String(window.location);
+    } catch (e) {
+      try { safeLocation = document.URL || 'https://digitalsleeplab.com/opaque-terms-v3'; } catch (e2) {}
+    }
+
+    gtag('config', 'G-1WM4RE66ER', {
+      page_location: safeLocation,
+      page_referrer: ''
+    });
+  </script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Terms of Service – SomnoAI Digital Sleep Lab</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
+  <link rel="apple-touch-icon" href="/favicon.svg">
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-core: #020617;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --accent: #818cf8;
+      --glass: rgba(15, 23, 42, 0.85);
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translateY(0) rotateY(0); }
+      50% { transform: translateY(-12px) rotateY(10deg); }
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: var(--bg-core);
+      background-image: 
+        radial-gradient(circle at 80% 20%, rgba(129, 140, 248, 0.1) 0%, transparent 40%),
+        radial-gradient(circle at 20% 80%, rgba(79, 70, 229, 0.08) 0%, transparent 40%),
+        radial-gradient(circle at 50% 100%, rgba(79, 70, 229, 0.15) 0%, transparent 60%),
+        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+      background-size: 100% 100%, 100% 100%, 100% 100%, 30px 30px, 30px 30px;
+      color: var(--text-primary);
+      font-family: 'Plus Jakarta Sans', -apple-system, system-ui, sans-serif;
+      line-height: 1.7;
+    }
+
+    body {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 100px 24px;
+    }
+
+    /* 3D 图标样式 */
+    .icon-container {
+      width: 120px;
+      height: 120px;
+      margin: 0 auto 40px;
+      perspective: 1000px;
+      animation: float 6s ease-in-out infinite;
+    }
+
+    .icon-3d {
+      width: 100%;
+      height: 100%;
+      filter: drop-shadow(0 20px 40px rgba(129, 140, 248, 0.4));
+    }
+
+    .glass-card {
+      background: var(--glass);
+      backdrop-filter: blur(40px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 3rem;
+      padding: 5rem;
+      box-shadow: 0 60px 120px -20px rgba(0, 0, 0, 0.9);
+      position: relative;
+    }
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 800;
+      letter-spacing: -0.06em;
+      margin-bottom: 0.5rem;
+      text-align: center;
+      font-style: italic;
+    }
+
+    .subtitle {
+      color: var(--accent);
+      font-size: 0.75rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 0.4em;
+      margin-bottom: 4rem;
+      display: block;
+      text-align: center;
+    }
+
+    h2 {
+      margin-top: 3.5rem;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 0.25em;
+      margin-bottom: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    h2::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(90deg, rgba(129, 140, 248, 0.2), transparent);
+    }
+
+    p, li {
+      color: var(--text-secondary);
+      font-size: 1rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .disclaimer-box {
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      background: rgba(239, 68, 68, 0.05);
+      padding: 2.5rem;
+      border-radius: 2rem;
+      margin-bottom: 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .disclaimer-box::before {
+      content: '⚠️';
+      position: absolute;
+      top: -10px; right: -10px;
+      font-size: 5rem;
+      opacity: 0.05;
+    }
+
+    .disclaimer-title {
+      color: #ef4444;
+      font-weight: 800;
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .footer {
+      margin-top: 5rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: #475569;
+      text-transform: uppercase;
+      letter-spacing: 0.5em;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+      transition: all 0.3s;
+    }
+
+    a:hover {
+      color: #fff;
+      text-shadow: 0 0 15px var(--accent);
+    }
+  </style>
+</head>
+<body>
+  <!-- 3D 图动图标 (Document Bundle) -->
+  <div class="icon-container">
+    <svg class="icon-3d" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="docGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#a5b4fc" />
+          <stop offset="100%" stop-color="#818cf8" />
+        </linearGradient>
+      </defs>
+      <!-- 背景纸张 -->
+      <rect x="25" y="15" width="55" height="70" rx="4" fill="white" opacity="0.1" transform="rotate(-5 50 50)" />
+      <!-- 主纸张 -->
+      <rect x="20" y="10" width="60" height="80" rx="4" fill="url(#docGrad)" />
+      <!-- 内部装饰线条 -->
+      <rect x="30" y="25" width="40" height="2" rx="1" fill="white" opacity="0.5" />
+      <rect x="30" y="35" width="40" height="2" rx="1" fill="white" opacity="0.5" />
+      <rect x="30" y="45" width="40" height="2" rx="1" fill="white" opacity="0.5" />
+      <rect x="30" y="55" width="25" height="2" rx="1" fill="white" opacity="0.5" />
+      <!-- 右下角折角 -->
+      <path d="M80 80 L70 90 L80 90 Z" fill="#4f46e5" />
+    </svg>
+  </div>
+
+  <div class="glass-card">
+    <h1>Terms of Service</h1>
+    <span class="subtitle">SomnoAI Digital Sleep Lab • v2025.01.04</span>
+    
+    <div class="disclaimer-box">
+      <span class="disclaimer-title">Medical Disclaimer</span>
+      <p style="color: #fca5a5; font-weight: bold; margin-bottom: 0.5rem; font-size: 1.1rem;">SomnoAI Digital Sleep Lab is an informational platform, not a medical device.</p>
+      <p style="color: #f8fafc; font-size: 0.95rem; opacity: 0.9; line-height: 1.8;">The insights generated by our AI system are for educational purposes only and do not constitute professional medical advice, diagnosis, or treatment. Always seek the advice of a qualified healthcare provider with any questions regarding a medical condition.</p>
+    </div>
+
+    <h2>1. Acceptance of Terms</h2>
+    <p>By using SomnoAI Digital Sleep Lab, you agree to these Terms of Service, our Privacy Policy, and all applicable Google Service Terms.</p>
+
+    <h2>2. Data Authorization</h2>
+    <p>The Service requires access to your Google Fit data. You represent that you are the legal holder of the Google account and authorize SomnoAI Digital Sleep Lab to process this data for AI analysis.</p>
+
+    <h2>3. Edge Computing & Security</h2>
+    <p>SomnoAI Digital Sleep Lab operates entirely in your browser. You are responsible for ensuring your device is secure. Closing the browser tab or signing out will purge all transient health data.</p>
+
+    <h2>4. Limitations of Liability</h2>
+    <p>We are not responsible for any inaccuracies in data derived from third-party sources (e.g., Google Fit, wearables) or AI-generated suggestions.</p>
+
+    <h2>5. Account Blocking Policy</h2>
+    <p>We reserve the right to automatically block or terminate access to the website and services at our sole discretion, without prior notice, for any reason, including but not limited to:</p>
+    <ul>
+      <li>Violation of these Terms of Service.</li>
+      <li>Suspicious or fraudulent activity.</li>
+      <li>Multiple failed login attempts (Security protection).</li>
+      <li>Unauthorized access or attempted access to administrative areas ("Honeypot" protection).</li>
+      <li>Actions that may harm the laboratory infrastructure or other users.</li>
+    </ul>
+    <p>If your account is blocked, you will be notified via email and will see a notice upon attempting to log in. This automatic blocking is in place to protect the integrity and security of the SomnoAI Digital Sleep Lab platform.</p>
+
+    <h2>6. Contact</h2>
+    <p>For inquiries regarding these terms, contact:<br />
+    <strong style="color: var(--accent); font-size: 1.2rem;">contact@sleepsomno.com</strong></p>
+
+    <div style="margin-top: 4rem; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 2rem; text-align: center;">
+      <a href="/" style="text-decoration: none; font-size: 0.9rem; color: #64748b;">← Back to Laboratory Hub</a>
+    </div>
+  </div>
+  <p class="footer">@2026 SomnoAI Digital Sleep Lab • Digital Health Exploration</p>
+</body>
+</html>

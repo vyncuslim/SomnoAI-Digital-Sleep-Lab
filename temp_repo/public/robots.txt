@@ -1,0 +1,24 @@
+User-agent: *
+Allow: /
+Allow: /about
+Allow: /product
+Allow: /how-it-works
+Allow: /features
+Allow: /research
+Allow: /science
+Allow: /news
+Allow: /faq
+Allow: /status
+Allow: /legal/*
+Allow: /support
+Allow: /report-abuse
+Allow: /blog
+Allow: /article/*
+Allow: /rss.xml
+Allow: /sitemap.xml
+Disallow: /admin
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /settings
+
+Sitemap: https://sleepsomno.com/sitemap.xml
