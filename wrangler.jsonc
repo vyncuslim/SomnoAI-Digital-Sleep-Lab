@@ -1,8 +1,0 @@
-{
-  "name": "somno-digital-sleep-lab",
-  "pages_build_output_dir": "dist",
-  "compatibility_date": "2024-09-23",
-  "ai": {
-    "binding": "AI"
-  }
-}

@@ -1,21 +1,7 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
-import { resolve } from 'path';
+import tailwindcss from '@tailwindcss/vite';
 
-// https://vitejs.dev/config/
 export default defineConfig({
-  root: process.cwd(),
-  plugins: [react()],
-  define: {
-    'process.env.GEMINI_API_KEY_1': JSON.stringify(process.env.GEMINI_API_KEY_1 || ''),
-    'process.env.API_KEY': JSON.stringify(process.env.API_KEY || ''),
-  },
-  build: {
-    outDir: 'dist',
-    rollupOptions: {
-      input: {
-        main: resolve(process.cwd(), 'index.html'),
-      },
-    },
-  },
+  plugins: [react(), tailwindcss()],
 });
