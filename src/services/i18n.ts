@@ -220,7 +220,8 @@ export const translations: Record<Language, any> = {
         feedback: 'Feedback',
         analytics: 'GA4 Telemetry',
         communications: 'Comms Center',
-        reviews: 'Reviews'
+        reviews: 'Reviews',
+        logins: 'Logins'
       }
     },
     policy: {
@@ -580,7 +581,8 @@ export const translations: Record<Language, any> = {
         feedback: '反馈',
         analytics: 'GA4 遥测',
         communications: '通讯中心',
-        reviews: '评论'
+        reviews: '评论',
+        logins: '登录记录'
       }
     },
     policy: {

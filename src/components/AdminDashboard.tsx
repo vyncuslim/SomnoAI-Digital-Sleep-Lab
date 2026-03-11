@@ -18,13 +18,14 @@ import { UserProfile, Feedback, AuditLog, SecurityEvent, Review, MarketingData }
 
 import { FounderDashboard } from './FounderDashboard';
 
-type AdminTab = 'overview' | 'founder' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews';
+type AdminTab = 'overview' | 'founder' | 'logins' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity },
   { id: 'audit_logs', name: 'System Audits', group: 'Maintenance', icon: List },
   { id: 'security_events', name: 'Security Signals', group: 'Security', icon: Shield },
   { id: 'profiles', name: 'Subject Registry', group: 'Core', icon: Users },
+  { id: 'logins', name: 'Login History', group: 'Security', icon: Shield },
   { id: 'sleep_records', name: 'Sleep Matrix', group: 'Biometrics', icon: Moon },
   { id: 'feedback', name: 'User Feedback', group: 'Support', icon: MessageSquare },
   { id: 'app_settings', name: 'App Settings', group: 'Config', icon: BarChart3 },
@@ -342,6 +343,47 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
       <div className="space-y-8">
         {activeTab === 'founder' && <FounderDashboard />}
+        {activeTab === 'logins' && (
+          <div className="space-y-6">
+            <div className="overflow-x-auto rounded-2xl border border-white/5">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10">
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Event</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">User ID</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Details</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[...auditLogs.filter(l => l.action === 'USER_LOGIN' || l.action === 'USER_LOGIN_OTP' || l.action === 'USER_SIGNUP' || l.action === 'FAILED_LOGIN_ATTEMPT' || l.action === 'BLOCKED_LOGIN_ATTEMPT'), ...securityEvents.filter(e => e.type === 'BLOCKED_CODE_SUBMISSION')]
+                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .map((log: any) => (
+                    <tr key={log.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      <td className="p-4">
+                        <div className="flex items-center gap-2">
+                          <Shield size={14} className={log.action === 'USER_LOGIN' || log.action === 'USER_LOGIN_OTP' || log.action === 'USER_SIGNUP' ? 'text-emerald-500' : 'text-rose-500'} />
+                          <span className={`text-xs font-bold uppercase tracking-wider ${log.action === 'USER_LOGIN' || log.action === 'USER_LOGIN_OTP' || log.action === 'USER_SIGNUP' ? 'text-emerald-400' : 'text-rose-400'}`}>
+                            {log.action || log.type}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-xs font-bold text-white">{log.profiles?.email || 'System'}</div>
+                        <div className="text-[10px] text-slate-500 font-mono">{log.user_id || 'N/A'}</div>
+                      </td>
+                      <td className="p-4 text-xs text-slate-400 max-w-xs truncate">
+                        {typeof log.details === 'object' ? JSON.stringify(log.details) : log.details}
+                      </td>
+                      <td className="p-4 text-xs font-mono text-slate-500 text-right">{new Date(log.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'overview' && (
           <div className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

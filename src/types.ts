@@ -97,7 +97,7 @@ export interface AuditLog {
 
 export interface SecurityEvent {
   id: string;
-  type: 'INFO' | 'WARNING' | 'BLOCK' | 'CRITICAL';
+  type: 'INFO' | 'WARNING' | 'BLOCK' | 'CRITICAL' | 'BLOCKED_CODE_SUBMISSION' | string;
   details: string;
   ip_address: string;
   created_at: string;

@@ -51,6 +51,7 @@ const NewsHub = lazy(() => import('./pages/NewsHub').then(module => ({ default: 
 const ArticleView = lazy(() => import('./components/ArticleView').then(module => ({ default: module.ArticleView })));
 const ChangelogView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ChangelogView })));
 const SupportView = lazy(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
+const FounderDashboardPage = lazy(() => import('./pages/FounderDashboardPage').then(module => ({ default: module.FounderDashboardPage })));
 const SearchHub = lazy(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
 const BlockedView = lazy(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
 
@@ -226,6 +227,11 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="admin" element={
         <ProtectedRoute adminOnly lang={lang}>
           <AdminView lang={lang} onBack={handleBack} />
+        </ProtectedRoute>
+      } />
+      <Route path="founder-dashboard" element={
+        <ProtectedRoute adminOnly lang={lang}>
+          <FounderDashboardPage />
         </ProtectedRoute>
       } />
       <Route path="settings" element={

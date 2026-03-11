@@ -101,6 +101,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [loading, setLoading] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
   const [privacyApproved, setPrivacyApproved] = useState(false);
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
+  const isTurnstileEnabled = !!turnstileSiteKey;
+
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = React.useRef<any>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -161,7 +164,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         throw new Error('You must approve the Terms of Service and Privacy Policy.');
       }
 
-      if ((view === 'signup' || view === 'login') && !turnstileToken) {
+      if ((view === 'signup' || view === 'login') && isTurnstileEnabled && !turnstileToken) {
         throw new Error('Please complete the security verification.');
       }
 
@@ -200,18 +203,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           if (profileData?.is_blocked) {
              // Log the attempt
              await logAuditLog(data.user.id, 'BLOCKED_LOGIN_ATTEMPT', `Blocked user attempted login. Code: ${profileData.block_code || 'N/A'}`);
-             // Sign out immediately
-             await supabase.auth.signOut();
-             throw new Error(`Account blocked. Please contact support and provide this code: ${profileData.block_code || 'N/A'}`);
+          } else {
+             await logAuditLog(data.user.id, 'USER_LOGIN', 'Successful login');
           }
-
-          await logAuditLog(data.user.id, 'USER_LOGIN', 'Successful login');
         }
         
         notificationService.sendLoginNotification(email, data.user?.id);
         navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
-        const { error: signUpError } = await supabase.auth.signUp({
+        const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -222,8 +222,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         
         if (signUpError) throw signUpError;
         
-        setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
-        setView('verification-pending');
+        if (data.session) {
+          // Email confirmation is disabled, user is logged in
+          if (data.user) {
+            await logAuditLog(data.user.id, 'USER_SIGNUP', 'Successful signup');
+            notificationService.sendLoginNotification(email, data.user.id);
+          }
+          navigate(`${langPrefix}/dashboard`);
+        } else {
+          // Email confirmation is required
+          setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
+          setView('verification-pending');
+        }
       } else if (view === 'forgot-password') {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: `${window.location.origin}/auth/reset-password`,
@@ -277,6 +287,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       
       if (err.message && err.message.includes('invalid-input-secret')) {
         errorMessage = 'CAPTCHA configuration error: The secret key is invalid. Please check your Supabase Auth settings.';
+      } else if (err.message && err.message.includes('captcha verification process failed')) {
+        errorMessage = 'CAPTCHA verification failed. If you have enabled CAPTCHA in Supabase, please ensure you have set VITE_TURNSTILE_SITE_KEY in your environment variables. Otherwise, disable CAPTCHA in Supabase Auth settings.';
       } else if (err.message === 'Invalid login credentials') {
         errorMessage = 'Invalid email or password.';
       } else if (err.message === 'User already registered') {
@@ -546,19 +558,21 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                         {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
                       </CheckboxField>
                       
-                      <div className="pt-2">
-                        <Turnstile 
-                          ref={turnstileRef}
-                          siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY || "0x4AAAAAACoUL8JmO5UfF_6N"} 
-                          onSuccess={(token) => setTurnstileToken(token)}
-                          onError={() => setError('Security verification failed. Please try again.')}
-                          onExpire={() => setTurnstileToken(null)}
-                          options={{
-                            theme: 'dark',
-                            size: 'normal',
-                          }}
-                        />
-                      </div>
+                      {isTurnstileEnabled && (
+                        <div className="pt-2">
+                          <Turnstile 
+                            ref={turnstileRef}
+                            siteKey={turnstileSiteKey} 
+                            onSuccess={(token) => setTurnstileToken(token)}
+                            onError={() => setError('Security verification failed. Please try again.')}
+                            onExpire={() => setTurnstileToken(null)}
+                            options={{
+                              theme: 'dark',
+                              size: 'normal',
+                            }}
+                          />
+                        </div>
+                      )}
                     </motion.div>
                   )}
 

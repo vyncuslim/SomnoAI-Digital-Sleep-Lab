@@ -104,7 +104,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const generateAnalysis = async () => {
     setIsAnalyzing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
       const prompt = `
         As a sleep expert, analyze the following sleep data and provide insights.
         Language: ${lang === 'zh' ? 'Chinese' : 'English'}

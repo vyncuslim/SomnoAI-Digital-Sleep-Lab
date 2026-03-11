@@ -1,7 +1,7 @@
 import { GoogleGenAI } from "@google/genai";
 
 declare var process: any;
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY! });
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY! });
 
 export async function getSleepRecommendation(userData: string): Promise<string> {
   try {

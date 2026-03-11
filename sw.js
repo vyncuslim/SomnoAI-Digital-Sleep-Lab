@@ -1,4 +1,4 @@
-const CACHE_NAME = 'somno-v400-fix';
+const CACHE_NAME = 'somno-v401-fix';
 const OFFLINE_URL = '/index.html';
 
 self.addEventListener('install', (event) => {
