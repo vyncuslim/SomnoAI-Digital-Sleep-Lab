@@ -90,6 +90,7 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     action text NOT NULL,
     details text,
     level text DEFAULT 'INFO',
+    ip_address text,
     created_at timestamptz DEFAULT now()
 );
 
@@ -154,6 +155,37 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
+-- RPC: 获取创始人统计数据
+CREATE OR REPLACE FUNCTION public.get_founder_stats()
+RETURNS json AS $$
+DECLARE
+  total_users int;
+  new_today int;
+  active_users int;
+  paying_users int;
+  country_distribution json;
+BEGIN
+  SELECT count(*) INTO total_users FROM public.profiles;
+  SELECT count(*) INTO new_today FROM public.profiles WHERE created_at >= now() - interval '24 hours';
+  SELECT count(*) INTO active_users FROM public.profiles WHERE last_login >= now() - interval '30 days';
+  SELECT count(*) INTO paying_users FROM public.profiles WHERE is_paying = true OR subscription_plan != 'free';
+  
+  SELECT json_object_agg(country, count) INTO country_distribution
+  FROM (
+    SELECT COALESCE(country, 'Unknown') as country, count(*) as count
+    FROM public.profiles
+    GROUP BY country
+  ) t;
+
+  RETURN json_build_object(
+    'total_users', total_users,
+    'new_today', new_today,
+    'active_users', active_users,
+    'paying_users', paying_users,
+    'country_distribution', country_distribution
+  );
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- 7. 应用设置表 (App Settings)
 CREATE TABLE IF NOT EXISTS public.app_settings (

@@ -14,6 +14,7 @@ import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
 import Footer from './components/Footer';
+import { HelmetProvider } from 'react-helmet-async';
 import { SchemaMarkup } from './components/SchemaMarkup';
 
 // Lazy load components
@@ -452,13 +453,15 @@ const AppContent = () => {
 
 function App() {
   return (
-    <AuthProvider>
-      <AnalyticsProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </AnalyticsProvider>
-    </AuthProvider>
+    <HelmetProvider>
+      <AuthProvider>
+        <AnalyticsProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </AnalyticsProvider>
+      </AuthProvider>
+    </HelmetProvider>
   );
 }
 

@@ -257,7 +257,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       
       if (setRes.status === 'fulfilled' && (setRes as any).value.data) {
         const settingsMap: Record<string, string> = {};
-        (setRes as any).value.data.forEach((s: any) => settingsMap[s.key] = s.value);
+        const settingsData = (setRes as any).value.data;
+        if (Array.isArray(settingsData)) {
+          settingsData.forEach((s: any) => {
+            if (s && s.key) settingsMap[s.key] = s.value;
+          });
+        }
         setSettings(settingsMap);
       }
       
@@ -302,7 +307,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       </header>
 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
-        {['overview', 'founder', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews', 'errors']
+        {['overview', 'founder', 'logins', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews', 'errors']
           .filter(tab => {
             if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder') return isOwner || isSuperOwner;
             if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;

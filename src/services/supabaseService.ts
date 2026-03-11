@@ -34,7 +34,8 @@ export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabase
     verifyOtp: () => Promise.resolve({ data: { user: null, session: null }, error: { message: 'Supabase not configured' } }),
     signInWithOAuth: () => Promise.resolve({ error: { message: 'Supabase not configured' } }),
     resend: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
-  }
+  },
+  rpc: () => Promise.resolve({ data: null, error: 'Supabase not configured' })
 } as any;
 
 // Error Logging Helper
@@ -55,12 +56,13 @@ export const logError = async (userId: string | null, error: any, context: strin
 };
 
 // Audit Log Helper
-export const logAuditLog = async (userId: string, action: string, details: string | Record<string, any>) => {
+export const logAuditLog = async (userId: string | null, action: string, details: string | Record<string, any>) => {
   try {
     const { error } = await supabase.from('audit_logs').insert([{
       user_id: userId,
       action,
-      details: typeof details === 'string' ? details : JSON.stringify(details)
+      details: typeof details === 'string' ? details : JSON.stringify(details),
+      ip_address: 'AUTO_DETECT'
     }]);
     return { error };
   } catch (err) {
