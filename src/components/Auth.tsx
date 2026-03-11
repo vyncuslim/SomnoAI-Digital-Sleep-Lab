@@ -180,6 +180,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
 
       if (view === 'login') {
+        if (!supabase.auth.signInWithPassword) {
+          throw new Error('Supabase is not configured. Please check your environment variables.');
+        }
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,

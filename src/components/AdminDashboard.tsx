@@ -236,10 +236,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
   const fetchData = async () => {
     setIsSyncing(true);
+    console.log('AdminDashboard: fetchData started');
     try {
       const { data: { user }, error } = await supabase.auth.getUser();
+      console.log('AdminDashboard: getUser result:', { user, error });
       if (error) throw error;
-      if (!user) return;
+      if (!user) {
+        console.log('AdminDashboard: No user found');
+        return;
+      }
 
       const [uRes, fRes, aRes, sRes, setRes, rRes] = await Promise.allSettled([
         adminApi.getUsers(),
@@ -249,6 +254,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
         adminApi.getSettings(),
         supabase.from('reviews').select('*').order('created_at', { ascending: false })
       ]);
+      console.log('AdminDashboard: fetchData results:', { uRes, fRes, aRes, sRes, setRes, rRes });
 
       setUsers(uRes.status === 'fulfilled' ? (uRes as any).value.data : []);
       const feedbackData = fRes.status === 'fulfilled' ? (fRes as any).value.data : [];
