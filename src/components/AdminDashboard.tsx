@@ -7,13 +7,13 @@ import {
   TrendingUp, ShieldOff, Mail, Bell,
   Star, Unlock, Lock
 } from 'lucide-react';
-import { GlassCard } from './GlassCard.tsx';
-import { adminApi, supabase } from '../services/supabaseService.ts';
-import { securityService } from '../services/securityService.ts';
-import { Language, getTranslation } from '../services/i18n.ts';
-import { useAuth } from '../context/AuthContext.tsx';
+import { GlassCard } from './GlassCard';
+import { adminApi, supabase } from '../services/supabaseService';
+import { securityService } from '../services/securityService';
+import { Language, getTranslation } from '../services/i18n';
+import { useAuth } from '../context/AuthContext';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
-import { emailService } from '../services/emailService.ts';
+import { emailService } from '../services/emailService';
 import { UserProfile, Feedback, AuditLog, SecurityEvent, Review } from '../types';
 
 import { FounderDashboard } from './FounderDashboard';
@@ -67,7 +67,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
   useEffect(() => {
     if (activeTab === 'analytics') {
-      fetchMarketingData();
+      // fetchMarketingData();
     }
   }, [activeTab]);
 
@@ -165,7 +165,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
     if (!authLoading && !isAdmin && profile) {
       const triggerBlock = async () => {
         try {
-          await supabase.from('profiles').update({ is_blocked: true }).eq('id', profile.id);
+          const blockCode = Math.floor(Math.random() * 1e12).toString().padStart(12, '0');
+          await supabase.from('profiles').update({ is_blocked: true, block_code: blockCode }).eq('id', profile.id);
           
           await securityService.handleSecurityViolation(
             profile.id, 
@@ -176,7 +177,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
           await emailService.sendBlockNotification(
             profile.email, 
-            'Attempted unauthorized access to Admin Console. This is a restricted area.'
+            'Attempted unauthorized access to Admin Console. This is a restricted area.',
+            blockCode
           );
           
           setTimeout(async () => {

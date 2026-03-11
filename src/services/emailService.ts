@@ -5,14 +5,23 @@ export const emailService = {
     console.log('Email Alert:', payload);
     // Implementation for sending email alerts
   },
-  sendBlockNotification: async (email: string, reason: string) => {
+  sendBlockNotification: async (email: string, reason: string, blockCode: string) => {
     try {
-      await fetch(`${API_URL}/notify-block`, {
+      await fetch(`${API_URL}/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email, reason }),
+        body: JSON.stringify({
+          to: email,
+          subject: 'Account Blocked',
+          html: `
+            <h1>Account Blocked</h1>
+            <p>Your account has been blocked due to: ${reason}</p>
+            <p>Your block code is: <strong>${blockCode}</strong></p>
+            <p>Please email admin@sleepsomno.com with this code to resolve the issue.</p>
+          `,
+        }),
       });
       console.log('Block notification sent to:', email);
     } catch (error) {

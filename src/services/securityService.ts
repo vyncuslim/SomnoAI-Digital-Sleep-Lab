@@ -2,7 +2,7 @@ import { supabase, logAuditLog, logSecurityEvent } from './supabaseService';
 import { emailService } from './emailService';
 
 const generateBlockCode = () => {
-  return 'BLOCK-' + Math.random().toString(36).substring(2, 9).toUpperCase();
+  return Array.from({length: 12}, () => Math.floor(Math.random() * 10)).join('');
 };
 
 export const securityService = {
@@ -48,7 +48,7 @@ export const securityService = {
         // Log the blocking event to security_events
         await logSecurityEvent(userId, 'USER_BLOCKED', `User blocked due to ${severity} violation: ${type}. Block code: ${blockCode}`);
 
-        await emailService.sendBlockNotification(email, `Security violation detected: ${type}. Your block code is: ${blockCode}`);
+        await emailService.sendBlockNotification(email, `Security violation detected: ${type}.`, blockCode);
       }
       
       await logAuditLog(userId, 'SECURITY_VIOLATION', { type, severity });

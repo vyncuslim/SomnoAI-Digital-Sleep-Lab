@@ -21,7 +21,11 @@ export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabase
     update: () => ({ data: null, error: 'Supabase not configured' }),
   }),
   auth: {
-    updateUser: () => Promise.resolve({ data: null, error: 'Supabase not configured' })
+    getSession: () => Promise.resolve({ data: { session: null }, error: null }),
+    onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
+    updateUser: () => Promise.resolve({ data: null, error: 'Supabase not configured' }),
+    signOut: () => Promise.resolve({ error: null }),
+    getUser: () => Promise.resolve({ data: { user: null }, error: null })
   }
 } as any;
 

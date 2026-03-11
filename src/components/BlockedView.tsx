@@ -116,11 +116,11 @@ export const BlockedView: React.FC<BlockedViewProps> = ({ reason, blockCode }) =
 
         <div className="flex flex-col sm:flex-row gap-4 w-full">
           <a 
-            href="mailto:support@digitalsleeplab.com" 
+            href="mailto:admin@sleepsomno.com" 
             className="flex-1 px-8 py-4 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20 flex items-center justify-center gap-2 group"
           >
             <Mail size={18} className="group-hover:scale-110 transition-transform" />
-            {isZh ? "联系支持团队" : "Contact Support"}
+            {isZh ? "联系管理员" : "Contact Admin"}
           </a>
           <a 
             href={`${langPrefix}/support`} 

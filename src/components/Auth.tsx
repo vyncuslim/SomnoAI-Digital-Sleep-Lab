@@ -278,6 +278,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       if (view === 'login') {
         try {
           await supabase.rpc('report_failed_login', { target_email: email });
+          await logAuditLog('SYSTEM', 'FAILED_LOGIN_ATTEMPT', `Failed login attempt for email: ${email}`);
         } catch (rpcErr) {
           console.error('Failed to report login attempt:', rpcErr);
         }
