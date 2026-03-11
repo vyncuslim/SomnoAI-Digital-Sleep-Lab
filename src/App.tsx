@@ -17,6 +17,7 @@ import Footer from './components/Footer';
 import { SchemaMarkup } from './components/SchemaMarkup';
 
 // Lazy load components
+const PersonalChat = lazy(() => import('./components/PersonalChat').then(module => ({ default: module.PersonalChat })));
 const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement').then(module => ({ default: module.SubscriptionManagement })));
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
@@ -278,6 +279,11 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="subscription" element={
         <ProtectedRoute lang={lang}>
           <SubscriptionManagement lang={lang} />
+        </ProtectedRoute>
+      } />
+      <Route path="personal-chat" element={
+        <ProtectedRoute lang={lang}>
+          <PersonalChat />
         </ProtectedRoute>
       } />
 

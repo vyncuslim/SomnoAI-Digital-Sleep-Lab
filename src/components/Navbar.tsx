@@ -4,7 +4,7 @@ import {
   Menu, X, LogIn, LogOut, User, Settings as SettingsIcon, Shield,
   FlaskConical, Newspaper, HelpCircle, Info, LayoutDashboard, 
   TrendingUp, Sparkles, ImageIcon, Mic, BookOpen, PenTool,
-  Microscope, Binary, Search
+  Microscope, Binary, Search, MessageSquare
 } from 'lucide-react';
 
 import { Language, getTranslation } from '../services/i18n';
@@ -60,6 +60,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'calendar', icon: TrendingUp, label: isZh ? '分析' : 'Atlas' },
     { id: 'experiment', icon: FlaskConical, label: isZh ? '实验' : 'Trials' },
     { id: 'assistant', icon: Sparkles, label: isZh ? 'AI 助手' : 'AI Assist' },
+    { id: 'personal-chat', icon: MessageSquare, label: isZh ? '个人聊天' : 'Personal Chat' },
     { id: 'dreams', icon: ImageIcon, label: isZh ? '投影' : 'Dreams' },
     { id: 'voice', icon: Mic, label: isZh ? '语音' : 'Voice' },
     { id: 'news', icon: Newspaper, label: isZh ? '科研' : 'Research' },
