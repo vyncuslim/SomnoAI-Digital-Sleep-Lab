@@ -281,6 +281,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         errorMessage = 'Invalid email or password.';
       } else if (err.message === 'User already registered') {
         errorMessage = 'An account with this email already exists.';
+      } else if (err.message && err.message.includes('Password should contain at least one character of each')) {
+        errorMessage = 'Password must contain at least one uppercase letter, one lowercase letter, and one number.';
       } else if (err.message && err.message.includes('Password should be at least')) {
         errorMessage = 'Password should be at least 6 characters.';
       }
@@ -333,7 +335,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       if (error) throw error;
       setSuccessMessage('Verification email resent! Please check your inbox.');
     } catch (err: any) {
-      setError(err.message || 'Failed to resend verification email.');
+      if (err.status === 429) {
+        setError('Too many requests. Please wait a few minutes before trying again.');
+      } else if (err.status === 500) {
+        setError('Server error while sending email. Please try again later or contact support.');
+      } else {
+        setError(err.message || 'Failed to resend verification email.');
+      }
     } finally {
       setLoading(false);
     }

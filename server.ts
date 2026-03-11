@@ -3,6 +3,7 @@ import { Resend } from 'resend';
 import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { createClient } from '@supabase/supabase-js';
+import path from 'path';
 
 dotenv.config();
 
@@ -71,6 +72,9 @@ async function startServer() {
     app.use(vite.middlewares);
   } else {
     app.use(express.static('dist'));
+    app.get('*', (req, res) => {
+      res.sendFile(path.resolve('dist/index.html'));
+    });
   }
 
   const PORT = 3000;
