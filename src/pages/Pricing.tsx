@@ -2,7 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card } from '../components/ui/Components';
-import { Check, Zap, ShieldCheck, Cpu, Sparkles, History, Brain, ArrowRight } from 'lucide-react';
+import { Check, ShieldCheck, Cpu, Sparkles } from 'lucide-react';
 import { Language } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { HardwareButton, TechnicalLabel } from '../components/ui/Components';
@@ -24,7 +24,7 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
     return `${baseUrl}?${params.toString()}`;
   };
 
-  const handlePlanSelect = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>, url: string) => {
+  const handlePlanSelect = (e: React.MouseEvent<HTMLButtonElement | HTMLAnchorElement>) => {
     if (!user) {
       e.preventDefault();
       const prefix = lang === 'zh' ? '/cn' : '/en';
@@ -69,7 +69,7 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
                 <div className="text-5xl font-black italic tracking-tighter text-white mb-8">$0</div>
                 <HardwareButton 
                   href={getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go')} 
-                  onClick={(e) => handlePlanSelect(e, getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go'))}
+                  onClick={(e) => handlePlanSelect(e)}
                   variant="outline"
                   className="w-full"
                 >
@@ -107,7 +107,7 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
                 </div>
                 <HardwareButton 
                   href={getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro')} 
-                  onClick={(e) => handlePlanSelect(e, getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro'))}
+                  onClick={(e) => handlePlanSelect(e)}
                   variant="primary"
                   className="w-full"
                 >
@@ -141,7 +141,7 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
                 <div className="text-5xl font-black italic tracking-tighter text-white mb-8">Custom</div>
                 <HardwareButton 
                   href={getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus')} 
-                  onClick={(e) => handlePlanSelect(e, getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus'))}
+                  onClick={(e) => handlePlanSelect(e)}
                   variant="outline"
                   className="w-full"
                 >

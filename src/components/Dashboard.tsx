@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Crown, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, LayoutDashboard, Settings, LogOut } from 'lucide-react';
+import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Crown, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, Settings, LogOut } from 'lucide-react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -104,7 +104,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const generateAnalysis = async () => {
     setIsAnalyzing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY_1 });
+      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
       const prompt = `
         As a sleep expert, analyze the following sleep data and provide insights.
         Language: ${lang === 'zh' ? 'Chinese' : 'English'}

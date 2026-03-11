@@ -7,11 +7,9 @@ import { Language } from '../services/i18n';
 
 interface SupportViewProps {
   lang: Language;
-  onBack: () => void;
-  onNavigate: (view: any) => void;
 }
 
-export const SupportView: React.FC<SupportViewProps> = ({ lang, onNavigate }) => {
+export const SupportView: React.FC<SupportViewProps> = ({ lang }) => {
   const isZh = lang === 'zh';
 
   return (

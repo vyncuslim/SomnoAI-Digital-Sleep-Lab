@@ -1,4 +1,3 @@
-import React from 'react';
 import { PlaceholderView } from './PlaceholderView';
 import { UserProfileView } from './UserProfileView';
 

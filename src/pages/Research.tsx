@@ -1,8 +1,8 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
-import { Section, Card, Accordion, InlineCTA } from '../components/ui/Components';
+import { Section, Card, InlineCTA } from '../components/ui/Components';
 import { Activity, Brain, Clock, Moon, Sun, Zap } from 'lucide-react';
-import { Language, getTranslation } from '../services/i18n';
+import { Language } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';
 
 interface ResearchProps {

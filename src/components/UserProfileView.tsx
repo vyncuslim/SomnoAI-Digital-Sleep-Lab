@@ -4,11 +4,10 @@ import { Language } from '../types';
 
 interface UserProfileViewProps {
   lang: Language;
-  onBack: () => void;
   onNavigate: (path: string) => void;
 }
 
-export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang, onBack, onNavigate }) => {
+export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang, onNavigate }) => {
   const { profile } = useAuth();
 
   return (

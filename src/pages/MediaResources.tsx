@@ -7,7 +7,7 @@ interface MediaResourcesProps {
   lang: Language;
 }
 
-export const MediaResources: React.FC<MediaResourcesProps> = ({ lang }) => {
+export const MediaResources: React.FC<MediaResourcesProps> = () => {
   return (
     <MarketingPageTemplate
       title="Media Resources"

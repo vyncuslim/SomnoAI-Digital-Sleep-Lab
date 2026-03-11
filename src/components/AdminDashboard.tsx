@@ -2,13 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { 
   Users, User, RefreshCw, ChevronLeft, 
   List, MessageSquare,
-  AlertTriangle, Search, Lightbulb, Sparkles,
+  AlertTriangle, Search,
   Activity, Shield, Clock, Moon, BarChart3, Save,
-  TrendingUp, Globe, MousePointer2, ShieldOff, Mail, Bell,
-  Star, HelpCircle, Unlock, Lock
+  TrendingUp, ShieldOff, Mail, Bell,
+  Star, Unlock, Lock
 } from 'lucide-react';
 import { GlassCard } from './GlassCard.tsx';
-import { adminApi, supabase, logAuditLog } from '../services/supabaseService.ts';
+import { adminApi, supabase } from '../services/supabaseService.ts';
 import { securityService } from '../services/securityService.ts';
 import { Language, getTranslation } from '../services/i18n.ts';
 import { useAuth } from '../context/AuthContext.tsx';
@@ -55,7 +55,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
   const [searchQuery, setSearchQuery] = useState('');
   const [isSyncing, setIsSyncing] = useState(false);
   const [savingSettings, setSavingSettings] = useState(false);
-  const [showAllData, setShowAllData] = useState(false);
 
   useEffect(() => {
     if (!authLoading && isAdmin) {

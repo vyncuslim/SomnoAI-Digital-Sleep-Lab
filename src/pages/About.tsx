@@ -1,7 +1,7 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA, HardwareButton, TechnicalLabel } from '../components/ui/Components';
-import { Shield, Lock, Brain, Activity, LineChart, Lightbulb, ExternalLink } from 'lucide-react';
+import { Shield, Lock, Brain, ExternalLink } from 'lucide-react';
 import { AlertBanner } from '../components/ui/Components';
 import { Language, getTranslation } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';

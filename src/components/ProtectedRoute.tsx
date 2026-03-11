@@ -1,29 +1,34 @@
 import React from 'react';
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { Language } from '../types';
+import { Language } from '../services/i18n';
 
-export const ProtectedRoute: React.FC<{ children: React.ReactNode, adminOnly?: boolean, lang: Language }> = ({ children, adminOnly, lang }) => {
-  const { user, loading, isAdmin, isVerified } = useAuth();
-  const langPrefix = lang === 'zh' ? '/cn' : '/en';
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  adminOnly?: boolean;
+  lang?: Language;
+}
 
-  if (loading) return (
-    <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">Neural Handshake in Progress...</p>
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly }) => {
+  const { user, loading, isAdmin } = useAuth();
+  const location = useLocation();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#01040a]">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
       </div>
-    </div>
-  );
-  if (!user) return <Navigate to={`${langPrefix}/auth/login`} />;
-  
-  if (!isVerified) {
-    return <Navigate to={`${langPrefix}/auth/login?error=unverified`} />;
+    );
   }
-  
+
+  if (!user) {
+    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+  }
+
   if (adminOnly && !isAdmin) {
-    return <Navigate to={`${langPrefix}/dashboard`} />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
 };
+

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA } from '../components/ui/Components';
 import { Activity, Brain, Clock, Shield, BarChart3, Lock, Zap, Eye } from 'lucide-react';
-import { Language, getTranslation } from '../services/i18n';
+import { Language } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';
 
 interface FeaturesProps {

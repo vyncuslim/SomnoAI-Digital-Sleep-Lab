@@ -1,11 +1,11 @@
-import React from 'react';
+import { FC, ReactNode } from 'react';
 
 interface PageLayoutProps {
-  children: React.ReactNode;
-  sidebar?: React.ReactNode;
+  children: ReactNode;
+  sidebar?: ReactNode;
 }
 
-export const PageLayout: React.FC<PageLayoutProps> = ({ children, sidebar }) => {
+export const PageLayout: FC<PageLayoutProps> = ({ children, sidebar }) => {
   return (
     <div className="min-h-screen bg-[#01040a] text-slate-300 font-sans selection:bg-indigo-500/30 selection:text-indigo-200 flex flex-col">
       {/* Main Content Area */}

@@ -4,8 +4,8 @@ import { useLanguage } from '../context/useLanguage';
 import { supabase } from '../services/supabaseService';
 
 interface BlockedViewProps {
-  reason?: string;
-  blockCode?: string;
+  reason?: string | null;
+  blockCode?: string | null;
 }
 
 export const BlockedView: React.FC<BlockedViewProps> = ({ reason, blockCode }) => {

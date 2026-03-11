@@ -9,7 +9,7 @@ interface GenericFeatureProps {
   description: string;
 }
 
-export const GenericFeature: React.FC<GenericFeatureProps> = ({ lang, onBack, title, description }) => {
+export const GenericFeature: React.FC<GenericFeatureProps> = ({ onBack, title, description }) => {
   return (
     <FeatureLayout title={title} onBack={onBack}>
       <div className="text-slate-400">

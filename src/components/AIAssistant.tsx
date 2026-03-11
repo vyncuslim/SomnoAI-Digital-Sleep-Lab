@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Send, Bot, User, Sparkles, ChevronLeft, Trash2 } from 'lucide-react';
 import { startContextualCoach } from '../services/geminiService';
 import { SleepRecord } from '../types';
-import { useLanguage } from '../context/useLanguage';
 
 interface Message {
   role: 'user' | 'model';
@@ -17,12 +16,11 @@ interface AIAssistantProps {
   onBack?: () => void;
 }
 
-export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, data, history, onBack }) => {
+export const AIAssistant: React.FC<AIAssistantProps> = ({ lang, history, onBack }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { t } = useLanguage();
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

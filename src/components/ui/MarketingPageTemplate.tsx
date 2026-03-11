@@ -1,17 +1,17 @@
-import React from 'react';
+import { FC, ReactNode } from 'react';
 import { PageLayout } from './PageLayout';
-import { Hero, Section, Card, InlineCTA, GridBackground } from './Components';
+import { Hero, GridBackground } from './Components';
 
 interface MarketingPageTemplateProps {
-  title: React.ReactNode;
+  title: ReactNode;
   subtitle: string;
   ctaPrimary?: { text: string; link: string };
   ctaSecondary?: { text: string; link: string };
   ctaTertiary?: { text: string; link: string };
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
-export const MarketingPageTemplate: React.FC<MarketingPageTemplateProps> = ({ title, subtitle, ctaPrimary, ctaSecondary, ctaTertiary, children }) => {
+export const MarketingPageTemplate: FC<MarketingPageTemplateProps> = ({ title, subtitle, ctaPrimary, ctaSecondary, ctaTertiary, children }) => {
   return (
     <PageLayout>
       <div className="relative">

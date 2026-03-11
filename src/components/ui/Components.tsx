@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Info, ArrowRight, Cpu, ShieldCheck, Zap } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { ChevronDown, ChevronRight, AlertCircle, CheckCircle2, Info, ArrowRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../../context/useLanguage';
 
@@ -204,7 +204,7 @@ export const Card: React.FC<{ title: string; description: string; icon?: React.R
     
     {icon && (
       <div className="w-20 h-20 rounded-3xl bg-indigo-500/5 border border-white/5 flex items-center justify-center text-indigo-400 mb-10 group-hover:bg-indigo-500/10 group-hover:border-indigo-500/30 group-hover:scale-110 group-hover:rotate-3 transition-all duration-700 shadow-inner">
-        {React.cloneElement(icon as React.ReactElement, { size: 32 })}
+        {React.cloneElement(icon as React.ReactElement<any>, { size: 32 })}
       </div>
     )}
     

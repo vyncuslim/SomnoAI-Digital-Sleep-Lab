@@ -5,6 +5,7 @@ interface LanguageContextType {
   lang: Language;
   langPrefix: string;
   t: (section: string) => any;
+  setLang: (lang: Language) => void;
 }
 
 export const LanguageContext = createContext<LanguageContextType | undefined>(undefined);

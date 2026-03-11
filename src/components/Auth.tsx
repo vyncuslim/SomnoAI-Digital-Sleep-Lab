@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check, ShieldAlert } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { GlassCard } from './GlassCard';
 import { HardwareButton } from './ui/Components';
-import { Language, getTranslation } from '../services/i18n';
+import { Language } from '../services/i18n';
 import { Logo } from './Logo';
 import { supabase, logAuditLog } from '../services/supabaseService';
 import { useAuth } from '../context/AuthContext';
@@ -70,7 +70,7 @@ const CheckboxField = ({ id, checked, onChange, children }: any) => (
 export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user, isVerified } = useAuth();
+  const { user, isVerified } = useAuth();
   const { langPrefix } = useLanguage();
   const [view, setView] = useState<AuthView>(initialView);
   
@@ -101,12 +101,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [loading, setLoading] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
   const [privacyApproved, setPrivacyApproved] = useState(false);
-  const [isRobotChecked, setIsRobotChecked] = useState(false);
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const turnstileRef = React.useRef<any>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
-  const t = getTranslation(lang, 'landing');
-
   const getPasswordStrength = (pass: string) => {
     if (!pass) return 0;
     let score = 0;
@@ -214,11 +211,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         notificationService.sendLoginNotification(email, data.user?.id);
         navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
             captchaToken: turnstileToken || undefined,
+            emailRedirectTo: `${window.location.origin}/auth/verify`,
           },
         });
         
@@ -360,7 +358,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     }
   };
 
-  const itemVariants = {
+  const itemVariants: any = {
     hidden: { opacity: 0, y: 10 },
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 300, damping: 24 } }
   };

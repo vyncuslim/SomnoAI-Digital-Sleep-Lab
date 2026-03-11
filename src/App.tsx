@@ -8,12 +8,12 @@ import { LanguageProvider } from './context/LanguageProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AnalyticsProvider } from './components/AnalyticsProvider';
 import RootLayout from './components/RootLayout';
-import { supabase, logAuditLog } from './services/supabaseService';
-import { SleepRecord, UserProfile as UserProfileType } from './types';
+import { supabase } from './services/supabaseService';
+import { SleepRecord } from './types';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { Navbar } from './components/Navbar';
-import { Footer } from './components/Footer';
+import Navbar from './components/Navbar';
+import Footer from './components/Footer';
 import { SchemaMarkup } from './components/SchemaMarkup';
 
 // Lazy load components
@@ -44,7 +44,7 @@ const Voice = lazy(() => import('./pages/Voice').then(module => ({ default: modu
 const GenericFeature = lazy(() => import('./pages/GenericFeature').then(module => ({ default: module.GenericFeature })));
 const AIAssistant = lazy(() => import('./components/AIAssistant').then(module => ({ default: module.AIAssistant })));
 const Trials = lazy(() => import('./pages/Trials').then(module => ({ default: module.Trials })));
-const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
+// const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
 const BlogHub = lazy(() => import('./pages/BlogHub').then(module => ({ default: module.BlogHub })));
 const BlogPostView = lazy(() => import('./components/BlogPostView').then(module => ({ default: module.BlogPostView })));
 const NewsHub = lazy(() => import('./pages/NewsHub').then(module => ({ default: module.NewsHub })));
@@ -55,28 +55,28 @@ const SearchHub = lazy(() => import('./components/SearchHub').then(module => ({ 
 const BlockedView = lazy(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
 
 // Initial Data
-const INITIAL_SLEEP_DATA: SleepRecord = {
-  id: 'rec_7892345610',
-  date: new Date().toISOString(),
-  score: 85,
-  heartRate: {
-    resting: 58,
-    min: 52,
-    max: 110,
-    average: 65,
-    history: []
-  },
-  deepRatio: 0.18,
-  remRatio: 0.22,
-  totalDuration: 460, // minutes
-  efficiency: 0.92,
-  stages: [],
-  aiInsights: [
-    "Deep sleep duration is within optimal range.",
-    "REM cycles show good consistency.",
-    "Resting heart rate is excellent."
-  ]
-};
+// const INITIAL_SLEEP_DATA: SleepRecord = {
+//   id: 'rec_7892345610',
+//   date: new Date().toISOString(),
+//   score: 85,
+//   heartRate: {
+//     resting: 58,
+//     min: 52,
+//     max: 110,
+//     average: 65,
+//     history: []
+//   },
+//   deepRatio: 0.18,
+//   remRatio: 0.22,
+//   totalDuration: 460, // minutes
+//   efficiency: 0.92,
+//   stages: [],
+//   aiInsights: [
+//     "Deep sleep duration is within optimal range.",
+//     "REM cycles show good consistency.",
+//     "Resting heart rate is excellent."
+//   ]
+// };
 
 const BlogPostWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
   const { slug } = useParams();
@@ -109,20 +109,51 @@ interface AppRoutesProps {
   setLang: (lang: Language) => void;
   latestData: SleepRecord | null;
   history: SleepRecord[];
-  profile: UserProfileType | null;
   handleNavigate: (path: string) => void;
 }
+
+const AuthCallback = () => {
+  const navigate = useNavigate();
+  const { user, loading } = useAuth();
+  const [timeoutReached, setTimeoutReached] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      navigate('/dashboard', { replace: true });
+    }
+  }, [user, navigate]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setTimeoutReached(true);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (timeoutReached && !loading && !user) {
+      navigate('/auth/login?error=unverified', { replace: true });
+    }
+  }, [timeoutReached, loading, user, navigate]);
+
+  return (
+    <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
+      <div className="text-center">
+        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">Verifying Identity...</p>
+      </div>
+    </div>
+  );
+};
 
 const AppRoutes: React.FC<AppRoutesProps> = ({
   lang,
   setLang,
   latestData,
   history,
-  profile,
   handleNavigate,
 }) => {
   const navigate = useNavigate();
-  const location = useLocation();
   const { isBlocked, blockedReason, blockCode } = useAuth();
   const langPrefix = lang === 'zh' ? '/cn' : '/en';
 
@@ -150,9 +181,10 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="auth/login" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signin" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signup" element={<Auth lang={lang} initialView="signup" />} />
+      <Route path="auth/callback" element={<AuthCallback />} />
       <Route path="login" element={<Navigate to={`${langPrefix}/auth/login`} replace />} />
       <Route path="signup" element={<Navigate to={`${langPrefix}/auth/signup`} replace />} />
-      <Route path="auth/verify" element={<Navigate to={`${langPrefix}/dashboard`} replace />} />
+      <Route path="auth/verify" element={<AuthCallback />} />
       <Route path="auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
       <Route path="about" element={<About lang={lang} />} />
       <Route path="pricing" element={<Pricing lang={lang} />} />
@@ -165,7 +197,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="contact" element={<Contact lang={lang} />} />
       <Route path="faq" element={<FAQ lang={lang} />} />
       <Route path="status" element={<Status lang={lang} />} />
-      <Route path="search" element={<SearchHub lang={lang} />} />
+      <Route path="search" element={<SearchHub />} />
       
       {/* Blog & News */}
       <Route path="blog" element={<BlogHub lang={lang} onSelectPost={(post: any) => navigate(`${langPrefix}/blog/${post.slug}`)} />} />
@@ -182,7 +214,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="terms" element={<Navigate to={`${langPrefix}/legal/terms-of-service`} replace />} />
       <Route path="policy" element={<Navigate to={`${langPrefix}/legal/policy-framework`} replace />} />
       <Route path="opensource" element={<Navigate to={`${langPrefix}/legal/open-source`} replace />} />
-      <Route path="support" element={<SupportView lang={lang} onBack={handleBack} onNavigate={handleNavigate} />} />
+      <Route path="support" element={<SupportView lang={lang} />} />
       <Route path="report-abuse" element={<Navigate to={`${langPrefix}/legal/abuse-policy`} replace />} />
 
       {/* Protected Routes */}
@@ -388,14 +420,14 @@ const AppContent = () => {
           />
         )}
         <div className={`transition-all duration-300 ${showNavbar ? (showBanner ? "pt-28" : "pt-20") : "pt-8"}`}>
-          <LanguageProvider lang={lang}>
+          <LanguageProvider lang={lang} setLang={handleLanguageChange}>
             {/^\/(cn|en)(\/|$)/.test(location.pathname) ? (
               <Routes>
-                <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
-                <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />} />
+                <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} handleNavigate={handleNavigate} />} />
+                <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} handleNavigate={handleNavigate} />} />
               </Routes>
             ) : (
-              <AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} profile={profile} handleNavigate={handleNavigate} />
+              <AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} handleNavigate={handleNavigate} />
             )}
           </LanguageProvider>
         </div>

@@ -1,11 +1,10 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
-import { supabase } from '../services/supabaseService';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
-import { UserProfile } from '../types';
+import { supabase } from '../lib/supabase';
 
 interface AuthContextType {
   user: User | null;
-  profile: UserProfile | null;
+  profile: any;
   loading: boolean;
   isBlocked: boolean;
   blockedReason?: string;
@@ -18,80 +17,50 @@ interface AuthContextType {
   signOut: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  profile: null,
+  loading: true,
+  isBlocked: false,
+  isAdmin: false,
+  isOwner: false,
+  isSuperOwner: false,
+  isVerified: false,
+  signIn: async () => {},
+  signOut: async () => {},
+});
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
-  const [blockedReason, setBlockedReason] = useState<string | undefined>(undefined);
-  const [blockCode, setBlockCode] = useState<string | undefined>(undefined);
+  const [blockedReason, setBlockedReason] = useState<string | undefined>();
+  const [blockCode, setBlockCode] = useState<string | undefined>();
 
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner || false;
-  const isOwner = profile?.role === 'owner' || profile?.is_super_owner || false;
-  const isSuperOwner = profile?.is_super_owner || false;
-  const isVerified = !!user?.email_confirmed_at;
-
-  const fetchProfile = async (userId: string, email?: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
-
-      if (error && error.code !== 'PGRST116') {
-        console.error('Error fetching profile:', error);
-      }
-
-      if (data) {
-        setProfile(data);
-        setIsBlocked(data.is_blocked || false);
-        setBlockedReason(data.blocked_reason);
-        setBlockCode(data.block_code);
-      } else {
-        // Fallback profile if not found in DB yet
-        setProfile({
-          id: userId,
-          email: email || '',
-          role: 'user'
-        });
-        setIsBlocked(false);
-        setBlockedReason(undefined);
-        setBlockCode(undefined);
-      }
-    } catch (err) {
-      console.error('Error in fetchProfile:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner;
+  const isOwner = profile?.role === 'owner' || profile?.is_super_owner;
+  const isSuperOwner = profile?.is_super_owner;
+  const isVerified = user?.email_confirmed_at != null;
 
   useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }: { data: { session: any } }) => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id, session.user.email);
+        fetchProfile(session.user.id);
       } else {
         setLoading(false);
       }
-    }).catch((err: any) => {
-      console.error('Error getting session:', err);
-      setLoading(false);
     });
 
-    // Listen for changes on auth state (logged in, signed out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       if (session?.user) {
-        fetchProfile(session.user.id, session.user.email);
+        fetchProfile(session.user.id);
       } else {
         setProfile(null);
-        setIsBlocked(false);
-        setBlockedReason(undefined);
-        setBlockCode(undefined);
         setLoading(false);
       }
     });
@@ -99,9 +68,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => subscription.unsubscribe();
   }, []);
 
+  const fetchProfile = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (error) throw error;
+      setProfile(data);
+      if (data?.is_blocked) {
+        setIsBlocked(true);
+        setBlockedReason(data.blocked_reason);
+        setBlockCode(data.block_code);
+      }
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const signIn = async (email: string) => {
-    // Mock signIn for compatibility if needed, but we'll use Supabase directly in Auth.tsx
-    console.log('signIn called', { email });
+    // Placeholder sign in
+    console.log('Sign in with', email);
   };
 
   const signOut = async () => {
@@ -109,17 +100,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, isBlocked, blockedReason, blockCode, isAdmin, isOwner, isSuperOwner, isVerified, signIn, signOut }}>
+    <AuthContext.Provider value={{ 
+      user, profile, loading, isBlocked, blockedReason, blockCode, 
+      isAdmin, isOwner, isSuperOwner, isVerified, signIn, signOut 
+    }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
+export const useAuth = () => useContext(AuthContext);

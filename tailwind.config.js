@@ -3,14 +3,18 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
-    "./components/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
-      fontFamily: {
-        sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'],
-        mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+      colors: {
+        background: '#050505',
+        foreground: '#ffffff',
+        primary: '#6366F1',
+        secondary: '#1f2937',
       },
+      fontFamily: {
+        sans: ['Inter', 'sans-serif'],
+      }
     },
   },
   plugins: [],

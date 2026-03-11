@@ -5,7 +5,6 @@ import { Language } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { GridBackground, HardwareWidget } from '../components/ui/Components';
 import { useNavigate } from 'react-router-dom';
-import { useLanguage } from '../context/useLanguage';
 
 interface SubscriptionManagementProps {
   lang: Language;
@@ -19,7 +18,6 @@ const PLAN_LINKS = {
 
 export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ lang }) => {
   const { profile } = useAuth();
-  const { langPrefix } = useLanguage();
   const navigate = useNavigate();
   const [plan, setPlan] = useState<string>('Go');
   const [loading, setLoading] = useState(false);

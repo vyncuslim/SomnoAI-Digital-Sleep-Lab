@@ -1,8 +1,8 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, StatusBadge, Timeline } from '../components/ui/Components';
-import { CheckCircle2, AlertCircle, XCircle, Clock } from 'lucide-react';
-import { Language, getTranslation } from '../services/i18n';
+import { CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { Language } from '../services/i18n';
 
 interface StatusProps {
   lang: Language;

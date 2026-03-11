@@ -1,15 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate } from 'react-router-dom';
 import { 
-  ArrowRight, Brain, Activity, Zap, 
+  Brain, Activity, Zap, 
   CheckCircle2, Users, Database, ShieldCheck,
-  Smartphone, BarChart3, MessageSquare, Heart,
-  Mail, Clock, History, Cpu, Sparkles
+  Smartphone, BarChart3, MessageSquare,
+  Mail, Cpu, Sparkles
 } from 'lucide-react';
 
 import { MarketingPageTemplate } from './ui/MarketingPageTemplate';
-import { Section, Card, InlineCTA, HardwareWidget, GridBackground, TelemetryStream, HardwareButton, TechnicalLabel } from './ui/Components';
+import { Section, Card, HardwareWidget, HardwareButton, TelemetryStream } from './ui/Components';
 import { Language, getTranslation } from '../services/i18n';
 import { useAuth } from '../context/AuthContext';
 
@@ -114,8 +113,8 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
       }
       subtitle={t.heroSubtitle || "Connect your wearable → Get AI recovery intelligence. Upload your sleep data, let our AI analyze it, and wake up to actionable recovery protocols."}
       ctaPrimary={{ text: t.ctaPrimary || "Start Analysis", link: "/auth/signup" }}
-      ctaSecondary={{ text: t.ctaSecondary || "Learn More", link: "/about" }}
-      ctaTertiary={{ text: lang === 'zh' ? "立即登录" : "Sign In", link: "/auth/login" }}
+      ctaSecondary={{ text: lang === 'zh' ? "立即登录" : "Sign In", link: "/auth/login" }}
+      ctaTertiary={{ text: t.ctaSecondary || "Learn More", link: "/about" }}
     >
       {/* Stats Section */}
       <Section moduleID="STATS_01">

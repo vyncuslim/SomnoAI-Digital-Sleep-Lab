@@ -6,7 +6,7 @@ interface LogoProps {
   lang?: 'en' | 'zh';
 }
 
-export const Logo: React.FC<LogoProps> = ({ className = "", showText = true, lang = 'en' }) => {
+export const Logo: React.FC<LogoProps> = ({ className = "", showText = true }) => {
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <div className="relative w-10 h-10 flex items-center justify-center shrink-0">

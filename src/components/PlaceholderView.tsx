@@ -10,7 +10,7 @@ interface PlaceholderProps {
   [key: string]: any;
 }
 
-export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Accessing Laboratory Node...', onBack, ...props }) => {
+export const PlaceholderView: React.FC<PlaceholderProps> = ({ title = 'Accessing Laboratory Node...', onBack }) => {
   const navigate = useNavigate();
   const { langPrefix } = useLanguage();
   const handleBack = onBack || (() => navigate(-1));

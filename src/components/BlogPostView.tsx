@@ -1,7 +1,6 @@
 
 import React, { useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Clock, Calendar, User, ShieldCheck, Tag, Share2, ArrowUpRight } from 'lucide-react';
+import { ArrowLeft, Clock, Calendar, User, ShieldCheck, Tag, ArrowUpRight } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { GlassCard } from './GlassCard.tsx';
 import { Article } from '../types.ts';
@@ -9,7 +8,7 @@ import { Language, getTranslation } from '../services/i18n.ts';
 import { updateMetadata } from '../services/navigation.ts';
 import { useLanguage } from '../context/useLanguage';
 
-const m = motion as any;
+
 
 interface BlogPostViewProps {
   post: Article;

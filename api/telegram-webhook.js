@@ -32,8 +32,8 @@ export default async function handler(req, res) {
   if (chatId !== ADMIN_CHAT_ID) return res.status(200).send('OK');
 
   try {
-    // FIXED: Exclusive process.env.GEMINI_API_KEY_1 usage
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY_1 });
+    // FIXED: Exclusive process.env.GEMINI_API_KEY usage
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
     
     const systemInstruction = `You are the Digital Sleep Lab Chief Research Officer (CRO).
     

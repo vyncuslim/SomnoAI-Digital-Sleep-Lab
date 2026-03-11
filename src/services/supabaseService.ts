@@ -40,6 +40,22 @@ export const logAuditLog = async (userId: string, action: string, details: strin
   }
 };
 
+// Security Event Helper
+export const logSecurityEvent = async (userId: string | null, type: string, details: string | Record<string, any>) => {
+  try {
+    const { error } = await supabase.from('security_events').insert([{
+      user_id: userId,
+      type,
+      details: typeof details === 'string' ? details : JSON.stringify(details),
+      ip_address: 'AUTO_DETECT'
+    }]);
+    return { error };
+  } catch (err) {
+    console.error("Security event log failed:", err);
+    return { error: err };
+  }
+};
+
 // Admin API
 export const adminApi = {
   getUsers: async () => supabase.from('profiles').select('*'),

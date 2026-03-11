@@ -4,16 +4,13 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Search, ArrowRight } from 'lucide-react';
 import { PageLayout } from './ui/PageLayout';
 import { Section, Card } from './ui/Components';
-import { Language } from '../types';
 import { updateMetadata } from '../services/navigation';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from '../data/mockData';
 import { useLanguage } from '../context/useLanguage';
 
-interface SearchHubProps {
-  lang: Language;
-}
+interface SearchHubProps {}
 
-export const SearchHub: React.FC<SearchHubProps> = ({ lang }) => {
+export const SearchHub: React.FC<SearchHubProps> = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { langPrefix } = useLanguage();

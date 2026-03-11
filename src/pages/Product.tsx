@@ -1,7 +1,7 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
-import { Section, Card, InlineCTA, HardwareButton, TechnicalLabel } from '../components/ui/Components';
-import { Activity, Brain, Clock, Shield, Smartphone, Watch, Cloud, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Section, Card, InlineCTA, TechnicalLabel } from '../components/ui/Components';
+import { Activity, Brain, Clock, Shield, Smartphone, Watch, Cloud, CheckCircle2 } from 'lucide-react';
 import { Language, getTranslation } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';
 

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA } from '../components/ui/Components';
-import { Mail, MessageSquare, MapPin, Globe, Check, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, MessageSquare, Globe, Check, AlertCircle, CheckCircle } from 'lucide-react';
 import { Language } from '../services/i18n';
 import { notificationService } from '../services/notificationService';
 

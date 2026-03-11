@@ -2,7 +2,7 @@ import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, AlertBanner, InlineCTA } from '../components/ui/Components';
 import { Database, Cpu, BrainCircuit, LineChart } from 'lucide-react';
-import { Language, getTranslation } from '../services/i18n';
+import { Language } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';
 
 interface HowItWorksProps {
