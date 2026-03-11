@@ -9,7 +9,8 @@ dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+const supabase = (supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey) : null;
 
 async function startServer() {
   const app = express();
@@ -62,6 +63,7 @@ async function startServer() {
 
   // Admin Analytics API
   app.get("/api/admin/founder-stats", async (req, res) => {
+    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
     try {
       const { data, error } = await supabase.rpc('get_founder_stats');
       if (error) throw error;
@@ -73,6 +75,7 @@ async function startServer() {
   });
 
   app.get("/api/admin/security-events", async (req, res) => {
+    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
     try {
       const { data, error } = await supabase
         .from('security_events')

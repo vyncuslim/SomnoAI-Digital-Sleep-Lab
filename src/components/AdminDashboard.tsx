@@ -59,10 +59,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
   const [savingSettings, setSavingSettings] = useState(false);
 
   useEffect(() => {
+    console.log('AdminDashboard: authLoading=', authLoading, 'isAdmin=', isAdmin);
     if (!authLoading && isAdmin) {
       fetchData();
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isAdmin, authLoading]);
 
   useEffect(() => {
