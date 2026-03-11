@@ -26,9 +26,33 @@ export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabase
     onAuthStateChange: () => ({ data: { subscription: { unsubscribe: () => {} } } }),
     updateUser: () => Promise.resolve({ data: null, error: 'Supabase not configured' }),
     signOut: () => Promise.resolve({ error: null }),
-    getUser: () => Promise.resolve({ data: { user: null }, error: null })
+    getUser: () => Promise.resolve({ data: { user: null }, error: null }),
+    signInWithPassword: () => Promise.resolve({ data: { user: null, session: null }, error: { message: 'Supabase not configured' } }),
+    signUp: () => Promise.resolve({ data: { user: null, session: null }, error: { message: 'Supabase not configured' } }),
+    signInWithOtp: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+    resetPasswordForEmail: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
+    verifyOtp: () => Promise.resolve({ data: { user: null, session: null }, error: { message: 'Supabase not configured' } }),
+    signInWithOAuth: () => Promise.resolve({ error: { message: 'Supabase not configured' } }),
+    resend: () => Promise.resolve({ data: null, error: { message: 'Supabase not configured' } }),
   }
 } as any;
+
+// Error Logging Helper
+export const logError = async (userId: string | null, error: any, context: string) => {
+  try {
+    const { error: logErr } = await supabase.from('error_logs').insert([{
+      user_id: userId,
+      error_message: error instanceof Error ? error.message : String(error),
+      error_stack: error instanceof Error ? error.stack : null,
+      context,
+      details: typeof error === 'object' ? JSON.stringify(error) : null
+    }]);
+    return { error: logErr };
+  } catch (err) {
+    console.error("Error log failed:", err);
+    return { error: err };
+  }
+};
 
 // Audit Log Helper
 export const logAuditLog = async (userId: string, action: string, details: string | Record<string, any>) => {

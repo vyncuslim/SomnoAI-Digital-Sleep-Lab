@@ -1,5 +1,6 @@
 import React from 'react';
 import { Language } from '../types';
+import { logError } from '../services/supabaseService';
 
 interface ErrorBoundaryProps {
   children: React.ReactNode;
@@ -8,16 +9,22 @@ interface ErrorBoundaryProps {
 
 interface ErrorBoundaryState {
   hasError: boolean;
+  error: Error | null;
 }
 
 export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
-    this.state = { hasError: false };
+    this.state = { hasError: false, error: null };
   }
 
-  static getDerivedStateFromError() {
-    return { hasError: true };
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    logError('SYSTEM', error, `ErrorBoundary: ${errorInfo.componentStack}`);
   }
 
   render() {

@@ -7,7 +7,8 @@ import { GlassCard } from './GlassCard';
 import { HardwareButton } from './ui/Components';
 import { Language } from '../services/i18n';
 import { Logo } from './Logo';
-import { supabase, logAuditLog } from '../services/supabaseService';
+import { supabase, logAuditLog, logError } from '../services/supabaseService';
+import { securityService } from '../services/securityService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/useLanguage';
 import { notificationService } from '../services/notificationService';
@@ -191,7 +192,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           },
         });
         
-        if (signInError) throw signInError;
+        if (signInError) {
+          await securityService.handleFailedLogin(email);
+          await logError(null, signInError, `Login failed for ${email}`);
+          throw signInError;
+        }
         
         if (data.user) {
           // Check if email is verified
@@ -206,12 +211,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           if (profileData?.is_blocked) {
              // Log the attempt
              await logAuditLog(data.user.id, 'BLOCKED_LOGIN_ATTEMPT', `Blocked user attempted login. Code: ${profileData.block_code || 'N/A'}`);
+             await supabase.auth.signOut();
+             throw new Error(`Your account is blocked. Block Code: ${profileData.block_code || 'N/A'}. Please contact admin@sleepsomno.com`);
           } else {
              await logAuditLog(data.user.id, 'USER_LOGIN', 'Successful login');
+             notificationService.sendLoginNotification(email, data.user.id);
           }
         }
         
-        notificationService.sendLoginNotification(email, data.user?.id);
         navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
         const { data, error: signUpError } = await supabase.auth.signUp({
@@ -223,7 +230,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           },
         });
         
-        if (signUpError) throw signUpError;
+        if (signUpError) {
+          await logError(null, signUpError, `Signup failed for ${email}`);
+          throw signUpError;
+        }
         
         if (data.session) {
           // Email confirmation is disabled, user is logged in
@@ -243,7 +253,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           captchaToken: turnstileToken || undefined,
         });
         
-        if (resetError) throw resetError;
+        if (resetError) {
+          await logError(null, resetError, `Password reset request failed for ${email}`);
+          throw resetError;
+        }
         setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
       } else if (view === 'otp') {
         if (showOtpInput) {

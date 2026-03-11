@@ -8,7 +8,7 @@ import {
   Star, Unlock, Lock
 } from 'lucide-react';
 import { GlassCard } from './GlassCard';
-import { adminApi, supabase } from '../services/supabaseService';
+import { adminApi, supabase, logError } from '../services/supabaseService';
 import { securityService } from '../services/securityService';
 import { Language, getTranslation } from '../services/i18n';
 import { useAuth } from '../context/AuthContext';
@@ -18,7 +18,7 @@ import { UserProfile, Feedback, AuditLog, SecurityEvent, Review } from '../types
 
 import { FounderDashboard } from './FounderDashboard';
 
-type AdminTab = 'overview' | 'founder' | 'logins' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews';
+type AdminTab = 'overview' | 'founder' | 'logins' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews' | 'errors';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity },
@@ -29,6 +29,7 @@ const DATABASE_SCHEMA = [
   { id: 'sleep_records', name: 'Sleep Matrix', group: 'Biometrics', icon: Moon },
   { id: 'feedback', name: 'User Feedback', group: 'Support', icon: MessageSquare },
   { id: 'app_settings', name: 'App Settings', group: 'Config', icon: BarChart3 },
+  { id: 'error_logs', name: 'Error Logs', group: 'System', icon: AlertTriangle },
   { id: 'communications', name: 'Comms Center', group: 'System', icon: Mail },
   { id: 'reviews', name: 'Product Reviews', group: 'Sentiment', icon: Star }
 ];
@@ -47,6 +48,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [securityEvents, setSecurityEvents] = useState<SecurityEvent[]>([]);
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [errorLogs, setErrorLogs] = useState<any[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
   
   const [marketingData, setMarketingData] = useState<any[]>([]);
@@ -223,17 +225,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
     </div>
   );
 
-  const fetchSecurityEvents = async () => {
-    try {
-      const response = await fetch('/api/admin/security-events');
-      if (!response.ok) throw new Error('Failed to fetch security events');
-      const data = await response.json();
-      setSecurityEvents(data);
-    } catch (error) {
-      console.error("Failed to fetch security events:", error);
-    }
-  };
-
   const fetchData = async () => {
     setIsSyncing(true);
     console.log('AdminDashboard: fetchData started');
@@ -246,28 +237,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
         return;
       }
 
-      const [uRes, fRes, aRes, sRes, setRes, rRes] = await Promise.allSettled([
+      const [uRes, fRes, aRes, sRes, setRes, rRes, eRes] = await Promise.allSettled([
         adminApi.getUsers(),
         adminApi.getFeedback(),
         adminApi.getAuditLogs(),
-        fetchSecurityEvents(),
+        adminApi.getSecurityEvents(),
         adminApi.getSettings(),
-        supabase.from('reviews').select('*').order('created_at', { ascending: false })
+        supabase.from('reviews').select('*').order('created_at', { ascending: false }),
+        supabase.from('error_logs').select('*, profiles:user_id(email)').order('created_at', { ascending: false }).limit(100)
       ]);
-      console.log('AdminDashboard: fetchData results:', { uRes, fRes, aRes, sRes, setRes, rRes });
+      console.log('AdminDashboard: fetchData results:', { uRes, fRes, aRes, sRes, setRes, rRes, eRes });
 
-      setUsers(uRes.status === 'fulfilled' ? (uRes as any).value.data : []);
-      const feedbackData = fRes.status === 'fulfilled' ? (fRes as any).value.data : [];
-      setFeedback(feedbackData);
-      
-      const logs = aRes.status === 'fulfilled' ? (aRes as any).value.data : [];
-      setAuditLogs(logs);
-
-      const events = sRes.status === 'fulfilled' ? (sRes as any).value.data : [];
-      setSecurityEvents(events);
-
-      const revs = rRes.status === 'fulfilled' ? (rRes as any).value.data || [] : [];
-      setReviews(revs);
+      setUsers(uRes.status === 'fulfilled' ? (uRes as any).value.data || [] : []);
+      setFeedback(fRes.status === 'fulfilled' ? (fRes as any).value.data || [] : []);
+      setAuditLogs(aRes.status === 'fulfilled' ? (aRes as any).value.data || [] : []);
+      setSecurityEvents(sRes.status === 'fulfilled' ? (sRes as any).value.data || [] : []);
+      setReviews(rRes.status === 'fulfilled' ? (rRes as any).value.data || [] : []);
+      setErrorLogs(eRes.status === 'fulfilled' ? (eRes as any).value.data || [] : []);
       
       if (setRes.status === 'fulfilled' && (setRes as any).value.data) {
         const settingsMap: Record<string, string> = {};
@@ -284,6 +270,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
     } catch (error) {
       console.error("Admin sync failed:", error);
+      logError(profile?.id || 'ADMIN', error, 'AdminDashboard: fetchData');
     } finally {
       setIsSyncing(false);
     }
@@ -315,7 +302,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       </header>
 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
-        {['overview', 'founder', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews']
+        {['overview', 'founder', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews', 'errors']
           .filter(tab => {
             if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder') return isOwner || isSuperOwner;
             if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;
@@ -945,6 +932,61 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                       <td className="p-4 text-xs font-mono text-slate-500 text-right">{new Date(review.created_at).toLocaleString()}</td>
                     </tr>
                   ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+        {activeTab === 'errors' && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <AlertTriangle className="text-rose-500" />
+                System Error Logs
+              </h2>
+              <button onClick={fetchData} className="p-2 bg-white/5 rounded-lg hover:bg-white/10 transition-colors">
+                <RefreshCw size={16} />
+              </button>
+            </div>
+            <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden">
+              <table className="w-full text-left">
+                <thead className="bg-white/5 text-[10px] uppercase tracking-widest font-bold text-slate-400">
+                  <tr>
+                    <th className="px-6 py-4">Time</th>
+                    <th className="px-6 py-4">User</th>
+                    <th className="px-6 py-4">Context</th>
+                    <th className="px-6 py-4">Message</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/5">
+                  {errorLogs.map((log) => (
+                    <tr key={log.id} className="hover:bg-white/5 transition-colors">
+                      <td className="px-6 py-4 text-xs text-slate-500 whitespace-nowrap">
+                        {new Date(log.created_at).toLocaleString()}
+                      </td>
+                      <td className="px-6 py-4 text-sm font-mono">
+                        {log.profiles?.email || log.user_id || 'SYSTEM'}
+                      </td>
+                      <td className="px-6 py-4 text-xs font-bold text-indigo-400">
+                        {log.context}
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-sm text-rose-300 mb-1">{log.error_message}</div>
+                        {log.details && (
+                          <div className="text-[10px] text-slate-500 font-mono truncate max-w-md">
+                            {log.details}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                  {errorLogs.length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-6 py-12 text-center text-slate-500 italic">
+                        No errors logged yet.
+                      </td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
