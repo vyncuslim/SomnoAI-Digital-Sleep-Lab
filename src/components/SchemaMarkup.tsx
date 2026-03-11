@@ -7,7 +7,7 @@ export const SchemaMarkup: React.FC = () => {
     "@type": "Organization",
     "name": "SomnoAI Digital Sleep Lab",
     "url": "https://sleepsomno.com",
-    "logo": "https://sleepsomno.com/icon-192.png",
+    "logo": "https://sleepsomno.com/logo_512.png",
     "sameAs": [
       "https://www.linkedin.com/company/digital-sleep-lab",
       "https://www.instagram.com/digitalsleeplab/",

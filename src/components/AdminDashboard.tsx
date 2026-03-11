@@ -14,7 +14,7 @@ import { Language, getTranslation } from '../services/i18n.ts';
 import { useAuth } from '../context/AuthContext.tsx';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { emailService } from '../services/emailService.ts';
-import { UserProfile, Feedback, AuditLog, SecurityEvent, Review, MarketingData } from '../types';
+import { UserProfile, Feedback, AuditLog, SecurityEvent, Review } from '../types';
 
 import { FounderDashboard } from './FounderDashboard';
 
@@ -49,8 +49,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
   
-  const [marketingData, setMarketingData] = useState<MarketingData[]>([]);
+  const [marketingData, setMarketingData] = useState<any[]>([]);
   const [loadingMarketing, setLoadingMarketing] = useState(false);
+  const [marketingError, setMarketingError] = useState<string | null>(null);
   
   const [tableCounts, setTableCounts] = useState<Record<string, number>>({});
   const [searchQuery, setSearchQuery] = useState('');
@@ -72,15 +73,33 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
   const fetchMarketingData = async () => {
     setLoadingMarketing(true);
+    setMarketingError(null);
     try {
       // Updated domain to digitalsleeplab.com
       const response = await fetch('https://connectors.windsor.ai/all?api_key=aa3204e4ef7d0c86362b3131645f629093b2&date_preset=last_14d&fields=account_id,account_name,achievement_id,active1_day_users,active7_day_users,active_users,clicks,sessions,datasource,date,source&select_accounts=googleanalytics4__380909155,searchconsole__sc-domain%3Adigitalsleeplab.com');
-      const data = await response.json();
-      if (data && data.data) {
-        setMarketingData(data.data);
+      
+      const text = await response.text();
+      
+      if (!response.ok) {
+        throw new Error(`API request failed with status ${response.status}: ${text}`);
+      }
+      
+      try {
+        const data = JSON.parse(text);
+        if (data && data.data) {
+          setMarketingData(data.data);
+        } else {
+          console.error("Marketing data format invalid:", data);
+          setMarketingError("Marketing data format invalid");
+        }
+      } catch (e) {
+        console.error("Failed to parse marketing data as JSON. Response text:", text);
+        setMarketingError("Failed to parse marketing data as JSON");
+        throw new Error("Invalid JSON response from marketing API");
       }
     } catch (error) {
       console.error("Failed to fetch marketing data:", error);
+      setMarketingError(error instanceof Error ? error.message : "Failed to fetch marketing data");
     } finally {
       setLoadingMarketing(false);
     }
@@ -231,50 +250,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
       setUsers(uRes.status === 'fulfilled' ? (uRes as any).value.data : []);
       const feedbackData = fRes.status === 'fulfilled' ? (fRes as any).value.data : [];
-      if (feedbackData.length === 0) {
-        setFeedback([
-          { id: '1', type: 'suggestion', content: 'Would love to see more detailed HRV analysis.', email: 'user@example.com', created_at: new Date().toISOString() },
-          { id: '2', type: 'report', content: 'Sync failed on my Oura ring once.', email: 'beta@example.com', created_at: new Date(Date.now() - 172800000).toISOString() },
-          { id: '3', type: 'compliment', content: 'The new dark mode is fantastic!', email: 'fan@example.com', created_at: new Date(Date.now() - 259200000).toISOString() },
-          { id: '4', type: 'suggestion', content: 'Can we export data to CSV?', email: 'analyst@example.com', created_at: new Date(Date.now() - 345600000).toISOString() }
-        ]);
-      } else {
-        setFeedback(feedbackData);
-      }
+      setFeedback(feedbackData);
       
       const logs = aRes.status === 'fulfilled' ? (aRes as any).value.data : [];
-      if (logs.length === 0) {
-        setAuditLogs([
-          { id: '1', action: 'System Initialization', user_id: 'SYSTEM', details: 'Admin Console initialized with Super Owner access.', created_at: new Date().toISOString() },
-          { id: '2', action: 'Security Policy Update', user_id: 'SYSTEM', details: 'Legal & Policy Framework synchronized across all regions.', created_at: new Date(Date.now() - 3600000).toISOString() },
-          { id: '3', action: 'User Role Change', user_id: 'admin_01', details: 'Promoted user_123 to Editor.', created_at: new Date(Date.now() - 7200000).toISOString() },
-          { id: '4', action: 'Database Backup', user_id: 'SYSTEM', details: 'Daily automated backup completed successfully.', created_at: new Date(Date.now() - 86400000).toISOString() }
-        ]);
-      } else {
-        setAuditLogs(logs);
-      }
+      setAuditLogs(logs);
 
       const events = sRes.status === 'fulfilled' ? (sRes as any).value.data : [];
-      if (events.length === 0) {
-        setSecurityEvents([
-          { id: '1', type: 'INFO', details: 'Honeypot protection active.', ip_address: '127.0.0.1', created_at: new Date().toISOString() },
-          { id: '2', type: 'WARNING', details: 'Multiple failed login attempts detected.', ip_address: '192.168.1.45', created_at: new Date(Date.now() - 14400000).toISOString() },
-          { id: '3', type: 'BLOCK', details: 'IP blocked due to suspicious activity.', ip_address: '10.0.0.5', created_at: new Date(Date.now() - 28800000).toISOString() }
-        ]);
-      } else {
-        setSecurityEvents(events);
-      }
+      setSecurityEvents(events);
 
       const revs = rRes.status === 'fulfilled' ? (rRes as any).value.data || [] : [];
-      if (revs.length === 0) {
-        setReviews([
-          { id: '1', rating: 5, comment: 'Incredible sleep insights. The AI analysis is spot on!', user_email: 'demo@sleepsomno.com', created_at: new Date().toISOString() },
-          { id: '2', rating: 4, comment: 'Very helpful for tracking my recovery.', user_email: 'tester@sleepsomno.com', created_at: new Date(Date.now() - 86400000).toISOString() },
-          { id: '3', rating: 5, comment: 'Best sleep app I have used so far.', user_email: 'sleepy@example.com', created_at: new Date(Date.now() - 172800000).toISOString() }
-        ]);
-      } else {
-        setReviews(revs);
-      }
+      setReviews(revs);
       
       if (setRes.status === 'fulfilled' && (setRes as any).value.data) {
         const settingsMap: Record<string, string> = {};
@@ -285,7 +270,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       const counts: Record<string, number> = {};
       for (const t of DATABASE_SCHEMA) {
         const { count } = await supabase.from(t.id).select('*', { count: 'exact', head: true });
-        counts[t.id] = count || (t.id === 'profiles' ? 1 : t.id === 'audit_logs' ? 2 : t.id === 'reviews' ? 2 : t.id === 'security_events' ? 1 : 0);
+        counts[t.id] = count || 0;
       }
       setTableCounts(counts);
 
@@ -802,6 +787,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
             {loadingMarketing ? (
               <div className="flex justify-center py-12">
                 <RefreshCw className="animate-spin text-indigo-500" size={32} />
+              </div>
+            ) : marketingError ? (
+              <div className="text-center py-12 text-rose-500 border-2 border-dashed border-rose-500/20 rounded-2xl bg-rose-500/5">
+                <p className="font-bold mb-2">Error Loading Analytics</p>
+                <p className="text-xs font-mono">{marketingError}</p>
+                <button onClick={fetchMarketingData} className="mt-4 px-4 py-2 bg-rose-500/20 hover:bg-rose-500/30 rounded-full text-xs font-bold uppercase tracking-widest">Retry</button>
               </div>
             ) : marketingData.length > 0 ? (
               <div className="space-y-6">

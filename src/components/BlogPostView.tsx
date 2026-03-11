@@ -34,7 +34,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ post, lang, onBack }
       },
       "headline": post.title,
       "description": post.excerpt,
-      "image": ["https://sleepsomno.com/favicon.svg"],
+      "image": ["https://sleepsomno.com/logo_512.png"],
       "datePublished": `${post.date}T10:00:00+08:00`,
       "dateModified": `${post.date}T10:00:00+08:00`,
       "author": {
@@ -48,7 +48,7 @@ export const BlogPostView: React.FC<BlogPostViewProps> = ({ post, lang, onBack }
         "name": "SomnoAI Digital Sleep Lab",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://sleepsomno.com/favicon.svg"
+          "url": "https://sleepsomno.com/logo_512.png"
         }
       },
       "keywords": post.tags.join(', ')

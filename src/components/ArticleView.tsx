@@ -33,7 +33,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
       },
       "headline": article.title,
       "description": article.excerpt,
-      "image": ["https://sleepsomno.com/favicon.svg"],
+      "image": ["https://sleepsomno.com/logo_512.png"],
       "datePublished": `${article.date}T10:00:00+08:00`,
       "dateModified": `${article.date}T10:00:00+08:00`,
       "author": {
@@ -47,7 +47,7 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
         "name": "SomnoAI Digital Sleep Lab",
         "logo": {
           "@type": "ImageObject",
-          "url": "https://sleepsomno.com/favicon.svg"
+          "url": "https://sleepsomno.com/logo_512.png"
         }
       }
     };
