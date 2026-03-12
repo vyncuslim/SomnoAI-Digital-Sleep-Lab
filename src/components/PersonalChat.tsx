@@ -74,7 +74,7 @@ export const PersonalChat: React.FC = () => {
       const systemInstruction = `You are a personal AI sleep coach. You have access to the user's recent sleep data: ${JSON.stringify(sleepData)}. Provide personalized, empathetic, and scientifically-backed advice based on this data.`;
       
       const response = await ai.models.generateContent({
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3-flash-preview",
         contents: [
           ...messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
           { role: 'user', parts: [{ text: input }] }
