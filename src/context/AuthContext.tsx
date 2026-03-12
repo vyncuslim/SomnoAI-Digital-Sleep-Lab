@@ -15,6 +15,7 @@ interface AuthContextType {
   isVerified: boolean;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -28,6 +29,7 @@ const AuthContext = createContext<AuthContextType>({
   isVerified: false,
   signIn: async () => {},
   signOut: async () => {},
+  refreshProfile: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -99,10 +101,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     await supabase.auth.signOut();
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      await fetchProfile(user.id);
+    }
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, profile, loading, isBlocked, blockedReason, blockCode, 
-      isAdmin, isOwner, isSuperOwner, isVerified, signIn, signOut 
+      isAdmin, isOwner, isSuperOwner, isVerified, signIn, signOut,
+      refreshProfile
     }}>
       {children}
     </AuthContext.Provider>

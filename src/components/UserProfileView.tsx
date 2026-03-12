@@ -1,6 +1,14 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  User, Mail, Phone, Globe, Settings, CreditCard, 
+  Shield, Save, Edit2, X, CheckCircle2, AlertCircle,
+  Calendar, Clock, Bell, Moon
+} from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { Language } from '../types';
+import { Language, UserProfile } from '../types';
+import { userApi, logAuditLog } from '../services/supabaseService';
+import { GlassCard } from './GlassCard';
 
 interface UserProfileViewProps {
   lang: Language;
@@ -8,27 +16,369 @@ interface UserProfileViewProps {
 }
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang, onNavigate }) => {
-  const { profile } = useAuth();
+  const { profile, user, refreshProfile } = useAuth();
+  const [isEditing, setIsEditing] = useState(false);
+  const [formData, setFormData] = useState<Partial<UserProfile>>({});
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
+
+  useEffect(() => {
+    if (profile) {
+      setFormData({
+        full_name: profile.full_name || '',
+        phone: profile.phone || '',
+        country: profile.country || '',
+        preferences: profile.preferences || {
+          theme: 'dark',
+          notifications: true,
+          bedtime_reminder: '22:00',
+          wake_goal: '07:00'
+        }
+      });
+    }
+  }, [profile]);
+
+  const handleSave = async () => {
+    if (!user) return;
+    setIsSaving(true);
+    setMessage(null);
+
+    try {
+      const { error } = await userApi.updateProfile(user.id, formData);
+      if (error) throw error;
+
+      await logAuditLog(user.id, 'UPDATE_PROFILE', formData);
+      await refreshProfile();
+      
+      setMessage({
+        type: 'success',
+        text: lang === 'zh' ? '资料已成功更新' : 'Profile updated successfully'
+      });
+      setIsEditing(false);
+    } catch (error: any) {
+      console.error('Error updating profile:', error);
+      setMessage({
+        type: 'error',
+        text: lang === 'zh' ? '更新失败: ' + error.message : 'Update failed: ' + error.message
+      });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const t = {
+    title: lang === 'zh' ? '个人资料' : 'User Profile',
+    personalInfo: lang === 'zh' ? '个人信息' : 'Personal Information',
+    fullName: lang === 'zh' ? '全名' : 'Full Name',
+    email: lang === 'zh' ? '电子邮箱' : 'Email Address',
+    phone: lang === 'zh' ? '电话号码' : 'Phone Number',
+    country: lang === 'zh' ? '国家/地区' : 'Country/Region',
+    subscription: lang === 'zh' ? '订阅详情' : 'Subscription Details',
+    plan: lang === 'zh' ? '当前计划' : 'Current Plan',
+    status: lang === 'zh' ? '状态' : 'Status',
+    memberSince: lang === 'zh' ? '加入时间' : 'Member Since',
+    settings: lang === 'zh' ? '偏好设置' : 'Preferences',
+    bedtime: lang === 'zh' ? '就寝提醒' : 'Bedtime Reminder',
+    wakeGoal: lang === 'zh' ? '起床目标' : 'Wake Up Goal',
+    notifications: lang === 'zh' ? '通知' : 'Notifications',
+    edit: lang === 'zh' ? '编辑资料' : 'Edit Profile',
+    save: lang === 'zh' ? '保存更改' : 'Save Changes',
+    cancel: lang === 'zh' ? '取消' : 'Cancel',
+    manageSub: lang === 'zh' ? '管理订阅' : 'Manage Subscription',
+    active: lang === 'zh' ? '已激活' : 'Active',
+    free: lang === 'zh' ? '免费' : 'Free',
+    pro: lang === 'zh' ? '专业版' : 'Pro',
+    placeholderName: lang === 'zh' ? '未设置' : 'Not set'
+  };
+
+  if (!profile) return null;
 
   return (
-    <div className="max-w-2xl mx-auto p-6 text-white">
-      <h1 className="text-2xl font-bold mb-6">{lang === 'zh' ? '用户资料' : 'User Profile'}</h1>
-      <div className="bg-white/5 p-6 rounded-xl border border-white/10">
-        <div className="mb-4">
-          <label className="text-slate-400 text-sm">{lang === 'zh' ? '邮箱' : 'Email'}</label>
-          <p className="text-lg">{profile?.email}</p>
+    <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-4xl font-black italic uppercase tracking-tighter text-white mb-2">
+            {t.title}
+          </h1>
+          <p className="text-slate-400 font-medium">
+            {lang === 'zh' ? '管理您的帐户设置和偏好。' : 'Manage your account settings and preferences.'}
+          </p>
         </div>
-        <div className="mb-4">
-          <label className="text-slate-400 text-sm">{lang === 'zh' ? '订阅计划' : 'Subscription Plan'}</label>
-          <p className="text-lg font-bold text-indigo-400 uppercase">{profile?.subscription_plan || (lang === 'zh' ? '免费' : 'Free')}</p>
-        </div>
-        <button 
-          onClick={() => onNavigate('subscription')}
-          className="mt-4 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors"
-        >
-          {lang === 'zh' ? '管理订阅' : 'Manage Subscription'}
-        </button>
+        {!isEditing && (
+          <button
+            onClick={() => setIsEditing(true)}
+            className="flex items-center gap-2 px-6 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/20"
+          >
+            <Edit2 className="w-4 h-4" />
+            {t.edit}
+          </button>
+        )}
       </div>
+
+      {/* Success/Error Message */}
+      <AnimatePresence>
+        {message && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            className={`p-4 rounded-xl flex items-center gap-3 border ${
+              message.type === 'success' 
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400' 
+                : 'bg-rose-500/10 border-rose-500/30 text-rose-400'
+            }`}
+          >
+            {message.type === 'success' ? <CheckCircle2 className="w-5 h-5" /> : <AlertCircle className="w-5 h-5" />}
+            <span className="font-medium">{message.text}</span>
+            <button onClick={() => setMessage(null)} className="ml-auto">
+              <X className="w-4 h-4 opacity-50 hover:opacity-100" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left Column: Personal Info */}
+        <div className="lg:col-span-2 space-y-8">
+          <GlassCard className="p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <User className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-xl font-black italic uppercase tracking-widest text-white">{t.personalInfo}</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.fullName}</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.full_name || ''}
+                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                    className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
+                  />
+                ) : (
+                  <p className="text-lg font-medium text-white">{profile.full_name || t.placeholderName}</p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.email}</label>
+                <p className="text-lg font-medium text-slate-400 flex items-center gap-2">
+                  <Mail className="w-4 h-4" />
+                  {profile.email}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.phone}</label>
+                {isEditing ? (
+                  <input
+                    type="tel"
+                    value={formData.phone || ''}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
+                  />
+                ) : (
+                  <p className="text-lg font-medium text-white flex items-center gap-2">
+                    <Phone className="w-4 h-4 text-slate-500" />
+                    {profile.phone || t.placeholderName}
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.country}</label>
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={formData.country || ''}
+                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                    className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
+                  />
+                ) : (
+                  <p className="text-lg font-medium text-white flex items-center gap-2">
+                    <Globe className="w-4 h-4 text-slate-500" />
+                    {profile.country || t.placeholderName}
+                  </p>
+                )}
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <Settings className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-xl font-black italic uppercase tracking-widest text-white">{t.settings}</h2>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Moon className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm font-medium text-white">{t.bedtime}</span>
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="time"
+                      value={formData.preferences?.bedtime_reminder || '22:00'}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        preferences: { ...formData.preferences, bedtime_reminder: e.target.value }
+                      })}
+                      className="bg-slate-950/50 border border-white/10 rounded px-2 py-1 text-white text-sm"
+                    />
+                  ) : (
+                    <span className="text-sm text-indigo-400 font-bold">{profile.preferences?.bedtime_reminder || '22:00'}</span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Clock className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm font-medium text-white">{t.wakeGoal}</span>
+                  </div>
+                  {isEditing ? (
+                    <input
+                      type="time"
+                      value={formData.preferences?.wake_goal || '07:00'}
+                      onChange={(e) => setFormData({
+                        ...formData,
+                        preferences: { ...formData.preferences, wake_goal: e.target.value }
+                      })}
+                      className="bg-slate-950/50 border border-white/10 rounded px-2 py-1 text-white text-sm"
+                    />
+                  ) : (
+                    <span className="text-sm text-indigo-400 font-bold">{profile.preferences?.wake_goal || '07:00'}</span>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Bell className="w-4 h-4 text-slate-400" />
+                    <span className="text-sm font-medium text-white">{t.notifications}</span>
+                  </div>
+                  {isEditing ? (
+                    <button
+                      onClick={() => setFormData({
+                        ...formData,
+                        preferences: { ...formData.preferences, notifications: !formData.preferences?.notifications }
+                      })}
+                      className={`w-12 h-6 rounded-full transition-colors relative ${
+                        formData.preferences?.notifications ? 'bg-indigo-600' : 'bg-slate-700'
+                      }`}
+                    >
+                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${
+                        formData.preferences?.notifications ? 'left-7' : 'left-1'
+                      }`} />
+                    </button>
+                  ) : (
+                    <span className={`text-xs font-black uppercase px-2 py-1 rounded ${
+                      profile.preferences?.notifications ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                    }`}>
+                      {profile.preferences?.notifications ? (lang === 'zh' ? '开启' : 'ON') : (lang === 'zh' ? '关闭' : 'OFF')}
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* Right Column: Subscription & Meta */}
+        <div className="space-y-8">
+          <GlassCard className="p-8 border-indigo-500/30 bg-indigo-500/5">
+            <div className="flex items-center gap-3 mb-8">
+              <CreditCard className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-xl font-black italic uppercase tracking-widest text-white">{t.subscription}</h2>
+            </div>
+
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{t.plan}</label>
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-indigo-600 rounded-xl">
+                    <Shield className="w-6 h-6 text-white" />
+                  </div>
+                  <div>
+                    <p className="text-xl font-black text-white uppercase tracking-tighter">
+                      {profile.subscription_plan === 'pro' ? t.pro : t.free}
+                    </p>
+                    <p className="text-xs text-indigo-400 font-bold uppercase tracking-widest">{t.status}: {t.active}</p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={() => onNavigate('subscription')}
+                className="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/10"
+              >
+                {t.manageSub}
+              </button>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-8">
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{t.memberSince}</label>
+                <div className="flex items-center gap-3 text-white">
+                  <Calendar className="w-4 h-4 text-slate-500" />
+                  <span className="font-medium">
+                    {new Date(profile.created_at || '').toLocaleDateString(lang === 'zh' ? 'zh-CN' : 'en-US', {
+                      year: 'numeric',
+                      month: 'long',
+                      day: 'numeric'
+                    })}
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-6 border-t border-white/5">
+                <p className="text-[10px] text-slate-500 font-medium leading-relaxed">
+                  {lang === 'zh' 
+                    ? '您的数据根据我们的隐私政策进行加密和保护。' 
+                    : 'Your data is encrypted and protected according to our privacy policy.'}
+                </p>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+      </div>
+
+      {/* Action Bar (Sticky when editing) */}
+      <AnimatePresence>
+        {isEditing && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 50 }}
+            className="fixed bottom-8 left-1/2 -translate-x-1/2 z-50 flex items-center gap-4 p-4 bg-slate-900/90 backdrop-blur-xl border border-white/10 rounded-2xl shadow-2xl"
+          >
+            <button
+              onClick={() => setIsEditing(false)}
+              className="px-6 py-3 text-slate-400 hover:text-white font-bold transition-colors"
+            >
+              {t.cancel}
+            </button>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="flex items-center gap-2 px-8 py-3 bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white rounded-xl font-bold transition-all shadow-lg shadow-indigo-500/40"
+            >
+              {isSaving ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                <Save className="w-4 h-4" />
+              )}
+              {t.save}
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };
