@@ -172,6 +172,8 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 
   const handleBack = () => navigate(-1);
 
+  const location = useLocation();
+  console.log('AppRoutes rendered for path:', location.pathname);
   if (isBlocked) {
     return (
       <Suspense fallback={<div className="min-h-screen bg-[#01040a]" />}>

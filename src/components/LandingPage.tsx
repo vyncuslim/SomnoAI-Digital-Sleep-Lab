@@ -19,6 +19,7 @@ interface LandingPageProps {
 }
 
 export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) => {
+  console.log('LandingPage rendered');
   const { user, profile } = useAuth();
   const t = getTranslation(lang, 'landing');
 

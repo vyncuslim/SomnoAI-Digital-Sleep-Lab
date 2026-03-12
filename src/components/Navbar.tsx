@@ -100,6 +100,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 whileHover={{ y: -2 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={() => {
+                  console.log('Navigating to:', id);
                   onNavigate(id);
                   setIsMobileMenuOpen(false);
                 }}

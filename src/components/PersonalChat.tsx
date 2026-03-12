@@ -6,8 +6,6 @@ import { SleepRecord } from '../types';
 import { Send, User, Bot, Loader2 } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY! });
-
 export const PersonalChat: React.FC = () => {
   const { user } = useAuth();
   const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string }[]>([]);
@@ -59,6 +57,7 @@ export const PersonalChat: React.FC = () => {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
+    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
 
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prev => [...prev, userMessage]);
@@ -66,6 +65,7 @@ export const PersonalChat: React.FC = () => {
     setLoading(true);
 
     try {
+      console.log('API Key exists:', !!(process.env.GEMINI_API_KEY || process.env.API_KEY));
       const systemInstruction = `You are a personal AI sleep coach. You have access to the user's recent sleep data: ${JSON.stringify(sleepData)}. Provide personalized, empathetic, and scientifically-backed advice based on this data.`;
       
       const response = await ai.models.generateContent({
@@ -82,7 +82,7 @@ export const PersonalChat: React.FC = () => {
       setMessages(prev => [...prev, { role: 'model', content: response.text || "I'm sorry, I couldn't generate a response." }]);
     } catch (error) {
       console.error("Chat error:", error);
-      setMessages(prev => [...prev, { role: 'model', content: "Sorry, I encountered an error." }]);
+      setMessages(prev => [...prev, { role: 'model', content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : String(error)}` }]);
     } finally {
       setLoading(false);
     }
