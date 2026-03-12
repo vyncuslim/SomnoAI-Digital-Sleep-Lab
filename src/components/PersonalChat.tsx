@@ -57,7 +57,12 @@ export const PersonalChat: React.FC = () => {
 
   const sendMessage = async () => {
     if (!input.trim() || loading) return;
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      setMessages(prev => [...prev, { role: 'model', content: "Error: Gemini API key is missing. Please contact support." }]);
+      return;
+    }
+    const ai = new GoogleGenAI({ apiKey });
 
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prev => [...prev, userMessage]);
