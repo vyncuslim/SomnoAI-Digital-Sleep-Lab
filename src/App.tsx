@@ -17,6 +17,8 @@ import Footer from './components/Footer';
 import { HelmetProvider } from 'react-helmet-async';
 import { SchemaMarkup } from './components/SchemaMarkup';
 
+import { GlobalAIChat } from './components/GlobalAIChat';
+
 // Lazy load components
 const PersonalChat = lazy(() => import('./components/PersonalChat').then(module => ({ default: module.PersonalChat })));
 const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement').then(module => ({ default: module.SubscriptionManagement })));
@@ -122,7 +124,11 @@ const AuthCallback = () => {
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard', { replace: true });
+      if (window.opener) {
+        window.close();
+      } else {
+        navigate('/dashboard', { replace: true });
+      }
     }
   }, [user, navigate]);
 
@@ -135,7 +141,11 @@ const AuthCallback = () => {
 
   useEffect(() => {
     if (timeoutReached && !loading && !user) {
-      navigate('/auth/login?error=unverified', { replace: true });
+      if (window.opener) {
+        window.close();
+      } else {
+        navigate('/auth/login?error=unverified', { replace: true });
+      }
     }
   }, [timeoutReached, loading, user, navigate]);
 
@@ -442,6 +452,7 @@ const AppContent = () => {
             ) : (
               <AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} handleNavigate={handleNavigate} />
             )}
+            <GlobalAIChat />
           </LanguageProvider>
         </div>
         {showNavbar && <Footer lang={lang} />}

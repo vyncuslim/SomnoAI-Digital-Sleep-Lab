@@ -56,7 +56,7 @@ export const FounderDashboard: React.FC = () => {
     );
   }
 
-  const pieData = Object.entries(stats.country_distribution).map(([name, value]) => ({ name, value }));
+  const pieData = Object.entries(stats.country_distribution || {}).map(([name, value]) => ({ name, value }));
   const COLORS = ['#818cf8', '#c084fc', '#fb7185', '#34d399', '#fbbf24', '#38bdf8'];
 
   return (
@@ -65,28 +65,28 @@ export const FounderDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <MetricCard 
           title="Total Subjects" 
-          value={stats.total_users} 
+          value={stats.total_users || 0} 
           icon={Users} 
           color="indigo" 
           trend="+12%" 
         />
         <MetricCard 
           title="New Today" 
-          value={stats.new_today} 
+          value={stats.new_today || 0} 
           icon={UserPlus} 
           color="emerald" 
           trend="+5%" 
         />
         <MetricCard 
           title="Active (30d)" 
-          value={stats.active_users} 
+          value={stats.active_users || 0} 
           icon={Activity} 
           color="amber" 
           trend="+8%" 
         />
         <MetricCard 
           title="Paying Nodes" 
-          value={stats.paying_users} 
+          value={stats.paying_users || 0} 
           icon={CreditCard} 
           color="purple" 
           trend="+15%" 

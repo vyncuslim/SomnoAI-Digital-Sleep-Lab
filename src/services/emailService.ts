@@ -1,3 +1,5 @@
+import { fetchWithLogging } from './apiService';
+
 const API_URL = '/api';
 
 export const emailService = {
@@ -7,7 +9,7 @@ export const emailService = {
   },
   sendBlockNotification: async (email: string, reason: string, blockCode: string) => {
     try {
-      await fetch(`${API_URL}/send-email`, {
+      await fetchWithLogging(`${API_URL}/send-email`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -22,7 +24,7 @@ export const emailService = {
             <p>Please email admin@sleepsomno.com with this code to resolve the issue.</p>
           `,
         }),
-      });
+      }, 'sendBlockNotification', 'CRITICAL');
       console.log('Block notification sent to:', email);
     } catch (error) {
       console.error('Failed to send block notification:', error);

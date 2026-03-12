@@ -43,6 +43,12 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               ? "我们在加载此实验室节点时遇到了意外错误。请尝试刷新页面或联系支持团队。" 
               : "We encountered an unexpected error while loading this laboratory node. Please try refreshing the page or contact support if the issue persists."}
           </p>
+          {this.state.error && (
+            <div className="bg-rose-500/10 border border-rose-500/20 p-4 rounded-xl mb-8 text-left max-w-2xl w-full overflow-auto">
+              <p className="text-rose-400 font-mono text-sm">{this.state.error.toString()}</p>
+              <pre className="text-rose-400/70 font-mono text-xs mt-2 whitespace-pre-wrap">{this.state.error.stack}</pre>
+            </div>
+          )}
           <div className="flex gap-4">
             <button 
               onClick={() => window.location.reload()} 

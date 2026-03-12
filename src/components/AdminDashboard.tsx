@@ -88,7 +88,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       
       try {
         const data = JSON.parse(text);
-        if (data && data.data) {
+        if (data && Array.isArray(data.data)) {
           setMarketingData(data.data);
         } else {
           console.error("Marketing data format invalid:", data);
@@ -244,7 +244,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
         adminApi.getSecurityEvents(),
         adminApi.getSettings(),
         supabase.from('reviews').select('*').order('created_at', { ascending: false }),
-        supabase.from('error_logs').select('*, profiles:user_id(email)').order('created_at', { ascending: false }).limit(100)
+        supabase.from('error_logs').select('*').order('created_at', { ascending: false }).limit(100)
       ]);
       console.log('AdminDashboard: fetchData results:', { uRes, fRes, aRes, sRes, setRes, rRes, eRes });
 

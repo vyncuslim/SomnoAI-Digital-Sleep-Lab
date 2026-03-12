@@ -39,13 +39,14 @@ export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabase
 } as any;
 
 // Error Logging Helper
-export const logError = async (userId: string | null, error: any, context: string) => {
+export const logError = async (userId: string | null, error: any, context: string, severity: 'INFO' | 'WARNING' | 'CRITICAL' = 'CRITICAL') => {
   try {
     const { error: logErr } = await supabase.from('error_logs').insert([{
       user_id: userId,
       error_message: error instanceof Error ? error.message : String(error),
       error_stack: error instanceof Error ? error.stack : null,
       context,
+      severity,
       details: typeof error === 'object' ? JSON.stringify(error) : null
     }]);
     return { error: logErr };
@@ -91,7 +92,7 @@ export const logSecurityEvent = async (userId: string | null, type: string, deta
 export const adminApi = {
   getUsers: async () => supabase.from('profiles').select('*'),
   getFeedback: async () => supabase.from('feedback').select('*'),
-  getAuditLogs: async () => supabase.from('audit_logs').select('*, profiles:user_id(email)').order('created_at', { ascending: false }),
+  getAuditLogs: async () => supabase.from('audit_logs').select('*').order('created_at', { ascending: false }),
   getSecurityEvents: async () => supabase.from('security_events').select('*').order('created_at', { ascending: false }),
   updateUserRole: async (id: string, role: string) => supabase.from('profiles').update({ role }).eq('id', id),
   getSettings: async () => supabase.from('app_settings').select('*'),

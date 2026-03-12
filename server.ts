@@ -16,9 +16,16 @@ async function startServer() {
   const app = express();
   app.use(express.json());
 
-  const resend = new Resend(process.env.RESEND_API_KEY);
+  let resend: Resend | null = null;
+  if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
 
   app.post('/api/notify-login', async (req, res) => {
+    if (!resend) {
+      console.warn('Resend is not configured. Skipping login notification.');
+      return res.status(200).json({ success: true, message: 'Resend not configured' });
+    }
     const { email, user_name, device, time, location } = req.body;
 
     try {
@@ -46,6 +53,9 @@ async function startServer() {
   });
 
   app.post('/api/send-email', async (req, res) => {
+    if (!resend) {
+      return res.status(500).json({ error: 'Resend is not configured' });
+    }
     const { to, subject, html } = req.body;
 
     try {

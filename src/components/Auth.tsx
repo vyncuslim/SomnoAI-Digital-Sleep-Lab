@@ -129,6 +129,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setToken('');
     setSuccessMessage(null);
     setError(null);
+    setTurnstileToken(null);
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+    }
   }, [view]);
 
   const validateEmail = (email: string) => {
@@ -161,11 +165,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setSuccessMessage(null);
 
     try {
-      if ((view === 'signup' || view === 'login') && (!termsApproved || !privacyApproved)) {
+      if (view === 'signup' && (!termsApproved || !privacyApproved)) {
         throw new Error('You must approve the Terms of Service and Privacy Policy.');
       }
 
-      if ((view === 'signup' || view === 'login') && isTurnstileEnabled && !turnstileToken) {
+      const requiresCaptcha = view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput);
+      if (requiresCaptcha && isTurnstileEnabled && !turnstileToken) {
         throw new Error('Please complete the security verification.');
       }
 
@@ -195,6 +200,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (signInError) {
           await securityService.handleFailedLogin(email);
           await logError(null, signInError, `Login failed for ${email}`);
+          await logAuditLog(null, 'USER_LOGIN_FAILURE', `Login failed for ${email}: ${signInError.message}`);
           throw signInError;
         }
         
@@ -330,19 +336,44 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       setLoading(true);
       setError(null);
       
-      const { error } = await supabase.auth.signInWithOAuth({
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}${langPrefix}/dashboard`
+          redirectTo: `${window.location.origin}/auth/callback`,
+          skipBrowserRedirect: true,
         }
       });
       
       if (error) throw error;
       
+      if (data?.url) {
+        // Open the OAuth URL in a popup to avoid iframe restrictions
+        const width = 500;
+        const height = 600;
+        const left = window.screenX + (window.outerWidth - width) / 2;
+        const top = window.screenY + (window.outerHeight - height) / 2;
+        const popup = window.open(
+          data.url,
+          'supabase_oauth',
+          `width=${width},height=${height},left=${left},top=${top},toolbar=0,scrollbars=1,status=1,resizable=1,location=1,menuBar=0`
+        );
+        
+        if (!popup) {
+          setError(lang === 'zh' ? '弹窗被拦截，请允许弹窗以继续。' : 'Popup blocked. Please allow popups to continue.');
+        } else {
+          // Listen for the popup closing or auth state changing
+          const checkPopup = setInterval(() => {
+            if (popup.closed) {
+              clearInterval(checkPopup);
+              setLoading(false);
+            }
+          }, 1000);
+        }
+      }
+      
     } catch (err: any) {
       console.error('Google Auth error:', err);
       setError(err.message || 'Google sign-in failed');
-    } finally {
       setLoading(false);
     }
   };
@@ -566,7 +597,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     </motion.div>
                   )}
 
-                  {(view === 'login' || view === 'signup') && (
+                  {view === 'signup' && (
                     <motion.div variants={itemVariants} className="space-y-4 ml-2 pt-2">
                       <CheckboxField id="terms" checked={termsApproved} onChange={setTermsApproved}>
                         {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/terms-of-service`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '服务条款' : 'Terms of Service'}</Link>.
@@ -574,22 +605,24 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                       <CheckboxField id="privacy" checked={privacyApproved} onChange={setPrivacyApproved}>
                         {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
                       </CheckboxField>
-                      
-                      {isTurnstileEnabled && (
-                        <div className="pt-2">
-                          <Turnstile 
-                            ref={turnstileRef}
-                            siteKey={turnstileSiteKey} 
-                            onSuccess={(token) => setTurnstileToken(token)}
-                            onError={() => setError('Security verification failed. Please try again.')}
-                            onExpire={() => setTurnstileToken(null)}
-                            options={{
-                              theme: 'dark',
-                              size: 'normal',
-                            }}
-                          />
-                        </div>
-                      )}
+                    </motion.div>
+                  )}
+
+                  {(view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput)) && isTurnstileEnabled && (
+                    <motion.div variants={itemVariants} className="space-y-4 ml-2 pt-2">
+                      <div className="pt-2">
+                        <Turnstile 
+                          ref={turnstileRef}
+                          siteKey={turnstileSiteKey} 
+                          onSuccess={(token) => setTurnstileToken(token)}
+                          onError={() => setError('Security verification failed. Please try again.')}
+                          onExpire={() => setTurnstileToken(null)}
+                          options={{
+                            theme: 'dark',
+                            size: 'normal',
+                          }}
+                        />
+                      </div>
                     </motion.div>
                   )}
 
