@@ -69,7 +69,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
   useEffect(() => {
     if (activeTab === 'analytics') {
-      // fetchMarketingData();
+      fetchMarketingData();
     }
   }, [activeTab]);
 
@@ -80,24 +80,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       // Updated domain to digitalsleeplab.com
       const response = await fetch('https://connectors.windsor.ai/all?api_key=aa3204e4ef7d0c86362b3131645f629093b2&date_preset=last_14d&fields=account_id,account_name,achievement_id,active1_day_users,active7_day_users,active_users,clicks,sessions,datasource,date,source&select_accounts=googleanalytics4__380909155,searchconsole__sc-domain%3Adigitalsleeplab.com');
       
+      const contentType = response.headers.get('content-type');
       const text = await response.text();
       
       if (!response.ok) {
-        throw new Error(`API request failed with status ${response.status}: ${text}`);
+        throw new Error(`Analytics API failed (${response.status})`);
+      }
+      
+      if (contentType && !contentType.includes('application/json')) {
+        throw new Error("Invalid response format: Received HTML instead of JSON. This usually indicates an invalid API key or service interruption.");
       }
       
       try {
         const data = JSON.parse(text);
-        if (data && Array.isArray(data.data)) {
-          setMarketingData(data.data);
+        const actualData = Array.isArray(data) ? data : (data && Array.isArray(data.data) ? data.data : null);
+        
+        if (actualData) {
+          setMarketingData(actualData);
         } else {
           console.error("Marketing data format invalid:", data);
-          setMarketingError("Marketing data format invalid");
+          setMarketingError("Marketing data format invalid: Expected an array of records.");
         }
       } catch (e) {
         console.error("Failed to parse marketing data as JSON. Response text:", text);
-        setMarketingError("Failed to parse marketing data as JSON");
-        throw new Error("Invalid JSON response from marketing API");
+        throw new Error("Failed to parse analytics data as JSON. Please check API configuration.");
       }
     } catch (error) {
       console.error("Failed to fetch marketing data:", error);
