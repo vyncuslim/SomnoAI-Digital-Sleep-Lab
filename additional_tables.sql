@@ -140,15 +140,29 @@ ALTER TABLE public.sleep_records ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.diary_entries ENABLE ROW LEVEL SECURITY;
 
 -- Admin can manage all
+DROP POLICY IF EXISTS "Admin manage analytics" ON public.analytics_daily;
 CREATE POLICY "Admin manage analytics" ON public.analytics_daily FOR ALL TO authenticated USING (public.is_admin_check(auth.uid()));
+
+DROP POLICY IF EXISTS "Admin manage communications" ON public.communications;
 CREATE POLICY "Admin manage communications" ON public.communications FOR ALL TO authenticated USING (public.is_admin_check(auth.uid()));
+
+DROP POLICY IF EXISTS "Admin manage sleep_records" ON public.sleep_records;
 CREATE POLICY "Admin manage sleep_records" ON public.sleep_records FOR ALL TO authenticated USING (public.is_admin_check(auth.uid()));
+
+DROP POLICY IF EXISTS "Admin manage diary_entries" ON public.diary_entries;
 CREATE POLICY "Admin manage diary_entries" ON public.diary_entries FOR ALL TO authenticated USING (public.is_admin_check(auth.uid()));
 
 -- Users can view own data
+DROP POLICY IF EXISTS "Users view own sleep_records" ON public.sleep_records;
 CREATE POLICY "Users view own sleep_records" ON public.sleep_records FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users insert own sleep_records" ON public.sleep_records;
 CREATE POLICY "Users insert own sleep_records" ON public.sleep_records FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users view own diary_entries" ON public.diary_entries;
 CREATE POLICY "Users view own diary_entries" ON public.diary_entries FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users insert own diary_entries" ON public.diary_entries;
 CREATE POLICY "Users insert own diary_entries" ON public.diary_entries FOR INSERT TO authenticated WITH CHECK (auth.uid() = user_id);
 
 -- 8. Ensure profiles has is_blocked

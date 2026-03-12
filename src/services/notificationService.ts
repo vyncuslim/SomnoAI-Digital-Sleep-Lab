@@ -11,6 +11,14 @@ export const notificationService = {
       const device = `${result.browser.name || 'Unknown Browser'} on ${result.os.name || 'Unknown OS'} (${result.device.type || 'desktop'})`;
       const time = new Date().toISOString();
       
+      // Fetch user name
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', userId)
+        .single();
+      const user_name = profile?.full_name || 'User';
+
       // Check for existing logins to see if this is "new"
       const { data: existingLogins } = await supabase
         .from('logins')
@@ -24,6 +32,7 @@ export const notificationService = {
       // Record this login
       await supabase.from('logins').insert([{
         user_id: userId,
+        user_name: user_name,
         device_info: device,
         ip_address: 'AUTO_DETECT',
         status: 'success'
@@ -37,6 +46,7 @@ export const notificationService = {
           },
           body: JSON.stringify({
             email,
+            user_name,
             device,
             time,
             userId,
