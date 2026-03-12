@@ -1,10 +1,21 @@
 import { GoogleGenAI } from "@google/genai";
 
-declare var process: any;
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY! });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAiInstance(): GoogleGenAI {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("GEMINI_API_KEY is not defined");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export async function getSleepRecommendation(userData: string): Promise<string> {
   try {
+    const ai = getAiInstance();
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: `Provide personalized sleep recommendations based on this user data: ${userData}`,
@@ -18,6 +29,7 @@ export async function getSleepRecommendation(userData: string): Promise<string> 
 
 export async function startContextualCoach(chatHistory: any[], history: any[], lang: string): Promise<any> {
   try {
+    const ai = getAiInstance();
     const systemInstruction = `You are a sleep coach. Language: ${lang}. History: ${JSON.stringify(history)}`;
     
     // Convert chat history to the format expected by gemini

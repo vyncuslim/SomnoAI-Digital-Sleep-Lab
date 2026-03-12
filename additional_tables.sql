@@ -17,6 +17,7 @@ CREATE TABLE IF NOT EXISTS public.error_logs (
 CREATE TABLE IF NOT EXISTS public.logins (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id uuid REFERENCES auth.users ON DELETE CASCADE NOT NULL,
+    user_name text,
     device_info text,
     ip_address text,
     location text,

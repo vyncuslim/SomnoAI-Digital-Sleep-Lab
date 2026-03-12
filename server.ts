@@ -19,7 +19,7 @@ async function startServer() {
   const resend = new Resend(process.env.RESEND_API_KEY);
 
   app.post('/api/notify-login', async (req, res) => {
-    const { email, device, time, location } = req.body;
+    const { email, user_name, device, time, location } = req.body;
 
     try {
       await resend.emails.send({
@@ -28,6 +28,7 @@ async function startServer() {
         subject: 'New Login Detected',
         html: `
           <h1>New Login Detected</h1>
+          <p>Hello ${user_name},</p>
           <p>A new login was detected for your SomnoAI account.</p>
           <ul>
             <li><strong>Device:</strong> ${device}</li>

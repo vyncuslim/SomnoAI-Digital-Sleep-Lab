@@ -659,6 +659,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
           </div>
         )}
 
+        {activeTab === 'errors' && (
+          <div className="space-y-6">
+            <div className="overflow-x-auto rounded-2xl border border-white/5">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-white/5 border-b border-white/10">
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Error</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">User</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Context</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Date</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {errorLogs.map((log) => (
+                    <tr key={log.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      <td className="p-4">
+                        <div className="text-xs font-bold text-rose-400">{log.error_message}</div>
+                      </td>
+                      <td className="p-4 text-xs font-mono text-slate-500">{log.profiles?.email || 'System'}</td>
+                      <td className="p-4 text-xs text-slate-400">{log.context}</td>
+                      <td className="p-4 text-xs font-mono text-slate-500 text-right">{new Date(log.created_at).toLocaleString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'feedback' && (
           <div className="space-y-8 px-2 max-w-6xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between gap-6 px-2 text-left border-b border-white/5 pb-8">
