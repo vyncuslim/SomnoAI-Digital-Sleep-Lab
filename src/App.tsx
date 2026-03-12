@@ -8,8 +8,6 @@ import { LanguageProvider } from './context/LanguageProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AnalyticsProvider } from './components/AnalyticsProvider';
 import RootLayout from './components/RootLayout';
-import { supabase } from './services/supabaseService';
-import { SleepRecord } from './types';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import Navbar from './components/Navbar';
@@ -46,7 +44,6 @@ const Atlas = lazy(() => import('./pages/Atlas').then(module => ({ default: modu
 const Dreams = lazy(() => import('./pages/Dreams').then(module => ({ default: module.Dreams })));
 const Voice = lazy(() => import('./pages/Voice').then(module => ({ default: module.Voice })));
 const GenericFeature = lazy(() => import('./pages/GenericFeature').then(module => ({ default: module.GenericFeature })));
-const AIAssistant = lazy(() => import('./components/AIAssistant').then(module => ({ default: module.AIAssistant })));
 const Trials = lazy(() => import('./pages/Trials').then(module => ({ default: module.Trials })));
 // const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
 const BlogHub = lazy(() => import('./pages/BlogHub').then(module => ({ default: module.BlogHub })));
@@ -112,8 +109,6 @@ const ArticleWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
 interface AppRoutesProps {
   lang: Language;
   setLang: (lang: Language) => void;
-  latestData: SleepRecord | null;
-  history: SleepRecord[];
   handleNavigate: (path: string) => void;
 }
 
@@ -162,8 +157,6 @@ const AuthCallback = () => {
 const AppRoutes: React.FC<AppRoutesProps> = ({
   lang,
   setLang,
-  latestData,
-  history,
   handleNavigate,
 }) => {
   const navigate = useNavigate();
@@ -284,11 +277,6 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
           <GenericFeature lang={lang} onBack={handleBack} title={lang === 'zh' ? '日志' : 'Log'} description={lang === 'zh' ? '这里是睡眠日志。' : 'Welcome to your sleep log.'} />
         </ProtectedRoute>
       } />
-      <Route path="ai-assistant" element={
-        <ProtectedRoute lang={lang}>
-          <AIAssistant lang={lang} data={latestData} history={history} />
-        </ProtectedRoute>
-      } />
       <Route path="subscription" element={
         <ProtectedRoute lang={lang}>
           <SubscriptionManagement lang={lang} />
@@ -311,52 +299,17 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
 const AppContent = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user, profile, isAdmin, signOut } = useAuth();
+  const { user, isAdmin, signOut } = useAuth();
   
   // Derive language from URL
   const lang: Language = location.pathname.startsWith('/cn') ? 'zh' : 'en';
   
-  const [latestData, setLatestData] = useState<SleepRecord | null>(null);
-  const [history, setHistory] = useState<SleepRecord[]>([]);
   const [showBanner, setShowBanner] = useState(true);
   const isSupabaseConfigured = !!import.meta.env.VITE_SUPABASE_URL && !!import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   useEffect(() => {
     trackPageView(location.pathname);
   }, [location.pathname]);
-
-  useEffect(() => {
-    if (profile) {
-      supabase.from('sleep_records')
-        .select('*')
-        .eq('user_id', profile.id)
-        .order('date', { ascending: false })
-        .then(({ data }: { data: any[] | null }) => {
-          if (data && data.length > 0) {
-            const mapped: SleepRecord[] = data.map((d: any) => ({
-              id: d.id,
-              date: d.date,
-              score: d.score || 0,
-              heartRate: {
-                resting: d.heart_rate_resting || 60,
-                min: d.heart_rate_min || 50,
-                max: d.heart_rate_max || 100,
-                average: d.heart_rate_avg || 70,
-                history: d.heart_rate_history || []
-              },
-              deepRatio: d.deep_ratio || 0.2,
-              remRatio: d.rem_ratio || 0.2,
-              totalDuration: d.total_duration || 480,
-              efficiency: d.efficiency || 0.9,
-              stages: d.stages || [],
-              aiInsights: d.ai_insights || []
-            }));
-            setLatestData(mapped[0]);
-            setHistory(mapped);
-          }
-        });
-    }
-  }, [profile]);
 
   const handleLanguageChange = (newLang: Language) => {
     const currentPath = window.location.pathname;
@@ -448,11 +401,11 @@ const AppContent = () => {
           <LanguageProvider lang={lang} setLang={handleLanguageChange}>
             {/^\/(cn|en)(\/|$)/.test(location.pathname) ? (
               <Routes>
-                <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} latestData={latestData} history={history} handleNavigate={handleNavigate} />} />
-                <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} handleNavigate={handleNavigate} />} />
+                <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} handleNavigate={handleNavigate} />} />
+                <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} handleNavigate={handleNavigate} />} />
               </Routes>
             ) : (
-              <AppRoutes lang="en" setLang={handleLanguageChange} latestData={latestData} history={history} handleNavigate={handleNavigate} />
+              <AppRoutes lang="en" setLang={handleLanguageChange} handleNavigate={handleNavigate} />
             )}
             <GlobalAIChat />
           </LanguageProvider>

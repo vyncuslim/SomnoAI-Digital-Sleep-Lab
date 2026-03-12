@@ -59,7 +59,6 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'dashboard', icon: LayoutDashboard, label: isZh ? '实验室' : 'Lab' },
     { id: 'calendar', icon: TrendingUp, label: isZh ? '分析' : 'Atlas' },
     { id: 'experiment', icon: FlaskConical, label: isZh ? '实验' : 'Trials' },
-    { id: 'assistant', icon: Sparkles, label: isZh ? 'AI 助手' : 'AI Assist' },
     { id: 'personal-chat', icon: MessageSquare, label: isZh ? '个人聊天' : 'Personal Chat' },
     { id: 'dreams', icon: ImageIcon, label: isZh ? '投影' : 'Dreams' },
     { id: 'voice', icon: Mic, label: isZh ? '语音' : 'Voice' },

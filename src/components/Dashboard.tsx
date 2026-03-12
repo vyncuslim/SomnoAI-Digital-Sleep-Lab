@@ -56,6 +56,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
+  const [dailyCount, setDailyCount] = useState(0);
+
+  const DAILY_LIMIT = 4;
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('sleepHistory');
@@ -64,6 +67,11 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         const parsed = JSON.parse(savedHistory);
         if (Array.isArray(parsed)) {
           setHistory(parsed);
+          
+          // Calculate daily count
+          const today = new Date().toDateString();
+          const todayCount = parsed.filter((r: any) => new Date(r.date).toDateString() === today).length;
+          setDailyCount(todayCount);
         }
       } catch (e) {
         console.error('Failed to parse history', e);
@@ -94,6 +102,11 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     const updatedHistory = [newRecord, ...history].slice(0, 10); // Keep last 10
     setHistory(updatedHistory);
     localStorage.setItem('sleepHistory', JSON.stringify(updatedHistory));
+    
+    // Update daily count
+    const today = new Date().toDateString();
+    const todayCount = updatedHistory.filter((r: any) => new Date(r.date).toDateString() === today).length;
+    setDailyCount(todayCount);
   };
 
   const handleLogout = async () => {
@@ -102,6 +115,12 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   };
 
   const generateAnalysis = async () => {
+    if (dailyCount >= DAILY_LIMIT) {
+      alert(lang === 'zh' 
+        ? "您已达到每日 4 次分析限制。我们设置此限制是为了确保系统稳定性并避免超出每日配额。请明天再试！" 
+        : "You have reached the daily limit of 4 analyses. We set this limit to ensure system stability and avoid exceeding daily quotas. Please try again tomorrow!");
+      return;
+    }
     setIsAnalyzing(true);
     try {
       const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
@@ -237,6 +256,16 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
           <div className="flex flex-col items-end gap-4">
             <div className="flex items-center gap-4">
               <TelemetryStream />
+              <div className="text-right">
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Daily Analysis</p>
+                <div className={`inline-flex items-center px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                  dailyCount >= DAILY_LIMIT 
+                    ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' 
+                    : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
+                }`}>
+                  {dailyCount}/{DAILY_LIMIT}
+                </div>
+              </div>
               <div className="text-right">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">{t.currentPlan}</p>
                 <div className={`inline-flex items-center px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
