@@ -17,8 +17,27 @@ export const PersonalChat: React.FC = () => {
   useEffect(() => {
     if (user) {
       fetchSleepData();
+      fetchMessages();
     }
   }, [user]);
+
+  const fetchMessages = async () => {
+    if (!user) return;
+    const { data, error } = await supabase
+      .from('chat_messages')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: true });
+
+    if (data) {
+      setMessages(data.map(m => ({ role: m.role as 'user' | 'model', content: m.content })));
+    }
+  };
+
+  const saveMessage = async (role: 'user' | 'model', content: string) => {
+    if (!user) return;
+    await supabase.from('chat_messages').insert([{ user_id: user.id, role, content }]);
+  };
 
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -66,6 +85,7 @@ export const PersonalChat: React.FC = () => {
 
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prev => [...prev, userMessage]);
+    await saveMessage('user', input);
     setInput('');
     setLoading(true);
 
@@ -84,7 +104,9 @@ export const PersonalChat: React.FC = () => {
         }
       });
 
-      setMessages(prev => [...prev, { role: 'model', content: response.text || "I'm sorry, I couldn't generate a response." }]);
+      const modelContent = response.text || "I'm sorry, I couldn't generate a response.";
+      setMessages(prev => [...prev, { role: 'model', content: modelContent }]);
+      await saveMessage('model', modelContent);
     } catch (error) {
       console.error("Chat error:", error);
       setMessages(prev => [...prev, { role: 'model', content: `Sorry, I encountered an error: ${error instanceof Error ? error.message : String(error)}` }]);
