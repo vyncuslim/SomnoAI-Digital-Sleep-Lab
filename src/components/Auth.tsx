@@ -217,11 +217,17 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           
           if (profileData?.is_blocked) {
              // Log the attempt
-             await logAuditLog(data.user.id, 'BLOCKED_LOGIN_ATTEMPT', `Blocked user attempted login. Code: ${profileData.block_code || 'N/A'}`);
+             await logAuditLog(data.user.id, 'BLOCKED_LOGIN_ATTEMPT', `Blocked user attempted login. Role: ${profileData.role || 'user'}. Code: ${profileData.block_code || 'N/A'}`);
              await supabase.auth.signOut();
              throw new Error(`Your account is blocked. Block Code: ${profileData.block_code || 'N/A'}. Please contact admin@sleepsomno.com`);
           } else {
-             await logAuditLog(data.user.id, 'USER_LOGIN', 'Successful login');
+             // Check if role is valid
+             if (!profileData?.role) {
+               console.warn(`User ${data.user.id} has no role assigned.`);
+               await logAuditLog(data.user.id, 'LOGIN_NO_ROLE', `User logged in without an assigned role.`);
+             }
+             
+             await logAuditLog(data.user.id, 'USER_LOGIN', `Successful login. Role: ${profileData?.role || 'user'}`);
              notificationService.sendLoginNotification(email, data.user.id);
           }
         }

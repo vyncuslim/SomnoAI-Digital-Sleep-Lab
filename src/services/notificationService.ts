@@ -29,14 +29,26 @@ export const notificationService = {
 
       const isNewDevice = !existingLogins || existingLogins.length === 0;
 
-      // Record this login
-      await supabase.from('logins').insert([{
-        user_id: userId,
-        user_name: user_name,
-        device_info: device,
-        ip_address: 'AUTO_DETECT',
-        status: 'success'
-      }]);
+      // Record this login via backend to capture IP
+      const recordResponse = await fetch(`${API_URL}/auth/record-login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+          email,
+          role: profile?.role || 'user',
+          user_name,
+          device
+        }),
+      });
+
+      let ip = 'Unknown';
+      if (recordResponse.ok) {
+        const recordData = await recordResponse.json();
+        ip = recordData.ip || 'Unknown';
+      }
 
       if (isNewDevice) {
         await fetch(`${API_URL}/notify-login`, {
@@ -50,7 +62,7 @@ export const notificationService = {
             device,
             time,
             userId,
-            location: 'New Device/Location Detected'
+            location: `IP: ${ip}`
           }),
         });
         console.log('New login notification sent');

@@ -21,6 +21,40 @@ async function startServer() {
     resend = new Resend(process.env.RESEND_API_KEY);
   }
 
+  app.post('/api/auth/record-login', async (req, res) => {
+    const { userId, email, role, user_name, device } = req.body;
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    
+    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+    try {
+      // Record in logins table
+      const { error: loginError } = await supabase.from('logins').insert([{
+        user_id: userId,
+        user_name: user_name,
+        device_info: device,
+        ip_address: ip,
+        status: 'success',
+        role: role
+      }]);
+
+      if (loginError) throw loginError;
+
+      // Also record in audit_logs
+      await supabase.from('audit_logs').insert([{
+        user_id: userId,
+        action: 'USER_LOGIN',
+        details: JSON.stringify({ device, ip, role, email }),
+        ip_address: ip
+      }]);
+
+      res.status(200).json({ success: true, ip });
+    } catch (error: any) {
+      console.error('Failed to record login:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   app.post('/api/notify-login', async (req, res) => {
     if (!resend) {
       console.warn('Resend is not configured. Skipping login notification.');
@@ -109,10 +143,14 @@ async function startServer() {
     const authHeader = req.headers.authorization;
     if (!authHeader) return false;
     const token = authHeader.split(' ')[1];
-    if (!token) return false;
+    if (!token) {
+      console.log('checkSuperOwner: No token found');
+      return false;
+    }
     
     try {
       const { data: { user }, error } = await supabase.auth.getUser(token);
+      console.log('checkSuperOwner: user:', user?.id, 'error:', error);
       if (error || !user) return false;
       
       const { data: profile } = await supabase
@@ -121,8 +159,10 @@ async function startServer() {
         .eq('id', user.id)
         .single();
         
+      console.log('checkSuperOwner: profile:', profile);
       return profile?.is_super_owner === true;
     } catch (e) {
+      console.error('checkSuperOwner: error:', e);
       return false;
     }
   };
@@ -183,11 +223,15 @@ async function startServer() {
 
       // For auth tables, we can't easily get columns via standard client
       // so we'll just add them as placeholders for now
-      const authSchemaInfo = authTables.map(table => ({
-        name: table,
-        columns: [],
-        isAuth: true,
-        schema: 'auth'
+      const authSchemaInfo = await Promise.all(authTables.map(async (table) => {
+        try {
+          const { data, error } = await supabase!.schema('auth').from(table).select('*').limit(1);
+          if (error) return { name: table, error: error.message, isAuth: true, schema: 'auth' };
+          const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
+          return { name: table, columns, isAuth: true, schema: 'auth' };
+        } catch (e) {
+          return { name: table, error: 'Failed to fetch', isAuth: true, schema: 'auth' };
+        }
       }));
 
       res.json([...schemaInfo, ...authSchemaInfo]);
