@@ -212,10 +212,18 @@ async function startServer() {
       
       const schemaInfo = await Promise.all(allTables.map(async (table) => {
         try {
-          const { data, error } = await supabase!.from(table).select('*').limit(1);
-          if (error) return { name: table, error: error.message, isAuth: false };
-          const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
-          return { name: table, columns, isAuth: false };
+          // Use information_schema to get column names regardless of whether the table is empty
+          const { data, error } = await supabase!.rpc('get_table_columns', { table_name: table });
+          
+          if (error) {
+            // Fallback: try to fetch one row if RPC fails
+            const { data: fallbackData, error: fallbackError } = await supabase!.from(table).select('*').limit(1);
+            if (fallbackError) return { name: table, error: fallbackError.message, isAuth: false };
+            const columns = fallbackData && fallbackData.length > 0 ? Object.keys(fallbackData[0]) : [];
+            return { name: table, columns, isAuth: false };
+          }
+          
+          return { name: table, columns: data, isAuth: false };
         } catch (e) {
           return { name: table, error: 'Failed to fetch', isAuth: false };
         }
