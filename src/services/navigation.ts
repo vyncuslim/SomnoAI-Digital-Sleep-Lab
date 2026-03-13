@@ -11,11 +11,11 @@ export const getSafeUrl = (): string => {
   } catch (e) {
     // ignore
   }
-  return 'https://digitalsleeplab.com/';
+  return 'https://sleepsomno.com/';
 };
 
 export const updateMetadata = (title: string, description?: string, canonicalPath?: string, keywords?: string[]) => {
-  const brand = "Digital Sleep Lab";
+  const brand = "SomnoAI Digital Sleep Lab";
   const fullTitle = `${title} | ${brand}`;
   document.title = fullTitle;
   
@@ -52,7 +52,7 @@ export const updateMetadata = (title: string, description?: string, canonicalPat
 
   const canonical = document.querySelector('link[rel="canonical"]');
   if (canonical) {
-    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://digitalsleeplab.com';
+    const origin = typeof window !== 'undefined' ? window.location.origin : 'https://sleepsomno.com';
     const cleanPath = canonicalPath 
       ? (canonicalPath.startsWith('/') ? canonicalPath : `/${canonicalPath}`)
       : (typeof window !== 'undefined' ? window.location.pathname : '/');
