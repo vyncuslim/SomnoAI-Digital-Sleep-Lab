@@ -9,6 +9,7 @@ import { Language } from '../services/i18n';
 import { Logo } from './Logo';
 import { supabase, logAuditLog, logError } from '../services/supabaseService';
 import { securityService } from '../services/securityService';
+import { emailService } from '../services/emailService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/useLanguage';
 import { notificationService } from '../services/notificationService';
@@ -246,10 +247,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           if (data.user) {
             await logAuditLog(data.user.id, 'USER_SIGNUP', 'Successful signup');
             notificationService.sendLoginNotification(email, data.user.id);
+            emailService.sendSignupWelcome(email);
           }
           navigate(`${langPrefix}/dashboard`);
         } else {
           // Email confirmation is required
+          emailService.sendSignupWelcome(email);
           setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
           setView('verification-pending');
         }
@@ -263,6 +266,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           await logError(null, resetError, `Password reset request failed for ${email}`);
           throw resetError;
         }
+        emailService.sendPasswordReset(email);
         setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
       } else if (view === 'otp') {
         if (showOtpInput) {

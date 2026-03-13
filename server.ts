@@ -104,6 +104,43 @@ async function startServer() {
     }
   });
 
+  app.get("/api/admin/auth-users", async (req, res) => {
+    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+    try {
+      const { data: { users }, error } = await supabase.auth.admin.listUsers();
+      if (error) throw error;
+      res.json(users);
+    } catch (error: any) {
+      console.error('Error fetching auth users:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/schema", async (req, res) => {
+    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+    try {
+      // This is a bit of a hack since we can't easily query information_schema via the client
+      // We'll return the list of tables we know about and their basic info
+      const tables = [
+        'profiles', 'sleep_records', 'feedback', 'audit_logs', 
+        'security_events', 'app_settings', 'error_logs', 
+        'communications', 'reviews', 'analytics_daily'
+      ];
+      
+      const schemaInfo = await Promise.all(tables.map(async (table) => {
+        const { data, error } = await supabase.from(table).select('*').limit(1);
+        if (error) return { table, error: error.message };
+        const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
+        return { table, columns };
+      }));
+
+      res.json(schemaInfo);
+    } catch (error: any) {
+      console.error('Error fetching schema:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },

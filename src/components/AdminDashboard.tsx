@@ -5,7 +5,7 @@ import {
   AlertTriangle, Search,
   Activity, Shield, Clock, Moon, BarChart3, Save,
   TrendingUp, ShieldOff, Mail, Bell,
-  Star, Unlock, Lock
+  Star, Unlock, Lock, Database, Table
 } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { adminApi, supabase, logError } from '../services/supabaseService';
@@ -18,7 +18,7 @@ import { UserProfile, Feedback, AuditLog, SecurityEvent, Review } from '../types
 
 import { FounderDashboard } from './FounderDashboard';
 
-type AdminTab = 'overview' | 'founder' | 'logins' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews' | 'errors';
+type AdminTab = 'overview' | 'founder' | 'logins' | 'registry' | 'signals' | 'system' | 'feedback' | 'analytics' | 'communications' | 'reviews' | 'errors' | 'database';
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity },
@@ -50,6 +50,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
   const [reviews, setReviews] = useState<Review[]>([]);
   const [errorLogs, setErrorLogs] = useState<any[]>([]);
   const [settings, setSettings] = useState<Record<string, string>>({});
+  const [authUsers, setAuthUsers] = useState<any[]>([]);
+  const [schemaInfo, setSchemaInfo] = useState<any[]>([]);
+  const [selectedTable, setSelectedTable] = useState<string | null>(null);
+  const [tableData, setTableData] = useState<any[]>([]);
+  const [loadingTable, setLoadingTable] = useState(false);
   
   const [marketingData, setMarketingData] = useState<any[]>([]);
   const [loadingMarketing, setLoadingMarketing] = useState(false);
@@ -71,7 +76,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
     if (activeTab === 'analytics') {
       fetchMarketingData();
     }
+    if (activeTab === 'database') {
+      fetchDatabaseInfo();
+    }
   }, [activeTab]);
+
+  const fetchDatabaseInfo = async () => {
+    setIsSyncing(true);
+    try {
+      const [users, schema] = await Promise.all([
+        adminApi.getAuthUsers(),
+        adminApi.getSchemaInfo()
+      ]);
+      setAuthUsers(users);
+      setSchemaInfo(schema);
+    } catch (error) {
+      console.error("Failed to fetch database info:", error);
+    } finally {
+      setIsSyncing(false);
+    }
+  };
+
+  const fetchTableData = async (tableName: string) => {
+    setLoadingTable(true);
+    setSelectedTable(tableName);
+    try {
+      const { data, error } = await supabase.from(tableName).select('*').limit(100);
+      if (error) throw error;
+      setTableData(data || []);
+    } catch (error) {
+      console.error(`Failed to fetch data for ${tableName}:`, error);
+      alert(`Failed to fetch data for ${tableName}`);
+    } finally {
+      setLoadingTable(false);
+    }
+  };
 
   const fetchMarketingData = async () => {
     setLoadingMarketing(true);
@@ -313,9 +352,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       </header>
 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
-        {['overview', 'founder', 'logins', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews', 'errors']
+        {['overview', 'founder', 'logins', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews', 'errors', 'database']
           .filter(tab => {
-            if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder') return isOwner || isSuperOwner;
+            if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder' || tab === 'database') return isOwner || isSuperOwner;
             if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;
             return true;
           })
@@ -1003,6 +1042,136 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                   )}
                 </tbody>
               </table>
+            </div>
+          </div>
+        )}
+
+        {activeTab === 'database' && (
+          <div className="space-y-8">
+            <div className="flex items-center gap-6 mb-8">
+               <div className="p-5 bg-indigo-500/10 rounded-[2rem] text-indigo-400 border border-indigo-500/20 shadow-xl">
+                 <Database size={32} />
+               </div>
+               <div>
+                 <h2 className="text-2xl font-black italic text-white uppercase tracking-tight">Database & Auth Explorer</h2>
+                 <p className="text-[10px] text-slate-600 uppercase tracking-widest font-black italic mt-1.5">
+                    Direct access to system tables and auth users
+                 </p>
+               </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              {/* Left Column: Schema & Tables */}
+              <div className="space-y-6">
+                <GlassCard className="p-6">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                    <Table size={14} /> Database Tables
+                  </h3>
+                  <div className="space-y-2">
+                    {schemaInfo.map((table) => (
+                      <button
+                        key={table.name}
+                        onClick={() => fetchTableData(table.name)}
+                        className={`w-full text-left p-3 rounded-xl text-sm transition-all flex items-center justify-between group ${
+                          selectedTable === table.name ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                        }`}
+                      >
+                        <span className="font-mono">{table.name}</span>
+                        <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">View Data</span>
+                      </button>
+                    ))}
+                  </div>
+                </GlassCard>
+
+                <GlassCard className="p-6">
+                  <h3 className="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4 flex items-center gap-2">
+                    <Shield size={14} /> Auth System
+                  </h3>
+                  <button
+                    onClick={() => { setSelectedTable('auth_users'); setTableData(authUsers); }}
+                    className={`w-full text-left p-3 rounded-xl text-sm transition-all flex items-center justify-between group ${
+                      selectedTable === 'auth_users' ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'
+                    }`}
+                  >
+                    <span className="font-mono">auth.users</span>
+                    <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">View Users</span>
+                  </button>
+                </GlassCard>
+              </div>
+
+              {/* Right Column: Data Editor/Viewer */}
+              <div className="lg:col-span-2 space-y-6">
+                <GlassCard className="p-0 overflow-hidden min-h-[600px] flex flex-col">
+                  <div className="p-6 border-b border-white/10 flex items-center justify-between bg-white/5">
+                    <div>
+                      <h3 className="text-lg font-bold flex items-center gap-2">
+                        {selectedTable ? (
+                          <>
+                            <Table size={18} className="text-indigo-400" />
+                            {selectedTable}
+                          </>
+                        ) : (
+                          'Select a table to explore'
+                        )}
+                      </h3>
+                      {selectedTable && (
+                        <p className="text-[10px] text-slate-500 uppercase tracking-widest font-mono mt-1">
+                          Showing first 100 records
+                        </p>
+                      )}
+                    </div>
+                    {selectedTable && (
+                      <button 
+                        onClick={() => selectedTable === 'auth_users' ? fetchDatabaseInfo() : fetchTableData(selectedTable)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        <RefreshCw size={16} className={loadingTable ? 'animate-spin' : ''} />
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="flex-1 overflow-auto p-0">
+                    {loadingTable ? (
+                      <div className="h-full flex items-center justify-center">
+                        <RefreshCw className="animate-spin text-indigo-500" size={32} />
+                      </div>
+                    ) : selectedTable ? (
+                      <div className="overflow-x-auto">
+                        <table className="w-full text-left border-collapse min-w-max">
+                          <thead className="bg-black/40 sticky top-0 z-10">
+                            <tr className="border-b border-white/10">
+                              {tableData.length > 0 ? Object.keys(tableData[0]).map(key => (
+                                <th key={key} className="p-4 text-[10px] font-bold uppercase tracking-widest text-slate-500 border-r border-white/5">
+                                  {key}
+                                </th>
+                              )) : (
+                                <th className="p-4 text-[10px] font-bold uppercase tracking-widest text-slate-500">No columns found</th>
+                              )}
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {tableData.map((row, i) => (
+                              <tr key={i} className="border-b border-white/5 hover:bg-white/5 transition-colors font-mono text-xs">
+                                {Object.values(row).map((val: any, j) => (
+                                  <td key={j} className="p-4 border-r border-white/5 max-w-xs truncate text-slate-400">
+                                    {typeof val === 'object' ? JSON.stringify(val) : String(val)}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <div className="h-full flex flex-col items-center justify-center text-slate-600 p-12 text-center">
+                        <Database size={48} className="mb-4 opacity-20" />
+                        <p className="text-sm font-medium">Select a table from the sidebar to view its contents.</p>
+                        <p className="text-xs mt-2 max-w-xs">You can explore both public database tables and the authentication user list.</p>
+                      </div>
+                    )}
+                  </div>
+                </GlassCard>
+              </div>
             </div>
           </div>
         )}

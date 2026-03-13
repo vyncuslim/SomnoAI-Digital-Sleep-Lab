@@ -222,7 +222,8 @@ export const translations: Record<Language, any> = {
         communications: 'Comms Center',
         reviews: 'Reviews',
         logins: 'Logins',
-        errors: 'Error Logs'
+        errors: 'Error Logs',
+        database: 'Database'
       }
     },
     policy: {
@@ -584,7 +585,8 @@ export const translations: Record<Language, any> = {
         communications: '通讯中心',
         reviews: '评论',
         logins: '登录记录',
-        errors: '错误日志'
+        errors: '错误日志',
+        database: '数据库'
       }
     },
     policy: {

@@ -96,7 +96,17 @@ export const adminApi = {
   getSecurityEvents: async () => supabase.from('security_events').select('*').order('created_at', { ascending: false }),
   updateUserRole: async (id: string, role: string) => supabase.from('profiles').update({ role }).eq('id', id),
   getSettings: async () => supabase.from('app_settings').select('*'),
-  updateSetting: async (key: string, value: string) => supabase.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() })
+  updateSetting: async (key: string, value: string) => supabase.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() }),
+  getAuthUsers: async () => {
+    const response = await fetch('/api/admin/auth-users');
+    if (!response.ok) throw new Error('Failed to fetch auth users');
+    return response.json();
+  },
+  getSchemaInfo: async () => {
+    const response = await fetch('/api/admin/schema');
+    if (!response.ok) throw new Error('Failed to fetch schema info');
+    return response.json();
+  }
 };
 
 // Feedback API
