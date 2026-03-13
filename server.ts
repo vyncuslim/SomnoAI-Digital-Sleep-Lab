@@ -4,6 +4,7 @@ import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { createClient } from '@supabase/supabase-js';
 import path from 'path';
+import { writeAuditLog } from './src/services/auditLog';
 
 dotenv.config();
 
@@ -40,13 +41,18 @@ async function startServer() {
 
       if (loginError) throw loginError;
 
-      // Also record in audit_logs
-      await supabase.from('audit_logs').insert([{
-        user_id: userId,
+      // Also record in audit_logs using writeAuditLog
+      await writeAuditLog({
+        source: 'web',
+        level: 'info',
+        category: 'auth',
         action: 'USER_LOGIN',
-        details: JSON.stringify({ device, ip, role, email }),
-        ip_address: ip
-      }]);
+        status: 'success',
+        actorUserId: userId,
+        ipAddress: ip as string,
+        message: 'User login success',
+        metadata: { device, role, email }
+      });
 
       res.status(200).json({ success: true, ip });
     } catch (error: any) {
@@ -103,6 +109,118 @@ async function startServer() {
       res.status(200).json(data);
     } catch (error) {
       res.status(500).json({ error: (error as Error).message });
+    }
+  });
+
+  app.post('/api/audit/auth-signup', async (req, res) => {
+    const body = req.body;
+    const forwardedFor = req.headers['x-forwarded-for'];
+    const ip = typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : null;
+    const userAgent = req.headers['user-agent'];
+
+    await writeAuditLog({
+      source: 'web',
+      level: body.success ? 'info' : 'warning',
+      category: 'auth',
+      action: 'signup',
+      status: body.success ? 'success' : 'failed',
+      actorUserId: body.userId ?? null,
+      ipAddress: ip,
+      userAgent,
+      path: '/signup',
+      method: 'POST',
+      errorCode: body.errorCode ?? null,
+      message: body.success ? 'User signup success' : 'User signup failed',
+      metadata: {
+        email: body.email ?? null,
+        needsEmailConfirmation: body.needsEmailConfirmation ?? null,
+      },
+    });
+
+    res.status(200).json({ ok: true });
+  });
+
+  app.post('/api/stripe/webhook', async (req, res) => {
+    try {
+      const event = req.body;
+
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object;
+        await writeAuditLog({
+          source: 'api',
+          level: 'info',
+          category: 'payment',
+          action: 'checkout_completed',
+          status: 'success',
+          actorUserId: session.metadata?.user_id ?? null,
+          message: 'Stripe checkout completed',
+          metadata: {
+            provider: 'stripe',
+            checkout_session_id: session.id,
+            customer_id: session.customer,
+            amount_total: session.amount_total,
+            currency: session.currency,
+          },
+        });
+      }
+
+      if (event.type === 'invoice.payment_failed') {
+        const invoice = event.data.object;
+        await writeAuditLog({
+          source: 'api',
+          level: 'error',
+          category: 'payment',
+          action: 'invoice_payment',
+          status: 'failed',
+          actorUserId: invoice.metadata?.user_id ?? null,
+          errorCode: 'stripe_payment_failed',
+          message: 'Stripe invoice payment failed',
+          metadata: {
+            provider: 'stripe',
+            invoice_id: invoice.id,
+            customer_id: invoice.customer,
+            amount_due: invoice.amount_due,
+            currency: invoice.currency,
+          },
+        });
+      }
+
+      res.status(200).json({ received: true });
+    } catch (err) {
+      await writeAuditLog({
+        source: 'api',
+        level: 'critical',
+        category: 'payment',
+        action: 'stripe_webhook',
+        status: 'failed',
+        errorCode: 'webhook_handler_error',
+        message: err instanceof Error ? err.message : 'Unknown webhook error',
+        metadata: {},
+      });
+      res.status(500).json({ error: 'Webhook handler failed' });
+    }
+  });
+
+import { adminServices } from './src/services/adminServices';
+import { writeAuditLog } from './src/services/auditLog';
+
+  app.post('/api/admin/delete-user', async (req, res) => {
+    const { adminUserId, targetUserId } = req.body;
+    try {
+      await adminServices.deleteUser(adminUserId, targetUserId);
+      res.json({ ok: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/admin/block-user', async (req, res) => {
+    const { adminUserId, targetUserId, reason } = req.body;
+    try {
+      await adminServices.blockUser({ adminUserId, targetUserId, reason });
+      res.json({ ok: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
     }
   });
 
