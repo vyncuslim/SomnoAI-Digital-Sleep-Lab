@@ -33,19 +33,16 @@ export const GlobalAIChat: React.FC = () => {
     try {
       const chat = ai.chats.create({
         model: 'gemini-3-flash-preview',
+        history: messages.map(msg => ({
+          role: msg.role,
+          parts: [{ text: msg.text }]
+        })),
         config: {
           systemInstruction: isZh 
             ? '你是SomnoAI的首席研究官。你是一个专业的睡眠科学AI助手。请用中文简明扼要地回答用户关于睡眠、应用功能或科学研究的问题。' 
             : 'You are the Chief Research Officer at SomnoAI. You are a professional sleep science AI assistant. Answer user questions about sleep, app features, or scientific research concisely.',
         }
       });
-
-      // Send previous context
-      for (const msg of messages) {
-        if (msg.role === 'user') {
-          await chat.sendMessage({ message: msg.text });
-        }
-      }
 
       const response = await chat.sendMessage({ message: userMessage });
       setMessages(prev => [...prev, { role: 'model', text: response.text || '' }]);

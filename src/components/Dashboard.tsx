@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Crown, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, Settings, LogOut } from 'lucide-react';
+import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Crown, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, Settings, LogOut, Upload, FileText, Trash2 } from 'lucide-react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { useAuth } from '../context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
@@ -57,8 +57,19 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [dailyCount, setDailyCount] = useState(0);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const DAILY_LIMIT = 4;
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      setSelectedFile(e.target.files[0]);
+    }
+  };
+
+  const removeFile = () => {
+    setSelectedFile(null);
+  };
 
   useEffect(() => {
     const savedHistory = localStorage.getItem('sleepHistory');
@@ -136,6 +147,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         - Energy Score (1-10): ${input.energyScore}
         - Screen time before bed: ${input.screenTime ? 'Yes' : 'No'}
         - Caffeine intake today: ${input.caffeine ? 'Yes' : 'No'}
+        ${selectedFile ? `- Note: User has uploaded a sleep report file (${selectedFile.name}). Please assume the analysis should consider potential external data if provided in text form.` : ''}
 
         Provide the response in JSON format with the following structure:
         {
@@ -208,6 +220,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     upgradeDesc: lang === 'zh' ? '解锁高级 AI 洞察和无限历史记录。' : 'Unlock advanced AI insights and unlimited history.',
     upgradeBtn: lang === 'zh' ? '立即升级' : 'Upgrade Now',
     currentPlan: lang === 'zh' ? '当前计划' : 'Current Plan',
+    uploadTitle: lang === 'zh' ? '上传睡眠数据' : 'Upload Sleep Data',
+    uploadDesc: lang === 'zh' ? '上传 CSV 或睡眠报告图片' : 'Upload CSV or images of sleep reports',
+    fileSelected: lang === 'zh' ? '已选择文件' : 'File selected',
   };
 
   return (
@@ -441,6 +456,40 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                   </div>
                 </div>
 
+                {/* File Upload Section */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-1.5 h-6 bg-emerald-500 rounded-full" />
+                    <h3 className="text-[10px] font-black uppercase tracking-widest text-slate-500">{t.uploadTitle}</h3>
+                  </div>
+                  
+                  {!selectedFile ? (
+                    <label className="flex flex-col items-center justify-center p-8 bg-black/40 border-2 border-dashed border-white/5 rounded-2xl cursor-pointer hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group">
+                      <Upload className="text-slate-500 group-hover:text-indigo-400 mb-3 transition-colors" size={32} />
+                      <p className="text-xs font-bold text-slate-400 group-hover:text-slate-200 transition-colors">{t.uploadDesc}</p>
+                      <input type="file" className="hidden" onChange={handleFileChange} accept=".csv,image/*" />
+                    </label>
+                  ) : (
+                    <div className="flex items-center justify-between p-4 bg-indigo-500/10 border border-indigo-500/30 rounded-2xl">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                          <FileText size={20} />
+                        </div>
+                        <div>
+                          <p className="text-xs font-bold text-white truncate max-w-[150px]">{selectedFile.name}</p>
+                          <p className="text-[10px] text-indigo-400 uppercase tracking-widest">{t.fileSelected}</p>
+                        </div>
+                      </div>
+                      <button 
+                        onClick={removeFile}
+                        className="p-2 text-slate-500 hover:text-rose-500 transition-colors"
+                      >
+                        <Trash2 size={18} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+
                 <button 
                   onClick={generateAnalysis}
                   disabled={isAnalyzing}
@@ -459,6 +508,10 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                     </>
                   )}
                 </button>
+                
+                <p className="text-[10px] text-slate-500 text-center mt-4 uppercase tracking-widest font-bold">
+                  {lang === 'zh' ? `每日限制: ${dailyCount}/${DAILY_LIMIT} 次分析` : `Daily Limit: ${dailyCount}/${DAILY_LIMIT} Analyses`}
+                </p>
               </div>
             </motion.div>
 
