@@ -13,6 +13,7 @@ import { emailService } from '../services/emailService';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/useLanguage';
 import { notificationService } from '../services/notificationService';
+import { trackEvent } from '../services/analytics';
 
 interface AuthProps {
   lang: Language;
@@ -229,6 +230,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
              
              await logAuditLog(data.user.id, 'USER_LOGIN', `Successful login. Role: ${profileData?.role || 'user'}`);
              notificationService.sendLoginNotification(email, data.user.id);
+             trackEvent('login', 'authentication', 'email');
           }
         }
         
@@ -251,6 +253,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (data.session) {
           // Email confirmation is disabled, user is logged in
           if (data.user) {
+            trackEvent('sign_up', 'authentication', 'email');
             await logAuditLog(data.user.id, 'USER_SIGNUP', 'Successful signup');
             notificationService.sendLoginNotification(email, data.user.id);
             emailService.sendSignupWelcome(email);
@@ -258,6 +261,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           navigate(`${langPrefix}/dashboard`);
         } else {
           // Email confirmation is required
+          trackEvent('sign_up_pending', 'authentication', 'email');
           emailService.sendSignupWelcome(email);
           setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
           setView('verification-pending');

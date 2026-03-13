@@ -418,11 +418,11 @@ function App() {
   return (
     <HelmetProvider>
       <AuthProvider>
-        <AnalyticsProvider>
-          <Router>
+        <Router>
+          <AnalyticsProvider>
             <AppContent />
-          </Router>
-        </AnalyticsProvider>
+          </AnalyticsProvider>
+        </Router>
       </AuthProvider>
     </HelmetProvider>
   );

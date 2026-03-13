@@ -44,6 +44,8 @@ export const TelemetryStream: React.FC = () => {
   );
 };
 
+import { trackEvent } from '../../services/analytics';
+
 // --- Hero ---
 export const Hero: React.FC<{ 
   title: React.ReactNode; 
@@ -87,20 +89,32 @@ export const Hero: React.FC<{
         >
           <div className="flex flex-col sm:flex-row items-center justify-center gap-6 w-full">
             {ctaPrimary && (
-              <Link to={`${langPrefix}${ctaPrimary.link}`} className="group px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-full transition-all shadow-[0_0_40px_rgba(79,70,229,0.4)] flex items-center gap-3 w-full sm:w-auto justify-center uppercase tracking-widest text-sm">
+              <Link 
+                to={`${langPrefix}${ctaPrimary.link}`} 
+                onClick={() => trackEvent('click_cta_primary', 'engagement', ctaPrimary.text)}
+                className="group px-10 py-5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-full transition-all shadow-[0_0_40px_rgba(79,70,229,0.4)] flex items-center gap-3 w-full sm:w-auto justify-center uppercase tracking-widest text-sm"
+              >
                 {ctaPrimary.text} 
                 <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
               </Link>
             )}
             {ctaSecondary && (
-              <Link to={`${langPrefix}${ctaSecondary.link}`} className="px-10 py-5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full transition-all border border-white/10 w-full sm:w-auto justify-center uppercase tracking-widest text-sm backdrop-blur-sm">
+              <Link 
+                to={`${langPrefix}${ctaSecondary.link}`} 
+                onClick={() => trackEvent('click_cta_secondary', 'engagement', ctaSecondary.text)}
+                className="px-10 py-5 bg-white/5 hover:bg-white/10 text-white font-bold rounded-full transition-all border border-white/10 w-full sm:w-auto justify-center uppercase tracking-widest text-sm backdrop-blur-sm"
+              >
                 {ctaSecondary.text}
               </Link>
             )}
           </div>
           
           {ctaTertiary && (
-            <Link to={`${langPrefix}${ctaTertiary.link}`} className="text-xs font-black text-slate-500 hover:text-indigo-400 uppercase tracking-[0.3em] transition-all flex items-center gap-2 group/link">
+            <Link 
+              to={`${langPrefix}${ctaTertiary.link}`} 
+              onClick={() => trackEvent('click_cta_tertiary', 'engagement', ctaTertiary.text)}
+              className="text-xs font-black text-slate-500 hover:text-indigo-400 uppercase tracking-[0.3em] transition-all flex items-center gap-2 group/link"
+            >
               <div className="w-1 h-1 rounded-full bg-indigo-500 scale-0 group-hover/link:scale-100 transition-transform" />
               {ctaTertiary.text}
             </Link>
