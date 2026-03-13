@@ -133,5 +133,39 @@ These updates represent our ongoing commitment to providing a secure, robust, an
     tags: ['Update', 'Algorithm'],
     readTime: '3 min',
     source: 'SomnoAI'
+  },
+  {
+    id: '6',
+    slug: 'ai-functionality-live',
+    title: 'New Feature: AI-Powered Sleep Analysis is Now Live',
+    excerpt: 'Experience the next level of sleep health with our new AI-powered analysis features.',
+    content: 'We are thrilled to announce that our advanced AI-powered sleep analysis features are now live! Users can now leverage cutting-edge machine learning models to gain deeper, more personalized insights into their sleep patterns and overall health. Log in to your dashboard to explore these new capabilities.',
+    date: new Date().toISOString().split('T')[0],
+    category: 'Announcement',
+    author: {
+      name: 'SomnoAI Team',
+      role: 'Official',
+      bio: 'The official voice of SomnoAI.'
+    },
+    tags: ['AI', 'Update', 'Feature'],
+    readTime: '2 min',
+    source: 'SomnoAI'
+  },
+  {
+    id: '7',
+    slug: 'meet-the-founder-vyncus-lim',
+    title: 'Meet the Founder: Vyncus Lim',
+    excerpt: 'Discover the vision and journey of Vyncus Lim, the founder of SomnoAI Digital Sleep Lab.',
+    content: 'Vyncus Lim is the founder of SomnoAI Digital Sleep Lab, a technology initiative focused on exploring how artificial intelligence and computational analysis can be used to better understand human sleep patterns. His work centers on the intersection of emerging digital technologies, behavioral data analysis, and sleep science. Driven by a mission to transform raw sleep data into understandable, privacy-focused insights, Vyncus leads the platform\'s research, product direction, and architecture.',
+    date: new Date().toISOString().split('T')[0],
+    category: 'Announcement',
+    author: {
+      name: 'SomnoAI Team',
+      role: 'Official',
+      bio: 'The official voice of SomnoAI.'
+    },
+    tags: ['Founder', 'Vision', 'Announcement'],
+    readTime: '3 min',
+    source: 'SomnoAI'
   }
 ];
