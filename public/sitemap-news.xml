@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
   <url>
-    <loc>https://digitalsleeplab.com/en/news/platform-update-admin-ui-security</loc>
+    <loc>https://sleepsomno.com/en/news/platform-update-admin-ui-security</loc>
     <news:news>
       <news:publication>
         <news:name>SomnoAI Digital Sleep Lab</news:name>
@@ -14,7 +14,7 @@
     </news:news>
   </url>
   <url>
-    <loc>https://digitalsleeplab.com/cn/news/platform-update-admin-ui-security</loc>
+    <loc>https://sleepsomno.com/cn/news/platform-update-admin-ui-security</loc>
     <news:news>
       <news:publication>
         <news:name>SomnoAI Digital Sleep Lab</news:name>
