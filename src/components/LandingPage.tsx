@@ -4,7 +4,7 @@ import {
   Brain, Activity, Zap, 
   CheckCircle2, Users, Database, ShieldCheck,
   Smartphone, BarChart3, MessageSquare,
-  Mail, Cpu, Sparkles
+  Mail
 } from 'lucide-react';
 
 import { MarketingPageTemplate } from './ui/MarketingPageTemplate';
@@ -20,28 +20,8 @@ interface LandingPageProps {
 
 export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) => {
   console.log('LandingPage rendered');
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const t = getTranslation(lang, 'landing');
-
-  const getPaymentLink = (baseUrl: string, planName: string) => {
-    try {
-      const url = new URL(baseUrl);
-      if (profile?.id) url.searchParams.append('client_reference_id', profile.id);
-      if (profile?.email) url.searchParams.append('prefilled_email', profile.email);
-      url.searchParams.append('plan', planName);
-      return url.toString();
-    } catch (e) {
-      return baseUrl;
-    }
-  };
-
-  const handlePlanSelect = (url: string) => {
-    if (!user) {
-      onNavigate('/auth/login');
-      return;
-    }
-    window.location.href = url;
-  };
 
   const stats = [
     { label: t.stats?.analyzed || "Hours Analyzed", value: "10M+", unit: "HRS", icon: Database },
@@ -101,7 +81,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
               className="text-indigo-400 font-bold uppercase tracking-widest text-sm mb-4 flex items-center justify-center gap-2"
             >
               <span className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
-              {lang === 'zh' ? '欢迎回来,' : 'Welcome back,'} {profile?.email || user.email}
+              {lang === 'zh' ? '欢迎回来,' : 'Welcome back,'} {user.email}
             </motion.p>
           )}
           <h1 className="text-6xl md:text-9xl font-black italic uppercase tracking-tighter text-white leading-[0.85] animate-float">
@@ -248,65 +228,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           <HardwareWidget label={t.techSpecs?.neuralLayers || "NEURAL_LAYERS"} value="128" unit="CORE" />
           <HardwareWidget label={t.techSpecs?.dataPoints || "DATA_POINTS"} value="1.2" unit="M/D" />
           <HardwareWidget label={t.techSpecs?.recoveryIndex || "RECOVERY_INDEX"} value="V4" unit="BETA" status="active" />
-        </div>
-      </Section>
-
-      {/* Pricing Section */}
-      <Section moduleID="PRIC_01" title={lang === 'zh' ? '定价方案' : 'Pricing Plans'} description={lang === 'zh' ? '选择最适合您的睡眠分析方案。' : 'Choose the plan that fits your needs.'}>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <Card 
-            title="Go" 
-            description={lang === 'zh' ? "免费访问核心睡眠分析功能。" : "Free access to core sleep analysis features."}
-            icon={<Cpu className="text-slate-400" />} 
-            label="STARTER"
-          >
-            <div className="mt-auto">
-              <div className="text-4xl font-black italic tracking-tighter text-white mb-8">$0</div>
-              <HardwareButton 
-                onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_3cI4gyfSSc1g5v41ll6Vq01', 'go'))}
-                variant="outline"
-                className="w-full"
-              >
-                {lang === 'zh' ? '选择 Go' : 'Select Go'}
-              </HardwareButton>
-            </div>
-          </Card>
-          <Card 
-            title="Pro" 
-            description={lang === 'zh' ? "深入的洞察、长期趋势分析和个性化建议。" : "In-depth insights, long-term trend analysis, and personalized recommendations."}
-            icon={<Sparkles className="text-indigo-400" />} 
-            label="MOST POPULAR" 
-            className="border-indigo-500/30 bg-indigo-500/5 shadow-[0_20px_50px_rgba(79,70,229,0.1)]"
-          >
-            <div className="scanline" />
-            <div className="mt-auto">
-              <div className="text-4xl font-black italic tracking-tighter text-white mb-8">$9.99<span className="text-xs font-bold text-slate-500 ml-2">/mo</span></div>
-              <HardwareButton 
-                onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_bJe9AS7mmaXccXw1ll6Vq02', 'pro'))}
-                variant="primary"
-                className="w-full"
-              >
-                {lang === 'zh' ? '选择 Pro' : 'Select Pro'}
-              </HardwareButton>
-            </div>
-          </Card>
-          <Card 
-            title="Plus" 
-            description={lang === 'zh' ? "为健康组织提供的高级功能和 API 访问。" : "Advanced features and API access for health organizations."}
-            icon={<ShieldCheck className="text-purple-400" />} 
-            label="ENTERPRISE"
-          >
-            <div className="mt-auto">
-              <div className="text-4xl font-black italic tracking-tighter text-white mb-8">Custom</div>
-              <HardwareButton 
-                onClick={() => handlePlanSelect(getPaymentLink('https://buy.stripe.com/test_14A14mgWWfds9Lke876Vq03', 'plus'))}
-                variant="outline"
-                className="w-full"
-              >
-                {lang === 'zh' ? '联系我们' : 'Contact Us'}
-              </HardwareButton>
-            </div>
-          </Card>
         </div>
       </Section>
 

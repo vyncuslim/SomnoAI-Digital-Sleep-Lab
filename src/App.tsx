@@ -19,14 +19,12 @@ import { GlobalAIChat } from './components/GlobalAIChat';
 
 // Lazy load components
 const PersonalChat = lazy(() => import('./components/PersonalChat').then(module => ({ default: module.PersonalChat })));
-const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement').then(module => ({ default: module.SubscriptionManagement })));
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
 const AdminView = lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
 const FeedbackView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
 const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
-const Pricing = lazy(() => import('./pages/Pricing'));
 const About = lazy(() => import('./pages/About').then(module => ({ default: module.About })));
 const Product = lazy(() => import('./pages/Product').then(module => ({ default: module.Product })));
 const HowItWorks = lazy(() => import('./pages/HowItWorks').then(module => ({ default: module.HowItWorks })));
@@ -195,7 +193,6 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="auth/verify" element={<AuthCallback />} />
       <Route path="auth/freeze" element={<DynamicPage lang={lang} type="account-blocking" />} />
       <Route path="about" element={<About lang={lang} />} />
-      <Route path="pricing" element={<Pricing lang={lang} />} />
       <Route path="product" element={<Product lang={lang} />} />
       <Route path="how-it-works" element={<HowItWorks lang={lang} />} />
       <Route path="features" element={<Features lang={lang} />} />
@@ -243,7 +240,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       } />
       <Route path="settings" element={
         <ProtectedRoute lang={lang}>
-          <UserProfile lang={lang} onBack={handleBack} onNavigate={handleNavigate} />
+          <UserProfile lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
 
@@ -275,11 +272,6 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="journal" element={
         <ProtectedRoute lang={lang}>
           <GenericFeature lang={lang} onBack={handleBack} title={lang === 'zh' ? '日志' : 'Log'} description={lang === 'zh' ? '这里是睡眠日志。' : 'Welcome to your sleep log.'} />
-        </ProtectedRoute>
-      } />
-      <Route path="subscription" element={
-        <ProtectedRoute lang={lang}>
-          <SubscriptionManagement lang={lang} />
         </ProtectedRoute>
       } />
       <Route path="personal-chat" element={

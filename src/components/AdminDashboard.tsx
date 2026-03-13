@@ -483,7 +483,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">User</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Role</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Status</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Subscription</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Country</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Provider</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Last Sign In</th>
@@ -532,31 +531,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                             )}
                           </div>
                           {user.block_code && <span className="text-[9px] text-rose-400 font-mono uppercase">{user.block_code}</span>}
-                        </div>
-                      </td>
-                      <td className="p-4">
-                        <div className="flex flex-col gap-1">
-                          <select
-                            value={user.subscription_plan || 'Free'}
-                            onChange={async (e) => {
-                              const newPlan = e.target.value;
-                              await supabase.from('profiles').update({ 
-                                subscription_plan: newPlan,
-                                is_paying: newPlan !== 'Free'
-                              }).eq('id', user.id);
-                              fetchData();
-                            }}
-                            disabled={!canManage(user)}
-                            className={`bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-[10px] font-bold uppercase tracking-wider outline-none focus:border-indigo-500 transition-colors ${!canManage(user) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                          >
-                            <option value="Free">Free</option>
-                            <option value="Pro">Pro</option>
-                            <option value="Elite">Elite</option>
-                            <option value="Enterprise">Enterprise</option>
-                          </select>
-                          {user.subscription_status && (
-                            <span className="text-[9px] text-slate-600 font-mono uppercase">{user.subscription_status}</span>
-                          )}
                         </div>
                       </td>
                       <td className="p-4 text-xs font-mono text-slate-400">

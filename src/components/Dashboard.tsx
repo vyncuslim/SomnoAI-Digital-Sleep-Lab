@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Crown, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, Settings, LogOut, Upload, FileText, Trash2 } from 'lucide-react';
+import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, Settings, LogOut, Upload, FileText, Trash2 } from 'lucide-react';
 import { GoogleGenAI, Type } from '@google/genai';
 import { useAuth } from '../context/AuthContext';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { GridBackground, TelemetryStream, HardwareWidget } from './ui/Components';
 import { useLanguage } from '../context/useLanguage';
 
@@ -32,17 +32,9 @@ interface HistoryRecord {
 }
 
 export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
-  const { profile, signOut } = useAuth();
+  const { signOut } = useAuth();
   const { langPrefix } = useLanguage();
   const navigate = useNavigate();
-  const rawPlan = profile?.subscription_plan || 'go';
-  // Normalize plan name: 'free' maps to 'go'
-  const plan = rawPlan.toLowerCase() === 'free' ? 'go' : rawPlan.toLowerCase();
-  const isFree = plan === 'go';
-  
-  // Helper to capitalize first letter
-  const displayPlan = plan.charAt(0).toUpperCase() + plan.slice(1);
-
   const [input, setInput] = useState<SleepInput>({
     duration: 7,
     bedtime: '23:00',
@@ -216,10 +208,6 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     tomorrow: lang === 'zh' ? '明日优化方向' : 'Tomorrow Optimization',
     history: lang === 'zh' ? '历史记录' : 'History',
     disclaimer: lang === 'zh' ? '免责声明：此分析仅供参考，不构成医疗建议。' : 'Disclaimer: This analysis is for informational purposes only and does not constitute medical advice.',
-    upgradeTitle: lang === 'zh' ? '升级到 Pro' : 'Upgrade to Pro',
-    upgradeDesc: lang === 'zh' ? '解锁高级 AI 洞察和无限历史记录。' : 'Unlock advanced AI insights and unlimited history.',
-    upgradeBtn: lang === 'zh' ? '立即升级' : 'Upgrade Now',
-    currentPlan: lang === 'zh' ? '当前计划' : 'Current Plan',
     uploadTitle: lang === 'zh' ? '上传睡眠数据' : 'Upload Sleep Data',
     uploadDesc: lang === 'zh' ? '上传 CSV 或睡眠报告图片' : 'Upload CSV or images of sleep reports',
     fileSelected: lang === 'zh' ? '已选择文件' : 'File selected',
@@ -234,31 +222,6 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/5 blur-[160px] rounded-full pointer-events-none" />
 
       <div className="max-w-7xl mx-auto p-4 md:p-8 relative z-10">
-        {isFree && (
-          <motion.div 
-            initial={{ opacity: 0, y: -20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="bg-gradient-to-r from-indigo-600 to-purple-600 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-[0_20px_50px_rgba(79,70,229,0.3)] mb-12 border border-white/10 relative overflow-hidden group"
-          >
-            <div className="absolute inset-0 bg-white/5 opacity-0 group-hover:opacity-100 transition-opacity duration-700" />
-            <div className="flex items-center gap-4 relative z-10">
-              <div className="p-3 bg-white/10 rounded-2xl backdrop-blur-md border border-white/20 shadow-inner">
-                <Crown className="text-yellow-300 drop-shadow-[0_0_8px_rgba(253,224,71,0.5)]" size={28} />
-              </div>
-              <div>
-                <h3 className="text-white font-black italic uppercase tracking-tighter text-xl">{t.upgradeTitle}</h3>
-                <p className="text-indigo-100 text-sm font-medium opacity-80">{t.upgradeDesc}</p>
-              </div>
-            </div>
-            <Link 
-              to="/subscription" 
-              className="whitespace-nowrap bg-white text-indigo-600 px-8 py-3 rounded-full font-black uppercase tracking-widest text-xs hover:bg-indigo-50 transition-all shadow-xl hover:scale-105 active:scale-95 relative z-10"
-            >
-              {t.upgradeBtn}
-            </Link>
-          </motion.div>
-        )}
-
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -285,16 +248,6 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                     : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
                 }`}>
                   {dailyCount}/{DAILY_LIMIT}
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">{t.currentPlan}</p>
-                <div className={`inline-flex items-center px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                  isFree 
-                    ? 'bg-slate-800/50 text-slate-400 border-slate-700' 
-                    : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30 shadow-[0_0_15px_rgba(99,102,241,0.2)]'
-                }`}>
-                  {displayPlan}
                 </div>
               </div>
             </div>

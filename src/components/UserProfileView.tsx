@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  User, Mail, Phone, Globe, Settings, CreditCard, 
-  Shield, Save, Edit2, X, CheckCircle2, AlertCircle,
+  User, Mail, Phone, Globe, Settings, Save, Edit2, X, CheckCircle2, AlertCircle,
   Calendar, Clock, Bell, Moon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -12,10 +11,9 @@ import { GlassCard } from './GlassCard';
 
 interface UserProfileViewProps {
   lang: Language;
-  onNavigate: (path: string) => void;
 }
 
-export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang, onNavigate }) => {
+export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
   const { profile, user, refreshProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<UserProfile>>({});
@@ -73,9 +71,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang, onNaviga
     email: lang === 'zh' ? '电子邮箱' : 'Email Address',
     phone: lang === 'zh' ? '电话号码' : 'Phone Number',
     country: lang === 'zh' ? '国家/地区' : 'Country/Region',
-    subscription: lang === 'zh' ? '订阅详情' : 'Subscription Details',
-    plan: lang === 'zh' ? '当前计划' : 'Current Plan',
-    status: lang === 'zh' ? '状态' : 'Status',
     memberSince: lang === 'zh' ? '加入时间' : 'Member Since',
     settings: lang === 'zh' ? '偏好设置' : 'Preferences',
     bedtime: lang === 'zh' ? '就寝提醒' : 'Bedtime Reminder',
@@ -84,10 +79,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang, onNaviga
     edit: lang === 'zh' ? '编辑资料' : 'Edit Profile',
     save: lang === 'zh' ? '保存更改' : 'Save Changes',
     cancel: lang === 'zh' ? '取消' : 'Cancel',
-    manageSub: lang === 'zh' ? '管理订阅' : 'Manage Subscription',
-    active: lang === 'zh' ? '已激活' : 'Active',
-    free: lang === 'zh' ? '免费' : 'Free',
-    pro: lang === 'zh' ? '专业版' : 'Pro',
     placeholderName: lang === 'zh' ? '未设置' : 'Not set'
   };
 
@@ -288,39 +279,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang, onNaviga
           </GlassCard>
         </div>
 
-        {/* Right Column: Subscription & Meta */}
+        {/* Right Column: Meta */}
         <div className="space-y-8">
-          <GlassCard className="p-8 border-indigo-500/30 bg-indigo-500/5">
-            <div className="flex items-center gap-3 mb-8">
-              <CreditCard className="w-5 h-5 text-indigo-400" />
-              <h2 className="text-xl font-black italic uppercase tracking-widest text-white">{t.subscription}</h2>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{t.plan}</label>
-                <div className="flex items-center gap-3">
-                  <div className="p-3 bg-indigo-600 rounded-xl">
-                    <Shield className="w-6 h-6 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-xl font-black text-white uppercase tracking-tighter">
-                      {profile.subscription_plan === 'pro' ? t.pro : t.free}
-                    </p>
-                    <p className="text-xs text-indigo-400 font-bold uppercase tracking-widest">{t.status}: {t.active}</p>
-                  </div>
-                </div>
-              </div>
-
-              <button
-                onClick={() => onNavigate('subscription')}
-                className="w-full py-3 bg-white/10 hover:bg-white/20 text-white rounded-xl font-bold transition-all border border-white/10"
-              >
-                {t.manageSub}
-              </button>
-            </div>
-          </GlassCard>
-
           <GlassCard className="p-8">
             <div className="space-y-6">
               <div>

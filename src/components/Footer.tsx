@@ -53,7 +53,7 @@ const Footer: React.FC<FooterProps> = () => {
         <div>
           <h4 className="font-bold text-white mb-4">NAVIGATION</h4>
           <ul className="space-y-2 text-sm">
-            {['PRODUCT', 'PRICING', 'HOW IT WORKS', 'RESEARCH', 'SCIENCE', 'NEWS', 'FAQ', 'STATUS', 'SIGN IN'].map(link => (
+            {['PRODUCT', 'HOW IT WORKS', 'RESEARCH', 'SCIENCE', 'NEWS', 'FAQ', 'STATUS', 'SIGN IN'].map(link => (
               <li key={link}><a href="#" onClick={(e) => handleLinkClick(e, link)} className="hover:text-white transition-colors">{link}</a></li>
             ))}
           </ul>
