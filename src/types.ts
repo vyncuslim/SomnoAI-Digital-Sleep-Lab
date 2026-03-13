@@ -54,6 +54,8 @@ export interface UserProfile {
   country?: string;
   last_login?: string;
   is_paying?: boolean;
+  failed_login_attempts?: number;
+  blocked_reason?: string;
 }
 
 export interface Article {

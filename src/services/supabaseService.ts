@@ -104,8 +104,20 @@ export const adminApi = {
         'Authorization': `Bearer ${session?.access_token}`
       }
     });
-    if (!response.ok) throw new Error('Failed to fetch auth users');
-    return response.json();
+    
+    const contentType = response.headers.get('content-type');
+    const text = await response.text();
+    
+    if (!response.ok || (contentType && !contentType.includes('application/json'))) {
+      console.warn('Auth users API failed or returned non-JSON.');
+      throw new Error('Failed to fetch auth users: Invalid response format.');
+    }
+    
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error('Failed to parse auth users as JSON.');
+    }
   },
   getSchemaInfo: async () => {
     const { data: { session } } = await supabase.auth.getSession();
@@ -114,8 +126,20 @@ export const adminApi = {
         'Authorization': `Bearer ${session?.access_token}`
       }
     });
-    if (!response.ok) throw new Error('Failed to fetch schema info');
-    return response.json();
+    
+    const contentType = response.headers.get('content-type');
+    const text = await response.text();
+    
+    if (!response.ok || (contentType && !contentType.includes('application/json'))) {
+      console.warn('Schema info API failed or returned non-JSON.');
+      throw new Error('Failed to fetch schema info: Invalid response format.');
+    }
+    
+    try {
+      return JSON.parse(text);
+    } catch (e) {
+      throw new Error('Failed to parse schema info as JSON.');
+    }
   }
 };
 

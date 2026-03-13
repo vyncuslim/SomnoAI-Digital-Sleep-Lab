@@ -108,13 +108,25 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
         }
       });
       
-      if (!response.ok) {
-        const err = await response.json();
-        throw new Error(err.error || 'Failed to fetch table data');
+      const contentType = response.headers.get('content-type');
+      const text = await response.text();
+      
+      if (!response.ok || (contentType && !contentType.includes('application/json'))) {
+        console.warn(`Table data API failed or returned non-JSON for ${tableName}.`);
+        try {
+          const err = JSON.parse(text);
+          throw new Error(err.error || 'Failed to fetch table data');
+        } catch (e) {
+          throw new Error(`Failed to fetch table data: API returned invalid format.`);
+        }
       }
       
-      const data = await response.json();
-      setTableData(data || []);
+      try {
+        const data = JSON.parse(text);
+        setTableData(data || []);
+      } catch (e) {
+        throw new Error(`Failed to parse table data as JSON.`);
+      }
     } catch (error: any) {
       console.error(`Failed to fetch data for ${tableName}:`, error);
       alert(`Failed to fetch data for ${tableName}: ${error.message}`);
@@ -404,7 +416,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
         {['overview', 'founder', 'logins', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews', 'errors', 'database']
           .filter(tab => {
             if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder') return isOwner || isSuperOwner;
-            if (tab === 'database') return isAdmin || isOwner || isSuperOwner;
+            if (tab === 'database') return isSuperOwner;
             if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;
             return true;
           })
@@ -566,36 +578,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
               />
             </div>
             <div className="overflow-x-auto rounded-2xl border border-white/5">
-              <table className="w-full text-left border-collapse">
+              <table className="w-full text-left border-collapse whitespace-nowrap">
                 <thead>
                   <tr className="bg-white/5 border-b border-white/10">
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">User</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Role</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Status</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Country</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Provider</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Last Sign In</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right">Actions</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">用户唯一识别码 (id)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">邮箱 (email)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">角色 (role)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">全名 (full_name)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">是否被封锁 (is_blocked)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">是否已初始化 (is_initialized)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">是否有应用数据 (has_app_data)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">创建时间 (created_at)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">电话 (phone)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">头像链接 (avatar_url)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">登录提供商 (provider)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">最后登录时间 (last_sign_in_at)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">更新时间 (updated_at)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">是否超级拥有者 (is_super_owner)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">Stripe 客户编号 (stripe_customer_id)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">订阅编号 (subscription_id)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">订阅方案 (subscription_plan)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">订阅状态 (subscription_status)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">封锁代码 (block_code)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">国家 (country)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">最后登录 (last_login)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">是否付费 (is_paying)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">封锁原因 (blocked_reason)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">登录失败次数 (failed_login_attempts)</th>
+                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right sticky right-0 bg-[#0a0a0a] shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.5)]">操作 (Actions)</th>
                   </tr>
                 </thead>
                 <tbody>
                   {users.filter(u => u.email?.includes(searchQuery) || u.id?.includes(searchQuery)).map((user) => (
                     <tr key={user.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
-                      <td className="p-4">
-                        <div className="flex items-center gap-3">
-                          {user.avatar_url ? (
-                            <img src={user.avatar_url} alt="" className="w-8 h-8 rounded-full border border-white/10" referrerPolicy="no-referrer" />
-                          ) : (
-                            <div className="w-8 h-8 bg-indigo-600/20 text-indigo-400 rounded-full flex items-center justify-center font-bold text-xs">
-                              {user.email?.[0].toUpperCase()}
-                            </div>
-                          )}
-                          <div>
-                            <div className="font-bold text-sm text-white">{user.full_name || user.email}</div>
-                            <div className="text-[10px] text-slate-500 font-mono">{user.id}</div>
-                          </div>
-                        </div>
-                      </td>
+                      <td className="p-4 text-xs font-mono text-slate-400">{user.id}</td>
+                      <td className="p-4 text-sm font-bold text-white">{user.email}</td>
                       <td className="p-4">
                         <select 
                           value={user.is_super_owner ? 'super_owner' : (user.role || 'user')}
@@ -610,28 +627,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                           {isSuperOwner && <option value="super_owner">Super Owner</option>}
                         </select>
                       </td>
+                      <td className="p-4 text-sm text-slate-300">{user.full_name || '-'}</td>
                       <td className="p-4">
-                        <div className="flex flex-col gap-1">
-                          <div className="flex items-center gap-2">
-                            {user.is_blocked ? (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/20 text-rose-500 border border-rose-500/30">Blocked</span>
-                            ) : (
-                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">Active</span>
-                            )}
-                          </div>
-                          {user.block_code && <span className="text-[9px] text-rose-400 font-mono uppercase">{user.block_code}</span>}
-                        </div>
+                        {user.is_blocked ? (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-rose-500/20 text-rose-500 border border-rose-500/30">是 (Yes)</span>
+                        ) : (
+                          <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">否 (No)</span>
+                        )}
                       </td>
-                      <td className="p-4 text-xs font-mono text-slate-400">
-                        {user.country || '-'}
+                      <td className="p-4 text-xs text-slate-400">{user.is_initialized ? '是' : '否'}</td>
+                      <td className="p-4 text-xs text-slate-400">{user.has_app_data ? '是' : '否'}</td>
+                      <td className="p-4 text-xs font-mono text-slate-500">{user.created_at ? new Date(user.created_at).toLocaleString() : '-'}</td>
+                      <td className="p-4 text-xs text-slate-400">{user.phone || '-'}</td>
+                      <td className="p-4 text-xs text-slate-400">
+                        {user.avatar_url ? (
+                          <a href={user.avatar_url} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">View</a>
+                        ) : '-'}
                       </td>
-                      <td className="p-4">
-                        <span className="text-[10px] font-mono text-slate-500 uppercase tracking-widest">{user.provider || 'email'}</span>
-                      </td>
-                      <td className="p-4 text-xs font-mono text-slate-500">
-                        {user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleDateString() : '-'}
-                      </td>
-                      <td className="p-4 text-right">
+                      <td className="p-4 text-[10px] font-mono text-slate-500 uppercase tracking-widest">{user.provider || 'email'}</td>
+                      <td className="p-4 text-xs font-mono text-slate-500">{user.last_sign_in_at ? new Date(user.last_sign_in_at).toLocaleString() : '-'}</td>
+                      <td className="p-4 text-xs font-mono text-slate-500">{user.updated_at ? new Date(user.updated_at).toLocaleString() : '-'}</td>
+                      <td className="p-4 text-xs text-slate-400">{user.is_super_owner ? '是' : '否'}</td>
+                      <td className="p-4 text-xs font-mono text-slate-400">{user.stripe_customer_id || '-'}</td>
+                      <td className="p-4 text-xs font-mono text-slate-400">{user.subscription_id || '-'}</td>
+                      <td className="p-4 text-xs text-slate-400">{user.subscription_plan || '-'}</td>
+                      <td className="p-4 text-xs text-slate-400">{user.subscription_status || '-'}</td>
+                      <td className="p-4 text-xs font-mono text-rose-400">{user.block_code || '-'}</td>
+                      <td className="p-4 text-xs font-mono text-slate-400">{user.country || '-'}</td>
+                      <td className="p-4 text-xs font-mono text-slate-500">{user.last_login ? new Date(user.last_login).toLocaleString() : '-'}</td>
+                      <td className="p-4 text-xs text-slate-400">{user.is_paying ? '是' : '否'}</td>
+                      <td className="p-4 text-xs text-rose-400">{user.blocked_reason || '-'}</td>
+                      <td className="p-4 text-xs font-mono text-slate-400">{user.failed_login_attempts || 0}</td>
+                      <td className="p-4 text-right sticky right-0 bg-[#0a0a0a] shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.5)]">
                         <button 
                           onClick={async () => {
                             const newStatus = !user.is_blocked;
@@ -1096,7 +1123,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
           </div>
         )}
 
-        {activeTab === 'database' && (isAdmin || isOwner || isSuperOwner) && (
+        {activeTab === 'database' && isSuperOwner && (
           <div className="space-y-8">
             <div className="flex items-center gap-6 mb-8">
                <div className="p-5 bg-indigo-500/10 rounded-[2rem] text-indigo-400 border border-indigo-500/20 shadow-xl">
