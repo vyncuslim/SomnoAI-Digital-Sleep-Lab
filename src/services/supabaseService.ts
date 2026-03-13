@@ -98,12 +98,22 @@ export const adminApi = {
   getSettings: async () => supabase.from('app_settings').select('*'),
   updateSetting: async (key: string, value: string) => supabase.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() }),
   getAuthUsers: async () => {
-    const response = await fetch('/api/admin/auth-users');
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch('/api/admin/auth-users', {
+      headers: {
+        'Authorization': `Bearer ${session?.access_token}`
+      }
+    });
     if (!response.ok) throw new Error('Failed to fetch auth users');
     return response.json();
   },
   getSchemaInfo: async () => {
-    const response = await fetch('/api/admin/schema');
+    const { data: { session } } = await supabase.auth.getSession();
+    const response = await fetch('/api/admin/schema', {
+      headers: {
+        'Authorization': `Bearer ${session?.access_token}`
+      }
+    });
     if (!response.ok) throw new Error('Failed to fetch schema info');
     return response.json();
   }

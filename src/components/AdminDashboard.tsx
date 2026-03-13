@@ -97,16 +97,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
     }
   };
 
-  const fetchTableData = async (tableName: string) => {
+  const fetchTableData = async (tableName: string, schema: string = 'public') => {
     setLoadingTable(true);
     setSelectedTable(tableName);
     try {
-      const { data, error } = await supabase.from(tableName).select('*').limit(100);
-      if (error) throw error;
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch(`/api/admin/table-data/${tableName}?schema=${schema}`, {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
+      
+      if (!response.ok) {
+        const err = await response.json();
+        throw new Error(err.error || 'Failed to fetch table data');
+      }
+      
+      const data = await response.json();
       setTableData(data || []);
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Failed to fetch data for ${tableName}:`, error);
-      alert(`Failed to fetch data for ${tableName}`);
+      alert(`Failed to fetch data for ${tableName}: ${error.message}`);
     } finally {
       setLoadingTable(false);
     }
@@ -354,7 +365,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
         {['overview', 'founder', 'logins', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews', 'errors', 'database']
           .filter(tab => {
-            if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder' || tab === 'database') return isOwner || isSuperOwner;
+            if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder') return isOwner || isSuperOwner;
+            if (tab === 'database') return isSuperOwner;
             if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;
             return true;
           })
@@ -1070,13 +1082,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                   <div className="space-y-2">
                     {schemaInfo.map((table) => (
                       <button
-                        key={table.name}
-                        onClick={() => fetchTableData(table.name)}
+                        key={`${table.schema || 'public'}.${table.name}`}
+                        onClick={() => fetchTableData(table.name, table.schema || 'public')}
                         className={`w-full text-left p-3 rounded-xl text-sm transition-all flex items-center justify-between group ${
                           selectedTable === table.name ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'
                         }`}
                       >
-                        <span className="font-mono">{table.name}</span>
+                        <div className="flex flex-col">
+                          <span className="font-mono">{table.name}</span>
+                          {table.schema && <span className="text-[8px] uppercase tracking-widest opacity-50">{table.schema}</span>}
+                        </div>
                         <span className="text-[10px] opacity-0 group-hover:opacity-100 transition-opacity">View Data</span>
                       </button>
                     ))}

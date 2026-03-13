@@ -104,8 +104,37 @@ async function startServer() {
     }
   });
 
+  const checkSuperOwner = async (req: express.Request) => {
+    if (!supabase) return false;
+    const authHeader = req.headers.authorization;
+    if (!authHeader) return false;
+    const token = authHeader.split(' ')[1];
+    if (!token) return false;
+    
+    try {
+      const { data: { user }, error } = await supabase.auth.getUser(token);
+      if (error || !user) return false;
+      
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('is_super_owner')
+        .eq('id', user.id)
+        .single();
+        
+      return profile?.is_super_owner === true;
+    } catch (e) {
+      return false;
+    }
+  };
+
   app.get("/api/admin/auth-users", async (req, res) => {
     if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+    
+    const isSuperOwner = await checkSuperOwner(req);
+    if (!isSuperOwner) {
+      return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
+    }
+
     try {
       const { data: { users }, error } = await supabase.auth.admin.listUsers();
       if (error) throw error;
@@ -118,6 +147,12 @@ async function startServer() {
 
   app.get("/api/admin/schema", async (req, res) => {
     if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+    const isSuperOwner = await checkSuperOwner(req);
+    if (!isSuperOwner) {
+      return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
+    }
+
     try {
       // This is a bit of a hack since we can't easily query information_schema via the client
       // We'll return the list of tables we know about and their basic info
@@ -126,17 +161,61 @@ async function startServer() {
         'security_events', 'app_settings', 'error_logs', 
         'communications', 'reviews', 'analytics_daily'
       ];
+
+      // Add auth schema tables for super owners
+      const authTables = [
+        'audit_log_entries', 'identities', 'mfa_amr_claims', 
+        'one_time_tokens', 'refresh_tokens', 'sessions'
+      ];
       
-      const schemaInfo = await Promise.all(tables.map(async (table) => {
-        const { data, error } = await supabase.from(table).select('*').limit(1);
-        if (error) return { table, error: error.message };
-        const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
-        return { table, columns };
+      const allTables = [...tables];
+      
+      const schemaInfo = await Promise.all(allTables.map(async (table) => {
+        try {
+          const { data, error } = await supabase!.from(table).select('*').limit(1);
+          if (error) return { name: table, error: error.message, isAuth: false };
+          const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
+          return { name: table, columns, isAuth: false };
+        } catch (e) {
+          return { name: table, error: 'Failed to fetch', isAuth: false };
+        }
       }));
 
-      res.json(schemaInfo);
+      // For auth tables, we can't easily get columns via standard client
+      // so we'll just add them as placeholders for now
+      const authSchemaInfo = authTables.map(table => ({
+        name: table,
+        columns: [],
+        isAuth: true,
+        schema: 'auth'
+      }));
+
+      res.json([...schemaInfo, ...authSchemaInfo]);
     } catch (error: any) {
       console.error('Error fetching schema:', error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/admin/table-data/:table", async (req, res) => {
+    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+    
+    const isSuperOwner = await checkSuperOwner(req);
+    if (!isSuperOwner) {
+      return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
+    }
+
+    const { table } = req.params;
+    const schema = (req.query.schema as string) || 'public';
+
+    try {
+      // Use the schema() method to access different schemas
+      const { data, error } = await supabase.schema(schema).from(table).select('*').limit(100);
+      
+      if (error) throw error;
+      res.json(data);
+    } catch (error: any) {
+      console.error(`Error fetching data for ${schema}.${table}:`, error);
       res.status(500).json({ error: error.message });
     }
   });
