@@ -22,3 +22,4 @@ Disallow: /dashboard
 Disallow: /settings
 
 Sitemap: https://digitalsleeplab.com/sitemap.xml
+Sitemap: https://digitalsleeplab.com/sitemap-news.xml

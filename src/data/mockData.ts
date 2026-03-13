@@ -35,6 +35,38 @@ export const BLOG_POSTS = [
 
 export const RESEARCH_ARTICLES = [
   {
+    id: '2',
+    slug: 'platform-update-admin-ui-security',
+    title: 'Platform Update: Admin UI Enhancements & Security Fixes',
+    excerpt: 'Recent updates to the Admin Dashboard, Registry UI, and platform security.',
+    content: `We are excited to announce several key updates to the SomnoAI Digital Sleep Lab platform, focusing on administrative capabilities, security, and user experience.
+
+### Admin Dashboard & Security Enhancements
+- **Enhanced User Profile Tracking:** We've added tracking for \`failed_login_attempts\` and \`blocked_reason\` to the UserProfile. This allows administrators to better monitor account security and understand why accounts may have been restricted.
+- **Strict Role-Based Access Control:** The Database & Auth Explorer within the Admin Dashboard is now strictly limited to users with the \`super_owner\` role. This ensures that sensitive system tables and authentication data are only accessible to the highest level of administrative personnel.
+
+### Registry UI Overhaul
+- **Comprehensive Data View:** The Registry table has been completely redesigned to support horizontal scrolling, accommodating a much wider array of user data fields.
+- **Detailed User Insights:** Administrators can now view comprehensive details including User ID, Email, Role, Full Name, Block Status, Initialization Status, App Data Presence, Creation Date, Phone, Avatar URL, Login Provider, Last Sign-In, Update Time, Super Owner Status, Stripe Customer ID, Subscription Details, Block Code, Country, Last Login, Paying Status, Blocked Reason, and Failed Login Attempts.
+- **Localized Headers:** All headers in the Registry table have been updated to support Chinese localization for our international administrative team.
+- **Streamlined Actions:** The action buttons (Block/Unblock) are now pinned to the right side of the table, ensuring they remain accessible even when scrolling through extensive user data.
+
+### Platform Stability & Branding
+- **Logo Resolution Fixes:** We've resolved an issue where the platform logo might not load correctly in certain environments. The logo now consistently uses the high-resolution \`logo_512.png\` asset across the application, including the manifest, index, privacy policy, and terms of service pages.
+
+These updates represent our ongoing commitment to providing a secure, robust, and user-friendly platform for both our users and administrative staff.`,
+    date: new Date().toISOString().split('T')[0],
+    category: 'Platform Update',
+    author: {
+      name: 'SomnoAI Engineering',
+      role: 'Development Team',
+      bio: 'The core engineering team behind SomnoAI Digital Sleep Lab.'
+    },
+    tags: ['Update', 'Security', 'Admin'],
+    readTime: '3 min',
+    source: 'SomnoAI'
+  },
+  {
     id: '1',
     slug: 'circadian-rhythms',
     title: 'Circadian Rhythms and Health',
@@ -50,5 +82,56 @@ export const RESEARCH_ARTICLES = [
     tags: ['Research', 'Biology'],
     readTime: '10 min',
     source: 'Sleep Journal'
+  },
+  {
+    id: '3',
+    slug: 'beta-access-program',
+    title: 'SomnoAI Digital Sleep Lab Announces Beta Access Program',
+    excerpt: 'Join our exclusive beta program to experience the future of digital sleep analysis.',
+    content: 'We are thrilled to announce the launch of our Beta Access Program. Early adopters will get exclusive access to our advanced neural telemetry and sleep pattern analysis tools. Join us in shaping the future of digital sleep health.',
+    date: '2024-05-01',
+    category: 'Announcement',
+    author: {
+      name: 'SomnoAI Team',
+      role: 'Official',
+      bio: 'The official voice of SomnoAI.'
+    },
+    tags: ['Beta', 'Announcement'],
+    readTime: '2 min',
+    source: 'SomnoAI'
+  },
+  {
+    id: '4',
+    slug: 'research-partnership',
+    title: 'New Research Partnership on Circadian Rhythm Analysis',
+    excerpt: 'SomnoAI partners with leading sleep research institutes.',
+    content: 'SomnoAI Digital Sleep Lab has entered into a strategic partnership with top-tier sleep research institutes to further our understanding of circadian rhythms and their impact on overall health. This collaboration will bring new insights and algorithms to our platform.',
+    date: '2024-04-15',
+    category: 'Partnership',
+    author: {
+      name: 'SomnoAI Team',
+      role: 'Official',
+      bio: 'The official voice of SomnoAI.'
+    },
+    tags: ['Research', 'Partnership'],
+    readTime: '4 min',
+    source: 'SomnoAI'
+  },
+  {
+    id: '5',
+    slug: 'platform-update-algorithms',
+    title: 'Platform Update: Enhanced Pattern Detection Algorithms',
+    excerpt: 'Our latest update brings significant improvements to sleep pattern detection.',
+    content: 'Our engineering team has rolled out a major update to our core pattern detection algorithms. Users will now experience more accurate sleep stage classification and deeper insights into their nightly rest patterns.',
+    date: '2024-03-28',
+    category: 'Platform Update',
+    author: {
+      name: 'SomnoAI Engineering',
+      role: 'Development Team',
+      bio: 'The core engineering team behind SomnoAI Digital Sleep Lab.'
+    },
+    tags: ['Update', 'Algorithm'],
+    readTime: '3 min',
+    source: 'SomnoAI'
   }
 ];

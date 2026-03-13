@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">
+  <url>
+    <loc>https://digitalsleeplab.com/en/news/platform-update-admin-ui-security</loc>
+    <news:news>
+      <news:publication>
+        <news:name>SomnoAI Digital Sleep Lab</news:name>
+        <news:language>en</news:language>
+      </news:publication>
+      <news:publication_date>2026-03-13T10:00:00+08:00</news:publication_date>
+      <news:title>Platform Update: Admin UI Enhancements &amp; Security Fixes</news:title>
+      <news:keywords>Update, Security, Admin</news:keywords>
+    </news:news>
+  </url>
+  <url>
+    <loc>https://digitalsleeplab.com/cn/news/platform-update-admin-ui-security</loc>
+    <news:news>
+      <news:publication>
+        <news:name>SomnoAI Digital Sleep Lab</news:name>
+        <news:language>zh-cn</news:language>
+      </news:publication>
+      <news:publication_date>2026-03-13T10:00:00+08:00</news:publication_date>
+      <news:title>平台更新：管理界面增强与安全修复</news:title>
+      <news:keywords>Update, Security, Admin</news:keywords>
+    </news:news>
+  </url>
+</urlset>

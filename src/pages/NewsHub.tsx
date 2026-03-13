@@ -13,6 +13,11 @@ export const NewsHub: React.FC<NewsHubProps> = ({ lang, onSelectArticle }) => {
 
   const announcements = [
     {
+      title: isZh ? "平台更新：管理界面增强与安全修复" : "Platform Update: Admin UI Enhancements & Security Fixes",
+      date: new Date().toISOString().split('T')[0],
+      slug: "platform-update-admin-ui-security"
+    },
+    {
       title: isZh ? "SomnoAI Digital Sleep Lab 宣布 Beta 访问计划" : "SomnoAI Digital Sleep Lab Announces Beta Access Program",
       date: "2024-05-01",
       slug: "beta-access-program"
