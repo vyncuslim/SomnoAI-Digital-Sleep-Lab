@@ -32,7 +32,7 @@ export const GlobalAIChat: React.FC = () => {
 
     try {
       const chat = ai.chats.create({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview',
         config: {
           systemInstruction: isZh 
             ? '你是SomnoAI的首席研究官。你是一个专业的睡眠科学AI助手。请用中文简明扼要地回答用户关于睡眠、应用功能或科学研究的问题。' 

@@ -44,9 +44,9 @@ export default async function handler(req, res) {
     const response = await ai.models.generateContent({
         /**
          * FIXED: Production path requirement: avoid preview models.
-         * Defaulting to Gemini 3.1 Pro for complex text analysis.
+         * Defaulting to Gemini 3 Flash for efficient analysis.
          */
-        model: "gemini-3.1-pro-preview",
+        model: "gemini-3-flash-preview",
         contents: [{ parts: [{ text: `Admin Input: ${text}` }] }],
         config: { systemInstruction }
     });

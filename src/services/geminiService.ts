@@ -17,7 +17,7 @@ export async function getSleepRecommendation(userData: string): Promise<string> 
   try {
     const ai = getAiInstance();
     const response = await ai.models.generateContent({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-3-flash-preview",
       contents: `Provide personalized sleep recommendations based on this user data: ${userData}`,
     });
     return response.text || "No recommendation available.";
@@ -39,7 +39,7 @@ export async function startContextualCoach(chatHistory: any[], history: any[], l
     }));
 
     const response = await ai.models.generateContentStream({
-      model: "gemini-3.1-pro-preview",
+      model: "gemini-3-flash-preview",
       contents: contents,
       config: {
         systemInstruction,

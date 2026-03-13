@@ -147,7 +147,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       `;
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -173,7 +173,13 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       }
     } catch (error: any) {
       console.error('Error generating analysis:', error);
-      alert(lang === 'zh' ? `生成分析时出错，请重试。(${error.message})` : `Error generating analysis, please try again. (${error.message})`);
+      let errorMsg = error.message;
+      if (error.message?.includes('quota') || error.message?.includes('429')) {
+        errorMsg = lang === 'zh' 
+          ? "系统当前繁忙（配额已满），请稍后再试或明天再试。" 
+          : "System is currently busy (quota reached). Please try again in a few minutes or tomorrow.";
+      }
+      alert(lang === 'zh' ? `生成分析时出错：${errorMsg}` : `Error generating analysis: ${errorMsg}`);
     } finally {
       setIsAnalyzing(false);
     }
