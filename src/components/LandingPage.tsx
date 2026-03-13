@@ -293,6 +293,57 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </div>
       </Section>
 
+      {/* Pricing Section */}
+      <Section className="relative overflow-hidden">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-indigo-500/5 blur-[160px] rounded-full pointer-events-none" />
+        <div className="text-center mb-20">
+          <h2 className="text-5xl md:text-7xl font-black italic uppercase tracking-tighter text-white mb-6">
+            {lang === 'zh' ? "定价方案" : "Pricing Plans"}
+          </h2>
+          <p className="text-xl text-slate-400 italic font-medium max-w-2xl mx-auto">
+            {lang === 'zh' ? "选择最适合您的睡眠分析方案" : "Choose the sleep analysis plan that's right for you"}
+          </p>
+        </div>
+
+        <div className="max-w-md mx-auto">
+          <Card 
+            title={lang === 'zh' ? "SomnoAI 数字睡眠实验室分析" : "SomnoAI Digital Sleep Lab Analysis"} 
+            description={lang === 'zh' ? "深入的洞察、长期趋势分析和个性化建议。" : "In-depth insights, long-term trend analysis, and personalized recommendations."}
+            icon={<Zap className="text-indigo-400" />}
+            label="NEURAL_ANALYSIS_V2"
+            className="border-indigo-500/40 bg-indigo-950/20 shadow-[0_20px_50px_rgba(79,70,229,0.1)] relative overflow-hidden"
+          >
+            <div className="scanline" />
+            <div className="mb-8 space-y-4">
+              <div className="flex items-center gap-3 text-xs text-slate-300">
+                <CheckCircle2 size={14} className="text-indigo-400" />
+                <span>{lang === 'zh' ? "AI 睡眠分析报告" : "AI Sleep Analysis Reports"}</span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-300">
+                <CheckCircle2 size={14} className="text-indigo-400" />
+                <span>{lang === 'zh' ? "无限历史记录" : "Unlimited History"}</span>
+              </div>
+              <div className="flex items-center gap-3 text-xs text-slate-300">
+                <CheckCircle2 size={14} className="text-indigo-400" />
+                <span>{lang === 'zh' ? "神经科学建议" : "Neural Insights"}</span>
+              </div>
+            </div>
+            <div className="mt-auto">
+              <div className="text-5xl font-black italic tracking-tighter text-white mb-8">
+                MYR 10.00<span className="text-sm font-bold text-slate-500 uppercase tracking-widest ml-2">/mo</span>
+              </div>
+              <HardwareButton 
+                href="https://checkout.sleepsomno.com/b/eVqaEXeioe9F9U2cx3cwg04" 
+                variant="primary"
+                className="w-full"
+              >
+                {lang === 'zh' ? "立即订阅" : "Subscribe Now"}
+              </HardwareButton>
+            </div>
+          </Card>
+        </div>
+      </Section>
+
       {/* Newsletter */}
       <Section>
         <div className="p-16 rounded-[4rem] bg-indigo-600/5 border border-indigo-500/10 text-center space-y-10 relative overflow-hidden">

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Mail, Phone, Globe, Settings, Save, Edit2, X, CheckCircle2, AlertCircle,
-  Calendar, Clock, Bell, Moon
+  Calendar
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Language, UserProfile } from '../types';
@@ -25,13 +25,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
       setFormData({
         full_name: profile.full_name || '',
         phone: profile.phone || '',
-        country: profile.country || '',
-        preferences: profile.preferences || {
-          theme: 'dark',
-          notifications: true,
-          bedtime_reminder: '22:00',
-          wake_goal: '07:00'
-        }
+        country: profile.country || ''
       });
     }
   }, [profile]);
@@ -73,9 +67,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
     country: lang === 'zh' ? '国家/地区' : 'Country/Region',
     memberSince: lang === 'zh' ? '加入时间' : 'Member Since',
     settings: lang === 'zh' ? '偏好设置' : 'Preferences',
-    bedtime: lang === 'zh' ? '就寝提醒' : 'Bedtime Reminder',
-    wakeGoal: lang === 'zh' ? '起床目标' : 'Wake Up Goal',
-    notifications: lang === 'zh' ? '通知' : 'Notifications',
+    subscription: lang === 'zh' ? '订阅详情' : 'Subscription Details',
+    plan: lang === 'zh' ? '当前方案' : 'Current Plan',
+    status: lang === 'zh' ? '状态' : 'Status',
+    manageSub: lang === 'zh' ? '管理订阅' : 'Manage Subscription',
+    active: lang === 'zh' ? '已激活' : 'Active',
+    free: lang === 'zh' ? 'Go版' : 'Go',
+    pro: lang === 'zh' ? 'SomnoAI 数字睡眠实验室分析' : 'SomnoAI Digital Sleep Lab Analysis',
     edit: lang === 'zh' ? '编辑资料' : 'Edit Profile',
     save: lang === 'zh' ? '保存更改' : 'Save Changes',
     cancel: lang === 'zh' ? '取消' : 'Cancel',
@@ -196,91 +194,40 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
               </div>
             </div>
           </GlassCard>
-
-          <GlassCard className="p-8">
-            <div className="flex items-center gap-3 mb-8">
-              <Settings className="w-5 h-5 text-indigo-400" />
-              <h2 className="text-xl font-black italic uppercase tracking-widest text-white">{t.settings}</h2>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Moon className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm font-medium text-white">{t.bedtime}</span>
-                  </div>
-                  {isEditing ? (
-                    <input
-                      type="time"
-                      value={formData.preferences?.bedtime_reminder || '22:00'}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        preferences: { ...formData.preferences, bedtime_reminder: e.target.value }
-                      })}
-                      className="bg-slate-950/50 border border-white/10 rounded px-2 py-1 text-white text-sm"
-                    />
-                  ) : (
-                    <span className="text-sm text-indigo-400 font-bold">{profile.preferences?.bedtime_reminder || '22:00'}</span>
-                  )}
-                </div>
-
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Clock className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm font-medium text-white">{t.wakeGoal}</span>
-                  </div>
-                  {isEditing ? (
-                    <input
-                      type="time"
-                      value={formData.preferences?.wake_goal || '07:00'}
-                      onChange={(e) => setFormData({
-                        ...formData,
-                        preferences: { ...formData.preferences, wake_goal: e.target.value }
-                      })}
-                      className="bg-slate-950/50 border border-white/10 rounded px-2 py-1 text-white text-sm"
-                    />
-                  ) : (
-                    <span className="text-sm text-indigo-400 font-bold">{profile.preferences?.wake_goal || '07:00'}</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Bell className="w-4 h-4 text-slate-400" />
-                    <span className="text-sm font-medium text-white">{t.notifications}</span>
-                  </div>
-                  {isEditing ? (
-                    <button
-                      onClick={() => setFormData({
-                        ...formData,
-                        preferences: { ...formData.preferences, notifications: !formData.preferences?.notifications }
-                      })}
-                      className={`w-12 h-6 rounded-full transition-colors relative ${
-                        formData.preferences?.notifications ? 'bg-indigo-600' : 'bg-slate-700'
-                      }`}
-                    >
-                      <div className={`absolute top-1 w-4 h-4 bg-white rounded-full transition-all ${
-                        formData.preferences?.notifications ? 'left-7' : 'left-1'
-                      }`} />
-                    </button>
-                  ) : (
-                    <span className={`text-xs font-black uppercase px-2 py-1 rounded ${
-                      profile.preferences?.notifications ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'
-                    }`}>
-                      {profile.preferences?.notifications ? (lang === 'zh' ? '开启' : 'ON') : (lang === 'zh' ? '关闭' : 'OFF')}
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </GlassCard>
         </div>
 
         {/* Right Column: Meta */}
         <div className="space-y-8">
+          <GlassCard className="p-8">
+            <div className="flex items-center gap-3 mb-8">
+              <Settings className="w-5 h-5 text-indigo-400" />
+              <h2 className="text-xl font-black italic uppercase tracking-widest text-white">{t.subscription}</h2>
+            </div>
+            
+            <div className="space-y-6">
+              <div>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{t.plan}</label>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-bold text-white italic">
+                    {profile.subscription_plan?.toLowerCase() === 'pro' ? t.pro : t.free}
+                  </span>
+                  <span className={`px-2 py-1 rounded text-[10px] font-black uppercase tracking-widest ${
+                    profile.subscription_status === 'active' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-slate-800 text-slate-500'
+                  }`}>
+                    {profile.subscription_status === 'active' ? t.active : profile.subscription_status || 'FREE'}
+                  </span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => window.location.href = '/pricing'}
+                className="w-full py-3 bg-white/5 hover:bg-white/10 border border-white/10 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all"
+              >
+                {t.manageSub}
+              </button>
+            </div>
+          </GlassCard>
+
           <GlassCard className="p-8">
             <div className="space-y-6">
               <div>

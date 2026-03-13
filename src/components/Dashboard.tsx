@@ -32,9 +32,13 @@ interface HistoryRecord {
 }
 
 export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
-  const { signOut } = useAuth();
+  const { profile, signOut } = useAuth();
   const { langPrefix } = useLanguage();
   const navigate = useNavigate();
+  const rawPlan = profile?.subscription_plan || 'go';
+  const plan = rawPlan.toLowerCase() === 'free' ? 'go' : rawPlan.toLowerCase();
+  const displayPlan = plan === 'pro' ? (lang === 'zh' ? 'SomnoAI 数字睡眠实验室分析' : 'SomnoAI Digital Sleep Lab Analysis') : (plan.charAt(0).toUpperCase() + plan.slice(1));
+
   const [input, setInput] = useState<SleepInput>({
     duration: 7,
     bedtime: '23:00',
@@ -208,6 +212,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     tomorrow: lang === 'zh' ? '明日优化方向' : 'Tomorrow Optimization',
     history: lang === 'zh' ? '历史记录' : 'History',
     disclaimer: lang === 'zh' ? '免责声明：此分析仅供参考，不构成医疗建议。' : 'Disclaimer: This analysis is for informational purposes only and does not constitute medical advice.',
+    currentPlan: lang === 'zh' ? '当前计划' : 'Current Plan',
     uploadTitle: lang === 'zh' ? '上传睡眠数据' : 'Upload Sleep Data',
     uploadDesc: lang === 'zh' ? '上传 CSV 或睡眠报告图片' : 'Upload CSV or images of sleep reports',
     fileSelected: lang === 'zh' ? '已选择文件' : 'File selected',
@@ -237,7 +242,15 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
             </p>
           </div>
           
-          <div className="flex flex-col items-end gap-4">
+            <div className="flex flex-col items-end gap-2">
+              <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{t.currentPlan}</span>
+              <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                plan === 'pro' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-slate-800 border-white/5 text-slate-500'
+              }`}>
+                {displayPlan}
+              </div>
+            </div>
+            <div className="flex flex-col items-end gap-4">
             <div className="flex items-center gap-4">
               <TelemetryStream />
               <div className="text-right">

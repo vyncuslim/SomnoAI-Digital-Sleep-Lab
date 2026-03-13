@@ -15,16 +15,16 @@ import Footer from './components/Footer';
 import { HelmetProvider } from 'react-helmet-async';
 import { SchemaMarkup } from './components/SchemaMarkup';
 
-import { GlobalAIChat } from './components/GlobalAIChat';
-
 // Lazy load components
 const PersonalChat = lazy(() => import('./components/PersonalChat').then(module => ({ default: module.PersonalChat })));
+const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement').then(module => ({ default: module.SubscriptionManagement })));
 const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
 const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
 const AdminView = lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
 const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
 const FeedbackView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
 const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
+const Pricing = lazy(() => import('./pages/Pricing'));
 const About = lazy(() => import('./pages/About').then(module => ({ default: module.About })));
 const Product = lazy(() => import('./pages/Product').then(module => ({ default: module.Product })));
 const HowItWorks = lazy(() => import('./pages/HowItWorks').then(module => ({ default: module.HowItWorks })));
@@ -243,6 +243,12 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
           <UserProfile lang={lang} onBack={handleBack} />
         </ProtectedRoute>
       } />
+      <Route path="pricing" element={<Pricing lang={lang} />} />
+      <Route path="subscription" element={
+        <ProtectedRoute lang={lang}>
+          <SubscriptionManagement lang={lang} />
+        </ProtectedRoute>
+      } />
 
       <Route path="feedback" element={
         <ProtectedRoute lang={lang}>
@@ -399,7 +405,6 @@ const AppContent = () => {
             ) : (
               <AppRoutes lang="en" setLang={handleLanguageChange} handleNavigate={handleNavigate} />
             )}
-            <GlobalAIChat />
           </LanguageProvider>
         </div>
         {showNavbar && <Footer lang={lang} />}

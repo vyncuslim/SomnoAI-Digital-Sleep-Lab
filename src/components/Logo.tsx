@@ -23,8 +23,8 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true }) =
         />
       </div>
       {showText && (
-        <div className="flex flex-col">
-          <span className="text-xl font-black italic tracking-tighter text-white leading-none">
+        <div className="flex flex-col min-w-fit">
+          <span className="text-xl font-black italic tracking-tighter text-white leading-none whitespace-nowrap">
             SomnoAI<span className="text-indigo-500"> Digital Sleep Lab</span>
           </span>
           <span className="micro-label opacity-40 mt-1">NEURAL_TELEMETRY_V4.2</span>

@@ -54,7 +54,6 @@ export interface UserProfile {
   country?: string;
   last_login?: string;
   is_paying?: boolean;
-  preferences?: Record<string, any>;
 }
 
 export interface Article {

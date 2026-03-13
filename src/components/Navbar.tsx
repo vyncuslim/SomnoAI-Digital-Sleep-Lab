@@ -47,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const guestLinks = [
     { label: isZh ? '产品' : 'Product', view: 'product', icon: Sparkles },
+    { label: isZh ? '定价' : 'Pricing', view: 'pricing', icon: TrendingUp },
     { label: isZh ? '原理' : 'How it Works', view: 'how-it-works', icon: Binary },
     { label: isZh ? '研究' : 'Research', view: 'research', icon: Microscope },
     { label: t.landing?.nav?.science || 'Science', view: 'science', icon: FlaskConical },
@@ -76,17 +77,11 @@ export const Navbar: React.FC<NavbarProps> = ({
         <m.button 
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          className="flex items-center gap-6 cursor-pointer group bg-transparent border-none p-0 outline-none text-left relative" 
+          className="flex items-center gap-3 cursor-pointer group bg-transparent border-none p-0 outline-none text-left relative" 
           onClick={() => onNavigate(isAuthenticated ? 'dashboard' : '/')}
         >
           <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
           <Logo className="group-hover:text-indigo-400 transition-colors scale-110" />
-          <div className="flex flex-col">
-            <span className="text-[10px] font-black italic uppercase tracking-tighter text-white group-hover:text-indigo-400 transition-colors">SomnoAI</span>
-            <span className="text-[6px] font-black uppercase tracking-[0.4em] text-slate-500">
-              {isZh ? '您的AI驱动睡眠伴侣' : 'Neural Sleep Lab'}
-            </span>
-          </div>
         </m.button>
 
         <div className="hidden xl:flex items-center gap-8">
