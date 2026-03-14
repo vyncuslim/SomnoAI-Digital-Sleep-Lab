@@ -228,7 +228,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
             'Authorization': `Bearer ${session?.access_token}`
         },
         body: JSON.stringify({
-            adminUserId: profile?.id,
             targetUserId: userId,
             newRole
         })
@@ -654,22 +653,78 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                       <td className="p-4 text-xs text-rose-400">{user.blocked_reason || '-'}</td>
                       <td className="p-4 text-xs font-mono text-slate-400">{user.failed_login_attempts || 0}</td>
                       <td className="p-4 text-right sticky right-0 bg-[#0a0a0a] shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.5)]">
-                        <button 
-                          onClick={async () => {
-                            const newStatus = !user.is_blocked;
-                            if (newStatus) {
-                              await securityService.handleSecurityViolation(user.id, user.email, 'Admin Manual Block', 'HIGH');
-                            } else {
-                              await securityService.unblockUser(user.id, user.email, 'Admin Manual Unblock');
-                            }
-                            fetchData();
-                          }}
-                          disabled={!canManage(user)}
-                          className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${user.is_blocked ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30' : 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30'} ${!canManage(user) ? 'opacity-50 cursor-not-allowed' : ''}`}
-                        >
-                          {user.is_blocked ? <Unlock size={14} /> : <Lock size={14} />}
-                          <span className="ml-1">{user.is_blocked ? 'Unblock' : 'Block'}</span>
-                        </button>
+                        <div className="flex items-center justify-end gap-2">
+                          <button 
+                            onClick={async () => {
+                              const newStatus = !user.is_blocked;
+                              const endpoint = newStatus ? '/api/admin/block-user' : '/api/admin/unblock-user';
+                              try {
+                                const { data: { session } } = await supabase.auth.getSession();
+                                const response = await fetch(endpoint, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${session?.access_token}`
+                                  },
+                                  body: JSON.stringify({
+                                    targetUserId: user.id,
+                                    reason: newStatus ? 'Admin Manual Block' : undefined
+                                  })
+                                });
+                                
+                                if (!response.ok) {
+                                  const err = await response.json();
+                                  throw new Error(err.error || 'Operation failed');
+                                }
+                                
+                                fetchData();
+                              } catch (error: any) {
+                                console.error("Action failed:", error);
+                                alert(`Action failed: ${error.message}`);
+                              }
+                            }}
+                            disabled={!canManage(user)}
+                            className={`px-3 py-1.5 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${user.is_blocked ? 'bg-emerald-500/20 text-emerald-500 hover:bg-emerald-500/30' : 'bg-rose-500/20 text-rose-500 hover:bg-rose-500/30'} ${!canManage(user) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          >
+                            {user.is_blocked ? <Unlock size={14} /> : <Lock size={14} />}
+                            <span className="ml-1">{user.is_blocked ? 'Unblock' : 'Block'}</span>
+                          </button>
+
+                          <button 
+                            onClick={async () => {
+                              if (!window.confirm(`Are you sure you want to delete user ${user.email}? This action is permanent.`)) return;
+                              
+                              try {
+                                const { data: { session } } = await supabase.auth.getSession();
+                                const response = await fetch('/api/admin/delete-user', {
+                                  method: 'POST',
+                                  headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${session?.access_token}`
+                                  },
+                                  body: JSON.stringify({
+                                    targetUserId: user.id
+                                  })
+                                });
+                                
+                                if (!response.ok) {
+                                  const err = await response.json();
+                                  throw new Error(err.error || 'Delete failed');
+                                }
+                                
+                                fetchData();
+                              } catch (error: any) {
+                                console.error("Delete failed:", error);
+                                alert(`Delete failed: ${error.message}`);
+                              }
+                            }}
+                            disabled={!canManage(user)}
+                            className={`p-1.5 rounded-full text-rose-500 hover:bg-rose-500/20 transition-colors ${!canManage(user) ? 'opacity-50 cursor-not-allowed' : ''}`}
+                            title="Delete User"
+                          >
+                            <AlertTriangle size={14} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

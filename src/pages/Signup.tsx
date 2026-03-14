@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
+import { supabase } from '../lib/supabase';
 
 const Signup: React.FC = () => {
   const [email, setEmail] = useState('');

@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
+import { supabase } from '../lib/supabase';
 
 interface FounderStats {
   total_users: number;
@@ -22,7 +23,12 @@ export const FounderDashboard: React.FC = () => {
   const fetchStats = async () => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/founder-stats');
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch('/api/admin/founder-stats', {
+        headers: {
+          'Authorization': `Bearer ${session?.access_token}`
+        }
+      });
       
       const contentType = response.headers.get('content-type');
       const text = await response.text();

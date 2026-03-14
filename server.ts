@@ -213,53 +213,69 @@ async function startServer() {
   });
 
 import { adminServices } from './src/services/adminServices';
+import { requireAdminFromRequest } from './src/lib/admin-auth';
 
   app.post('/api/admin/delete-user', async (req, res) => {
-    const { adminUserId, targetUserId } = req.body;
     try {
-      await adminServices.deleteUser(adminUserId, targetUserId);
+      const adminUser = await requireAdminFromRequest(req);
+      const { targetUserId } = req.body;
+      await adminServices.deleteUser(adminUser.id, targetUserId);
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(error.message.includes('Unauthorized') ? 403 : 400).json({ error: error.message });
     }
   });
 
   app.post('/api/admin/block-user', async (req, res) => {
-    const { adminUserId, targetUserId, reason } = req.body;
     try {
-      await adminServices.blockUser({ adminUserId, targetUserId, reason });
+      const adminUser = await requireAdminFromRequest(req);
+      const { targetUserId, reason } = req.body;
+      await adminServices.blockUser({ adminUserId: adminUser.id, targetUserId, reason });
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(error.message.includes('Unauthorized') ? 403 : 400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/admin/unblock-user', async (req, res) => {
+    try {
+      const adminUser = await requireAdminFromRequest(req);
+      const { targetUserId } = req.body;
+      await adminServices.unblockUser({ adminUserId: adminUser.id, targetUserId });
+      res.json({ ok: true });
+    } catch (error: any) {
+      res.status(error.message.includes('Unauthorized') ? 403 : 400).json({ error: error.message });
     }
   });
 
   app.post('/api/admin/update-role', async (req, res) => {
-    const { adminUserId, targetUserId, newRole } = req.body;
     try {
-      await adminServices.updateUserRole({ adminUserId, targetUserId, newRole });
+      const adminUser = await requireAdminFromRequest(req);
+      const { targetUserId, newRole } = req.body;
+      await adminServices.updateUserRole({ adminUserId: adminUser.id, targetUserId, newRole });
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(400).json({ error: error.message });
+      res.status(error.message.includes('Unauthorized') ? 403 : 400).json({ error: error.message });
     }
   });
 
   // Admin Analytics API
   app.get("/api/admin/founder-stats", async (req, res) => {
-    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
     try {
+      await requireAdminFromRequest(req);
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
       const { data, error } = await supabase.rpc('get_founder_stats');
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      console.error('Error fetching founder stats:', error);
-      res.status(500).json({ error: error.message });
+      res.status(error.message.includes('Unauthorized') ? 403 : 500).json({ error: error.message });
     }
   });
 
   app.get("/api/admin/security-events", async (req, res) => {
-    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
     try {
+      await requireAdminFromRequest(req);
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
       const { data, error } = await supabase
         .from('security_events')
         .select(`
@@ -271,67 +287,48 @@ import { adminServices } from './src/services/adminServices';
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      console.error('Error fetching security events:', error);
-      res.status(500).json({ error: error.message });
+      res.status(error.message.includes('Unauthorized') ? 403 : 500).json({ error: error.message });
     }
   });
 
-  const checkSuperOwner = async (req: express.Request) => {
-    if (!supabase) return false;
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return false;
-    const token = authHeader.split(' ')[1];
-    if (!token) {
-      console.log('checkSuperOwner: No token found');
-      return false;
-    }
-    
+  app.get("/api/admin/auth-users", async (req, res) => {
     try {
-      const { data: { user }, error } = await supabase.auth.getUser(token);
-      console.log('checkSuperOwner: user:', user?.id, 'error:', error);
-      if (error || !user) return false;
-      
-      const { data: profile } = await supabase
+      const adminUser = await requireAdminFromRequest(req);
+      // Extra check for super owner if needed, but requireAdminFromRequest already checks for admin/super_owner
+      // If this specific route requires ONLY super_owner:
+      const { data: profile } = await supabaseAdmin
         .from('profiles')
         .select('is_super_owner')
-        .eq('id', user.id)
+        .eq('id', adminUser.id)
         .single();
-        
-      console.log('checkSuperOwner: profile:', profile);
-      return profile?.is_super_owner === true;
-    } catch (e) {
-      console.error('checkSuperOwner: error:', e);
-      return false;
-    }
-  };
+      
+      if (!profile?.is_super_owner) {
+        return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
+      }
 
-  app.get("/api/admin/auth-users", async (req, res) => {
-    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
-    
-    const isSuperOwner = await checkSuperOwner(req);
-    if (!isSuperOwner) {
-      return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
-    }
-
-    try {
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
       const { data: { users }, error } = await supabase.auth.admin.listUsers();
       if (error) throw error;
       res.json(users);
     } catch (error: any) {
-      console.error('Error fetching auth users:', error);
-      res.status(500).json({ error: error.message });
+      res.status(error.message.includes('Unauthorized') ? 403 : 500).json({ error: error.message });
     }
   });
 
   app.get("/api/admin/schema", async (req, res) => {
-    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
-
-    const isSuperOwner = await checkSuperOwner(req);
-    if (!isSuperOwner) {
-      return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
-    }
-
     try {
+      const adminUser = await requireAdminFromRequest(req);
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('is_super_owner')
+        .eq('id', adminUser.id)
+        .single();
+      
+      if (!profile?.is_super_owner) {
+        return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
+      }
+
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
       // This is a bit of a hack since we can't easily query information_schema via the client
       // We'll return the list of tables we know about and their basic info
       const tables = [
@@ -388,25 +385,30 @@ import { adminServices } from './src/services/adminServices';
   });
 
   app.get("/api/admin/table-data/:table", async (req, res) => {
-    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
-    
-    const isSuperOwner = await checkSuperOwner(req);
-    if (!isSuperOwner) {
-      return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
-    }
-
-    const { table } = req.params;
-    const schema = (req.query.schema as string) || 'public';
-
     try {
+      const adminUser = await requireAdminFromRequest(req);
+      const { data: profile } = await supabaseAdmin
+        .from('profiles')
+        .select('is_super_owner')
+        .eq('id', adminUser.id)
+        .single();
+      
+      if (!profile?.is_super_owner) {
+        return res.status(403).json({ error: 'Unauthorized: Super Owner access required' });
+      }
+
+      if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+
+      const { table } = req.params;
+      const schema = (req.query.schema as string) || 'public';
+
       // Use the schema() method to access different schemas
       const { data, error } = await supabase.schema(schema).from(table).select('*').limit(100);
       
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      console.error(`Error fetching data for ${schema}.${table}:`, error);
-      res.status(500).json({ error: error.message });
+      res.status(error.message.includes('Unauthorized') ? 403 : 500).json({ error: error.message });
     }
   });
 
