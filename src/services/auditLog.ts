@@ -12,7 +12,7 @@ type AuditCategory =
   | 'user_action';
 type AuditStatus = 'success' | 'failed' | 'denied' | 'pending';
 
-export async function writeAuditLog(params: {
+interface AuditLogParams {
   source?: string;
   level?: AuditLevel;
   category?: AuditCategory;
@@ -29,7 +29,9 @@ export async function writeAuditLog(params: {
   errorCode?: string | null;
   message?: string | null;
   metadata?: Record<string, unknown>;
-}) {
+}
+
+export async function writeAuditLog(params: AuditLogParams) {
   const { data, error } = await supabaseAdmin.rpc('write_audit_log', {
     p_source: params.source ?? 'system',
     p_level: params.level ?? 'info',
@@ -55,3 +57,12 @@ export async function writeAuditLog(params: {
 
   return { data, error };
 }
+
+export const auditLogger = {
+  logAuth: (params: Omit<AuditLogParams, 'category'> & { status: AuditStatus }) => 
+    writeAuditLog({ ...params, category: 'auth' }),
+  logPayment: (params: Omit<AuditLogParams, 'category'> & { status: AuditStatus }) => 
+    writeAuditLog({ ...params, category: 'payment' }),
+  logAdmin: (params: Omit<AuditLogParams, 'category'> & { status: AuditStatus }) => 
+    writeAuditLog({ ...params, category: 'admin' }),
+};

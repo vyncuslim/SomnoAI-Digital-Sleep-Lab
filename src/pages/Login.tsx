@@ -26,12 +26,34 @@ const Login = () => {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Record login failure
+        await fetch('/api/audit/auth-login-failure', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, errorCode: error.message }),
+        });
+        throw error;
+      }
+
+      // Record login success
+      await fetch('/api/auth/record-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: data.user.id,
+          email: data.user.email,
+          role: data.user.user_metadata?.role || 'user',
+          user_name: data.user.user_metadata?.full_name || 'User',
+          device: navigator.userAgent
+        }),
+      });
+
       navigate(from, { replace: true });
     } catch (err: any) {
       setError(err.message || 'Failed to sign in');

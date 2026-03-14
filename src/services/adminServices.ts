@@ -1,14 +1,13 @@
 import { supabaseAdmin } from './supabaseAdmin';
-import { writeAuditLog } from './auditLog';
+import { auditLogger } from './auditLog';
 
 export const adminServices = {
   async deleteUser(adminUserId: string, targetUserId: string) {
     const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
 
-    await writeAuditLog({
+    await auditLogger.logAdmin({
       source: 'admin_panel',
       level: error ? 'error' : 'warning',
-      category: 'admin',
       action: 'delete_user',
       status: error ? 'failed' : 'success',
       actorUserId: adminUserId,
@@ -32,10 +31,9 @@ export const adminServices = {
       .update({ is_blocked: true, blocked_reason: params.reason })
       .eq('id', params.targetUserId);
 
-    await writeAuditLog({
+    await auditLogger.logAdmin({
       source: 'admin_panel',
       level: error ? 'error' : 'warning',
-      category: 'admin',
       action: 'block_user',
       status: error ? 'failed' : 'success',
       actorUserId: params.adminUserId,
@@ -58,10 +56,9 @@ export const adminServices = {
       .update({ is_blocked: false, blocked_reason: null })
       .eq('id', params.targetUserId);
 
-    await writeAuditLog({
+    await auditLogger.logAdmin({
       source: 'admin_panel',
       level: error ? 'error' : 'info',
-      category: 'admin',
       action: 'unblock_user',
       status: error ? 'failed' : 'success',
       actorUserId: params.adminUserId,
@@ -93,10 +90,9 @@ export const adminServices = {
       .update({ role: params.newRole, is_super_owner: params.newRole === 'super_owner' })
       .eq('id', params.targetUserId);
 
-    await writeAuditLog({
+    await auditLogger.logAdmin({
       source: 'admin_panel',
       level: error ? 'error' : 'info',
-      category: 'admin',
       action: 'update_user_role',
       status: error ? 'failed' : 'success',
       actorUserId: params.adminUserId,

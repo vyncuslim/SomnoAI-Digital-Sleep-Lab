@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { createClient } from '@supabase/supabase-js';
 import path from 'path';
-import { writeAuditLog } from './src/services/auditLog';
+import { writeAuditLog, auditLogger } from './src/services/auditLog';
 
 dotenv.config();
 
@@ -42,10 +42,9 @@ async function startServer() {
       if (loginError) throw loginError;
 
       // Also record in audit_logs using writeAuditLog
-      await writeAuditLog({
+      await auditLogger.logAuth({
         source: 'web',
         level: 'info',
-        category: 'auth',
         action: 'USER_LOGIN',
         status: 'success',
         actorUserId: userId,
@@ -65,10 +64,9 @@ async function startServer() {
     const { email, errorCode } = req.body;
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     
-    await writeAuditLog({
+    await auditLogger.logAuth({
         source: 'web',
         level: 'warning',
-        category: 'auth',
         action: 'USER_LOGIN_FAILURE',
         status: 'failed',
         ipAddress: ip as string,
@@ -135,10 +133,9 @@ async function startServer() {
     const ip = typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : null;
     const userAgent = req.headers['user-agent'];
 
-    await writeAuditLog({
+    await auditLogger.logAuth({
       source: 'web',
       level: body.success ? 'info' : 'warning',
-      category: 'auth',
       action: 'signup',
       status: body.success ? 'success' : 'failed',
       actorUserId: body.userId ?? null,
@@ -163,10 +160,9 @@ async function startServer() {
 
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object;
-        await writeAuditLog({
+        await auditLogger.logPayment({
           source: 'api',
           level: 'info',
-          category: 'payment',
           action: 'checkout_completed',
           status: 'success',
           actorUserId: session.metadata?.user_id ?? null,
@@ -183,10 +179,9 @@ async function startServer() {
 
       if (event.type === 'invoice.payment_failed') {
         const invoice = event.data.object;
-        await writeAuditLog({
+        await auditLogger.logPayment({
           source: 'api',
           level: 'error',
-          category: 'payment',
           action: 'invoice_payment',
           status: 'failed',
           actorUserId: invoice.metadata?.user_id ?? null,
@@ -204,10 +199,9 @@ async function startServer() {
 
       res.status(200).json({ received: true });
     } catch (err) {
-      await writeAuditLog({
+      await auditLogger.logPayment({
         source: 'api',
         level: 'critical',
-        category: 'payment',
         action: 'stripe_webhook',
         status: 'failed',
         errorCode: 'webhook_handler_error',
@@ -219,7 +213,6 @@ async function startServer() {
   });
 
 import { adminServices } from './src/services/adminServices';
-import { writeAuditLog } from './src/services/auditLog';
 
   app.post('/api/admin/delete-user', async (req, res) => {
     const { adminUserId, targetUserId } = req.body;

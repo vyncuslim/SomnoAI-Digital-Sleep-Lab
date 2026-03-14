@@ -7,7 +7,7 @@ const Signup: React.FC = () => {
   const [terms, setTerms] = useState(false);
   const [privacy, setPrivacy] = useState(false);
 
-  const handleSignup = () => {
+  const handleSignup = async () => {
     if (!email || !password) {
       toast.error('Please fill in all fields');
       return;
@@ -16,7 +16,31 @@ const Signup: React.FC = () => {
       toast.error('Please agree to the Terms and Privacy Policy');
       return;
     }
-    toast.success('Account creation initiated!');
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
+
+      // Record signup attempt
+      await fetch('/api/audit/auth-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          success: !error,
+          userId: data.user?.id ?? null,
+          email: email,
+          errorCode: error?.message ?? null,
+          needsEmailConfirmation: !!data.user && !data.user.identities?.length
+        }),
+      });
+
+      if (error) throw error;
+      toast.success('Account creation successful!');
+    } catch (err: any) {
+      toast.error(err.message || 'Failed to sign up');
+    }
   };
 
   const handleSocialLogin = (provider: string) => {
