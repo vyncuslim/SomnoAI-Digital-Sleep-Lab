@@ -430,7 +430,7 @@ async function startServer() {
       const adminUser = await requireAdminFromRequest(req);
       // Extra check for super owner if needed, but requireAdminFromRequest already checks for admin/super_owner
       // If this specific route requires ONLY super_owner:
-      const { data: profile } = await supabaseAdmin
+      const { data: profile } = await supabase!
         .from('profiles')
         .select('is_super_owner')
         .eq('id', adminUser.id)
@@ -452,7 +452,7 @@ async function startServer() {
   app.get("/api/admin/schema", async (req, res) => {
     try {
       const adminUser = await requireAdminFromRequest(req);
-      const { data: profile } = await supabaseAdmin
+      const { data: profile } = await supabase!
         .from('profiles')
         .select('is_super_owner')
         .eq('id', adminUser.id)
@@ -521,7 +521,7 @@ async function startServer() {
   app.get("/api/admin/table-data/:table", async (req, res) => {
     try {
       const adminUser = await requireAdminFromRequest(req);
-      const { data: profile } = await supabaseAdmin
+      const { data: profile } = await supabase!
         .from('profiles')
         .select('is_super_owner')
         .eq('id', adminUser.id)
@@ -546,12 +546,19 @@ async function startServer() {
     }
   });
 
+  console.log('Starting server...');
   if (process.env.NODE_ENV !== 'production') {
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
+    console.log('Creating Vite server...');
+    try {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      console.log('Vite server created successfully');
+      app.use(vite.middlewares);
+    } catch (err) {
+      console.error('Failed to create Vite server:', err);
+    }
   } else {
     app.use(express.static('dist', {
       setHeaders: (res, path) => {

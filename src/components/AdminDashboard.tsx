@@ -26,7 +26,7 @@ const DATABASE_SCHEMA = [
   { id: 'audit_logs_recent', name: 'Recent Audits', group: 'Maintenance', icon: List },
   { id: 'security_events', name: 'Security Signals', group: 'Security', icon: Shield },
   { id: 'profiles', name: 'Subject Registry', group: 'Core', icon: Users },
-  { id: 'logins', name: 'Login History', group: 'Security', icon: Shield },
+  { id: 'login_attempts', name: 'Login History', group: 'Security', icon: Shield },
   { id: 'sleep_records', name: 'Sleep Matrix', group: 'Biometrics', icon: Moon },
   { id: 'feedback', name: 'User Feedback', group: 'Support', icon: MessageSquare },
   { id: 'app_settings', name: 'App Settings', group: 'Config', icon: BarChart3 },
