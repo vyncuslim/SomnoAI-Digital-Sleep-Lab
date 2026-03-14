@@ -100,21 +100,56 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- 4. Fix handle_new_user trigger to be more robust
+-- 4. Ensure profiles table has all required columns
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'is_super_owner') THEN
+        ALTER TABLE public.profiles ADD COLUMN is_super_owner boolean DEFAULT false;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'full_name') THEN
+        ALTER TABLE public.profiles ADD COLUMN full_name text;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'avatar_url') THEN
+        ALTER TABLE public.profiles ADD COLUMN avatar_url text;
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'provider') THEN
+        ALTER TABLE public.profiles ADD COLUMN provider text;
+    END IF;
+    
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'updated_at') THEN
+        ALTER TABLE public.profiles ADD COLUMN updated_at timestamptz DEFAULT now();
+    END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'profiles' AND column_name = 'email') THEN
+        ALTER TABLE public.profiles ADD COLUMN email text;
+    END IF;
+END $$;
+
+-- 5. Fix handle_new_user trigger to be more robust
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
+DECLARE
+    v_email text;
+    v_full_name text;
 BEGIN
+    -- Extract email and name with fallbacks
+    v_email := COALESCE(new.email, new.raw_user_meta_data->>'email', 'no-email-' || new.id || '@placeholder.com');
+    v_full_name := COALESCE(new.raw_user_meta_data->>'full_name', new.raw_user_meta_data->>'name', '');
+
     -- Handle potential email conflicts where the email exists but with a different ID
     -- This can happen if auth.users and public.profiles get out of sync
     UPDATE public.profiles 
     SET email = email || '_old_' || id 
-    WHERE email = new.email AND id != new.id;
+    WHERE email = v_email AND id != new.id;
 
     INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role)
     VALUES (
         new.id, 
-        COALESCE(new.email, 'no-email@placeholder.com'), 
-        COALESCE(new.raw_user_meta_data->>'full_name', ''),
+        v_email, 
+        v_full_name,
         new.raw_user_meta_data->>'avatar_url',
         new.app_metadata->>'provider',
         'user'
@@ -125,6 +160,9 @@ BEGIN
         avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
         provider = COALESCE(EXCLUDED.provider, profiles.provider),
         updated_at = now();
+    RETURN new;
+EXCEPTION WHEN OTHERS THEN
+    -- On any error, return NEW so the auth.users insert still succeeds
     RETURN new;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;

@@ -1,6 +1,9 @@
 import React, { useState } from 'react';
 import toast from 'react-hot-toast';
 import { supabase } from '../lib/supabase';
+import { Logo } from '../components/Logo';
+import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 
 const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
@@ -49,61 +52,93 @@ const Signup: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col items-center justify-center py-24">
-      <h2 className="text-4xl font-bold mb-8">JOIN THE LAB</h2>
-      <div className="bg-[#0a0d14] p-8 rounded-2xl border border-white/10 w-96">
-        <input 
-          type="email" 
-          placeholder="Email Address" 
-          className="w-full bg-gray-800 px-4 py-2 rounded-full mb-4" 
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        <input 
-          type="password" 
-          placeholder="Password" 
-          className="w-full bg-gray-800 px-4 py-2 rounded-full mb-4" 
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        <div className="flex items-center gap-2 mb-4 text-sm">
-          <input 
-            type="checkbox" 
-            checked={terms}
-            onChange={(e) => setTerms(e.target.checked)}
-          />
-          <span>I agree to the Terms of Service.</span>
+    <div className="min-h-screen bg-[#01040a] text-white flex flex-col items-center justify-center p-6 relative overflow-hidden grainy-bg">
+      {/* Background Effects */}
+      <div className="absolute top-[-10%] right-[-10%] w-[600px] h-[600px] bg-indigo-600/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute bottom-[-10%] left-[-10%] w-[600px] h-[600px] bg-purple-600/10 blur-[120px] rounded-full pointer-events-none" />
+      
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="w-full max-w-md relative z-10"
+      >
+        <div className="flex flex-col items-center mb-10">
+          <Link to="/" className="group relative">
+            <div className="absolute inset-0 bg-indigo-500/20 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <Logo className="mb-6 scale-125 relative z-10" />
+          </Link>
+          <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
+            JOIN THE LAB
+          </h2>
+          <p className="text-slate-500 text-xs font-mono uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            SomnoAI • Neural Access
+          </p>
         </div>
-        <div className="flex items-center gap-2 mb-8 text-sm">
-          <input 
-            type="checkbox" 
-            checked={privacy}
-            onChange={(e) => setPrivacy(e.target.checked)}
-          />
-          <span>I agree to the Privacy Policy.</span>
+
+        <div className="bg-slate-900/40 p-8 sm:p-10 rounded-[2.5rem] border border-white/5 shadow-2xl backdrop-blur-xl relative overflow-hidden">
+          {/* Decorative corner accents */}
+          <div className="absolute top-0 left-0 w-8 h-8 border-t-2 border-l-2 border-indigo-500/30 rounded-tl-[2.5rem]" />
+          <div className="absolute bottom-0 right-0 w-8 h-8 border-b-2 border-r-2 border-purple-500/30 rounded-br-[2.5rem]" />
+
+          <div className="space-y-4">
+            <input 
+              type="email" 
+              placeholder="Email Address" 
+              className="w-full bg-black/40 border border-white/10 px-4 py-4 rounded-2xl text-sm font-mono focus:outline-none focus:border-indigo-500/50 transition-all" 
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+            <input 
+              type="password" 
+              placeholder="Password" 
+              className="w-full bg-black/40 border border-white/10 px-4 py-4 rounded-2xl text-sm font-mono focus:outline-none focus:border-indigo-500/50 transition-all" 
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            
+            <div className="space-y-3 py-2">
+              <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setTerms(!terms)}>
+                <div className={`w-4 h-4 rounded border transition-all ${terms ? 'bg-indigo-500 border-indigo-500' : 'bg-black/40 border-white/20'}`} />
+                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">I agree to the Terms of Service.</span>
+              </div>
+              <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setPrivacy(!privacy)}>
+                <div className={`w-4 h-4 rounded border transition-all ${privacy ? 'bg-indigo-500 border-indigo-500' : 'bg-black/40 border-white/20'}`} />
+                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">I agree to the Privacy Policy.</span>
+              </div>
+            </div>
+
+            <button 
+              onClick={handleSignup}
+              className="w-full bg-indigo-600 text-white px-4 py-4 rounded-2xl font-black uppercase tracking-widest italic hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
+            >
+              CREATE ACCOUNT
+            </button>
+
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5" /></div>
+              <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-600">
+                <span className="bg-[#0a0d14] px-4">OR CONTINUE WITH</span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={() => handleSocialLogin('GOOGLE')}
+                className="bg-white/5 border border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest italic hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+              >
+                GOOGLE
+              </button>
+              <button 
+                onClick={() => handleSocialLogin('OTP')}
+                className="bg-white/5 border border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest italic hover:bg-white/10 transition-all flex items-center justify-center gap-2"
+              >
+                OTP
+              </button>
+            </div>
+          </div>
         </div>
-        <button 
-          onClick={handleSignup}
-          className="w-full bg-blue-600 text-white px-4 py-2 rounded-full font-bold mb-8 hover:bg-blue-700 transition-colors"
-        >
-          CREATE ACCOUNT
-        </button>
-        <div className="text-center text-gray-400 mb-4">OR CONTINUE WITH</div>
-        <div className="flex justify-center gap-4">
-          <button 
-            onClick={() => handleSocialLogin('GOOGLE')}
-            className="bg-gray-800 px-4 py-2 rounded-full hover:bg-gray-700 transition-colors"
-          >
-            GOOGLE
-          </button>
-          <button 
-            onClick={() => handleSocialLogin('OTP')}
-            className="bg-gray-800 px-4 py-2 rounded-full hover:bg-gray-700 transition-colors"
-          >
-            OTP
-          </button>
-        </div>
-      </div>
+      </motion.div>
     </div>
   );
 };

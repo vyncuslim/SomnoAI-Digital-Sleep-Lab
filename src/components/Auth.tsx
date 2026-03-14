@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/useLanguage';
 import { notificationService } from '../services/notificationService';
 import { trackEvent } from '../services/analytics';
+import { fetchWithLogging } from '../services/apiService';
 
 interface AuthProps {
   lang: Language;
@@ -201,11 +202,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         
         if (signInError) {
           await securityService.handleFailedLogin(email);
-          await fetch('/api/audit/auth-login-failure', {
+          await fetchWithLogging('/api/audit/login', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email, errorCode: signInError.message })
-          });
+            body: JSON.stringify({ 
+              email, 
+              status: 'failed', 
+              errorCode: signInError.message 
+            })
+          }, 'Auth Login Failure');
           throw signInError;
         }
         
@@ -221,31 +226,37 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           
           if (profileData?.is_blocked) {
              // Log the attempt
-             await fetch('/api/audit/auth-login-failure', {
+             await fetchWithLogging('/api/audit/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, errorCode: `Blocked user attempted login. Role: ${profileData.role || 'user'}. Code: ${profileData.block_code || 'N/A'}` })
-             });
+                body: JSON.stringify({ 
+                  email, 
+                  status: 'failed', 
+                  errorCode: `Blocked user attempted login. Role: ${profileData.role || 'user'}. Code: ${profileData.block_code || 'N/A'}` 
+                })
+             }, 'Blocked User Login Attempt');
              await supabase.auth.signOut();
              throw new Error(`Your account is blocked. Block Code: ${profileData.block_code || 'N/A'}. Please contact admin@sleepsomno.com`);
           } else {
              // Check if role is valid
              if (!profileData?.role) {
                console.warn(`User ${data.user.id} has no role assigned.`);
-               // await logAuditLog(data.user.id, 'LOGIN_NO_ROLE', `User logged in without an assigned role.`); // REMOVE
              }
              
-             await fetch('/api/auth/record-login', {
+             await fetchWithLogging('/api/audit/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     userId: data.user.id,
                     email,
-                    role: profileData?.role || 'user',
-                    user_name: profileData?.full_name || 'N/A',
-                    device: navigator.userAgent
+                    status: 'success',
+                    metadata: {
+                      role: profileData?.role || 'user',
+                      user_name: profileData?.full_name || 'N/A',
+                      device: navigator.userAgent
+                    }
                 })
-             });
+             }, 'Auth Login Success');
              notificationService.sendLoginNotification(email, data.user.id);
              trackEvent('login', 'authentication', 'email');
           }
@@ -263,7 +274,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         });
         
         if (signUpError) {
-          await fetch('/api/audit/auth-signup', {
+          await fetchWithLogging('/api/audit/auth-signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -272,7 +283,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               success: false,
               errorCode: signUpError.message
             })
-          });
+          }, 'Auth Signup Failure');
           throw signUpError;
         }
         
@@ -280,7 +291,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           // Email confirmation is disabled, user is logged in
           if (data.user) {
             trackEvent('sign_up', 'authentication', 'email');
-            await fetch('/api/audit/auth-signup', {
+            await fetchWithLogging('/api/audit/auth-signup', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -288,7 +299,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     email,
                     success: true
                 })
-            });
+            }, 'Auth Signup Success');
             notificationService.sendLoginNotification(email, data.user.id);
             emailService.sendSignupWelcome(email);
           }
@@ -296,7 +307,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         } else {
           // Email confirmation is required
           trackEvent('sign_up_pending', 'authentication', 'email');
-          await fetch('/api/audit/auth-signup', {
+          await fetchWithLogging('/api/audit/auth-signup', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -305,7 +316,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                 success: true,
                 needsEmailConfirmation: true
             })
-          });
+          }, 'Auth Signup Pending');
           emailService.sendSignupWelcome(email);
           setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
           setView('verification-pending');

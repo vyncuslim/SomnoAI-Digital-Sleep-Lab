@@ -2,7 +2,9 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, AlertCircle, LogIn } from 'lucide-react';
+import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { fetchWithLogging } from '../services/apiService';
+import { Logo } from '../components/Logo';
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -33,26 +35,33 @@ const Login = () => {
 
       if (error) {
         // Record login failure
-        await fetch('/api/audit/auth-login-failure', {
+        await fetchWithLogging('/api/audit/login', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ email, errorCode: error.message }),
-        });
+          body: JSON.stringify({ 
+            email, 
+            status: 'failed', 
+            errorCode: error.message 
+          }),
+        }, 'Login Failure Logging');
         throw error;
       }
 
       // Record login success
-      await fetch('/api/auth/record-login', {
+      await fetchWithLogging('/api/audit/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           userId: data.user.id,
           email: data.user.email,
-          role: data.user.user_metadata?.role || 'user',
-          user_name: data.user.user_metadata?.full_name || 'User',
-          device: navigator.userAgent
+          status: 'success',
+          metadata: {
+            role: data.user.user_metadata?.role || 'user',
+            user_name: data.user.user_metadata?.full_name || 'User',
+            device: navigator.userAgent
+          }
         }),
-      });
+      }, 'Login Success Logging');
 
       navigate(from, { replace: true });
     } catch (err: any) {
@@ -66,11 +75,11 @@ const Login = () => {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md bg-secondary/30 p-8 rounded-2xl border border-white/10 shadow-xl backdrop-blur-sm">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4">
-            <LogIn className="w-8 h-8 text-primary" />
+          <div className="flex justify-center mb-6">
+            <Logo showText={false} className="scale-125" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">Welcome Back</h1>
-          <p className="text-gray-400 mt-2">Sign in to access your sleep lab dashboard</p>
+          <h1 className="text-2xl font-bold text-white uppercase tracking-tight italic">Welcome Back</h1>
+          <p className="text-slate-500 text-xs font-mono uppercase tracking-widest mt-2">Neural Access • Session Start</p>
         </div>
 
         {error && (

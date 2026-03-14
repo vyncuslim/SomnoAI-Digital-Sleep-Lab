@@ -4,17 +4,113 @@ import dotenv from 'dotenv';
 import { createServer as createViteServer } from 'vite';
 import { createClient } from '@supabase/supabase-js';
 import path from 'path';
+import helmet from 'helmet';
+import Stripe from 'stripe';
 import { writeAuditLog, auditLogger } from './src/services/auditLog';
+import { requireAdminFromRequest } from './src/lib/admin-auth';
+import { getUserFromRequest, requireUserFromRequest, isAdmin } from './src/lib/auth-utils';
+import { adminServices } from './src/services/adminServices';
 
 dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
+const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 
 const supabase = (supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey) : null;
+const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
 async function startServer() {
   const app = express();
+
+  // Security Headers
+  app.use(helmet({
+    contentSecurityPolicy: {
+      directives: {
+        ...helmet.contentSecurityPolicy.getDefaultDirectives(),
+        "img-src": ["'self'", "data:", "https://*.supabase.co", "https://*.sleepsomno.com", "https://picsum.photos", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
+        "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com", "https://app.livechatai.com", "https://challenges.cloudflare.com"],
+        "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://app.livechatai.com"],
+        "connect-src": ["'self'", "https://*.supabase.co", "https://*.google-analytics.com", "https://*.googletagmanager.com", "wss://*.supabase.co"]
+      },
+    },
+    crossOriginEmbedderPolicy: false,
+  }));
+
+  // Stripe Webhook needs raw body
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+    if (!stripe || !stripeWebhookSecret) {
+      console.warn('Stripe or Webhook Secret not configured');
+      return res.status(400).send('Webhook Error: Missing configuration');
+    }
+
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig as string, stripeWebhookSecret);
+    } catch (err: any) {
+      console.error(`Webhook Error: ${err.message}`);
+      return res.status(400).send(`Webhook Error: ${err.message}`);
+    }
+
+    try {
+      if (event.type === 'checkout.session.completed') {
+        const session = event.data.object as Stripe.Checkout.Session;
+        await auditLogger.logPayment({
+          source: 'api',
+          level: 'info',
+          action: 'checkout_completed',
+          status: 'success',
+          actorUserId: session.metadata?.user_id ?? null,
+          message: 'Stripe checkout completed',
+          metadata: {
+            provider: 'stripe',
+            checkout_session_id: session.id,
+            customer_id: session.customer as string,
+            amount_total: session.amount_total,
+            currency: session.currency,
+          },
+        });
+      }
+
+      if (event.type === 'invoice.payment_failed') {
+        const invoice = event.data.object as Stripe.Invoice;
+        await auditLogger.logPayment({
+          source: 'api',
+          level: 'error',
+          action: 'invoice_payment',
+          status: 'failed',
+          actorUserId: invoice.metadata?.user_id ?? null,
+          errorCode: 'stripe_payment_failed',
+          message: 'Stripe invoice payment failed',
+          metadata: {
+            provider: 'stripe',
+            invoice_id: invoice.id,
+            customer_id: invoice.customer as string,
+            amount_due: invoice.amount_due,
+            currency: invoice.currency,
+          },
+        });
+      }
+
+      res.status(200).json({ received: true });
+    } catch (err) {
+      await auditLogger.logPayment({
+        source: 'api',
+        level: 'critical',
+        action: 'stripe_webhook',
+        status: 'failed',
+        errorCode: 'webhook_handler_error',
+        message: err instanceof Error ? err.message : 'Unknown webhook error',
+        metadata: {},
+      });
+      res.status(500).json({ error: 'Webhook handler failed' });
+    }
+  });
+
+  // Regular JSON parsing for other routes
   app.use(express.json());
 
   let resend: Resend | null = null;
@@ -22,58 +118,70 @@ async function startServer() {
     resend = new Resend(process.env.RESEND_API_KEY);
   }
 
-  app.post('/api/auth/record-login', async (req, res) => {
-    const { userId, email, role, user_name, device } = req.body;
+  // Secure login recording
+  // Consolidated Login Logging Endpoint
+  app.post('/api/audit/login', async (req, res) => {
+    const { email, status, errorCode, userId, metadata } = req.body;
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    
-    if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
+    const userAgent = req.headers['user-agent'];
 
     try {
-      // Record in logins table
-      const { error: loginError } = await supabase.from('logins').insert([{
-        user_id: userId,
-        user_name: user_name,
-        device_info: device,
-        ip_address: ip,
-        status: 'success',
-        role: role
-      }]);
-
-      if (loginError) throw loginError;
-
-      // Also record in audit_logs using writeAuditLog
       await auditLogger.logAuth({
         source: 'web',
-        level: 'info',
+        level: status === 'success' ? 'info' : 'warning',
         action: 'USER_LOGIN',
-        status: 'success',
-        actorUserId: userId,
+        status: status,
+        actorUserId: userId || null,
         ipAddress: ip as string,
-        message: 'User login success',
-        metadata: { device, role, email }
+        userAgent: userAgent as string,
+        message: status === 'success' ? `Login success for ${email}` : `Login failed for ${email}: ${errorCode}`,
+        metadata: { ...metadata, email, errorCode }
       });
 
-      res.status(200).json({ success: true, ip });
+      // If success, also record in logins table
+      if (status === 'success' && userId && supabase) {
+        await supabase.from('logins').insert([{
+          user_id: userId,
+          user_name: metadata?.user_name || 'User',
+          device_info: userAgent,
+          ip_address: ip,
+          status: 'success',
+          role: metadata?.role || 'user'
+        }]);
+      }
+
+      res.status(200).json({ success: true });
     } catch (error: any) {
-      console.error('Failed to record login:', error);
+      console.error('Failed to log login event:', error);
       res.status(500).json({ error: error.message });
     }
   });
 
-  app.post('/api/audit/auth-login-failure', async (req, res) => {
-    const { email, errorCode } = req.body;
-    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
-    
-    await auditLogger.logAuth({
+  // General Event Logging Endpoint
+  app.post('/api/audit/log-event', async (req, res) => {
+    try {
+      const user = await getUserFromRequest(req);
+      const { category, action, status, level, message, metadata } = req.body;
+      const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+      const userAgent = req.headers['user-agent'];
+
+      await writeAuditLog({
         source: 'web',
-        level: 'warning',
-        action: 'USER_LOGIN_FAILURE',
-        status: 'failed',
+        level: level || 'info',
+        category: category || 'system',
+        action: action || 'unknown',
+        status: status || 'success',
+        actorUserId: user?.id || null,
         ipAddress: ip as string,
-        message: `Login failed for ${email}: ${errorCode}`,
-        metadata: { email, errorCode }
-    });
-    res.status(200).json({ success: true });
+        userAgent: userAgent as string,
+        message: message || '',
+        metadata: metadata || {}
+      });
+
+      res.status(200).json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ error: error.message });
+    }
   });
 
   app.post('/api/notify-login', async (req, res) => {
@@ -108,12 +216,23 @@ async function startServer() {
   });
 
   app.post('/api/send-email', async (req, res) => {
-    if (!resend) {
-      return res.status(500).json({ error: 'Resend is not configured' });
-    }
-    const { to, subject, html } = req.body;
-
     try {
+      // Only authenticated users can send emails (or restrict to admins)
+      const user = await requireUserFromRequest(req);
+      
+      if (!resend) {
+        return res.status(500).json({ error: 'Resend is not configured' });
+      }
+      const { to, subject, html } = req.body;
+
+      // Optional: restrict 'to' address or check if user is admin
+      const userIsAdmin = await isAdmin(user.id);
+      if (!userIsAdmin && to !== user.email) {
+        // Non-admins can only send emails to themselves (e.g. for testing or specific features)
+        // Or just block non-admins entirely if this is an admin-only tool
+        return res.status(403).json({ error: 'Forbidden: Only admins can send arbitrary emails' });
+      }
+
       const data = await resend.emails.send({
         from: 'SomnoAI <onboarding@resend.dev>',
         to: [to],
@@ -122,8 +241,8 @@ async function startServer() {
       });
 
       res.status(200).json(data);
-    } catch (error) {
-      res.status(500).json({ error: (error as Error).message });
+    } catch (error: any) {
+      res.status(error.message.includes('Unauthorized') ? 401 : 500).json({ error: error.message });
     }
   });
 
@@ -154,66 +273,8 @@ async function startServer() {
     res.status(200).json({ ok: true });
   });
 
-  app.post('/api/stripe/webhook', async (req, res) => {
-    try {
-      const event = req.body;
-
-      if (event.type === 'checkout.session.completed') {
-        const session = event.data.object;
-        await auditLogger.logPayment({
-          source: 'api',
-          level: 'info',
-          action: 'checkout_completed',
-          status: 'success',
-          actorUserId: session.metadata?.user_id ?? null,
-          message: 'Stripe checkout completed',
-          metadata: {
-            provider: 'stripe',
-            checkout_session_id: session.id,
-            customer_id: session.customer,
-            amount_total: session.amount_total,
-            currency: session.currency,
-          },
-        });
-      }
-
-      if (event.type === 'invoice.payment_failed') {
-        const invoice = event.data.object;
-        await auditLogger.logPayment({
-          source: 'api',
-          level: 'error',
-          action: 'invoice_payment',
-          status: 'failed',
-          actorUserId: invoice.metadata?.user_id ?? null,
-          errorCode: 'stripe_payment_failed',
-          message: 'Stripe invoice payment failed',
-          metadata: {
-            provider: 'stripe',
-            invoice_id: invoice.id,
-            customer_id: invoice.customer,
-            amount_due: invoice.amount_due,
-            currency: invoice.currency,
-          },
-        });
-      }
-
-      res.status(200).json({ received: true });
-    } catch (err) {
-      await auditLogger.logPayment({
-        source: 'api',
-        level: 'critical',
-        action: 'stripe_webhook',
-        status: 'failed',
-        errorCode: 'webhook_handler_error',
-        message: err instanceof Error ? err.message : 'Unknown webhook error',
-        metadata: {},
-      });
-      res.status(500).json({ error: 'Webhook handler failed' });
-    }
-  });
-
-import { adminServices } from './src/services/adminServices';
-import { requireAdminFromRequest } from './src/lib/admin-auth';
+  // Consolidate Stripe Webhook logic above to avoid duplicate route definitions
+  // Removed old /api/stripe/webhook here as it's now handled with raw body parsing above
 
   app.post('/api/admin/delete-user', async (req, res) => {
     try {
