@@ -32,30 +32,35 @@ interface AuditLogParams {
 }
 
 export async function writeAuditLog(params: AuditLogParams) {
-  const { data, error } = await supabaseAdmin.rpc('write_audit_log', {
-    p_source: params.source ?? 'system',
-    p_level: params.level ?? 'info',
-    p_category: params.category ?? 'system',
-    p_action: params.action,
-    p_status: params.status ?? 'success',
-    p_actor_user_id: params.actorUserId ?? null,
-    p_target_user_id: params.targetUserId ?? null,
-    p_session_id: params.sessionId ?? null,
-    p_request_id: params.requestId ?? null,
-    p_ip_address: params.ipAddress ?? null,
-    p_user_agent: params.userAgent ?? null,
-    p_path: params.path ?? null,
-    p_method: params.method ?? null,
-    p_error_code: params.errorCode ?? null,
-    p_message: params.message ?? null,
-    p_metadata: params.metadata ?? {},
-  });
+  try {
+    const { data, error } = await supabaseAdmin.rpc('write_audit_log', {
+      p_source: params.source ?? 'system',
+      p_level: params.level ?? 'info',
+      p_category: params.category ?? 'system',
+      p_action: params.action,
+      p_status: params.status ?? 'success',
+      p_actor_user_id: params.actorUserId ?? null,
+      p_target_user_id: params.targetUserId ?? null,
+      p_session_id: params.sessionId ?? null,
+      p_request_id: params.requestId ?? null,
+      p_ip_address: params.ipAddress ?? null,
+      p_user_agent: params.userAgent ?? null,
+      p_path: params.path ?? null,
+      p_method: params.method ?? null,
+      p_error_code: params.errorCode ?? null,
+      p_message: params.message ?? null,
+      p_metadata: params.metadata ?? {},
+    });
 
-  if (error) {
-    console.error('writeAuditLog failed:', error);
+    if (error) {
+      console.error('writeAuditLog failed:', error);
+    }
+
+    return { data, error };
+  } catch (err) {
+    console.error('Unexpected error in writeAuditLog:', err);
+    return { data: null, error: err };
   }
-
-  return { data, error };
 }
 
 export const auditLogger = {
