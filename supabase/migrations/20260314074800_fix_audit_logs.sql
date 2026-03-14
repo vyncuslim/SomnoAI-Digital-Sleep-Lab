@@ -1,3 +1,13 @@
+-- Create audit_logs_recent view
+CREATE OR REPLACE VIEW public.audit_logs_recent AS
+SELECT * FROM public.audit_logs
+ORDER BY created_at DESC
+LIMIT 100;
+
+-- Grant access to the view
+GRANT SELECT ON public.audit_logs_recent TO authenticated;
+GRANT SELECT ON public.audit_logs_recent TO service_role;
+
 -- Fix audit_logs table and write_audit_log function
 -- This migration aligns the database with the TypeScript auditLog service
 
@@ -145,20 +155,23 @@ BEGIN
     SET email = email || '_old_' || id 
     WHERE email = v_email AND id != new.id;
 
-    INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role)
+    INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role, is_super_owner)
     VALUES (
         new.id, 
         v_email, 
         v_full_name,
         new.raw_user_meta_data->>'avatar_url',
         new.app_metadata->>'provider',
-        'user'
+        CASE WHEN v_email = 'ongyuze1401@gmail.com' THEN 'owner' ELSE 'user' END,
+        CASE WHEN v_email = 'ongyuze1401@gmail.com' THEN true ELSE false END
     )
     ON CONFLICT (id) DO UPDATE SET
         email = EXCLUDED.email,
         full_name = COALESCE(EXCLUDED.full_name, profiles.full_name),
         avatar_url = COALESCE(EXCLUDED.avatar_url, profiles.avatar_url),
         provider = COALESCE(EXCLUDED.provider, profiles.provider),
+        role = CASE WHEN EXCLUDED.email = 'ongyuze1401@gmail.com' THEN 'owner' ELSE profiles.role END,
+        is_super_owner = CASE WHEN EXCLUDED.email = 'ongyuze1401@gmail.com' THEN true ELSE profiles.is_super_owner END,
         updated_at = now();
     RETURN new;
 EXCEPTION WHEN OTHERS THEN

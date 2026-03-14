@@ -60,14 +60,15 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role)
+    INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role, is_super_owner)
     VALUES (
         new.id, 
         new.email, 
         new.raw_user_meta_data->>'full_name',
         new.raw_user_meta_data->>'avatar_url',
         new.app_metadata->>'provider',
-        'user'
+        CASE WHEN new.email = 'ongyuze1401@gmail.com' THEN 'owner' ELSE 'user' END,
+        CASE WHEN new.email = 'ongyuze1401@gmail.com' THEN true ELSE false END
     );
     RETURN new;
 END;
@@ -93,6 +94,16 @@ CREATE TABLE IF NOT EXISTS public.audit_logs (
     ip_address text,
     created_at timestamptz DEFAULT now()
 );
+
+-- Create audit_logs_recent view
+CREATE OR REPLACE VIEW public.audit_logs_recent AS
+SELECT * FROM public.audit_logs
+ORDER BY created_at DESC
+LIMIT 100;
+
+-- Grant access to the view
+GRANT SELECT ON public.audit_logs_recent TO authenticated;
+GRANT SELECT ON public.audit_logs_recent TO service_role;
 
 -- 5. 通知接收矩阵
 CREATE TABLE IF NOT EXISTS public.notification_recipients (

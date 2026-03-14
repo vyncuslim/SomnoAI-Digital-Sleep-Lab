@@ -75,12 +75,31 @@ async function startServer() {
         });
       }
 
+      if (event.type === 'invoice.payment_succeeded') {
+        const invoice = event.data.object as Stripe.Invoice;
+        await auditLogger.logPayment({
+          source: 'api',
+          level: 'info',
+          action: 'invoice_payment_succeeded',
+          status: 'success',
+          actorUserId: invoice.metadata?.user_id ?? null,
+          message: 'Stripe invoice payment succeeded',
+          metadata: {
+            provider: 'stripe',
+            invoice_id: invoice.id,
+            customer_id: invoice.customer as string,
+            amount_paid: invoice.amount_paid,
+            currency: invoice.currency,
+          },
+        });
+      }
+
       if (event.type === 'invoice.payment_failed') {
         const invoice = event.data.object as Stripe.Invoice;
         await auditLogger.logPayment({
           source: 'api',
           level: 'error',
-          action: 'invoice_payment',
+          action: 'invoice_payment_failed',
           status: 'failed',
           actorUserId: invoice.metadata?.user_id ?? null,
           errorCode: 'stripe_payment_failed',
@@ -91,6 +110,60 @@ async function startServer() {
             customer_id: invoice.customer as string,
             amount_due: invoice.amount_due,
             currency: invoice.currency,
+          },
+        });
+      }
+
+      if (event.type === 'customer.subscription.created') {
+        const subscription = event.data.object as Stripe.Subscription;
+        await auditLogger.logPayment({
+          source: 'api',
+          level: 'info',
+          action: 'subscription_created',
+          status: 'success',
+          actorUserId: subscription.metadata?.user_id ?? null,
+          message: 'Stripe subscription created',
+          metadata: {
+            provider: 'stripe',
+            subscription_id: subscription.id,
+            customer_id: subscription.customer as string,
+            status: subscription.status,
+          },
+        });
+      }
+
+      if (event.type === 'customer.subscription.updated') {
+        const subscription = event.data.object as Stripe.Subscription;
+        await auditLogger.logPayment({
+          source: 'api',
+          level: 'info',
+          action: 'subscription_updated',
+          status: 'success',
+          actorUserId: subscription.metadata?.user_id ?? null,
+          message: 'Stripe subscription updated',
+          metadata: {
+            provider: 'stripe',
+            subscription_id: subscription.id,
+            customer_id: subscription.customer as string,
+            status: subscription.status,
+          },
+        });
+      }
+
+      if (event.type === 'customer.subscription.deleted') {
+        const subscription = event.data.object as Stripe.Subscription;
+        await auditLogger.logPayment({
+          source: 'api',
+          level: 'warning',
+          action: 'subscription_deleted',
+          status: 'success',
+          actorUserId: subscription.metadata?.user_id ?? null,
+          message: 'Stripe subscription deleted',
+          metadata: {
+            provider: 'stripe',
+            subscription_id: subscription.id,
+            customer_id: subscription.customer as string,
+            status: subscription.status,
           },
         });
       }

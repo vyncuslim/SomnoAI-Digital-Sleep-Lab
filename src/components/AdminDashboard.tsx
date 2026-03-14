@@ -23,6 +23,7 @@ type AdminTab = 'overview' | 'founder' | 'logins' | 'registry' | 'signals' | 'sy
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity },
   { id: 'audit_logs', name: 'System Audits', group: 'Maintenance', icon: List },
+  { id: 'audit_logs_recent', name: 'Recent Audits', group: 'Maintenance', icon: List },
   { id: 'security_events', name: 'Security Signals', group: 'Security', icon: Shield },
   { id: 'profiles', name: 'Subject Registry', group: 'Core', icon: Users },
   { id: 'logins', name: 'Login History', group: 'Security', icon: Shield },
@@ -475,7 +476,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {DATABASE_SCHEMA
                 .filter(item => {
-                  if (item.id === 'audit_logs' || item.id === 'security_events') return isOwner || isSuperOwner;
+                  if (item.id === 'audit_logs' || item.id === 'audit_logs_recent' || item.id === 'security_events') return isOwner || isSuperOwner;
                   return true;
                 })
                 .map((item) => (
