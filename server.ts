@@ -61,6 +61,23 @@ async function startServer() {
     }
   });
 
+  app.post('/api/audit/auth-login-failure', async (req, res) => {
+    const { email, errorCode } = req.body;
+    const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+    
+    await writeAuditLog({
+        source: 'web',
+        level: 'warning',
+        category: 'auth',
+        action: 'USER_LOGIN_FAILURE',
+        status: 'failed',
+        ipAddress: ip as string,
+        message: `Login failed for ${email}: ${errorCode}`,
+        metadata: { email, errorCode }
+    });
+    res.status(200).json({ success: true });
+  });
+
   app.post('/api/notify-login', async (req, res) => {
     if (!resend) {
       console.warn('Resend is not configured. Skipping login notification.');
@@ -218,6 +235,16 @@ import { writeAuditLog } from './src/services/auditLog';
     const { adminUserId, targetUserId, reason } = req.body;
     try {
       await adminServices.blockUser({ adminUserId, targetUserId, reason });
+      res.json({ ok: true });
+    } catch (error: any) {
+      res.status(400).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/admin/update-role', async (req, res) => {
+    const { adminUserId, targetUserId, newRole } = req.body;
+    try {
+      await adminServices.updateUserRole({ adminUserId, targetUserId, newRole });
       res.json({ ok: true });
     } catch (error: any) {
       res.status(400).json({ error: error.message });

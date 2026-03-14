@@ -220,29 +220,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       const targetUser = users.find(u => u.id === userId);
       if (!targetUser) return;
       
-      const oldRole = targetUser.is_super_owner ? 'super_owner' : (targetUser.role || 'user');
-      
-      if (newRole === 'super_owner') {
-        await supabase.from('profiles').update({ role: 'owner', is_super_owner: true }).eq('id', userId);
-      } else {
-        await supabase.from('profiles').update({ role: newRole, is_super_owner: false }).eq('id', userId);
-      }
-      
-      // Log the event
-      await supabase.from('audit_logs').insert([{
-        user_id: profile?.id, // Acting admin
-        action: 'ROLE_CHANGE',
-        details: JSON.stringify({
-          target_user_id: userId,
-          old_role: oldRole,
-          new_role: newRole,
-          acting_admin_id: profile?.id
+      const { data: { session } } = await supabase.auth.getSession();
+      await fetch('/api/admin/update-role', {
+        method: 'POST',
+        headers: { 
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+            adminUserId: profile?.id,
+            targetUserId: userId,
+            newRole
         })
-      }]);
+      });
 
       fetchData();
     } catch (error) {
       console.error("Failed to update role:", error);
+      alert('Failed to update role');
     }
   };
 

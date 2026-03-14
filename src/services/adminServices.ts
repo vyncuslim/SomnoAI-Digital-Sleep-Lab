@@ -73,5 +73,40 @@ export const adminServices = {
 
     if (error) throw error;
     return { success: true };
+  },
+
+  async updateUserRole(params: {
+    adminUserId: string;
+    targetUserId: string;
+    newRole: string;
+  }) {
+    const { data: targetUser } = await supabaseAdmin
+      .from('profiles')
+      .select('role, is_super_owner')
+      .eq('id', params.targetUserId)
+      .single();
+
+    const oldRole = targetUser?.is_super_owner ? 'super_owner' : (targetUser?.role || 'user');
+
+    const { error } = await supabaseAdmin
+      .from('profiles')
+      .update({ role: params.newRole, is_super_owner: params.newRole === 'super_owner' })
+      .eq('id', params.targetUserId);
+
+    await writeAuditLog({
+      source: 'admin_panel',
+      level: error ? 'error' : 'info',
+      category: 'admin',
+      action: 'update_user_role',
+      status: error ? 'failed' : 'success',
+      actorUserId: params.adminUserId,
+      targetUserId: params.targetUserId,
+      errorCode: error?.code ?? null,
+      message: error ? 'Admin failed to update user role' : 'Admin updated user role',
+      metadata: { oldRole, newRole: params.newRole },
+    });
+
+    if (error) throw error;
+    return { success: true };
   }
 };
