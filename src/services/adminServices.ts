@@ -28,7 +28,7 @@ export const adminServices = {
   }) {
     const { error } = await supabaseAdmin
       .from('profiles')
-      .update({ is_blocked: true, blocked_reason: params.reason })
+      .update({ is_blocked: true, block_code: params.reason })
       .eq('id', params.targetUserId);
 
     await auditLogger.logAdmin({
@@ -53,7 +53,7 @@ export const adminServices = {
   }) {
     const { error } = await supabaseAdmin
       .from('profiles')
-      .update({ is_blocked: false, blocked_reason: null })
+      .update({ is_blocked: false, block_code: null })
       .eq('id', params.targetUserId);
 
     await auditLogger.logAdmin({

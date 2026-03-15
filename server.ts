@@ -380,7 +380,7 @@ async function startServer() {
       (req as any).adminUser = adminUser;
       next();
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 401).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 401).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -391,7 +391,7 @@ async function startServer() {
       await adminServices.deleteUser(adminUser.id, targetUserId);
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 400).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -402,7 +402,7 @@ async function startServer() {
       await adminServices.blockUser({ adminUserId: adminUser.id, targetUserId, reason });
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 400).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -413,7 +413,7 @@ async function startServer() {
       await adminServices.unblockUser({ adminUserId: adminUser.id, targetUserId });
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 400).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -424,7 +424,7 @@ async function startServer() {
       await adminServices.updateUserRole({ adminUserId: adminUser.id, targetUserId, newRole });
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 400).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -437,7 +437,7 @@ async function startServer() {
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 500).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -456,7 +456,7 @@ async function startServer() {
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 500).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -480,7 +480,7 @@ async function startServer() {
       if (error) throw error;
       res.json(users);
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 500).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -549,7 +549,7 @@ async function startServer() {
       res.json([...schemaInfo, ...authSchemaInfo]);
     } catch (error: any) {
       console.error('Error fetching schema:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -577,7 +577,7 @@ async function startServer() {
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 403 : 500).json({ error: error.message });
+      res.status(error?.message?.includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 

@@ -598,7 +598,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">国家 (country)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">最后登录 (last_login)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">是否付费 (is_paying)</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">封锁原因 (blocked_reason)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">登录失败次数 (failed_login_attempts)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500 text-right sticky right-0 bg-[#0a0a0a] shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.5)]">操作 (Actions)</th>
                   </tr>
@@ -651,7 +650,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                       <td className="p-4 text-xs font-mono text-slate-400">{user.country || '-'}</td>
                       <td className="p-4 text-xs font-mono text-slate-500">{user.last_login ? new Date(user.last_login).toLocaleString() : '-'}</td>
                       <td className="p-4 text-xs text-slate-400">{user.is_paying ? '是' : '否'}</td>
-                      <td className="p-4 text-xs text-rose-400">{user.blocked_reason || '-'}</td>
                       <td className="p-4 text-xs font-mono text-slate-400">{user.failed_login_attempts || 0}</td>
                       <td className="p-4 text-right sticky right-0 bg-[#0a0a0a] shadow-[-10px_0_15px_-3px_rgba(0,0,0,0.5)]">
                         <div className="flex items-center justify-end gap-2">
