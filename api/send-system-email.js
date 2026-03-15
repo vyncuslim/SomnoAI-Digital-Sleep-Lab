@@ -34,7 +34,7 @@ export default async function handler(req, res) {
       .from('audit_logs')
       .select('created_at')
       .eq('action', 'EMAIL_DISPATCH_SUCCESS')
-      .ilike('details', `%Target: ${to}%`)
+      .ilike('message', `%Target: ${to}%`)
       .gt('created_at', fiveMinsAgo)
       .limit(1);
 
@@ -76,8 +76,11 @@ export default async function handler(req, res) {
     // 6. 异步审计
     supabase.from('audit_logs').insert([{
       action: 'EMAIL_DISPATCH_SUCCESS',
-      details: `Target: ${to}, ID: ${info.messageId}, AFS_Invited: ${!!isHighValueEvent}`,
-      level: 'INFO'
+      message: `Target: ${to}, ID: ${info.messageId}, AFS_Invited: ${!!isHighValueEvent}`,
+      level: 'INFO',
+      source: 'system',
+      category: 'system',
+      status: 'success'
     }]).then(() => {}).catch(() => {});
 
     return res.status(200).json({ success: true, messageId: info.messageId });
@@ -86,8 +89,11 @@ export default async function handler(req, res) {
     
     supabase.from('audit_logs').insert([{
       action: 'EMAIL_DISPATCH_FAILURE',
-      details: `Target: ${to}, Error: ${error.message}`,
-      level: 'WARNING'
+      message: `Target: ${to}, Error: ${error.message}`,
+      level: 'WARNING',
+      source: 'system',
+      category: 'system',
+      status: 'failed'
     }]).then(() => {}).catch(() => {});
 
     return res.status(500).json({ 

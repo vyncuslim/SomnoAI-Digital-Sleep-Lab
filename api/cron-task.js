@@ -46,8 +46,11 @@ export default async function handler(req, res) {
     const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
     const { error: logErr } = await supabase.from('audit_logs').insert([{
       action: 'CRON_MAINTENANCE_TICK',
-      details: `UptimeRobot Heartbeat Confirmed. SyncResult: ${syncResult.code}`,
-      level: syncResult.code === 200 ? 'INFO' : 'WARNING'
+      message: `UptimeRobot Heartbeat Confirmed. SyncResult: ${syncResult.code}`,
+      level: syncResult.code === 200 ? 'INFO' : 'WARNING',
+      source: 'system',
+      category: 'system',
+      status: syncResult.code === 200 ? 'success' : 'failed'
     }]);
 
     results.tasks.audit_persistence = logErr ? "FAILED" : "SUCCESS";

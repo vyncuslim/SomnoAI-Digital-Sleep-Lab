@@ -44,5 +44,5 @@ export async function isAdmin(userId: string) {
     .eq('id', userId)
     .single();
 
-  return profile?.role === 'admin' || profile?.role === 'super_owner' || profile?.is_super_owner;
+  return profile?.role === 'admin' || profile?.is_super_owner;
 }

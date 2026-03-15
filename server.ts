@@ -56,6 +56,30 @@ async function startServer() {
     }
 
     try {
+      // Idempotency check
+      const { data: existingLog } = await supabase!
+        .from('audit_logs')
+        .select('id')
+        .eq('action', 'stripe_webhook_event')
+        .eq('metadata->>event_id', event.id)
+        .maybeSingle();
+      
+      if (existingLog) {
+        console.log(`Webhook event ${event.id} already processed.`);
+        return res.status(200).json({ received: true, message: 'Already processed' });
+      }
+
+      // Record the event to prevent replay
+      await supabase!.from('audit_logs').insert([{
+        source: 'api',
+        category: 'payment',
+        status: 'success',
+        action: 'stripe_webhook_event',
+        level: 'info',
+        message: `Processing Stripe event ${event.id}`,
+        metadata: { event_id: event.id, type: event.type }
+      }]);
+
       if (event.type === 'checkout.session.completed') {
         const session = event.data.object as Stripe.Checkout.Session;
         await auditLogger.logPayment({
@@ -349,9 +373,20 @@ async function startServer() {
   // Consolidate Stripe Webhook logic above to avoid duplicate route definitions
   // Removed old /api/stripe/webhook here as it's now handled with raw body parsing above
 
-  app.post('/api/admin/delete-user', async (req, res) => {
+  // Protect all /api/admin/* endpoints
+  app.use('/api/admin', async (req, res, next) => {
     try {
       const adminUser = await requireAdminFromRequest(req);
+      (req as any).adminUser = adminUser;
+      next();
+    } catch (error: any) {
+      res.status(error.message.includes('Unauthorized') ? 403 : 401).json({ error: error.message });
+    }
+  });
+
+  app.post('/api/admin/delete-user', async (req, res) => {
+    try {
+      const adminUser = (req as any).adminUser;
       const { targetUserId } = req.body;
       await adminServices.deleteUser(adminUser.id, targetUserId);
       res.json({ ok: true });
@@ -362,7 +397,7 @@ async function startServer() {
 
   app.post('/api/admin/block-user', async (req, res) => {
     try {
-      const adminUser = await requireAdminFromRequest(req);
+      const adminUser = (req as any).adminUser;
       const { targetUserId, reason } = req.body;
       await adminServices.blockUser({ adminUserId: adminUser.id, targetUserId, reason });
       res.json({ ok: true });
@@ -373,7 +408,7 @@ async function startServer() {
 
   app.post('/api/admin/unblock-user', async (req, res) => {
     try {
-      const adminUser = await requireAdminFromRequest(req);
+      const adminUser = (req as any).adminUser;
       const { targetUserId } = req.body;
       await adminServices.unblockUser({ adminUserId: adminUser.id, targetUserId });
       res.json({ ok: true });
@@ -384,7 +419,7 @@ async function startServer() {
 
   app.post('/api/admin/update-role', async (req, res) => {
     try {
-      const adminUser = await requireAdminFromRequest(req);
+      const adminUser = (req as any).adminUser;
       const { targetUserId, newRole } = req.body;
       await adminServices.updateUserRole({ adminUserId: adminUser.id, targetUserId, newRole });
       res.json({ ok: true });
@@ -396,7 +431,7 @@ async function startServer() {
   // Admin Analytics API
   app.get("/api/admin/founder-stats", async (req, res) => {
     try {
-      await requireAdminFromRequest(req);
+      const adminUser = (req as any).adminUser;
       if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
       const { data, error } = await supabase.rpc('get_founder_stats');
       if (error) throw error;
@@ -408,7 +443,7 @@ async function startServer() {
 
   app.get("/api/admin/security-events", async (req, res) => {
     try {
-      await requireAdminFromRequest(req);
+      const adminUser = (req as any).adminUser;
       if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
       const { data, error } = await supabase
         .from('security_events')
@@ -427,7 +462,7 @@ async function startServer() {
 
   app.get("/api/admin/auth-users", async (req, res) => {
     try {
-      const adminUser = await requireAdminFromRequest(req);
+      const adminUser = (req as any).adminUser;
       // Extra check for super owner if needed, but requireAdminFromRequest already checks for admin/super_owner
       // If this specific route requires ONLY super_owner:
       const { data: profile } = await supabase!
@@ -451,7 +486,7 @@ async function startServer() {
 
   app.get("/api/admin/schema", async (req, res) => {
     try {
-      const adminUser = await requireAdminFromRequest(req);
+      const adminUser = (req as any).adminUser;
       const { data: profile } = await supabase!
         .from('profiles')
         .select('is_super_owner')
@@ -520,7 +555,7 @@ async function startServer() {
 
   app.get("/api/admin/table-data/:table", async (req, res) => {
     try {
-      const adminUser = await requireAdminFromRequest(req);
+      const adminUser = (req as any).adminUser;
       const { data: profile } = await supabase!
         .from('profiles')
         .select('is_super_owner')

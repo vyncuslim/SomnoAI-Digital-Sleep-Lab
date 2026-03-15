@@ -37,7 +37,7 @@ export async function requireAdminFromRequest(req: any) {
     throw new Error('Unauthorized: User is blocked');
   }
 
-  const isAdmin = profile.role === 'admin' || profile.role === 'super_owner' || profile.is_super_owner;
+  const isAdmin = profile.role === 'admin' || profile.is_super_owner;
   
   if (!isAdmin) {
     throw new Error('Unauthorized: Admin role required');
