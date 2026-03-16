@@ -81,6 +81,24 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
 
               <div className="flex items-start gap-6 p-6 hardware-panel group hover:border-indigo-500/30 transition-colors">
                 <div className="p-3 bg-white/5 rounded-xl text-indigo-400 group-hover:bg-indigo-500/10 transition-colors">
+                  <MessageSquare className="w-6 h-6" />
+                </div>
+                <div>
+                  <div className="hardware-label mb-2">WHATSAPP</div>
+                  <h4 className="text-white font-bold mb-2">{lang === 'zh' ? "AI 助手" : "AI Assistant"}</h4>
+                  <p className="text-slate-400 text-sm mb-2">
+                    {lang === 'zh' 
+                      ? "如需咨询，您不一定需要联系 +60 187807388，也可以通过 WhatsApp 联系 +1 (555) 933-5379。该账号为 AI 助手账号，可用于回答相关问题。" 
+                      : "For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions."}
+                  </p>
+                  <a href="https://wa.me/15559335379" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 transition-colors block text-sm font-bold">
+                    {lang === 'zh' ? "通过 WhatsApp 联系" : "Contact via WhatsApp"}
+                  </a>
+                </div>
+              </div>
+              
+              <div className="flex items-start gap-6 p-6 hardware-panel group hover:border-indigo-500/30 transition-colors">
+                <div className="p-3 bg-white/5 rounded-xl text-indigo-400 group-hover:bg-indigo-500/10 transition-colors">
                   <Globe className="w-6 h-6" />
                 </div>
                 <div>
