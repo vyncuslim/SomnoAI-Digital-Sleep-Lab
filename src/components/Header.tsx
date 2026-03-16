@@ -4,7 +4,7 @@ const Header = () => {
   return (
     <header className="bg-[#050505] text-white py-4 px-6 flex items-center justify-between border-b border-white/10">
       <div className="flex items-center gap-2">
-        <div className="w-8 h-8 rounded-full bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500"></div>
+        <img src="/logo_512.png" alt="SomnoAI Logo" className="w-8 h-8 object-contain" />
         <span className="font-bold text-lg">SomnoAI Digital Sleep Lab</span>
       </div>
       <nav className="hidden md:flex gap-6 text-sm text-gray-400">

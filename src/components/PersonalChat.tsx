@@ -3,7 +3,7 @@ import { GoogleGenAI } from "@google/genai";
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabaseService';
 import { SleepRecord } from '../types';
-import { Send, User, Bot, Loader2, Paperclip, X, AlertTriangle } from 'lucide-react';
+import { Send, User, Bot, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 
 export const PersonalChat: React.FC = () => {
@@ -11,6 +11,8 @@ export const PersonalChat: React.FC = () => {
   const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string, fileData?: string }[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const recognitionRef = useRef<any>(null);
   const [sleepData, setSleepData] = useState<SleepRecord[]>([]);
   const [labData, setLabData] = useState<any[]>([]);
   const [selectedFile, setSelectedFile] = useState<{ name: string, data: string, type: string } | null>(null);
@@ -19,6 +21,36 @@ export const PersonalChat: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const DAILY_LIMIT = 4;
+
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (SpeechRecognition) {
+      const recognition = new SpeechRecognition();
+      recognition.continuous = false;
+      recognition.lang = 'zh-CN';
+      recognition.onresult = (event: any) => {
+        const transcript = event.results[0][0].transcript;
+        setInput(prev => prev + transcript);
+        setIsRecording(false);
+      };
+      recognition.onerror = () => {
+        setIsRecording(false);
+      };
+      recognition.onend = () => {
+        setIsRecording(false);
+      };
+      recognitionRef.current = recognition;
+    }
+  }, []);
+
+  const toggleRecording = () => {
+    if (isRecording) {
+      recognitionRef.current?.stop();
+    } else {
+      recognitionRef.current?.start();
+      setIsRecording(true);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -280,13 +312,22 @@ export const PersonalChat: React.FC = () => {
               placeholder="Ask about your sleep..."
               rows={1}
             />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="absolute right-3 bottom-3 p-2 text-slate-400 hover:text-indigo-400 transition-colors"
-              title="Upload file"
-            >
-              <Paperclip size={18} />
-            </button>
+            <div className="absolute right-3 bottom-3 flex items-center gap-2">
+              <button 
+                onClick={toggleRecording}
+                className={`p-2 transition-colors ${isRecording ? 'text-red-500 animate-pulse' : 'text-slate-400 hover:text-indigo-400'}`}
+                title="Voice input"
+              >
+                {isRecording ? <MicOff size={18} /> : <Mic size={18} />}
+              </button>
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                className="p-2 text-slate-400 hover:text-indigo-400 transition-colors"
+                title="Upload file"
+              >
+                <Paperclip size={18} />
+              </button>
+            </div>
             <input 
               type="file" 
               ref={fileInputRef} 
