@@ -1,4 +1,5 @@
 import React from 'react';
+import logoUrl from '../logo_512.png';
 
 interface LogoProps {
   className?: string;
@@ -16,10 +17,9 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true }) =
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1 h-1 bg-indigo-500 rounded-full shadow-[0_0_8px_#6366f1]" />
         
         <img 
-          src="/logo_512.png" 
+          src={logoUrl} 
           alt="SomnoAI Logo" 
           className="w-full h-full object-contain drop-shadow-[0_0_8px_rgba(129,140,248,0.4)]"
-          referrerPolicy="no-referrer"
         />
       </div>
       {showText && (

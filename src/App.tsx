@@ -53,6 +53,7 @@ const SupportView = lazy(() => import('./components/SupportView').then(module =>
 const FounderDashboardPage = lazy(() => import('./pages/FounderDashboardPage').then(module => ({ default: module.FounderDashboardPage })));
 const SearchHub = lazy(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
 const BlockedView = lazy(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
+const LogoOnly = lazy(() => import('./pages/LogoOnly'));
 
 // Initial Data
 // const INITIAL_SLEEP_DATA: SleepRecord = {
@@ -203,6 +204,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="faq" element={<FAQ lang={lang} />} />
       <Route path="status" element={<Status lang={lang} />} />
       <Route path="search" element={<SearchHub />} />
+      <Route path="logo" element={<LogoOnly />} />
       
       {/* Blog & News */}
       <Route path="blog" element={<BlogHub lang={lang} onSelectPost={(post: any) => navigate(`${langPrefix}/blog/${post.slug}`)} />} />
