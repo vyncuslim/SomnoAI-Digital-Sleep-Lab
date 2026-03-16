@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, Mail, Phone, Globe, Settings, Save, Edit2, X, CheckCircle2, AlertCircle,
-  Calendar
+  Calendar, Upload
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { Language, UserProfile } from '../types';
-import { userApi, logAuditLog } from '../services/supabaseService';
+import { userApi, logAuditLog, supabase } from '../services/supabaseService';
 import { GlassCard } from './GlassCard';
 
 interface UserProfileViewProps {
@@ -18,6 +18,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<UserProfile>>({});
   const [isSaving, setIsSaving] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null);
 
   useEffect(() => {
@@ -25,10 +26,52 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
       setFormData({
         full_name: profile.full_name || '',
         phone: profile.phone || '',
-        country: profile.country || ''
+        country: profile.country || '',
+        avatar_url: profile.avatar_url || ''
       });
     }
   }, [profile]);
+
+  const handleAvatarUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (!event.target.files || event.target.files.length === 0 || !user) return;
+    
+    setIsUploading(true);
+    setMessage(null);
+    
+    const file = event.target.files[0];
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Math.random()}.${fileExt}`;
+    const filePath = `avatars/${fileName}`;
+
+    try {
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filePath, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('avatars')
+        .getPublicUrl(filePath);
+
+      const { error: updateError } = await userApi.updateProfile(user.id, { avatar_url: publicUrl });
+      if (updateError) throw updateError;
+
+      await refreshProfile();
+      setMessage({
+        type: 'success',
+        text: lang === 'zh' ? '头像已更新' : 'Avatar updated successfully'
+      });
+    } catch (error: any) {
+      console.error('Error uploading avatar:', error);
+      setMessage({
+        type: 'error',
+        text: lang === 'zh' ? '上传失败: ' + error.message : 'Upload failed: ' + error.message
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleSave = async () => {
     if (!user) return;
@@ -136,61 +179,86 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
               <h2 className="text-xl font-black italic uppercase tracking-widest text-white">{t.personalInfo}</h2>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.fullName}</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.full_name || ''}
-                    onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
-                    className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
-                  />
-                ) : (
-                  <p className="text-lg font-medium text-white">{profile.full_name || t.placeholderName}</p>
+            <div className="flex flex-col md:flex-row gap-8 mb-8">
+              <div className="relative group">
+                <div className="w-32 h-32 rounded-full overflow-hidden bg-slate-800 border-2 border-white/10">
+                  {profile.avatar_url ? (
+                    <img src={profile.avatar_url} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-slate-500">
+                      <User size={48} />
+                    </div>
+                  )}
+                </div>
+                {isEditing && (
+                  <label className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full opacity-0 group-hover:opacity-100 cursor-pointer transition-opacity">
+                    <Upload className="text-white" />
+                    <input type="file" accept="image/*" onChange={handleAvatarUpload} className="hidden" disabled={isUploading} />
+                  </label>
+                )}
+                {isUploading && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60 rounded-full">
+                    <div className="w-8 h-8 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  </div>
                 )}
               </div>
+              
+              <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.fullName}</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={formData.full_name || ''}
+                      onChange={(e) => setFormData({ ...formData, full_name: e.target.value })}
+                      className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium text-white">{profile.full_name || t.placeholderName}</p>
+                  )}
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.email}</label>
-                <p className="text-lg font-medium text-slate-400 flex items-center gap-2">
-                  <Mail className="w-4 h-4" />
-                  {profile.email}
-                </p>
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.phone}</label>
-                {isEditing ? (
-                  <input
-                    type="tel"
-                    value={formData.phone || ''}
-                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
-                  />
-                ) : (
-                  <p className="text-lg font-medium text-white flex items-center gap-2">
-                    <Phone className="w-4 h-4 text-slate-500" />
-                    {profile.phone || t.placeholderName}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.email}</label>
+                  <p className="text-lg font-medium text-slate-400 flex items-center gap-2">
+                    <Mail className="w-4 h-4" />
+                    {profile.email}
                   </p>
-                )}
-              </div>
+                </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.country}</label>
-                {isEditing ? (
-                  <input
-                    type="text"
-                    value={formData.country || ''}
-                    onChange={(e) => setFormData({ ...formData, country: e.target.value })}
-                    className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
-                  />
-                ) : (
-                  <p className="text-lg font-medium text-white flex items-center gap-2">
-                    <Globe className="w-4 h-4 text-slate-500" />
-                    {profile.country || t.placeholderName}
-                  </p>
-                )}
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.phone}</label>
+                  {isEditing ? (
+                    <input
+                      type="tel"
+                      value={formData.phone || ''}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                      className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium text-white flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-slate-500" />
+                      {profile.phone || t.placeholderName}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.country}</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={formData.country || ''}
+                      onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                      className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
+                    />
+                  ) : (
+                    <p className="text-lg font-medium text-white flex items-center gap-2">
+                      <Globe className="w-4 h-4 text-slate-500" />
+                      {profile.country || t.placeholderName}
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
           </GlassCard>

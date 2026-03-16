@@ -672,8 +672,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                                 });
                                 
                                 if (!response.ok) {
-                                  const err = await response.json();
-                                  throw new Error(err.error || 'Operation failed');
+                                  let errorMessage = 'Operation failed';
+                                  try {
+                                    const err = await response.json();
+                                    errorMessage = err.error || errorMessage;
+                                  } catch (e) {
+                                    // Ignore JSON parsing error, use default message
+                                  }
+                                  throw new Error(errorMessage);
                                 }
                                 
                                 fetchData();
@@ -707,8 +713,14 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                                 });
                                 
                                 if (!response.ok) {
-                                  const err = await response.json();
-                                  throw new Error(err.error || 'Delete failed');
+                                  let errorMessage = 'Delete failed';
+                                  try {
+                                    const err = await response.json();
+                                    errorMessage = err.error || errorMessage;
+                                  } catch (e) {
+                                    // Ignore JSON parsing error, use default message
+                                  }
+                                  throw new Error(errorMessage);
                                 }
                                 
                                 fetchData();
