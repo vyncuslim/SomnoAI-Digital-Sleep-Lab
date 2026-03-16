@@ -2,7 +2,7 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA } from '../components/ui/Components';
-import { CreditCard, RefreshCw, Lightbulb, Shield, Mail, Users } from 'lucide-react';
+import { CreditCard, RefreshCw, Lightbulb, Shield, Mail, Users, MessageSquare } from 'lucide-react';
 import { Language } from '../services/i18n';
 
 interface SupportViewProps {
@@ -58,6 +58,13 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang }) => {
             description={isZh ? "加入我们的 Discord 社区，与其他用户讨论和分享想法。" : "Join our Discord community to discuss and share ideas with other users."}
             icon={<Users />}
             onClick={() => window.open('https://discord.com/invite/9EXJtRmju', '_blank')}
+            className="cursor-pointer hover:border-indigo-500/50 transition-colors"
+          />
+          <Card 
+            title={isZh ? "WhatsApp AI 助手" : "WhatsApp AI Assistant"}
+            description={isZh ? "如需咨询，您不一定需要联系 +60 187807388，也可以通过 WhatsApp 联系 +1 (555) 933-5379。该账号为 AI 助手账号，可用于回答相关问题。" : "For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions."}
+            icon={<MessageSquare />}
+            onClick={() => window.open('https://wa.me/15559335379', '_blank')}
             className="cursor-pointer hover:border-indigo-500/50 transition-colors"
           />
         </div>

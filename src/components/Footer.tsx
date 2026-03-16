@@ -7,7 +7,7 @@ interface FooterProps {
   lang?: Language;
 }
 
-const Footer: React.FC<FooterProps> = () => {
+const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
   const handleLinkClick = (e: React.MouseEvent, text: string) => {
     e.preventDefault();
     toast.success(`Navigating to ${text}...`);
@@ -48,6 +48,11 @@ const Footer: React.FC<FooterProps> = () => {
             <p>SomnoAI Digital Sleep Lab Inc.</p>
             <p>100 Innovation Drive, Suite 400</p>
             <p>San Francisco, CA 94105</p>
+            <p className="mt-2 text-gray-500">
+              {lang === 'zh' 
+                ? "如需咨询，您不一定需要联系 +60 187807388，也可以通过 WhatsApp 联系 +1 (555) 933-5379。该账号为 AI 助手账号，可用于回答相关问题。" 
+                : "For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions."}
+            </p>
           </div>
         </div>
         <div>

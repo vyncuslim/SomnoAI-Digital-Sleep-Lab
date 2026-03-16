@@ -86,7 +86,9 @@ This platform is not a clinical research facility and does not conduct medical t
 **Admin Node:** admin@sleepsomno.com (Catch-all, 15GB)
 
 We aim to respond to inquiries within 24-48 business hours.
-Please use the appropriate node for your specific inquiry to ensure faster processing.`
+Please use the appropriate node for your specific inquiry to ensure faster processing.
+
+For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions.`
     },
     faq: {
       title: "Frequently Asked Questions",
@@ -423,7 +425,10 @@ SomnoAI Digital Sleep Lab 作为一个信息和研究导向的平台运营，不
 **管理节点：** admin@sleepsomno.com (全接收, 15GB)
 
 我们的目标是在 24-48 个工作小时内回复查询。
-请根据您的具体查询使用相应的节点，以确保更快的处理速度。`
+请根据您的具体查询使用相应的节点，以确保更快的处理速度。
+
+如需咨询，您不一定需要联系 +60 187807388，也可以通过 WhatsApp 联系 +1 (555) 933-5379。该账号为 AI 助手账号，可用于回答相关问题。
+For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions.`
     },
     faq: {
       title: "常见问题",
