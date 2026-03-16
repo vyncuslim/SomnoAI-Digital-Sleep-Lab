@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Crown, ShieldCheck, Zap, Activity, ChevronRight, CreditCard, Settings, ArrowLeft, Sparkles, Cpu, Clock, History, Brain } from 'lucide-react';
+import { Crown, ShieldCheck, Zap, Activity, ChevronRight, CreditCard, Settings, ArrowLeft, Sparkles, Cpu, Clock, History, Brain, RefreshCw } from 'lucide-react';
 import { Language } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { GridBackground, HardwareWidget } from '../components/ui/Components';
@@ -17,10 +17,14 @@ const PLAN_LINKS = {
 };
 
 export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ lang }) => {
-  const { profile } = useAuth();
+  const { profile, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const [plan, setPlan] = useState<string>('Go');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    refreshProfile();
+  }, []);
 
   useEffect(() => {
     if (profile && profile.subscription_plan) {
@@ -126,6 +130,13 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
               <div className="flex items-center gap-3 mb-8">
                 <div className="w-1.5 h-6 bg-indigo-500 rounded-full" />
                 <h2 className="text-xl font-black italic uppercase tracking-widest text-white">{lang === 'zh' ? '当前计划' : 'Current Plan'}</h2>
+                <button 
+                  onClick={refreshProfile}
+                  className="ml-auto text-slate-500 hover:text-white transition-colors"
+                  title={lang === 'zh' ? '刷新状态' : 'Refresh Status'}
+                >
+                  <RefreshCw size={16} />
+                </button>
               </div>
 
               <div className="p-8 bg-black/40 rounded-3xl border border-white/5 relative overflow-hidden group/plan">

@@ -156,14 +156,25 @@ async function startServer() {
         });
       }
 
-      if (event.type === 'customer.subscription.updated') {
+      if (event.type === 'customer.subscription.updated' || event.type === 'customer.subscription.created') {
         const subscription = event.data.object as Stripe.Subscription;
+        const userId = subscription.metadata?.user_id;
+
+        if (userId) {
+          const plan = subscription.items.data[0].price.lookup_key || 'pro'; // Default to pro if lookup_key is missing
+          await supabase!.from('profiles').update({
+            subscription_plan: plan,
+            subscription_status: subscription.status,
+            is_paying: subscription.status === 'active'
+          }).eq('id', userId);
+        }
+
         await auditLogger.logPayment({
           source: 'api',
           level: 'info',
           action: 'subscription_updated',
           status: 'success',
-          actorUserId: subscription.metadata?.user_id ?? null,
+          actorUserId: userId ?? null,
           message: 'Stripe subscription updated',
           metadata: {
             provider: 'stripe',
@@ -176,12 +187,22 @@ async function startServer() {
 
       if (event.type === 'customer.subscription.deleted') {
         const subscription = event.data.object as Stripe.Subscription;
+        const userId = subscription.metadata?.user_id;
+
+        if (userId) {
+          await supabase!.from('profiles').update({
+            subscription_plan: 'go',
+            subscription_status: 'canceled',
+            is_paying: false
+          }).eq('id', userId);
+        }
+
         await auditLogger.logPayment({
           source: 'api',
           level: 'warning',
           action: 'subscription_deleted',
           status: 'success',
-          actorUserId: subscription.metadata?.user_id ?? null,
+          actorUserId: userId ?? null,
           message: 'Stripe subscription deleted',
           metadata: {
             provider: 'stripe',
