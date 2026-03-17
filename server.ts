@@ -238,7 +238,7 @@ async function startServer() {
 
   // Secure login recording
   // Consolidated Login Logging Endpoint
-  app.post('/api/audit/login', async (req, res) => {
+  app.post(['/api/audit/login', '/api/audit/login/'], async (req, res) => {
     const { email, status, errorCode, userId, metadata } = req.body;
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -276,7 +276,7 @@ async function startServer() {
   });
 
   // General Event Logging Endpoint
-  app.post('/api/audit/log-event', async (req, res) => {
+  app.post(['/api/audit/log-event', '/api/audit/log-event/'], async (req, res) => {
     try {
       const user = await getUserFromRequest(req);
       const { category, action, status, level, message, metadata } = req.body;
@@ -364,7 +364,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/audit/auth-signup', async (req, res) => {
+  app.post(['/api/audit/auth-signup', '/api/audit/auth-signup/'], async (req, res) => {
     const body = req.body;
     const forwardedFor = req.headers['x-forwarded-for'];
     const ip = typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : null;
