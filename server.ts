@@ -13,6 +13,8 @@ import { getUserFromRequest, requireUserFromRequest, isAdmin } from './src/lib/a
 import { adminServices } from './src/services/adminServices';
 import { OFFICIAL_LINKS } from './src/constants/links';
 
+import { serverEmailService } from './src/services/serverEmailService';
+
 dotenv.config();
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
@@ -272,24 +274,22 @@ async function startServer() {
       }
 
       // If Resend is configured, send an email to support
-      if (resend) {
-        try {
-          await resend.emails.send({
-            from: 'SomnoAI Contact <onboarding@resend.dev>',
-            to: [OFFICIAL_LINKS.email],
-            subject: `Contact Form: ${subject}`,
-            html: `
-              <h1>New Contact Message</h1>
-              <p><strong>From:</strong> ${email}</p>
-              <p><strong>Subject:</strong> ${subject}</p>
-              <p><strong>Message:</strong></p>
-              <p>${message}</p>
-            `,
-          });
-        } catch (emailError) {
-          console.error('Failed to send contact email via Resend:', emailError);
-          // Don't fail the request if only email notification fails
-        }
+      try {
+        await serverEmailService.sendEmail({
+          to: OFFICIAL_LINKS.email,
+          subject: `Contact Form: ${subject}`,
+          category: 'contact_form',
+          html: `
+            <h1>New Contact Message</h1>
+            <p><strong>From:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong></p>
+            <p>${message}</p>
+          `,
+        });
+      } catch (emailError) {
+        console.error('Failed to send contact email via serverEmailService:', emailError);
+        // Don't fail the request if only email notification fails
       }
 
       res.status(200).json({ success: true });
@@ -707,7 +707,12 @@ async function startServer() {
       const tables = [
         'profiles', 'sleep_records', 'feedback', 'audit_logs', 
         'security_events', 'app_settings', 'error_logs', 
-        'communications', 'reviews', 'analytics_daily'
+        'communications', 'reviews', 'analytics_daily',
+        'analytics_country', 'analytics_device', 'analytics_realtime',
+        'articles', 'chat_messages', 'daily_sleep_summary',
+        'daily_steps_summary', 'diary_entries', 'health_raw_data',
+        'health_records', 'heart_rate_summary', 'logins',
+        'subscriptions', 'user_app_status', 'user_data'
       ];
 
       // Add auth schema tables for super owners

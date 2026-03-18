@@ -5,13 +5,15 @@ import {
   AlertTriangle, Search,
   Activity, Shield, Clock, Moon, BarChart3, Save,
   TrendingUp, ShieldOff, Mail, Bell,
-  Star, Unlock, Lock, Database, Table
+  Star, Unlock, Lock, Database, Table,
+  Globe, Smartphone, Zap, FileText, Heart, CreditCard
 } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { adminApi, supabase, logError, logAuditLog } from '../services/supabaseService';
 import { securityService } from '../services/securityService';
 import { Language, getTranslation } from '../services/i18n';
 import { useAuth } from '../context/AuthContext';
+import { seedService } from '../services/seedService';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { emailService } from '../services/emailService';
 import { UserProfile, Feedback, AuditLog, SecurityEvent, Review } from '../types';
@@ -22,17 +24,32 @@ type AdminTab = 'overview' | 'founder' | 'logins' | 'registry' | 'signals' | 'sy
 
 const DATABASE_SCHEMA = [
   { id: 'analytics_daily', name: 'Traffic Records', group: 'GA4 Telemetry', icon: Activity },
+  { id: 'analytics_country', name: 'Geo Distribution', group: 'GA4 Telemetry', icon: Globe },
+  { id: 'analytics_device', name: 'Device Matrix', group: 'GA4 Telemetry', icon: Smartphone },
+  { id: 'analytics_realtime', name: 'Live Sessions', group: 'GA4 Telemetry', icon: Zap },
   { id: 'audit_logs', name: 'System Audits', group: 'Maintenance', icon: List },
   { id: 'audit_logs_recent', name: 'Recent Audits', group: 'Maintenance', icon: List },
   { id: 'security_events', name: 'Security Signals', group: 'Security', icon: Shield },
   { id: 'profiles', name: 'Subject Registry', group: 'Core', icon: Users },
   { id: 'login_attempts', name: 'Login History', group: 'Security', icon: Shield },
+  { id: 'logins', name: 'Successful Logins', group: 'Security', icon: Shield },
   { id: 'sleep_records', name: 'Sleep Matrix', group: 'Biometrics', icon: Moon },
+  { id: 'daily_sleep_summary', name: 'Sleep Summaries', group: 'Biometrics', icon: Moon },
+  { id: 'daily_steps_summary', name: 'Steps Summaries', group: 'Biometrics', icon: Activity },
+  { id: 'heart_rate_summary', name: 'Heart Rate Summaries', group: 'Biometrics', icon: Heart },
+  { id: 'health_raw_data', name: 'Raw Health Data', group: 'Biometrics', icon: Activity },
+  { id: 'health_records', name: 'Health Records', group: 'Biometrics', icon: Activity },
+  { id: 'diary_entries', name: 'Diary Entries', group: 'User Data', icon: FileText },
+  { id: 'user_data', name: 'User Data Store', group: 'User Data', icon: Database },
+  { id: 'user_app_status', name: 'App Status', group: 'User Data', icon: Activity },
+  { id: 'articles', name: 'CMS Articles', group: 'Content', icon: FileText },
+  { id: 'chat_messages', name: 'Chat Messages', group: 'Support', icon: MessageSquare },
   { id: 'feedback', name: 'User Feedback', group: 'Support', icon: MessageSquare },
   { id: 'app_settings', name: 'App Settings', group: 'Config', icon: BarChart3 },
   { id: 'error_logs', name: 'Error Logs', group: 'System', icon: AlertTriangle },
   { id: 'communications', name: 'Comms Center', group: 'System', icon: Mail },
-  { id: 'reviews', name: 'Product Reviews', group: 'Sentiment', icon: Star }
+  { id: 'reviews', name: 'Product Reviews', group: 'Sentiment', icon: Star },
+  { id: 'subscriptions', name: 'User Subscriptions', group: 'Billing', icon: CreditCard }
 ];
 
 interface AdminDashboardProps {
@@ -343,6 +360,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       </button>
     </div>
   );
+
+  const handleSeedData = async () => {
+    if (!window.confirm('Are you sure you want to seed sample data? This will add records to multiple tables.')) return;
+    
+    try {
+      const result = await seedService.seedAll();
+      if (result.success) {
+        alert('Sample data seeded successfully!');
+        fetchData();
+        if (selectedTable) fetchTableData(selectedTable, 'public');
+      } else {
+        alert('Failed to seed data: ' + (result.error as any)?.message);
+      }
+    } catch (error) {
+      alert('An unexpected error occurred.');
+    }
+  };
 
   const fetchData = async () => {
     setIsSyncing(true);
@@ -831,14 +865,42 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                   {auditLogs.map((log) => (
                     <tr key={log.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
                       <td className="p-4">
-                        <div className="flex items-center gap-2">
-                          <List size={14} className="text-slate-400" />
-                          <span className="text-sm font-bold text-white">{log.action}</span>
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <List size={14} className="text-slate-400" />
+                            <span className="text-sm font-bold text-white uppercase tracking-tight">{log.action}</span>
+                          </div>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className={`text-[8px] px-1.5 py-0.5 rounded-full font-black uppercase border ${
+                              log.status === 'success' ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400' : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
+                            }`}>
+                              {log.status}
+                            </span>
+                            <span className="text-[8px] text-slate-500 uppercase tracking-widest font-black italic">
+                              {log.category}
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td className="p-4 text-xs font-mono text-slate-500">{log.user_id}</td>
-                      <td className="p-4 text-xs text-slate-400 max-w-xs truncate">
-                        {typeof log.details === 'object' ? JSON.stringify(log.details) : log.details}
+                      <td className="p-4">
+                        <div className="flex flex-col gap-1">
+                          <div className="text-[10px] text-slate-500 font-mono flex items-center gap-1">
+                            <User size={10} /> Actor: {log.user_id || 'SYSTEM'}
+                          </div>
+                          {log.target_user_id && (
+                            <div className="text-[10px] text-indigo-400 font-mono flex items-center gap-1">
+                              <User size={10} /> Target: {log.target_user_id}
+                            </div>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="text-xs text-slate-400 max-w-xs overflow-hidden">
+                          <div className="font-medium text-slate-300 mb-1">{log.message}</div>
+                          <div className="font-mono text-[10px] opacity-50 truncate">
+                            {JSON.stringify(log.metadata || log.details || {})}
+                          </div>
+                        </div>
                       </td>
                       <td className="p-4 text-xs font-mono text-slate-500 text-right">{new Date(log.created_at).toLocaleString()}</td>
                     </tr>
@@ -1294,14 +1356,27 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                         </p>
                       )}
                     </div>
-                    {selectedTable && (
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={handleSeedData}
+                        className="px-3 py-1.5 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 rounded-lg text-xs font-medium transition-colors flex items-center gap-2"
+                      >
+                        <RefreshCw className="w-3 h-3" />
+                        Seed Sample Data
+                      </button>
                       <button 
-                        onClick={() => selectedTable === 'auth_users' ? fetchDatabaseInfo() : fetchTableData(selectedTable)}
+                        onClick={() => {
+                          if (selectedTable === 'auth_users') {
+                            fetchDatabaseInfo();
+                          } else if (selectedTable) {
+                            fetchTableData(selectedTable);
+                          }
+                        }}
                         className="p-2 hover:bg-white/10 rounded-lg transition-colors"
                       >
                         <RefreshCw size={16} className={loadingTable ? 'animate-spin' : ''} />
                       </button>
-                    )}
+                    </div>
                   </div>
 
                   <div className="flex-1 overflow-auto p-0">

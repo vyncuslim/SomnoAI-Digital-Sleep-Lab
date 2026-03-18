@@ -92,6 +92,11 @@ export interface AuditLog {
   id: string;
   action: string;
   user_id: string;
+  target_user_id?: string;
+  category?: string;
+  status?: string;
+  message?: string;
+  metadata?: Record<string, any>;
   details: string | Record<string, any>;
   created_at: string;
 }

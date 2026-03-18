@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
+import { analyticsService } from '../services/analyticsService';
 import { supabase } from '../services/supabaseService';
 
 interface AuthContextType {
@@ -51,16 +52,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        analyticsService.trackVisit(session.user.id);
       } else {
         setLoading(false);
+        analyticsService.trackVisit();
       }
     });
 
     // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event: any, session: any) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event: any, session: any) => {
       setUser(session?.user ?? null);
       if (session?.user) {
         fetchProfile(session.user.id);
+        if (event === 'SIGNED_IN') {
+          analyticsService.trackVisit(session.user.id);
+        }
       } else {
         setProfile(null);
         setLoading(false);

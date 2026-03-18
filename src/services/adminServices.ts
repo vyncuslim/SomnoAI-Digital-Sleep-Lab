@@ -1,9 +1,15 @@
 import { supabaseAdmin } from './supabaseAdmin';
 import { auditLogger } from './auditLog';
+import { serverEmailService } from './serverEmailService';
 
 export const adminServices = {
   async deleteUser(adminUserId: string, targetUserId: string) {
     console.log(`Attempting to delete user ${targetUserId} via Supabase Admin`);
+    
+    // Fetch user email before deleting
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(targetUserId);
+    const userEmail = userData?.user?.email;
+
     const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
 
     await auditLogger.logAdmin({
@@ -15,13 +21,19 @@ export const adminServices = {
       targetUserId,
       errorCode: error?.code ?? null,
       message: error ? `Admin failed to delete user: ${error.message}` : 'Admin deleted user',
-      metadata: {},
+      metadata: { userEmail },
     });
 
     if (error) {
       console.error(`Supabase Admin deleteUser error:`, error);
       throw new Error(`Supabase Admin deleteUser failed: ${error.message || 'Unknown error'}`);
     }
+
+    // Send notification if user email is available
+    if (userEmail) {
+      await serverEmailService.sendDeleteNotification(userEmail);
+    }
+
     return { success: true };
   },
 
@@ -30,6 +42,10 @@ export const adminServices = {
     targetUserId: string;
     reason: string;
   }) {
+    // Fetch user email before blocking
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(params.targetUserId);
+    const userEmail = userData?.user?.email;
+
     const { error } = await supabaseAdmin
       .from('profiles')
       .update({ is_blocked: true, block_code: params.reason })
@@ -44,10 +60,16 @@ export const adminServices = {
       targetUserId: params.targetUserId,
       errorCode: error?.code ?? null,
       message: error ? 'Admin failed to block user' : 'Admin blocked user',
-      metadata: { reason: params.reason },
+      metadata: { reason: params.reason, userEmail },
     });
 
     if (error) throw error;
+
+    // Send notification if user email is available
+    if (userEmail) {
+      await serverEmailService.sendBlockNotification(userEmail, params.reason);
+    }
+
     return { success: true };
   },
 
@@ -55,6 +77,10 @@ export const adminServices = {
     adminUserId: string;
     targetUserId: string;
   }) {
+    // Fetch user email before unblocking
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(params.targetUserId);
+    const userEmail = userData?.user?.email;
+
     const { error } = await supabaseAdmin
       .from('profiles')
       .update({ is_blocked: false, block_code: null })
@@ -69,10 +95,16 @@ export const adminServices = {
       targetUserId: params.targetUserId,
       errorCode: error?.code ?? null,
       message: error ? 'Admin failed to unblock user' : 'Admin unblocked user',
-      metadata: {},
+      metadata: { userEmail },
     });
 
     if (error) throw error;
+
+    // Send notification if user email is available
+    if (userEmail) {
+      await serverEmailService.sendUnblockNotification(userEmail);
+    }
+
     return { success: true };
   },
 
