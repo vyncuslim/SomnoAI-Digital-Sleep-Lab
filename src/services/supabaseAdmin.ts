@@ -14,11 +14,11 @@ export const supabaseAdmin = (supabaseUrl && supabaseServiceKey)
     })
   : {
       from: () => ({
-        select: () => ({ eq: () => ({ single: () => ({ data: null, error: { message: 'Supabase Admin not configured' } }) }), order: () => ({ data: null, error: { message: 'Supabase Admin not configured' } }) }),
-        insert: () => ({ data: null, error: { message: 'Supabase Admin not configured' } }),
-        upsert: () => ({ data: null, error: { message: 'Supabase Admin not configured' } }),
-        delete: () => ({ data: null, error: { message: 'Supabase Admin not configured' } }),
-        update: () => ({ data: null, error: { message: 'Supabase Admin not configured' } }),
+        select: () => ({ eq: () => ({ single: () => Promise.resolve({ data: null, error: { message: 'Supabase Admin not configured' } }) }), order: () => Promise.resolve({ data: null, error: { message: 'Supabase Admin not configured' } }), limit: () => Promise.resolve({ data: null, error: { message: 'Supabase Admin not configured' } }) }),
+        insert: () => Promise.resolve({ data: null, error: { message: 'Supabase Admin not configured' } }),
+        upsert: () => Promise.resolve({ data: null, error: { message: 'Supabase Admin not configured' } }),
+        delete: () => ({ eq: () => Promise.resolve({ data: null, error: { message: 'Supabase Admin not configured' } }) }),
+        update: () => ({ eq: () => Promise.resolve({ data: null, error: { message: 'Supabase Admin not configured' } }) }),
       }),
       auth: {
         admin: {

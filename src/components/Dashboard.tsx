@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, Settings, LogOut, Upload, FileText, Trash2 } from 'lucide-react';
-import { GoogleGenAI, Type } from '@google/genai';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { GridBackground, TelemetryStream, HardwareWidget } from './ui/Components';
 import { useLanguage } from '../context/useLanguage';
+import { supabase } from '../services/supabaseService';
 
 interface SleepInput {
   duration: number;
@@ -136,7 +136,6 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     }
     setIsAnalyzing(true);
     try {
-      const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || process.env.API_KEY });
       const prompt = `
         As a sleep expert, analyze the following sleep data and provide insights.
         Language: ${lang === 'zh' ? 'Chinese' : 'English'}
@@ -163,25 +162,29 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         }
       `;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-        config: {
-          responseMimeType: 'application/json',
-          responseSchema: {
-            type: Type.OBJECT,
-            properties: {
-              overview: { type: Type.STRING },
-              insights: { type: Type.ARRAY, items: { type: Type.STRING } },
-              recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
-              tomorrowOptimization: { type: Type.STRING }
-            },
-            required: ["overview", "insights", "recommendations", "tomorrowOptimization"]
-          }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+
+      const res = await fetch('/api/analyze-sleep', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
         },
+        body: JSON.stringify({
+          prompt,
+          lang,
+          selectedFileName: selectedFile?.name
+        })
       });
 
-      const resultText = response.text;
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to generate analysis');
+      }
+
+      const data = await res.json();
+      const resultText = data.text;
       if (resultText) {
         const cleanedText = resultText.replace(/```json\n?|\n?```/g, '').trim();
         const parsedResult = JSON.parse(cleanedText) as AIAnalysis;

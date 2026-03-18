@@ -2,8 +2,6 @@ import { supabase } from './supabaseService.ts';
 import { notifyAdmin } from './telegramService.ts';
 import { emailService } from './emailService.ts';
 
-declare const process: { env: { API_KEY: string } };
-
 /**
  * SOMNO LAB NEURAL PULSE MONITOR v1.5
  * Consolidates reports into mirrored non-redundant transmissions (TG + Email).
@@ -43,11 +41,18 @@ export const systemMonitor = {
       const { data: { session } } = await (supabase.auth as any).getSession();
       result.details.auth = !!session;
 
-      /**
-       * FIXED: Guidelines enforce exclusive process.env.API_KEY usage.
-       * 3. Check Critical Environment Keys
-       */
-      result.details.environment = !!process.env.API_KEY;
+      // 3. Check Critical Environment Keys
+      try {
+        const healthRes = await fetch('/api/health');
+        if (healthRes.ok) {
+          const healthData = await healthRes.json();
+          result.details.environment = healthData.environment;
+        } else {
+          result.details.environment = false;
+        }
+      } catch (e) {
+        result.details.environment = false;
+      }
 
       const endTime = performance.now();
       result.latency = Math.round(endTime - startTime);

@@ -222,7 +222,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       if (!targetUser) return;
       
       const { data: { session } } = await supabase.auth.getSession();
-      await fetch('/api/admin/update-role', {
+      const response = await fetch('/api/admin/update-role', {
         method: 'POST',
         headers: { 
             'Content-Type': 'application/json',
@@ -233,6 +233,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
             newRole
         })
       });
+
+      if (!response.ok) {
+        let errorMessage = 'Update role failed';
+        try {
+          const text = await response.text();
+          try {
+            const err = JSON.parse(text);
+            errorMessage = err.error || errorMessage;
+          } catch (e) {
+            console.error("Non-JSON error response:", text);
+            errorMessage = `Server error (${response.status})`;
+          }
+        } catch (e) {
+          // Ignore text parsing error
+        }
+        throw new Error(errorMessage);
+      }
 
       fetchData();
     } catch (error) {
@@ -678,10 +695,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                                 if (!response.ok) {
                                   let errorMessage = 'Operation failed';
                                   try {
-                                    const err = await response.json();
-                                    errorMessage = err.error || errorMessage;
+                                    const text = await response.text();
+                                    try {
+                                      const err = JSON.parse(text);
+                                      errorMessage = err.error || errorMessage;
+                                    } catch (e) {
+                                      console.error("Non-JSON error response:", text);
+                                      errorMessage = `Server error (${response.status})`;
+                                    }
                                   } catch (e) {
-                                    // Ignore JSON parsing error, use default message
+                                    // Ignore text parsing error
                                   }
                                   throw new Error(errorMessage);
                                 }
@@ -719,10 +742,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                                 if (!response.ok) {
                                   let errorMessage = 'Delete failed';
                                   try {
-                                    const err = await response.json();
-                                    errorMessage = err.error || errorMessage;
+                                    const text = await response.text();
+                                    try {
+                                      const err = JSON.parse(text);
+                                      errorMessage = err.error || errorMessage;
+                                    } catch (e) {
+                                      console.error("Non-JSON error response:", text);
+                                      errorMessage = `Server error (${response.status})`;
+                                    }
                                   } catch (e) {
-                                    // Ignore JSON parsing error, use default message
+                                    // Ignore text parsing error
                                   }
                                   throw new Error(errorMessage);
                                 }

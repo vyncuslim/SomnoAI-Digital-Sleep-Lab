@@ -6,6 +6,7 @@ import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import helmet from 'helmet';
 import Stripe from 'stripe';
+import { GoogleGenAI } from '@google/genai';
 import { writeAuditLog, auditLogger } from './src/services/auditLog';
 import { requireAdminFromRequest } from './src/lib/admin-auth';
 import { getUserFromRequest, requireUserFromRequest, isAdmin } from './src/lib/auth-utils';
@@ -30,9 +31,9 @@ async function startServer() {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "img-src": ["'self'", "data:", "https://*.supabase.co", "https://*.sleepsomno.com", "https://picsum.photos", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
-        "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com", "https://app.livechatai.com", "https://challenges.cloudflare.com"],
+        "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com", "https://app.livechatai.com", "https://challenges.cloudflare.com", "https://unpkg.com"],
         "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://app.livechatai.com"],
-        "connect-src": ["'self'", "https://*.supabase.co", "https://*.google-analytics.com", "https://*.googletagmanager.com", "wss://*.supabase.co"]
+        "connect-src": ["'self'", "https://*.supabase.co", "https://*.google-analytics.com", "https://*.googletagmanager.com", "wss://*.supabase.co", "https://app.livechatai.com", "https://api.elevenlabs.io", "wss://api.elevenlabs.io", "https://connectors.windsor.ai"]
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -229,7 +230,16 @@ async function startServer() {
   });
 
   // Regular JSON parsing for other routes
-  app.use(express.json());
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
+  // API routes FIRST
+  app.get("/api/health", (req, res) => {
+    res.json({ 
+      status: "ok",
+      environment: !!(process.env.GEMINI_API_KEY || process.env.API_KEY)
+    });
+  });
 
   let resend: Resend | null = null;
   if (process.env.RESEND_API_KEY) {
@@ -389,6 +399,109 @@ async function startServer() {
     });
 
     res.status(200).json({ ok: true });
+  });
+
+  app.post('/api/chat', async (req, res) => {
+    try {
+      const user = await requireUserFromRequest(req);
+      const { messages, currentInput, currentFile, systemInstruction } = req.body;
+
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'Gemini API key is not configured.' });
+      }
+
+      const ai = new GoogleGenAI({ apiKey });
+
+      const parts: any[] = [{ text: currentInput || "Please analyze this file." }];
+      if (currentFile) {
+        parts.push({
+          inlineData: {
+            data: currentFile.data,
+            mimeType: currentFile.type
+          }
+        });
+      }
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: [
+          ...messages.map((m: any) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
+          { role: 'user', parts }
+        ],
+        config: {
+          systemInstruction,
+        }
+      });
+
+      res.json({ text: response.text });
+    } catch (error: any) {
+      console.error('Chat API Error:', error);
+      res.status(error.message.includes('Unauthorized') ? 401 : 500).json({ error: error.message || 'Failed to generate response' });
+    }
+  });
+
+  app.post('/api/analyze-sleep', async (req, res) => {
+    try {
+      const user = await requireUserFromRequest(req);
+      const { prompt, lang, selectedFileName } = req.body;
+
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'Gemini API key is not configured.' });
+      }
+
+      const { GoogleGenAI, Type } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+
+      const response = await ai.models.generateContent({
+        model: 'gemini-3-flash-preview',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              overview: { type: Type.STRING },
+              insights: { type: Type.ARRAY, items: { type: Type.STRING } },
+              recommendations: { type: Type.ARRAY, items: { type: Type.STRING } },
+              tomorrowOptimization: { type: Type.STRING }
+            },
+            required: ["overview", "insights", "recommendations", "tomorrowOptimization"]
+          }
+        },
+      });
+
+      res.json({ text: response.text });
+    } catch (error: any) {
+      console.error('Analyze Sleep API Error:', error);
+      res.status(error.message.includes('Unauthorized') ? 401 : 500).json({ error: error.message || 'Failed to generate analysis' });
+    }
+  });
+
+  app.post('/api/sleep-recommendation', async (req, res) => {
+    try {
+      const user = await requireUserFromRequest(req);
+      const { userData } = req.body;
+
+      const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
+      if (!apiKey) {
+        return res.status(500).json({ error: 'Gemini API key is not configured.' });
+      }
+
+      const { GoogleGenAI } = await import('@google/genai');
+      const ai = new GoogleGenAI({ apiKey });
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3-flash-preview",
+        contents: `Provide personalized sleep recommendations based on this user data: ${userData}`,
+      });
+
+      res.json({ text: response.text });
+    } catch (error: any) {
+      console.error('Sleep Recommendation API Error:', error);
+      res.status(error.message.includes('Unauthorized') ? 401 : 500).json({ error: error.message || 'Failed to generate recommendation' });
+    }
   });
 
   // Consolidate Stripe Webhook logic above to avoid duplicate route definitions

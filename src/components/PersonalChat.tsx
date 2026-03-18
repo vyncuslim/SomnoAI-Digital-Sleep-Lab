@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { GoogleGenAI } from "@google/genai";
 import { useAuth } from '../context/AuthContext';
 import { supabase, logAuditLog } from '../services/supabaseService';
 import { SleepRecord } from '../types';
@@ -171,13 +170,6 @@ export const PersonalChat: React.FC = () => {
       return;
     }
 
-    const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
-    if (!apiKey) {
-      setMessages(prev => [...prev, { role: 'model', content: "Error: Gemini API key is missing. Please contact support." }]);
-      return;
-    }
-    const ai = new GoogleGenAI({ apiKey });
-
     const userMessage = { role: 'user' as const, content: input };
     setMessages(prev => [...prev, userMessage]);
     await saveMessage('user', input + (selectedFile ? ` [Attached File: ${selectedFile.name}]` : ''));
@@ -201,28 +193,31 @@ export const PersonalChat: React.FC = () => {
       If the user asks about their data from today, refer to the Lab records.
       You can also analyze uploaded images or documents related to sleep.`;
       
-      const parts: any[] = [{ text: currentInput || "Please analyze this file." }];
-      if (currentFile) {
-        parts.push({
-          inlineData: {
-            data: currentFile.data,
-            mimeType: currentFile.type
-          }
-        });
-      }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
 
-      const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: [
-          ...messages.map(m => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
-          { role: 'user', parts }
-        ],
-        config: {
-          systemInstruction,
-        }
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({
+          messages,
+          currentInput,
+          currentFile,
+          systemInstruction
+        })
       });
 
-      const modelContent = response.text || "I'm sorry, I couldn't generate a response.";
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to generate response');
+      }
+
+      const data = await res.json();
+      const modelContent = data.text || "I'm sorry, I couldn't generate a response.";
+      
       setMessages(prev => [...prev, { role: 'model', content: modelContent }]);
       await saveMessage('model', modelContent);
     } catch (error) {
