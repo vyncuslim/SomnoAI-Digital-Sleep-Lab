@@ -441,12 +441,15 @@ async function startServer() {
   });
 
   app.post('/api/admin/update-role', async (req, res) => {
+    console.log(`Received ${req.method} request for /api/admin/update-role`);
     try {
       const adminUser = (req as any).adminUser;
       const { targetUserId, newRole } = req.body;
+      console.log(`Admin ${adminUser.id} updating user ${targetUserId} to role ${newRole}`);
       await adminServices.updateUserRole({ adminUserId: adminUser.id, targetUserId, newRole });
       res.json({ ok: true });
     } catch (error: any) {
+      console.error('Update role error:', error);
       res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
