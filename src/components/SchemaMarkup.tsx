@@ -1,7 +1,15 @@
 import React from 'react';
 import { Helmet } from 'react-helmet-async';
 
-export const SchemaMarkup: React.FC = () => {
+interface ArticleSchemaProps {
+  type?: 'Article' | 'NewsArticle';
+  headline: string;
+  datePublished: string;
+  authorName: string;
+  imageUrl: string;
+}
+
+export const SchemaMarkup: React.FC<{ article?: ArticleSchemaProps }> = ({ article }) => {
   const schemaData = {
     "@context": "https://schema.org",
     "@type": "Organization",
@@ -39,6 +47,26 @@ export const SchemaMarkup: React.FC = () => {
     }
   };
 
+  const articleSchema = article ? {
+    "@context": "https://schema.org",
+    "@type": article.type || "Article",
+    "headline": article.headline,
+    "datePublished": article.datePublished,
+    "author": {
+      "@type": "Person",
+      "name": article.authorName
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "SomnoAI Digital Sleep Lab",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://sleepsomno.com/logo_512.png"
+      }
+    },
+    "image": article.imageUrl
+  } : null;
+
   return (
     <Helmet>
       <script type="application/ld+json">
@@ -47,6 +75,11 @@ export const SchemaMarkup: React.FC = () => {
       <script type="application/ld+json">
         {JSON.stringify(websiteSchema)}
       </script>
+      {articleSchema && (
+        <script type="application/ld+json">
+          {JSON.stringify(articleSchema)}
+        </script>
+      )}
     </Helmet>
   );
 };

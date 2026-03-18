@@ -409,9 +409,11 @@ async function startServer() {
     try {
       const adminUser = (req as any).adminUser;
       const { targetUserId } = req.body;
+      console.log(`Admin ${adminUser.id} attempting to delete user ${targetUserId}`);
       await adminServices.deleteUser(adminUser.id, targetUserId);
       res.json({ ok: true });
     } catch (error: any) {
+      console.error('Delete user error:', error);
       res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });

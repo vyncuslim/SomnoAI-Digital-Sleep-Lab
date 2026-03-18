@@ -3,6 +3,7 @@ import { auditLogger } from './auditLog';
 
 export const adminServices = {
   async deleteUser(adminUserId: string, targetUserId: string) {
+    console.log(`Attempting to delete user ${targetUserId} via Supabase Admin`);
     const { error } = await supabaseAdmin.auth.admin.deleteUser(targetUserId);
 
     await auditLogger.logAdmin({
@@ -13,11 +14,14 @@ export const adminServices = {
       actorUserId: adminUserId,
       targetUserId,
       errorCode: error?.code ?? null,
-      message: error ? 'Admin failed to delete user' : 'Admin deleted user',
+      message: error ? `Admin failed to delete user: ${error.message}` : 'Admin deleted user',
       metadata: {},
     });
 
-    if (error) throw error;
+    if (error) {
+      console.error(`Supabase Admin deleteUser error:`, error);
+      throw new Error(`Supabase Admin deleteUser failed: ${error.message || 'Unknown error'}`);
+    }
     return { success: true };
   },
 
