@@ -64,12 +64,18 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang }) => {
           <Card 
             title={isZh ? "WhatsApp AI 助手" : "WhatsApp AI Assistant"}
             description={isZh 
-              ? `您可以通过我们的官方 WhatsApp 频道联系我们。手机号: ${OFFICIAL_LINKS.whatsappPhone}` 
-              : `You can reach us via our official WhatsApp channel. Phone: ${OFFICIAL_LINKS.whatsappPhone}`}
+              ? "您可以通过我们的官方 WhatsApp 频道联系我们，获取 AI 助手的即时回复。" 
+              : "You can reach us via our official WhatsApp channel for instant responses from our AI assistant."}
             icon={<MessageSquare />}
             onClick={() => window.open(OFFICIAL_LINKS.whatsappChannel, '_blank')}
             className="cursor-pointer hover:border-indigo-500/50 transition-colors"
-          />
+          >
+            <div className="mt-4 pt-4 border-t border-white/5">
+              <span className="text-indigo-400 text-sm font-bold">
+                {isZh ? `通过 WhatsApp 联系 ${OFFICIAL_LINKS.whatsappPhone}` : `Contact via WhatsApp ${OFFICIAL_LINKS.whatsappPhone}`}
+              </span>
+            </div>
+          </Card>
         </div>
       </Section>
 
