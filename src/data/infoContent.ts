@@ -89,7 +89,7 @@ We aim to respond to inquiries within 24-48 business hours.
 Please use the appropriate node for your specific inquiry to ensure faster processing.
 
 For inquiries, you can also reach us via our official WhatsApp channel for instant responses from our AI assistant.
-**WhatsApp AI Assistant:** +1 (555) 945-0876`
+**Contact via WhatsApp:** +1 (555) 945-0876`
     },
     faq: {
       title: "Frequently Asked Questions",
@@ -429,7 +429,7 @@ SomnoAI Digital Sleep Lab 作为一个信息和研究导向的平台运营，不
 请根据您的具体查询使用相应的节点，以确保更快的处理速度。
 
 如需咨询，您也可以通过我们的官方 WhatsApp 频道联系我们，获取 AI 助手的即时回复。
-**WhatsApp AI 助手：** +1 (555) 945-0876`
+**点击打开 WhatsApp 的：** +1 (555) 945-0876`
     },
     faq: {
       title: "常见问题",
