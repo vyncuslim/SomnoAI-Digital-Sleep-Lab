@@ -353,8 +353,8 @@ const AppContent = () => {
   return (
     <ErrorBoundary lang={lang}>
       <RootLayout>
-      <SchemaMarkup />
-      <div className="min-h-screen bg-[#01040a]">
+        <SchemaMarkup />
+        
         {!isSupabaseConfigured && (
           <div className="fixed top-0 left-0 right-0 bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
             ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
@@ -410,8 +410,7 @@ const AppContent = () => {
           </LanguageProvider>
         </div>
         {showNavbar && <Footer lang={lang} />}
-      </div>
-    </RootLayout>
+      </RootLayout>
   </ErrorBoundary>
 );
 };

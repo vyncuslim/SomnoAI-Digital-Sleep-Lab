@@ -15,6 +15,9 @@ interface SleepInput {
   energyScore: number;
   screenTime: boolean;
   caffeine: boolean;
+  pace: string;
+  maxHeartRate: number;
+  minHeartRate: number;
 }
 
 interface AIAnalysis {
@@ -47,6 +50,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     energyScore: 7,
     screenTime: true,
     caffeine: true,
+    pace: '0:00',
+    maxHeartRate: 0,
+    minHeartRate: 0,
   });
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -143,6 +149,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         - Energy Score (1-10): ${input.energyScore}
         - Screen time before bed: ${input.screenTime ? 'Yes' : 'No'}
         - Caffeine intake today: ${input.caffeine ? 'Yes' : 'No'}
+        - Pace: ${input.pace}
+        - Max Heart Rate: ${input.maxHeartRate} bpm
+        - Min Heart Rate: ${input.minHeartRate} bpm
         ${selectedFile ? `- Note: User has uploaded a sleep report file (${selectedFile.name}). Please assume the analysis should consider potential external data if provided in text form.` : ''}
 
         Provide the response in JSON format with the following structure:
@@ -204,6 +213,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     energy: lang === 'zh' ? '今日精力评分 (1-10)' : 'Energy Score (1-10)',
     screen: lang === 'zh' ? '睡前是否看手机' : 'Screen Time Before Bed',
     caffeine: lang === 'zh' ? '今日是否摄入咖啡因' : 'Caffeine Intake Today',
+    pace: lang === 'zh' ? '步速 (min/km)' : 'Pace (min/km)',
+    maxHR: lang === 'zh' ? '最高心率 (bpm)' : 'Max Heart Rate (bpm)',
+    minHR: lang === 'zh' ? '最低心率 (bpm)' : 'Min Heart Rate (bpm)',
     yes: lang === 'zh' ? '是' : 'Yes',
     no: lang === 'zh' ? '否' : 'No',
     overview: lang === 'zh' ? '睡眠概览' : 'Sleep Overview',
@@ -219,14 +231,14 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#01040a] text-slate-200 relative overflow-hidden grainy-bg pb-20">
+    <div className="relative overflow-hidden grainy-bg pb-20">
       <GridBackground />
       
       {/* Background Glows */}
       <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-indigo-500/5 blur-[160px] rounded-full pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/5 blur-[160px] rounded-full pointer-events-none" />
 
-      <div className="max-w-7xl mx-auto p-4 md:p-8 relative z-10">
+      <div className="relative z-10">
         <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
           <div>
             <div className="flex items-center gap-3 mb-4">
@@ -418,6 +430,21 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                       >
                         {t.no}
                       </button>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="group/input">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{t.pace}</label>
+                      <input type="text" value={input.pace} onChange={(e) => setInput({...input, pace: e.target.value})} className="w-full bg-black/40 border border-white/5 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono" />
+                    </div>
+                    <div className="group/input">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{t.maxHR}</label>
+                      <input type="number" value={input.maxHeartRate} onChange={(e) => setInput({...input, maxHeartRate: Number(e.target.value)})} className="w-full bg-black/40 border border-white/5 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono" />
+                    </div>
+                    <div className="group/input">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{t.minHR}</label>
+                      <input type="number" value={input.minHeartRate} onChange={(e) => setInput({...input, minHeartRate: Number(e.target.value)})} className="w-full bg-black/40 border border-white/5 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono" />
                     </div>
                   </div>
                 </div>
