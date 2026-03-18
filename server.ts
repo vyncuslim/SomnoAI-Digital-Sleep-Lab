@@ -26,6 +26,11 @@ const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 async function startServer() {
   const app = express();
 
+  let resend: Resend | null = null;
+  if (process.env.RESEND_API_KEY) {
+    resend = new Resend(process.env.RESEND_API_KEY);
+  }
+
   // Security Headers
   app.use(helmet({
     contentSecurityPolicy: {
@@ -230,6 +235,10 @@ async function startServer() {
     }
   });
 
+  // Regular JSON parsing for other routes
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
   app.post('/api/contact', async (req, res) => {
     const { subject, email, message } = req.body;
     
@@ -269,10 +278,6 @@ async function startServer() {
     }
   });
 
-  // Regular JSON parsing for other routes
-  app.use(express.json({ limit: '50mb' }));
-  app.use(express.urlencoded({ limit: '50mb', extended: true }));
-
   // API routes FIRST
   app.get("/api/health", (req, res) => {
     res.json({ 
@@ -280,11 +285,6 @@ async function startServer() {
       environment: !!(process.env.GEMINI_API_KEY || process.env.API_KEY)
     });
   });
-
-  let resend: Resend | null = null;
-  if (process.env.RESEND_API_KEY) {
-    resend = new Resend(process.env.RESEND_API_KEY);
-  }
 
   // Secure login recording
   // Consolidated Login Logging Endpoint
