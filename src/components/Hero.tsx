@@ -1,6 +1,5 @@
 
 import { Link } from 'react-router-dom';
-import toast from 'react-hot-toast';
 
 const Hero = () => {
   return (
@@ -14,7 +13,7 @@ const Hero = () => {
       </p>
       <div className="flex gap-4 justify-center">
         <Link to="/signup" className="bg-blue-600 text-white px-8 py-4 rounded-full font-bold hover:bg-blue-700 transition-colors">START ANALYSIS</Link>
-        <button onClick={() => toast('More information coming soon!')} className="bg-white/10 text-white px-8 py-4 rounded-full font-bold hover:bg-white/20 transition-colors">LEARN MORE</button>
+        <Link to="/about" className="bg-white/10 text-white px-8 py-4 rounded-full font-bold hover:bg-white/20 transition-colors">LEARN MORE</Link>
       </div>
     </section>
   );

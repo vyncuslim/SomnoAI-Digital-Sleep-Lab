@@ -11,6 +11,7 @@ import { writeAuditLog, auditLogger } from './src/services/auditLog';
 import { requireAdminFromRequest } from './src/lib/admin-auth';
 import { getUserFromRequest, requireUserFromRequest, isAdmin } from './src/lib/auth-utils';
 import { adminServices } from './src/services/adminServices';
+import { OFFICIAL_LINKS } from './src/constants/links';
 
 dotenv.config();
 
@@ -226,6 +227,45 @@ async function startServer() {
         metadata: {},
       });
       res.status(500).json({ error: 'Webhook handler failed' });
+    }
+  });
+
+  app.post('/api/contact', async (req, res) => {
+    const { subject, email, message } = req.body;
+    
+    try {
+      // Log the contact message to audit logs
+      await writeAuditLog({
+        source: 'web',
+        level: 'info',
+        category: 'communication',
+        action: 'contact_form_submission',
+        status: 'success',
+        actorUserId: null,
+        message: `Contact message from ${email}: ${subject}`,
+        metadata: { subject, email, message_length: message?.length }
+      });
+
+      // If Resend is configured, send an email to support
+      if (resend) {
+        await resend.emails.send({
+          from: 'SomnoAI Contact <onboarding@resend.dev>',
+          to: [OFFICIAL_LINKS.email],
+          subject: `Contact Form: ${subject}`,
+          html: `
+            <h1>New Contact Message</h1>
+            <p><strong>From:</strong> ${email}</p>
+            <p><strong>Subject:</strong> ${subject}</p>
+            <p><strong>Message:</strong></p>
+            <p>${message}</p>
+          `,
+        });
+      }
+
+      res.status(200).json({ success: true });
+    } catch (error: any) {
+      console.error('Failed to process contact message:', error);
+      res.status(500).json({ error: 'Failed to send message' });
     }
   });
 

@@ -62,9 +62,9 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang }) => {
           />
           <Card 
             title={isZh ? "WhatsApp AI 助手" : "WhatsApp AI Assistant"}
-            description={isZh ? "如需咨询，您不一定需要联系 +60 187807388，也可以通过 WhatsApp 联系 +1 (555) 933-5379。该账号为 AI 助手账号，可用于回答相关问题。" : "For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions."}
+            description={isZh ? "您可以通过我们的官方 WhatsApp 频道联系我们，获取 AI 助手的即时回复。" : "You can reach us via our official WhatsApp channel for instant responses from our AI assistant."}
             icon={<MessageSquare />}
-            onClick={() => window.open('https://wa.me/15559335379', '_blank')}
+            onClick={() => window.open('https://whatsapp.com/channel/0029Vb6lxT11SWt4YLKSVG39', '_blank')}
             className="cursor-pointer hover:border-indigo-500/50 transition-colors"
           />
         </div>

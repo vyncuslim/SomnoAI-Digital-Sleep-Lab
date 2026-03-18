@@ -1,5 +1,5 @@
 import React from 'react';
-import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 
 const Pricing: React.FC = () => {
   const plans = [
@@ -22,12 +22,12 @@ const Pricing: React.FC = () => {
             <ul className="space-y-2 text-sm mb-8">
               {plan.features.map(f => <li key={f}>✓ {f}</li>)}
             </ul>
-            <button 
-              onClick={() => toast.success(`Selected ${plan.name} plan!`)}
-              className="bg-white text-black px-4 py-2 rounded-full font-bold hover:bg-gray-200 transition-colors"
+            <Link 
+              to="/signup"
+              className="bg-white text-black px-4 py-2 rounded-full font-bold hover:bg-gray-200 transition-colors text-center"
             >
               SELECT {plan.name}
-            </button>
+            </Link>
           </div>
         ))}
       </div>

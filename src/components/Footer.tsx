@@ -1,5 +1,5 @@
 import React from 'react';
-import toast from 'react-hot-toast';
+import { Link } from 'react-router-dom';
 import { OFFICIAL_LINKS } from '../constants/links';
 import { Language } from '../types';
 
@@ -8,10 +8,38 @@ interface FooterProps {
 }
 
 const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
-  const handleLinkClick = (e: React.MouseEvent, text: string) => {
-    e.preventDefault();
-    toast.success(`Navigating to ${text}...`);
-  };
+  const langPrefix = lang === 'zh' ? '/cn' : '/en';
+
+  const navLinks = [
+    { name: 'PRODUCT', path: '/product' },
+    { name: 'PRICING', path: '/pricing' },
+    { name: 'HOW IT WORKS', path: '/how-it-works' },
+    { name: 'RESEARCH', path: '/research' },
+    { name: 'SCIENCE', path: '/science' },
+    { name: 'NEWS', path: '/news' },
+    { name: 'FAQ', path: '/faq' },
+    { name: 'STATUS', path: '/status' },
+    { name: 'SIGN IN', path: '/auth/login' }
+  ];
+
+  const legalLinks = [
+    { name: 'LEGAL HUB', path: '/legal' },
+    { name: 'COOKIES', path: '/legal/cookies' },
+    { name: 'AI DISCLAIMER', path: '/legal/ai-disclaimer' },
+    { name: 'ABUSE POLICY', path: '/legal/abuse-policy' },
+    { name: 'OPEN SOURCE', path: '/legal/open-source' },
+    { name: 'PRIVACY POLICY', path: '/legal/privacy-policy' },
+    { name: 'SECURITY', path: '/legal/security' },
+    { name: 'MEDICAL DISCLAIMER', path: '/legal/medical-disclaimer' },
+    { name: 'ACCOUNT BLOCKING', path: '/legal/account-blocking' }
+  ];
+
+  const policyLinks = [
+    { name: 'TERMS OF SERVICE', path: '/legal/terms-of-service' },
+    { name: 'ACCEPTABLE USE', path: '/legal/acceptable-use' },
+    { name: 'DATA PROCESSING', path: '/legal/data-processing' },
+    { name: 'POLICY FRAMEWORK', path: '/legal/policy-framework' }
+  ];
 
   return (
     <footer className="bg-[#01040a] text-gray-400 py-12 px-8 border-t border-white/10">
@@ -46,32 +74,44 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
           <div className="mt-4 text-xs">
             <p className="text-gray-500">
               {lang === 'zh' 
-                ? "如需咨询，您不一定需要联系 +60 187807388，也可以通过 WhatsApp 联系 +1 (555) 933-5379。该账号为 AI 助手账号，可用于回答相关问题。" 
-                : "For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions."}
+                ? "如有任何疑问，请通过官方支持渠道或电子邮件与我们联系。我们的 AI 助手全天候为您服务。" 
+                : "For any inquiries, please contact us via our official support channels or email. Our AI assistant is available 24/7 to help."}
             </p>
           </div>
         </div>
         <div>
           <h4 className="font-bold text-white mb-4">NAVIGATION</h4>
           <ul className="space-y-2 text-sm">
-            {['PRODUCT', 'PRICING', 'HOW IT WORKS', 'RESEARCH', 'SCIENCE', 'NEWS', 'FAQ', 'STATUS', 'SIGN IN'].map(link => (
-              <li key={link}><a href="#" onClick={(e) => handleLinkClick(e, link)} className="hover:text-white transition-colors">{link}</a></li>
+            {navLinks.map(link => (
+              <li key={link.name}>
+                <Link to={`${langPrefix}${link.path}`} className="hover:text-white transition-colors">
+                  {link.name}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>
         <div>
           <h4 className="font-bold text-white mb-4">COMPLIANCE & LEGAL</h4>
           <ul className="space-y-2 text-sm">
-            {['LEGAL HUB', 'COOKIES', 'AI DISCLAIMER', 'ABUSE POLICY', 'OPEN SOURCE', 'PRIVACY POLICY', 'SECURITY', 'MEDICAL DISCLAIMER', 'ACCOUNT BLOCKING'].map(link => (
-              <li key={link}><a href="#" onClick={(e) => handleLinkClick(e, link)} className="hover:text-white transition-colors">{link}</a></li>
+            {legalLinks.map(link => (
+              <li key={link.name}>
+                <Link to={`${langPrefix}${link.path}`} className="hover:text-white transition-colors">
+                  {link.name}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>
         <div>
           <h4 className="font-bold text-white mb-4">POLICY FRAMEWORK</h4>
           <ul className="space-y-2 text-sm">
-            {['TERMS OF SERVICE', 'ACCEPTABLE USE', 'DATA PROCESSING', 'POLICY FRAMEWORK'].map(link => (
-              <li key={link}><a href="#" onClick={(e) => handleLinkClick(e, link)} className="hover:text-white transition-colors">{link}</a></li>
+            {policyLinks.map(link => (
+              <li key={link.name}>
+                <Link to={`${langPrefix}${link.path}`} className="hover:text-white transition-colors">
+                  {link.name}
+                </Link>
+              </li>
             ))}
           </ul>
         </div>

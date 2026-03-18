@@ -88,10 +88,10 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                   <h4 className="text-white font-bold mb-2">{lang === 'zh' ? "AI 助手" : "AI Assistant"}</h4>
                   <p className="text-slate-400 text-sm mb-2">
                     {lang === 'zh' 
-                      ? "如需咨询，您不一定需要联系 +60 187807388，也可以通过 WhatsApp 联系 +1 (555) 933-5379。该账号为 AI 助手账号，可用于回答相关问题。" 
-                      : "For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions."}
+                      ? "您可以通过我们的官方 WhatsApp 频道联系我们，获取 AI 助手的即时回复。" 
+                      : "You can reach us via our official WhatsApp channel for instant responses from our AI assistant."}
                   </p>
-                  <a href="https://wa.me/15559335379" target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 transition-colors block text-sm font-bold">
+                  <a href={OFFICIAL_LINKS.whatsappChannel} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 transition-colors block text-sm font-bold">
                     {lang === 'zh' ? "通过 WhatsApp 联系" : "Contact via WhatsApp"}
                   </a>
                 </div>

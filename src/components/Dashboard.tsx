@@ -242,35 +242,38 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-purple-500/5 blur-[160px] rounded-full pointer-events-none" />
 
       <div className="relative z-10">
-        <div className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <div className="flex items-center gap-3 mb-4">
+        <div className="mb-12 flex flex-col lg:flex-row lg:items-end justify-between gap-8">
+          <div className="space-y-4">
+            <div className="flex flex-wrap items-center gap-3">
               <span className="micro-label opacity-40">SYSTEM_ACCESS: GRANTED</span>
-              <div className="h-px w-12 bg-white/10" />
+              <div className="hidden sm:block h-px w-12 bg-white/10" />
               <span className="micro-label text-indigo-400">NEURAL_LINK: ACTIVE</span>
             </div>
-            <h1 className="text-4xl md:text-6xl font-black italic uppercase tracking-tighter text-white mb-2 leading-none">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black italic uppercase tracking-tighter text-white leading-none">
               {t.title}
             </h1>
-            <p className="text-slate-400 font-medium text-lg border-l-2 border-indigo-500/20 pl-6 mt-4">
+            <p className="text-slate-400 font-medium text-base sm:text-lg border-l-2 border-indigo-500/20 pl-6 max-w-2xl">
               {lang === 'zh' ? '跟踪您的睡眠并获取 AI 驱动的见解。' : 'Track your sleep and get AI-powered insights.'}
             </p>
           </div>
           
-            <div className="flex flex-col items-end gap-2">
+          <div className="flex flex-col sm:flex-row items-start lg:items-end gap-6 lg:gap-8">
+            <div className="flex flex-col items-start lg:items-end gap-2">
               <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em]">{t.currentPlan}</span>
-              <div className={`px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+              <div className={`px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
                 plan === 'pro' ? 'bg-indigo-500/10 border-indigo-500/30 text-indigo-400' : 'bg-slate-800 border-white/5 text-slate-500'
               }`}>
                 {displayPlan}
               </div>
             </div>
-            <div className="flex flex-col items-end gap-4">
+            
             <div className="flex items-center gap-4">
-              <TelemetryStream />
-              <div className="text-right">
+              <div className="hidden sm:block">
+                <TelemetryStream />
+              </div>
+              <div className="text-left lg:text-right">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Daily Analysis</p>
-                <div className={`inline-flex items-center px-4 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border ${
+                <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
                   dailyCount >= DAILY_LIMIT 
                     ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' 
                     : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
@@ -319,7 +322,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-6 pl-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pl-4">
                     <div className="group/input">
                       <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
                         <Moon size={14} />
@@ -436,7 +439,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                     <div className="group/input">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 block">{t.pace}</label>
                       <input type="text" value={input.pace} onChange={(e) => setInput({...input, pace: e.target.value})} className="w-full bg-black/40 border border-white/5 rounded-2xl px-4 py-3 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono" />
@@ -512,7 +515,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
             </motion.div>
 
             {/* Quick Stats */}
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <HardwareWidget label="NEURAL_LOAD" value="42" unit="%" status="active" icon={<Brain size={20} />} />
               <HardwareWidget label="SYNC_STABILITY" value="98.2" unit="%" status="active" icon={<ShieldCheck size={20} />} />
             </div>
@@ -527,14 +530,14 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                   initial={{ opacity: 0, scale: 0.98, y: 20 }}
                   animate={{ opacity: 1, scale: 1, y: 0 }}
                   exit={{ opacity: 0, scale: 0.98, y: -20 }}
-                  className="hardware-panel p-10 bg-indigo-950/20 border-indigo-500/30 backdrop-blur-xl relative overflow-hidden"
+                  className="hardware-panel p-6 sm:p-10 bg-indigo-950/20 border-indigo-500/30 backdrop-blur-xl relative overflow-hidden"
                 >
                   <div className="absolute top-0 right-0 p-4 opacity-10">
                     <Cpu size={120} />
                   </div>
                   <div className="scanline" />
                   
-                  <div className="flex items-center justify-between mb-10">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 sm:gap-0 mb-10">
                     <div className="flex items-center gap-4">
                       <div className="p-3 bg-indigo-500/20 rounded-2xl border border-indigo-500/30">
                         <Sparkles className="text-indigo-400" size={24} />
@@ -548,7 +551,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                         </div>
                       </div>
                     </div>
-                    <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded text-[8px] font-black text-emerald-400 uppercase tracking-widest italic">
+                    <div className="self-start sm:self-auto px-3 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded text-[8px] font-black text-emerald-400 uppercase tracking-widest italic">
                       COMPLETED
                     </div>
                   </div>
@@ -664,10 +667,10 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                   {history.map((record) => (
                     <div 
                       key={record.id} 
-                      className="flex items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group cursor-default relative overflow-hidden"
+                      className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-black/40 border border-white/5 rounded-2xl hover:border-indigo-500/50 hover:bg-indigo-500/5 transition-all group cursor-default relative overflow-hidden gap-4 sm:gap-0"
                     >
                       <div className="absolute left-0 top-0 bottom-0 w-1 bg-indigo-500/0 group-hover:bg-indigo-500 transition-colors" />
-                      <div className="flex items-center gap-6 pl-2">
+                      <div className="flex flex-wrap sm:flex-nowrap items-center gap-4 sm:gap-6 pl-2">
                         <div className="flex flex-col">
                           <span className="text-[10px] font-black text-slate-500 uppercase tracking-widest group-hover:text-indigo-400 transition-colors">Date</span>
                           <span className="text-sm font-mono text-white">{new Date(record.date).toLocaleDateString()}</span>
