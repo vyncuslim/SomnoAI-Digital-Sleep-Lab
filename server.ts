@@ -37,9 +37,9 @@ async function startServer() {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
         "img-src": ["'self'", "data:", "https://*.supabase.co", "https://*.sleepsomno.com", "https://picsum.photos", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
-        "script-src": ["'self'", "'unsafe-inline'", "https://*.googletagmanager.com", "https://app.livechatai.com", "https://challenges.cloudflare.com", "https://unpkg.com"],
+        "script-src": ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", "https://*.googletagmanager.com", "https://app.livechatai.com", "https://challenges.cloudflare.com", "https://unpkg.com"],
         "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://app.livechatai.com"],
-        "connect-src": ["'self'", "https://*.supabase.co", "https://*.google-analytics.com", "https://*.googletagmanager.com", "wss://*.supabase.co", "https://app.livechatai.com", "https://api.elevenlabs.io", "wss://api.elevenlabs.io", "https://connectors.windsor.ai"]
+        "connect-src": ["'self'", "https://*.supabase.co", "https://*.google-analytics.com", "https://*.googletagmanager.com", "wss://*.supabase.co", "https://app.livechatai.com", "https://api.elevenlabs.io", "wss://api.elevenlabs.io", "https://connectors.windsor.ai", "https://unpkg.com"]
       },
     },
     crossOriginEmbedderPolicy: false,
@@ -239,7 +239,8 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-  app.post('/api/contact', async (req, res) => {
+  app.post(['/api/contact', '/api/contact/'], async (req, res) => {
+    console.log('Received contact request:', req.method, req.url);
     const { subject, email, message } = req.body;
     
     try {
