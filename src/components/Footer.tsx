@@ -44,11 +44,7 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
           </div>
           <p className="text-sm">Our mission is to decode human sleep through neural interfaces and advanced AI telemetry at the SomnoAI Digital Sleep Lab.</p>
           <div className="mt-4 text-xs">
-            <p>FACILITY LOCATION</p>
-            <p>SomnoAI Digital Sleep Lab Inc.</p>
-            <p>100 Innovation Drive, Suite 400</p>
-            <p>San Francisco, CA 94105</p>
-            <p className="mt-2 text-gray-500">
+            <p className="text-gray-500">
               {lang === 'zh' 
                 ? "如需咨询，您不一定需要联系 +60 187807388，也可以通过 WhatsApp 联系 +1 (555) 933-5379。该账号为 AI 助手账号，可用于回答相关问题。" 
                 : "For inquiries, you don't necessarily have to contact +60 187807388; you can also reach us via WhatsApp at +1 (555) 933-5379. This is an AI assistant account that can answer your questions."}

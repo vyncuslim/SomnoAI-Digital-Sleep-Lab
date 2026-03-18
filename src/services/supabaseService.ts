@@ -94,9 +94,17 @@ export const adminApi = {
   getFeedback: async () => supabase.from('feedback').select('*'),
   getAuditLogs: async () => supabase.from('audit_logs').select('*').order('created_at', { ascending: false }),
   getSecurityEvents: async () => supabase.from('security_events').select('*').order('created_at', { ascending: false }),
-  updateUserRole: async (id: string, role: string) => supabase.from('profiles').update({ role }).eq('id', id),
+  updateUserRole: async (adminId: string, id: string, role: string) => {
+    const result = await supabase.from('profiles').update({ role }).eq('id', id);
+    if (!result.error) await logAuditLog(adminId, 'UPDATE_USER_ROLE', { target_user_id: id, new_role: role });
+    return result;
+  },
   getSettings: async () => supabase.from('app_settings').select('*'),
-  updateSetting: async (key: string, value: string) => supabase.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() }),
+  updateSetting: async (adminId: string, key: string, value: string) => {
+    const result = await supabase.from('app_settings').upsert({ key, value, updated_at: new Date().toISOString() });
+    if (!result.error) await logAuditLog(adminId, 'UPDATE_SETTING', { key, value });
+    return result;
+  },
   getAuthUsers: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     const response = await fetch('/api/admin/auth-users', {
@@ -147,6 +155,7 @@ export const adminApi = {
 export const feedbackApi = {
   submitFeedback: async (type: string, content: string, email: string) => {
     const { error } = await supabase.from('feedback').insert([{ type, content, email }]);
+    if (!error) await logAuditLog(email, 'SUBMIT_FEEDBACK', { type, content });
     return { success: !error, error };
   }
 };
@@ -154,23 +163,47 @@ export const feedbackApi = {
 // Diary API
 export const diaryApi = {
   getEntries: async (userId: string) => supabase.from('diary_entries').select('*').eq('user_id', userId),
-  saveEntry: async (userId: string, entry: Record<string, any>) => supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]),
-  deleteEntry: async (id: string) => supabase.from('diary_entries').delete().eq('id', id)
+  saveEntry: async (userId: string, entry: Record<string, any>) => {
+    const result = await supabase.from('diary_entries').insert([{ ...entry, user_id: userId }]);
+    if (!result.error) await logAuditLog(userId, 'SAVE_DIARY_ENTRY', entry);
+    return result;
+  },
+  deleteEntry: async (userId: string, id: string) => {
+    const result = await supabase.from('diary_entries').delete().eq('id', id);
+    if (!result.error) await logAuditLog(userId, 'DELETE_DIARY_ENTRY', { entry_id: id });
+    return result;
+  }
 };
 
 // Auth API
 export const authApi = {
-  updatePassword: async (password: string) => supabase.auth.updateUser({ password })
+  updatePassword: async (userId: string, password: string) => {
+    const result = await supabase.auth.updateUser({ password });
+    if (!result.error) await logAuditLog(userId, 'UPDATE_PASSWORD', {});
+    return result;
+  }
 };
 
 // User API
 export const userApi = {
   getProfile: async (id: string) => supabase.from('profiles').select('*').eq('id', id).single(),
-  updateProfile: async (id: string, updates: Partial<UserProfile>) => supabase.from('profiles').update(updates).eq('id', id)
+  updateProfile: async (id: string, updates: Partial<UserProfile>) => {
+    const result = await supabase.from('profiles').update(updates).eq('id', id);
+    if (!result.error) await logAuditLog(id, 'UPDATE_PROFILE', updates);
+    return result;
+  }
 };
 
 // User Data API
 export const userDataApi = {
-  saveInitialSetup: async (userId: string, data: Partial<UserProfile>) => supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId),
-  completeSetup: async (userId: string, data: Partial<UserProfile>) => supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId)
+  saveInitialSetup: async (userId: string, data: Partial<UserProfile>) => {
+    const result = await supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId);
+    if (!result.error) await logAuditLog(userId, 'SAVE_INITIAL_SETUP', data);
+    return result;
+  },
+  completeSetup: async (userId: string, data: Partial<UserProfile>) => {
+    const result = await supabase.from('profiles').update({ ...data, setup_completed: true }).eq('id', userId);
+    if (!result.error) await logAuditLog(userId, 'COMPLETE_SETUP', data);
+    return result;
+  }
 };

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { GoogleGenAI } from "@google/genai";
 import { useAuth } from '../context/AuthContext';
-import { supabase } from '../services/supabaseService';
+import { supabase, logAuditLog } from '../services/supabaseService';
 import { SleepRecord } from '../types';
 import { Send, User, Bot, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff } from 'lucide-react';
 import { GlassCard } from './GlassCard';
@@ -105,7 +105,8 @@ export const PersonalChat: React.FC = () => {
 
   const saveMessage = async (role: 'user' | 'model', content: string) => {
     if (!user) return;
-    await supabase.from('chat_messages').insert([{ user_id: user.id, role, content }]);
+    const { error } = await supabase.from('chat_messages').insert([{ user_id: user.id, role, content }]);
+    if (!error) await logAuditLog(user.id, 'SAVE_CHAT_MESSAGE', { role, contentLength: content.length });
   };
 
   useEffect(() => {

@@ -8,7 +8,7 @@ import {
   Star, Unlock, Lock, Database, Table
 } from 'lucide-react';
 import { GlassCard } from './GlassCard';
-import { adminApi, supabase, logError } from '../services/supabaseService';
+import { adminApi, supabase, logError, logAuditLog } from '../services/supabaseService';
 import { securityService } from '../services/securityService';
 import { Language, getTranslation } from '../services/i18n';
 import { useAuth } from '../context/AuthContext';
@@ -252,7 +252,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
 
       const targetSettings = updates ? updates : settings;
       await Promise.all(Object.entries(targetSettings).map(([key, value]) => 
-        adminApi.updateSetting(key, String(value))
+        adminApi.updateSetting(profile!.id, key, String(value))
       ));
       
       if (!updates) alert('Settings saved successfully');
@@ -269,7 +269,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       const triggerBlock = async () => {
         try {
           const blockCode = Math.floor(Math.random() * 1e12).toString().padStart(12, '0');
-          await supabase.from('profiles').update({ is_blocked: true, block_code: blockCode }).eq('id', profile.id);
+          const { error } = await supabase.from('profiles').update({ is_blocked: true, block_code: blockCode }).eq('id', profile.id);
+          if (!error) await logAuditLog(profile.id, 'BLOCK_USER', { reason: 'UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT' });
           
           await securityService.handleSecurityViolation(
             profile.id, 
@@ -410,23 +411,24 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
       <div className="flex gap-8 mb-8 overflow-x-auto pb-4">
         {['overview', 'founder', 'logins', 'registry', 'signals', 'system', 'feedback', 'analytics', 'communications', 'reviews', 'errors', 'database']
           .filter(tab => {
-            if (tab === 'analytics' || tab === 'system' || tab === 'communications' || tab === 'founder') return isOwner || isSuperOwner;
+            if (tab === 'logins' || tab === 'system') return isSuperOwner;
+            if (tab === 'analytics' || tab === 'communications' || tab === 'founder') return isOwner || isSuperOwner;
             if (tab === 'database') return isSuperOwner;
             if (tab === 'signals') return isAdmin || isOwner || isSuperOwner;
             return true;
           })
           .map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab as AdminTab)}
-            className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
-              activeTab === tab ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'
-            }`}
-          >
-            {tab === 'founder' ? 'Founder' : t.tabs[tab as keyof typeof t.tabs]}
-          </button>
-        ))}
-      </div>
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab as AdminTab)}
+              className={`px-6 py-2 rounded-full text-sm font-bold uppercase tracking-wider transition-colors whitespace-nowrap ${
+                activeTab === tab ? 'bg-indigo-600 text-white' : 'bg-white/5 text-slate-400 hover:bg-white/10'
+              }`}
+            >
+              {tab === 'founder' ? 'Founder' : t.tabs[tab as keyof typeof t.tabs]}
+            </button>
+          ))}
+        </div>
 
       <div className="space-y-8">
         {activeTab === 'founder' && <FounderDashboard />}
@@ -523,39 +525,41 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                 </div>
               </GlassCard>
 
-              <GlassCard className="p-8">
-                <div className="flex items-center gap-4 mb-6">
-                  <Clock size={20} className="text-amber-400" />
-                  <h3 className="text-lg font-bold uppercase tracking-widest text-white">Recent Activity</h3>
-                </div>
-                <div className="space-y-4">
-                  {[...auditLogs, ...securityEvents]
-                    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-                    .slice(0, 3)
-                    .map((item, i) => {
-                      const isSecurity = 'type' in item;
-                      const title = isSecurity ? (item as SecurityEvent).type : (item as AuditLog).action;
-                      const details = typeof item.details === 'string' ? item.details : JSON.stringify(item.details);
-                      
-                      return (
-                        <div key={i} className="flex items-start gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
-                          <div className={`mt-1 w-1.5 h-1.5 rounded-full ${isSecurity ? 'bg-rose-500' : 'bg-slate-500'}`} />
-                          <div>
-                            <p className="text-sm font-bold text-white mb-1">
-                              {title || 'System Event'}
-                            </p>
-                            <p className="text-xs text-slate-400 mb-2 line-clamp-1">
-                              {details}
-                            </p>
-                            <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
-                              {new Date(item.created_at).toLocaleString()}
-                            </p>
+              {isSuperOwner && (
+                <GlassCard className="p-8">
+                  <div className="flex items-center gap-4 mb-6">
+                    <Clock size={20} className="text-amber-400" />
+                    <h3 className="text-lg font-bold uppercase tracking-widest text-white">Recent Activity</h3>
+                  </div>
+                  <div className="space-y-4">
+                    {[...auditLogs, ...securityEvents]
+                      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                      .slice(0, 3)
+                      .map((item, i) => {
+                        const isSecurity = 'type' in item;
+                        const title = isSecurity ? (item as SecurityEvent).type : (item as AuditLog).action;
+                        const details = typeof item.details === 'string' ? item.details : JSON.stringify(item.details);
+                        
+                        return (
+                          <div key={i} className="flex items-start gap-4 p-4 bg-white/5 rounded-xl border border-white/5">
+                            <div className={`mt-1 w-1.5 h-1.5 rounded-full ${isSecurity ? 'bg-rose-500' : 'bg-slate-500'}`} />
+                            <div>
+                              <p className="text-sm font-bold text-white mb-1">
+                                {title || 'System Event'}
+                              </p>
+                              <p className="text-xs text-slate-400 mb-2 line-clamp-1">
+                                {details}
+                              </p>
+                              <p className="text-[10px] font-mono text-slate-600 uppercase tracking-widest">
+                                {new Date(item.created_at).toLocaleString()}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                </div>
-              </GlassCard>
+                        );
+                      })}
+                  </div>
+                </GlassCard>
+              )}
             </div>
           </div>
         )}
