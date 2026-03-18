@@ -20,7 +20,7 @@ export const ChangelogView: React.FC = () => {
 
   useEffect(() => {
     const fetchChangelog = async () => {
-      const { data, error } = await supabase.from('changelog').select('*').order('date', { ascending: false });
+      const { data } = await supabase.from('changelog').select('*').order('date', { ascending: false });
       if (data) setEntries(data);
       setLoading(false);
     };
