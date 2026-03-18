@@ -39,8 +39,9 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
       });
       setSuccess(true);
       setFormData({ ...formData, message: '', email: '', privacyAgreed: false });
-    } catch (err) {
-      setError(lang === 'zh' ? '发送失败，请稍后重试' : 'Failed to send message. Please try again later.');
+    } catch (err: any) {
+      const errorMsg = err.response?.data?.details || err.message || 'Failed to send message. Please try again later.';
+      setError(lang === 'zh' ? `发送失败: ${errorMsg}` : `Failed to send message: ${errorMsg}`);
     } finally {
       setLoading(false);
     }

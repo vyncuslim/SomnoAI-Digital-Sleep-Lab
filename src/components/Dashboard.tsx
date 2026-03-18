@@ -7,6 +7,8 @@ import { GridBackground, TelemetryStream, HardwareWidget } from './ui/Components
 import { useLanguage } from '../context/useLanguage';
 import { supabase } from '../services/supabaseService';
 
+import { TimePicker } from './ui/TimePicker';
+
 interface SleepInput {
   duration: number;
   bedtime: string;
@@ -323,30 +325,18 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pl-4">
-                    <div className="group/input">
-                      <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
-                        <Moon size={14} />
-                        {t.bedtime}
-                      </label>
-                      <input 
-                        type="time" 
-                        value={input.bedtime}
-                        onChange={(e) => setInput({ ...input, bedtime: e.target.value })}
-                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono hover:border-white/10"
-                      />
-                    </div>
-                    <div className="group/input">
-                      <label className="flex items-center gap-2 text-[10px] font-black text-slate-500 uppercase tracking-widest mb-3 group-focus-within/input:text-indigo-400 transition-colors">
-                        <Sun size={14} />
-                        {t.wakeTime}
-                      </label>
-                      <input 
-                        type="time" 
-                        value={input.wakeTime}
-                        onChange={(e) => setInput({ ...input, wakeTime: e.target.value })}
-                        className="w-full bg-black/40 border border-white/5 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-indigo-500/50 transition-all font-mono hover:border-white/10"
-                      />
-                    </div>
+                    <TimePicker 
+                      label={t.bedtime}
+                      value={input.bedtime}
+                      onChange={(val) => setInput({ ...input, bedtime: val })}
+                      icon={<Moon size={14} />}
+                    />
+                    <TimePicker 
+                      label={t.wakeTime}
+                      value={input.wakeTime}
+                      onChange={(val) => setInput({ ...input, wakeTime: val })}
+                      icon={<Sun size={14} />}
+                    />
                   </div>
                 </div>
 

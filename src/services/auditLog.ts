@@ -9,6 +9,7 @@ type AuditCategory =
   | 'admin'
   | 'security'
   | 'database'
+  | 'communication'
   | 'user_action';
 type AuditStatus = 'success' | 'failed' | 'denied' | 'pending';
 

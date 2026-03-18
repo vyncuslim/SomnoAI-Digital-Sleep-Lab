@@ -255,26 +255,50 @@ async function startServer() {
         metadata: { subject, email, message_length: message?.length }
       });
 
+      // Also record in communications table if supabase is available
+      if (supabase) {
+        try {
+          await supabase.from('communications').insert([{
+            type: 'contact_form',
+            subject,
+            sender_email: email,
+            message,
+            status: 'new'
+          }]);
+        } catch (dbError) {
+          console.error('Failed to record in communications table:', dbError);
+        }
+      }
+
       // If Resend is configured, send an email to support
       if (resend) {
-        await resend.emails.send({
-          from: 'SomnoAI Contact <onboarding@resend.dev>',
-          to: [OFFICIAL_LINKS.email],
-          subject: `Contact Form: ${subject}`,
-          html: `
-            <h1>New Contact Message</h1>
-            <p><strong>From:</strong> ${email}</p>
-            <p><strong>Subject:</strong> ${subject}</p>
-            <p><strong>Message:</strong></p>
-            <p>${message}</p>
-          `,
-        });
+        try {
+          await resend.emails.send({
+            from: 'SomnoAI Contact <onboarding@resend.dev>',
+            to: [OFFICIAL_LINKS.email],
+            subject: `Contact Form: ${subject}`,
+            html: `
+              <h1>New Contact Message</h1>
+              <p><strong>From:</strong> ${email}</p>
+              <p><strong>Subject:</strong> ${subject}</p>
+              <p><strong>Message:</strong></p>
+              <p>${message}</p>
+            `,
+          });
+        } catch (emailError) {
+          console.error('Failed to send contact email via Resend:', emailError);
+          // Don't fail the request if only email notification fails
+        }
       }
 
       res.status(200).json({ success: true });
     } catch (error: any) {
       console.error('Failed to process contact message:', error);
-      res.status(500).json({ error: 'Failed to send message' });
+      res.status(500).json({ 
+        error: 'Failed to send message',
+        details: error.message,
+        stack: error.stack
+      });
     }
   });
 
