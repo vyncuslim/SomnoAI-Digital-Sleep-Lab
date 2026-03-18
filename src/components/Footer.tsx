@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Logo } from './Logo';
 import { OFFICIAL_LINKS } from '../constants/links';
 import { Language } from '../types';
 
@@ -45,30 +46,8 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
     <footer className="bg-[#01040a] text-gray-400 py-12 px-8 border-t border-white/10">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
         <div>
-          <div className="flex items-center gap-2 mb-4">
-            <svg viewBox="0 0 100 100" className="w-8 h-8" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <defs>
-                <linearGradient id="ring1" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#a855f7" />
-                </linearGradient>
-                <linearGradient id="ring2" x1="100%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#ec4899" />
-                  <stop offset="100%" stopColor="#f59e0b" />
-                </linearGradient>
-                <linearGradient id="planet" x1="0%" y1="0%" x2="100%" y2="100%">
-                  <stop offset="0%" stopColor="#f43f5e" />
-                  <stop offset="100%" stopColor="#3b82f6" />
-                </linearGradient>
-              </defs>
-              <circle cx="50" cy="50" r="15" fill="url(#planet)" />
-              <path d="M 20 50 A 30 15 0 0 0 80 50" stroke="url(#ring1)" strokeWidth="6" strokeLinecap="round" />
-              <path d="M 80 50 A 30 15 0 0 0 20 50" stroke="url(#ring2)" strokeWidth="6" strokeLinecap="round" />
-              <circle cx="30" cy="30" r="2" fill="#fff" opacity="0.5" />
-              <circle cx="70" cy="70" r="1.5" fill="#fff" opacity="0.3" />
-              <circle cx="80" cy="30" r="1" fill="#fff" opacity="0.6" />
-            </svg>
-            <div className="font-bold text-lg text-white">SomnoAI Digital Sleep Lab</div>
+          <div className="mb-4">
+            <Logo showText={true} className="scale-75 origin-left" />
           </div>
           <p className="text-sm">Our mission is to decode human sleep through neural interfaces and advanced AI telemetry at the SomnoAI Digital Sleep Lab.</p>
           <div className="mt-4 text-xs">
