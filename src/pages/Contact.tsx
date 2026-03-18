@@ -4,6 +4,7 @@ import { Section, Card, InlineCTA } from '../components/ui/Components';
 import { Mail, MessageSquare, Globe, Check, AlertCircle, CheckCircle } from 'lucide-react';
 import { Language } from '../services/i18n';
 import { notificationService } from '../services/notificationService';
+import { OFFICIAL_LINKS } from '../constants/links';
 
 interface ContactProps {
   lang: Language;
@@ -49,7 +50,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
     <MarketingPageTemplate
       title={lang === 'zh' ? "联系我们" : "Contact Us"}
       subtitle={lang === 'zh' ? "对平台、研究或合作机会有疑问？我们很乐意听取您的意见。" : "Have a question about the platform, research, or collaboration opportunities? We'd love to hear from you."}
-      ctaPrimary={{ text: lang === 'zh' ? "发送邮件" : "Email Support", link: "mailto:support@sleepsomno.com" }}
+      ctaPrimary={{ text: lang === 'zh' ? "发送邮件" : "Email Support", link: `mailto:${OFFICIAL_LINKS.email}` }}
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-16">
         {/* Left Column: Contact Methods */}
@@ -63,8 +64,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                 <div>
                   <div className="hardware-label mb-2">INQUIRIES</div>
                   <h4 className="text-white font-bold mb-2">{lang === 'zh' ? "一般咨询" : "General Inquiries"}</h4>
-                  <a href="mailto:admin@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">admin@sleepsomno.com</a>
-                  <a href="mailto:contact@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">contact@sleepsomno.com</a>
+                  <a href={`mailto:${OFFICIAL_LINKS.email}`} className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">{OFFICIAL_LINKS.email}</a>
                 </div>
               </div>
               
@@ -75,7 +75,7 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                 <div>
                   <div className="hardware-label mb-2">SUPPORT</div>
                   <h4 className="text-white font-bold mb-2">{lang === 'zh' ? "用户支持" : "User Support"}</h4>
-                  <a href="mailto:support@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">support@sleepsomno.com</a>
+                  <a href={OFFICIAL_LINKS.support} className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">{lang === 'zh' ? "访问支持中心" : "Visit Support Center"}</a>
                 </div>
               </div>
 

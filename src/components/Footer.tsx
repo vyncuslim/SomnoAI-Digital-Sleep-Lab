@@ -1,6 +1,6 @@
 import React from 'react';
 import toast from 'react-hot-toast';
-
+import { OFFICIAL_LINKS } from '../constants/links';
 import { Language } from '../types';
 
 interface FooterProps {
@@ -79,8 +79,10 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
       <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-xs gap-4">
         <div className="flex items-center gap-4">
           <span className="text-green-500">● ALL SYSTEMS OPERATIONAL</span>
-          <a href="#" onClick={(e) => handleLinkClick(e, 'DISCORD')} className="hover:text-white transition-colors">DISCORD</a>
-          <a href="#" onClick={(e) => handleLinkClick(e, 'LINKEDIN')} className="hover:text-white transition-colors">LINKEDIN</a>
+          <a href={OFFICIAL_LINKS.discord} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">DISCORD</a>
+          <a href={OFFICIAL_LINKS.linkedinCompany} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LINKEDIN</a>
+          <a href={OFFICIAL_LINKS.github} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GITHUB</a>
+          <a href={OFFICIAL_LINKS.supportAssistant} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">AI SUPPORT</a>
         </div>
         <p>© 2026 SOMNOAI DIGITAL SLEEP LAB. ALL RIGHTS RESERVED.</p>
       </div>
