@@ -149,7 +149,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         - Energy Score (1-10): ${input.energyScore}
         - Screen time before bed: ${input.screenTime ? 'Yes' : 'No'}
         - Caffeine intake today: ${input.caffeine ? 'Yes' : 'No'}
-        - Pace: ${input.pace}
+        - Step: ${input.pace}
         - Max Heart Rate: ${input.maxHeartRate} bpm
         - Min Heart Rate: ${input.minHeartRate} bpm
         ${selectedFile ? `- Note: User has uploaded a sleep report file (${selectedFile.name}). Please assume the analysis should consider potential external data if provided in text form.` : ''}
@@ -213,7 +213,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     energy: lang === 'zh' ? '今日精力评分 (1-10)' : 'Energy Score (1-10)',
     screen: lang === 'zh' ? '睡前是否看手机' : 'Screen Time Before Bed',
     caffeine: lang === 'zh' ? '今日是否摄入咖啡因' : 'Caffeine Intake Today',
-    pace: lang === 'zh' ? '步速 (min/km)' : 'Pace (min/km)',
+    pace: lang === 'zh' ? '步数 (step)' : 'Step',
     maxHR: lang === 'zh' ? '最高心率 (bpm)' : 'Max Heart Rate (bpm)',
     minHR: lang === 'zh' ? '最低心率 (bpm)' : 'Min Heart Rate (bpm)',
     yes: lang === 'zh' ? '是' : 'Yes',

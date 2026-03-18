@@ -352,7 +352,15 @@ const AppContent = () => {
 
   return (
     <ErrorBoundary lang={lang}>
-      <RootLayout>
+      <RootLayout 
+        lang={lang} 
+        activeView={activeView} 
+        onNavigate={handleNavigate} 
+        onLanguageChange={handleLanguageChange}
+        isAuthenticated={!!user}
+        isAdmin={isAdmin}
+        onLogout={handleLogout}
+      >
         <SchemaMarkup />
         
         {!isSupabaseConfigured && (
