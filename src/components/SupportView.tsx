@@ -4,6 +4,7 @@ import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA } from '../components/ui/Components';
 import { CreditCard, RefreshCw, Lightbulb, Shield, Mail, Users, MessageSquare } from 'lucide-react';
 import { Language } from '../services/i18n';
+import { OFFICIAL_LINKS } from '../constants/links';
 
 interface SupportViewProps {
   lang: Language;
@@ -50,21 +51,23 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang }) => {
             title={isZh ? "电子邮件支持" : "Email Support"}
             description={isZh ? "向我们的支持团队发送消息，我们将在 24 小时内回复。" : "Send a message to our support team and we'll respond within 24 hours."}
             icon={<Mail />}
-            onClick={() => window.location.href = 'mailto:support@sleepsomno.com'}
+            onClick={() => window.location.href = `mailto:${OFFICIAL_LINKS.email}`}
             className="cursor-pointer hover:border-indigo-500/50 transition-colors"
           />
           <Card 
             title={isZh ? "社区论坛" : "Community Forum"}
             description={isZh ? "加入我们的 Discord 社区，与其他用户讨论和分享想法。" : "Join our Discord community to discuss and share ideas with other users."}
             icon={<Users />}
-            onClick={() => window.open('https://discord.com/invite/9EXJtRmju', '_blank')}
+            onClick={() => window.open(OFFICIAL_LINKS.discord, '_blank')}
             className="cursor-pointer hover:border-indigo-500/50 transition-colors"
           />
           <Card 
             title={isZh ? "WhatsApp AI 助手" : "WhatsApp AI Assistant"}
-            description={isZh ? "您可以通过我们的官方 WhatsApp 频道联系我们，获取 AI 助手的即时回复。" : "You can reach us via our official WhatsApp channel for instant responses from our AI assistant."}
+            description={isZh 
+              ? `您可以通过我们的官方 WhatsApp 频道联系我们。手机号: ${OFFICIAL_LINKS.whatsappPhone}` 
+              : `You can reach us via our official WhatsApp channel. Phone: ${OFFICIAL_LINKS.whatsappPhone}`}
             icon={<MessageSquare />}
-            onClick={() => window.open('https://whatsapp.com/channel/0029Vb6lxT11SWt4YLKSVG39', '_blank')}
+            onClick={() => window.open(OFFICIAL_LINKS.whatsappChannel, '_blank')}
             className="cursor-pointer hover:border-indigo-500/50 transition-colors"
           />
         </div>

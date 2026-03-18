@@ -91,6 +91,9 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
                       ? "您可以通过我们的官方 WhatsApp 频道联系我们，获取 AI 助手的即时回复。" 
                       : "You can reach us via our official WhatsApp channel for instant responses from our AI assistant."}
                   </p>
+                  <div className="text-slate-400 text-xs mb-3 font-mono">
+                    WhatsApp: {OFFICIAL_LINKS.whatsappPhone}
+                  </div>
                   <a href={OFFICIAL_LINKS.whatsappChannel} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 transition-colors block text-sm font-bold">
                     {lang === 'zh' ? "通过 WhatsApp 联系" : "Contact via WhatsApp"}
                   </a>

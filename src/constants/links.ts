@@ -10,8 +10,9 @@ export const OFFICIAL_LINKS = {
   youtube: 'https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og',
   discord: 'https://discord.gg/McrBeJXG8',
   telegram: 'https://t.me/somnoaidigitalsleeplab',
-  whatsappChannel: 'https://whatsapp.com/channel/0029Vb6lxT11SWt4YLKSVG39',
+  whatsappChannel: 'https://www.whatsapp.com/channel/0029Vb6lxT11SWt4YLKSVG39',
+  whatsappPhone: '+1 (555) 945-0876',
   supportAssistant: 'https://chatgpt.com/g/g-69b33ead0df8819184c5c5b22fd5c339-somnoai-digital-sleep-lab-support-assistant',
   email: 'support@sleepsomno.com',
-  support: 'https://app.livechatai.com/somnoai-support'
+  support: 'https://app.livechatai.com/ai-bot/cmm94ogp70001ju044o63bgyk'
 };
