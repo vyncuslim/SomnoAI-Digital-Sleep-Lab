@@ -72,7 +72,7 @@ export const SupportView: React.FC<SupportViewProps> = ({ lang }) => {
           >
             <div className="mt-4 pt-4 border-t border-white/5">
               <span className="text-indigo-400 text-sm font-bold">
-                {isZh ? `点击打开 WhatsApp 的 ${OFFICIAL_LINKS.whatsappPhone}` : `Contact via WhatsApp ${OFFICIAL_LINKS.whatsappPhone}`}
+                {isZh ? `点击打开 WhatsApp 的 ${OFFICIAL_LINKS.whatsappChannel}` : `Contact via WhatsApp ${OFFICIAL_LINKS.whatsappChannel}`}
               </span>
             </div>
           </Card>
