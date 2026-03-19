@@ -114,7 +114,7 @@ export const HowItWorks: React.FC<HowItWorksProps> = ({ lang }) => {
               <div className="space-y-3">
                 <InlineCTA text={lang === 'zh' ? "隐私政策" : "Privacy Policy"} link="/privacy" />
                 <br />
-                <InlineCTA text={lang === 'zh' ? "数据处理" : "Data Processing"} link="/data-processing" />
+                <InlineCTA text={lang === 'zh' ? "数据处理" : "Data Handling"} link="/legal/data-handling" />
               </div>
             </div>
           </div>

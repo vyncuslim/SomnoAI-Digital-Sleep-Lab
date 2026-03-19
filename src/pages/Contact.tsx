@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA } from '../components/ui/Components';
-import { Mail, MessageSquare, Globe, Check, AlertCircle, CheckCircle } from 'lucide-react';
+import { Mail, MessageSquare, Check, AlertCircle, CheckCircle } from 'lucide-react';
 import { Language } from '../services/i18n';
 import { notificationService } from '../services/notificationService';
 import { OFFICIAL_LINKS } from '../constants/links';
@@ -100,13 +100,27 @@ export const Contact: React.FC<ContactProps> = ({ lang }) => {
               
               <div className="flex items-start gap-6 p-6 hardware-panel group hover:border-indigo-500/30 transition-colors">
                 <div className="p-3 bg-white/5 rounded-xl text-indigo-400 group-hover:bg-indigo-500/10 transition-colors">
-                  <Globe className="w-6 h-6" />
+                  <Mail className="w-6 h-6" />
                 </div>
-                <div>
-                  <div className="hardware-label mb-2">LEGAL</div>
-                  <h4 className="text-white font-bold mb-2">{lang === 'zh' ? "合作与法律" : "Partnerships & Legal"}</h4>
-                  <a href="mailto:partners@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">partners@sleepsomno.com</a>
-                  <a href="mailto:legal@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">legal@sleepsomno.com</a>
+                <div className="w-full">
+                  <div className="hardware-label mb-2">DIRECTORY</div>
+                  <h4 className="text-white font-bold mb-4">{lang === 'zh' ? "部门邮箱" : "Department Emails"}</h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <a href="mailto:admin@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">admin@sleepsomno.com</a>
+                    <a href="mailto:contact@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">contact@sleepsomno.com</a>
+                    <a href="mailto:founder@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">founder@sleepsomno.com</a>
+                    <a href="mailto:legal@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">legal@sleepsomno.com</a>
+                    <a href="mailto:media@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">media@sleepsomno.com</a>
+                    <a href="mailto:office@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">office@sleepsomno.com</a>
+                    <a href="mailto:partnership@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">partnership@sleepsomno.com</a>
+                    <a href="mailto:press@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">press@sleepsomno.com</a>
+                    <a href="mailto:product@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">product@sleepsomno.com</a>
+                    <a href="mailto:security@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">security@sleepsomno.com</a>
+                    <a href="mailto:service@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">service@sleepsomno.com</a>
+                    <a href="mailto:support@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">support@sleepsomno.com</a>
+                    <a href="mailto:team@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">team@sleepsomno.com</a>
+                    <a href="mailto:tech@sleepsomno.com" className="text-slate-400 hover:text-indigo-400 transition-colors block text-sm">tech@sleepsomno.com</a>
+                  </div>
                 </div>
               </div>
             </div>

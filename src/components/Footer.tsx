@@ -40,8 +40,9 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
   const policyLinks = [
     { name: 'TERMS OF SERVICE', path: '/legal/terms-of-service' },
     { name: 'ACCEPTABLE USE', path: '/legal/acceptable-use' },
-    { name: 'DATA PROCESSING', path: '/legal/data-processing' },
-    { name: 'POLICY FRAMEWORK', path: '/legal/policy-framework' }
+    { name: 'DATA HANDLING', path: '/legal/data-handling' },
+    { name: 'POLICY FRAMEWORK', path: '/legal/policy-framework' },
+    { name: 'LEGAL CONTACT', path: '/legal/contact' }
   ];
 
   return (

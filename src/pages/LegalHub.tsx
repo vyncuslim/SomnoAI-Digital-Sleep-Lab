@@ -20,7 +20,7 @@ export const LegalHub: React.FC<LegalHubProps> = ({ lang }) => {
     { title: isZh ? "可接受使用政策" : "Acceptable Use Policy", description: isZh ? "在我们平台上适当行为的指南。" : "Guidelines for appropriate behavior on our platform.", link: "/legal/acceptable-use", icon: <Scale /> },
     { title: isZh ? "AI 免责声明" : "AI Disclaimer", description: isZh ? "关于我们计算模型局限性的重要信息。" : "Important information regarding the limitations of our computational models.", link: "/legal/ai-disclaimer", icon: <BrainCircuit /> },
     { title: isZh ? "医疗免责声明" : "Medical Disclaimer", description: isZh ? "澄清我们的平台不是医疗设备。" : "Clarification that our platform is not a medical device.", link: "/legal/medical-disclaimer", icon: <AlertTriangle /> },
-    { title: isZh ? "数据处理协议" : "Data Processing Agreement", description: isZh ? "关于处理个人数据的条款。" : "Terms regarding the processing of personal data.", link: "/legal/data-processing", icon: <Database /> },
+    { title: isZh ? "数据处理说明" : "Data Handling Notice", description: isZh ? "关于我们如何处理用户数据的说明。" : "Summary of how we handle user data in practical terms.", link: "/legal/data-handling", icon: <Database /> },
     { title: isZh ? "滥用政策" : "Abuse Policy", description: isZh ? "我们如何处理滥用或违反政策的报告。" : "How we handle reports of abuse or policy violations.", link: "/legal/abuse-policy", icon: <ShieldAlert /> },
     { title: isZh ? "账户封禁政策" : "Account Blocking Policy", description: isZh ? "账户可能被暂停或终止的条件。" : "Conditions under which accounts may be suspended or terminated.", link: "/legal/account-blocking", icon: <Ban /> },
     { title: isZh ? "政策框架" : "Policy Framework", description: isZh ? "我们在治理和合规方面的总体方法。" : "Our overarching approach to governance and compliance.", link: "/legal/policy-framework", icon: <BookOpen /> },
@@ -52,7 +52,7 @@ export const LegalHub: React.FC<LegalHubProps> = ({ lang }) => {
 
       <div className="text-center pt-12 border-t border-white/5">
         <div className="flex items-center justify-center gap-6">
-          <InlineCTA text={isZh ? "联系法务" : "Contact Legal"} link="/contact" />
+          <InlineCTA text={isZh ? "联系法务" : "Contact Legal"} link="/legal/contact" />
           <span className="text-white/20">|</span>
           <InlineCTA text={isZh ? "支持" : "Support"} link="/support" />
         </div>

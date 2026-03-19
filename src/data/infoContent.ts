@@ -80,10 +80,19 @@ This platform is not a clinical research facility and does not conduct medical t
       content: `The following official communication channels are active for the SomnoAI Digital Sleep Lab ecosystem:
 
 **Support Node:** support@sleepsomno.com (15GB)
-**Partnership Node:** partners@sleepsomno.com (15GB)
+**Partnership Node:** partnership@sleepsomno.com (15GB)
 **Legal Node:** legal@sleepsomno.com (15GB)
 **Contact Node:** contact@sleepsomno.com (15GB)
 **Admin Node:** admin@sleepsomno.com (Catch-all, 15GB)
+**Founder Node:** founder@sleepsomno.com (15GB)
+**Media Node:** media@sleepsomno.com (15GB)
+**Office Node:** office@sleepsomno.com (15GB)
+**Press Node:** press@sleepsomno.com (15GB)
+**Product Node:** product@sleepsomno.com (15GB)
+**Security Node:** security@sleepsomno.com (15GB)
+**Service Node:** service@sleepsomno.com (15GB)
+**Team Node:** team@sleepsomno.com (15GB)
+**Tech Node:** tech@sleepsomno.com (15GB)
 
 We aim to respond to inquiries within 24-48 business hours.
 Please use the appropriate node for your specific inquiry to ensure faster processing.
@@ -420,10 +429,19 @@ SomnoAI Digital Sleep Lab 作为一个信息和研究导向的平台运营，不
       content: `SomnoAI Digital Sleep Lab 生态系统目前激活了以下官方通讯渠道：
 
 **支持节点：** support@sleepsomno.com (15GB)
-**合作伙伴节点：** partners@sleepsomno.com (15GB)
+**合作伙伴节点：** partnership@sleepsomno.com (15GB)
 **法律节点：** legal@sleepsomno.com (15GB)
 **联系节点：** contact@sleepsomno.com (15GB)
 **管理节点：** admin@sleepsomno.com (全接收, 15GB)
+**创始人节点：** founder@sleepsomno.com (15GB)
+**媒体节点：** media@sleepsomno.com (15GB)
+**办公节点：** office@sleepsomno.com (15GB)
+**新闻节点：** press@sleepsomno.com (15GB)
+**产品节点：** product@sleepsomno.com (15GB)
+**安全节点：** security@sleepsomno.com (15GB)
+**服务节点：** service@sleepsomno.com (15GB)
+**团队节点：** team@sleepsomno.com (15GB)
+**技术节点：** tech@sleepsomno.com (15GB)
 
 我们的目标是在 24-48 个工作小时内回复查询。
 请根据您的具体查询使用相应的节点，以确保更快的处理速度。
