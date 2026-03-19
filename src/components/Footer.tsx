@@ -20,6 +20,8 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
     { name: 'NEWS', path: '/news' },
     { name: 'FAQ', path: '/faq' },
     { name: 'STATUS', path: '/status' },
+    { name: 'CONTACT', path: '/contact' },
+    { name: 'SUPPORT', path: '/support' },
     { name: 'SIGN IN', path: '/auth/login' }
   ];
 

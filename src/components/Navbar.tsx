@@ -4,7 +4,7 @@ import {
   Menu, X, LogIn, LogOut, User, Settings as SettingsIcon, Shield,
   FlaskConical, Newspaper, HelpCircle, Info, LayoutDashboard, 
   TrendingUp, Sparkles, ImageIcon, Mic, BookOpen, PenTool,
-  Microscope, Binary, Search, MessageSquare
+  Microscope, Binary, Search, MessageSquare, Mail, LifeBuoy
 } from 'lucide-react';
 
 import { Language, getTranslation } from '../services/i18n';
@@ -54,6 +54,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     { label: t.landing?.nav?.news || 'News', view: 'news', icon: Newspaper },
     { label: t.landing?.nav?.faq || 'FAQ', view: 'faq', icon: HelpCircle },
     { label: t.landing?.nav?.project || 'Project', view: 'about', icon: Info },
+    { label: isZh ? '联系' : 'Contact', view: 'contact', icon: Mail },
+    { label: isZh ? '支持' : 'Support', view: 'support', icon: LifeBuoy },
   ];
 
   const authLinks = [
@@ -67,6 +69,8 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'faq', icon: HelpCircle, label: isZh ? '帮助' : 'Help' },
     { id: 'blog', icon: PenTool, label: isZh ? '博文' : 'Blog' },
     { id: 'diary', icon: BookOpen, label: isZh ? '日志' : 'Log' },
+    { id: 'contact', icon: Mail, label: isZh ? '联系' : 'Contact' },
+    { id: 'support', icon: LifeBuoy, label: isZh ? '支持' : 'Support' },
   ];
 
   const links = isAuthenticated ? authLinks : guestLinks;
