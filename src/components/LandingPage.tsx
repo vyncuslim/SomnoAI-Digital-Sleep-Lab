@@ -92,10 +92,10 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           </h1>
         </div>
       }
-      subtitle={t.heroSubtitle || "Connect your wearable → Get AI recovery intelligence. Upload your sleep data, let our AI analyze it, and wake up to actionable recovery protocols."}
-      ctaPrimary={{ text: t.ctaPrimary || "Start Analysis", link: "/auth/signup" }}
-      ctaSecondary={{ text: lang === 'zh' ? "立即登录" : "Sign In", link: "/auth/login" }}
-      ctaTertiary={{ text: t.ctaSecondary || "Learn More", link: "/about" }}
+      subtitle={lang === 'zh' ? "使用您现有的可穿戴设备数据获取 AI 驱动的睡眠洞察——无硬件锁定，隐私优先，从第一天起即可执行。" : "Use your existing wearable data to get AI-powered sleep insights — no hardware lock-in, privacy-first, actionable from day one."}
+      ctaPrimary={{ text: lang === 'zh' ? "上传睡眠数据" : "Upload Sleep Data", link: "/auth/signup" }}
+      ctaSecondary={{ text: lang === 'zh' ? "探索工作原理" : "Explore How It Works", link: "/how-it-works" }}
+      ctaTertiary={{ text: lang === 'zh' ? "加入候补名单" : "Join Waitlist", link: "/contact" }}
     >
       {/* Stats Section */}
       <Section moduleID="STATS_01">
@@ -120,19 +120,50 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
         </div>
       </Section>
 
+      {/* Trust Assets & Brand Clarification */}
+      <Section moduleID="TRUST_01" className="border-y border-white/5 bg-indigo-900/5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-12 text-center md:text-left">
+          <div>
+            <div className="text-indigo-400 mb-4 flex justify-center md:justify-start"><ShieldCheck size={32} /></div>
+            <h3 className="text-xl font-bold text-white mb-2">{lang === 'zh' ? '数字睡眠实验室，而非单纯的追踪器' : 'A Digital Sleep Lab, Not Just a Tracker'}</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              {lang === 'zh' ? '市场上有很多名为 Somno/Sonno 的硬件。我们不生产硬件，我们是独立于硬件的 AI 分析大脑，为您解读数据背后的真相。' : 'There are many hardware trackers named Somno/Sonno. We don\'t make hardware. We are the hardware-agnostic AI brain that uncovers the truth behind your data.'}
+            </p>
+          </div>
+          <div>
+            <div className="text-indigo-400 mb-4 flex justify-center md:justify-start"><Database size={32} /></div>
+            <h3 className="text-xl font-bold text-white mb-2">{lang === 'zh' ? '支持多源数据接入' : 'Supported Data Sources'}</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              {lang === 'zh' ? '无缝集成 Apple Health, Google Fit, Oura, Garmin, Fitbit 等主流健康平台。您无需被单一品牌绑定。' : 'Seamlessly integrates with Apple Health, Google Fit, Oura, Garmin, Fitbit, and more. You are never locked into a single brand.'}
+            </p>
+          </div>
+          <div>
+            <div className="text-indigo-400 mb-4 flex justify-center md:justify-start"><Users size={32} /></div>
+            <h3 className="text-xl font-bold text-white mb-2">{lang === 'zh' ? '由研究人员与工程师构建' : 'Built by Researchers & Engineers'}</h3>
+            <p className="text-sm text-slate-400 leading-relaxed">
+              {lang === 'zh' ? '我们的团队致力于将临床级别的睡眠洞察带给大众。查看我们的公开路线图或直接与创始人团队联系。' : 'Our team is dedicated to bringing clinical-grade sleep insights to everyone. View our public roadmap or contact the founding team directly.'}
+            </p>
+            <div className="mt-4 flex gap-4 justify-center md:justify-start">
+              <button onClick={() => onNavigate('/about')} className="text-xs font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider">{lang === 'zh' ? '关于我们 →' : 'About Us →'}</button>
+              <button onClick={() => onNavigate('/contact')} className="text-xs font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider">{lang === 'zh' ? '联系团队 →' : 'Contact Team →'}</button>
+            </div>
+          </div>
+        </div>
+      </Section>
+
       {/* Core Capabilities */}
       <Section 
         moduleID="CORE_01"
-        title={lang === 'zh' ? '核心能力' : 'Core Capabilities'} 
-        description={lang === 'zh' ? '由 Gemini 2.5 Pro 模型驱动的高级遥测处理。' : 'Advanced telemetry processing powered by Gemini 2.5 Pro models.'}
+        title={lang === 'zh' ? '解决真实的睡眠问题' : 'Solving Real Sleep Problems'} 
+        description={lang === 'zh' ? '我们解决的是解释问题，而不只是记录问题。' : 'We solve the problem of interpretation, not just tracking.'}
       >
         <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
           <div className="md:col-span-8">
             <Card 
-              title={t.features?.biometric?.title || "Biometric Tracking"}
-              description={t.features?.biometric?.desc || "Real-time heart rate and movement analysis during sleep cycles."}
+              title={lang === 'zh' ? "为什么睡了 8 小时还是累？" : "Why are you still tired after 8 hours of sleep?"}
+              description={lang === 'zh' ? "我们不仅记录睡眠时长。我们的 AI 会分析您的睡眠架构、HRV 和生活方式因素，找出您疲劳的根本原因。" : "We go beyond simple duration tracking. Our AI analyzes your sleep architecture, HRV, and lifestyle factors to pinpoint the root cause of your fatigue."}
               icon={<Activity size={32} />}
-              label="TELEMETRY"
+              label="ROOT_CAUSE_ANALYSIS"
               className="h-full"
             >
               <div className="mt-8 p-6 bg-black/40 rounded-2xl border border-white/5 relative overflow-hidden">
@@ -151,30 +182,136 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
           </div>
           <div className="md:col-span-4">
             <Card 
-              title={t.features?.neural?.title || "Neural Insights"}
-              description={t.features?.neural?.desc || "AI-driven interpretation of sleep stages."}
-              icon={<Brain size={32} />}
-              label="COGNITIVE"
+              title={lang === 'zh' ? "为什么不同品牌设备的数据无法被统一解释？" : "Why can't different tracker data be explained together?"}
+              description={lang === 'zh' ? "我们将来自 Apple Health、Oura、Garmin 等设备的数据汇总到一个统一的智能分析层中。" : "We aggregate data from Apple Health, Oura, Garmin, and more into a single, unified intelligence layer."}
+              icon={<Database size={32} />}
+              label="DATA_AGGREGATION"
               className="h-full"
             />
           </div>
           <div className="md:col-span-4">
             <Card 
-              title={t.features?.recovery?.title || "Recovery Optimization"}
-              description={t.features?.recovery?.desc || "Personalized protocols to enhance deep sleep."}
-              icon={<Zap size={32} />}
-              label="PROTOCOL"
+              title={lang === 'zh' ? "没有智能戒指？普通人也该拥有聪明的睡眠分析。" : "No smart ring? You still deserve smart sleep analysis."}
+              description={lang === 'zh' ? "即使只有基础的手机追踪或手动记录，我们的 AI 也能识别模式并提供可执行的恢复方案。" : "Even with basic phone tracking or manual logs, our AI can identify patterns and provide actionable recovery protocols."}
+              icon={<Brain size={32} />}
+              label="ACCESSIBLE_AI"
               className="h-full"
             />
           </div>
           <div className="md:col-span-8">
             <Card 
-              title={lang === 'zh' ? '安全加密' : 'Secure Encryption'}
-              description={lang === 'zh' ? '您的数据在传输和存储过程中均经过 AES-256 加密。' : 'Your data is encrypted with AES-256 during transit and at rest.'}
+              title={lang === 'zh' ? "你的数据，你做主（本地优先与加密）" : "Your Data, Your Rules (Local-first & Encrypted)"}
+              description={lang === 'zh' ? "我们是研究实验室，不是数据中间商。您的原始生物特征数据永远不会离开您的设备。所有处理均在边缘完成，确保隐私优先。" : "We are a research lab, not a data broker. Your raw biometrics NEVER leave your device. All processing is edge-processed, ensuring privacy-first analysis."}
               icon={<ShieldCheck size={32} />}
-              label="SECURITY"
+              label="PRIVACY_FIRST"
               className="h-full bg-emerald-500/[0.02] border-emerald-500/10"
-            />
+            >
+              <div className="mt-6">
+                <button onClick={() => onNavigate('/privacy')} className="text-xs font-bold text-emerald-400 hover:text-emerald-300 uppercase tracking-wider flex items-center gap-1">
+                  {lang === 'zh' ? '查看我们的数据处理政策 →' : 'View our Data Handling Policy →'}
+                </button>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </Section>
+
+      {/* What You Get / Real Report Example */}
+      <Section 
+        moduleID="REPORT_01"
+        title={lang === 'zh' ? '您将获得什么' : 'What You Get'} 
+        description={lang === 'zh' ? '不再是枯燥的数字。获取清晰、可执行的洞察，确切告诉您该怎么做。' : 'No more confusing numbers. Get clear, actionable insights that tell you exactly what to do.'}
+        className="bg-indigo-900/5 border-y border-white/5"
+      >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          <div className="space-y-8">
+            <div className="flex gap-4 items-start">
+              <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center shrink-0 border border-indigo-500/30">
+                <Brain className="text-indigo-400" size={24} />
+              </div>
+              <div>
+                <h4 className="text-xl font-bold text-white mb-2">{lang === 'zh' ? '异常原因分析' : 'Anomaly Root Cause'}</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  {lang === 'zh' ? '“昨晚您的深度睡眠下降了 30%。这与您在睡前 2 小时记录的晚间锻炼高度相关。建议将高强度训练移至下午。”' : '"Your deep sleep dropped by 30% last night. This highly correlates with the late workout you logged 2 hours before bed. Recommendation: Shift high-intensity training to the afternoon."'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex gap-4 items-start">
+              <div className="w-12 h-12 rounded-full bg-emerald-500/20 flex items-center justify-center shrink-0 border border-emerald-500/30">
+                <Zap className="text-emerald-400" size={24} />
+              </div>
+              <div>
+                <h4 className="text-xl font-bold text-white mb-2">{lang === 'zh' ? '优先级建议' : 'Prioritized Actions'}</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  {lang === 'zh' ? '不要被几十条建议淹没。我们每天只给您 1-2 个最高影响力的行动项。' : 'Stop getting overwhelmed by dozens of tips. We give you exactly 1-2 highest-impact action items for the day.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-4 items-start">
+              <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0 border border-purple-500/30">
+                <BarChart3 className="text-purple-400" size={24} />
+              </div>
+              <div>
+                <h4 className="text-xl font-bold text-white mb-2">{lang === 'zh' ? '长期趋势与一致性' : 'Long-term Trends & Consistency'}</h4>
+                <p className="text-slate-400 text-sm leading-relaxed">
+                  {lang === 'zh' ? '追踪您的“睡眠一致性得分”，这是比单晚睡眠时长更重要的恢复指标。' : 'Track your "Sleep Consistency Score", a far more important metric for recovery than single-night duration.'}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Mockup Dashboard */}
+          <div className="relative">
+            <div className="absolute inset-0 bg-gradient-to-tr from-indigo-500/10 to-purple-500/10 rounded-3xl blur-2xl" />
+            <div className="relative bg-[#0a0f1c] border border-white/10 rounded-3xl p-6 shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 rounded-full bg-red-500" />
+                  <div className="w-3 h-3 rounded-full bg-yellow-500" />
+                  <div className="w-3 h-3 rounded-full bg-green-500" />
+                </div>
+                <div className="text-xs font-mono text-slate-500">SomnoAI Analysis Report</div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4 mb-6">
+                <div className="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                  <div className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Recovery Score</div>
+                  <div className="text-4xl font-black text-emerald-400">82<span className="text-lg text-slate-500">/100</span></div>
+                </div>
+                <div className="bg-slate-900/50 rounded-2xl p-4 border border-white/5">
+                  <div className="text-xs text-slate-400 mb-1 uppercase tracking-wider">Sleep Debt</div>
+                  <div className="text-4xl font-black text-yellow-400">-1.2<span className="text-lg text-slate-500">h</span></div>
+                </div>
+              </div>
+
+              <div className="bg-indigo-500/10 rounded-2xl p-5 border border-indigo-500/20 mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Brain size={16} className="text-indigo-400" />
+                  <span className="text-sm font-bold text-indigo-300 uppercase tracking-wider">AI Insight</span>
+                </div>
+                <p className="text-sm text-indigo-100/80 leading-relaxed">
+                  Your REM sleep was optimal, but deep sleep was fragmented between 2 AM and 4 AM. This pattern correlates with the late meal logged at 9 PM. 
+                </p>
+              </div>
+
+              <div className="bg-slate-900/50 rounded-2xl p-5 border border-white/5">
+                <div className="text-xs text-slate-400 mb-3 uppercase tracking-wider">Action Plan for Today</div>
+                <ul className="space-y-3">
+                  <li className="flex items-start gap-3 text-sm text-slate-300">
+                    <div className="mt-0.5 w-4 h-4 rounded-full border border-emerald-500/50 flex items-center justify-center bg-emerald-500/10 shrink-0">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                    </div>
+                    Stop caffeine intake by 2:00 PM to improve deep sleep continuity.
+                  </li>
+                  <li className="flex items-start gap-3 text-sm text-slate-300">
+                    <div className="mt-0.5 w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center shrink-0" />
+                    Aim for 15 mins of direct sunlight before 9:00 AM.
+                  </li>
+                </ul>
+              </div>
+            </div>
           </div>
         </div>
       </Section>
@@ -282,13 +419,13 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             {lang === 'zh' ? '准备好' : 'Ready to'} <br />
             <span className="text-indigo-500">{lang === 'zh' ? '优化了吗？' : 'Optimize?'}</span>
           </h2>
-          <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto font-medium">{lang === 'zh' ? '加入下一代睡眠工程的候补名单。' : 'Join the waitlist for the next generation of sleep engineering.'}</p>
+          <p className="text-xl md:text-2xl text-slate-400 max-w-2xl mx-auto font-medium">{lang === 'zh' ? '停止猜测您的睡眠。开始上传数据，获取真实的洞察。' : 'Stop guessing about your sleep. Upload your data and get real insights.'}</p>
           <HardwareButton 
             onClick={() => onNavigate('/auth/signup')}
             variant="secondary"
             className="mx-auto !px-16 !py-8 !text-xl shadow-[0_20px_60px_rgba(255,255,255,0.15)]"
           >
-            {lang === 'zh' ? '立即开始' : 'Get Started Now'}
+            {lang === 'zh' ? '上传睡眠数据' : 'Upload Sleep Data'}
           </HardwareButton>
         </div>
       </Section>

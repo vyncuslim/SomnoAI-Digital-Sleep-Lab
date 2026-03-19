@@ -55,8 +55,8 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
           <div className="mt-4 text-xs">
             <p className="text-gray-500">
               {lang === 'zh' 
-                ? "如有任何疑问，请通过官方支持渠道或电子邮件与我们联系。我们的 AI 助手全天候为您服务。" 
-                : "For any inquiries, please contact us via our official support channels or email. Our AI assistant is available 24/7 to help."}
+                ? "请认准 SomnoAI Digital Sleep Lab 官方品牌。如有任何疑问，请通过官方支持渠道或电子邮件与我们联系。" 
+                : "Please recognize the official SomnoAI Digital Sleep Lab brand. For any inquiries, contact us via our official support channels."}
             </p>
           </div>
         </div>

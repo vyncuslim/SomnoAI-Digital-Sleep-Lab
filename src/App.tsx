@@ -12,45 +12,66 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { HelmetProvider } from 'react-helmet-async';
 import { SchemaMarkup } from './components/SchemaMarkup';
 
-// Lazy load components
-const PersonalChat = lazy(() => import('./components/PersonalChat').then(module => ({ default: module.PersonalChat })));
-const SubscriptionManagement = lazy(() => import('./pages/SubscriptionManagement').then(module => ({ default: module.SubscriptionManagement })));
-const Auth = lazy(() => import('./components/Auth').then(module => ({ default: module.Auth })));
-const Dashboard = lazy(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
-const AdminView = lazy(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
-const UserProfile = lazy(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
-const FeedbackView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
-const LandingPage = lazy(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
-const Pricing = lazy(() => import('./pages/Pricing'));
-const About = lazy(() => import('./pages/About').then(module => ({ default: module.About })));
-const Product = lazy(() => import('./pages/Product').then(module => ({ default: module.Product })));
-const HowItWorks = lazy(() => import('./pages/HowItWorks').then(module => ({ default: module.HowItWorks })));
-const Features = lazy(() => import('./pages/Features').then(module => ({ default: module.Features })));
-const Research = lazy(() => import('./pages/Research').then(module => ({ default: module.Research })));
-const Science = lazy(() => import('./pages/Science').then(module => ({ default: module.Science })));
-const Founder = lazy(() => import('./pages/Founder').then(module => ({ default: module.Founder })));
-const FAQ = lazy(() => import('./pages/FAQ').then(module => ({ default: module.FAQ })));
-const Status = lazy(() => import('./pages/Status').then(module => ({ default: module.Status })));
-const Contact = lazy(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
-const LegalHub = lazy(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
-const MediaResources = lazy(() => import('./pages/MediaResources').then(module => ({ default: module.MediaResources })));
-const DynamicPage = lazy(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
-const Atlas = lazy(() => import('./pages/Atlas').then(module => ({ default: module.Atlas })));
-const Dreams = lazy(() => import('./pages/Dreams').then(module => ({ default: module.Dreams })));
-const Voice = lazy(() => import('./pages/Voice').then(module => ({ default: module.Voice })));
-const GenericFeature = lazy(() => import('./pages/GenericFeature').then(module => ({ default: module.GenericFeature })));
-const Trials = lazy(() => import('./pages/Trials').then(module => ({ default: module.Trials })));
-// const DiaryView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
-const BlogHub = lazy(() => import('./pages/BlogHub').then(module => ({ default: module.BlogHub })));
-const BlogPostView = lazy(() => import('./components/BlogPostView').then(module => ({ default: module.BlogPostView })));
-const NewsHub = lazy(() => import('./pages/NewsHub').then(module => ({ default: module.NewsHub })));
-const ArticleView = lazy(() => import('./components/ArticleView').then(module => ({ default: module.ArticleView })));
-const ChangelogView = lazy(() => import('./components/Placeholders').then(module => ({ default: module.ChangelogView })));
-const SupportView = lazy(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
-const FounderDashboardPage = lazy(() => import('./pages/FounderDashboardPage').then(module => ({ default: module.FounderDashboardPage })));
-const SearchHub = lazy(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
-const BlockedView = lazy(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
-const LogoOnly = lazy(() => import('./pages/LogoOnly'));
+// Lazy load components with retry for chunk loading errors
+const lazyWithRetry = (componentImport: () => Promise<any>) =>
+  lazy(async () => {
+    const pageHasAlreadyBeenForceRefreshed = JSON.parse(
+      window.sessionStorage.getItem('page-has-been-force-refreshed') || 'false'
+    );
+
+    try {
+      const component = await componentImport();
+      window.sessionStorage.setItem('page-has-been-force-refreshed', 'false');
+      return component;
+    } catch (error) {
+      if (!pageHasAlreadyBeenForceRefreshed) {
+        // Assume that the error was caused by the routing to a new version of the app
+        window.sessionStorage.setItem('page-has-been-force-refreshed', 'true');
+        window.location.reload();
+        return { default: () => null }; // Return a dummy component while reloading
+      }
+      throw error;
+    }
+  });
+
+const PersonalChat = lazyWithRetry(() => import('./components/PersonalChat').then(module => ({ default: module.PersonalChat })));
+const SubscriptionManagement = lazyWithRetry(() => import('./pages/SubscriptionManagement').then(module => ({ default: module.SubscriptionManagement })));
+const Auth = lazyWithRetry(() => import('./components/Auth').then(module => ({ default: module.Auth })));
+const Dashboard = lazyWithRetry(() => import('./components/Dashboard').then(module => ({ default: module.Dashboard })));
+const AdminView = lazyWithRetry(() => import('./components/AdminDashboard').then(module => ({ default: module.AdminDashboard })));
+const UserProfile = lazyWithRetry(() => import('./components/Placeholders').then(module => ({ default: module.UserProfile })));
+const FeedbackView = lazyWithRetry(() => import('./components/Placeholders').then(module => ({ default: module.FeedbackView })));
+const LandingPage = lazyWithRetry(() => import('./components/LandingPage').then(module => ({ default: module.LandingPage })));
+const Pricing = lazyWithRetry(() => import('./pages/Pricing'));
+const About = lazyWithRetry(() => import('./pages/About').then(module => ({ default: module.About })));
+const Product = lazyWithRetry(() => import('./pages/Product').then(module => ({ default: module.Product })));
+const HowItWorks = lazyWithRetry(() => import('./pages/HowItWorks').then(module => ({ default: module.HowItWorks })));
+const Features = lazyWithRetry(() => import('./pages/Features').then(module => ({ default: module.Features })));
+const Research = lazyWithRetry(() => import('./pages/Research').then(module => ({ default: module.Research })));
+const Science = lazyWithRetry(() => import('./pages/Science').then(module => ({ default: module.Science })));
+const Founder = lazyWithRetry(() => import('./pages/Founder').then(module => ({ default: module.Founder })));
+const FAQ = lazyWithRetry(() => import('./pages/FAQ').then(module => ({ default: module.FAQ })));
+const Status = lazyWithRetry(() => import('./pages/Status').then(module => ({ default: module.Status })));
+const Contact = lazyWithRetry(() => import('./pages/Contact').then(module => ({ default: module.Contact })));
+const LegalHub = lazyWithRetry(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
+const MediaResources = lazyWithRetry(() => import('./pages/MediaResources').then(module => ({ default: module.MediaResources })));
+const DynamicPage = lazyWithRetry(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
+const Atlas = lazyWithRetry(() => import('./pages/Atlas').then(module => ({ default: module.Atlas })));
+const Dreams = lazyWithRetry(() => import('./pages/Dreams').then(module => ({ default: module.Dreams })));
+const Voice = lazyWithRetry(() => import('./pages/Voice').then(module => ({ default: module.Voice })));
+const GenericFeature = lazyWithRetry(() => import('./pages/GenericFeature').then(module => ({ default: module.GenericFeature })));
+const Trials = lazyWithRetry(() => import('./pages/Trials').then(module => ({ default: module.Trials })));
+// const DiaryView = lazyWithRetry(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
+const BlogHub = lazyWithRetry(() => import('./pages/BlogHub').then(module => ({ default: module.BlogHub })));
+const BlogPostView = lazyWithRetry(() => import('./components/BlogPostView').then(module => ({ default: module.BlogPostView })));
+const NewsHub = lazyWithRetry(() => import('./pages/NewsHub').then(module => ({ default: module.NewsHub })));
+const ArticleView = lazyWithRetry(() => import('./components/ArticleView').then(module => ({ default: module.ArticleView })));
+const ChangelogView = lazyWithRetry(() => import('./components/Placeholders').then(module => ({ default: module.ChangelogView })));
+const SupportView = lazyWithRetry(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
+const FounderDashboardPage = lazyWithRetry(() => import('./pages/FounderDashboardPage').then(module => ({ default: module.FounderDashboardPage })));
+const SearchHub = lazyWithRetry(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
+const BlockedView = lazyWithRetry(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
+const LogoOnly = lazyWithRetry(() => import('./pages/LogoOnly'));
 
 // Initial Data
 // const INITIAL_SLEEP_DATA: SleepRecord = {
