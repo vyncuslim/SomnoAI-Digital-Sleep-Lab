@@ -124,7 +124,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [termsApproved, setTermsApproved] = useState(false);
   const [privacyApproved, setPrivacyApproved] = useState(false);
   const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
-  const isTurnstileEnabled = !!turnstileSiteKey;
+  const isTurnstileEnabled = false; // Disabled as requested by user
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isTurnstileLoaded, setIsTurnstileLoaded] = useState(false);
