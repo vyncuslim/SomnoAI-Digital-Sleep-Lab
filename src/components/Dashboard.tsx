@@ -508,6 +508,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <HardwareWidget label="NEURAL_LOAD" value="42" unit="%" status="active" icon={<Brain size={20} />} />
               <HardwareWidget label="SYNC_STABILITY" value="98.2" unit="%" status="active" icon={<ShieldCheck size={20} />} />
+              <HardwareWidget label="SLEEP_SCORE" value={((input.energyScore / 10) * 100).toString()} unit="/100" status="active" icon={<Moon size={20} />} />
             </div>
           </div>
 

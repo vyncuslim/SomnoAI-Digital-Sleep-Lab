@@ -34,19 +34,20 @@ const EmailSubscription: React.FC = () => {
 
   return (
     <div className="w-full max-w-md bg-[#151619] p-6 rounded-2xl border border-white/10 shadow-2xl font-mono mt-8">
-      <h2 className="text-xs uppercase tracking-widest text-[#8E9299] mb-4">Subscribe for Updates</h2>
+      <h2 className="text-xl font-black italic uppercase tracking-widest text-white mb-2">Stay Updated</h2>
+      <p className="text-sm text-slate-400 mb-6">Join our newsletter for the latest sleep science and AI updates.</p>
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
         <input
           type="email"
-          className="w-full p-4 bg-black/50 text-white rounded-lg border border-white/5 focus:border-emerald-500/50 focus:outline-none text-sm"
+          className="w-full p-4 bg-black/50 text-white rounded-lg border border-white/5 focus:border-indigo-500/50 focus:outline-none text-sm"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          placeholder="Enter your email address"
+          placeholder="Enter your email"
           required
         />
         <button
           type="submit"
-          className="w-full px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-black font-bold rounded-lg transition-all duration-200 uppercase text-xs tracking-widest"
+          className="w-full px-4 py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg transition-all duration-200 uppercase text-xs tracking-widest"
           disabled={status === 'loading'}
         >
           {status === 'loading' ? 'Subscribing...' : 'Subscribe'}
