@@ -119,6 +119,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [token, setToken] = useState('');
   const [otpType, setOtpType] = useState<'signup' | 'sms' | 'recovery' | 'magiclink'>('sms');
   const [showOtpInput, setShowOtpInput] = useState(false);
+  const [resendTimer, setResendTimer] = useState(0);
   const [loading, setLoading] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
   const [privacyApproved, setPrivacyApproved] = useState(false);
@@ -132,6 +133,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   React.useEffect(() => {
     console.log('Turnstile token state updated:', turnstileToken ? 'Received (length: ' + turnstileToken.length + ')' : 'Null');
   }, [turnstileToken]);
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (resendTimer > 0) {
+      interval = setInterval(() => {
+        setResendTimer((prev) => prev - 1);
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [resendTimer]);
+
   const [confirmPassword, setConfirmPassword] = useState('');
   const getPasswordStrength = (pass: string) => {
     if (!pass) return 0;
@@ -229,13 +240,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
 
       if (view === 'signup') {
-        const emailValidation = validateEmail(email);
-        if (!emailValidation.valid) {
-          throw new Error(emailValidation.message);
-        }
+        if (authMethod === 'email') {
+          const emailValidation = validateEmail(email);
+          if (!emailValidation.valid) {
+            throw new Error(emailValidation.message);
+          }
 
-        if (password !== confirmPassword) {
-          throw new Error('Passwords do not match.');
+          if (password !== confirmPassword) {
+            throw new Error('Passwords do not match.');
+          }
         }
       }
 
@@ -250,44 +263,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             throw new Error(phoneValidation.message);
           }
 
-          // If password is provided, try password login first
-          if (password) {
-            console.log('Attempting phone + password login');
-            const { data, error: signInError } = await supabase.auth.signInWithPassword({
-              phone: phone.replace(/\s/g, ''),
-              password,
-              options: {
-                captchaToken: turnstileToken || undefined,
-              },
-            });
-            
-            if (signInError) {
-              // If it's a "User not found" or "Invalid login credentials", 
-              // we might want to allow them to try OTP instead of just failing.
-              console.warn('Phone password login failed:', signInError.message);
-              throw signInError;
-            }
-            
-            if (data.user) {
-              await fetchWithLogging('/api/audit/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: data.user.id,
-                    phone: phone.replace(/\s/g, ''),
-                    status: 'success',
-                    metadata: {
-                      auth_method: 'phone_password',
-                      device: navigator.userAgent
-                    }
-                })
-              }, 'Auth Phone Login Success');
-              navigate(`${langPrefix}/dashboard`);
-              return;
-            }
-          }
-
-          // Otherwise, use OTP login
+          // Phone login is now OTP-only as requested
           console.log('Attempting phone OTP login');
           setOtpType('sms');
           const { error: otpError } = await supabase.auth.signInWithOtp({
@@ -384,15 +360,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             throw new Error(phoneValidation.message);
           }
 
-          if (password !== confirmPassword) {
-            throw new Error('Passwords do not match.');
-          }
-
-          console.log('Attempting phone signup with password');
+          // Phone signup is now OTP-only as requested
+          console.log('Attempting phone OTP signup');
           setOtpType('signup');
-          const { data, error: signUpError } = await supabase.auth.signUp({
+          const { error: signUpError } = await supabase.auth.signInWithOtp({
             phone: phone.replace(/\s/g, ''),
-            password,
             options: {
               captchaToken: turnstileToken || undefined,
             },
@@ -411,15 +383,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             throw signUpError;
           }
           
-          if (data.user && !data.session) {
-            // OTP sent for verification
-            setShowOtpInput(true);
-            setView('otp');
-            setSuccessMessage(lang === 'zh' ? '验证码已发送到您的手机，请验证以完成注册。' : 'Verification code sent to your phone. Please verify to complete registration.');
-          } else if (data.session) {
-            // Logged in immediately
-            navigate(`${langPrefix}/dashboard`);
-          }
+          setShowOtpInput(true);
+          setView('otp');
+          setSuccessMessage(lang === 'zh' ? '验证码已发送到您的手机，请验证以完成注册。' : 'Verification code sent to your phone. Please verify to complete registration.');
           return;
         }
 
@@ -672,6 +638,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (error) throw error;
         setSuccessMessage('Verification code resent! Please check your messages.');
       }
+      setResendTimer(60); // 60 seconds cooldown
     } catch (err: any) {
       if (err.status === 429) {
         setError('Too many requests. Please wait a few minutes before trying again.');
@@ -689,7 +656,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     if (view === 'login') return lang === 'zh' ? '欢迎回来' : 'Welcome Back';
     if (view === 'signup') return lang === 'zh' ? '加入实验室' : 'Join the Lab';
     if (view === 'forgot-password') return lang === 'zh' ? '重置密码' : 'Reset Password';
-    if (view === 'otp') return lang === 'zh' ? '无密码登录' : 'Passwordless Login';
+    if (view === 'otp') {
+      if (otpType === 'signup') return lang === 'zh' ? '验证账户' : 'Verify Account';
+      return lang === 'zh' ? '无密码登录' : 'Passwordless Login';
+    }
     if (view === 'verification-pending') return lang === 'zh' ? '等待验证' : 'Verification Pending';
     return '';
   };
@@ -830,7 +800,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   onSubmit={handleSubmit} 
                   className="space-y-6"
                 >
-                  {(view === 'login' || view === 'signup') && (
+                  {(view === 'login' || view === 'signup' || (view === 'otp' && !showOtpInput)) && (
                     <motion.div variants={itemVariants} className="flex p-1 bg-black/40 rounded-xl border border-white/5 mb-2">
                       <button
                         type="button"
@@ -849,7 +819,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     </motion.div>
                   )}
 
-                  {authMethod === 'email' ? (
+                  {(authMethod === 'email' || view === 'forgot-password') ? (
                     <motion.div variants={itemVariants}>
                       <InputField
                         icon={Mail}
@@ -896,10 +866,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                         <button 
                           type="button"
                           onClick={handleResendVerification}
-                          disabled={loading}
+                          disabled={loading || resendTimer > 0}
                           className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors disabled:opacity-50"
                         >
-                          {lang === 'zh' ? '重新发送' : 'Resend Code'}
+                          {resendTimer > 0 
+                            ? (lang === 'zh' ? `${resendTimer}秒后重发` : `Resend in ${resendTimer}s`)
+                            : (lang === 'zh' ? '重新发送' : 'Resend Code')}
                         </button>
                         <button 
                           type="button"
@@ -918,7 +890,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     </motion.div>
                   )}
 
-                  {(view === 'login' || view === 'signup') && (
+                  {(view === 'login' || view === 'signup') && authMethod === 'email' && (
                     <motion.div variants={itemVariants}>
                       <InputField
                         icon={Lock}
@@ -927,7 +899,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                         value={password}
                         onChange={(e: any) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        required={view === 'signup' || (view === 'login' && authMethod === 'email')}
+                        required
                         rightElement={
                           view === 'login' && (
                             <button 
@@ -940,11 +912,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                           )
                         }
                       />
-                      {view === 'login' && authMethod === 'phone' && (
-                        <p className="text-[9px] text-slate-600 mt-2 ml-4 font-mono uppercase tracking-wider">
-                          {lang === 'zh' ? '可选：输入密码登录，或留空使用验证码登录' : 'Optional: Enter password to sign in, or leave blank for OTP'}
-                        </p>
-                      )}
                     </motion.div>
                   )}
 
@@ -991,7 +958,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     </motion.div>
                   )}
 
-                  {view === 'signup' && (
+                  {view === 'signup' && authMethod === 'email' && (
                     <motion.div variants={itemVariants}>
                       <InputField
                         icon={Lock}
@@ -1077,13 +1044,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                       </HardwareButton>
                       <HardwareButton 
                         type="button" 
-                        onClick={() => setView('otp')}
+                        onClick={() => {
+                          setAuthMethod('email');
+                          setView('otp');
+                        }}
                         disabled={loading}
                         variant="outline"
                         className="!py-3"
                         icon={<KeyRound size={18} className="text-slate-400 group-hover/btn:text-white transition-colors" />}
                       >
-                        OTP
+                        {lang === 'zh' ? '魔术链接' : 'Magic Link'}
                       </HardwareButton>
                     </div>
                   </motion.div>
