@@ -127,6 +127,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isTurnstileLoaded, setIsTurnstileLoaded] = useState(false);
   const turnstileRef = React.useRef<any>(null);
+
+  React.useEffect(() => {
+    console.log('Turnstile token state updated:', turnstileToken ? 'Received (length: ' + turnstileToken.length + ')' : 'Null');
+  }, [turnstileToken]);
   const [confirmPassword, setConfirmPassword] = useState('');
   const getPasswordStrength = (pass: string) => {
     if (!pass) return 0;
@@ -145,19 +149,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   React.useEffect(() => {
+    console.log('Auth View/Method changed, resetting Turnstile:', { view, authMethod });
     setShowOtpInput(false);
     setToken('');
     setSuccessMessage(null);
     setError(null);
+    // Clear Turnstile token when view or auth method changes to ensure fresh verification
     setTurnstileToken(null);
     if (turnstileRef.current && isTurnstileLoaded) {
       try {
+        console.log('Calling turnstileRef.current.reset()');
         turnstileRef.current.reset();
       } catch (e) {
         console.warn('Failed to reset Turnstile:', e);
       }
     }
-  }, [view, isTurnstileLoaded]);
+  }, [view, authMethod]);
 
   const validateEmail = (email: string) => {
     const fakePatterns = ['@ddd', '@ds', '@123'];
@@ -189,18 +196,35 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setSuccessMessage(null);
 
     try {
+      console.log('handleSubmit started', { 
+        view, 
+        authMethod, 
+        requiresCaptcha: (view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput)), 
+        hasToken: !!turnstileToken, 
+        isTurnstileEnabled, 
+        hasSiteKey: !!turnstileSiteKey,
+        isTurnstileLoaded
+      });
+      
       if (view === 'signup' && (!termsApproved || !privacyApproved)) {
         throw new Error('You must approve the Terms of Service and Privacy Policy.');
       }
 
       const requiresCaptcha = view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput);
+      
       if (requiresCaptcha && isTurnstileEnabled) {
         if (!turnstileToken) {
+          console.warn('Turnstile token missing at submission. View:', view, 'AuthMethod:', authMethod);
+          if (turnstileRef.current) {
+            try {
+              turnstileRef.current.reset();
+            } catch (e) {
+              console.warn('Failed to reset Turnstile on missing token:', e);
+            }
+          }
           throw new Error(lang === 'zh' ? '请先完成安全验证。' : 'Please complete the security verification.');
         }
-        if (!isTurnstileLoaded) {
-          throw new Error(lang === 'zh' ? '安全验证尚未加载完成，请稍候。' : 'Security verification is still loading, please wait.');
-        }
+        console.log('Turnstile token present, proceeding with submission');
       }
 
       if (view === 'signup') {
@@ -863,10 +887,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                         <Turnstile 
                           ref={turnstileRef}
                           siteKey={turnstileSiteKey} 
-                          onSuccess={(token) => setTurnstileToken(token)}
-                          onError={() => setError('Security verification failed. Please try again.')}
-                          onExpire={() => setTurnstileToken(null)}
-                          onLoad={() => setIsTurnstileLoaded(true)}
+                          onSuccess={(token) => {
+                            console.log('Turnstile success for', view, authMethod, 'token starts with:', token.substring(0, 10));
+                            setTurnstileToken(token);
+                          }}
+                          onError={() => {
+                            console.error('Turnstile error');
+                            setError('Security verification failed. Please try again.');
+                          }}
+                          onExpire={() => {
+                            console.warn('Turnstile token expired');
+                            setTurnstileToken(null);
+                          }}
+                          onLoad={() => {
+                            console.log('Turnstile widget loaded');
+                            setIsTurnstileLoaded(true);
+                          }}
                           options={{
                             theme: 'dark',
                             size: 'normal',
