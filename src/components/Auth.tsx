@@ -544,7 +544,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
 
       let errorMessage = err.message || 'Authentication failed';
       
-      if (err.message && err.message.includes('invalid-input-secret')) {
+      if (err.name === 'AuthRetryableFetchError' || (err.status && err.status === 504)) {
+        errorMessage = lang === 'zh'
+          ? '服务器响应超时，请检查网络连接或稍后重试。'
+          : 'Server response timed out. Please check your connection or try again later.';
+      } else if (err.message && err.message.includes('invalid-input-secret')) {
         errorMessage = 'CAPTCHA configuration error: The secret key is invalid. Please check your Supabase Auth settings.';
       } else if (err.message && (err.message.includes('captcha verification process failed') || err.message.includes('timeout-or-duplicate'))) {
         errorMessage = lang === 'zh' 
