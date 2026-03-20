@@ -158,13 +158,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setTurnstileToken(null);
     if (turnstileRef.current && isTurnstileLoaded) {
       try {
-        console.log('Calling turnstileRef.current.reset()');
+        console.log('Calling turnstileRef.current.reset() due to view/method change');
         turnstileRef.current.reset();
       } catch (e) {
         console.warn('Failed to reset Turnstile:', e);
       }
     }
-  }, [view, authMethod]);
+  }, [view, authMethod, isTurnstileLoaded]);
 
   const validateEmail = (email: string) => {
     const fakePatterns = ['@ddd', '@ds', '@123'];
@@ -497,8 +497,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       
       if (err.message && err.message.includes('invalid-input-secret')) {
         errorMessage = 'CAPTCHA configuration error: The secret key is invalid. Please check your Supabase Auth settings.';
-      } else if (err.message && err.message.includes('captcha verification process failed')) {
-        errorMessage = 'CAPTCHA verification failed. If you have enabled CAPTCHA in Supabase, please ensure you have set VITE_TURNSTILE_SITE_KEY in your environment variables. Otherwise, disable CAPTCHA in Supabase Auth settings.';
+      } else if (err.message && (err.message.includes('captcha verification process failed') || err.message.includes('timeout-or-duplicate'))) {
+        errorMessage = lang === 'zh' 
+          ? '验证码验证失败或已过期，请重试。' 
+          : 'CAPTCHA verification failed or expired. Please try again.';
+        console.log('Specific CAPTCHA error detected, resetting Turnstile');
       } else if (err.message === 'Invalid login credentials') {
         errorMessage = 'Invalid email or password.';
       } else if (err.message === 'User already registered') {
@@ -510,9 +513,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
       setError(errorMessage);
       // Reset Turnstile on error to prevent token reuse
+      console.log('Resetting Turnstile due to error:', err);
       setTurnstileToken(null);
       if (turnstileRef.current && isTurnstileLoaded) {
         try {
+          console.log('Calling turnstileRef.current.reset() on error');
           turnstileRef.current.reset();
         } catch (e) {
           console.warn('Failed to reset Turnstile on error:', e);
@@ -885,6 +890,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     <motion.div variants={itemVariants} className="space-y-4 ml-2 pt-2">
                       <div className="pt-2">
                         <Turnstile 
+                          key={`${view}-${authMethod}`}
                           ref={turnstileRef}
                           siteKey={turnstileSiteKey} 
                           onSuccess={(token) => {
