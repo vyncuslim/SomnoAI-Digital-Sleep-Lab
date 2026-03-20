@@ -102,6 +102,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [phone, setPhone] = useState('');
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [password, setPassword] = useState('');
+
+  const validatePhone = (phone: string) => {
+    // Basic E.164 regex: starts with +, followed by 7 to 15 digits
+    const phoneRegex = /^\+[1-9]\d{6,14}$/;
+    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
+      return { 
+        valid: false, 
+        message: lang === 'zh' 
+          ? '请输入有效的国际格式手机号码 (例如: +8613812345678)' 
+          : 'Please enter a valid phone number in international format (e.g., +1234567890).' 
+      };
+    }
+    return { valid: true };
+  };
   const [token, setToken] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -196,9 +210,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         }
 
         if (authMethod === 'phone') {
+          const phoneValidation = validatePhone(phone);
+          if (!phoneValidation.valid) {
+            throw new Error(phoneValidation.message);
+          }
+
           // Phone login usually uses OTP in Supabase
           const { error: otpError } = await supabase.auth.signInWithOtp({
-            phone,
+            phone: phone.replace(/\s/g, ''),
             options: {
               captchaToken: turnstileToken || undefined,
             },
@@ -233,10 +252,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         }
         
         if (data.user) {
-          // Check if email is verified
-          if (!data.user.email_confirmed_at) {
+          // Check if email or phone is verified
+          if (!data.user.email_confirmed_at && !data.user.phone_confirmed_at) {
             await supabase.auth.signOut();
-            throw new Error('Please verify your email address before logging in. Check your inbox for the verification link.');
+            const message = authMethod === 'email' 
+              ? (lang === 'zh' ? '请在登录前验证您的邮箱。请检查您的收件箱。' : 'Please verify your email address before logging in. Check your inbox for the verification link.')
+              : (lang === 'zh' ? '请在登录前验证您的手机。' : 'Please verify your phone number before logging in.');
+            throw new Error(message);
           }
 
           // Check if user is blocked
@@ -283,8 +305,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
         if (authMethod === 'phone') {
+          const phoneValidation = validatePhone(phone);
+          if (!phoneValidation.valid) {
+            throw new Error(phoneValidation.message);
+          }
+
           const { error: signUpError } = await supabase.auth.signInWithOtp({
-            phone,
+            phone: phone.replace(/\s/g, ''),
             options: {
               captchaToken: turnstileToken || undefined,
             },
@@ -369,7 +396,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (showOtpInput) {
           const { data, error: verifyError } = await supabase.auth.verifyOtp({
             email: authMethod === 'email' ? email : undefined,
-            phone: authMethod === 'phone' ? phone : undefined,
+            phone: authMethod === 'phone' ? phone.replace(/\s/g, '') : undefined,
             token,
             type: authMethod === 'email' ? 'email' : 'sms',
           });
@@ -378,6 +405,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           
           if (data.user) {
             await logAuditLog(data.user.id, 'USER_LOGIN_OTP', 'Successful OTP login');
+            
+            // Explicitly record phone number in profile if it was a phone login
+            if (authMethod === 'phone') {
+              try {
+                await supabase.from('profiles').update({ 
+                  phone: phone.replace(/\s/g, ''),
+                  last_login: new Date().toISOString()
+                }).eq('id', data.user.id);
+              } catch (profileErr) {
+                console.error('Failed to update profile with phone:', profileErr);
+              }
+            }
           }
           
           navigate(`${langPrefix}/dashboard`);
@@ -481,8 +520,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   };
 
   const handleResendVerification = async () => {
-    if (!email) {
+    if (authMethod === 'email' && !email) {
       setError('Please enter your email address.');
+      return;
+    }
+    if (authMethod === 'phone' && !phone) {
+      setError('Please enter your phone number.');
       return;
     }
     
@@ -490,19 +533,28 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setError(null);
     setSuccessMessage(null);
     try {
-      const { error } = await supabase.auth.resend({
-        type: 'signup',
-        email: email,
-      });
-      if (error) throw error;
-      setSuccessMessage('Verification email resent! Please check your inbox.');
+      if (authMethod === 'email') {
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: email,
+        });
+        if (error) throw error;
+        setSuccessMessage('Verification email resent! Please check your inbox.');
+      } else {
+        const { error } = await supabase.auth.resend({
+          type: 'sms_otp',
+          phone: phone.replace(/\s/g, ''),
+        });
+        if (error) throw error;
+        setSuccessMessage('Verification code resent! Please check your messages.');
+      }
     } catch (err: any) {
       if (err.status === 429) {
         setError('Too many requests. Please wait a few minutes before trying again.');
       } else if (err.status === 500) {
-        setError('Server error while sending email. Please try again later or contact support.');
+        setError('Server error while sending verification. Please try again later or contact support.');
       } else {
-        setError(err.message || 'Failed to resend verification email.');
+        setError(err.message || 'Failed to resend verification.');
       }
     } finally {
       setLoading(false);
@@ -577,12 +629,29 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                 className="space-y-6 text-center"
               >
                 <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Mail className="text-indigo-400 w-10 h-10" />
+                  {authMethod === 'email' ? (
+                    <Mail className="text-indigo-400 w-10 h-10" />
+                  ) : (
+                    <Phone className="text-indigo-400 w-10 h-10" />
+                  )}
                 </div>
-                <h2 className="text-xl font-bold text-white uppercase tracking-tight">Check Your Email</h2>
+                <h2 className="text-xl font-bold text-white uppercase tracking-tight">
+                  {authMethod === 'email' 
+                    ? (lang === 'zh' ? '检查您的邮箱' : 'Check Your Email')
+                    : (lang === 'zh' ? '检查您的手机' : 'Check Your Phone')}
+                </h2>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  We've sent a verification link to <span className="text-white font-mono">{email}</span>. 
-                  Please click the link in the email to verify your account and complete registration.
+                  {authMethod === 'email' ? (
+                    <>
+                      {lang === 'zh' ? '我们已向 ' : "We've sent a verification link to "}<span className="text-white font-mono">{email}</span>. 
+                      {lang === 'zh' ? ' 请点击邮件中的链接以验证您的账户并完成注册。' : ' Please click the link in the email to verify your account and complete registration.'}
+                    </>
+                  ) : (
+                    <>
+                      {lang === 'zh' ? '我们已向 ' : "We've sent a verification code to "}<span className="text-white font-mono">{phone}</span>. 
+                      {lang === 'zh' ? ' 请在登录页面输入验证码以完成验证。' : ' Please enter the code on the login page to complete verification.'}
+                    </>
+                  )}
                 </p>
                 
                 <div className="pt-4 space-y-4">
@@ -592,14 +661,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     variant="outline"
                     className="w-full"
                   >
-                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Resend Verification Email'}
+                    {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
+                      authMethod === 'email' 
+                        ? (lang === 'zh' ? '重新发送验证邮件' : 'Resend Verification Email')
+                        : (lang === 'zh' ? '重新发送验证码' : 'Resend Verification Code')
+                    )}
                   </HardwareButton>
                   
                   <button 
-                    onClick={() => setView('login')}
+                    onClick={() => setView(authMethod === 'phone' ? 'otp' : 'login')}
                     className="text-xs text-indigo-400 font-bold hover:text-indigo-300 uppercase tracking-widest transition-colors"
                   >
-                    Back to Login
+                    {authMethod === 'phone' ? (lang === 'zh' ? '去输入验证码' : 'Go to Enter Code') : (lang === 'zh' ? '返回登录' : 'Back to Login')}
                   </button>
                 </div>
               </motion.div>
@@ -695,7 +768,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                         required
                         autoFocus
                       />
-                      <div className="flex justify-end mt-2">
+                      <div className="flex justify-between mt-2 px-1">
+                        <button 
+                          type="button"
+                          onClick={handleResendVerification}
+                          disabled={loading}
+                          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors disabled:opacity-50"
+                        >
+                          {lang === 'zh' ? '重新发送' : 'Resend Code'}
+                        </button>
                         <button 
                           type="button"
                           onClick={() => {
@@ -705,7 +786,9 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                           }}
                           className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors"
                         >
-                          {lang === 'zh' ? '更改邮箱' : 'Change Email'}
+                          {authMethod === 'email' 
+                            ? (lang === 'zh' ? '更改邮箱' : 'Change Email')
+                            : (lang === 'zh' ? '更改号码' : 'Change Number')}
                         </button>
                       </div>
                     </motion.div>

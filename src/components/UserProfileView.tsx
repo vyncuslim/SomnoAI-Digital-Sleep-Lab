@@ -222,7 +222,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
                   <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.email}</label>
                   <p className="text-lg font-medium text-slate-400 flex items-center gap-2">
                     <Mail className="w-4 h-4" />
-                    {profile.email}
+                    {profile.email || t.placeholderName}
                   </p>
                 </div>
 

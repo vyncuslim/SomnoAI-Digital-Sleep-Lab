@@ -308,13 +308,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
           
           await securityService.handleSecurityViolation(
             profile.id, 
-            profile.email, 
+            profile.email || profile.phone || profile.id, 
             'UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT', 
             'CRITICAL'
           );
 
           await emailService.sendBlockNotification(
-            profile.email, 
+            profile.email || 'admin@sleepsomno.com', 
             'Attempted unauthorized access to Admin Console. This is a restricted area.',
             blockCode
           );

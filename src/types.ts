@@ -33,7 +33,7 @@ export interface SleepRecord {
 
 export interface UserProfile {
   id: string;
-  email: string;
+  email?: string;
   role?: 'user' | 'editor' | 'admin' | 'owner' | 'super_owner';
   full_name?: string;
   is_blocked?: boolean;
