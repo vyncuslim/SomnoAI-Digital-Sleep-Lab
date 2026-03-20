@@ -17,11 +17,16 @@ export const SchemaMarkup: React.FC<{ article?: ArticleSchemaProps }> = ({ artic
     "url": "https://sleepsomno.com",
     "logo": "/logo_512.png",
     "sameAs": [
-      "https://www.linkedin.com/company/digital-sleep-lab",
-      "https://www.instagram.com/digitalsleeplab/",
-      "https://www.tiktok.com/@digitalsleeplab",
+      "https://www.crunchbase.com/organization/somnoai-digital-sleep-lab",
+      "https://www.linkedin.com/company/somnoai-digital-sleep-lab",
+      "https://www.instagram.com/sleepsomno/",
+      "https://www.tiktok.com/@somnoaidigitalsleeplab",
       "https://www.facebook.com/profile.php?id=61587027632695",
-      "https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og"
+      "https://www.youtube.com/channel/UCu0V4CzeSIdagRVrHL116Og",
+      "https://discord.gg/McrBeJXG8",
+      "https://t.me/somnoaidigitalsleeplab",
+      "https://whatsapp.com/channel/0029Vb6lxT11SWt4YLKSVG39",
+      "https://github.com/vyncuslim/SomnoAI-Digital-Sleep-Lab"
     ],
     "contactPoint": {
       "@type": "ContactPoint",

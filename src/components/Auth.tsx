@@ -179,7 +179,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     
     // Use a small timeout to ensure the DOM has updated if the widget was unmounted/remounted
     const timer = setTimeout(() => {
-      if (turnstileRef.current) {
+      if (turnstileRef.current && isTurnstileLoaded) {
         try {
           console.log('Calling turnstileRef.current.reset() due to view/method change');
           turnstileRef.current.reset();
@@ -236,13 +236,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         throw new Error('You must approve the Terms of Service and Privacy Policy.');
       }
 
-      const requiresCaptcha = (view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput)) && authMethod !== 'phone';
+      const requiresCaptcha = (view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput));
       
       if (requiresCaptcha && isTurnstileEnabled) {
         if (!turnstileToken) {
           console.warn('Turnstile token missing at submission. View:', view, 'AuthMethod:', authMethod);
           // Try one last time to reset if it's missing
-          if (turnstileRef.current) {
+          if (turnstileRef.current && isTurnstileLoaded) {
             try {
               turnstileRef.current.reset();
             } catch (e) {
@@ -284,8 +284,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           const { error: otpError } = await supabase.auth.signInWithOtp({
             phone: phone.replace(/\s/g, ''),
             options: {
-              // Do not send captchaToken for phone auth to avoid backend rejection
-              captchaToken: undefined,
+              captchaToken: turnstileToken || undefined,
             },
           });
           if (otpError) throw otpError;
@@ -382,8 +381,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           const { error: signUpError } = await supabase.auth.signInWithOtp({
             phone: phone.replace(/\s/g, ''),
             options: {
-              // Do not send captchaToken for phone signup to avoid backend rejection
-              captchaToken: undefined,
+              captchaToken: turnstileToken || undefined,
             },
           });
           
@@ -676,8 +674,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           const { error } = await supabase.auth.signInWithOtp({
             phone: phone.replace(/\s/g, ''),
             options: {
-              // Do not send captchaToken for phone signup to avoid backend rejection
-              captchaToken: undefined,
+              captchaToken: turnstileToken || undefined,
             }
           });
           if (error) throw error;
@@ -688,7 +685,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       setResendTimer(60);
       // Reset Turnstile for next potential resend
       setTurnstileToken(null);
-      if (turnstileRef.current) turnstileRef.current.reset();
+      if (turnstileRef.current && isTurnstileLoaded) turnstileRef.current.reset();
     } catch (err: any) {
       if (err.status === 429) {
         setError('Too many requests. Please wait a few minutes before trying again.');
@@ -995,7 +992,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                           onExpire={() => {
                             console.warn('Turnstile token expired');
                             setTurnstileToken(null);
-                            if (turnstileRef.current) turnstileRef.current.reset();
+                            if (turnstileRef.current && isTurnstileLoaded) turnstileRef.current.reset();
                           }}
                           onLoad={() => {
                             console.log('Turnstile widget loaded');
@@ -1011,7 +1008,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                             type="button"
                             onClick={() => {
                               setTurnstileToken(null);
-                              if (turnstileRef.current) turnstileRef.current.reset();
+                              if (turnstileRef.current && isTurnstileLoaded) turnstileRef.current.reset();
                             }}
                             className="absolute -right-2 -top-2 p-1 bg-slate-800 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-white"
                             title="Refresh Verification"
