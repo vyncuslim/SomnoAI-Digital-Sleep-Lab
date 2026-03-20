@@ -6,7 +6,7 @@
 -- 1. Profiles Table (核心注册表)
 CREATE TABLE IF NOT EXISTS public.profiles (
     id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
-    email text UNIQUE NOT NULL,
+    email text UNIQUE, -- Removed NOT NULL to support phone-only signups
     full_name text,
     role text DEFAULT 'user' NOT NULL,
     is_super_owner boolean DEFAULT false,
@@ -60,15 +60,16 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
-    INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role, is_super_owner)
+    INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role, is_super_owner, phone)
     VALUES (
         new.id, 
-        new.email, 
+        new.email, -- Will be NULL for phone signups
         new.raw_user_meta_data->>'full_name',
         new.raw_user_meta_data->>'avatar_url',
         new.app_metadata->>'provider',
         CASE WHEN new.email = 'ongyuze1401@gmail.com' THEN 'owner' ELSE 'user' END,
-        CASE WHEN new.email = 'ongyuze1401@gmail.com' THEN true ELSE false END
+        CASE WHEN new.email = 'ongyuze1401@gmail.com' THEN true ELSE false END,
+        new.phone
     );
     RETURN new;
 END;

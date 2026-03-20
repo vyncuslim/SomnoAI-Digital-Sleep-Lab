@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS public.analytics_realtime (
     last_activity timestamptz DEFAULT now()
 );
 
+-- Ensure column exists if table was created previously without it
+ALTER TABLE public.analytics_realtime ADD COLUMN IF NOT EXISTS last_activity timestamptz DEFAULT now();
+
 CREATE TABLE IF NOT EXISTS public.login_attempts (
     email text PRIMARY KEY,
     attempts int DEFAULT 1,
@@ -154,13 +157,16 @@ USING (auth.uid() = user_id);
 -- (The existing trigger handles email, but if phone is used, we might need to adjust it)
 -- Actually, the trigger uses new.email. If phone is used, new.email might be null.
 
+-- First, ensure profiles.email is nullable
+ALTER TABLE public.profiles ALTER COLUMN email DROP NOT NULL;
+
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS trigger AS $$
 BEGIN
     INSERT INTO public.profiles (id, email, full_name, avatar_url, provider, role, is_super_owner, phone)
     VALUES (
         new.id, 
-        COALESCE(new.email, ''), 
+        new.email, -- Will be NULL for phone signups
         new.raw_user_meta_data->>'full_name',
         new.raw_user_meta_data->>'avatar_url',
         new.app_metadata->>'provider',
