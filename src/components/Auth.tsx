@@ -117,6 +117,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     return { valid: true };
   };
   const [token, setToken] = useState('');
+  const [otpType, setOtpType] = useState<'signup' | 'sms' | 'recovery' | 'magiclink'>('sms');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
@@ -249,7 +250,46 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             throw new Error(phoneValidation.message);
           }
 
-          // Phone login usually uses OTP in Supabase
+          // If password is provided, try password login first
+          if (password) {
+            console.log('Attempting phone + password login');
+            const { data, error: signInError } = await supabase.auth.signInWithPassword({
+              phone: phone.replace(/\s/g, ''),
+              password,
+              options: {
+                captchaToken: turnstileToken || undefined,
+              },
+            });
+            
+            if (signInError) {
+              // If it's a "User not found" or "Invalid login credentials", 
+              // we might want to allow them to try OTP instead of just failing.
+              console.warn('Phone password login failed:', signInError.message);
+              throw signInError;
+            }
+            
+            if (data.user) {
+              await fetchWithLogging('/api/audit/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    userId: data.user.id,
+                    phone: phone.replace(/\s/g, ''),
+                    status: 'success',
+                    metadata: {
+                      auth_method: 'phone_password',
+                      device: navigator.userAgent
+                    }
+                })
+              }, 'Auth Phone Login Success');
+              navigate(`${langPrefix}/dashboard`);
+              return;
+            }
+          }
+
+          // Otherwise, use OTP login
+          console.log('Attempting phone OTP login');
+          setOtpType('sms');
           const { error: otpError } = await supabase.auth.signInWithOtp({
             phone: phone.replace(/\s/g, ''),
             options: {
@@ -344,16 +384,42 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             throw new Error(phoneValidation.message);
           }
 
-          const { error: signUpError } = await supabase.auth.signInWithOtp({
+          if (password !== confirmPassword) {
+            throw new Error('Passwords do not match.');
+          }
+
+          console.log('Attempting phone signup with password');
+          setOtpType('signup');
+          const { data, error: signUpError } = await supabase.auth.signUp({
             phone: phone.replace(/\s/g, ''),
+            password,
             options: {
               captchaToken: turnstileToken || undefined,
             },
           });
-          if (signUpError) throw signUpError;
-          setShowOtpInput(true);
-          setView('otp');
-          setSuccessMessage(lang === 'zh' ? '验证码已发送到您的手机。' : 'Verification code sent to your phone.');
+          
+          if (signUpError) {
+            await fetchWithLogging('/api/audit/auth-signup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                phone: phone.replace(/\s/g, ''),
+                success: false,
+                errorCode: signUpError.message
+              })
+            }, 'Auth Phone Signup Failure');
+            throw signUpError;
+          }
+          
+          if (data.user && !data.session) {
+            // OTP sent for verification
+            setShowOtpInput(true);
+            setView('otp');
+            setSuccessMessage(lang === 'zh' ? '验证码已发送到您的手机，请验证以完成注册。' : 'Verification code sent to your phone. Please verify to complete registration.');
+          } else if (data.session) {
+            // Logged in immediately
+            navigate(`${langPrefix}/dashboard`);
+          }
           return;
         }
 
@@ -428,17 +494,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
       } else if (view === 'otp') {
         if (showOtpInput) {
+          console.log('Verifying OTP:', { authMethod, otpType });
           const { data, error: verifyError } = await supabase.auth.verifyOtp({
             email: authMethod === 'email' ? email : undefined,
             phone: authMethod === 'phone' ? phone.replace(/\s/g, '') : undefined,
             token,
-            type: authMethod === 'email' ? 'email' : 'sms',
+            type: authMethod === 'email' ? 'magiclink' : otpType,
           });
           
           if (verifyError) throw verifyError;
           
           if (data.user) {
-            await logAuditLog(data.user.id, 'USER_LOGIN_OTP', 'Successful OTP login');
+            await logAuditLog(data.user.id, 'USER_LOGIN_OTP', `Successful OTP verification (${otpType})`);
             
             // Explicitly record phone number in profile if it was a phone login
             if (authMethod === 'phone') {
@@ -457,6 +524,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           return;
         }
 
+        console.log('Requesting new OTP:', { authMethod, otpType });
         const { error: otpError } = await supabase.auth.signInWithOtp({
           email: authMethod === 'email' ? email : undefined,
           phone: authMethod === 'phone' ? phone.replace(/\s/g, '') : undefined,
@@ -598,7 +666,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         setSuccessMessage('Verification email resent! Please check your inbox.');
       } else {
         const { error } = await supabase.auth.resend({
-          type: 'sms_otp',
+          type: otpType === 'signup' ? 'signup' : 'sms_otp',
           phone: phone.replace(/\s/g, ''),
         });
         if (error) throw error;
@@ -850,7 +918,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     </motion.div>
                   )}
 
-                  {(view === 'login' || view === 'signup') && authMethod === 'email' && (
+                  {(view === 'login' || view === 'signup') && (
                     <motion.div variants={itemVariants}>
                       <InputField
                         icon={Lock}
@@ -859,7 +927,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                         value={password}
                         onChange={(e: any) => setPassword(e.target.value)}
                         placeholder="••••••••"
-                        required
+                        required={view === 'signup' || (view === 'login' && authMethod === 'email')}
                         rightElement={
                           view === 'login' && (
                             <button 
@@ -872,6 +940,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                           )
                         }
                       />
+                      {view === 'login' && authMethod === 'phone' && (
+                        <p className="text-[9px] text-slate-600 mt-2 ml-4 font-mono uppercase tracking-wider">
+                          {lang === 'zh' ? '可选：输入密码登录，或留空使用验证码登录' : 'Optional: Enter password to sign in, or leave blank for OTP'}
+                        </p>
+                      )}
                     </motion.div>
                   )}
 
