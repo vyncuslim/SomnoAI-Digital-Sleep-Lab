@@ -125,6 +125,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- RPC: 写入审计日志
+DROP FUNCTION IF EXISTS public.write_audit_log(text, text, text, text, text, uuid, uuid, text, text, text, text, text, text, text, text, jsonb);
 CREATE OR REPLACE FUNCTION public.write_audit_log(
   p_source text,
   p_level text,
