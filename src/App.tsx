@@ -1,4 +1,4 @@
-import React, { useState, useEffect, Suspense, lazy } from 'react';
+import React, { useEffect, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import { trackPageView } from './services/analytics';
@@ -11,6 +11,7 @@ import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HelmetProvider } from 'react-helmet-async';
 import { SchemaMarkup } from './components/SchemaMarkup';
+import { AuthCallback } from './components/AuthCallback';
 
 // Lazy load components with retry for chunk loading errors
 const lazyWithRetry = (componentImport: () => Promise<any>) =>
@@ -126,53 +127,12 @@ const ArticleWrapper: React.FC<{ lang: Language }> = ({ lang }) => {
   return <ArticleView article={article} lang={lang} onBack={() => navigate(`${langPrefix}/news`)} />;
 };
 
+
 interface AppRoutesProps {
   lang: Language;
   setLang: (lang: Language) => void;
   handleNavigate: (path: string) => void;
 }
-
-const AuthCallback = () => {
-  const navigate = useNavigate();
-  const { user, loading } = useAuth();
-  const [timeoutReached, setTimeoutReached] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      if (window.opener) {
-        window.close();
-      } else {
-        navigate('/dashboard', { replace: true });
-      }
-    }
-  }, [user, navigate]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setTimeoutReached(true);
-    }, 5000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (timeoutReached && !loading && !user) {
-      if (window.opener) {
-        window.close();
-      } else {
-        navigate('/auth/login?error=unverified', { replace: true });
-      }
-    }
-  }, [timeoutReached, loading, user, navigate]);
-
-  return (
-    <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
-      <div className="text-center">
-        <div className="w-16 h-16 border-4 border-indigo-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-slate-500 font-mono text-xs uppercase tracking-widest">Verifying Identity...</p>
-      </div>
-    </div>
-  );
-};
 
 const AppRoutes: React.FC<AppRoutesProps> = ({
   lang,
