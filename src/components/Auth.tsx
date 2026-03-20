@@ -143,6 +143,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     return () => clearInterval(interval);
   }, [resendTimer]);
 
+  React.useEffect(() => {
+    console.log('Auth initialized', { 
+      isTurnstileEnabled, 
+      hasSiteKey: !!turnstileSiteKey,
+      env: import.meta.env.MODE
+    });
+  }, []);
+
   const [confirmPassword, setConfirmPassword] = useState('');
   const getPasswordStrength = (pass: string) => {
     if (!pass) return 0;
@@ -168,15 +176,21 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setError(null);
     // Clear Turnstile token when view or auth method changes to ensure fresh verification
     setTurnstileToken(null);
-    if (turnstileRef.current && isTurnstileLoaded) {
-      try {
-        console.log('Calling turnstileRef.current.reset() due to view/method change');
-        turnstileRef.current.reset();
-      } catch (e) {
-        console.warn('Failed to reset Turnstile:', e);
+    
+    // Use a small timeout to ensure the DOM has updated if the widget was unmounted/remounted
+    const timer = setTimeout(() => {
+      if (turnstileRef.current) {
+        try {
+          console.log('Calling turnstileRef.current.reset() due to view/method change');
+          turnstileRef.current.reset();
+        } catch (e) {
+          console.warn('Failed to reset Turnstile:', e);
+        }
       }
-    }
-  }, [view, authMethod, isTurnstileLoaded]);
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [view, authMethod]);
 
   const validateEmail = (email: string) => {
     const fakePatterns = ['@ddd', '@ds', '@123'];
@@ -222,11 +236,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         throw new Error('You must approve the Terms of Service and Privacy Policy.');
       }
 
-      const requiresCaptcha = view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput);
+      const requiresCaptcha = (view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput)) && authMethod !== 'phone';
       
       if (requiresCaptcha && isTurnstileEnabled) {
         if (!turnstileToken) {
           console.warn('Turnstile token missing at submission. View:', view, 'AuthMethod:', authMethod);
+          // Try one last time to reset if it's missing
           if (turnstileRef.current) {
             try {
               turnstileRef.current.reset();
@@ -236,7 +251,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           }
           throw new Error(lang === 'zh' ? '请先完成安全验证。' : 'Please complete the security verification.');
         }
-        console.log('Turnstile token present, proceeding with submission');
+        console.log('Turnstile token present (starts with: ' + turnstileToken.substring(0, 10) + '), proceeding with submission');
       }
 
       if (view === 'signup') {
@@ -269,7 +284,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           const { error: otpError } = await supabase.auth.signInWithOtp({
             phone: phone.replace(/\s/g, ''),
             options: {
-              captchaToken: turnstileToken || undefined,
+              // Do not send captchaToken for phone auth to avoid backend rejection
+              captchaToken: undefined,
             },
           });
           if (otpError) throw otpError;
@@ -366,7 +382,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           const { error: signUpError } = await supabase.auth.signInWithOtp({
             phone: phone.replace(/\s/g, ''),
             options: {
-              captchaToken: turnstileToken || undefined,
+              // Do not send captchaToken for phone signup to avoid backend rejection
+              captchaToken: undefined,
             },
           });
           
@@ -623,22 +640,55 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setError(null);
     setSuccessMessage(null);
     try {
+      console.log('Resending verification:', { authMethod, view, otpType, email, phone });
+      
       if (authMethod === 'email') {
-        const { error } = await supabase.auth.resend({
-          type: 'signup',
-          email: email,
-        });
-        if (error) throw error;
-        setSuccessMessage('Verification email resent! Please check your inbox.');
+        if (otpType === 'magiclink' || view === 'otp') {
+          // For magic link / passwordless login, use signInWithOtp
+          const { error } = await supabase.auth.signInWithOtp({
+            email: email,
+            options: {
+              emailRedirectTo: `${window.location.origin}/dashboard`,
+              captchaToken: turnstileToken || undefined,
+            }
+          });
+          if (error) throw error;
+          setSuccessMessage(lang === 'zh' ? '登录链接已重发，请检查您的邮箱。' : 'Login link resent! Please check your inbox.');
+        } else {
+          // For signup confirmation
+          const { error } = await supabase.auth.resend({
+            type: 'signup',
+            email: email,
+          });
+          if (error) throw error;
+          setSuccessMessage(lang === 'zh' ? '验证邮件已重发，请检查您的邮箱。' : 'Verification email resent! Please check your inbox.');
+        }
       } else {
-        const { error } = await supabase.auth.resend({
-          type: otpType === 'signup' ? 'signup' : 'sms_otp',
-          phone: phone.replace(/\s/g, ''),
-        });
-        if (error) throw error;
-        setSuccessMessage('Verification code resent! Please check your messages.');
+        // For phone
+        if (otpType === 'signup') {
+          const { error } = await supabase.auth.resend({
+            type: 'signup',
+            phone: phone.replace(/\s/g, ''),
+          });
+          if (error) throw error;
+        } else {
+          // For SMS OTP login
+          const { error } = await supabase.auth.signInWithOtp({
+            phone: phone.replace(/\s/g, ''),
+            options: {
+              // Do not send captchaToken for phone signup to avoid backend rejection
+              captchaToken: undefined,
+            }
+          });
+          if (error) throw error;
+        }
+        setSuccessMessage(lang === 'zh' ? '验证码已重发，请检查您的手机。' : 'Verification code resent! Please check your messages.');
       }
-      setResendTimer(60); // 60 seconds cooldown
+      
+      setResendTimer(60);
+      // Reset Turnstile for next potential resend
+      setTurnstileToken(null);
+      if (turnstileRef.current) turnstileRef.current.reset();
     } catch (err: any) {
       if (err.status === 429) {
         setError('Too many requests. Please wait a few minutes before trying again.');
@@ -928,22 +978,24 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
 
                   {(view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput)) && isTurnstileEnabled && (
                     <motion.div variants={itemVariants} className="space-y-4 ml-2 pt-2">
-                      <div className="pt-2">
+                      <div className="pt-2 relative group">
                         <Turnstile 
-                          key={`${view}-${authMethod}`}
+                          key={`ts-${view}-${authMethod}`}
                           ref={turnstileRef}
                           siteKey={turnstileSiteKey} 
                           onSuccess={(token) => {
-                            console.log('Turnstile success for', view, authMethod, 'token starts with:', token.substring(0, 10));
+                            console.log('Turnstile success for', view, authMethod, 'token length:', token.length);
                             setTurnstileToken(token);
                           }}
-                          onError={() => {
-                            console.error('Turnstile error');
+                          onError={(error) => {
+                            console.error('Turnstile error:', error);
                             setError('Security verification failed. Please try again.');
+                            setTurnstileToken(null);
                           }}
                           onExpire={() => {
                             console.warn('Turnstile token expired');
                             setTurnstileToken(null);
+                            if (turnstileRef.current) turnstileRef.current.reset();
                           }}
                           onLoad={() => {
                             console.log('Turnstile widget loaded');
@@ -954,6 +1006,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                             size: 'normal',
                           }}
                         />
+                        {isTurnstileLoaded && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setTurnstileToken(null);
+                              if (turnstileRef.current) turnstileRef.current.reset();
+                            }}
+                            className="absolute -right-2 -top-2 p-1 bg-slate-800 rounded-full opacity-0 group-hover:opacity-100 transition-opacity text-slate-400 hover:text-white"
+                            title="Refresh Verification"
+                          >
+                            <Loader2 size={12} className={loading ? 'animate-spin' : ''} />
+                          </button>
+                        )}
                       </div>
                     </motion.div>
                   )}
