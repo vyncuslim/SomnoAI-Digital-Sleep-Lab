@@ -56,10 +56,6 @@ const Contact = lazyWithRetry(() => import('./pages/Contact').then(module => ({ 
 const LegalHub = lazyWithRetry(() => import('./pages/LegalHub').then(module => ({ default: module.LegalHub })));
 const MediaResources = lazyWithRetry(() => import('./pages/MediaResources').then(module => ({ default: module.MediaResources })));
 const DynamicPage = lazyWithRetry(() => import('./pages/DynamicPage').then(module => ({ default: module.DynamicPage })));
-const Privacy = lazyWithRetry(() => import('./pages/Privacy').then(module => ({ default: module.Privacy })));
-const CookiePolicy = lazyWithRetry(() => import('./pages/CookiePolicy').then(module => ({ default: module.CookiePolicy })));
-const HealthDisclaimer = lazyWithRetry(() => import('./pages/HealthDisclaimer').then(module => ({ default: module.HealthDisclaimer })));
-const DataHandling = lazyWithRetry(() => import('./pages/DataHandling').then(module => ({ default: module.DataHandling })));
 const LegalContact = lazyWithRetry(() => import('./pages/LegalContact').then(module => ({ default: module.LegalContact })));
 const Atlas = lazyWithRetry(() => import('./pages/Atlas').then(module => ({ default: module.Atlas })));
 const Dreams = lazyWithRetry(() => import('./pages/Dreams').then(module => ({ default: module.Dreams })));
@@ -239,12 +235,21 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       {/* Legal & Support */}
       <Route path="legal" element={<LegalHub lang={lang} />} />
       <Route path="media" element={<MediaResources lang={lang} />} />
-      <Route path="legal/privacy-policy" element={<Privacy />} />
-      <Route path="legal/cookies" element={<CookiePolicy />} />
-      <Route path="legal/medical-disclaimer" element={<HealthDisclaimer />} />
-      <Route path="legal/data-handling" element={<DataHandling />} />
-      <Route path="legal/contact" element={<LegalContact />} />
+      <Route path="legal/privacy-policy" element={<DynamicPage lang={lang} type="privacy-policy" />} />
+      <Route path="legal/terms-of-service" element={<DynamicPage lang={lang} type="terms-of-service" />} />
+      <Route path="legal/cookies" element={<DynamicPage lang={lang} type="cookies" />} />
+      <Route path="legal/cookie-policy" element={<Navigate to={`${langPrefix}/legal/cookies`} replace />} />
+      <Route path="legal/medical-disclaimer" element={<DynamicPage lang={lang} type="medical-disclaimer" />} />
+      <Route path="legal/data-handling" element={<DynamicPage lang={lang} type="data-handling" />} />
+      <Route path="legal/contact" element={<LegalContact lang={lang} />} />
       <Route path="legal/data-processing" element={<Navigate to={`${langPrefix}/legal/data-handling`} replace />} />
+      <Route path="legal/security" element={<DynamicPage lang={lang} type="security" />} />
+      <Route path="legal/acceptable-use" element={<DynamicPage lang={lang} type="acceptable-use" />} />
+      <Route path="legal/ai-disclaimer" element={<DynamicPage lang={lang} type="ai-disclaimer" />} />
+      <Route path="legal/abuse-policy" element={<DynamicPage lang={lang} type="abuse-policy" />} />
+      <Route path="legal/account-blocking" element={<DynamicPage lang={lang} type="account-blocking" />} />
+      <Route path="legal/policy-framework" element={<DynamicPage lang={lang} type="policy-framework" />} />
+      <Route path="legal/open-source" element={<DynamicPage lang={lang} type="open-source" />} />
       <Route path="legal/:type" element={<DynamicPage lang={lang} />} />
       <Route path="privacy" element={<Navigate to={`${langPrefix}/legal/privacy-policy`} replace />} />
       <Route path="terms" element={<Navigate to={`${langPrefix}/legal/terms-of-service`} replace />} />

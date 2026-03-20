@@ -34,7 +34,9 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
     { name: 'PRIVACY POLICY', path: '/legal/privacy-policy' },
     { name: 'SECURITY', path: '/legal/security' },
     { name: 'MEDICAL DISCLAIMER', path: '/legal/medical-disclaimer' },
-    { name: 'ACCOUNT BLOCKING', path: '/legal/account-blocking' }
+    { name: 'ACCOUNT BLOCKING', path: '/legal/account-blocking' },
+    { name: 'VULNERABILITY DISCLOSURE', path: '/legal/vulnerability-disclosure' },
+    { name: 'INTELLECTUAL PROPERTY', path: '/legal/intellectual-property' }
   ];
 
   const policyLinks = [
@@ -42,6 +44,11 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
     { name: 'ACCEPTABLE USE', path: '/legal/acceptable-use' },
     { name: 'DATA HANDLING', path: '/legal/data-handling' },
     { name: 'POLICY FRAMEWORK', path: '/legal/policy-framework' },
+    { name: 'PRICING & BILLING', path: '/legal/pricing-and-billing' },
+    { name: 'REFUND & CANCELLATION', path: '/legal/refund-and-cancellation' },
+    { name: 'APPEALS & COMPLAINTS', path: '/legal/appeals-and-complaints' },
+    { name: 'SUB-PROCESSORS', path: '/legal/subprocessors' },
+    { name: 'DPA', path: '/legal/dpa' },
     { name: 'LEGAL CONTACT', path: '/legal/contact' }
   ];
 

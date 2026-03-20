@@ -79,17 +79,20 @@ This platform is not a clinical research facility and does not conduct medical t
       subtitle: "System Mailboxes",
       content: `The following official communication channels are active for the SomnoAI Digital Sleep Lab ecosystem:
 
+**General Legal Inquiries:** legal@sleepsomno.com (15GB)
+**Privacy & Data Protection:** legal@sleepsomno.com (15GB)
+**Security & Vulnerability Reporting:** security@sleepsomno.com (15GB)
+**Intellectual Property & Copyright:** legal@sleepsomno.com (15GB)
+**Law Enforcement Requests:** legal@sleepsomno.com (15GB)
+**Media & Press Inquiries:** press@sleepsomno.com (15GB)
+**Partnership & Business Legal:** partnership@sleepsomno.com (15GB)
+
 **Support Node:** support@sleepsomno.com (15GB)
-**Partnership Node:** partnership@sleepsomno.com (15GB)
-**Legal Node:** legal@sleepsomno.com (15GB)
 **Contact Node:** contact@sleepsomno.com (15GB)
 **Admin Node:** admin@sleepsomno.com (Catch-all, 15GB)
 **Founder Node:** founder@sleepsomno.com (15GB)
-**Media Node:** media@sleepsomno.com (15GB)
 **Office Node:** office@sleepsomno.com (15GB)
-**Press Node:** press@sleepsomno.com (15GB)
 **Product Node:** product@sleepsomno.com (15GB)
-**Security Node:** security@sleepsomno.com (15GB)
 **Service Node:** service@sleepsomno.com (15GB)
 **Team Node:** team@sleepsomno.com (15GB)
 **Tech Node:** tech@sleepsomno.com (15GB)
@@ -157,180 +160,496 @@ All algorithms, software, designs, and content are the exclusive property of Som
 For detailed policies, please refer to the specific documents linked in our footer.`
     },
     "privacy-policy": {
-      title: "SomnoAI Digital Sleep Lab Privacy Policy",
+      title: "Privacy Policy",
       subtitle: "Your Data, Your Privacy",
-      content: `The Privacy Policy of SomnoAI Digital Sleep Lab explains how information may be collected, processed, stored, and protected when users interact with the platform. Protecting user privacy is an important consideration in the development and operation of digital platforms that process behavioral data.
+      content: `This Privacy Policy explains what personal data SomnoAI Digital Sleep Lab collects, how we use it, how we protect it, and the rights available to users. We are committed to protecting your privacy and ensuring a secure environment for your sleep-related data.
 
-SomnoAI Digital Sleep Lab may collect certain categories of information in order to operate the platform and provide analytical features. These categories may include user-provided sleep information, technical usage data related to platform functionality, and system-generated analytics that help maintain platform performance.
+**1. Information We Collect**
+We collect information that you provide directly to us, such as when you create an account, connect a device, or contact us for support. This may include:
+• Account Information: Name, email address, and login credentials.
+• Sleep & Activity Data: Sleep duration, timing, movement patterns, and other biometric signals from connected devices.
+• Technical Data: IP address, browser type, device information, and usage logs.
 
-User-provided sleep data may include information such as sleep duration, bedtime schedules, wake times, and other behavioral signals submitted through the platform. This information may be processed in order to generate sleep pattern summaries and analytical insights. The purpose of this processing is to enable the system to identify patterns within sleep-related datasets.
+**2. How We Use Your Information**
+We use the collected data to:
+• Provide and maintain our services.
+• Generate personalized sleep insights and behavioral analysis.
+• Improve platform performance and develop new features.
+• Communicate with you regarding updates, security alerts, and support.
+• Ensure compliance with our legal obligations and policies.
 
-Technical information may also be collected to support platform functionality and system stability. This may include device information, browser type, usage logs, and system performance metrics. These signals help maintain service reliability and ensure that the platform operates as intended.
+**3. Data Sharing & Disclosure**
+We do not sell your personal data. We may share information only in the following circumstances:
+• With your explicit consent.
+• With service providers who assist in our operations (under strict confidentiality).
+• For legal reasons, such as complying with a subpoena or protecting our rights.
 
-SomnoAI Digital Sleep Lab aims to implement reasonable safeguards designed to protect information from unauthorized access or misuse. Security practices may include system monitoring, access control mechanisms, and technical protections intended to reduce risk.
+**4. Data Security**
+We implement industry-standard technical and organizational measures to protect your data. However, no method of transmission over the internet is 100% secure.
 
-Users should understand that no digital system can guarantee absolute protection against all potential risks associated with online data processing. While efforts are made to protect information, users should exercise caution when sharing sensitive information online.
-
-The platform may update its privacy practices over time as the system evolves and new technologies are introduced. Users are encouraged to review the Privacy Policy periodically in order to remain informed about how information is handled.`
+**5. Your Rights**
+You have the right to access, correct, or delete your personal data. You can manage your information through your account settings or by contacting us at legal@sleepsomno.com.`
     },
     "terms-of-service": {
-      title: "SomnoAI Digital Sleep Lab Terms of Service",
+      title: "Terms of Service",
       subtitle: "Rules of Engagement",
-      content: `The Terms of Service describe the conditions under which individuals may access and interact with the SomnoAI Digital Sleep Lab platform. These terms establish the guidelines that govern user behavior, platform usage, and system limitations.
+      content: `These Terms of Service govern your access to and use of SomnoAI Digital Sleep Lab’s products, services, website, and related digital features. By using our platform, you agree to be bound by these terms.
 
-By accessing or using the platform, users agree to comply with the conditions described in these terms. The platform is provided as a technology exploration environment intended to support analysis of sleep-related information through computational methods.
+**1. Acceptance of Terms**
+By accessing or using SomnoAI Digital Sleep Lab, you confirm that you have read, understood, and agreed to these Terms of Service. If you do not agree, you must not use our services.
 
-Users are responsible for ensuring that the information they provide through the platform is accurate to the best of their knowledge. The platform relies on user-provided signals and behavioral inputs to generate analytical summaries.
+**2. Description of Service**
+SomnoAI Digital Sleep Lab provides a digital environment for the analysis of sleep-related behavioral data using artificial intelligence and computational modeling. The platform is intended for informational and research purposes only.
 
-SomnoAI Digital Sleep Lab reserves the right to modify platform functionality, introduce new features, or discontinue certain components as part of the ongoing development of the project.
+**3. User Responsibilities**
+You are responsible for:
+• Providing accurate and truthful information.
+• Maintaining the confidentiality of your account credentials.
+• Ensuring your use of the platform complies with all applicable laws.
 
-Users must not attempt to misuse the platform or interfere with its normal operation. Actions such as attempting to exploit system vulnerabilities, automated abuse of services, or deliberate disruption of platform functionality are considered violations of these terms.
+**4. Prohibited Conduct**
+You agree not to:
+• Misuse the platform or interfere with its normal operation.
+• Attempt to bypass security measures or exploit vulnerabilities.
+• Use the platform for any illegal or unauthorized purpose.
 
-Violations of the Terms of Service may result in restrictions on access to the platform or other protective measures designed to maintain system stability.
+**5. Intellectual Property**
+All content, algorithms, and software on the platform are the property of SomnoAI Digital Sleep Lab or its licensors and are protected by intellectual property laws.
 
-**Account Banning**
-SomnoAI Digital Sleep Lab reserves the right to ban accounts for reasons including:
+**6. Limitation of Liability**
+SomnoAI Digital Sleep Lab is provided "as is" without warranties of any kind. We are not liable for any damages arising from your use of the platform.
 
-• Security violations or suspicious activity.
-• Violation of our Terms of Service or Acceptable Use Policy.
-• Actions that threaten the stability of our infrastructure.
-
-Banned users will be notified via their registered email.`
+**7. Account Termination**
+We reserve the right to suspend or terminate your account at our discretion, including for violations of these terms.`
     },
     cookies: {
-      title: "SomnoAI Digital Sleep Lab Cookies Policy",
-      subtitle: "How We Use Cookies",
-      content: `The SomnoAI Digital Sleep Lab website may use cookies and similar technologies to support platform functionality and improve the user experience.
+      title: "Cookie Policy",
+      subtitle: "Managing Your Preferences",
+      content: `This Cookie Policy explains how SomnoAI Digital Sleep Lab uses cookies and similar technologies to recognize you when you visit our website. It explains what these technologies are and why we use them, as well as your rights to control our use of them.
 
-Cookies are small data files stored on a user’s device that allow websites to remember information about user preferences or interactions. These technologies may be used to maintain session continuity, store certain user settings, or analyze platform usage patterns.
+**1. What are Cookies?**
+Cookies are small data files that are placed on your computer or mobile device when you visit a website. They are widely used by website owners to make their websites work, or to work more efficiently, as well as to provide reporting information.
 
-Cookies may also help the platform understand how visitors interact with the website. This information may be used to improve navigation, enhance platform performance, and support ongoing development of the system.
+**2. Why do we use Cookies?**
+We use first-party and third-party cookies for several reasons:
+• Essential Cookies: These are strictly necessary to provide you with services available through our website and to use some of its features.
+• Performance & Functionality Cookies: These are used to enhance the performance and functionality of our website but are non-essential to its use.
+• Analytics & Customization Cookies: These collect information that is used either in aggregate form to help us understand how our website is being used or how effective our marketing campaigns are.
 
-Users typically have the ability to manage cookie preferences through their web browser settings. Most browsers allow users to disable cookies, delete stored cookies, or control how cookies are used by websites.
-
-Disabling cookies may affect certain features of the platform that rely on session management or stored preferences.`
+**3. How can I control Cookies?**
+You have the right to decide whether to accept or reject cookies. You can set or amend your web browser controls to accept or refuse cookies. If you choose to reject cookies, you may still use our website though your access to some functionality and areas of our website may be restricted.`
     },
     security: {
-      title: "Platform Security Practices",
+      title: "Security Overview",
       subtitle: "Protecting the Lab",
-      content: `SomnoAI Digital Sleep Lab implements technical and operational measures designed to protect platform integrity and reduce the risk of unauthorized access.
+      content: `At SomnoAI Digital Sleep Lab, security is a top priority. We employ a multi-layered approach to protect our platform, our data, and our users.
 
-Security practices may include system monitoring, authentication mechanisms, access control systems, and infrastructure protections designed to safeguard digital resources.
+**1. Data Encryption**
+We use industry-standard encryption protocols (such as TLS/SSL) to protect data in transit between your device and our servers. Data at rest is also encrypted using robust cryptographic standards.
 
-Regular monitoring of system activity may be performed to detect unusual behavior or potential vulnerabilities within the platform environment.
+**2. Access Control**
+Access to sensitive data and systems is strictly controlled and limited to authorized personnel only. We use multi-factor authentication (MFA) and follow the principle of least privilege.
 
-Although security measures are implemented to reduce risk, users should understand that no online system can guarantee complete protection against all potential threats.
+**3. Infrastructure Security**
+Our infrastructure is hosted on secure, world-class cloud platforms that comply with rigorous security standards. We perform regular security audits and vulnerability assessments.
 
-Users are encouraged to maintain safe online practices, including protecting account credentials and avoiding the sharing of sensitive information through unsecured channels.`
+**4. Incident Response**
+We have a dedicated incident response plan in place to quickly address and mitigate any security threats or breaches. If you discover a security vulnerability, please contact us at security@sleepsomno.com.`
     },
     "acceptable-use": {
       title: "Acceptable Use Policy",
-      subtitle: "Community Standards",
-      content: `The Acceptable Use Policy defines the rules and expectations that govern how users may interact with the SomnoAI Digital Sleep Lab platform and its related services. This policy is intended to protect the integrity, reliability, and security of the platform while ensuring that all users can access and use the system in a safe and responsible environment.
+      subtitle: "Safe and Responsible Use",
+      content: `This Acceptable Use Policy (AUP) outlines the rules and guidelines for using SomnoAI Digital Sleep Lab. Our goal is to ensure a safe, respectful, and productive environment for all users.
 
-Users of SomnoAI Digital Sleep Lab must use the platform in a manner that respects the stability of the system and the experience of other users. The platform is designed as a technological environment for analyzing sleep-related behavioral data, and it must be used in accordance with responsible digital practices.
+**1. Prohibited Activities**
+You agree not to use the platform to:
+• Violate any local, state, national, or international law.
+• Harm, threaten, or harass others.
+• Upload or transmit viruses, malware, or any other malicious code.
+• Attempt to gain unauthorized access to our systems or other users' accounts.
+• Reverse engineer, decompile, or disassemble any part of the platform.
 
-Users agree not to misuse the platform or attempt to exploit any technical vulnerabilities within the system. Activities that interfere with the normal operation of the platform or degrade the quality of service for other users are strictly prohibited.
+**2. Content Standards**
+Any data or content you provide must be:
+• Accurate and truthful.
+• Free of any infringing or proprietary material that you do not have the right to share.
+• Non-offensive and appropriate for a professional research environment.
 
-Examples of prohibited behavior may include, but are not limited to:
-
-• Attempting to bypass or circumvent security protections or authentication mechanisms
-• Performing automated abuse of platform services through bots or scripts designed to overload system resources
-• Introducing malicious software, viruses, or harmful code into the platform environment
-• Attempting to reverse engineer, manipulate, or disrupt system functionality
-• Engaging in activities intended to interfere with normal platform operations
-• Attempting to access restricted system components without authorization
-
-Users are also expected to comply with applicable laws and regulations when interacting with the platform. Activities that violate local, national, or international laws are not permitted.
-
-SomnoAI Digital Sleep Lab reserves the right to monitor system activity for the purpose of maintaining platform stability and detecting potential misuse. If violations of the Acceptable Use Policy are detected, the platform may take protective actions including restricting access, suspending accounts, or implementing other measures necessary to protect system integrity.
-
-Failure to follow acceptable use guidelines may result in temporary or permanent limitations on access to the platform.`
+**3. Enforcement**
+We reserve the right to investigate any suspected violation of this AUP. Failure to comply may result in the suspension or termination of your access to the platform.`
     },
     "ai-disclaimer": {
       title: "AI Disclaimer",
-      subtitle: "Understanding AI Insights",
-      content: `SomnoAI Digital Sleep Lab uses artificial intelligence technologies to analyze patterns within user-provided data and behavioral signals related to sleep activity. These technologies rely on computational models designed to detect correlations within datasets.
+      subtitle: "Understanding AI-Generated Insights",
+      content: `SomnoAI Digital Sleep Lab utilizes advanced artificial intelligence and computational modeling to analyze sleep-related data. It is important to understand the nature and limitations of these technologies.
 
-Artificial intelligence systems operate based on probabilistic analysis rather than deterministic conclusions. This means that the insights generated by the platform represent algorithmic interpretations of data rather than verified factual determinations.
+**1. Nature of AI Insights**
+The insights, patterns, and summaries generated by our platform are the result of complex algorithmic processing. While we strive for high accuracy, AI models can sometimes produce unexpected or incomplete results.
 
-AI-generated outputs may contain limitations, uncertainties, or variations inherent to machine learning systems. Because these models rely on available data and statistical pattern recognition, the insights generated by the platform should be interpreted as informational observations rather than definitive assessments.
+**2. No Human Intervention**
+The analysis provided is automated and does not involve real-time review by human sleep specialists unless explicitly stated as part of a specific research program.
 
-Users should understand that artificial intelligence is a tool designed to assist in the interpretation of complex datasets. The purpose of these systems within SomnoAI Digital Sleep Lab is to provide analytical insights that may help users reflect on their sleep patterns.
-
-AI-generated insights should not be interpreted as scientific conclusions, professional advice, or medical determinations. Users are encouraged to consider the outputs of the system as informational interpretations that may support personal awareness of sleep behavior.
-
-The platform continues to evolve as computational models are refined and improved over time.`
+**3. Experimental Technology**
+Many of the features on our platform are experimental. They are intended to push the boundaries of sleep science and should be viewed as tools for exploration and research rather than definitive conclusions.`
     },
     "medical-disclaimer": {
       title: "Medical Disclaimer",
-      subtitle: "Not a Medical Device",
-      content: `SomnoAI Digital Sleep Lab does not provide medical advice, medical diagnosis, or medical treatment. The platform is designed as a technology exploration environment that analyzes behavioral data related to sleep patterns using computational methods.
+      subtitle: "Not a Substitute for Professional Advice",
+      content: `SomnoAI Digital Sleep Lab is a digital research and analysis platform. It is NOT a medical device and does NOT provide medical advice, diagnosis, or treatment.
 
-Information generated by the platform is intended for informational and educational purposes only. The analytical insights provided by the system should not be interpreted as professional medical guidance.
+**1. Not for Medical Use**
+The information provided by the platform is for informational and research purposes only. It should not be used to diagnose or treat any sleep disorder or medical condition.
 
-Sleep behavior can be influenced by many biological, psychological, and environmental factors. Digital platforms analyzing behavioral data cannot replace professional medical evaluation performed by qualified healthcare providers.
+**2. Consult a Professional**
+Always seek the advice of your physician or other qualified health provider with any questions you may have regarding a medical condition. Never disregard professional medical advice or delay in seeking it because of something you have read on this platform.
 
-Users experiencing persistent sleep disturbances, fatigue, insomnia, or other health concerns should seek guidance from licensed medical professionals who are qualified to provide clinical assessment and treatment recommendations.
-
-The SomnoAI Digital Sleep Lab platform should not be used as a substitute for professional medical consultation, diagnosis, or treatment.`
+**3. Emergency Situations**
+If you think you may have a medical emergency, call your doctor or emergency services immediately. SomnoAI Digital Sleep Lab is not intended for use in emergency or life-critical situations.`
     },
-    "data-processing": {
-      title: "Data Processing",
+    "data-handling": {
+      title: "Data Handling Notice",
       subtitle: "How We Handle Information",
-      content: `SomnoAI Digital Sleep Lab processes certain categories of information in order to operate the platform and provide analytical insights related to sleep behavior.
+      content: `This Data Handling Notice describes how SomnoAI Digital Sleep Lab processes, stores, and protects the information you provide to us.
 
-Data processing may include the analysis of user-provided sleep information, system-generated metrics, and technical data associated with platform performance and system functionality. These processes allow the platform to identify patterns within sleep-related datasets and generate structured summaries.
+**1. Data Minimization**
+We only collect the data that is strictly necessary to provide our services and generate sleep insights. We do not collect excessive or irrelevant information.
 
-The information processed by the platform may include behavioral signals such as sleep duration, sleep timing, nighttime interruptions, and other related inputs submitted by users.
+**2. Storage & Retention**
+Data is stored on secure servers with restricted access. We retain your data only for as long as necessary to fulfill the purposes for which it was collected, or as required by law.
 
-Technical data may also be collected to support system reliability and operational performance. This may include device information, system usage patterns, and platform activity logs that help maintain service stability.
+**3. Anonymization & Aggregation**
+Where possible, we anonymize or aggregate data to protect individual identities, especially when using data for research and platform improvement.
 
-SomnoAI Digital Sleep Lab aims to maintain transparency regarding how data is processed within the system. The platform is designed to process information for the purpose of generating insights, improving analytical models, and maintaining platform functionality.
-
-Users should understand that digital systems analyzing behavioral data rely on computational processing in order to operate effectively.`
+**4. User Control**
+You have control over your data. You can request a copy of your data, ask for corrections, or request deletion at any time by contacting legal@sleepsomno.com.`
     },
     "abuse-policy": {
       title: "Abuse Policy",
       subtitle: "Maintaining a Safe Environment",
-      content: `The Abuse Policy describes behaviors that are considered misuse of the SomnoAI Digital Sleep Lab platform. Protecting the stability and reliability of the system requires preventing activities that interfere with platform operations.
+      content: `SomnoAI Digital Sleep Lab is committed to preventing abuse and ensuring the stability of our platform. This policy outlines what we consider to be abusive behavior.
 
-Examples of abusive behavior may include attempts to exploit system vulnerabilities, perform automated attacks, overload system resources, or intentionally misuse platform functionality in a manner that disrupts normal operations.
+**1. System Abuse**
+Any attempt to disrupt the platform's operation, including DDoS attacks, automated scraping, or exploiting technical vulnerabilities, is strictly prohibited.
 
-Activities that involve unauthorized access attempts, automated scraping of platform data, or the use of malicious tools designed to interfere with system functionality may also be considered abusive behavior.
+**2. User Abuse**
+Harassment, spamming, or any form of malicious interaction with other users or our team will not be tolerated.
 
-SomnoAI Digital Sleep Lab reserves the right to investigate suspicious activity in order to protect platform stability. If abuse is detected, the platform may implement protective measures designed to mitigate risk and maintain service availability for legitimate users.`
+**3. Reporting Abuse**
+If you witness or experience abuse on our platform, please report it immediately to security@sleepsomno.com. We investigate all reports and take appropriate action.`
     },
     "account-blocking": {
       title: "Account Blocking Policy",
       subtitle: "Protecting the Ecosystem",
-      content: `SomnoAI Digital Sleep Lab reserves the right to ban accounts for reasons including:
+      content: `To maintain the integrity of SomnoAI Digital Sleep Lab, we reserve the right to block or suspend accounts that violate our policies.
 
-• Security violations or suspicious activity.
-• Violation of our Terms of Service or Acceptable Use Policy.
-• Actions that threaten the stability of our infrastructure.
+**1. Reasons for Blocking**
+Accounts may be blocked for:
+• Repeated violations of our Terms of Service or Acceptable Use Policy.
+• Suspicious or fraudulent activity.
+• Actions that pose a security risk to our infrastructure or other users.
 
-Banned users will be notified via their registered email.`
+**2. Notification**
+If your account is blocked, you will receive a notification at your registered email address explaining the reason for the action.
+
+**3. Appeals**
+If you believe your account was blocked in error, you can submit an appeal to legal@sleepsomno.com. We review all appeals on a case-by-case basis.`
     },
     "policy-framework": {
       title: "Policy Framework",
       subtitle: "Our Governing Principles",
-      content: `The Policy Framework describes how governance policies are structured and maintained within SomnoAI Digital Sleep Lab. These policies provide guidelines for platform operation, user responsibilities, and system protection measures.
+      content: `The SomnoAI Digital Sleep Lab Policy Framework provides the structure for our legal, privacy, and operational guidelines.
 
-A clear policy framework helps ensure consistency in how rules are applied across the platform environment. It also promotes transparency by providing users with information about the standards that guide platform governance.
+**1. Transparency**
+We are committed to making our policies clear, accessible, and easy to understand.
 
-Policies may evolve over time as the platform continues to develop and new technologies are introduced. Updates to policies may reflect improvements in system functionality, security practices, and regulatory considerations.
+**2. Consistency**
+Our policies are applied consistently across our platform to ensure fairness for all users.
 
-Maintaining a structured policy framework helps support responsible platform operation and long-term system stability.`
+**3. Continuous Improvement**
+We regularly review and update our policies to reflect changes in technology, law, and our services.
+
+**4. User-Centric Approach**
+Our policies are designed with the user's best interests in mind, balancing innovation with protection and privacy.`
+    },
+    "legal-contact": {
+      title: "Legal Contact",
+      subtitle: "Contact Us",
+      intro: "If you have specific legal inquiries, privacy concerns, or need to submit a formal request to SomnoAI Digital Sleep Lab, please use the appropriate contact channel below.",
+      subIntro: "To ensure your request is processed efficiently, we recommend contacting the specific department related to your inquiry.",
+      categories: [
+        { title: "General Legal Inquiries", description: "For general questions regarding our legal framework, corporate information, or regulatory compliance.", email: "legal@sleepsomno.com" },
+        { title: "Privacy & Data Protection", description: "For data access requests, deletion requests, privacy concerns, or inquiries regarding how we handle personal data.", email: "legal@sleepsomno.com" },
+        { title: "Security & Vulnerability Reporting", description: "For reporting security vulnerabilities, data breaches, or other platform integrity concerns.", email: "security@sleepsomno.com" },
+        { title: "Intellectual Property & Copyright", description: "For inquiries related to trademarks, copyrights, or reporting potential intellectual property infringements.", email: "legal@sleepsomno.com" },
+        { title: "Law Enforcement Requests", description: "For formal requests from government agencies or law enforcement authorities.", email: "legal@sleepsomno.com" },
+        { title: "Media & Press Inquiries", description: "For official statements, media kits, or press-related legal matters.", email: "press@sleepsomno.com" },
+        { title: "Partnership & Business Legal", description: "For legal matters related to business collaborations, vendor agreements, or institutional partnerships.", email: "partnership@sleepsomno.com" }
+      ],
+      otherTitle: "Other Departmental Contacts",
+      otherContacts: [
+        { label: "Administration", email: "admin@sleepsomno.com" },
+        { label: "Founder Office", email: "founder@sleepsomno.com" },
+        { label: "General Contact", email: "contact@sleepsomno.com" },
+        { label: "Office", email: "office@sleepsomno.com" },
+        { label: "Product", email: "product@sleepsomno.com" },
+        { label: "Service", email: "service@sleepsomno.com" },
+        { label: "Support", email: "support@sleepsomno.com" },
+        { label: "Team", email: "team@sleepsomno.com" },
+        { label: "Technical", email: "tech@sleepsomno.com" }
+      ]
+    },
+    "pricing-and-billing": {
+      title: "Pricing & Billing Policy",
+      subtitle: "Commercial Terms & Usage",
+      content: `This Pricing & Billing Policy explains how pricing, usage limits, subscriptions, billing, and payment-related matters may apply to SomnoAI Digital Sleep Lab products and services.
+
+**1. Pricing Structure**
+SomnoAI Digital Sleep Lab may offer free, trial, beta, limited-access, subscription-based, usage-based, or custom-priced services depending on the product, feature, user category, or commercial arrangement.
+Certain features may be available without payment, while others may require a paid plan, upgraded access, or separate commercial approval.
+
+**2. Product Availability and Pricing Changes**
+We reserve the right to introduce, modify, suspend, or discontinue pricing plans, usage limits, feature access, bundled offerings, or product availability at any time.
+Where reasonably appropriate, updated pricing will be reflected on the relevant website, product interface, order page, quote, or service documentation.
+
+**3. Usage Limits**
+Some plans may include usage limits, feature caps, request limits, account restrictions, or access thresholds. If a plan includes defined quotas, those limits apply unless otherwise stated in writing.
+We may enforce technical or operational controls to manage fair use, system performance, abuse prevention, platform stability, or feature availability.
+
+Certain SomnoAI Digital Sleep Lab services may include daily usage-based access models. For example, a free plan may provide limited daily access to AI chat and analytics features, while paid access may increase the number of daily interactions or feature availability. Actual limits, feature scope, and plan entitlements are subject to the product page, checkout page, or service description in effect at the time of purchase.
+
+**4. Billing Terms**
+If you purchase a paid service, you agree to provide valid and current billing information and authorize the applicable charges associated with your selected plan, subscription, or order.
+Charges may be one-time, recurring, usage-based, milestone-based, invoice-based, or otherwise structured depending on the applicable arrangement.
+
+**5. Taxes**
+Unless otherwise stated, fees may exclude applicable taxes, duties, levies, withholding obligations, or other government-imposed charges. You are responsible for any taxes required under applicable law, except for taxes based on our net income.
+
+**6. Payment Processing**
+Payments may be processed directly by SomnoAI Digital Sleep Lab or through authorized third-party payment providers. We are not responsible for errors, downtime, or operational issues caused by third-party payment systems beyond our reasonable control.
+
+**7. Failure to Pay**
+If payment is declined, overdue, reversed, disputed, or otherwise not successfully completed, we may suspend or limit access to relevant services, features, or accounts until the matter is resolved.
+
+**8. Promotional Offers**
+Any trial, beta access, promotional credit, discount, or limited-time offer may be subject to additional conditions, expiration dates, usage restrictions, or withdrawal at our discretion unless prohibited by law.
+
+**9. No Guarantee of Future Pricing**
+Current pricing, feature scope, or plan structure does not guarantee continued availability of the same commercial terms in the future.
+
+**10. Contact**
+For billing-related questions, please contact the relevant support or legal contact channel listed on our website.`
+    },
+    "refund-and-cancellation": {
+      title: "Refund & Cancellation Policy",
+      subtitle: "Subscriptions & Refunds",
+      content: `This Refund & Cancellation Policy explains how SomnoAI Digital Sleep Lab handles cancellations, plan changes, and refund requests for paid products or services.
+
+**1. General Rule**
+Unless otherwise stated in a specific agreement, order form, or mandatory law, payments made for access to digital services, subscriptions, feature unlocks, usage allocations, or related offerings are generally non-refundable.
+
+**2. Cancellation**
+You may cancel a subscription or recurring service in accordance with the cancellation tools, plan settings, written instructions, or support processes made available for the relevant product.
+Cancellation will generally prevent future renewal charges but will not automatically entitle you to a refund for amounts already paid, unless required by law or expressly stated otherwise.
+
+**3. Refund Requests**
+We may, at our discretion, review refund requests on a case-by-case basis, including where:
+• duplicate charges occurred;
+• a technical issue materially prevented access to a purchased service;
+• an unauthorized transaction is reasonably demonstrated;
+• a refund is required by applicable law.
+
+**4. Non-Refundable Situations**
+Refunds are generally not available for:
+• change of mind after purchase;
+• partial use or non-use of purchased access;
+• dissatisfaction based solely on preference where the service was available as described;
+• expired promotional access, free credits, or unused allocations unless otherwise stated.
+
+**5. Chargebacks and Payment Disputes**
+If you initiate a chargeback or payment dispute, we may review the associated account, access history, and payment records, and may suspend or restrict service access where reasonably necessary to manage fraud, abuse, or billing risk.
+
+**6. Plan Changes**
+If we allow upgrades or downgrades between plans, billing adjustments, credits, or timing effects may be handled according to the specific plan rules applicable to the product.
+
+**7. Contact**
+To request cancellation support or submit a refund inquiry, please use the appropriate billing or legal contact channel listed on our website.`
+    },
+    "vulnerability-disclosure": {
+      title: "Vulnerability Disclosure Policy",
+      subtitle: "Responsible Security Research",
+      content: `SomnoAI Digital Sleep Lab values responsible security research and encourages the good-faith reporting of potential vulnerabilities affecting our services, systems, or websites.
+
+**1. Scope**
+This policy applies to security vulnerabilities discovered in SomnoAI Digital Sleep Lab-owned or operated digital services, websites, applications, or infrastructure that are made available to the public or intended for user access.
+
+**2. How to Report**
+If you believe you have identified a security issue, please report it promptly through the designated security contact channel and include:
+• a clear description of the issue;
+• affected URL, endpoint, feature, or system;
+• reproduction steps where possible;
+• screenshots, logs, or proof-of-concept details where appropriate;
+• your contact information for follow-up.
+
+**3. Good-Faith Research Expectations**
+When conducting security research, you must:
+• act in good faith;
+• avoid violating privacy, confidentiality, or data protection rights;
+• avoid service disruption, denial-of-service activity, or destructive testing;
+• avoid accessing, altering, or deleting data unnecessarily;
+• avoid social engineering, phishing, physical intrusion, or extortion;
+• stop testing immediately once sensitive data exposure or significant service risk becomes apparent.
+
+**4. No Authorization for Harmful Activity**
+This policy does not authorize illegal activity, unauthorized data exfiltration, destructive testing, malware deployment, account takeover, or actions that may harm users, systems, or third parties.
+
+**5. Response Handling**
+We will review legitimate reports in good faith and may contact you for clarification or verification. We do not guarantee a particular response timeline, resolution outcome, acknowledgment format, or public disclosure process.
+
+**6. Confidentiality**
+Please do not publicly disclose a suspected vulnerability until we have had a reasonable opportunity to review and address it.
+
+**7. No Bounty Commitment**
+Unless expressly stated otherwise, SomnoAI Digital Sleep Lab does not commit to providing monetary rewards, bounties, or compensation for vulnerability reports.`
+    },
+    "appeals-and-complaints": {
+      title: "Appeals & Complaints Policy",
+      subtitle: "Review & Dispute Resolution",
+      content: `This Appeals & Complaints Policy explains how users may raise concerns, submit complaints, or request review of certain enforcement, moderation, access, or policy-related decisions made by SomnoAI Digital Sleep Lab.
+
+**1. Scope**
+You may use this process to contact us regarding matters such as:
+• account suspension or restriction;
+• policy enforcement decisions;
+• abuse or impersonation reports;
+• privacy-related concerns;
+• content or access disputes;
+• complaints about platform handling or administrative decisions.
+
+**2. Submission Requirements**
+To help us review your request, please provide:
+• your full name;
+• your contact email;
+• relevant account identifier, if any;
+• the decision, issue, or event you are challenging or reporting;
+• supporting documents, screenshots, timestamps, or links where available;
+• a concise explanation of why review is requested.
+
+**3. Review Process**
+We may assess the request based on applicable policies, service logs, risk indicators, legal obligations, user safety, platform integrity, evidence provided, and operational context.
+Submitting an appeal or complaint does not guarantee reversal, compensation, restoration, or any specific outcome.
+
+**4. Abuse of Process**
+We may decline to process submissions that are abusive, repetitive, clearly unfounded, fraudulent, or made in bad faith.
+
+**5. Additional Action**
+Where appropriate, we may request additional information, maintain the original decision, modify the decision, or take further protective action.
+
+**6. Contact**
+Appeals and complaints should be submitted through the relevant legal, abuse, support, or policy contact channel listed on our website.`
+    },
+    "intellectual-property": {
+      title: "Intellectual Property Policy",
+      subtitle: "Ownership & Rights",
+      content: `This Intellectual Property Policy explains how intellectual property rights apply to SomnoAI Digital Sleep Lab’s website, products, services, branding, content, software, and related materials.
+
+**1. Ownership**
+Unless otherwise stated, SomnoAI Digital Sleep Lab and its licensors own all rights, title, and interest in and to the platform, including software, interface design, source materials, text, graphics, trademarks, logos, brand elements, documentation, layouts, compilations, and other protected materials.
+
+**2. Limited Permission**
+You may access and use our services only for lawful and authorized purposes in accordance with our Terms of Service and applicable policies. No license or transfer of ownership is granted except to the limited extent necessary for normal permitted use.
+
+**3. Restrictions**
+You may not, except as permitted by law or expressly authorized by us:
+• copy, reproduce, republish, or redistribute our materials;
+• modify, adapt, translate, or create derivative works from protected materials;
+• reverse engineer, decompile, disassemble, or attempt to extract source code;
+• use our branding, logos, or trade dress in a misleading or unauthorized manner;
+• remove copyright, trademark, or proprietary notices.
+
+**4. User Content**
+You retain ownership of content you lawfully submit to the platform. However, by submitting such content, you grant SomnoAI Digital Sleep Lab a non-exclusive, worldwide, royalty-free license to host, process, reproduce, display, adapt, and use that content as reasonably necessary to operate, secure, improve, and provide the service.
+
+**5. Feedback**
+If you provide suggestions, feedback, ideas, or improvement proposals relating to our services, we may use them without restriction or obligation unless otherwise agreed in writing.
+
+**6. Infringement Claims**
+If you believe your intellectual property rights have been infringed through our services, you may submit a notice through the designated legal contact channel with sufficient detail for review.`
+    },
+    "subprocessors": {
+      title: "Sub-processors",
+      subtitle: "Third-Party Service Providers",
+      content: `This page provides information about categories of third-party service providers that may process data on behalf of SomnoAI Digital Sleep Lab in connection with the operation, delivery, maintenance, security, or improvement of our services.
+
+**1. Purpose**
+We may engage carefully selected third-party providers to support infrastructure, hosting, storage, communications, analytics, customer support, payment processing, monitoring, security, development, and related operational functions.
+
+**2. Categories of Sub-processors**
+Depending on the services used, sub-processors may include providers in categories such as:
+• cloud hosting and infrastructure;
+• database and storage services;
+• analytics and diagnostics;
+• email and communication delivery;
+• security and anti-abuse services;
+• payment and billing support;
+• developer tooling and deployment services;
+• customer support and ticketing systems.
+
+**3. Data Access Principles**
+We seek to limit data access to what is reasonably necessary for the provider to perform the relevant service and expect service providers to operate under appropriate confidentiality, security, and contractual obligations.
+
+**4. Changes**
+We may update the list or categories of subprocessors from time to time as our operational environment, service architecture, or vendor relationships evolve.
+
+**5. Contact**
+For additional questions relating to subprocessors or vendor-supported processing, please contact the relevant privacy or legal channel listed on our website.`
+    },
+    "dpa": {
+      title: "Data Processing Agreement (DPA)",
+      subtitle: "Business Data Processing",
+      content: `SomnoAI Digital Sleep Lab may make a Data Processing Agreement available to eligible business, institutional, or commercial customers where personal data is processed on their behalf in connection with the use of our services.
+
+**1. Purpose**
+The DPA is intended to define the respective responsibilities of SomnoAI Digital Sleep Lab and the relevant customer regarding personal data processed in the course of providing contracted services.
+
+**2. Scope**
+Where applicable, the DPA may address matters such as:
+• categories of personal data processed;
+• nature and purpose of processing;
+• duration of processing;
+• confidentiality commitments;
+• security obligations;
+• subprocessors;
+• international data transfers;
+• deletion or return of data upon termination;
+• audit or information rights, where appropriate.
+
+**3. Availability**
+A DPA may be provided upon request, subject to eligibility, service type, customer relationship, and legal or operational suitability.
+
+**4. Contact**
+Organizations seeking information regarding DPA availability may contact SomnoAI Digital Sleep Lab through the relevant legal or privacy contact channel.`
     },
     "open-source": {
-      title: "Open Source",
+      title: "Open Source Notices",
       subtitle: "Transparency in Technology",
-      content: `SomnoAI Digital Sleep Lab may incorporate software components, frameworks, or development tools that are distributed under open source licenses. Open source technologies are widely used in modern software development and support collaboration across the global technology community.
+      content: `SomnoAI Digital Sleep Lab may use, integrate, distribute, or build upon open-source software components in connection with its products, services, or development workflows.
 
-These technologies provide foundational tools that enable developers to build and improve digital systems through shared innovation. By leveraging open source frameworks and libraries, platforms like SomnoAI Digital Sleep Lab can benefit from established technologies that support reliability and performance.
+We respect the rights of open-source authors and communities and aim to comply with applicable open-source license obligations.
 
-Where applicable, the platform acknowledges the contributions of open source projects that support its development. Open source technologies represent an important part of the broader technology ecosystem and contribute to the advancement of software engineering practices.`
+**1. Open-Source Components**
+Where required, we may provide notices, attributions, license texts, or acknowledgments for open-source software included in or used by our platform.
+
+**2. License Terms**
+Open-source components remain subject to their respective license terms. Nothing in SomnoAI Digital Sleep Lab’s Terms of Service overrides the rights or obligations granted under applicable open-source licenses for those specific components.
+
+**3. Availability of Notices**
+Applicable notices may be published on this page, within product documentation, in repository materials, in-app disclosures, or other appropriate locations.
+
+**4. No Transfer of Third-Party Rights**
+Use of open-source components does not grant ownership of those components to users beyond the permissions set out in their relevant licenses.
+
+**5. Contact**
+Questions regarding open-source notices or attribution matters may be sent through our legal or technical contact channel.`
     },
     founder: {
       title: "Founder",
@@ -428,17 +747,20 @@ SomnoAI Digital Sleep Lab 作为一个信息和研究导向的平台运营，不
       subtitle: "系统邮箱",
       content: `SomnoAI Digital Sleep Lab 生态系统目前激活了以下官方通讯渠道：
 
+**一般法律咨询：** legal@sleepsomno.com (15GB)
+**隐私与数据保护：** legal@sleepsomno.com (15GB)
+**安全与漏洞报告：** security@sleepsomno.com (15GB)
+**知识产权与版权：** legal@sleepsomno.com (15GB)
+**执法请求：** legal@sleepsomno.com (15GB)
+**媒体与新闻咨询：** press@sleepsomno.com (15GB)
+**合作伙伴与业务法律：** partnership@sleepsomno.com (15GB)
+
 **支持节点：** support@sleepsomno.com (15GB)
-**合作伙伴节点：** partnership@sleepsomno.com (15GB)
-**法律节点：** legal@sleepsomno.com (15GB)
 **联系节点：** contact@sleepsomno.com (15GB)
 **管理节点：** admin@sleepsomno.com (全接收, 15GB)
 **创始人节点：** founder@sleepsomno.com (15GB)
-**媒体节点：** media@sleepsomno.com (15GB)
 **办公节点：** office@sleepsomno.com (15GB)
-**新闻节点：** press@sleepsomno.com (15GB)
 **产品节点：** product@sleepsomno.com (15GB)
-**安全节点：** security@sleepsomno.com (15GB)
 **服务节点：** service@sleepsomno.com (15GB)
 **团队节点：** team@sleepsomno.com (15GB)
 **技术节点：** tech@sleepsomno.com (15GB)
@@ -524,166 +846,464 @@ SomnoAI Digital Sleep Lab 是一个信息和研究平台。它不是获得许可
     },
     "terms-of-service": {
       title: "服务条款",
-      subtitle: "参与规则",
-      content: `通过使用 SomnoAI Digital Sleep Lab，您同意以下条款：
+      subtitle: "使用规则",
+      content: `这些服务条款规范您对 SomnoAI Digital Sleep Lab 的产品、服务、网站及相关数字功能的访问和使用。通过使用我们的平台，您同意受这些条款的约束。
 
-**接受**
-访问平台即表示接受这些条款和我们的隐私政策。
+**1. 条款的接受**
+通过访问或使用 SomnoAI Digital Sleep Lab，您确认您已阅读、理解并同意这些服务条款。如果您不同意，则不得使用我们的服务。
 
-**用户责任**
-您负责维护账户的安全，并对在您的凭据下发生的所有活动负责。
+**2. 服务说明**
+SomnoAI Digital Sleep Lab 提供了一个数字环境，利用人工智能和计算建模分析与睡眠相关的行为数据。该平台仅用于信息和研究目的。
 
-**禁止行为**
-用户不得尝试对平台进行逆向工程、绕过安全措施或将服务用于非法目的。
+**3. 用户责任**
+您负责：
+• 提供准确且真实的信息。
+• 维护您的账户凭据的机密性。
+• 确保您对平台的使用符合所有适用法律。
 
-**责任限制**
-SomnoAI Digital Sleep Lab 按“原样”提供，不提供任何形式的保证。我们对基于 AI 生成的见解做出的任何决定不承担责任。
+**4. 禁止行为**
+您同意不：
+• 滥用平台或干扰其正常运行。
+• 尝试绕过安全措施或利用漏洞。
+• 将平台用于任何非法或未经授权的目的。
 
-**账户封禁**
-SomnoAI Digital Sleep Lab 保留封禁账户的权利，原因包括：
+**5. 知识产权**
+平台上的所有内容、算法和软件均为 SomnoAI Digital Sleep Lab 或其许可方的财产，并受知识产权法保护。
 
-• 安全违规或可疑活动。
-• 违反我们的服务条款或可接受使用政策。
-• 威胁我们基础设施稳定性的行为。
+**6. 责任限制**
+SomnoAI Digital Sleep Lab 按“原样”提供，不附带任何形式的保证。我们对因您使用平台而产生的任何损害不承担责任。
 
-被封禁的用户将通过其注册邮箱收到通知。`
+**7. 账户终止**
+我们保留自行决定暂停或终止您账户的权利，包括因违反这些条款。`
     },
     cookies: {
       title: "Cookie 政策",
-      subtitle: "我们如何使用 Cookie",
-      content: `SomnoAI Digital Sleep Lab 使用 Cookie 来增强您的体验。
+      subtitle: "管理您的偏好",
+      content: `本 Cookie 政策解释了 SomnoAI Digital Sleep Lab 如何在您访问我们的网站时使用 Cookie 和类似技术来识别您。它解释了这些技术是什么以及我们为什么要使用它们，以及您控制我们使用它们的权利。
 
-**必要 Cookie**
-身份验证和会话管理所必需。
+**1. 什么是 Cookie？**
+Cookie 是当您访问网站时放置在您的计算机或移动设备上的小数据文件。网站所有者广泛使用 Cookie 来使他们的网站运行，或更有效地运行，并提供报告信息。
 
-**性能 Cookie**
-用于监控平台的稳定性和速度。
+**2. 我们为什么要使用 Cookie？**
+我们出于以下几个原因使用第一方和第三方 Cookie：
+• 必要 Cookie：这些是为您提供通过我们网站提供的服务并使用其某些功能所严格必需的。
+• 性能和功能 Cookie：这些用于增强我们网站的性能和功能，但对于其使用并非必需。
+• 分析和定制 Cookie：这些收集的信息要么以汇总形式使用，以帮助我们了解我们的网站是如何被使用的，或者我们的营销活动有多有效。
 
-**分析 Cookie**
-帮助我们了解用户如何与平台交互以改进功能。
-
-您可以通过浏览器设置管理您的 Cookie 偏好。`
+**3. 我该如何控制 Cookie？**
+您有权决定是否接受或拒绝 Cookie。您可以设置或修改您的 Web 浏览器控件以接受或拒绝 Cookie。如果您选择拒绝 Cookie，您仍然可以使用我们的网站，尽管您访问我们网站的某些功能和区域可能会受到限制。`
     },
     security: {
-      title: "安全政策",
+      title: "安全概览",
       subtitle: "保护实验室",
-      content: `SomnoAI Digital Sleep Lab 实施行业标准的保障措施来保护我们的基础设施和您的数据。
+      content: `在 SomnoAI Digital Sleep Lab，安全是重中之重。我们采用多层方法来保护我们的平台、我们的数据和我们的用户。
 
-**加密**
-所有传输中的数据均使用 TLS/SSL 协议加密。
+**1. 数据加密**
+我们使用行业标准加密协议（如 TLS/SSL）来保护您的设备与我们的服务器之间传输的数据。静态数据也使用强大的加密标准进行加密。
 
-**访问控制**
-我们使用安全的身份验证机制，并遵循内部访问的最小权限原则。
+**2. 访问控制**
+对敏感数据和系统的访问受到严格控制，仅限于授权人员。我们使用多因素身份验证 (MFA) 并遵循最小权限原则。
 
-**监控**
-我们的系统会持续监控未经授权的访问或可疑活动。
+**3. 基础设施安全**
+我们的基础设施托管在符合严格安全标准的全球顶级云平台上。我们定期进行安全审计和漏洞评估。
 
-**漏洞管理**
-我们定期评估系统的安全弱点并及时应用补丁。`
+**4. 事件响应**
+我们制定了专门的事件响应计划，以快速处理和减轻任何安全威胁或漏洞。如果您发现安全漏洞，请通过 security@sleepsomno.com 与我们联系。`
     },
     "acceptable-use": {
       title: "可接受使用政策",
-      subtitle: "社区标准",
-      content: `SomnoAI Digital Sleep Lab 的用户必须遵守以下标准：
+      subtitle: "安全与负责任的使用",
+      content: `本可接受使用政策 (AUP) 概述了使用 SomnoAI Digital Sleep Lab 的规则和指南。我们的目标是为所有用户确保一个安全、尊重和高效的环境。
 
-• 仅将平台用于其预定的信息目的。
-• 不要上传恶意代码或有害内容。
-• 不要尝试破坏服务的可用性。
-• 尊重其他用户的隐私和安全。
+**1. 禁止活动**
+您同意不将平台用于：
+• 违反任何地方、州、国家或国际法律。
+• 伤害、威胁或骚扰他人。
+• 上传或传播病毒、恶意软件或任何其他恶意代码。
+• 尝试获得对我们系统或其他用户账户的未经授权访问。
+• 对平台的任何部分进行逆向工程、反编译或拆解。
 
-违规行为可能导致账户立即被暂停。`
+**2. 内容标准**
+您提供的任何数据或内容必须：
+• 准确且真实。
+• 不含任何您无权共享的侵权或专有材料。
+• 无攻击性，且适合专业的研究环境。
+
+**3. 执行**
+我们保留调查任何涉嫌违反本 AUP 行为的权利。不遵守规定可能会导致您对平台的访问被暂停或终止。`
     },
     "ai-disclaimer": {
-      title: "AI 使用免责声明",
-      subtitle: "了解 AI 见解",
-      content: `SomnoAI Digital Sleep Lab 利用先进的人工智能来分析数据。
+      title: "AI 免责声明",
+      subtitle: "了解 AI 生成的见解",
+      content: `SomnoAI Digital Sleep Lab 利用先进的人工智能和计算建模来分析睡眠相关数据。了解这些技术的性质和局限性非常重要。
 
-**概率性质**
-AI 输出基于模式和概率。它们不是绝对的事实。
+**1. AI 见解的性质**
+我们平台生成的见解、模式和摘要是复杂算法处理的结果。虽然我们努力追求高准确性，但 AI 模型有时会产生意想不到或不完整的结果。
 
-**准确性**
-虽然我们努力追求高准确性，但 AI 生成的见解可能包含错误或基于不完整的数据。
+**2. 无人工干预**
+提供的分析是自动化的，除非明确说明作为特定研究计划的一部分，否则不涉及人类睡眠专家的实时审查。
 
-**人类判断**
-AI 见解应作为人类判断和专业建议的补充，而非替代。`
+**3. 实验性技术**
+我们平台上的许多功能都是实验性的。它们旨在推向睡眠科学的边界，应被视为探索和研究的工具，而非确定性的结论。`
     },
     "medical-disclaimer": {
       title: "医疗免责声明",
-      subtitle: "非医疗设备",
-      content: `SomnoAI Digital Sleep Lab 不是医疗设备或临床服务。
+      subtitle: "不能替代专业建议",
+      content: `SomnoAI Digital Sleep Lab 是一个数字研究和分析平台。它不是医疗设备，不提供医疗建议、诊断或治疗。
 
-**无医疗建议**
-提供的信息不构成医疗建议、诊断或治疗。
+**1. 不用于医疗用途**
+平台提供的信息仅用于信息和研究目的。它不应用于诊断或治疗任何睡眠障碍或医疗状况。
 
-**咨询专业人士**
-如有医疗疑虑或在做出与健康相关的改变之前，请务必咨询合格的医疗保健提供者。
+**2. 咨询专业人士**
+关于医疗状况的任何问题，请始终寻求您的医生或其他合格健康提供者的建议。切勿因您在平台上阅读的内容而忽视专业医疗建议或延迟寻求建议。
 
-**紧急情况**
-请勿将此平台用于紧急或关键健康监测。`
+**3. 紧急情况**
+如果您认为自己可能有医疗紧急情况，请立即致电您的医生或紧急服务部门。SomnoAI Digital Sleep Lab 不适用于紧急或生命关键情况。`
     },
-    "data-processing": {
-      title: "数据处理声明",
+    "data-handling": {
+      title: "数据处理通知",
       subtitle: "我们如何处理信息",
-      content: `SomnoAI Digital Sleep Lab 按照严格的隐私标准处理数据。
+      content: `本数据处理通知描述了 SomnoAI Digital Sleep Lab 如何处理、存储和保护您提供给我们的信息。
 
-**处理逻辑**
-分析数据以识别睡眠周期、恢复趋势和行为相关性。
+**1. 数据最小化**
+我们仅收集提供服务和生成睡眠见解所绝对必需的数据。我们不收集过度或无关的信息。
 
-**透明度**
-我们对处理哪些数据以及原因保持透明。
+**2. 存储与保留**
+数据存储在访问受限的安全服务器上。我们仅在实现收集目的所需的时间内或法律要求的时间内保留您的数据。
 
-**安全性**
-处理在具有强大技术保障的安全环境中进行。`
+**3. 匿名化与聚合**
+在可能的情况下，我们会对数据进行匿名化或聚合处理，以保护个人身份，特别是在将数据用于研究和平台改进时。
+
+**4. 用户控制**
+您对自己的数据拥有控制权。您可以随时通过 legal@sleepsomno.com 联系我们，要求获取您的数据副本、要求更正或要求删除。`
     },
     "abuse-policy": {
-      title: "滥用举报政策",
+      title: "滥用政策",
       subtitle: "维护安全环境",
-      content: `我们严肃对待对平台的滥用和误用。
+      content: `SomnoAI Digital Sleep Lab 致力于防止滥用并确保我们平台的稳定性。本政策概述了我们认为的滥用行为。
 
-**举报**
-如果您遇到可疑活动或违反政策的行为，请将其报告至 support@sleepsomno.com。
+**1. 系统滥用**
+严禁任何企图干扰平台运行的行为，包括 DDoS 攻击、自动化抓取或利用技术漏洞。
 
-**调查**
-我们会调查所有报告并采取适当行动，其中可能包括终止账户或法律措施。`
+**2. 用户滥用**
+我们不会容忍对其他用户或我们团队的骚扰、垃圾邮件或任何形式的恶意互动。
+
+**3. 报告滥用**
+如果您在我们的平台上目睹或经历滥用行为，请立即通过 security@sleepsomno.com 举报。我们会调查所有报告并采取适当行动。`
     },
     "account-blocking": {
       title: "账户封禁政策",
       subtitle: "保护生态系统",
-      content: `SomnoAI Digital Sleep Lab 保留封禁账户的权利，原因包括：
+      content: `为了维护 SomnoAI Digital Sleep Lab 的完整性，我们保留封禁或暂停违反我们政策的账户的权利。
 
-• 安全违规或可疑活动。
-• 违反我们的服务条款或可接受使用政策。
-• 威胁我们基础设施稳定性的行为。
+**1. 封禁原因**
+账户可能因以下原因被封禁：
+• 反复违反我们的服务条款或可接受使用政策。
+• 可疑或欺诈活动。
+• 对我们的基础设施或其他用户构成安全风险的行为。
 
-被封禁的用户将通过其注册邮箱收到通知。`
+**2. 通知**
+如果您的账户被封禁，您将在注册邮箱中收到一封通知，解释采取该行动的原因。
+
+**3. 申诉**
+如果您认为您的账户被错误封禁，您可以向 legal@sleepsomno.com 提交申诉。我们会根据具体情况审查所有申诉。`
     },
     "policy-framework": {
       title: "政策框架",
-      subtitle: "我们的管理原则",
-      content: `SomnoAI Digital Sleep Lab 政策框架确保了技术开发的连贯性和道德性。
+      subtitle: "我们的治理原则",
+      content: `SomnoAI Digital Sleep Lab 政策框架为我们的法律、隐私和运营指南提供了结构。
 
-**核心支柱：**
-1. 隐私设计
-2. 科学严谨
-3. 用户赋能
-4. 道德 AI 开发
-5. 运营透明度
+**1. 透明度**
+我们致力于使我们的政策清晰、易于访问且易于理解。
 
-我们的政策会定期审查，以适应新的研究和监管标准。`
+**2. 一致性**
+我们的政策在整个平台中一致应用，以确保所有用户的公平性。
+
+**3. 持续改进**
+我们定期审查并更新我们的政策，以反映技术、法律和我们服务的变化。
+
+**4. 以用户为中心的方法**
+我们的政策在设计时考虑了用户的最佳利益，在创新与保护和隐私之间取得平衡。`
+    },
+    "legal-contact": {
+      title: "法律联系",
+      subtitle: "联系我们",
+      intro: "如果您有特定的法律查询、隐私疑虑，或需要向 SomnoAI Digital Sleep Lab 提交正式请求，请使用下方的适当联系渠道。",
+      subIntro: "为了确保您的请求得到高效处理，我们建议您联系与您的查询相关的具体部门。",
+      categories: [
+        { title: "一般法律查询", description: "有关我们的法律框架、公司信息或监管合规性的一般问题。", email: "legal@sleepsomno.com" },
+        { title: "隐私与数据保护", description: "有关数据访问请求、删除请求、隐私疑虑或有关我们如何处理个人数据的查询。", email: "legal@sleepsomno.com" },
+        { title: "安全与漏洞报告", description: "用于报告安全漏洞、数据泄露或其他平台完整性问题。", email: "security@sleepsomno.com" },
+        { title: "知识产权与版权", description: "有关商标、版权或报告潜在知识产权侵权行为的查询。", email: "legal@sleepsomno.com" },
+        { title: "执法请求", description: "来自政府机构或执法部门的正式请求。", email: "legal@sleepsomno.com" },
+        { title: "媒体与新闻查询", description: "用于官方声明、媒体资料包或与新闻相关的法律事务。", email: "press@sleepsomno.com" },
+        { title: "合作伙伴与商业法律", description: "有关商业合作、供应商协议或机构合作伙伴关系的法律事务。", email: "partnership@sleepsomno.com" }
+      ],
+      otherTitle: "其他部门联系方式",
+      otherContacts: [
+        { label: "行政管理", email: "admin@sleepsomno.com" },
+        { label: "创始人办公室", email: "founder@sleepsomno.com" },
+        { label: "一般联系", email: "contact@sleepsomno.com" },
+        { label: "办公室", email: "office@sleepsomno.com" },
+        { label: "产品", email: "product@sleepsomno.com" },
+        { label: "服务", email: "service@sleepsomno.com" },
+        { label: "支持", email: "support@sleepsomno.com" },
+        { label: "团队", email: "team@sleepsomno.com" },
+        { label: "技术", email: "tech@sleepsomno.com" }
+      ]
+    },
+    "pricing-and-billing": {
+      title: "定价与计费政策",
+      subtitle: "商业条款与使用",
+      content: `本定价与计费政策解释了定价、使用限制、订阅、计费和付款相关事项如何适用于 SomnoAI Digital Sleep Lab 的产品和服务。
+
+**1. 定价结构**
+根据产品、功能、用户类别或商业安排，SomnoAI Digital Sleep Lab 可能会提供免费、试用、测试、限制访问、基于订阅、基于使用或自定义定价的服务。
+某些功能可能无需付费即可使用，而其他功能可能需要付费计划、升级访问权限或单独的商业批准。
+
+**2. 产品可用性和定价变更**
+我们保留随时引入、修改、暂停或终止定价计划、使用限制、功能访问、捆绑产品或产品可用性的权利。
+在合理适当的情况下，更新后的定价将反映在相关网站、产品界面、订单页面、报价或服务文档中。
+
+**3. 使用限制**
+某些计划可能包括使用限制、功能上限、请求限制、账户限制或访问阈值。如果计划包括定义的配额，除非另有书面说明，否则这些限制适用。
+我们可能会实施技术或操作控制，以管理公平使用、系统性能、防止滥用、平台稳定性或功能可用性。
+
+某些 SomnoAI Digital Sleep Lab 服务可能包括基于每日使用的访问模型。例如，免费计划可能提供对 AI 聊天和分析功能的有限每日访问，而付费访问可能会增加每日交互次数或功能可用性。实际限制、功能范围和计划权利以购买时生效的产品页面、结账页面或服务说明为准。
+
+**4. 计费条款**
+如果您购买付费服务，即表示您同意提供有效且当前的计费信息，并授权与您选择的计划、订阅或订单相关的适用费用。
+费用可能是一次性的、经常性的、基于使用的、基于里程碑的、基于发票的，或根据适用安排采取其他结构。
+
+**5. 税费**
+除非另有说明，费用可能不包括适用的税费、关税、征费、预扣义务或其他政府征收的费用。您负责承担适用法律要求的任何税费，但基于我们净收入的税费除外。
+
+**6. 付款处理**
+付款可能由 SomnoAI Digital Sleep Lab 直接处理，或通过授权的第三方付款提供商处理。对于由第三方付款系统造成的超出我们合理控制范围的错误、停机或操作问题，我们不承担责任。
+
+**7. 未能付款**
+如果付款被拒绝、逾期、撤销、争议或以其他方式未能成功完成，我们可能会暂停或限制对相关服务、功能或账户的访问，直到问题得到解决。
+
+**8. 促销优惠**
+任何试用、测试访问、促销信用、折扣或限时优惠都可能受到额外条件、到期日期、使用限制或我们自行决定撤销的约束，除非法律禁止。
+
+**9. 不保证未来定价**
+当前的定价、功能范围或计划结构并不保证将来能继续提供相同的商业条款。
+
+**10. 联系方式**
+有关计费相关问题，请联系我们网站上列出的相关支持或法律联系渠道。`
+    },
+    "refund-and-cancellation": {
+      title: "退款与取消政策",
+      subtitle: "订阅与退款",
+      content: `本退款与取消政策解释了 SomnoAI Digital Sleep Lab 如何处理付费产品或服务的取消、计划变更和退款请求。
+
+**1. 一般规则**
+除非在特定协议、订单表或强制性法律中另有说明，否则为访问数字服务、订阅、功能解锁、使用分配或相关产品而支付的款项通常不予退还。
+
+**2. 取消**
+您可以根据相关产品提供的取消工具、计划设置、书面说明或支持流程取消订阅或经常性服务。
+取消通常会阻止未来的续订费用，但不会自动使您有权获得已支付金额的退款，除非法律要求或另有明确说明。
+
+**3. 退款请求**
+我们可能会根据具体情况自行决定审查退款请求，包括：
+• 发生重复收费；
+• 技术问题实质上阻止了对购买服务的访问；
+• 合理证明了未经授权的交易；
+• 适用法律要求退款。
+
+**4. 不予退款的情况**
+通常在以下情况下不予退款：
+• 购买后改变主意；
+• 部分使用或未使用购买的访问权限；
+• 仅因偏好而产生的不满，而服务已按说明提供；
+• 过期的促销访问、免费信用或未使用的分配，除非另有说明。
+
+**5. 退单和付款争议**
+如果您发起退单或付款争议，我们可能会审查相关的账户、访问历史和付款记录，并可能在管理欺诈、滥用或计费风险合理必要时暂停或限制服务访问。
+
+**6. 计划变更**
+如果我们允许在计划之间升级或降级，计费调整、信用或时间影响可能会根据适用于该产品的特定计划规则进行处理。
+
+**7. 联系方式**
+要请求取消支持或提交退款咨询，请使用我们网站上列出的适当计费或法律联系渠道。`
+    },
+    "vulnerability-disclosure": {
+      title: "漏洞披露政策",
+      subtitle: "负责任的安全研究",
+      content: `SomnoAI Digital Sleep Lab 重视负责任的安全研究，并鼓励善意报告影响我们服务、系统或网站的潜在漏洞。
+
+**1. 范围**
+本政策适用于在 SomnoAI Digital Sleep Lab 拥有或运营的、向公众开放或旨在供用户访问的数字服务、网站、应用程序或基础设施中发现的安全漏洞。
+
+**2. 如何报告**
+如果您认为自己发现了安全问题，请立即通过指定安全联系渠道报告，并包括：
+• 问题的清晰描述；
+• 受影响的 URL、端点、功能或系统；
+• 可能的复现步骤；
+• 适当的截图、日志或概念验证详情；
+• 您的联系信息以便后续跟进。
+
+**3. 善意研究期望**
+在进行安全研究时，您必须：
+• 秉持善意行事；
+• 避免违反隐私、机密或数据保护权利；
+• 避免服务中断、拒绝服务活动或破坏性测试；
+• 避免不必要地访问、更改或删除数据；
+• 避免社交工程、钓鱼、物理入侵或勒索；
+• 一旦发现敏感数据泄露或重大服务风险，立即停止测试。
+
+**4. 未授权有害活动**
+本政策不授权非法活动、未经授权的数据外泄、破坏性测试、恶意软件部署、账户接管或可能损害用户、系统或第三方的行为。
+
+**5. 响应处理**
+我们将善意审查合法报告，并可能联系您进行澄清或验证。我们不保证特定的响应时间表、解决结果、确认格式或公开披露流程。
+
+**6. 保密性**
+在我们有合理机会审查并解决疑似漏洞之前，请勿公开披露。
+
+**7. 无赏金承诺**
+除非另有明确说明，否则 SomnoAI Digital Sleep Lab 不承诺为漏洞报告提供金钱奖励、赏金或补偿。`
+    },
+    "appeals-and-complaints": {
+      title: "申诉与投诉政策",
+      subtitle: "审查与争议解决",
+      content: `本申诉与投诉政策解释了用户如何就 SomnoAI Digital Sleep Lab 做出的某些执行、审核、访问或政策相关决定提出疑虑、提交投诉或请求审查。
+
+**1. 范围**
+您可以使用此流程就以下事项联系我们：
+• 账户暂停或限制；
+• 政策执行决定；
+• 滥用或冒充报告；
+• 隐私相关疑虑；
+• 内容或访问争议；
+• 有关平台处理或行政决定的投诉。
+
+**2. 提交要求**
+为了帮助我们审查您的请求，请提供：
+• 您的全名；
+• 您的联系电子邮件；
+• 相关的账户标识符（如有）；
+• 您挑战或报告的决定、问题或事件；
+• 支持文档、截图、时间戳或链接（如有）；
+• 简要说明请求审查的原因。
+
+**3. 审查流程**
+我们可能会根据适用政策、服务日志、风险指标、法律义务、用户安全、平台完整性、提供的证据和运营环境来评估请求。
+提交申诉或投诉并不保证撤销、补偿、恢复或任何特定结果。
+
+**4. 滥用流程**
+我们可能会拒绝处理具有侮辱性、重复性、明显毫无根据、欺诈性或出于恶意提交的内容。
+
+**5. 额外行动**
+在适当情况下，我们可能会要求提供更多信息、维持原决定、修改决定或采取进一步的保护措施。
+
+**6. 联系方式**
+申诉和投诉应通过我们网站上列出的相关法律、滥用、支持或政策联系渠道提交。`
+    },
+    "intellectual-property": {
+      title: "知识产权政策",
+      subtitle: "所有权与权利",
+      content: `本知识产权政策解释了知识产权如何适用于 SomnoAI Digital Sleep Lab 的网站、产品、服务、品牌、内容、软件和相关材料。
+
+**1. 所有权**
+除非另有说明，SomnoAI Digital Sleep Lab 及其许可方拥有平台的所有权利、所有权和利益，包括软件、界面设计、源代码材料、文本、图形、商标、徽标、品牌元素、文档、布局、汇编和其他受保护材料。
+
+**2. 有限许可**
+您只能根据我们的服务条款和适用政策，出于合法且授权的目的访问和使用我们的服务。除了正常许可使用所需的有限范围外，不授予任何许可或所有权转让。
+
+**3. 限制**
+除非法律允许或经我们明确授权，否则您不得：
+• 复制、转载、重新发布或重新分发我们的材料；
+• 修改、改编、翻译或根据受保护材料创作衍生作品；
+• 对任何源代码进行逆向工程、反编译、反汇编或尝试提取；
+• 以误导或未经授权的方式使用我们的品牌、徽标或商业外观；
+• 删除版权、商标或所有权声明。
+
+**4. 用户内容**
+您保留合法提交给平台的内容的所有权。但是，通过提交此类内容，您授予 SomnoAI Digital Sleep Lab 一项非独家的、全球性的、免版税的许可，允许其在运营、保护、改进和提供服务所合理必要的情况下托管、处理、复制、展示、改编和使用该内容。
+
+**5. 反馈**
+如果您提供有关我们服务的建议、反馈、想法或改进建议，我们可以不受限制或义务地使用它们，除非另有书面约定。
+
+**6. 侵权索赔**
+如果您认为您的知识产权通过我们的服务受到了侵犯，您可以通过指定的法律联系渠道提交通知，并提供足够的细节供审查。`
+    },
+    "subprocessors": {
+      title: "次级处理者",
+      subtitle: "第三方服务提供商",
+      content: `本页面提供了有关可能代表 SomnoAI Digital Sleep Lab 处理数据的第三方服务提供商类别的信息，这些处理与我们服务的运营、交付、维护、安全或改进有关。
+
+**1. 目的**
+我们可能会聘请精心挑选的第三方提供商来支持基础设施、托管、存储、通信、分析、客户支持、付款处理、监控、安全、开发和相关的运营功能。
+
+**2. 次级处理者类别**
+根据所使用的服务，次级处理者可能包括以下类别的提供商：
+• 云托管和基础设施；
+• 数据库和存储服务；
+• 分析和诊断；
+• 电子邮件和通信交付；
+• 安全和防滥用服务；
+• 付款和计费支持；
+• 开发人员工具和部署服务；
+• 客户支持和票务系统。
+
+**3. 数据访问原则**
+我们寻求将数据访问限制在提供商执行相关服务所合理必要的范围内，并期望服务提供商在适当的保密、安全和合同义务下运营。
+
+**4. 变更**
+随着我们的运营环境、服务架构或供应商关系的发展，我们可能会不时更新次级处理者的列表或类别。
+
+**5. 联系方式**
+有关次级处理者或供应商支持的处理的其他问题，请联系我们网站上列出的相关隐私或法律渠道。`
+    },
+    "dpa": {
+      title: "数据处理协议 (DPA)",
+      subtitle: "业务数据处理",
+      content: `在代表符合条件的商业、机构或商业客户处理个人数据以使用我们的服务时，SomnoAI Digital Sleep Lab 可能会提供数据处理协议。
+
+**1. 目的**
+DPA 旨在界定 SomnoAI Digital Sleep Lab 与相关客户在提供合同服务过程中处理个人数据的各自责任。
+
+**2. 范围**
+在适用情况下，DPA 可能会涉及以下事项：
+• 处理的个人数据类别；
+• 处理的性质和目的；
+• 处理持续时间；
+• 保密承诺；
+• 安全义务；
+• 次级处理者；
+• 国际数据传输；
+• 终止时删除或退回数据；
+• 审计或信息权利（如适用）。
+
+**3. 可用性**
+DPA 可根据要求提供，但须视资格、服务类型、客户关系以及法律或运营适用性而定。
+
+**4. 联系方式**
+寻求有关 DPA 可用性信息的组织可以通过相关的法律或隐私联系渠道联系 SomnoAI Digital Sleep Lab。`
     },
     "open-source": {
-      title: "开源承诺",
+      title: "开源通知",
       subtitle: "技术透明度",
-      content: `SomnoAI Digital Sleep Lab 相信开放协作的力量。
+      content: `SomnoAI Digital Sleep Lab 可能会在与其产品、服务或开发工作流程相关的过程中使用、整合、分发或基于开源软件组件进行构建。
 
-**公共仓库**
-我们为前端和文档维护公共仓库，以鼓励透明度和社区反馈。
+我们尊重开源作者和社区的权利，并旨在遵守适用的开源许可证义务。
 
-**贡献**
-我们欢迎社区的贡献，以帮助改进我们的工具和研究。
+**1. 开源组件**
+在需要时，我们可能会为平台中包含或使用的开源软件提供通知、归属、许可证文本或致谢。
 
-**许可证**
-我们的开源项目通常根据 MIT 或 Apache 2.0 许可证发布。`
+**2. 许可证条款**
+开源组件仍受其各自许可证条款的约束。SomnoAI Digital Sleep Lab 服务条款中的任何内容均不会覆盖适用的开源许可证为这些特定组件授予的权利或义务。
+
+**3. 通知可用性**
+适用的通知可能会发布在本页面、产品文档、存储库材料、应用内披露或其他适当位置。
+
+**4. 不转让第三方权利**
+使用开源组件并不会向用户授予这些组件的所有权，超出其相关许可证中规定的许可范围。
+
+**5. 联系方式**
+有关开源通知或归属事项的问题可以通过我们的法律或技术联系渠道发送。`
     },
     founder: {
       title: "创始人",

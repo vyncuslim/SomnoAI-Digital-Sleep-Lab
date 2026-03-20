@@ -1,5 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
 import { INFO_CONTENT } from '../data/infoContent';
 import { Language } from '../types';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
@@ -30,18 +31,22 @@ export const DynamicPage: React.FC<DynamicPageProps> = ({ lang, type }) => {
   const isLegalPage = [
     'privacy-policy', 'terms-of-service', 'cookies', 'security', 
     'acceptable-use', 'ai-disclaimer', 'medical-disclaimer', 
-    'data-processing', 'abuse-policy', 'account-blocking', 
-    'policy-framework', 'open-source', 'legal'
+    'data-handling', 'abuse-policy', 'account-blocking', 
+    'policy-framework', 'open-source', 'legal', 'cookie-policy',
+    'pricing-and-billing', 'refund-and-cancellation', 'vulnerability-disclosure',
+    'appeals-and-complaints', 'intellectual-property', 'subprocessors', 'dpa'
   ].includes(activeType as string);
 
   if (isLegalPage) {
     return (
       <LegalPageTemplate
         title={content.title}
-        lastUpdated={new Date().toLocaleDateString()}
-        breadcrumbs={[{ label: 'Legal', link: '/legal' }, { label: content.title }]}
+        lastUpdated="March 20, 2026"
+        breadcrumbs={[{ label: lang === 'zh' ? '法律' : 'Legal', link: '/legal' }, { label: content.title }]}
       >
-        <div className="whitespace-pre-wrap">{content.content}</div>
+        <div className="markdown-body text-slate-300 leading-relaxed">
+          <ReactMarkdown>{content.content}</ReactMarkdown>
+        </div>
       </LegalPageTemplate>
     );
   }
@@ -52,8 +57,8 @@ export const DynamicPage: React.FC<DynamicPageProps> = ({ lang, type }) => {
       subtitle={content.subtitle}
     >
       <Section>
-        <div className="prose prose-invert max-w-none text-slate-300 whitespace-pre-wrap text-lg leading-relaxed">
-          {content.content}
+        <div className="markdown-body prose prose-invert max-w-none text-slate-300 text-lg leading-relaxed">
+          <ReactMarkdown>{content.content}</ReactMarkdown>
         </div>
       </Section>
     </MarketingPageTemplate>
