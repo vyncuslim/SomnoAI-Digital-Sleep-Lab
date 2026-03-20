@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check, Phone } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { GlassCard } from './GlassCard';
 import { HardwareButton } from './ui/Components';
@@ -99,6 +99,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   }, [initialView]);
 
   const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [password, setPassword] = useState('');
   const [token, setToken] = useState('');
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -192,6 +194,22 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (!supabase.auth.signInWithPassword) {
           throw new Error('Supabase is not configured. Please check your environment variables.');
         }
+
+        if (authMethod === 'phone') {
+          // Phone login usually uses OTP in Supabase
+          const { error: otpError } = await supabase.auth.signInWithOtp({
+            phone,
+            options: {
+              captchaToken: turnstileToken || undefined,
+            },
+          });
+          if (otpError) throw otpError;
+          setShowOtpInput(true);
+          setView('otp');
+          setSuccessMessage(lang === 'zh' ? '验证码已发送到您的手机。' : 'Verification code sent to your phone.');
+          return;
+        }
+
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
@@ -264,6 +282,20 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         
         navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
+        if (authMethod === 'phone') {
+          const { error: signUpError } = await supabase.auth.signInWithOtp({
+            phone,
+            options: {
+              captchaToken: turnstileToken || undefined,
+            },
+          });
+          if (signUpError) throw signUpError;
+          setShowOtpInput(true);
+          setView('otp');
+          setSuccessMessage(lang === 'zh' ? '验证码已发送到您的手机。' : 'Verification code sent to your phone.');
+          return;
+        }
+
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -336,9 +368,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       } else if (view === 'otp') {
         if (showOtpInput) {
           const { data, error: verifyError } = await supabase.auth.verifyOtp({
-            email,
+            email: authMethod === 'email' ? email : undefined,
+            phone: authMethod === 'phone' ? phone : undefined,
             token,
-            type: 'email',
+            type: authMethod === 'email' ? 'email' : 'sms',
           });
           
           if (verifyError) throw verifyError;
@@ -600,18 +633,55 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   onSubmit={handleSubmit} 
                   className="space-y-6"
                 >
-                  <motion.div variants={itemVariants}>
-                    <InputField
-                      icon={Mail}
-                      label="Email Address"
-                      type="email"
-                      value={email}
-                      onChange={(e: any) => setEmail(e.target.value)}
-                      placeholder="name@example.com"
-                      required
-                      disabled={showOtpInput}
-                    />
-                  </motion.div>
+                  {(view === 'login' || view === 'signup') && (
+                    <motion.div variants={itemVariants} className="flex p-1 bg-black/40 rounded-xl border border-white/5 mb-2">
+                      <button
+                        type="button"
+                        onClick={() => setAuthMethod('email')}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${authMethod === 'email' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                      >
+                        {lang === 'zh' ? '邮箱' : 'Email'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAuthMethod('phone')}
+                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${authMethod === 'phone' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
+                      >
+                        {lang === 'zh' ? '手机号' : 'Phone'}
+                      </button>
+                    </motion.div>
+                  )}
+
+                  {authMethod === 'email' ? (
+                    <motion.div variants={itemVariants}>
+                      <InputField
+                        icon={Mail}
+                        label="Email Address"
+                        type="email"
+                        value={email}
+                        onChange={(e: any) => setEmail(e.target.value)}
+                        placeholder="name@example.com"
+                        required
+                        disabled={showOtpInput}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div variants={itemVariants}>
+                      <InputField
+                        icon={Phone}
+                        label={lang === 'zh' ? '手机号码' : 'Phone Number'}
+                        type="tel"
+                        value={phone}
+                        onChange={(e: any) => setPhone(e.target.value)}
+                        placeholder="+86 138..."
+                        required
+                        disabled={showOtpInput}
+                      />
+                      <p className="text-[9px] text-slate-600 mt-2 ml-4 font-mono uppercase tracking-wider">
+                        {lang === 'zh' ? '请输入带国家代码的完整号码 (如 +86...)' : 'Include country code (e.g., +1...)'}
+                      </p>
+                    </motion.div>
+                  )}
 
                   {view === 'otp' && showOtpInput && (
                     <motion.div variants={itemVariants}>
@@ -641,7 +711,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     </motion.div>
                   )}
 
-                  {(view === 'login' || view === 'signup') && (
+                  {(view === 'login' || view === 'signup') && authMethod === 'email' && (
                     <motion.div variants={itemVariants}>
                       <InputField
                         icon={Lock}
