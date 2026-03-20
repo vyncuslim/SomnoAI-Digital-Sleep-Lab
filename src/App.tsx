@@ -34,6 +34,8 @@ const lazyWithRetry = (componentImport: () => Promise<any>) =>
     }
   });
 
+const PasswordReset = lazyWithRetry(() => import('./pages/PasswordReset').then(module => ({ default: module.PasswordReset })));
+const UserSettings = lazyWithRetry(() => import('./pages/UserSettings').then(module => ({ default: module.UserSettings })));
 const PersonalChat = lazyWithRetry(() => import('./components/PersonalChat').then(module => ({ default: module.PersonalChat })));
 const SubscriptionManagement = lazyWithRetry(() => import('./pages/SubscriptionManagement').then(module => ({ default: module.SubscriptionManagement })));
 const Auth = lazyWithRetry(() => import('./components/Auth').then(module => ({ default: module.Auth })));
@@ -208,6 +210,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="auth/signin" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signup" element={<Auth lang={lang} initialView="signup" />} />
       <Route path="auth/callback" element={<AuthCallback />} />
+      <Route path="auth/reset-password" element={<PasswordReset />} />
       <Route path="login" element={<Navigate to={`${langPrefix}/auth/login`} replace />} />
       <Route path="signup" element={<Navigate to={`${langPrefix}/auth/signup`} replace />} />
       <Route path="auth/verify" element={<AuthCallback />} />
@@ -275,6 +278,11 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
         </ProtectedRoute>
       } />
       <Route path="settings" element={
+        <ProtectedRoute lang={lang}>
+          <UserSettings />
+        </ProtectedRoute>
+      } />
+      <Route path="profile" element={
         <ProtectedRoute lang={lang}>
           <UserProfile lang={lang} onBack={handleBack} />
         </ProtectedRoute>
