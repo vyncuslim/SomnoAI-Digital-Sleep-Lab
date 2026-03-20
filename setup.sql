@@ -89,12 +89,66 @@ END $$;
 CREATE TABLE IF NOT EXISTS public.audit_logs (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     user_id uuid REFERENCES auth.users ON DELETE SET NULL,
+    actor_user_id uuid REFERENCES auth.users ON DELETE SET NULL,
+    target_user_id uuid REFERENCES auth.users ON DELETE SET NULL,
     action text NOT NULL,
+    source text DEFAULT 'system',
+    category text DEFAULT 'system',
+    status text DEFAULT 'success',
+    level text DEFAULT 'info',
+    message text,
     details text,
-    level text DEFAULT 'INFO',
+    metadata jsonb DEFAULT '{}'::jsonb,
     ip_address text,
+    user_agent text,
+    path text,
+    method text,
+    request_id text,
+    session_id text,
+    error_code text,
     created_at timestamptz DEFAULT now()
 );
+
+-- RPC: 写入审计日志
+CREATE OR REPLACE FUNCTION public.write_audit_log(
+  p_source text,
+  p_level text,
+  p_category text,
+  p_action text,
+  p_status text,
+  p_actor_user_id uuid DEFAULT NULL,
+  p_target_user_id uuid DEFAULT NULL,
+  p_session_id text DEFAULT NULL,
+  p_request_id text DEFAULT NULL,
+  p_ip_address text DEFAULT NULL,
+  p_user_agent text DEFAULT NULL,
+  p_path text DEFAULT NULL,
+  p_method text DEFAULT NULL,
+  p_error_code text DEFAULT NULL,
+  p_message text DEFAULT NULL,
+  p_metadata jsonb DEFAULT '{}'::jsonb
+)
+RETURNS uuid AS $$
+DECLARE
+  v_log_id uuid;
+BEGIN
+  INSERT INTO public.audit_logs (
+    source, level, category, action, status, 
+    actor_user_id, target_user_id, session_id, request_id, 
+    ip_address, user_agent, path, method, error_code, 
+    message, metadata
+  )
+  VALUES (
+    p_source, p_level, p_category, p_action, p_status,
+    p_actor_user_id, p_target_user_id, p_session_id, p_request_id,
+    p_ip_address, p_user_agent, p_path, p_method, p_error_code,
+    p_message, p_metadata
+  )
+  RETURNING id INTO v_log_id;
+  
+  RETURN v_log_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Create audit_logs_recent view
 CREATE OR REPLACE VIEW public.audit_logs_recent AS
@@ -138,9 +192,60 @@ CREATE TABLE IF NOT EXISTS public.analytics_daily (
     created_at timestamptz DEFAULT now()
 );
 
+CREATE TABLE IF NOT EXISTS public.analytics_country (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    country_code text NOT NULL,
+    country_name text,
+    visitor_count integer DEFAULT 0,
+    last_updated timestamptz DEFAULT now(),
+    UNIQUE(country_code)
+);
+
+CREATE TABLE IF NOT EXISTS public.analytics_device (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    device_type text NOT NULL,
+    browser text,
+    os text,
+    visitor_count integer DEFAULT 0,
+    last_updated timestamptz DEFAULT now(),
+    UNIQUE(device_type, browser, os)
+);
+
+CREATE TABLE IF NOT EXISTS public.analytics_realtime (
+    session_id text PRIMARY KEY,
+    user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
+    path text,
+    last_activity timestamptz DEFAULT now()
+);
+
+-- RPC: 增加设备统计
+CREATE OR REPLACE FUNCTION public.increment_device_analytics(d_type text, browser_info text, os_info text)
+RETURNS void AS $$
+BEGIN
+    INSERT INTO public.analytics_device (device_type, browser, os, visitor_count)
+    VALUES (d_type, browser_info, os_info, 1)
+    ON CONFLICT (device_type, browser, os) DO UPDATE 
+    SET visitor_count = analytics_device.visitor_count + 1,
+        last_updated = now();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC: 增加国家统计
+CREATE OR REPLACE FUNCTION public.increment_country_analytics(c_code text, c_name text)
+RETURNS void AS $$
+BEGIN
+    INSERT INTO public.analytics_country (country_code, country_name, visitor_count)
+    VALUES (c_code, c_name, 1)
+    ON CONFLICT (country_code) DO UPDATE 
+    SET visitor_count = analytics_country.visitor_count + 1,
+        last_updated = now();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
 CREATE TABLE IF NOT EXISTS public.security_events (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
     event_type text NOT NULL,
+    type text, -- Added for compatibility with code using 'type'
     user_id uuid REFERENCES auth.users(id) ON DELETE SET NULL,
     ip_address text,
     user_agent text,
@@ -148,6 +253,56 @@ CREATE TABLE IF NOT EXISTS public.security_events (
     details jsonb DEFAULT '{}'::jsonb,
     created_at timestamptz DEFAULT now()
 );
+
+-- RPC: 写入安全事件
+CREATE OR REPLACE FUNCTION public.log_security_event(
+  p_type text,
+  p_details jsonb DEFAULT '{}'::jsonb,
+  p_severity text DEFAULT 'INFO',
+  p_user_id uuid DEFAULT NULL,
+  p_ip_address text DEFAULT NULL,
+  p_user_agent text DEFAULT NULL
+)
+RETURNS uuid AS $$
+DECLARE
+  v_event_id uuid;
+BEGIN
+  INSERT INTO public.security_events (
+    type, event_type, details, severity, user_id, ip_address, user_agent
+  )
+  VALUES (
+    p_type, p_type, p_details, p_severity, p_user_id, p_ip_address, p_user_agent
+  )
+  RETURNING id INTO v_event_id;
+  
+  RETURN v_event_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC: 写入错误日志
+CREATE OR REPLACE FUNCTION public.log_error(
+  p_error_message text,
+  p_error_stack text DEFAULT NULL,
+  p_context text DEFAULT NULL,
+  p_severity text DEFAULT 'CRITICAL',
+  p_user_id uuid DEFAULT NULL,
+  p_details jsonb DEFAULT NULL
+)
+RETURNS uuid AS $$
+DECLARE
+  v_error_id uuid;
+BEGIN
+  INSERT INTO public.error_logs (
+    error_message, error_stack, context, severity, user_id, details
+  )
+  VALUES (
+    p_error_message, p_error_stack, p_context, p_severity, p_user_id, p_details
+  )
+  RETURNING id INTO v_error_id;
+  
+  RETURN v_error_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
 CREATE TABLE IF NOT EXISTS public.sleep_records (
     id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -211,7 +366,21 @@ CREATE OR REPLACE FUNCTION public.report_failed_login(target_email text)
 RETURNS void AS $$
 DECLARE
   current_attempts int;
+  v_is_blocked boolean;
 BEGIN
+  -- Handle empty input
+  IF target_email IS NULL OR target_email = '' THEN
+    RETURN;
+  END IF;
+
+  -- Check if user is already blocked
+  SELECT is_blocked INTO v_is_blocked FROM public.profiles 
+  WHERE email = target_email OR phone = target_email;
+  
+  IF v_is_blocked THEN
+    RAISE EXCEPTION 'Security policy: Too many failed attempts. Please try again later.';
+  END IF;
+
   INSERT INTO public.login_attempts (email, attempts, last_attempt)
   VALUES (target_email, 1, now())
   ON CONFLICT (email) DO UPDATE 
@@ -219,11 +388,22 @@ BEGIN
       last_attempt = now()
   RETURNING attempts INTO current_attempts;
 
+  -- Block if attempts >= 5
   IF current_attempts >= 5 THEN
-    UPDATE public.profiles SET is_blocked = true, failed_login_attempts = current_attempts WHERE email = target_email;
+    UPDATE public.profiles 
+    SET is_blocked = true, 
+        failed_login_attempts = current_attempts,
+        block_code = 'BRUTE_FORCE_PROTECTION'
+    WHERE email = target_email OR phone = target_email;
   ELSE
-    UPDATE public.profiles SET failed_login_attempts = current_attempts WHERE email = target_email;
+    UPDATE public.profiles 
+    SET failed_login_attempts = current_attempts 
+    WHERE email = target_email OR phone = target_email;
   END IF;
+  
+  -- Log to security_events
+  INSERT INTO public.security_events (event_type, type, details, severity)
+  VALUES ('FAILED_LOGIN', 'FAILED_LOGIN', jsonb_build_object('identifier', target_email, 'attempts', current_attempts), 'WARNING');
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

@@ -262,15 +262,15 @@ export const SubscriptionManagement: React.FC<SubscriptionManagementProps> = ({ 
                 <div className="mb-8 space-y-4">
                   <div className="flex items-center gap-3 text-xs text-slate-300">
                     <Sparkles size={14} className="text-indigo-400" />
-                    <span>AI Sleep Analysis</span>
+                    <span>{lang === 'zh' ? '无限 AI 睡眠分析' : 'Unlimited AI Sleep Analysis'}</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-300">
                     <History size={14} className="text-indigo-400" />
-                    <span>Unlimited History</span>
+                    <span>{lang === 'zh' ? '无限数据历史记录' : 'Unlimited Data History'}</span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-slate-300">
                     <Brain size={14} className="text-indigo-400" />
-                    <span>Neural Insights</span>
+                    <span>{lang === 'zh' ? '无限神经科学洞察' : 'Unlimited Neural Insights'}</span>
                   </div>
                 </div>
                 <div className="mt-auto pt-8">

@@ -52,15 +52,15 @@ const Pricing: React.FC<PricingProps> = ({ lang }) => {
               <div className="mb-8 space-y-4">
                 <div className="flex items-center gap-3 text-xs text-slate-300">
                   <Check size={14} className="text-indigo-400" />
-                  <span>{isZh ? "AI 睡眠分析报告" : "AI Sleep Analysis Reports"}</span>
+                  <span>{isZh ? "无限 AI 睡眠分析报告" : "Unlimited AI Sleep Analysis Reports"}</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-300">
                   <Check size={14} className="text-indigo-400" />
-                  <span>{isZh ? "无限历史记录" : "Unlimited History"}</span>
+                  <span>{isZh ? "无限数据历史记录" : "Unlimited Data History"}</span>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-slate-300">
                   <Check size={14} className="text-indigo-400" />
-                  <span>{isZh ? "神经科学建议" : "Neural Insights"}</span>
+                  <span>{isZh ? "无限神经科学洞察" : "Unlimited Neural Insights"}</span>
                 </div>
               </div>
               <div className="mt-auto">

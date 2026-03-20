@@ -28,14 +28,33 @@ CREATE TABLE IF NOT EXISTS public.analytics_realtime (
     last_activity timestamptz DEFAULT now()
 );
 
--- Ensure column exists if table was created previously without it
+-- Ensure columns exist if tables were created previously without them
 ALTER TABLE public.analytics_realtime ADD COLUMN IF NOT EXISTS last_activity timestamptz DEFAULT now();
+ALTER TABLE public.analytics_realtime ADD COLUMN IF NOT EXISTS path text;
 
 CREATE TABLE IF NOT EXISTS public.login_attempts (
     email text PRIMARY KEY,
     attempts int DEFAULT 1,
     last_attempt timestamptz DEFAULT now()
 );
+
+-- Ensure audit_logs has all required columns
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS actor_user_id uuid REFERENCES auth.users ON DELETE SET NULL;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS target_user_id uuid REFERENCES auth.users ON DELETE SET NULL;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS source text DEFAULT 'system';
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS category text DEFAULT 'system';
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS status text DEFAULT 'success';
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS message text;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS metadata jsonb DEFAULT '{}'::jsonb;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS user_agent text;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS path text;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS method text;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS request_id text;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS session_id text;
+ALTER TABLE public.audit_logs ADD COLUMN IF NOT EXISTS error_code text;
+
+-- Ensure security_events has 'type' column
+ALTER TABLE public.security_events ADD COLUMN IF NOT EXISTS type text;
 
 -- 2. Fix RPCs (Ensure they exist and handle phone numbers)
 CREATE OR REPLACE FUNCTION public.increment_device_analytics(d_type text, browser_info text, os_info text)
@@ -98,6 +117,51 @@ BEGIN
     SET failed_login_attempts = current_attempts 
     WHERE email = target_email OR phone = target_email;
   END IF;
+  
+  -- Log to security_events
+  INSERT INTO public.security_events (event_type, type, details, severity)
+  VALUES ('FAILED_LOGIN', 'FAILED_LOGIN', jsonb_build_object('identifier', target_email, 'attempts', current_attempts), 'WARNING');
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- RPC: 写入审计日志
+CREATE OR REPLACE FUNCTION public.write_audit_log(
+  p_source text,
+  p_level text,
+  p_category text,
+  p_action text,
+  p_status text,
+  p_actor_user_id uuid DEFAULT NULL,
+  p_target_user_id uuid DEFAULT NULL,
+  p_session_id text DEFAULT NULL,
+  p_request_id text DEFAULT NULL,
+  p_ip_address text DEFAULT NULL,
+  p_user_agent text DEFAULT NULL,
+  p_path text DEFAULT NULL,
+  p_method text DEFAULT NULL,
+  p_error_code text DEFAULT NULL,
+  p_message text DEFAULT NULL,
+  p_metadata jsonb DEFAULT '{}'::jsonb
+)
+RETURNS uuid AS $$
+DECLARE
+  v_log_id uuid;
+BEGIN
+  INSERT INTO public.audit_logs (
+    source, level, category, action, status, 
+    actor_user_id, target_user_id, session_id, request_id, 
+    ip_address, user_agent, path, method, error_code, 
+    message, metadata
+  )
+  VALUES (
+    p_source, p_level, p_category, p_action, p_status,
+    p_actor_user_id, p_target_user_id, p_session_id, p_request_id,
+    p_ip_address, p_user_agent, p_path, p_method, p_error_code,
+    p_message, p_metadata
+  )
+  RETURNING id INTO v_log_id;
+  
+  RETURN v_log_id;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

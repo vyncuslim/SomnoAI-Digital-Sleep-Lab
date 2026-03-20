@@ -41,14 +41,14 @@ export const supabase = (supabaseUrl && supabaseAnonKey) ? createClient(supabase
 // Error Logging Helper
 export const logError = async (userId: string | null, error: any, context: string, severity: 'INFO' | 'WARNING' | 'CRITICAL' = 'CRITICAL') => {
   try {
-    const { error: logErr } = await supabase.from('error_logs').insert([{
-      user_id: userId,
-      error_message: error instanceof Error ? error.message : String(error),
-      error_stack: error instanceof Error ? error.stack : null,
-      context,
-      severity,
-      details: typeof error === 'object' ? JSON.stringify(error) : null
-    }]);
+    const { error: logErr } = await supabase.rpc('log_error', {
+      p_user_id: userId,
+      p_error_message: error instanceof Error ? error.message : String(error),
+      p_error_stack: error instanceof Error ? error.stack : null,
+      p_context: context,
+      p_severity: severity,
+      p_details: typeof error === 'object' ? error : { raw: String(error) }
+    });
     return { error: logErr };
   } catch (err) {
     console.error("Error log failed:", err);
@@ -59,12 +59,13 @@ export const logError = async (userId: string | null, error: any, context: strin
 // Audit Log Helper
 export const logAuditLog = async (userId: string | null, action: string, details: string | Record<string, any>) => {
   try {
-    const { error } = await supabase.from('audit_logs').insert([{
-      user_id: userId,
-      action,
-      details: typeof details === 'string' ? details : JSON.stringify(details),
-      ip_address: 'AUTO_DETECT'
-    }]);
+    const { error } = await supabase.rpc('write_audit_log', {
+      p_actor_user_id: userId,
+      p_action: action,
+      p_message: typeof details === 'string' ? details : JSON.stringify(details),
+      p_metadata: typeof details === 'object' ? details : { details },
+      p_source: 'web'
+    });
     return { error };
   } catch (err) {
     console.error("Audit log failed:", err);
@@ -75,12 +76,12 @@ export const logAuditLog = async (userId: string | null, action: string, details
 // Security Event Helper
 export const logSecurityEvent = async (userId: string | null, type: string, details: string | Record<string, any>) => {
   try {
-    const { error } = await supabase.from('security_events').insert([{
-      user_id: userId,
-      type,
-      details: typeof details === 'string' ? details : JSON.stringify(details),
-      ip_address: 'AUTO_DETECT'
-    }]);
+    const { error } = await supabase.rpc('log_security_event', {
+      p_user_id: userId,
+      p_type: type,
+      p_details: typeof details === 'object' ? details : { details },
+      p_severity: 'INFO'
+    });
     return { error };
   } catch (err) {
     console.error("Security event log failed:", err);

@@ -154,9 +154,91 @@ export const translations: Record<Language, any> = {
         recovery: { title: 'Recovery Optimization', desc: 'Personalized protocols to enhance deep sleep and recovery.' }
       },
       protocol: {
+        title: 'The Protocol',
+        subtitle: 'Four steps to total cognitive restoration.',
         step1: { title: 'Connect Device', desc: 'Sync with Apple Health, Google Fit, or Oura Ring in seconds.' },
         step2: { title: 'Neural Analysis', desc: 'Our AI engine processes 50+ biometric markers during your sleep.' },
-        step3: { title: 'Receive Insights', desc: 'Wake up to actionable recovery protocols and energy forecasts.' }
+        step3: { title: 'Receive Insights', desc: 'Wake up to actionable recovery protocols and energy forecasts.' },
+        step4: { title: 'Actionable Advice', desc: 'Receive personalized schedule and training recommendations.' }
+      },
+      trust: {
+        labTitle: 'A Digital Sleep Lab, Not Just a Tracker',
+        labDesc: 'There are many hardware trackers named Somno/Sonno. We don\'t make hardware. We are the hardware-agnostic AI brain that uncovers the truth behind your data.',
+        sourcesTitle: 'Supported Data Sources',
+        sourcesDesc: 'Seamlessly integrates with Apple Health, Google Fit, Oura, Garmin, Fitbit, and more. You are never locked into a single brand.',
+        teamTitle: 'Built by Researchers & Engineers',
+        teamDesc: 'Our team is dedicated to bringing clinical-grade sleep insights to everyone. View our public roadmap or contact the founding team directly.',
+        aboutUs: 'About Us →',
+        contactTeam: 'Contact Team →'
+      },
+      capabilities: {
+        title: 'Solving Real Sleep Problems',
+        subtitle: 'We solve the problem of interpretation, not just tracking.',
+        tiredTitle: 'Why are you still tired after 8 hours of sleep?',
+        tiredDesc: 'We go beyond simple duration tracking. Our AI analyzes your sleep architecture, HRV, and lifestyle factors to pinpoint the root cause of your fatigue.',
+        unifiedTitle: 'Why can\'t different tracker data be explained together?',
+        unifiedDesc: 'We aggregate data from Apple Health, Oura, Garmin, and more into a single, unified intelligence layer.',
+        noRingTitle: 'No smart ring? You still deserve smart sleep analysis.',
+        noRingDesc: 'Even with basic phone tracking or manual logs, our AI can identify patterns and provide actionable recovery protocols.',
+        privacyTitle: 'Your Data, Your Rules (Local-first & Encrypted)',
+        privacyDesc: 'We are a research lab, not a data broker. Your raw biometrics NEVER leave your device. All processing is edge-processed, ensuring privacy-first analysis.',
+        privacyPolicy: 'View our Data Handling Policy →'
+      },
+      report: {
+        title: 'What You Get',
+        subtitle: 'No more confusing numbers. Get clear, actionable insights that tell you exactly what to do.',
+        anomalyTitle: 'Anomaly Root Cause',
+        anomalyDesc: '"Your deep sleep dropped by 30% last night. This highly correlates with the late workout you logged 2 hours before bed. Recommendation: Shift high-intensity training to the afternoon."',
+        priorityTitle: 'Prioritized Actions',
+        priorityDesc: 'Stop getting overwhelmed by dozens of tips. We give you exactly 1-2 highest-impact action items for the day.',
+        trendsTitle: 'Long-term Trends & Consistency',
+        trendsDesc: 'Track your "Sleep Consistency Score", a far more important metric for recovery than single-night duration.'
+      },
+      whoIsItFor: {
+        title: 'Who is it for?',
+        subtitle: 'Whatever your goal, SomnoAI Digital Sleep Lab provides customized recovery strategies.',
+        athleteTitle: 'Elite Athletes',
+        athleteDesc: 'Optimize training load, predict fatigue, and peak on race day.',
+        workerTitle: 'Knowledge Workers',
+        workerDesc: 'Maximize deep sleep to improve daytime cognitive clarity and focus.',
+        improverTitle: 'Sleep Improvers',
+        improverDesc: 'Identify hidden factors disrupting sleep and establish healthy routines.'
+      },
+      testimonials: [
+        {
+          quote: "The depth of analysis is unlike anything I've seen. It's not just tracking; it's actual coaching.",
+          author: "Dr. Sarah Chen",
+          role: "Neuroscientist"
+        },
+        {
+          quote: "Finally, a sleep app that tells me *why* I'm tired, not just *that* I'm tired.",
+          author: "Marcus Thorne",
+          role: "Elite Athlete"
+        }
+      ],
+      pricing: {
+        title: 'Pricing Plans',
+        subtitle: 'Choose the sleep analysis plan that\'s right for you',
+        planTitle: 'SomnoAI Digital Sleep Lab Analysis',
+        planDesc: 'In-depth insights, long-term trend analysis, and personalized recommendations.',
+        features: [
+          'Unlimited AI Analysis Reports',
+          'Unlimited Data History',
+          'Unlimited Neural Insights'
+        ],
+        price: 'MYR 10.00',
+        period: '/mo',
+        button: 'Subscribe Now'
+      },
+      faq: {
+        title: 'Frequently Asked Questions',
+        subtitle: 'Everything you need to know about the SomnoAI Digital Sleep Lab.',
+        items: [
+          { q: 'Is SomnoAI a hardware device?', a: 'No. SomnoAI is a digital sleep laboratory that analyzes data from your existing wearables (Apple Watch, Oura, Garmin, etc.). We do not sell hardware.' },
+          { q: 'How is my data protected?', a: 'We use local-first processing and AES-256 encryption. Your raw biometric data never leaves your device; only anonymized telemetry is used for AI analysis.' },
+          { q: 'Which devices are supported?', a: 'We support Apple Health, Google Fit, Oura, Garmin, Fitbit, Whoop, and many others through our unified data layer.' },
+          { q: 'Can I use it without a wearable?', a: 'Yes. You can manually log sleep data or use basic phone-based tracking, and our AI will still provide valuable insights based on your inputs.' }
+        ]
       },
       footer: {
         about: 'About',
@@ -168,7 +250,15 @@ export const translations: Record<Language, any> = {
         policy: 'Policy Framework',
         opensource: 'Open Source',
         rights: 'ALL RIGHTS RESERVED'
-      }
+      },
+      welcomeBack: 'Welcome back,',
+      readyTo: 'Ready to',
+      optimize: 'Optimize?',
+      stopGuessing: 'Stop guessing about your sleep. Upload your data and get real insights.',
+      subscribing: 'Subscribing...',
+      subscribed: 'Subscribed!',
+      unsubscribeNote: 'You can unsubscribe at any time. View our Privacy Policy.',
+      waitlist: 'Join Waitlist'
     },
     about: {
       aiCoreTitle: 'AI Core Capabilities',
@@ -517,9 +607,91 @@ export const translations: Record<Language, any> = {
         recovery: { title: '恢复优化', desc: '增强深度睡眠和恢复的个性化方案。' }
       },
       protocol: {
+        title: '协议流程',
+        subtitle: '实现全面认知恢复的四个步骤。',
         step1: { title: '连接设备', desc: '秒级同步 Apple Health、Google Fit 或 Oura Ring。' },
         step2: { title: '神经分析', desc: '我们的 AI 引擎在您睡眠期间处理 50 多个生物识别标记。' },
-        step3: { title: '获取洞察', desc: '醒来即可获得可操作的恢复方案和能量预测。' }
+        step3: { title: '获取洞察', desc: '醒来即可获得可操作的恢复方案和能量预测。' },
+        step4: { title: '行动建议', desc: '获得个性化的作息调整和训练建议。' }
+      },
+      trust: {
+        labTitle: '数字睡眠实验室，而非单纯的追踪器',
+        labDesc: '市场上有很多名为 Somno/Sonno 的硬件。我们不生产硬件，我们是独立于硬件的 AI 分析大脑，为您解读数据背后的真相。',
+        sourcesTitle: '支持多源数据接入',
+        sourcesDesc: '无缝集成 Apple Health, Google Fit, Oura, Garmin, Fitbit 等主流健康平台。您无需被单一品牌绑定。',
+        teamTitle: '由研究人员与工程师构建',
+        teamDesc: '我们的团队致力于将临床级别的睡眠洞察带给大众。查看我们的公开路线图或直接与创始人团队联系。',
+        aboutUs: '关于我们 →',
+        contactTeam: '联系团队 →'
+      },
+      capabilities: {
+        title: '解决真实的睡眠问题',
+        subtitle: '我们解决的是解释问题，而不只是记录问题。',
+        tiredTitle: '为什么睡了 8 小时还是累？',
+        tiredDesc: '我们不仅记录睡眠时长。我们的 AI 会分析您的睡眠架构、HRV 和生活方式因素，找出您疲劳的根本原因。',
+        unifiedTitle: '为什么不同品牌设备的数据无法被统一解释？',
+        unifiedDesc: '我们将来自 Apple Health、Oura、Garmin 等设备的数据汇总到一个统一的智能分析层中。',
+        noRingTitle: '没有智能戒指？普通人也该拥有聪明的睡眠分析。',
+        noRingDesc: '即使只有基础的手机追踪或手动记录，我们的 AI 也能识别模式并提供可执行的恢复方案。',
+        privacyTitle: '你的数据，你做主（本地优先与加密）',
+        privacyDesc: '我们是研究实验室，不是数据中间商。您的原始生物特征数据永远不会离开您的设备。所有处理均在边缘完成，确保隐私优先。',
+        privacyPolicy: '查看我们的数据处理政策 →'
+      },
+      report: {
+        title: '您将获得什么',
+        subtitle: '不再是枯燥的数字。获取清晰、可执行的洞察，确切告诉您该怎么做。',
+        anomalyTitle: '异常原因分析',
+        anomalyDesc: '“昨晚您的深度睡眠下降了 30%。这与您在睡前 2 小时记录的晚间锻炼高度相关。建议将高强度训练移至下午。”',
+        priorityTitle: '优先级建议',
+        priorityDesc: '不要被几十条建议淹没。我们每天只给您 1-2 个最高影响力的行动项。',
+        trendsTitle: '长期趋势与一致性',
+        trendsDesc: '追踪您的“睡眠一致性得分”，这是比单晚睡眠时长更重要的恢复指标。'
+      },
+      whoIsItFor: {
+        title: '为谁设计？',
+        subtitle: '无论您的目标是什么，SomnoAI Digital Sleep Lab 都能提供定制化的恢复策略。',
+        athleteTitle: '高强度运动员',
+        athleteDesc: '优化训练负荷，预测疲劳，并在比赛日达到最佳状态。',
+        workerTitle: '知识工作者',
+        workerDesc: '最大化深度睡眠，提高白天的认知清晰度和专注力。',
+        improverTitle: '失眠改善者',
+        improverDesc: '识别破坏睡眠的隐藏因素，建立健康的作息规律。'
+      },
+      testimonials: [
+        {
+          quote: "分析的深度与我见过的任何东西都不同。它不仅仅是追踪；它是真正的指导。",
+          author: "Sarah Chen 博士",
+          role: "神经科学家"
+        },
+        {
+          quote: "终于有一个睡眠应用告诉我*为什么*我累，而不仅仅是*我*累了。",
+          author: "Marcus Thorne",
+          role: "精英运动员"
+        }
+      ],
+      pricing: {
+        title: '定价方案',
+        subtitle: '选择最适合您的睡眠分析方案',
+        planTitle: 'SomnoAI 数字睡眠实验室分析',
+        planDesc: '深入的洞察、长期趋势分析和个性化建议。',
+        features: [
+          '无限 AI 睡眠分析报告',
+          '无限数据历史记录',
+          '无限神经科学洞察'
+        ],
+        price: 'MYR 10.00',
+        period: '/月',
+        button: '立即订阅'
+      },
+      faq: {
+        title: '常见问题',
+        subtitle: '关于 SomnoAI 数字睡眠实验室您需要了解的一切。',
+        items: [
+          { q: 'SomnoAI 是硬件设备吗？', a: '不是。SomnoAI 是一个数字睡眠实验室，它分析来自您现有可穿戴设备（Apple Watch, Oura, Garmin 等）的数据。我们不销售硬件。' },
+          { q: '我的数据如何受到保护？', a: '我们使用本地优先处理和 AES-256 加密。您的原始生物识别数据永远不会离开您的设备；只有匿名遥测数据用于 AI 分析。' },
+          { q: '支持哪些设备？', a: '我们通过统一的数据层支持 Apple Health, Google Fit, Oura, Garmin, Fitbit, Whoop 等。' },
+          { q: '没有可穿戴设备可以使用吗？', a: '可以。您可以手动记录睡眠数据或使用基础的手机追踪，我们的 AI 仍会根据您的输入提供有价值的洞察。' }
+        ]
       },
       footer: {
         about: '关于',
@@ -531,7 +703,15 @@ export const translations: Record<Language, any> = {
         policy: '政策与法律框架',
         opensource: '开源',
         rights: '保留所有权利'
-      }
+      },
+      welcomeBack: '欢迎回来,',
+      readyTo: '准备好',
+      optimize: '优化了吗？',
+      stopGuessing: '停止猜测您的睡眠。开始上传数据，获取真实的洞察。',
+      subscribing: '正在订阅...',
+      subscribed: '已订阅！',
+      unsubscribeNote: '您可以随时取消订阅。查看我们的隐私政策。',
+      waitlist: '加入候补名单'
     },
     about: {
       aiCoreTitle: 'AI 核心能力',
