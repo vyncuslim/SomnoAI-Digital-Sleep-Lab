@@ -15,7 +15,7 @@ export const SchemaMarkup: React.FC<{ article?: ArticleSchemaProps }> = ({ artic
     "@type": "Organization",
     "name": "SomnoAI Digital Sleep Lab",
     "url": "https://sleepsomno.com",
-    "logo": "https://sleepsomno.com/logo_512.png",
+    "logo": "/logo_512.png",
     "sameAs": [
       "https://www.linkedin.com/company/digital-sleep-lab",
       "https://www.instagram.com/digitalsleeplab/",
@@ -61,7 +61,7 @@ export const SchemaMarkup: React.FC<{ article?: ArticleSchemaProps }> = ({ artic
       "name": "SomnoAI Digital Sleep Lab",
       "logo": {
         "@type": "ImageObject",
-        "url": "https://sleepsomno.com/logo_512.png"
+        "url": "/logo_512.png"
       }
     },
     "image": article.imageUrl
