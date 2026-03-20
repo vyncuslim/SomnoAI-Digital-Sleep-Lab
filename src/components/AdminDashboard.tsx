@@ -308,7 +308,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
           
           await securityService.handleSecurityViolation(
             profile.id, 
-            profile.email || profile.phone || profile.id, 
+            profile.email || profile.id, 
             'UNAUTHORIZED_ADMIN_ACCESS_ATTEMPT', 
             'CRITICAL'
           );
@@ -639,7 +639,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">是否已初始化 (is_initialized)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">是否有应用数据 (has_app_data)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">创建时间 (created_at)</th>
-                    <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">电话 (phone)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">头像链接 (avatar_url)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">登录提供商 (provider)</th>
                     <th className="p-4 text-xs font-bold uppercase tracking-widest text-slate-500">最后登录时间 (last_sign_in_at)</th>
@@ -687,7 +686,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({ lang, onBack }) 
                       <td className="p-4 text-xs text-slate-400">{user.is_initialized ? '是' : '否'}</td>
                       <td className="p-4 text-xs text-slate-400">{user.has_app_data ? '是' : '否'}</td>
                       <td className="p-4 text-xs font-mono text-slate-500">{user.created_at ? new Date(user.created_at).toLocaleString() : '-'}</td>
-                      <td className="p-4 text-xs text-slate-400">{user.phone || '-'}</td>
                       <td className="p-4 text-xs text-slate-400">
                         {user.avatar_url ? (
                           <a href={user.avatar_url} target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">View</a>

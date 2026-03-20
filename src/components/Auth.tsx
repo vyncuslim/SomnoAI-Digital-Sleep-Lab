@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check, Phone } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Chrome, Brain, ShieldCheck, ArrowLeft, KeyRound, Loader2, Check } from 'lucide-react';
 import { Turnstile } from '@marsidev/react-turnstile';
 import { GlassCard } from './GlassCard';
 import { HardwareButton } from './ui/Components';
@@ -99,32 +99,16 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   }, [initialView]);
 
   const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [password, setPassword] = useState('');
-
-  const validatePhone = (phone: string) => {
-    // Basic E.164 regex: starts with +, followed by 7 to 15 digits
-    const phoneRegex = /^\+[1-9]\d{6,14}$/;
-    if (!phoneRegex.test(phone.replace(/\s/g, ''))) {
-      return { 
-        valid: false, 
-        message: lang === 'zh' 
-          ? '请输入有效的国际格式手机号码 (例如: +8613812345678)' 
-          : 'Please enter a valid phone number in international format (e.g., +1234567890).' 
-      };
-    }
-    return { valid: true };
-  };
   const [token, setToken] = useState('');
-  const [otpType, setOtpType] = useState<'signup' | 'sms' | 'recovery' | 'magiclink'>('sms');
+  const [otpType] = useState<'signup' | 'sms' | 'recovery' | 'magiclink'>('magiclink');
   const [showOtpInput, setShowOtpInput] = useState(false);
   const [resendTimer, setResendTimer] = useState(0);
   const [loading, setLoading] = useState(false);
   const [termsApproved, setTermsApproved] = useState(false);
   const [privacyApproved, setPrivacyApproved] = useState(false);
-  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY;
-  const isTurnstileEnabled = false; // Disabled as requested by user
+  const turnstileSiteKey = import.meta.env.VITE_TURNSTILE_SITE_KEY || '0x4AAAAAACNi1FM3bbfW_VsI';
+  const isTurnstileEnabled = true; // Enabled as requested by user
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
   const [isTurnstileLoaded, setIsTurnstileLoaded] = useState(false);
@@ -169,19 +153,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   React.useEffect(() => {
-    console.log('Auth View/Method changed, resetting Turnstile:', { view, authMethod });
+    console.log('Auth View changed, resetting Turnstile:', { view });
     setShowOtpInput(false);
     setToken('');
     setSuccessMessage(null);
     setError(null);
-    // Clear Turnstile token when view or auth method changes to ensure fresh verification
+    // Clear Turnstile token when view changes to ensure fresh verification
     setTurnstileToken(null);
     
     // Use a small timeout to ensure the DOM has updated if the widget was unmounted/remounted
     const timer = setTimeout(() => {
       if (turnstileRef.current && isTurnstileLoaded) {
         try {
-          console.log('Calling turnstileRef.current.reset() due to view/method change');
+          console.log('Calling turnstileRef.current.reset() due to view change');
           turnstileRef.current.reset();
         } catch (e) {
           console.warn('Failed to reset Turnstile:', e);
@@ -190,7 +174,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     }, 100);
     
     return () => clearTimeout(timer);
-  }, [view, authMethod]);
+  }, [view]);
 
   const validateEmail = (email: string) => {
     const fakePatterns = ['@ddd', '@ds', '@123'];
@@ -224,7 +208,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     try {
       console.log('handleSubmit started', { 
         view, 
-        authMethod, 
         requiresCaptcha: (view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput)), 
         hasToken: !!turnstileToken, 
         isTurnstileEnabled, 
@@ -240,7 +223,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       
       if (requiresCaptcha && isTurnstileEnabled) {
         if (!turnstileToken) {
-          console.warn('Turnstile token missing at submission. View:', view, 'AuthMethod:', authMethod);
+          console.warn('Turnstile token missing at submission. View:', view);
           // Try one last time to reset if it's missing
           if (turnstileRef.current && isTurnstileLoaded) {
             try {
@@ -255,43 +238,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
 
       if (view === 'signup') {
-        if (authMethod === 'email') {
-          const emailValidation = validateEmail(email);
-          if (!emailValidation.valid) {
-            throw new Error(emailValidation.message);
-          }
+        const emailValidation = validateEmail(email);
+        if (!emailValidation.valid) {
+          throw new Error(emailValidation.message);
+        }
 
-          if (password !== confirmPassword) {
-            throw new Error('Passwords do not match.');
-          }
+        if (password !== confirmPassword) {
+          throw new Error('Passwords do not match.');
         }
       }
 
       if (view === 'login') {
         if (!supabase.auth.signInWithPassword) {
           throw new Error('Supabase is not configured. Please check your environment variables.');
-        }
-
-        if (authMethod === 'phone') {
-          const phoneValidation = validatePhone(phone);
-          if (!phoneValidation.valid) {
-            throw new Error(phoneValidation.message);
-          }
-
-          // Phone login is now OTP-only as requested
-          console.log('Attempting phone OTP login');
-          setOtpType('sms');
-          const { error: otpError } = await supabase.auth.signInWithOtp({
-            phone: phone.replace(/\s/g, ''),
-            options: {
-              captchaToken: turnstileToken || undefined,
-            },
-          });
-          if (otpError) throw otpError;
-          setShowOtpInput(true);
-          setView('otp');
-          setSuccessMessage(lang === 'zh' ? '验证码已发送到您的手机。' : 'Verification code sent to your phone.');
-          return;
         }
 
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
@@ -317,12 +276,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         }
         
         if (data.user) {
-          // Check if email or phone is verified
-          if (!data.user.email_confirmed_at && !data.user.phone_confirmed_at) {
+          // Check if email is verified
+          if (!data.user.email_confirmed_at) {
             await supabase.auth.signOut();
-            const message = authMethod === 'email' 
-              ? (lang === 'zh' ? '请在登录前验证您的邮箱。请检查您的收件箱。' : 'Please verify your email address before logging in. Check your inbox for the verification link.')
-              : (lang === 'zh' ? '请在登录前验证您的手机。' : 'Please verify your phone number before logging in.');
+            const message = lang === 'zh' ? '请在登录前验证您的邮箱。请检查您的收件箱。' : 'Please verify your email address before logging in. Check your inbox for the verification link.';
             throw new Error(message);
           }
 
@@ -369,41 +326,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         
         navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
-        if (authMethod === 'phone') {
-          const phoneValidation = validatePhone(phone);
-          if (!phoneValidation.valid) {
-            throw new Error(phoneValidation.message);
-          }
-
-          // Phone signup is now OTP-only as requested
-          console.log('Attempting phone OTP signup');
-          setOtpType('signup');
-          const { error: signUpError } = await supabase.auth.signInWithOtp({
-            phone: phone.replace(/\s/g, ''),
-            options: {
-              captchaToken: turnstileToken || undefined,
-            },
-          });
-          
-          if (signUpError) {
-            await fetchWithLogging('/api/audit/auth-signup', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                phone: phone.replace(/\s/g, ''),
-                success: false,
-                errorCode: signUpError.message
-              })
-            }, 'Auth Phone Signup Failure');
-            throw signUpError;
-          }
-          
-          setShowOtpInput(true);
-          setView('otp');
-          setSuccessMessage(lang === 'zh' ? '验证码已发送到您的手机，请验证以完成注册。' : 'Verification code sent to your phone. Please verify to complete registration.');
-          return;
-        }
-
         const { data, error: signUpError } = await supabase.auth.signUp({
           email,
           password,
@@ -475,40 +397,26 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
       } else if (view === 'otp') {
         if (showOtpInput) {
-          console.log('Verifying OTP:', { authMethod, otpType });
+          console.log('Verifying OTP:', { otpType });
           const { data, error: verifyError } = await supabase.auth.verifyOtp({
-            email: authMethod === 'email' ? email : undefined,
-            phone: authMethod === 'phone' ? phone.replace(/\s/g, '') : undefined,
+            email: email,
             token,
-            type: authMethod === 'email' ? 'magiclink' : otpType,
+            type: 'magiclink',
           });
           
           if (verifyError) throw verifyError;
           
           if (data.user) {
             await logAuditLog(data.user.id, 'USER_LOGIN_OTP', `Successful OTP verification (${otpType})`);
-            
-            // Explicitly record phone number in profile if it was a phone login
-            if (authMethod === 'phone') {
-              try {
-                await supabase.from('profiles').update({ 
-                  phone: phone.replace(/\s/g, ''),
-                  last_login: new Date().toISOString()
-                }).eq('id', data.user.id);
-              } catch (profileErr) {
-                console.error('Failed to update profile with phone:', profileErr);
-              }
-            }
           }
           
           navigate(`${langPrefix}/dashboard`);
           return;
         }
 
-        console.log('Requesting new OTP:', { authMethod, otpType });
+        console.log('Requesting new OTP:', { otpType });
         const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: authMethod === 'email' ? email : undefined,
-          phone: authMethod === 'phone' ? phone.replace(/\s/g, '') : undefined,
+          email: email,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
             captchaToken: turnstileToken || undefined,
@@ -518,9 +426,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (otpError) throw otpError;
         setShowOtpInput(true);
         setSuccessMessage(
-          authMethod === 'email'
-            ? (lang === 'zh' ? '验证码/登录链接已发送到您的邮箱，请查收。' : 'Verification code or magic link sent to your email. Check your inbox.')
-            : (lang === 'zh' ? '验证码已发送到您的手机。' : 'Verification code sent to your phone.')
+          lang === 'zh' ? '验证码/登录链接已发送到您的邮箱，请查收。' : 'Verification code or magic link sent to your email. Check your inbox.'
         );
       }
     } catch (err: any) {
@@ -528,7 +434,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       
       if (view === 'login') {
         try {
-          const identifier = authMethod === 'email' ? email : phone.replace(/\s/g, '');
+          const identifier = email;
           if (identifier) {
             try {
               await supabase.rpc('report_failed_login', { target_email: identifier });
@@ -629,12 +535,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   };
 
   const handleResendVerification = async () => {
-    if (authMethod === 'email' && !email) {
+    if (!email) {
       setError('Please enter your email address.');
-      return;
-    }
-    if (authMethod === 'phone' && !phone) {
-      setError('Please enter your phone number.');
       return;
     }
     
@@ -642,48 +544,27 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setError(null);
     setSuccessMessage(null);
     try {
-      console.log('Resending verification:', { authMethod, view, otpType, email, phone });
+      console.log('Resending verification:', { view, otpType, email });
       
-      if (authMethod === 'email') {
-        if (otpType === 'magiclink' || view === 'otp') {
-          // For magic link / passwordless login, use signInWithOtp
-          const { error } = await supabase.auth.signInWithOtp({
-            email: email,
-            options: {
-              emailRedirectTo: `${window.location.origin}/dashboard`,
-              captchaToken: turnstileToken || undefined,
-            }
-          });
-          if (error) throw error;
-          setSuccessMessage(lang === 'zh' ? '登录链接已重发，请检查您的邮箱。' : 'Login link resent! Please check your inbox.');
-        } else {
-          // For signup confirmation
-          const { error } = await supabase.auth.resend({
-            type: 'signup',
-            email: email,
-          });
-          if (error) throw error;
-          setSuccessMessage(lang === 'zh' ? '验证邮件已重发，请检查您的邮箱。' : 'Verification email resent! Please check your inbox.');
-        }
+      if (otpType === 'magiclink' || view === 'otp') {
+        // For magic link / passwordless login, use signInWithOtp
+        const { error } = await supabase.auth.signInWithOtp({
+          email: email,
+          options: {
+            emailRedirectTo: `${window.location.origin}/dashboard`,
+            captchaToken: turnstileToken || undefined,
+          }
+        });
+        if (error) throw error;
+        setSuccessMessage(lang === 'zh' ? '登录链接已重发，请检查您的邮箱。' : 'Login link resent! Please check your inbox.');
       } else {
-        // For phone
-        if (otpType === 'signup') {
-          const { error } = await supabase.auth.resend({
-            type: 'signup',
-            phone: phone.replace(/\s/g, ''),
-          });
-          if (error) throw error;
-        } else {
-          // For SMS OTP login
-          const { error } = await supabase.auth.signInWithOtp({
-            phone: phone.replace(/\s/g, ''),
-            options: {
-              captchaToken: turnstileToken || undefined,
-            }
-          });
-          if (error) throw error;
-        }
-        setSuccessMessage(lang === 'zh' ? '验证码已重发，请检查您的手机。' : 'Verification code resent! Please check your messages.');
+        // For signup confirmation
+        const { error } = await supabase.auth.resend({
+          type: 'signup',
+          email: email,
+        });
+        if (error) throw error;
+        setSuccessMessage(lang === 'zh' ? '验证邮件已重发，请检查您的邮箱。' : 'Verification email resent! Please check your inbox.');
       }
       
       setResendTimer(60);
@@ -774,29 +655,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                 className="space-y-6 text-center"
               >
                 <div className="w-20 h-20 bg-indigo-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
-                  {authMethod === 'email' ? (
-                    <Mail className="text-indigo-400 w-10 h-10" />
-                  ) : (
-                    <Phone className="text-indigo-400 w-10 h-10" />
-                  )}
+                  <Mail className="text-indigo-400 w-10 h-10" />
                 </div>
                 <h2 className="text-xl font-bold text-white uppercase tracking-tight">
-                  {authMethod === 'email' 
-                    ? (lang === 'zh' ? '检查您的邮箱' : 'Check Your Email')
-                    : (lang === 'zh' ? '检查您的手机' : 'Check Your Phone')}
+                  {lang === 'zh' ? '检查您的邮箱' : 'Check Your Email'}
                 </h2>
                 <p className="text-slate-400 text-sm leading-relaxed">
-                  {authMethod === 'email' ? (
-                    <>
-                      {lang === 'zh' ? '我们已向 ' : "We've sent a verification link to "}<span className="text-white font-mono">{email}</span>. 
-                      {lang === 'zh' ? ' 请点击邮件中的链接以验证您的账户并完成注册。' : ' Please click the link in the email to verify your account and complete registration.'}
-                    </>
-                  ) : (
-                    <>
-                      {lang === 'zh' ? '我们已向 ' : "We've sent a verification code to "}<span className="text-white font-mono">{phone}</span>. 
-                      {lang === 'zh' ? ' 请在登录页面输入验证码以完成验证。' : ' Please enter the code on the login page to complete verification.'}
-                    </>
-                  )}
+                  {lang === 'zh' ? '我们已向 ' : "We've sent a verification link to "}<span className="text-white font-mono">{email}</span>. 
+                  {lang === 'zh' ? ' 请点击邮件中的链接以验证您的账户并完成注册。' : ' Please click the link in the email to verify your account and complete registration.'}
                 </p>
                 
                 <div className="pt-4 space-y-4">
@@ -807,17 +673,15 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     className="w-full"
                   >
                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : (
-                      authMethod === 'email' 
-                        ? (lang === 'zh' ? '重新发送验证邮件' : 'Resend Verification Email')
-                        : (lang === 'zh' ? '重新发送验证码' : 'Resend Verification Code')
+                      lang === 'zh' ? '重新发送验证邮件' : 'Resend Verification Email'
                     )}
                   </HardwareButton>
                   
                   <button 
-                    onClick={() => setView(authMethod === 'phone' ? 'otp' : 'login')}
+                    onClick={() => setView('login')}
                     className="text-xs text-indigo-400 font-bold hover:text-indigo-300 uppercase tracking-widest transition-colors"
                   >
-                    {authMethod === 'phone' ? (lang === 'zh' ? '去输入验证码' : 'Go to Enter Code') : (lang === 'zh' ? '返回登录' : 'Back to Login')}
+                    {lang === 'zh' ? '返回登录' : 'Back to Login'}
                   </button>
                 </div>
               </motion.div>
@@ -851,55 +715,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   onSubmit={handleSubmit} 
                   className="space-y-6"
                 >
-                  {(view === 'login' || view === 'signup' || (view === 'otp' && !showOtpInput)) && (
-                    <motion.div variants={itemVariants} className="flex p-1 bg-black/40 rounded-xl border border-white/5 mb-2">
-                      <button
-                        type="button"
-                        onClick={() => setAuthMethod('email')}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${authMethod === 'email' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-                      >
-                        {lang === 'zh' ? '邮箱' : 'Email'}
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAuthMethod('phone')}
-                        className={`flex-1 py-2 text-[10px] font-black uppercase tracking-widest rounded-lg transition-all ${authMethod === 'phone' ? 'bg-indigo-500 text-white shadow-lg' : 'text-slate-500 hover:text-slate-300'}`}
-                      >
-                        {lang === 'zh' ? '手机号' : 'Phone'}
-                      </button>
-                    </motion.div>
-                  )}
-
-                  {(authMethod === 'email' || view === 'forgot-password') ? (
-                    <motion.div variants={itemVariants}>
-                      <InputField
-                        icon={Mail}
-                        label="Email Address"
-                        type="email"
-                        value={email}
-                        onChange={(e: any) => setEmail(e.target.value)}
-                        placeholder="name@example.com"
-                        required
-                        disabled={showOtpInput}
-                      />
-                    </motion.div>
-                  ) : (
-                    <motion.div variants={itemVariants}>
-                      <InputField
-                        icon={Phone}
-                        label={lang === 'zh' ? '手机号码' : 'Phone Number'}
-                        type="tel"
-                        value={phone}
-                        onChange={(e: any) => setPhone(e.target.value)}
-                        placeholder="+86 138..."
-                        required
-                        disabled={showOtpInput}
-                      />
-                      <p className="text-[9px] text-slate-600 mt-2 ml-4 font-mono uppercase tracking-wider">
-                        {lang === 'zh' ? '请输入带国家代码的完整号码 (如 +86...)' : 'Include country code (e.g., +1...)'}
-                      </p>
-                    </motion.div>
-                  )}
+                  <motion.div variants={itemVariants}>
+                    <InputField
+                      icon={Mail}
+                      label="Email Address"
+                      type="email"
+                      value={email}
+                      onChange={(e: any) => setEmail(e.target.value)}
+                      placeholder="name@example.com"
+                      required
+                      disabled={showOtpInput}
+                    />
+                  </motion.div>
 
                   {view === 'otp' && showOtpInput && (
                     <motion.div variants={itemVariants}>
@@ -933,15 +760,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                           }}
                           className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 uppercase tracking-wider transition-colors"
                         >
-                          {authMethod === 'email' 
-                            ? (lang === 'zh' ? '更改邮箱' : 'Change Email')
-                            : (lang === 'zh' ? '更改号码' : 'Change Number')}
+                          {lang === 'zh' ? '更改邮箱' : 'Change Email'}
                         </button>
                       </div>
                     </motion.div>
                   )}
 
-                  {(view === 'login' || view === 'signup') && authMethod === 'email' && (
+                  {(view === 'login' || view === 'signup') && (
                     <motion.div variants={itemVariants}>
                       <InputField
                         icon={Lock}
@@ -981,11 +806,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     <motion.div variants={itemVariants} className="space-y-4 ml-2 pt-2">
                       <div className="pt-2 relative group">
                         <Turnstile 
-                          key={`ts-${view}-${authMethod}`}
+                          key={`ts-${view}`}
                           ref={turnstileRef}
                           siteKey={turnstileSiteKey} 
                           onSuccess={(token) => {
-                            console.log('Turnstile success for', view, authMethod, 'token length:', token.length);
+                            console.log('Turnstile success for', view, 'token length:', token.length);
                             setTurnstileToken(token);
                           }}
                           onError={(error) => {
@@ -1024,7 +849,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     </motion.div>
                   )}
 
-                  {view === 'signup' && authMethod === 'email' && (
+                  {view === 'signup' && (
                     <motion.div variants={itemVariants}>
                       <InputField
                         icon={Lock}
@@ -1111,7 +936,6 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                       <HardwareButton 
                         type="button" 
                         onClick={() => {
-                          setAuthMethod('email');
                           setView('otp');
                         }}
                         disabled={loading}

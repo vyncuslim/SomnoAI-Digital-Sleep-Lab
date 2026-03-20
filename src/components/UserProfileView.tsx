@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  User, Mail, Phone, Globe, Settings, Save, Edit2, X, CheckCircle2, AlertCircle,
+  User, Mail, Globe, Settings, Save, Edit2, X, CheckCircle2, AlertCircle,
   Calendar, Upload
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
@@ -25,7 +25,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
     if (profile) {
       setFormData({
         full_name: profile.full_name || '',
-        phone: profile.phone || '',
         country: profile.country || '',
         avatar_url: profile.avatar_url || ''
       });
@@ -106,7 +105,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
     personalInfo: lang === 'zh' ? '个人信息' : 'Personal Information',
     fullName: lang === 'zh' ? '全名' : 'Full Name',
     email: lang === 'zh' ? '电子邮箱' : 'Email Address',
-    phone: lang === 'zh' ? '电话号码' : 'Phone Number',
     country: lang === 'zh' ? '国家/地区' : 'Country/Region',
     memberSince: lang === 'zh' ? '加入时间' : 'Member Since',
     settings: lang === 'zh' ? '偏好设置' : 'Preferences',
@@ -224,23 +222,6 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
                     <Mail className="w-4 h-4" />
                     {profile.email || t.placeholderName}
                   </p>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.phone}</label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      value={formData.phone || ''}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      className="w-full bg-slate-950/50 border border-white/10 rounded-lg px-4 py-2 text-white focus:border-indigo-500 outline-none transition-colors"
-                    />
-                  ) : (
-                    <p className="text-lg font-medium text-white flex items-center gap-2">
-                      <Phone className="w-4 h-4 text-slate-500" />
-                      {profile.phone || t.placeholderName}
-                    </p>
-                  )}
                 </div>
 
                 <div className="space-y-2">

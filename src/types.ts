@@ -40,7 +40,6 @@ export interface UserProfile {
   is_initialized?: boolean;
   has_app_data?: boolean;
   created_at?: string;
-  phone?: string;
   avatar_url?: string;
   provider?: string;
   last_sign_in_at?: string;

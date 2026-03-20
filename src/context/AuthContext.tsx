@@ -44,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = profile?.role === 'admin' || profile?.role === 'owner' || profile?.is_super_owner;
   const isOwner = profile?.role === 'owner' || profile?.is_super_owner;
   const isSuperOwner = profile?.is_super_owner;
-  const isVerified = user?.email_confirmed_at != null || user?.phone_confirmed_at != null;
+  const isVerified = user?.email_confirmed_at != null;
 
   useEffect(() => {
     // Get initial session
