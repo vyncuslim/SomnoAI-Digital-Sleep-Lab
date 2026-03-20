@@ -38,10 +38,10 @@ async function startServer() {
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "img-src": ["'self'", "data:", "https://*.supabase.co", "https://*.sleepsomno.com", "https://picsum.photos", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
-        "script-src": ["'self'", "'unsafe-inline'", "'wasm-unsafe-eval'", "https://*.googletagmanager.com", "https://app.livechatai.com", "https://challenges.cloudflare.com", "https://unpkg.com"],
-        "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://app.livechatai.com"],
-        "connect-src": ["'self'", "https://*.supabase.co", "https://*.google-analytics.com", "https://*.googletagmanager.com", "wss://*.supabase.co", "https://app.livechatai.com", "https://api.elevenlabs.io", "wss://api.elevenlabs.io", "https://connectors.windsor.ai", "https://unpkg.com"]
+        "img-src": ["'self'", "data:", "blob:", "https://*.supabase.co", "https://*.sleepsomno.com", "https://picsum.photos", "https://*.google-analytics.com", "https://*.googletagmanager.com"],
+        "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "'wasm-unsafe-eval'", "https://*.googletagmanager.com", "https://app.livechatai.com", "https://challenges.cloudflare.com", "https://unpkg.com", "https://*.run.app"],
+        "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://app.livechatai.com", "https://*.supabase.co"],
+        "connect-src": ["'self'", "https://*.supabase.co", "https://*.google-analytics.com", "https://*.googletagmanager.com", "wss://*.supabase.co", "https://app.livechatai.com", "https://api.elevenlabs.io", "wss://api.elevenlabs.io", "https://connectors.windsor.ai", "https://unpkg.com", "https://*.run.app", "wss://*.run.app"]
       },
     },
     crossOriginEmbedderPolicy: false,

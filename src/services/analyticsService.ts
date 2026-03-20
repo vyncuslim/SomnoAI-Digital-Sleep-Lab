@@ -50,16 +50,20 @@ export const analyticsService = {
       // 6. Realtime analytics
       let sessionId = sessionStorage.getItem('analytics_session_id');
       if (!sessionId) {
-        sessionId = Math.random().toString(36).substring(7);
+        sessionId = crypto.randomUUID?.() || Math.random().toString(36).substring(2) + Date.now().toString(36);
         sessionStorage.setItem('analytics_session_id', sessionId);
       }
 
-      await supabase.from('analytics_realtime').upsert({
+      const { error: upsertError } = await supabase.from('analytics_realtime').upsert({
         session_id: sessionId,
         user_id: userId || null,
         path: window.location.pathname,
         last_activity: new Date().toISOString()
       }, { onConflict: 'session_id' });
+
+      if (upsertError) {
+        console.warn('Analytics upsert failed:', upsertError.message);
+      }
 
     } catch (error) {
       console.error('Error tracking visit:', error);

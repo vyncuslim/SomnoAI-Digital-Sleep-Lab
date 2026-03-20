@@ -25,7 +25,7 @@ export const securityService = {
       // Log to security_events
       await logSecurityEvent(userId, 'FAILED_LOGIN_ATTEMPT', `Failed login attempt for email: ${email}`);
 
-      await logAuditLog(userId || 'SYSTEM', 'FAILED_LOGIN_ATTEMPT', { email });
+      await logAuditLog(userId, 'FAILED_LOGIN_ATTEMPT', { email });
 
       // Send security alert for failed login
       await emailService.sendSecurityAlert(email, 'Failed Login Attempt', 'A failed login attempt was detected for your account. If this wasn\'t you, please monitor your account.');

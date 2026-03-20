@@ -125,6 +125,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   const isTurnstileEnabled = !!turnstileSiteKey;
 
   const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [isTurnstileLoaded, setIsTurnstileLoaded] = useState(false);
   const turnstileRef = React.useRef<any>(null);
   const [confirmPassword, setConfirmPassword] = useState('');
   const getPasswordStrength = (pass: string) => {
@@ -149,10 +150,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setSuccessMessage(null);
     setError(null);
     setTurnstileToken(null);
-    if (turnstileRef.current) {
-      turnstileRef.current.reset();
+    if (turnstileRef.current && isTurnstileLoaded) {
+      try {
+        turnstileRef.current.reset();
+      } catch (e) {
+        console.warn('Failed to reset Turnstile:', e);
+      }
     }
-  }, [view]);
+  }, [view, isTurnstileLoaded]);
 
   const validateEmail = (email: string) => {
     const fakePatterns = ['@ddd', '@ds', '@123'];
@@ -189,8 +194,13 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
 
       const requiresCaptcha = view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput);
-      if (requiresCaptcha && isTurnstileEnabled && !turnstileToken) {
-        throw new Error('Please complete the security verification.');
+      if (requiresCaptcha && isTurnstileEnabled) {
+        if (!turnstileToken) {
+          throw new Error(lang === 'zh' ? '请先完成安全验证。' : 'Please complete the security verification.');
+        }
+        if (!isTurnstileLoaded) {
+          throw new Error(lang === 'zh' ? '安全验证尚未加载完成，请稍候。' : 'Security verification is still loading, please wait.');
+        }
       }
 
       if (view === 'signup') {
@@ -424,7 +434,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         }
 
         const { error: otpError } = await supabase.auth.signInWithOtp({
-          email,
+          email: authMethod === 'email' ? email : undefined,
+          phone: authMethod === 'phone' ? phone.replace(/\s/g, '') : undefined,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
             captchaToken: turnstileToken || undefined,
@@ -433,15 +444,26 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         
         if (otpError) throw otpError;
         setShowOtpInput(true);
-        setSuccessMessage(lang === 'zh' ? '验证码/登录链接已发送到您的邮箱，请查收。' : 'Verification code or magic link sent to your email. Check your inbox.');
+        setSuccessMessage(
+          authMethod === 'email'
+            ? (lang === 'zh' ? '验证码/登录链接已发送到您的邮箱，请查收。' : 'Verification code or magic link sent to your email. Check your inbox.')
+            : (lang === 'zh' ? '验证码已发送到您的手机。' : 'Verification code sent to your phone.')
+        );
       }
     } catch (err: any) {
       console.error('Auth error:', err);
       
       if (view === 'login') {
         try {
-          await supabase.rpc('report_failed_login', { target_email: email });
-          await logAuditLog('SYSTEM', 'FAILED_LOGIN_ATTEMPT', `Failed login attempt for email: ${email}`);
+          const identifier = authMethod === 'email' ? email : phone.replace(/\s/g, '');
+          if (identifier) {
+            try {
+              await supabase.rpc('report_failed_login', { target_email: identifier });
+            } catch (rpcErr) {
+              console.warn('Failed to report failed login via RPC:', rpcErr);
+            }
+            await logAuditLog(null, 'FAILED_LOGIN_ATTEMPT', `Failed login attempt for identifier: ${identifier}`);
+          }
         } catch (rpcErr) {
           console.error('Failed to report login attempt:', rpcErr);
         }
@@ -463,9 +485,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         errorMessage = 'Password should be at least 6 characters.';
       }
       setError(errorMessage);
-      // Reset Turnstile on error
-      if (turnstileRef.current) {
-        turnstileRef.current.reset();
+      // Reset Turnstile on error to prevent token reuse
+      setTurnstileToken(null);
+      if (turnstileRef.current && isTurnstileLoaded) {
+        try {
+          turnstileRef.current.reset();
+        } catch (e) {
+          console.warn('Failed to reset Turnstile on error:', e);
+        }
       }
     } finally {
       setLoading(false);
@@ -839,6 +866,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                           onSuccess={(token) => setTurnstileToken(token)}
                           onError={() => setError('Security verification failed. Please try again.')}
                           onExpire={() => setTurnstileToken(null)}
+                          onLoad={() => setIsTurnstileLoaded(true)}
                           options={{
                             theme: 'dark',
                             size: 'normal',
