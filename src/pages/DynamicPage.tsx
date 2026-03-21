@@ -35,7 +35,7 @@ export const DynamicPage: React.FC<DynamicPageProps> = ({ lang, type }) => {
         title={content.title}
         subtitle={content.subtitle}
         paragraphs={content.paragraphs || []}
-        badge={lang === 'zh' ? '机密数据' : 'CONFIDENTIAL DATA'}
+        lang={lang}
       />
     );
   }
