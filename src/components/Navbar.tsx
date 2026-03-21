@@ -86,6 +86,9 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <div className="absolute -left-6 top-1/2 -translate-y-1/2 w-1 h-8 bg-indigo-500 rounded-full opacity-0 group-hover:opacity-100 transition-all" />
           <Logo className="group-hover:text-indigo-400 transition-colors scale-110" />
+          <div className="hidden lg:block">
+            <div className="text-[10px] font-black text-indigo-500 uppercase tracking-[0.2em] italic">SDSL-CS-001</div>
+          </div>
         </m.button>
 
         <div className="hidden xl:flex items-center gap-8">
