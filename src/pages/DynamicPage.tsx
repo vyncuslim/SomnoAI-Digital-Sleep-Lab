@@ -34,7 +34,8 @@ export const DynamicPage: React.FC<DynamicPageProps> = ({ lang, type }) => {
     'data-handling', 'abuse-policy', 'account-blocking', 
     'policy-framework', 'open-source', 'legal', 'cookie-policy',
     'pricing-and-billing', 'refund-and-cancellation', 'vulnerability-disclosure',
-    'appeals-and-complaints', 'intellectual-property', 'subprocessors', 'dpa'
+    'appeals-and-complaints', 'intellectual-property', 'subprocessors', 'dpa',
+    'children-privacy'
   ].includes(activeType as string);
 
   if (isLegalPage) {

@@ -36,7 +36,8 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
     { name: 'MEDICAL DISCLAIMER', path: '/legal/medical-disclaimer' },
     { name: 'ACCOUNT BLOCKING', path: '/legal/account-blocking' },
     { name: 'VULNERABILITY DISCLOSURE', path: '/legal/vulnerability-disclosure' },
-    { name: 'INTELLECTUAL PROPERTY', path: '/legal/intellectual-property' }
+    { name: 'INTELLECTUAL PROPERTY', path: '/legal/intellectual-property' },
+    { name: 'CHILDREN\'S PRIVACY', path: '/legal/children-privacy' }
   ];
 
   const policyLinks = [

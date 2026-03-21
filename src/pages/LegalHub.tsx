@@ -31,7 +31,8 @@ export const LegalHub: React.FC<LegalHubProps> = ({ lang }) => {
     { title: isZh ? "申诉与投诉政策" : "Appeals & Complaints Policy", description: isZh ? "处理申诉和正式投诉的流程。" : "Process for handling appeals and formal complaints.", link: "/legal/appeals-and-complaints", icon: <MessageSquare /> },
     { title: isZh ? "知识产权政策" : "Intellectual Property Policy", description: isZh ? "关于所有权、版权和商标的信息。" : "Information about ownership, copyright, and trademarks.", link: "/legal/intellectual-property", icon: <Copyright /> },
     { title: isZh ? "子处理者" : "Sub-processors", description: isZh ? "我们使用的第三方服务提供商列表。" : "List of third-party service providers we use.", link: "/legal/subprocessors", icon: <Users /> },
-    { title: isZh ? "数据处理协议 (DPA)" : "Data Processing Agreement (DPA)", description: isZh ? "关于处理个人数据的协议条款。" : "Agreement terms regarding the processing of personal data.", link: "/legal/dpa", icon: <FileCheck /> }
+    { title: isZh ? "数据处理协议 (DPA)" : "Data Processing Agreement (DPA)", description: isZh ? "关于处理个人数据的协议条款。" : "Agreement terms regarding the processing of personal data.", link: "/legal/dpa", icon: <FileCheck /> },
+    { title: isZh ? "儿童隐私政策" : "Children’s Privacy", description: isZh ? "我们如何保护儿童的隐私。" : "How we protect children's privacy.", link: "/legal/children-privacy", icon: <Users /> }
   ];
 
   return (
@@ -107,7 +108,7 @@ export const LegalHub: React.FC<LegalHubProps> = ({ lang }) => {
               {isZh ? "治理与合规" : "Governance & Compliance"}
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              {[documents[5], documents[6], documents[7], documents[10], documents[14], documents[15], documents[16], documents[17], documents[18]].map((doc, idx) => (
+              {[documents[5], documents[6], documents[7], documents[10], documents[14], documents[15], documents[16], documents[17], documents[18], documents[19]].map((doc, idx) => (
                 <Link key={idx} to={doc.link} className="block h-full">
                   <Card 
                     title={doc.title}
