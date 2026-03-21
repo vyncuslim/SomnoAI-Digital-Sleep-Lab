@@ -13,46 +13,54 @@ export const SecuritySettings: React.FC = () => {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const PinInput = ({ value, onChange, disabled = false }: { value: string, onChange: (val: string) => void, disabled?: boolean }) => {
-    const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+  const PinInput = ({ value, onChange, disabled = false, autoFocus = false }: { value: string, onChange: (val: string) => void, disabled?: boolean, autoFocus?: boolean }) => {
+    const inputRef = React.useRef<HTMLInputElement>(null);
 
-    const handleChange = (index: number, val: string) => {
-      if (!/^\d*$/.test(val)) return;
-      
-      const newPin = value.split('');
-      newPin[index] = val.slice(-1);
-      const updatedPin = newPin.join('');
-      onChange(updatedPin);
-
-      if (val && index < 5) {
-        inputRefs.current[index + 1]?.focus();
-      }
+    const handleContainerClick = () => {
+      inputRef.current?.focus();
     };
 
-    const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Backspace' && !value[index] && index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+      onChange(val);
     };
 
     return (
-      <div className="flex justify-center gap-2">
+      <div 
+        className="relative flex justify-center gap-2 cursor-text" 
+        onClick={handleContainerClick}
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          pattern="\d*"
+          maxLength={6}
+          value={value}
+          onChange={handleInputChange}
+          disabled={disabled}
+          autoFocus={autoFocus}
+          className="absolute inset-0 opacity-0 cursor-default"
+          aria-label="6-digit PIN"
+        />
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <input
-            key={i}
-            ref={(el) => {
-              inputRefs.current[i] = el;
-            }}
-            type="text"
-            inputMode="numeric"
-            pattern="\d*"
-            maxLength={1}
-            value={value[i] || ''}
-            disabled={disabled}
-            onChange={(e) => handleChange(i, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            className="w-10 h-12 bg-slate-800 border border-slate-700 rounded-lg text-center text-xl font-bold text-white focus:outline-none focus:border-indigo-500 transition-all"
-          />
+          <div 
+            key={i} 
+            className={`w-10 h-14 bg-slate-900/50 border rounded-xl flex items-center justify-center text-2xl font-mono font-bold transition-all ${
+              value.length === i && !disabled ? 'border-indigo-500 ring-4 ring-indigo-500/10' : 'border-slate-700'
+            } ${disabled ? 'opacity-50' : ''}`}
+          >
+            <span className={value[i] ? 'text-white' : 'text-white/10'}>
+              {value[i] || '0'}
+            </span>
+            {value.length === i && !disabled && (
+              <motion.div
+                animate={{ opacity: [0, 1, 0] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+                className="absolute bottom-2 w-4 h-0.5 bg-indigo-500/50"
+              />
+            )}
+          </div>
         ))}
       </div>
     );
@@ -79,8 +87,9 @@ export const SecuritySettings: React.FC = () => {
       const { recoveryKey: key } = await setPin(pin);
       setRecoveryKey(key);
       setMode('success');
-    } catch (err) {
-      setError('Failed to update PIN');
+    } catch (err: any) {
+      setError(err.message || 'Failed to update PIN');
+      console.error('PIN Setup Error:', err);
     } finally {
       setIsProcessing(false);
     }
@@ -106,8 +115,9 @@ export const SecuritySettings: React.FC = () => {
       } else {
         setError('Invalid recovery key');
       }
-    } catch (err) {
-      setError('Recovery failed');
+    } catch (err: any) {
+      setError(err.message || 'Recovery failed');
+      console.error('PIN Recovery Error:', err);
     } finally {
       setIsProcessing(false);
     }
@@ -146,16 +156,22 @@ export const SecuritySettings: React.FC = () => {
                 <form onSubmit={handleSetupSubmit} className="space-y-6">
                   <div className="text-center">
                     <h4 className="text-lg font-bold text-white mb-1">{hasPinSet ? 'Change Security PIN' : 'Set Security PIN'}</h4>
-                    <p className="text-xs text-slate-400">Enter a new 6-digit numeric PIN</p>
+                    <motion.p 
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      className="text-xs text-slate-400 font-mono"
+                    >
+                      {'> '}Enter a new 6-digit numeric PIN
+                    </motion.p>
                   </div>
                   
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center">New PIN</label>
-                      <PinInput value={pin} onChange={setPinInput} />
+                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center font-bold">New PIN</label>
+                      <PinInput value={pin} onChange={setPinInput} autoFocus />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center">Confirm PIN</label>
+                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center font-bold">Confirm PIN</label>
                       <PinInput value={confirmPin} onChange={setConfirmPin} />
                     </div>
                   </div>

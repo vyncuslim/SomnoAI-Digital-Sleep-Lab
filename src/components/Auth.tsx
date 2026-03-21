@@ -49,8 +49,11 @@ const InputField = ({ icon: Icon, label, rightElement, ...props }: any) => {
 };
 
 const CheckboxField = ({ id, checked, onChange, children }: any) => (
-  <div className="flex items-start gap-3 group cursor-pointer" onClick={() => onChange(!checked)}>
-    <div className="relative mt-0.5 flex-shrink-0">
+  <div className="flex items-start gap-3 group">
+    <div 
+      className="relative mt-0.5 flex-shrink-0 cursor-pointer" 
+      onClick={() => onChange(!checked)}
+    >
       <input
         type="checkbox"
         id={id}
@@ -65,7 +68,7 @@ const CheckboxField = ({ id, checked, onChange, children }: any) => (
         <Check size={12} className={`text-white transition-transform duration-300 ${checked ? 'scale-100' : 'scale-0'}`} />
       </div>
     </div>
-    <label htmlFor={id} className="text-xs text-slate-400 cursor-pointer select-none leading-relaxed group-hover:text-slate-300 transition-colors" onClick={(e) => e.preventDefault()}>
+    <label htmlFor={id} className="text-xs text-slate-400 cursor-pointer select-none leading-relaxed group-hover:text-slate-300 transition-colors">
       {children}
     </label>
   </div>
@@ -796,10 +799,10 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   {view === 'signup' && (
                     <motion.div variants={itemVariants} className="space-y-4 ml-2 pt-2">
                       <CheckboxField id="terms" checked={termsApproved} onChange={setTermsApproved}>
-                        {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/terms-of-service`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '服务条款' : 'Terms of Service'}</Link>.
+                        {lang === 'zh' ? '我同意' : 'I agree to the'} <a href={`${langPrefix}/legal/terms-of-service`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '服务条款' : 'Terms of Service'}</a>.
                       </CheckboxField>
                       <CheckboxField id="privacy" checked={privacyApproved} onChange={setPrivacyApproved}>
-                        {lang === 'zh' ? '我同意' : 'I agree to the'} <Link to={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</Link>.
+                        {lang === 'zh' ? '我同意' : 'I agree to the'} <a href={`${langPrefix}/legal/privacy-policy`} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()} className="text-indigo-400 hover:text-indigo-300 hover:underline transition-colors">{lang === 'zh' ? '隐私政策' : 'Privacy Policy'}</a>.
                       </CheckboxField>
                     </motion.div>
                   )}

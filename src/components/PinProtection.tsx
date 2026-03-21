@@ -78,8 +78,9 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
       const { recoveryKey: key } = await setPin(pin);
       setRecoveryKey(key);
       setMode('success');
-    } catch (err) {
-      setError('Failed to set PIN. Please try again.');
+    } catch (err: any) {
+      setError(err.message || 'Failed to set PIN. Please try again.');
+      console.error('PIN Setup Error:', err);
     } finally {
       setIsProcessing(false);
     }
@@ -113,54 +114,53 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
   };
 
   const PinInput = ({ value, onChange, disabled = false, autoFocus = false }: { value: string, onChange: (val: string) => void, disabled?: boolean, autoFocus?: boolean }) => {
-    const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+    const inputRef = React.useRef<HTMLInputElement>(null);
 
-    const handleChange = (index: number, val: string) => {
-      if (!/^\d*$/.test(val)) return;
-      
-      const newPin = value.split('');
-      newPin[index] = val.slice(-1);
-      const updatedPin = newPin.join('');
-      onChange(updatedPin);
-
-      if (val && index < 5) {
-        inputRefs.current[index + 1]?.focus();
-      }
+    const handleContainerClick = () => {
+      inputRef.current?.focus();
     };
 
-    const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
-      if (e.key === 'Backspace' && !value[index] && index > 0) {
-        inputRefs.current[index - 1]?.focus();
-      }
-    };
-
-    const handlePaste = (e: React.ClipboardEvent) => {
-      e.preventDefault();
-      const pasteData = e.clipboardData.getData('text').slice(0, 6).replace(/\D/g, '');
-      onChange(pasteData);
-      const nextIndex = Math.min(pasteData.length, 5);
-      inputRefs.current[nextIndex]?.focus();
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
+      onChange(val);
     };
 
     return (
-      <div className="flex justify-center gap-2" onPaste={handlePaste}>
+      <div 
+        className="relative flex justify-center gap-2 cursor-text" 
+        onClick={handleContainerClick}
+      >
+        <input
+          ref={inputRef}
+          type="text"
+          inputMode="numeric"
+          pattern="\d*"
+          maxLength={6}
+          value={value}
+          onChange={handleInputChange}
+          disabled={disabled}
+          autoFocus={autoFocus}
+          className="absolute inset-0 opacity-0 cursor-default"
+          aria-label="6-digit PIN"
+        />
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <input
-            key={i}
-            ref={(el) => {
-              inputRefs.current[i] = el;
-            }}
-            type="text"
-            inputMode="numeric"
-            pattern="\d*"
-            maxLength={1}
-            value={value[i] || ''}
-            disabled={disabled}
-            autoFocus={autoFocus && i === 0}
-            onChange={(e) => handleChange(i, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            className={`w-12 h-16 bg-white/5 border border-white/10 rounded-xl text-center text-2xl font-bold text-white focus:outline-none focus:border-emerald-500/50 transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
-          />
+          <div 
+            key={i} 
+            className={`w-12 h-16 bg-white/5 border rounded-xl flex items-center justify-center text-3xl font-mono font-bold transition-all ${
+              value.length === i && !disabled ? 'border-emerald-500 ring-4 ring-emerald-500/10' : 'border-white/10'
+            } ${disabled ? 'opacity-50' : ''}`}
+          >
+            <span className={value[i] ? 'text-white' : 'text-white/10'}>
+              {value[i] || '0'}
+            </span>
+            {value.length === i && !disabled && (
+              <motion.div
+                animate={{ opacity: [0, 1, 0] }}
+                transition={{ duration: 0.8, repeat: Infinity }}
+                className="absolute bottom-3 w-6 h-0.5 bg-emerald-500/50"
+              />
+            )}
+          </div>
         ))}
       </div>
     );
@@ -171,6 +171,8 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     setShowCopySuccess(true);
     setTimeout(() => setShowCopySuccess(false), 2000);
   };
+
+  const lang = user?.email?.includes('zh') || navigator.language.startsWith('zh') ? 'zh' : 'en';
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[#01040a] flex items-center justify-center p-4">
@@ -192,17 +194,24 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
           </div>
           
           <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-tight">
-            {mode === 'verify' && 'Security Verification'}
-            {mode === 'setup' && 'Set Security PIN'}
-            {mode === 'recovery' && 'Account Recovery'}
-            {mode === 'success' && 'PIN Set Successfully'}
+            {mode === 'verify' && (lang === 'zh' ? '安全验证' : 'Security Verification')}
+            {mode === 'setup' && (lang === 'zh' ? '设置安全 PIN' : 'Set Security PIN')}
+            {mode === 'recovery' && (lang === 'zh' ? '账户恢复' : 'Account Recovery')}
+            {mode === 'success' && (lang === 'zh' ? 'PIN 设置成功' : 'PIN Set Successfully')}
           </h2>
-          <p className="text-white/50 text-sm">
-            {mode === 'verify' && (isPinBlocked ? 'Too many failed attempts. Please use your recovery key.' : 'Enter your 6-digit security PIN to continue.')}
-            {mode === 'setup' && 'Create a 6-digit PIN to protect your account.'}
-            {mode === 'recovery' && 'Use your recovery key to reset your PIN.'}
-            {mode === 'success' && 'Please save your recovery key in a safe place.'}
-          </p>
+          <div className="space-y-1">
+            <p className="text-white/50 text-sm font-mono">
+              {mode === 'verify' && (isPinBlocked ? '> ACCESS_DENIED: Too many failed attempts.' : '> ENTER_PIN: 6-digit security code required.')}
+              {mode === 'setup' && '> INITIALIZING: Create 6-digit security PIN.'}
+              {mode === 'recovery' && '> RECOVERY_MODE: Resetting security credentials.'}
+              {mode === 'success' && '> SUCCESS: Security PIN established.'}
+            </p>
+            {mode === 'setup' && (
+              <p className="text-slate-400 text-xs">
+                {lang === 'zh' ? '创建一个 6 位 PIN 以保护您的账户。' : 'Create a 6-digit PIN to protect your account.'}
+              </p>
+            )}
+          </div>
         </div>
 
         <AnimatePresence mode="wait">
