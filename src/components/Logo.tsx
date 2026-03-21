@@ -1,5 +1,4 @@
 import React from 'react';
-import logoUrl from '../logo_512.png';
 
 interface LogoProps {
   className?: string;
@@ -11,7 +10,7 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true }) =
   return (
     <div className={`flex items-center gap-3 ${className}`}>
       <img 
-        src={logoUrl} 
+        src="/logo_512.png" 
         alt="SomnoAI Logo" 
         className="w-10 h-10 object-contain"
       />

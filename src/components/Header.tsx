@@ -1,12 +1,11 @@
 
+import React from 'react';
+import { Logo } from './Logo';
 
 const Header = () => {
   return (
     <header className="bg-[#050505] text-white py-4 px-6 flex items-center justify-between border-b border-white/10">
-      <div className="flex items-center gap-2">
-        <img src="/logo_512.png" alt="SomnoAI Logo" className="w-8 h-8 object-contain" />
-        <span className="font-bold text-lg">SomnoAI Digital Sleep Lab</span>
-      </div>
+      <Logo className="scale-90 origin-left" />
       <nav className="hidden md:flex gap-6 text-sm text-gray-400">
         <a href="#" className="hover:text-white">Product</a>
         <a href="#" className="hover:text-white">Pricing</a>
