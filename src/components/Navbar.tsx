@@ -50,10 +50,10 @@ export const Navbar: React.FC<NavbarProps> = ({
     { label: isZh ? '定价' : 'Pricing', view: 'pricing', icon: TrendingUp },
     { label: isZh ? '原理' : 'How it Works', view: 'how-it-works', icon: Binary },
     { label: isZh ? '研究' : 'Research', view: 'research', icon: Microscope },
-    { label: t.landing?.nav?.science || 'Science', view: 'science', icon: FlaskConical },
-    { label: t.landing?.nav?.news || 'News', view: 'news', icon: Newspaper },
-    { label: t.landing?.nav?.faq || 'FAQ', view: 'faq', icon: HelpCircle },
-    { label: t.landing?.nav?.project || 'Project', view: 'about', icon: Info },
+    { label: t.nav?.science || 'Science', view: 'science', icon: FlaskConical },
+    { label: t.nav?.news || 'News', view: 'news', icon: Newspaper },
+    { label: t.nav?.faq || 'FAQ', view: 'faq', icon: HelpCircle },
+    { label: t.nav?.project || 'Project', view: 'about', icon: Info },
     { label: isZh ? '联系' : 'Contact', view: 'contact', icon: Mail },
     { label: isZh ? '支持' : 'Support', view: 'support', icon: LifeBuoy },
   ];
@@ -177,7 +177,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         ) : (
           <div className="hidden sm:flex items-center gap-6">
             <button onClick={() => onNavigate('signup')} className="text-[10px] font-black text-slate-500 hover:text-white transition-all tracking-[0.2em] uppercase italic">
-              {t.landing?.nav?.signup || 'JOIN NOW'}
+              {t.nav?.signup || 'JOIN NOW'}
             </button>
             <m.button 
               whileHover={{ scale: 1.05 }} 
@@ -185,7 +185,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               onClick={() => onNavigate('login')} 
               className="px-8 py-3 bg-indigo-600 text-white rounded-xl text-[10px] font-black uppercase tracking-[0.2em] hover:bg-indigo-500 transition-all italic flex items-center gap-3 shadow-lg"
             >
-              <LogIn size={14} /> {t.landing?.nav?.enter || 'SIGN IN'}
+              <LogIn size={14} /> {t.nav?.enter || 'SIGN IN'}
             </m.button>
           </div>
         )}
@@ -277,10 +277,10 @@ export const Navbar: React.FC<NavbarProps> = ({
               ) : (
                 <div className="flex flex-col gap-4">
                   <button onClick={() => onNavigate('signup')} className="w-full py-4 bg-white/5 border border-white/5 rounded-2xl text-[10px] font-black uppercase tracking-widest italic text-slate-400">
-                    {t.landing?.nav?.signup || 'JOIN NOW'}
+                    {t.nav?.signup || 'JOIN NOW'}
                   </button>
                   <button onClick={() => onNavigate('login')} className="w-full py-4 bg-indigo-600 rounded-2xl text-[10px] font-black uppercase tracking-widest italic text-white shadow-xl">
-                    {t.landing?.nav?.enter || 'SIGN IN'}
+                    {t.nav?.enter || 'SIGN IN'}
                   </button>
                 </div>
               )}

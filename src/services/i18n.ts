@@ -1062,6 +1062,23 @@ export const translations: Record<Language, any> = {
   }
 };
 
-export const getTranslation = (lang: Language, section: string) => {
-  return translations[lang]?.[section] || translations.en[section] || {};
+export const getTranslation = (lang: Language, path: string) => {
+  const keys = path.split('.');
+  
+  let current: any = translations[lang];
+  for (const key of keys) {
+    if (current === undefined) break;
+    current = current[key];
+  }
+  
+  if (current !== undefined) return current;
+
+  // Fallback to English
+  current = translations.en;
+  for (const key of keys) {
+    if (current === undefined) break;
+    current = current[key];
+  }
+  
+  return current !== undefined ? current : path;
 };
