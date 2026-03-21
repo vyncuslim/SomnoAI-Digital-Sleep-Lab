@@ -8,7 +8,7 @@ export const notificationService = {
     try {
       const parser = new UAParser();
       const result = parser.getResult();
-      const device = `${result.browser.name || 'Unknown Browser'} on ${result.os.name || 'Unknown OS'} (${result.device.type || 'desktop'})`;
+      const device = `${result.browser?.name || 'Unknown Browser'} on ${result.os?.name || 'Unknown OS'} (${result.device?.type || 'desktop'})`;
       const time = new Date().toISOString();
       
       // Fetch user name

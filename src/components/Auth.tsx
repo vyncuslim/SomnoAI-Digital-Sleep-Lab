@@ -266,16 +266,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         });
         
         if (signInError) {
-          await securityService.handleFailedLogin(email);
-          await fetchWithLogging('/api/audit/login', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              email, 
-              status: 'failed', 
-              errorCode: signInError.message 
-            })
-          }, 'Auth Login Failure');
+          console.error('Supabase signInWithPassword error:', signInError);
+          try {
+            await securityService.handleFailedLogin(email);
+          } catch (e) {
+            console.warn('handleFailedLogin failed', e);
+          }
+          try {
+            await fetchWithLogging('/api/audit/login', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                email, 
+                status: 'failed', 
+                errorCode: signInError.message 
+              })
+            }, 'Auth Login Failure');
+          } catch (e) {
+            console.warn('audit login failed', e);
+          }
           throw signInError;
         }
         
@@ -347,16 +356,21 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         });
         
         if (signUpError) {
-          await fetchWithLogging('/api/audit/auth-signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              userId: null,
-              email,
-              success: false,
-              errorCode: signUpError.message
-            })
-          }, 'Auth Signup Failure');
+          console.error('Supabase signUp error:', signUpError);
+          try {
+            await fetchWithLogging('/api/audit/auth-signup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: null,
+                email,
+                success: false,
+                errorCode: signUpError.message
+              })
+            }, 'Auth Signup Failure');
+          } catch (e) {
+            console.warn('audit signup failed', e);
+          }
           throw signUpError;
         }
         

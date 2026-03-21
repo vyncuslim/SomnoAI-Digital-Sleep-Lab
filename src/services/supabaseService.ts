@@ -64,7 +64,10 @@ export const logAuditLog = async (userId: string | null, action: string, details
       p_action: action,
       p_message: typeof details === 'string' ? details : JSON.stringify(details),
       p_metadata: typeof details === 'object' ? details : { details },
-      p_source: 'web'
+      p_source: 'web',
+      p_level: 'info',
+      p_category: 'auth',
+      p_status: 'success'
     });
     return { error };
   } catch (err) {
