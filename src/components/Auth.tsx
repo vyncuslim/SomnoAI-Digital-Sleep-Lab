@@ -103,6 +103,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [pin, setPin] = useState('');
   const [token, setToken] = useState('');
   const [otpType] = useState<'signup' | 'sms' | 'recovery' | 'magiclink'>('magiclink');
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -310,6 +311,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                console.warn(`User ${data.user.id} has no role assigned.`);
              }
              
+             // If PIN was provided, we can handle it here or let PinProtection handle it after login
+             if (pin && pin.length === 6) {
+               console.log('PIN provided during login, will be handled by PinProtection');
+             }
+
              await fetchWithLogging('/api/audit/login', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -772,7 +778,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   )}
 
                   {(view === 'login' || view === 'signup') && (
-                    <motion.div variants={itemVariants}>
+                    <motion.div variants={itemVariants} className="space-y-6">
                       <InputField
                         icon={Lock}
                         label="Password"
@@ -793,6 +799,25 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                           )
                         }
                       />
+
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest ml-4">
+                          {view === 'signup' ? (lang === 'zh' ? '设置 6 位安全 PIN' : 'Set 6-Digit Security PIN') : (lang === 'zh' ? '安全 PIN (可选)' : 'Security PIN (Optional)')}
+                        </label>
+                        <div className="relative group">
+                          <ShieldCheck className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-600 group-focus-within:text-indigo-400 transition-colors" size={18} />
+                          <input
+                            type="password"
+                            inputMode="numeric"
+                            pattern="\d*"
+                            maxLength={6}
+                            value={pin}
+                            onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
+                            placeholder="••••••"
+                            className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white font-mono tracking-[0.5em] focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder-slate-700/50"
+                          />
+                        </div>
+                      </div>
                     </motion.div>
                   )}
 

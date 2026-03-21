@@ -5,8 +5,10 @@ import { useAuth } from '../context/AuthContext';
 import { Mail, Lock, AlertCircle } from 'lucide-react';
 import { fetchWithLogging } from '../services/apiService';
 import { Logo } from '../components/Logo';
+import { useLanguage } from '../context/useLanguage';
 
 const Login = () => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -65,7 +67,7 @@ const Login = () => {
 
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || 'Failed to sign in');
+      setError(err.message || t('auth.loginError'));
     } finally {
       setLoading(false);
     }
@@ -78,7 +80,7 @@ const Login = () => {
           <div className="flex justify-center mb-6">
             <Logo showText={false} className="scale-125" />
           </div>
-          <h1 className="text-2xl font-bold text-white uppercase tracking-tight italic">Welcome Back</h1>
+          <h1 className="text-2xl font-bold text-white uppercase tracking-tight italic">{t('auth.loginTitle')}</h1>
           <p className="text-slate-500 text-xs font-mono uppercase tracking-widest mt-2">Neural Access • Session Start</p>
         </div>
 
@@ -91,7 +93,7 @@ const Login = () => {
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Email Address</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('auth.email')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Mail className="h-5 w-5 text-gray-500" />
@@ -108,7 +110,7 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-300 mb-2">Password</label>
+            <label className="block text-sm font-medium text-gray-300 mb-2">{t('auth.password')}</label>
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Lock className="h-5 w-5 text-gray-500" />
@@ -129,7 +131,7 @@ const Login = () => {
             disabled={loading}
             className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
-            {loading ? 'Signing in...' : 'Sign In'}
+            {loading ? t('auth.loggingIn') : t('auth.loginBtn')}
           </button>
         </form>
       </div>

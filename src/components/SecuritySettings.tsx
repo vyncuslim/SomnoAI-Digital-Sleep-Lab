@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Shield, Key, CheckCircle2, AlertCircle } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useLanguage } from '../context/useLanguage';
 
 export const SecuritySettings: React.FC = () => {
   const { hasPinSet, setPin, resetPinWithRecoveryKey } = useAuth();
+  const { t } = useLanguage();
   const [mode, setMode] = useState<'idle' | 'change' | 'recovery' | 'success'>('idle');
   const [pin, setPinInput] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
@@ -14,54 +16,20 @@ export const SecuritySettings: React.FC = () => {
   const [isProcessing, setIsProcessing] = useState(false);
 
   const PinInput = ({ value, onChange, disabled = false, autoFocus = false }: { value: string, onChange: (val: string) => void, disabled?: boolean, autoFocus?: boolean }) => {
-    const inputRef = React.useRef<HTMLInputElement>(null);
-
-    const handleContainerClick = () => {
-      inputRef.current?.focus();
-    };
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-      onChange(val);
-    };
-
     return (
-      <div 
-        className="relative flex justify-center gap-2 cursor-text" 
-        onClick={handleContainerClick}
-      >
+      <div className="relative group max-w-[240px] mx-auto">
         <input
-          ref={inputRef}
-          type="text"
+          type="password"
           inputMode="numeric"
           pattern="\d*"
           maxLength={6}
           value={value}
-          onChange={handleInputChange}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
           disabled={disabled}
           autoFocus={autoFocus}
-          className="absolute inset-0 opacity-0 cursor-default"
-          aria-label="6-digit PIN"
+          placeholder="••••••"
+          className="w-full bg-slate-900/50 border border-slate-700 rounded-xl py-4 text-center text-3xl font-mono tracking-[0.4em] text-indigo-400 focus:outline-none focus:border-indigo-500 focus:ring-4 focus:ring-indigo-500/10 transition-all placeholder:text-white/5"
         />
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div 
-            key={i} 
-            className={`w-10 h-14 bg-slate-900/50 border rounded-xl flex items-center justify-center text-2xl font-mono font-bold transition-all ${
-              value.length === i && !disabled ? 'border-indigo-500 ring-4 ring-indigo-500/10' : 'border-slate-700'
-            } ${disabled ? 'opacity-50' : ''}`}
-          >
-            <span className={value[i] ? 'text-white' : 'text-white/10'}>
-              {value[i] || '0'}
-            </span>
-            {value.length === i && !disabled && (
-              <motion.div
-                animate={{ opacity: [0, 1, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="absolute bottom-2 w-4 h-0.5 bg-indigo-500/50"
-              />
-            )}
-          </div>
-        ))}
       </div>
     );
   };
@@ -72,13 +40,13 @@ export const SecuritySettings: React.FC = () => {
     setIsProcessing(true);
 
     if (pin.length !== 6 || !/^\d+$/.test(pin)) {
-      setError('PIN must be 6 digits');
+      setError(t('auth.pinInvalid'));
       setIsProcessing(false);
       return;
     }
 
     if (pin !== confirmPin) {
-      setError('PINs do not match');
+      setError(t('auth.pinMismatch'));
       setIsProcessing(false);
       return;
     }
@@ -88,7 +56,7 @@ export const SecuritySettings: React.FC = () => {
       setRecoveryKey(key);
       setMode('success');
     } catch (err: any) {
-      setError(err.message || 'Failed to update PIN');
+      setError(err.message || t('auth.pinSetError'));
       console.error('PIN Setup Error:', err);
     } finally {
       setIsProcessing(false);
@@ -101,7 +69,7 @@ export const SecuritySettings: React.FC = () => {
     setIsProcessing(true);
 
     if (!recoveryInput || pin.length !== 6) {
-      setError('Provide recovery key and new 6-digit PIN');
+      setError(t('auth.pinRecoveryError'));
       setIsProcessing(false);
       return;
     }
@@ -113,10 +81,10 @@ export const SecuritySettings: React.FC = () => {
         setPinInput('');
         setRecoveryInput('');
       } else {
-        setError('Invalid recovery key');
+        setError(t('auth.pinRecoveryInvalid'));
       }
     } catch (err: any) {
-      setError(err.message || 'Recovery failed');
+      setError(err.message || t('auth.pinRecoveryFailed'));
       console.error('PIN Recovery Error:', err);
     } finally {
       setIsProcessing(false);
@@ -131,15 +99,15 @@ export const SecuritySettings: React.FC = () => {
             <Shield className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-sm font-bold text-white">Security PIN</h3>
-            <p className="text-xs text-slate-400">{hasPinSet ? 'PIN protection is active' : 'Set a PIN to protect your account'}</p>
+            <h3 className="text-sm font-bold text-white">{t('auth.pinLabel')}</h3>
+            <p className="text-xs text-slate-400">{hasPinSet ? t('auth.pinProtectionActive') : t('auth.pinProtectionInactive')}</p>
           </div>
         </div>
         <button
           onClick={() => setMode(hasPinSet ? 'change' : 'change')}
           className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold rounded-lg transition-colors"
         >
-          {hasPinSet ? 'CHANGE PIN' : 'SET PIN'}
+          {hasPinSet ? t('auth.pinChange') : t('auth.pinCreate')}
         </button>
       </div>
 
@@ -155,23 +123,23 @@ export const SecuritySettings: React.FC = () => {
               {mode === 'change' && (
                 <form onSubmit={handleSetupSubmit} className="space-y-6">
                   <div className="text-center">
-                    <h4 className="text-lg font-bold text-white mb-1">{hasPinSet ? 'Change Security PIN' : 'Set Security PIN'}</h4>
+                    <h4 className="text-lg font-bold text-white mb-1">{hasPinSet ? t('auth.pinChange') : t('auth.pinSetupTitle')}</h4>
                     <motion.p 
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       className="text-xs text-slate-400 font-mono"
                     >
-                      {'> '}Enter a new 6-digit numeric PIN
+                      {'> '}{t('auth.pinSetupDesc')}
                     </motion.p>
                   </div>
                   
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center font-bold">New PIN</label>
+                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center font-bold">{t('auth.pinLabel')}</label>
                       <PinInput value={pin} onChange={setPinInput} autoFocus />
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center font-bold">Confirm PIN</label>
+                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center font-bold">{t('auth.pinConfirmLabel')}</label>
                       <PinInput value={confirmPin} onChange={setConfirmPin} />
                     </div>
                   </div>
@@ -189,14 +157,14 @@ export const SecuritySettings: React.FC = () => {
                       onClick={() => setMode('idle')}
                       className="flex-1 py-3 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-700 transition-all"
                     >
-                      CANCEL
+                      {t('auth.pinCancel')}
                     </button>
                     <button
                       type="submit"
                       disabled={isProcessing || pin.length !== 6 || pin !== confirmPin}
                       className="flex-1 py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 disabled:opacity-50 transition-all"
                     >
-                      {isProcessing ? 'PROCESSING...' : 'SAVE PIN'}
+                      {isProcessing ? t('auth.pinProcessing') : t('auth.pinSave')}
                     </button>
                   </div>
 
@@ -206,7 +174,7 @@ export const SecuritySettings: React.FC = () => {
                       onClick={() => setMode('recovery')}
                       className="w-full text-slate-500 text-[10px] uppercase tracking-widest hover:text-slate-300 transition-colors"
                     >
-                      Forgot PIN? Use Recovery Key
+                      {t('auth.pinForgot')}
                     </button>
                   )}
                 </form>
@@ -215,13 +183,13 @@ export const SecuritySettings: React.FC = () => {
               {mode === 'recovery' && (
                 <form onSubmit={handleRecoverySubmit} className="space-y-6">
                   <div className="text-center">
-                    <h4 className="text-lg font-bold text-white mb-1">PIN Recovery</h4>
-                    <p className="text-xs text-slate-400">Use your recovery key to reset your PIN</p>
+                    <h4 className="text-lg font-bold text-white mb-1">{t('auth.pinRecoveryTitle')}</h4>
+                    <p className="text-xs text-slate-400">{t('auth.pinRecoverySubtitle')}</p>
                   </div>
 
                   <div className="space-y-4">
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block">Recovery Key</label>
+                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block">{t('auth.pinRecoveryKeyLabel')}</label>
                       <div className="relative">
                         <Key className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-600" />
                         <input
@@ -229,12 +197,12 @@ export const SecuritySettings: React.FC = () => {
                           value={recoveryInput}
                           onChange={(e) => setRecoveryInput(e.target.value)}
                           className="w-full bg-slate-800 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-white focus:outline-none focus:border-indigo-500 transition-colors font-mono text-xs"
-                          placeholder="Enter recovery key"
+                          placeholder={t('auth.pinRecoveryKeyPlaceholder')}
                         />
                       </div>
                     </div>
                     <div>
-                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center">New 6-Digit PIN</label>
+                      <label className="text-[10px] uppercase tracking-widest text-slate-500 mb-2 block text-center">{t('auth.pinNewPlaceholder')}</label>
                       <PinInput value={pin} onChange={setPinInput} />
                     </div>
                   </div>
@@ -252,14 +220,14 @@ export const SecuritySettings: React.FC = () => {
                       onClick={() => setMode('idle')}
                       className="flex-1 py-3 bg-slate-800 text-white text-xs font-bold rounded-xl hover:bg-slate-700 transition-all"
                     >
-                      CANCEL
+                      {t('auth.pinCancel')}
                     </button>
                     <button
                       type="submit"
                       disabled={isProcessing || !recoveryInput || pin.length !== 6}
                       className="flex-1 py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 disabled:opacity-50 transition-all"
                     >
-                      {isProcessing ? 'RESETTING...' : 'RESET PIN'}
+                      {isProcessing ? t('auth.pinResetting') : t('auth.pinReset')}
                     </button>
                   </div>
                 </form>
@@ -271,8 +239,8 @@ export const SecuritySettings: React.FC = () => {
                     <div className="w-12 h-12 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
                       <CheckCircle2 className="w-6 h-6 text-emerald-500" />
                     </div>
-                    <h4 className="text-lg font-bold text-white mb-1">PIN Set Successfully</h4>
-                    <p className="text-xs text-slate-400">Save your recovery key in a safe place</p>
+                    <h4 className="text-lg font-bold text-white mb-1">{t('auth.pinSetSuccess')}</h4>
+                    <p className="text-xs text-slate-400">{t('auth.pinRecoveryWarning')}</p>
                   </div>
 
                   <div className="bg-emerald-500/5 border border-emerald-500/10 rounded-xl p-4 text-center">
@@ -283,7 +251,7 @@ export const SecuritySettings: React.FC = () => {
                       onClick={() => navigator.clipboard.writeText(recoveryKey)}
                       className="text-emerald-500/60 hover:text-emerald-500 transition-colors text-[10px] uppercase tracking-widest font-bold"
                     >
-                      Copy Key
+                      {t('auth.pinCopyKey')}
                     </button>
                   </div>
 
@@ -291,7 +259,7 @@ export const SecuritySettings: React.FC = () => {
                     onClick={() => setMode('idle')}
                     className="w-full py-3 bg-indigo-600 text-white text-xs font-bold rounded-xl hover:bg-indigo-500 transition-all"
                   >
-                    DONE
+                    {t('auth.pinDone')}
                   </button>
                 </div>
               )}

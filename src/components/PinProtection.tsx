@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/useLanguage';
 import { motion, AnimatePresence } from 'motion/react';
-import { Lock, Shield, Key, RefreshCw, CheckCircle2, AlertCircle, Copy } from 'lucide-react';
+import { Lock, Shield, Key, RefreshCw, CheckCircle2, AlertCircle, Copy, LogOut, Timer } from 'lucide-react';
 import { Logo } from './Logo';
 
 interface PinProtectionProps {
@@ -9,7 +10,8 @@ interface PinProtectionProps {
 }
 
 export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
-  const { user, loading, hasPinSet, isPinVerified, isPinBlocked, setIsPinVerified, verifyPin, setPin, resetPinWithRecoveryKey } = useAuth();
+  const { user, profile, loading, hasPinSet, isPinVerified, isPinBlocked, setIsPinVerified, verifyPin, setPin, resetPinWithRecoveryKey, signOut } = useAuth();
+  const { t } = useLanguage();
   const [pin, setPinInput] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [recoveryKey, setRecoveryKey] = useState('');
@@ -18,6 +20,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [showCopySuccess, setShowCopySuccess] = useState(false);
+  const [timeLeft, setTimeLeft] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && user) {
@@ -29,6 +32,32 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     }
   }, [loading, user, hasPinSet, isPinVerified]);
 
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isPinBlocked && profile?.pin_blocked_until) {
+      const updateTimer = () => {
+        const now = new Date();
+        const blockedUntil = new Date(profile.pin_blocked_until!);
+        const diff = blockedUntil.getTime() - now.getTime();
+        
+        if (diff <= 0) {
+          setTimeLeft(null);
+          return;
+        }
+
+        const minutes = Math.floor(diff / 60000);
+        const seconds = Math.floor((diff % 60000) / 1000);
+        setTimeLeft(`${minutes}:${seconds.toString().padStart(2, '0')}`);
+      };
+
+      updateTimer();
+      interval = setInterval(updateTimer, 1000);
+    } else {
+      setTimeLeft(null);
+    }
+    return () => clearInterval(interval);
+  }, [isPinBlocked, profile?.pin_blocked_until]);
+
   if (loading) return null;
   if (!user) return <>{children}</>;
   if (isPinVerified) return <>{children}</>;
@@ -39,7 +68,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     setIsProcessing(true);
 
     if (pin.length !== 6 || !/^\d+$/.test(pin)) {
-      setError('PIN must be exactly 6 numeric digits');
+      setError(t('auth.pinInvalid'));
       setIsProcessing(false);
       return;
     }
@@ -47,11 +76,11 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     try {
       const success = await verifyPin(pin);
       if (!success) {
-        setError('Incorrect PIN. Please try again.');
+        setError(t('auth.pinIncorrect'));
         setPinInput('');
       }
     } catch (err) {
-      setError('An error occurred. Please try again.');
+      setError(t('auth.error'));
     } finally {
       setIsProcessing(false);
     }
@@ -63,13 +92,13 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     setIsProcessing(true);
 
     if (pin.length !== 6 || !/^\d+$/.test(pin)) {
-      setError('PIN must be exactly 6 numeric digits');
+      setError(t('auth.pinInvalid'));
       setIsProcessing(false);
       return;
     }
 
     if (pin !== confirmPin) {
-      setError('PINs do not match');
+      setError(t('auth.pinMismatch') || 'PINs do not match');
       setIsProcessing(false);
       return;
     }
@@ -79,7 +108,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
       setRecoveryKey(key);
       setMode('success');
     } catch (err: any) {
-      setError(err.message || 'Failed to set PIN. Please try again.');
+      setError(err.message || t('auth.pinSetError') || 'Failed to set PIN. Please try again.');
       console.error('PIN Setup Error:', err);
     } finally {
       setIsProcessing(false);
@@ -92,7 +121,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     setIsProcessing(true);
 
     if (!recoveryInput || pin.length !== 6 || !/^\d+$/.test(pin)) {
-      setError('Please provide recovery key and a new 6-digit numeric PIN');
+      setError(t('auth.pinRecoveryError') || 'Please provide recovery key and a new 6-digit numeric PIN');
       setIsProcessing(false);
       return;
     }
@@ -104,64 +133,31 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
         setPinInput('');
         setRecoveryInput('');
       } else {
-        setError('Invalid recovery key');
+        setError(t('auth.pinRecoveryKeyInvalid') || 'Invalid recovery key');
       }
     } catch (err) {
-      setError('Recovery failed. Please try again.');
+      setError(t('auth.pinRecoveryFailed') || 'Recovery failed. Please try again.');
     } finally {
       setIsProcessing(false);
     }
   };
 
   const PinInput = ({ value, onChange, disabled = false, autoFocus = false }: { value: string, onChange: (val: string) => void, disabled?: boolean, autoFocus?: boolean }) => {
-    const inputRef = React.useRef<HTMLInputElement>(null);
-
-    const handleContainerClick = () => {
-      inputRef.current?.focus();
-    };
-
-    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const val = e.target.value.replace(/\D/g, '').slice(0, 6);
-      onChange(val);
-    };
-
     return (
-      <div 
-        className="relative flex justify-center gap-2 cursor-text" 
-        onClick={handleContainerClick}
-      >
+      <div className="relative group max-w-[280px] mx-auto">
         <input
-          ref={inputRef}
-          type="text"
+          type="password"
           inputMode="numeric"
           pattern="\d*"
           maxLength={6}
           value={value}
-          onChange={handleInputChange}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, ''))}
           disabled={disabled}
           autoFocus={autoFocus}
-          className="absolute inset-0 opacity-0 cursor-default"
-          aria-label="6-digit PIN"
+          placeholder="••••••"
+          className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 text-center text-4xl font-mono tracking-[0.5em] text-emerald-500 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-white/5"
         />
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <div 
-            key={i} 
-            className={`w-12 h-16 bg-white/5 border rounded-xl flex items-center justify-center text-3xl font-mono font-bold transition-all ${
-              value.length === i && !disabled ? 'border-emerald-500 ring-4 ring-emerald-500/10' : 'border-white/10'
-            } ${disabled ? 'opacity-50' : ''}`}
-          >
-            <span className={value[i] ? 'text-white' : 'text-white/10'}>
-              {value[i] || '0'}
-            </span>
-            {value.length === i && !disabled && (
-              <motion.div
-                animate={{ opacity: [0, 1, 0] }}
-                transition={{ duration: 0.8, repeat: Infinity }}
-                className="absolute bottom-3 w-6 h-0.5 bg-emerald-500/50"
-              />
-            )}
-          </div>
-        ))}
+        <div className="absolute inset-0 rounded-2xl border border-white/5 pointer-events-none group-hover:border-white/10 transition-colors" />
       </div>
     );
   };
@@ -171,8 +167,6 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     setShowCopySuccess(true);
     setTimeout(() => setShowCopySuccess(false), 2000);
   };
-
-  const lang = user?.email?.includes('zh') || navigator.language.startsWith('zh') ? 'zh' : 'en';
 
   return (
     <div className="fixed inset-0 z-[9999] bg-[#01040a] flex items-center justify-center p-4">
@@ -194,10 +188,10 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
           </div>
           
           <h2 className="text-2xl font-bold text-white mb-2 uppercase tracking-tight">
-            {mode === 'verify' && (lang === 'zh' ? '安全验证' : 'Security Verification')}
-            {mode === 'setup' && (lang === 'zh' ? '设置安全 PIN' : 'Set Security PIN')}
-            {mode === 'recovery' && (lang === 'zh' ? '账户恢复' : 'Account Recovery')}
-            {mode === 'success' && (lang === 'zh' ? 'PIN 设置成功' : 'PIN Set Successfully')}
+            {mode === 'verify' && t('auth.pinVerifyTitle')}
+            {mode === 'setup' && t('auth.pinSetupTitle')}
+            {mode === 'recovery' && t('auth.pinRecoveryTitle')}
+            {mode === 'success' && t('auth.pinSetSuccess')}
           </h2>
           <div className="space-y-1">
             <p className="text-white/50 text-sm font-mono">
@@ -208,7 +202,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
             </p>
             {mode === 'setup' && (
               <p className="text-slate-400 text-xs">
-                {lang === 'zh' ? '创建一个 6 位 PIN 以保护您的账户。' : 'Create a 6-digit PIN to protect your account.'}
+                {t('auth.pinSetupDesc')}
               </p>
             )}
           </div>
@@ -232,9 +226,17 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               />
 
               {isPinBlocked && (
-                <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20">
-                  <AlertCircle className="w-4 h-4" />
-                  Access blocked due to multiple failed attempts.
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                    <AlertCircle className="w-4 h-4" />
+                    {t('auth.pinBlockedMessage')}
+                  </div>
+                  {timeLeft && (
+                    <div className="flex items-center justify-center gap-2 text-white/40 text-xs font-mono">
+                      <Timer className="w-3 h-3" />
+                      {t('auth.pinTryAgainIn').replace('{time}', timeLeft)}
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -250,16 +252,27 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
                 disabled={isProcessing || pin.length !== 6 || isPinBlocked}
                 className="w-full py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                {isProcessing ? 'VERIFYING...' : 'UNLOCK ACCESS'}
+                {isProcessing ? t('auth.pinVerifying') : t('auth.pinUnlock')}
               </button>
 
-              <button
-                type="button"
-                onClick={() => setMode('recovery')}
-                className="w-full text-white/30 text-xs hover:text-white/60 transition-colors uppercase tracking-widest"
-              >
-                Forgot PIN? Use Recovery Key
-              </button>
+              <div className="flex flex-col gap-4">
+                <button
+                  type="button"
+                  onClick={() => setMode('recovery')}
+                  className="w-full text-white/30 text-xs hover:text-white/60 transition-colors uppercase tracking-widest"
+                >
+                  {t('auth.pinForgot')}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="w-full flex items-center justify-center gap-2 text-red-500/40 text-xs hover:text-red-500/80 transition-colors uppercase tracking-widest"
+                >
+                  <LogOut className="w-3 h-3" />
+                  {t('settings.logout')}
+                </button>
+              </div>
             </motion.form>
           )}
 
@@ -274,11 +287,15 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
             >
               <div className="space-y-6">
                 <div>
-                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">New 6-Digit PIN</label>
+                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">
+                    {t('auth.pinNewPlaceholder')}
+                  </label>
                   <PinInput value={pin} onChange={setPinInput} autoFocus />
                 </div>
                 <div>
-                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">Confirm PIN</label>
+                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">
+                    {t('auth.pinConfirmPlaceholder')}
+                  </label>
                   <PinInput value={confirmPin} onChange={setConfirmPin} />
                 </div>
               </div>
@@ -295,7 +312,16 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
                 disabled={isProcessing || pin.length !== 6 || pin !== confirmPin}
                 className="w-full py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                {isProcessing ? 'SETTING UP...' : 'CREATE PIN'}
+                {isProcessing ? t('auth.pinSettingUp') : t('auth.pinCreate')}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => signOut()}
+                className="w-full flex items-center justify-center gap-2 text-red-500/40 text-xs hover:text-red-500/80 transition-colors uppercase tracking-widest"
+              >
+                <LogOut className="w-3 h-3" />
+                {t('settings.logout')}
               </button>
             </motion.form>
           )}
@@ -311,7 +337,9 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
             >
               <div className="space-y-6">
                 <div>
-                  <label className="text-xs text-white/30 uppercase tracking-widest mb-2 block">Recovery Key</label>
+                  <label className="text-xs text-white/30 uppercase tracking-widest mb-2 block">
+                    {t('auth.pinRecoveryKeyLabel')}
+                  </label>
                   <div className="relative">
                     <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
                     <input
@@ -319,12 +347,14 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
                       value={recoveryInput}
                       onChange={(e) => setRecoveryInput(e.target.value)}
                       className="w-full bg-white/5 border border-white/10 rounded-xl pl-12 pr-4 py-3 text-white focus:outline-none focus:border-emerald-500/50 transition-colors font-mono text-sm"
-                      placeholder="Enter your recovery key"
+                      placeholder={t('auth.pinRecoveryKeyPlaceholder')}
                     />
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">New 6-Digit PIN</label>
+                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">
+                    {t('auth.pinNewPlaceholder')}
+                  </label>
                   <PinInput value={pin} onChange={setPinInput} />
                 </div>
               </div>
@@ -341,16 +371,27 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
                 disabled={isProcessing || !recoveryInput || pin.length !== 6}
                 className="w-full py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
-                {isProcessing ? 'RECOVERING...' : 'RESET PIN'}
+                {isProcessing ? t('auth.pinRecovering') : t('auth.pinReset')}
               </button>
 
-              <button
-                type="button"
-                onClick={() => setMode('verify')}
-                className="w-full text-white/30 text-xs hover:text-white/60 transition-colors uppercase tracking-widest"
-              >
-                Back to PIN Entry
-              </button>
+              <div className="flex flex-col gap-4">
+                <button
+                  type="button"
+                  onClick={() => setMode('verify')}
+                  className="w-full text-white/30 text-xs hover:text-white/60 transition-colors uppercase tracking-widest"
+                >
+                  {t('auth.backToLogin') || 'Back to PIN Entry'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => signOut()}
+                  className="w-full flex items-center justify-center gap-2 text-red-500/40 text-xs hover:text-red-500/80 transition-colors uppercase tracking-widest"
+                >
+                  <LogOut className="w-3 h-3" />
+                  {t('settings.logout')}
+                </button>
+              </div>
             </motion.form>
           )}
 
@@ -362,7 +403,9 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               className="space-y-6"
             >
               <div className="bg-emerald-500/5 border border-emerald-500/20 rounded-2xl p-6 text-center">
-                <p className="text-xs text-emerald-500/60 uppercase tracking-widest mb-4">Your Recovery Key</p>
+                <p className="text-xs text-emerald-500/60 uppercase tracking-widest mb-4">
+                  {t('auth.pinRecoveryKeyLabel')}
+                </p>
                 <div className="bg-black/40 rounded-xl p-4 font-mono text-emerald-500 break-all text-sm mb-4 border border-emerald-500/10">
                   {recoveryKey}
                 </div>
@@ -371,23 +414,25 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
                   className="flex items-center gap-2 mx-auto text-emerald-500/60 hover:text-emerald-500 transition-colors text-xs uppercase tracking-widest"
                 >
                   {showCopySuccess ? (
-                    <><CheckCircle2 className="w-3 h-3" /> COPIED</>
+                    <><CheckCircle2 className="w-3 h-3" /> {t('auth.pinCopied')}</>
                   ) : (
-                    <><Copy className="w-3 h-3" /> Copy Key</>
+                    <><Copy className="w-3 h-3" /> {t('auth.pinCopyKey')}</>
                   )}
                 </button>
               </div>
 
               <div className="flex items-start gap-3 text-white/40 text-xs bg-white/5 p-4 rounded-xl border border-white/10">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <p>Store this key securely. You will need it if you forget your PIN. This is the only time it will be shown.</p>
+                <p>
+                  {t('auth.pinRecoveryWarning')}
+                </p>
               </div>
 
               <button
                 onClick={() => setIsPinVerified(true)}
                 className="w-full py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 transition-all"
               >
-                CONTINUE TO WEBSITE
+                {t('auth.pinContinue')}
               </button>
             </motion.div>
           )}

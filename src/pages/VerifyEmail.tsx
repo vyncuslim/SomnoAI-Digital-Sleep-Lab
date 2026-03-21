@@ -9,7 +9,7 @@ import { useLanguage } from '../context/useLanguage';
 
 export const VerifyEmail: React.FC = () => {
   const { user, resendVerificationEmail, signOut } = useAuth();
-  const { langPrefix } = useLanguage();
+  const { langPrefix, t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const [loading, setLoading] = useState(false);
@@ -41,10 +41,10 @@ export const VerifyEmail: React.FC = () => {
     setMessage(null);
     try {
       await resendVerificationEmail(email);
-      setMessage({ type: 'success', text: 'Verification email resent! Please check your inbox.' });
+      setMessage({ type: 'success', text: t('auth.verifyEmailResent') });
       setCooldown(60); // 60 seconds cooldown
     } catch (error: any) {
-      setMessage({ type: 'error', text: error.message || 'Failed to resend verification email.' });
+      setMessage({ type: 'error', text: error.message || t('auth.verifyEmailError') });
     } finally {
       setLoading(false);
     }
@@ -74,12 +74,11 @@ export const VerifyEmail: React.FC = () => {
           </div>
 
           <h1 className="text-2xl font-black uppercase tracking-tight mb-4">
-            Verify Your Email
+            {t('auth.verifyEmailTitle')}
           </h1>
 
           <p className="text-slate-400 text-sm leading-relaxed mb-8">
-            We've sent a verification link to <span className="text-white font-mono">{email}</span>. 
-            Please check your inbox and click the link to activate your account.
+            {t('auth.verifyEmailDesc').replace('{{email}}', email || '')}
           </p>
 
           {message && (
@@ -106,9 +105,9 @@ export const VerifyEmail: React.FC = () => {
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin mx-auto" />
               ) : cooldown > 0 ? (
-                `Resend in ${cooldown}s`
+                t('auth.resendIn').replace('{{seconds}}', cooldown.toString())
               ) : (
-                'Resend Verification Email'
+                t('auth.resendBtn')
               )}
             </HardwareButton>
 
@@ -117,14 +116,14 @@ export const VerifyEmail: React.FC = () => {
               className="flex items-center justify-center gap-2 w-full text-xs text-slate-500 font-bold hover:text-white uppercase tracking-widest transition-colors"
             >
               <ArrowLeft size={14} />
-              Back to Login
+              {t('auth.backToLogin')}
             </button>
           </div>
 
           <div className="mt-10 pt-8 border-t border-white/5">
             <div className="flex items-center justify-center gap-2 text-[10px] text-slate-500 uppercase tracking-widest font-bold">
               <CheckCircle2 size={12} className="text-emerald-500" />
-              Secure Neural Verification
+              {t('auth.secureVerification')}
             </div>
           </div>
         </GlassCard>

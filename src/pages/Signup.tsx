@@ -4,8 +4,10 @@ import { supabase } from '../lib/supabase';
 import { Logo } from '../components/Logo';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
+import { useLanguage } from '../context/useLanguage';
 
 const Signup: React.FC = () => {
+  const { t } = useLanguage();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [terms, setTerms] = useState(false);
@@ -13,11 +15,11 @@ const Signup: React.FC = () => {
 
   const handleSignup = async () => {
     if (!email || !password) {
-      toast.error('Please fill in all fields');
+      toast.error(t('auth.fillAllFields'));
       return;
     }
     if (!terms || !privacy) {
-      toast.error('Please agree to the Terms and Privacy Policy');
+      toast.error(t('auth.agreeRequired'));
       return;
     }
 
@@ -41,9 +43,9 @@ const Signup: React.FC = () => {
       });
 
       if (error) throw error;
-      toast.success('Account creation successful!');
+      toast.success(t('auth.signupSuccess'));
     } catch (err: any) {
-      toast.error(err.message || 'Failed to sign up');
+      toast.error(err.message || t('auth.signupError'));
     }
   };
 
@@ -68,7 +70,7 @@ const Signup: React.FC = () => {
             <Logo className="mb-6 scale-125 relative z-10" />
           </Link>
           <h2 className="text-3xl font-black italic uppercase tracking-tighter text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.2)]">
-            JOIN THE LAB
+            {t('auth.signupTitle')}
           </h2>
           <p className="text-slate-500 text-xs font-mono uppercase tracking-[0.3em] mt-2 flex items-center gap-2">
             <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -84,14 +86,14 @@ const Signup: React.FC = () => {
           <div className="space-y-4">
             <input 
               type="email" 
-              placeholder="Email Address" 
+              placeholder={t('auth.email')} 
               className="w-full bg-black/40 border border-white/10 px-4 py-4 rounded-2xl text-sm font-mono focus:outline-none focus:border-indigo-500/50 transition-all" 
               value={email}
               onChange={(e) => setEmail(e.target.value)}
             />
             <input 
               type="password" 
-              placeholder="Password" 
+              placeholder={t('auth.password')} 
               className="w-full bg-black/40 border border-white/10 px-4 py-4 rounded-2xl text-sm font-mono focus:outline-none focus:border-indigo-500/50 transition-all" 
               value={password}
               onChange={(e) => setPassword(e.target.value)}
@@ -100,11 +102,11 @@ const Signup: React.FC = () => {
             <div className="space-y-3 py-2">
               <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setTerms(!terms)}>
                 <div className={`w-4 h-4 rounded border transition-all ${terms ? 'bg-indigo-500 border-indigo-500' : 'bg-black/40 border-white/20'}`} />
-                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">I agree to the Terms of Service.</span>
+                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t('auth.agreeTerms')}</span>
               </div>
               <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setPrivacy(!privacy)}>
                 <div className={`w-4 h-4 rounded border transition-all ${privacy ? 'bg-indigo-500 border-indigo-500' : 'bg-black/40 border-white/20'}`} />
-                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">I agree to the Privacy Policy.</span>
+                <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">{t('auth.agreePrivacy')}</span>
               </div>
             </div>
 
@@ -112,13 +114,13 @@ const Signup: React.FC = () => {
               onClick={handleSignup}
               className="w-full bg-indigo-600 text-white px-4 py-4 rounded-2xl font-black uppercase tracking-widest italic hover:bg-indigo-500 transition-all shadow-lg shadow-indigo-600/20 active:scale-95"
             >
-              CREATE ACCOUNT
+              {t('auth.signupBtn')}
             </button>
 
             <div className="relative py-4">
               <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-white/5" /></div>
               <div className="relative flex justify-center text-[8px] font-black uppercase tracking-[0.3em] text-slate-600">
-                <span className="bg-[#0a0d14] px-4">OR CONTINUE WITH</span>
+                <span className="bg-[#0a0d14] px-4">{t('auth.orContinueWith')}</span>
               </div>
             </div>
 
@@ -127,13 +129,13 @@ const Signup: React.FC = () => {
                 onClick={() => handleSocialLogin('GOOGLE')}
                 className="bg-white/5 border border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest italic hover:bg-white/10 transition-all flex items-center justify-center gap-2"
               >
-                GOOGLE
+                {t('auth.google')}
               </button>
               <button 
                 onClick={() => handleSocialLogin('OTP')}
                 className="bg-white/5 border border-white/5 px-4 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest italic hover:bg-white/10 transition-all flex items-center justify-center gap-2"
               >
-                OTP
+                {t('auth.otp')}
               </button>
             </div>
           </div>
