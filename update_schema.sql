@@ -7,7 +7,11 @@ ALTER TABLE public.profiles
 ADD COLUMN IF NOT EXISTS block_code text,
 ADD COLUMN IF NOT EXISTS country text,
 ADD COLUMN IF NOT EXISTS last_login timestamptz,
-ADD COLUMN IF NOT EXISTS is_paying boolean DEFAULT false;
+ADD COLUMN IF NOT EXISTS is_paying boolean DEFAULT false,
+ADD COLUMN IF NOT EXISTS pin_hash text,
+ADD COLUMN IF NOT EXISTS recovery_key text,
+ADD COLUMN IF NOT EXISTS failed_pin_attempts int DEFAULT 0,
+ADD COLUMN IF NOT EXISTS pin_blocked_until timestamptz;
 
 -- 2. Create security_events table
 CREATE TABLE IF NOT EXISTS public.security_events (

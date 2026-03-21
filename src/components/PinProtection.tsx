@@ -38,8 +38,8 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     setError('');
     setIsProcessing(true);
 
-    if (pin.length !== 6) {
-      setError('PIN must be 6 digits');
+    if (pin.length !== 6 || !/^\d+$/.test(pin)) {
+      setError('PIN must be exactly 6 numeric digits');
       setIsProcessing(false);
       return;
     }
@@ -62,8 +62,8 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     setError('');
     setIsProcessing(true);
 
-    if (pin.length !== 6) {
-      setError('PIN must be 6 digits');
+    if (pin.length !== 6 || !/^\d+$/.test(pin)) {
+      setError('PIN must be exactly 6 numeric digits');
       setIsProcessing(false);
       return;
     }
@@ -90,8 +90,8 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     setError('');
     setIsProcessing(true);
 
-    if (!recoveryInput || pin.length !== 6) {
-      setError('Please provide recovery key and new 6-digit PIN');
+    if (!recoveryInput || pin.length !== 6 || !/^\d+$/.test(pin)) {
+      setError('Please provide recovery key and a new 6-digit numeric PIN');
       setIsProcessing(false);
       return;
     }
@@ -110,6 +110,60 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
     } finally {
       setIsProcessing(false);
     }
+  };
+
+  const PinInput = ({ value, onChange, disabled = false, autoFocus = false }: { value: string, onChange: (val: string) => void, disabled?: boolean, autoFocus?: boolean }) => {
+    const inputRefs = React.useRef<(HTMLInputElement | null)[]>([]);
+
+    const handleChange = (index: number, val: string) => {
+      if (!/^\d*$/.test(val)) return;
+      
+      const newPin = value.split('');
+      newPin[index] = val.slice(-1);
+      const updatedPin = newPin.join('');
+      onChange(updatedPin);
+
+      if (val && index < 5) {
+        inputRefs.current[index + 1]?.focus();
+      }
+    };
+
+    const handleKeyDown = (index: number, e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Backspace' && !value[index] && index > 0) {
+        inputRefs.current[index - 1]?.focus();
+      }
+    };
+
+    const handlePaste = (e: React.ClipboardEvent) => {
+      e.preventDefault();
+      const pasteData = e.clipboardData.getData('text').slice(0, 6).replace(/\D/g, '');
+      onChange(pasteData);
+      const nextIndex = Math.min(pasteData.length, 5);
+      inputRefs.current[nextIndex]?.focus();
+    };
+
+    return (
+      <div className="flex justify-center gap-2" onPaste={handlePaste}>
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <input
+            key={i}
+            ref={(el) => {
+              inputRefs.current[i] = el;
+            }}
+            type="text"
+            inputMode="numeric"
+            pattern="\d*"
+            maxLength={1}
+            value={value[i] || ''}
+            disabled={disabled}
+            autoFocus={autoFocus && i === 0}
+            onChange={(e) => handleChange(i, e.target.value)}
+            onKeyDown={(e) => handleKeyDown(i, e)}
+            className={`w-12 h-16 bg-white/5 border border-white/10 rounded-xl text-center text-2xl font-bold text-white focus:outline-none focus:border-emerald-500/50 transition-all ${disabled ? 'opacity-50 cursor-not-allowed' : ''}`}
+          />
+        ))}
+      </div>
+    );
   };
 
   const copyRecoveryKey = () => {
@@ -161,18 +215,12 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               onSubmit={handlePinSubmit}
               className="space-y-6"
             >
-              <div className="flex justify-center gap-2">
-                <input
-                  type="password"
-                  maxLength={6}
-                  value={pin}
-                  disabled={isPinBlocked}
-                  onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                  className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-3xl tracking-[1em] text-white focus:outline-none focus:border-emerald-500/50 transition-colors ${isPinBlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  placeholder="••••••"
-                  autoFocus
-                />
-              </div>
+              <PinInput 
+                value={pin} 
+                onChange={setPinInput} 
+                disabled={isPinBlocked} 
+                autoFocus 
+              />
 
               {isPinBlocked && (
                 <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20">
@@ -215,28 +263,14 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               onSubmit={handleSetupSubmit}
               className="space-y-6"
             >
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="text-xs text-white/30 uppercase tracking-widest mb-2 block">New 6-Digit PIN</label>
-                  <input
-                    type="password"
-                    maxLength={6}
-                    value={pin}
-                    onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                    placeholder="••••••"
-                  />
+                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">New 6-Digit PIN</label>
+                  <PinInput value={pin} onChange={setPinInput} autoFocus />
                 </div>
                 <div>
-                  <label className="text-xs text-white/30 uppercase tracking-widest mb-2 block">Confirm PIN</label>
-                  <input
-                    type="password"
-                    maxLength={6}
-                    value={confirmPin}
-                    onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, ''))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                    placeholder="••••••"
-                  />
+                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">Confirm PIN</label>
+                  <PinInput value={confirmPin} onChange={setConfirmPin} />
                 </div>
               </div>
 
@@ -266,7 +300,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               onSubmit={handleRecoverySubmit}
               className="space-y-6"
             >
-              <div className="space-y-4">
+              <div className="space-y-6">
                 <div>
                   <label className="text-xs text-white/30 uppercase tracking-widest mb-2 block">Recovery Key</label>
                   <div className="relative">
@@ -281,15 +315,8 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs text-white/30 uppercase tracking-widest mb-2 block">New 6-Digit PIN</label>
-                  <input
-                    type="password"
-                    maxLength={6}
-                    value={pin}
-                    onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-center text-2xl tracking-[0.5em] text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
-                    placeholder="••••••"
-                  />
+                  <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">New 6-Digit PIN</label>
+                  <PinInput value={pin} onChange={setPinInput} />
                 </div>
               </div>
 

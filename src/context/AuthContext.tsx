@@ -54,7 +54,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isBlocked, setIsBlocked] = useState(false);
   const [isPinVerified, setIsPinVerified] = useState(false);
   const [isPinBlocked, setIsPinBlocked] = useState(false);
-  const [failedAttempts, setFailedAttempts] = useState(0);
   const [blockedReason, setBlockedReason] = useState<string | undefined>();
   const [blockCode, setBlockCode] = useState<string | undefined>();
 
@@ -65,6 +64,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isSuperOwner = profile?.is_super_owner;
   const isVerified = user?.email_confirmed_at != null;
   const hasPinSet = !!profile?.pin_hash;
+
+  useEffect(() => {
+    if (profile?.pin_blocked_until) {
+      const blockedUntil = new Date(profile.pin_blocked_until);
+      if (blockedUntil > new Date()) {
+        setIsPinBlocked(true);
+      } else {
+        setIsPinBlocked(false);
+      }
+    } else if (profile?.failed_pin_attempts >= MAX_PIN_ATTEMPTS) {
+      setIsPinBlocked(true);
+    } else {
+      setIsPinBlocked(false);
+    }
+  }, [profile]);
 
   const hashPin = async (pin: string): Promise<string> => {
     const msgUint8 = new TextEncoder().encode(pin);
@@ -143,12 +157,34 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const hashedPin = await hashPin(pin); 
     if (profile.pin_hash === hashedPin) {
       setIsPinVerified(true);
-      setFailedAttempts(0);
+      
+      // Reset failed attempts on success
+      await supabase
+        .from('profiles')
+        .update({ 
+          failed_pin_attempts: 0,
+          pin_blocked_until: null
+        })
+        .eq('id', user?.id);
+
       await logSecurityEvent(user?.id || null, 'PIN_VERIFIED', { success: true });
+      await refreshProfile();
       return true;
     } else {
-      const newAttempts = failedAttempts + 1;
-      setFailedAttempts(newAttempts);
+      const newAttempts = (profile?.failed_pin_attempts || 0) + 1;
+      
+      const updates: any = { failed_pin_attempts: newAttempts };
+      if (newAttempts >= MAX_PIN_ATTEMPTS) {
+        // Block for 1 hour
+        const blockedUntil = new Date();
+        blockedUntil.setHours(blockedUntil.getHours() + 1);
+        updates.pin_blocked_until = blockedUntil.toISOString();
+      }
+
+      await supabase
+        .from('profiles')
+        .update(updates)
+        .eq('id', user?.id);
       
       await logSecurityEvent(user?.id || null, 'PIN_VERIFICATION_FAILED', { 
         attempt_number: newAttempts,
@@ -156,11 +192,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       });
 
       if (newAttempts >= MAX_PIN_ATTEMPTS) {
-        setIsPinBlocked(true);
         await logSecurityEvent(user?.id || null, 'PIN_BLOCKED', { 
           reason: 'Too many failed attempts'
         });
       }
+      
+      await refreshProfile();
       return false;
     }
   };
@@ -175,14 +212,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       .from('profiles')
       .update({ 
         pin_hash: hashedPin,
-        recovery_key: recoveryKey 
+        recovery_key: recoveryKey,
+        failed_pin_attempts: 0,
+        pin_blocked_until: null
       })
       .eq('id', user.id);
 
     if (error) throw error;
     
     await fetchProfile(user.id);
-    setFailedAttempts(0);
     setIsPinBlocked(false);
     await logAuditLog(user.id, 'SET_PIN', { has_recovery_key: true });
     return { recoveryKey };
@@ -205,13 +243,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const hashedPin = await hashPin(newPin);
     const { error: updateError } = await supabase
       .from('profiles')
-      .update({ pin_hash: hashedPin })
+      .update({ 
+        pin_hash: hashedPin,
+        failed_pin_attempts: 0,
+        pin_blocked_until: null
+      })
       .eq('id', user.id);
       
     if (updateError) return false;
     
     await fetchProfile(user.id);
-    setFailedAttempts(0);
     setIsPinBlocked(false);
     setIsPinVerified(true);
     await logAuditLog(user.id, 'RESET_PIN_WITH_RECOVERY_KEY', { success: true });
