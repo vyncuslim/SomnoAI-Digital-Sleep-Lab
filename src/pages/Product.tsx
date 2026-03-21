@@ -1,7 +1,7 @@
 import React from 'react';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { Section, Card, InlineCTA, TechnicalLabel } from '../components/ui/Components';
-import { Activity, Brain, Clock, Shield, Smartphone, Watch, Cloud, CheckCircle2 } from 'lucide-react';
+import { Activity, Brain, Clock, Shield, Smartphone, Watch, Cloud, CheckCircle2, Scan } from 'lucide-react';
 import { Language, getTranslation } from '../services/i18n';
 import { INFO_CONTENT } from '../data/infoContent';
 
@@ -62,11 +62,12 @@ export const Product: React.FC<ProductProps> = ({ lang }) => {
       </Section>
 
       <Section title={lang === 'zh' ? "支持的集成" : "Supported Integrations"}>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 py-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 py-12">
           {[
             { icon: Watch, label: lang === 'zh' ? "可穿戴设备" : "Wearables", id: "DEV_01" },
             { icon: Smartphone, label: lang === 'zh' ? "健康应用" : "Health Apps", id: "APP_01" },
-            { icon: Cloud, label: lang === 'zh' ? "云生态系统" : "Cloud Ecosystems", id: "CLD_01" }
+            { icon: Cloud, label: lang === 'zh' ? "云生态系统" : "Cloud Ecosystems", id: "CLD_01" },
+            { icon: Scan, label: lang === 'zh' ? "公司扫描" : "Company-Scan", id: "SDSL-CS-001" }
           ].map((item, i) => (
             <div key={i} className="flex flex-col items-center gap-6 p-10 rounded-3xl bg-slate-900/50 border border-white/5 text-slate-400 hover:text-indigo-400 hover:border-indigo-500/30 transition-all group relative overflow-hidden">
               <div className="scanline opacity-0 group-hover:opacity-100" />

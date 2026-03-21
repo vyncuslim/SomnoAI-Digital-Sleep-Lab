@@ -116,7 +116,7 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
           <a href={OFFICIAL_LINKS.github} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GITHUB</a>
           <a href={OFFICIAL_LINKS.supportAssistant} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">AI SUPPORT</a>
         </div>
-        <p>© 2026 SOMNOAI DIGITAL SLEEP LAB. ALL RIGHTS RESERVED.</p>
+        <p>© 2026 SOMNOAI DIGITAL SLEEP LAB. ALL RIGHTS RESERVED. SDSL-CS-001</p>
       </div>
     </footer>
   );
