@@ -5,6 +5,7 @@ import { INFO_CONTENT } from '../data/infoContent';
 import { Language } from '../types';
 import { MarketingPageTemplate } from '../components/ui/MarketingPageTemplate';
 import { LegalPageTemplate } from '../components/ui/LegalPageTemplate';
+import { ProtectedView } from '../components/ProtectedView';
 import { Section, HardwareButton } from '../components/ui/Components';
 
 interface DynamicPageProps {
@@ -25,6 +26,17 @@ export const DynamicPage: React.FC<DynamicPageProps> = ({ lang, type }) => {
         <h1 className="text-4xl font-black italic mb-4">404 - Page Not Found</h1>
         <HardwareButton onClick={() => navigate(-1)}>Return</HardwareButton>
       </div>
+    );
+  }
+
+  if (content.protected) {
+    return (
+      <ProtectedView
+        title={content.title}
+        subtitle={content.subtitle}
+        paragraphs={content.paragraphs || []}
+        badge={lang === 'zh' ? '机密数据' : 'CONFIDENTIAL DATA'}
+      />
     );
   }
 

@@ -17,6 +17,8 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
     { name: 'HOW IT WORKS', path: '/how-it-works' },
     { name: 'RESEARCH', path: '/research' },
     { name: 'SCIENCE', path: '/science' },
+    { name: lang === 'zh' ? '机密研究' : 'CONFIDENTIAL RESEARCH', path: '/research-confidential' },
+    { name: lang === 'zh' ? '科学见解' : 'SCIENCE INSIGHTS', path: '/science-insights' },
     { name: 'NEWS', path: '/news' },
     { name: 'FAQ', path: '/faq' },
     { name: 'STATUS', path: '/status' },
