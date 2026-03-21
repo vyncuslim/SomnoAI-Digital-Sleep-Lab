@@ -37,33 +37,41 @@ const Login = () => {
 
       if (error) {
         // Record login failure
-        await fetchWithLogging('/api/audit/login', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            email, 
-            status: 'failed', 
-            errorCode: error.message 
-          }),
-        }, 'Login Failure Logging');
+        try {
+          await fetchWithLogging('/api/audit/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              email, 
+              status: 'failed', 
+              errorCode: error.message 
+            }),
+          }, 'Login Failure Logging');
+        } catch (e) {
+          console.warn('Login failure logging failed', e);
+        }
         throw error;
       }
 
       // Record login success
-      await fetchWithLogging('/api/audit/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          userId: data.user.id,
-          email: data.user.email,
-          status: 'success',
-          metadata: {
-            role: data.user.user_metadata?.role || 'user',
-            user_name: data.user.user_metadata?.full_name || 'User',
-            device: navigator.userAgent
-          }
-        }),
-      }, 'Login Success Logging');
+      try {
+        await fetchWithLogging('/api/audit/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            userId: data.user.id,
+            email: data.user.email,
+            status: 'success',
+            metadata: {
+              role: data.user.user_metadata?.role || 'user',
+              user_name: data.user.user_metadata?.full_name || 'User',
+              device: navigator.userAgent
+            }
+          }),
+        }, 'Login Success Logging');
+      } catch (e) {
+        console.warn('Login success logging failed', e);
+      }
 
       navigate(from, { replace: true });
     } catch (err: any) {

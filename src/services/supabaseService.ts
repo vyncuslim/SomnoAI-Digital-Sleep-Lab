@@ -51,7 +51,7 @@ export const logError = async (userId: string | null, error: any, context: strin
     });
     return { error: logErr };
   } catch (err) {
-    console.error("Error log failed:", err);
+    console.warn("Error log failed:", err);
     return { error: err };
   }
 };
@@ -71,7 +71,7 @@ export const logAuditLog = async (userId: string | null, action: string, details
     });
     return { error };
   } catch (err) {
-    console.error("Audit log failed:", err);
+    console.warn("Audit log failed:", err);
     return { error: err };
   }
 };
@@ -87,7 +87,7 @@ export const logSecurityEvent = async (userId: string | null, type: string, deta
     });
     return { error };
   } catch (err) {
-    console.error("Security event log failed:", err);
+    console.warn("Security event log failed:", err);
     return { error: err };
   }
 };

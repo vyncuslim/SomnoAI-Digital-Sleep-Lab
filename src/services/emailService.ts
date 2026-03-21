@@ -23,7 +23,7 @@ export const emailService = {
         }),
       }, 'sendAdminAlert', 'CRITICAL');
     } catch (error) {
-      console.error('Failed to send admin alert:', error);
+      console.warn('Failed to send admin alert:', error);
     }
   },
   sendSignupWelcome: async (email: string) => {
@@ -52,7 +52,7 @@ export const emailService = {
         }),
       }, 'sendSignupWelcome', 'INFO');
     } catch (error) {
-      console.error('Failed to send welcome email:', error);
+      console.warn('Failed to send welcome email:', error);
     }
   },
   sendPasswordReset: async (email: string) => {
@@ -75,7 +75,7 @@ export const emailService = {
         }),
       }, 'sendPasswordReset', 'WARNING');
     } catch (error) {
-      console.error('Failed to send password reset email:', error);
+      console.warn('Failed to send password reset email:', error);
     }
   },
   sendSecurityAlert: async (email: string, event: string, details: string) => {
@@ -103,7 +103,7 @@ export const emailService = {
         }),
       }, 'sendSecurityAlert', 'CRITICAL');
     } catch (error) {
-      console.error('Failed to send security alert:', error);
+      console.warn('Failed to send security alert:', error);
     }
   },
   sendBlockNotification: async (email: string, reason: string, blockCode: string) => {
@@ -126,7 +126,7 @@ export const emailService = {
       }, 'sendBlockNotification', 'CRITICAL');
       console.log('Block notification sent to:', email);
     } catch (error) {
-      console.error('Failed to send block notification:', error);
+      console.warn('Failed to send block notification:', error);
     }
   }
 };

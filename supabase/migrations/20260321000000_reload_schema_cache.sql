@@ -21,11 +21,5 @@ $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 GRANT EXECUTE ON FUNCTION public.get_table_columns(text) TO authenticated;
 
--- Ensure log_error and log_security_event exist and are accessible
--- (They should be from previous migrations, but let's ensure permissions)
-GRANT EXECUTE ON FUNCTION public.log_error(uuid, text, text, text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.log_security_event(uuid, text, jsonb, text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.write_audit_log(uuid, text, text, jsonb, text) TO anon, authenticated;
-
 -- Reload schema cache again after creating functions
 NOTIFY pgrst, 'reload schema';

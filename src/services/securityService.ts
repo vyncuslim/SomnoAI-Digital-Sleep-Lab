@@ -19,7 +19,7 @@ export const securityService = {
       const { error } = await supabase.rpc('report_failed_login', { target_email: email });
       
       if (error) {
-        console.error("RPC report_failed_login failed:", error);
+        console.warn("RPC report_failed_login failed:", error);
       }
 
       // Log to security_events
@@ -30,7 +30,7 @@ export const securityService = {
       // Send security alert for failed login
       await emailService.sendSecurityAlert(email, 'Failed Login Attempt', 'A failed login attempt was detected for your account. If this wasn\'t you, please monitor your account.');
     } catch (error) {
-      console.error("Security service failed to handle login error:", error);
+      console.warn("Security service failed to handle login error:", error);
     }
   },
 
@@ -56,7 +56,7 @@ export const securityService = {
       
       await logAuditLog(userId, 'SECURITY_VIOLATION', { type, severity });
     } catch (error) {
-      console.error("Security service failed to handle violation:", error);
+      console.warn("Security service failed to handle violation:", error);
     }
   },
 
@@ -80,7 +80,7 @@ export const securityService = {
 
       await logAuditLog('ADMIN', 'USER_UNBLOCK', { userId, email, reason });
     } catch (error) {
-      console.error("Security service failed to unblock user:", error);
+      console.warn("Security service failed to unblock user:", error);
     }
   }
 };

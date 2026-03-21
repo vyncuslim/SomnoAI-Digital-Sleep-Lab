@@ -303,15 +303,19 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           
           if (profileData?.is_blocked) {
              // Log the attempt
-             await fetchWithLogging('/api/audit/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                  email, 
-                  status: 'failed', 
-                  errorCode: `Blocked user attempted login. Role: ${profileData.role || 'user'}. Code: ${profileData.block_code || 'N/A'}` 
-                })
-             }, 'Blocked User Login Attempt');
+             try {
+               await fetchWithLogging('/api/audit/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ 
+                    email, 
+                    status: 'failed', 
+                    errorCode: `Blocked user attempted login. Role: ${profileData.role || 'user'}. Code: ${profileData.block_code || 'N/A'}` 
+                  })
+               }, 'Blocked User Login Attempt');
+             } catch (e) {
+               console.warn('Blocked user login attempt logging failed', e);
+             }
              await supabase.auth.signOut();
              throw new Error(`Your account is blocked. Block Code: ${profileData.block_code || 'N/A'}. Please contact admin@sleepsomno.com`);
           } else {
@@ -325,21 +329,29 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                console.log('PIN provided during login, will be handled by PinProtection');
              }
 
-             await fetchWithLogging('/api/audit/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: data.user.id,
-                    email,
-                    status: 'success',
-                    metadata: {
-                      role: profileData?.role || 'user',
-                      user_name: profileData?.full_name || 'N/A',
-                      device: navigator.userAgent
-                    }
-                })
-             }, 'Auth Login Success');
-             notificationService.sendLoginNotification(email, data.user.id);
+             try {
+               await fetchWithLogging('/api/audit/login', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userId: data.user.id,
+                      email,
+                      status: 'success',
+                      metadata: {
+                        role: profileData?.role || 'user',
+                        user_name: profileData?.full_name || 'N/A',
+                        device: navigator.userAgent
+                      }
+                  })
+               }, 'Auth Login Success');
+             } catch (e) {
+               console.warn('audit login success failed', e);
+             }
+             try {
+               notificationService.sendLoginNotification(email, data.user.id);
+             } catch (e) {
+               console.warn('sendLoginNotification failed', e);
+             }
              trackEvent('login', 'authentication', 'email');
           }
         }
@@ -378,33 +390,53 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           // Email confirmation is disabled, user is logged in
           if (data.user) {
             trackEvent('sign_up', 'authentication', 'email');
-            await fetchWithLogging('/api/audit/auth-signup', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    userId: data.user.id,
-                    email,
-                    success: true
-                })
-            }, 'Auth Signup Success');
-            notificationService.sendLoginNotification(email, data.user.id);
-            emailService.sendSignupWelcome(email);
+            try {
+              await fetchWithLogging('/api/audit/auth-signup', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({
+                      userId: data.user.id,
+                      email,
+                      success: true
+                  })
+              }, 'Auth Signup Success');
+            } catch (e) {
+              console.warn('audit signup success failed', e);
+            }
+            try {
+              notificationService.sendLoginNotification(email, data.user.id);
+            } catch (e) {
+              console.warn('sendLoginNotification failed', e);
+            }
+            try {
+              emailService.sendSignupWelcome(email);
+            } catch (e) {
+              console.warn('sendSignupWelcome failed', e);
+            }
           }
           navigate(`${langPrefix}/dashboard`);
         } else {
           // Email confirmation is required
           trackEvent('sign_up_pending', 'authentication', 'email');
-          await fetchWithLogging('/api/audit/auth-signup', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                userId: data.user?.id ?? null,
-                email,
-                success: true,
-                needsEmailConfirmation: true
-            })
-          }, 'Auth Signup Pending');
-          emailService.sendSignupWelcome(email);
+          try {
+            await fetchWithLogging('/api/audit/auth-signup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                  userId: data.user?.id ?? null,
+                  email,
+                  success: true,
+                  needsEmailConfirmation: true
+              })
+            }, 'Auth Signup Pending');
+          } catch (e) {
+            console.warn('audit signup pending failed', e);
+          }
+          try {
+            emailService.sendSignupWelcome(email);
+          } catch (e) {
+            console.warn('sendSignupWelcome failed', e);
+          }
           setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
           navigate(`${langPrefix}/auth/verify-email`, { state: { email } });
         }
@@ -415,10 +447,18 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         });
         
         if (resetError) {
-          await logError(null, resetError, `Password reset request failed for ${email}`);
+          try {
+            await logError(null, resetError, `Password reset request failed for ${email}`);
+          } catch (e) {
+            console.warn('logError failed', e);
+          }
           throw resetError;
         }
-        emailService.sendPasswordReset(email);
+        try {
+          emailService.sendPasswordReset(email);
+        } catch (e) {
+          console.warn('sendPasswordReset failed', e);
+        }
         setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
       } else if (view === 'otp') {
         if (showOtpInput) {
@@ -432,7 +472,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           if (verifyError) throw verifyError;
           
           if (data.user) {
-            await logAuditLog(data.user.id, 'USER_LOGIN_OTP', `Successful OTP verification (${otpType})`);
+            try {
+              await logAuditLog(data.user.id, 'USER_LOGIN_OTP', `Successful OTP verification (${otpType})`);
+            } catch (e) {
+              console.warn('logAuditLog failed', e);
+            }
           }
           
           navigate(`${langPrefix}/dashboard`);
@@ -466,10 +510,14 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             } catch (rpcErr) {
               console.warn('Failed to report failed login via RPC:', rpcErr);
             }
-            await logAuditLog(null, 'FAILED_LOGIN_ATTEMPT', `Failed login attempt for identifier: ${identifier}`);
+            try {
+              await logAuditLog(null, 'FAILED_LOGIN_ATTEMPT', `Failed login attempt for identifier: ${identifier}`);
+            } catch (e) {
+              console.warn('logAuditLog failed', e);
+            }
           }
         } catch (rpcErr) {
-          console.error('Failed to report login attempt:', rpcErr);
+          console.warn('Failed to report login attempt:', rpcErr);
         }
       }
 

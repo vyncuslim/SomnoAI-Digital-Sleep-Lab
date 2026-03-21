@@ -71,6 +71,7 @@ CREATE TABLE IF NOT EXISTS public.error_logs (
 -- Grant permissions
 GRANT EXECUTE ON FUNCTION public.log_error(uuid, text, jsonb, text, text, text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.log_security_event(uuid, text, jsonb, text) TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.write_audit_log(text, text, text, text, text, uuid, uuid, text, text, text, text, text, text, text, text, jsonb) TO anon, authenticated;
 GRANT ALL ON TABLE public.error_logs TO anon, authenticated;
 
 -- Reload schema cache
