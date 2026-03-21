@@ -76,6 +76,7 @@ const FounderDashboardPage = lazyWithRetry(() => import('./pages/FounderDashboar
 const SearchHub = lazyWithRetry(() => import('./components/SearchHub').then(module => ({ default: module.SearchHub })));
 const BlockedView = lazyWithRetry(() => import('./components/BlockedView').then(module => ({ default: module.BlockedView })));
 const LogoOnly = lazyWithRetry(() => import('./pages/LogoOnly'));
+const VerifyEmail = lazyWithRetry(() => import('./pages/VerifyEmail').then(module => ({ default: module.VerifyEmail })));
 
 // Initial Data
 // const INITIAL_SLEEP_DATA: SleepRecord = {
@@ -169,6 +170,7 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
       <Route path="auth/login" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signin" element={<Auth lang={lang} initialView="login" />} />
       <Route path="auth/signup" element={<Auth lang={lang} initialView="signup" />} />
+      <Route path="auth/verify-email" element={<VerifyEmail />} />
       <Route path="auth/callback" element={<AuthCallback />} />
       <Route path="auth/reset-password" element={<PasswordReset />} />
       <Route path="login" element={<Navigate to={`${langPrefix}/auth/login`} replace />} />

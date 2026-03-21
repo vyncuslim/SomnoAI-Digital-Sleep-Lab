@@ -278,9 +278,11 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (data.user) {
           // Check if email is verified
           if (!data.user.email_confirmed_at) {
+            // Sign out to prevent partial session
+            const userEmail = data.user.email;
             await supabase.auth.signOut();
-            const message = lang === 'zh' ? '请在登录前验证您的邮箱。请检查您的收件箱。' : 'Please verify your email address before logging in. Check your inbox for the verification link.';
-            throw new Error(message);
+            navigate(`${langPrefix}/auth/verify-email`, { state: { email: userEmail } });
+            return;
           }
 
           // Check if user is blocked
@@ -381,7 +383,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           }, 'Auth Signup Pending');
           emailService.sendSignupWelcome(email);
           setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
-          setView('verification-pending');
+          navigate(`${langPrefix}/auth/verify-email`, { state: { email } });
         }
       } else if (view === 'forgot-password') {
         const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {

@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useLanguage } from '../context/useLanguage';
 import { Language } from '../services/i18n';
 import { PinProtection } from './PinProtection';
 
@@ -11,7 +12,8 @@ interface ProtectedRouteProps {
 }
 
 export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminOnly }) => {
-  const { user, loading, isAdmin } = useAuth();
+  const { user, loading, isAdmin, isVerified } = useAuth();
+  const { langPrefix } = useLanguage();
   const location = useLocation();
   console.log('ProtectedRoute rendered for path:', location.pathname, 'User:', user);
 
@@ -24,11 +26,15 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminO
   }
 
   if (!user) {
-    return <Navigate to="/auth/login" state={{ from: location }} replace />;
+    return <Navigate to={`${langPrefix}/auth/login`} state={{ from: location }} replace />;
+  }
+
+  if (!isVerified) {
+    return <Navigate to={`${langPrefix}/auth/verify-email`} replace />;
   }
 
   if (adminOnly && !isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to={`${langPrefix}/dashboard`} replace />;
   }
 
   return (

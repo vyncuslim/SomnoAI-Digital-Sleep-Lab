@@ -24,6 +24,7 @@ interface AuthContextType {
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
+  resendVerificationEmail: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -45,6 +46,7 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => {},
   signOut: async () => {},
   refreshProfile: async () => {},
+  resendVerificationEmail: async () => {},
 });
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -265,12 +267,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const resendVerificationEmail = async (email: string) => {
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth/verify`,
+      },
+    });
+    if (error) throw error;
+  };
+
   return (
     <AuthContext.Provider value={{ 
       user, profile, loading, isBlocked, blockedReason, blockCode, 
       isAdmin, isOwner, isSuperOwner, isVerified, isPinVerified, isPinBlocked, hasPinSet,
       setIsPinVerified, verifyPin, setPin, resetPinWithRecoveryKey,
-      signIn, signOut, refreshProfile
+      signIn, signOut, refreshProfile, resendVerificationEmail
     }}>
       {children}
     </AuthContext.Provider>
