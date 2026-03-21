@@ -14,6 +14,11 @@ interface AuthContextType {
   isOwner: boolean;
   isSuperOwner: boolean;
   isVerified: boolean;
+  isPinVerified: boolean;
+  hasPinSet: boolean;
+  verifyPin: (pin: string) => Promise<boolean>;
+  setPin: (pin: string) => Promise<{ recoveryKey: string }>;
+  resetPinWithRecoveryKey: (recoveryKey: string, newPin: string) => Promise<boolean>;
   signIn: (email: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
@@ -28,6 +33,11 @@ const AuthContext = createContext<AuthContextType>({
   isOwner: false,
   isSuperOwner: false,
   isVerified: false,
+  isPinVerified: false,
+  hasPinSet: false,
+  verifyPin: async () => false,
+  setPin: async () => ({ recoveryKey: '' }),
+  resetPinWithRecoveryKey: async () => false,
   signIn: async () => {},
   signOut: async () => {},
   refreshProfile: async () => {},
@@ -38,6 +48,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [isBlocked, setIsBlocked] = useState(false);
+  const [isPinVerified, setIsPinVerified] = useState(false);
   const [blockedReason, setBlockedReason] = useState<string | undefined>();
   const [blockCode, setBlockCode] = useState<string | undefined>();
 
@@ -45,6 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isOwner = profile?.role === 'owner' || profile?.is_super_owner;
   const isSuperOwner = profile?.is_super_owner;
   const isVerified = user?.email_confirmed_at != null;
+  const hasPinSet = !!profile?.pin_hash;
 
   useEffect(() => {
     // Get initial session
@@ -105,6 +117,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     await supabase.auth.signOut();
+    setIsPinVerified(false);
+  };
+
+  const verifyPin = async (pin: string): Promise<boolean> => {
+    if (!profile?.pin_hash) return false;
+    // In a real app, we'd hash the pin and compare. 
+    // For this demo, we'll assume the pin_hash is the pin itself or a simple hash.
+    // We'll use a simple "hash" for demonstration.
+    const hashedPin = btoa(pin); 
+    if (profile.pin_hash === hashedPin) {
+      setIsPinVerified(true);
+      return true;
+    }
+    return false;
+  };
+
+  const setPin = async (pin: string): Promise<{ recoveryKey: string }> => {
+    if (!user) throw new Error('User not authenticated');
+    
+    const hashedPin = btoa(pin);
+    const recoveryKey = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({ 
+        pin_hash: hashedPin,
+        recovery_key: recoveryKey 
+      })
+      .eq('id', user.id);
+
+    if (error) throw error;
+    
+    await fetchProfile(user.id);
+    setIsPinVerified(true);
+    return { recoveryKey };
+  };
+
+  const resetPinWithRecoveryKey = async (recoveryKey: string, newPin: string): Promise<boolean> => {
+    if (!user) return false;
+    
+    const { data, error: fetchError } = await supabase
+      .from('profiles')
+      .select('recovery_key')
+      .eq('id', user.id)
+      .single();
+      
+    if (fetchError || data.recovery_key !== recoveryKey) return false;
+    
+    const hashedPin = btoa(newPin);
+    const { error: updateError } = await supabase
+      .from('profiles')
+      .update({ pin_hash: hashedPin })
+      .eq('id', user.id);
+      
+    if (updateError) return false;
+    
+    await fetchProfile(user.id);
+    setIsPinVerified(true);
+    return true;
   };
 
   const refreshProfile = async () => {
@@ -116,8 +187,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   return (
     <AuthContext.Provider value={{ 
       user, profile, loading, isBlocked, blockedReason, blockCode, 
-      isAdmin, isOwner, isSuperOwner, isVerified, signIn, signOut,
-      refreshProfile
+      isAdmin, isOwner, isSuperOwner, isVerified, isPinVerified, hasPinSet,
+      verifyPin, setPin, resetPinWithRecoveryKey,
+      signIn, signOut, refreshProfile
     }}>
       {children}
     </AuthContext.Provider>
