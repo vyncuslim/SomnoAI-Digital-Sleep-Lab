@@ -2,13 +2,14 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'motion/react';
 import { Lock, Shield, Key, RefreshCw, CheckCircle2, AlertCircle, Copy } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface PinProtectionProps {
   children: React.ReactNode;
 }
 
 export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
-  const { user, loading, hasPinSet, isPinVerified, verifyPin, setPin, resetPinWithRecoveryKey } = useAuth();
+  const { user, loading, hasPinSet, isPinVerified, isPinBlocked, setIsPinVerified, verifyPin, setPin, resetPinWithRecoveryKey } = useAuth();
   const [pin, setPinInput] = useState('');
   const [confirmPin, setConfirmPin] = useState('');
   const [recoveryKey, setRecoveryKey] = useState('');
@@ -16,6 +17,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
   const [mode, setMode] = useState<'verify' | 'setup' | 'recovery' | 'success'>('verify');
   const [error, setError] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [showCopySuccess, setShowCopySuccess] = useState(false);
 
   useEffect(() => {
     if (!loading && user) {
@@ -112,7 +114,8 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
 
   const copyRecoveryKey = () => {
     navigator.clipboard.writeText(recoveryKey);
-    // Could add a toast here
+    setShowCopySuccess(true);
+    setTimeout(() => setShowCopySuccess(false), 2000);
   };
 
   return (
@@ -125,6 +128,8 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
         className="relative w-full max-w-md bg-black/40 border border-white/10 backdrop-blur-xl rounded-3xl p-8 shadow-2xl"
       >
         <div className="flex flex-col items-center text-center mb-8">
+          <Logo className="mb-8 scale-110" showText={false} />
+          
           <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 border border-emerald-500/20">
             {mode === 'verify' && <Lock className="w-8 h-8 text-emerald-500" />}
             {mode === 'setup' && <Shield className="w-8 h-8 text-emerald-500" />}
@@ -139,7 +144,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
             {mode === 'success' && 'PIN Set Successfully'}
           </h2>
           <p className="text-white/50 text-sm">
-            {mode === 'verify' && 'Enter your 6-digit security PIN to continue.'}
+            {mode === 'verify' && (isPinBlocked ? 'Too many failed attempts. Please use your recovery key.' : 'Enter your 6-digit security PIN to continue.')}
             {mode === 'setup' && 'Create a 6-digit PIN to protect your account.'}
             {mode === 'recovery' && 'Use your recovery key to reset your PIN.'}
             {mode === 'success' && 'Please save your recovery key in a safe place.'}
@@ -161,14 +166,22 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
                   type="password"
                   maxLength={6}
                   value={pin}
+                  disabled={isPinBlocked}
                   onChange={(e) => setPinInput(e.target.value.replace(/\D/g, ''))}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-3xl tracking-[1em] text-white focus:outline-none focus:border-emerald-500/50 transition-colors"
+                  className={`w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-3xl tracking-[1em] text-white focus:outline-none focus:border-emerald-500/50 transition-colors ${isPinBlocked ? 'opacity-50 cursor-not-allowed' : ''}`}
                   placeholder="••••••"
                   autoFocus
                 />
               </div>
 
-              {error && (
+              {isPinBlocked && (
+                <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20">
+                  <AlertCircle className="w-4 h-4" />
+                  Access blocked due to multiple failed attempts.
+                </div>
+              )}
+
+              {error && !isPinBlocked && (
                 <div className="flex items-center gap-2 text-red-500 text-sm bg-red-500/10 p-3 rounded-xl border border-red-500/20">
                   <AlertCircle className="w-4 h-4" />
                   {error}
@@ -177,7 +190,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
 
               <button
                 type="submit"
-                disabled={isProcessing || pin.length !== 6}
+                disabled={isProcessing || pin.length !== 6 || isPinBlocked}
                 className="w-full py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
               >
                 {isProcessing ? 'VERIFYING...' : 'UNLOCK ACCESS'}
@@ -321,8 +334,11 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
                   onClick={copyRecoveryKey}
                   className="flex items-center gap-2 mx-auto text-emerald-500/60 hover:text-emerald-500 transition-colors text-xs uppercase tracking-widest"
                 >
-                  <Copy className="w-3 h-3" />
-                  Copy Key
+                  {showCopySuccess ? (
+                    <><CheckCircle2 className="w-3 h-3" /> COPIED</>
+                  ) : (
+                    <><Copy className="w-3 h-3" /> Copy Key</>
+                  )}
                 </button>
               </div>
 
@@ -332,7 +348,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               </div>
 
               <button
-                onClick={() => window.location.reload()}
+                onClick={() => setIsPinVerified(true)}
                 className="w-full py-4 bg-emerald-500 text-black font-bold rounded-xl hover:bg-emerald-400 transition-all"
               >
                 CONTINUE TO WEBSITE
