@@ -181,8 +181,15 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to generate analysis');
+        const errorText = await res.text();
+        let errorMessage = 'Failed to generate analysis';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();

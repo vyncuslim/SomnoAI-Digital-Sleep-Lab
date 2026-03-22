@@ -12,7 +12,15 @@ export const fetchWithLogging = async (url: string, options: RequestInit = {}, c
 
     const response = await fetch(url, { ...options, headers });
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      // Try to get text first, then parse as JSON if possible
+      const errorText = await response.text();
+      let errorData;
+      try {
+        errorData = JSON.parse(errorText);
+      } catch (e) {
+        errorData = { raw: errorText };
+      }
+      
       const { data: { user } } = await supabase.auth.getUser();
       await logError(
         user?.id || null,
@@ -20,7 +28,7 @@ export const fetchWithLogging = async (url: string, options: RequestInit = {}, c
         `URL: ${url}, Context: ${context}`,
         severity
       );
-      throw new Error(`Request failed with status ${response.status}`);
+      throw new Error(`Request failed with status ${response.status}: ${errorText || 'No error details'}`);
     }
     return response;
   } catch (error) {

@@ -211,8 +211,15 @@ export const PersonalChat: React.FC = () => {
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.error || 'Failed to generate response');
+        const errorText = await res.text();
+        let errorMessage = 'Failed to generate response';
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error || errorMessage;
+        } catch (e) {
+          errorMessage = errorText || errorMessage;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await res.json();

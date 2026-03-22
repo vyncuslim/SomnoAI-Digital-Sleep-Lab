@@ -3,6 +3,28 @@ import { fetchWithLogging } from './apiService';
 const API_URL = '/api';
 
 export const emailService = {
+  sendLoginCode: async (email: string, code: string) => {
+    try {
+      await fetchWithLogging(`${API_URL}/send-email`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: email,
+          subject: 'Your Login Code',
+          html: `
+            <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
+              <p>Hello,</p>
+              <p>Use this code to login:</p>
+              <h2 style="color: #4f46e5;">${code}</h2>
+              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com<br><br><small>SDSL-CS-001</small></p>
+            </div>
+          `,
+        }),
+      }, 'sendLoginCode', 'INFO');
+    } catch (error) {
+      console.warn('Failed to send login code:', error);
+    }
+  },
   sendAdminAlert: async (payload: any) => {
     try {
       await fetchWithLogging(`${API_URL}/send-email`, {
@@ -10,31 +32,30 @@ export const emailService = {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: 'admin@sleepsomno.com',
-          subject: '管理员警报：系统事件通知',
+          subject: 'Admin Alert: System Event Notification',
           html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-              <p>尊敬的管理员，</p>
-              <p>您好。</p>
-              <p>系统刚刚检测到一项新的管理事件，需要您尽快查看。</p>
-              <h3>事件摘要：</h3>
+              <p>Hello Admin,</p>
+              <p>A new administrative event has been detected by the system and requires your attention.</p>
+              <h3>Event Summary</h3>
               <ul>
-                <li><strong>事件类型：</strong> ${payload.type || 'N/A'}</li>
-                <li><strong>时间：</strong> ${new Date().toLocaleString()}</li>
-                <li><strong>用户/来源：</strong> ${payload.source || 'System'}</li>
-                <li><strong>风险等级：</strong> ${payload.riskLevel || 'Medium'}</li>
-                <li><strong>详情：</strong> ${JSON.stringify(payload.details || {})}</li>
+                <li><strong>Event Type:</strong> ${payload.type || 'N/A'}</li>
+                <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
+                <li><strong>Source/User:</strong> ${payload.source || 'System'}</li>
+                <li><strong>Risk Level:</strong> ${payload.riskLevel || 'Medium'}</li>
+                <li><strong>Details:</strong> ${JSON.stringify(payload.details || {})}</li>
               </ul>
-              <p>请尽快登录管理后台进行核查，并根据需要采取进一步措施。</p>
-              <p><strong>管理后台链接：</strong><br><a href="${window.location.origin}/admin">${window.location.origin}/admin</a></p>
-              <p>如这不是预期行为，建议您立即：</p>
+              <p>Please log in to the admin dashboard as soon as possible to review this event and take any necessary action.</p>
+              <p><strong>Admin Dashboard:</strong><br><a href="${window.location.origin}/admin">${window.location.origin}/admin</a></p>
+              <p>If this activity was not expected, we recommend that you immediately:</p>
               <ul>
-                <li>检查相关账户活动</li>
-                <li>更新管理员密码</li>
-                <li>审查系统日志</li>
-                <li>启用或检查多重验证设置</li>
+                <li>Review related account activity</li>
+                <li>Update administrator credentials</li>
+                <li>Check system logs</li>
+                <li>Verify multi-factor authentication settings</li>
               </ul>
-              <p>此邮件由系统自动发送，请勿直接回复。</p>
-              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com</p>
+              <p>This is an automated message. Please do not reply to this email.</p>
+              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com<br><br><small>SDSL-CS-001</small></p>
             </div>
           `,
         }),
@@ -43,35 +64,35 @@ export const emailService = {
       console.warn('Failed to send admin alert:', error);
     }
   },
-  sendSignupWelcome: async (email: string) => {
+  sendSignupWelcome: async (email: string, userName: string, loginUrl: string, signupTime: string) => {
     try {
       await fetchWithLogging(`${API_URL}/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: email,
-          subject: '欢迎加入 SomnoAI Digital Sleep Lab',
+          subject: 'Welcome to SomnoAI Digital Sleep Lab',
           html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-              <p>您好：</p>
-              <p>欢迎注册 SomnoAI Digital Sleep Lab。</p>
-              <p>您的账户已成功创建，现在可以开始使用我们的服务。</p>
-              <h3>账户信息：</h3>
+              <p>Hello ${userName},</p>
+              <p>Welcome to SomnoAI Digital Sleep Lab.</p>
+              <p>Your account has been successfully created, and you can now start using our services.</p>
+              <h3>Account Details</h3>
               <ul>
-                <li><strong>注册邮箱：</strong> ${email}</li>
-                <li><strong>注册时间：</strong> ${new Date().toLocaleString()}</li>
+                <li><strong>Email:</strong> ${email}</li>
+                <li><strong>Signup Time:</strong> ${signupTime}</li>
               </ul>
-              <p>您可以通过以下链接登录您的账户：<br><a href="${window.location.origin}/auth/login">${window.location.origin}/auth/login</a></p>
-              <p>为了帮助您更顺利开始使用，建议您优先完成以下操作：</p>
+              <p>You can log in to your account here:<br><a href="${loginUrl}">${loginUrl}</a></p>
+              <p>To get started smoothly, we recommend that you:</p>
               <ul>
-                <li>完善个人资料</li>
-                <li>设置安全密码</li>
-                <li>查看平台功能介绍</li>
-                <li>开启账户安全保护</li>
+                <li>Complete your profile</li>
+                <li>Set a strong password</li>
+                <li>Explore the platform features</li>
+                <li>Enable account security protection</li>
               </ul>
-              <p>如果这次注册并非由您本人操作，请立即联系我们：support@sleepsomno.com</p>
-              <p>感谢您的加入，期待为您提供服务。</p>
-              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com</p>
+              <p>If this account was not created by you, please contact us immediately at: support@sleepsomno.com</p>
+              <p>Thank you for joining us. We look forward to supporting you.</p>
+              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com<br><br><small>SDSL-CS-001</small></p>
             </div>
           `,
         }),
@@ -80,28 +101,28 @@ export const emailService = {
       console.warn('Failed to send welcome email:', error);
     }
   },
-  sendPasswordReset: async (email: string) => {
+  sendPasswordReset: async (email: string, userName: string, resetLink: string, expiryTime: string) => {
     try {
       await fetchWithLogging(`${API_URL}/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: email,
-          subject: '重置您的账户密码',
+          subject: 'Reset Your Account Password',
           html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-              <p>您好：</p>
-              <p>我们收到了一个重置您账户密码的请求。</p>
-              <p>您可以点击以下链接重置密码：<br><a href="${window.location.origin}/auth/reset-password">重置密码</a></p>
-              <h3>注意事项：</h3>
+              <p>Hello ${userName},</p>
+              <p>We received a request to reset the password for your account.</p>
+              <p>You can reset your password by clicking the link below:<br><a href="${resetLink}">Reset Password</a></p>
+              <h3>Important Notes</h3>
               <ul>
-                <li>该链接将在 1 小时后失效</li>
-                <li>如果您没有请求重置密码，请忽略此邮件</li>
-                <li>为了账户安全，请勿将此链接分享给他人</li>
+                <li>This link will expire in ${expiryTime}</li>
+                <li>If you did not request a password reset, please ignore this email</li>
+                <li>For security reasons, do not share this link with anyone</li>
               </ul>
-              <p>如果您未发起此请求，但担心账户安全，请尽快联系我们：support@sleepsomno.com</p>
-              <p>此邮件由系统自动发送，请勿直接回复。</p>
-              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com</p>
+              <p>If you did not make this request and believe your account may be at risk, please contact us immediately at: support@sleepsomno.com</p>
+              <p>This is an automated message. Please do not reply to this email.</p>
+              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com<br><br><small>SDSL-CS-001</small></p>
             </div>
           `,
         }),
@@ -110,36 +131,38 @@ export const emailService = {
       console.warn('Failed to send password reset email:', error);
     }
   },
-  sendSecurityAlert: async (email: string, event: string, details: string) => {
+  sendSecurityAlert: async (email: string, userName: string, activityType: string, activityTime: string, ipAddress: string, deviceInfo: string, location: string, securityPageUrl: string) => {
     try {
       await fetchWithLogging(`${API_URL}/send-email`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: email,
-          subject: '安全警报：检测到异常活动',
+          subject: 'Security Alert: Unusual Activity Detected',
           html: `
             <div style="font-family: sans-serif; line-height: 1.6; color: #333;">
-              <p>您好：</p>
-              <p>我们检测到您的账户出现了一次异常或敏感操作，因此向您发送此安全提醒。</p>
-              <h3>活动详情：</h3>
+              <p>Hello ${userName},</p>
+              <p>We detected unusual or sensitive activity on your account, so we are sending you this security alert.</p>
+              <h3>Activity Details</h3>
               <ul>
-                <li><strong>操作类型：</strong> ${event}</li>
-                <li><strong>时间：</strong> ${new Date().toLocaleString()}</li>
-                <li><strong>详情：</strong> ${details}</li>
+                <li><strong>Activity Type:</strong> ${activityType}</li>
+                <li><strong>Time:</strong> ${activityTime}</li>
+                <li><strong>IP Address:</strong> ${ipAddress}</li>
+                <li><strong>Device/Browser:</strong> ${deviceInfo}</li>
+                <li><strong>Location:</strong> ${location}</li>
               </ul>
-              <p>如果这是您本人操作，则无需进一步处理。</p>
-              <p>如果这不是您本人执行的操作，请立即采取以下措施：</p>
+              <p>If this was you, no further action is required.</p>
+              <p>If this was not you, please take action immediately:</p>
               <ul>
-                <li>立即重置密码</li>
-                <li>检查近期登录记录</li>
-                <li>联系我们的支持团队</li>
-                <li>启用额外安全验证措施</li>
+                <li>Reset your password</li>
+                <li>Review your recent login activity</li>
+                <li>Contact our support team</li>
+                <li>Enable additional security protections</li>
               </ul>
-              <p>安全处理链接：<br><a href="${window.location.origin}/settings/security">${window.location.origin}/settings/security</a></p>
-              <p>支持邮箱：support@sleepsomno.com</p>
-              <p>我们非常重视账户安全。如发现异常，请尽快处理。</p>
-              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com</p>
+              <p>Security Page:<br><a href="${securityPageUrl}">${securityPageUrl}</a></p>
+              <p>Support Email: support@sleepsomno.com</p>
+              <p>We take account security seriously. Please act promptly if you do not recognize this activity.</p>
+              <p>Best regards,<br>SomnoAI Digital Sleep Lab<br>Website: https://sleepsomno.com<br>Support: support@sleepsomno.com<br>Security: security@sleepsomno.com<br><br><small>SDSL-CS-001</small></p>
             </div>
           `,
         }),
