@@ -129,6 +129,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .single();
       
       if (error) throw error;
+      console.log('[DEBUG] Profile data received from Supabase:', data);
       setProfile(data);
       if (data?.is_blocked) {
         setIsBlocked(true);
