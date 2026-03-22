@@ -6,7 +6,7 @@ import { Send, User, Bot, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff } fr
 import { GlassCard } from './GlassCard';
 
 export const PersonalChat: React.FC = () => {
-  const { user } = useAuth();
+  const { user, profile } = useAuth();
   const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string, fileData?: string }[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
