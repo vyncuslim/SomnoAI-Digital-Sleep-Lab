@@ -466,9 +466,13 @@ async function startServer() {
     res.status(200).json({ ok: true });
   });
 
+  // Debugging middleware for API routes
+  app.use(['/api/chat', '/api/analyze-sleep'], (req, res, next) => {
+    console.log(`[DEBUG] Received ${req.method} request to ${req.url}`);
+    next();
+  });
+
   app.post('/api/chat', async (req, res) => {
-    console.log('Received POST request to /api/chat');
-    try {
       const user = await requireUserFromRequest(req);
       const { messages, currentInput, currentFile, systemInstruction } = req.body;
 

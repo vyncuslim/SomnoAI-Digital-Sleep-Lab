@@ -63,7 +63,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const [dailyCount, setDailyCount] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const DAILY_LIMIT = 4;
+  const DAILY_LIMIT = profile?.subscription_plan === 'unlimited' ? Infinity : 4;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

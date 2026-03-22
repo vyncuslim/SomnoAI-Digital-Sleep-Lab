@@ -19,7 +19,7 @@ export const PersonalChat: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const DAILY_LIMIT = 4;
+  const DAILY_LIMIT = profile?.subscription_plan === 'unlimited' ? Infinity : 4;
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
