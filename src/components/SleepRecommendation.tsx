@@ -1,16 +1,27 @@
 import React, { useState } from 'react';
 import { getSleepRecommendation } from '../services/geminiService';
+import { useAuth } from '../context/AuthContext';
 
 const SleepRecommendation: React.FC = () => {
+  const { profile } = useAuth();
   const [userData, setUserData] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [loading, setLoading] = useState(false);
+  const [dailyCount, setDailyCount] = useState(0);
+
+  const DAILY_LIMIT = profile?.subscription_plan === 'unlimited' ? Infinity : 4;
 
   const handleGetRecommendation = async () => {
+    if (dailyCount >= DAILY_LIMIT) {
+      setRecommendation('Daily limit reached. Please upgrade to unlimited to continue.');
+      return;
+    }
+
     setLoading(true);
     try {
       const rec = await getSleepRecommendation(userData);
       setRecommendation(rec);
+      setDailyCount(prev => prev + 1);
     } catch (error) {
       setRecommendation('Error generating recommendation. Please try again.');
     } finally {
