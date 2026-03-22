@@ -9,7 +9,7 @@ const SleepRecommendation: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [dailyCount, setDailyCount] = useState(0);
 
-  const DAILY_LIMIT = profile?.subscription_plan === 'unlimited' ? Infinity : 4;
+  const DAILY_LIMIT = (profile?.id === '8f424e4f-e53d-447f-ba5f-98428fe0a34e' || profile?.subscription_plan === 'unlimited') ? Infinity : 4;
 
   const handleGetRecommendation = async () => {
     if (dailyCount >= DAILY_LIMIT) {
