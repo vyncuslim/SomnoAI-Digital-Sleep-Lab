@@ -467,6 +467,7 @@ async function startServer() {
   });
 
   app.post('/api/chat', async (req, res) => {
+    console.log('Received POST request to /api/chat');
     try {
       const user = await requireUserFromRequest(req);
       const { messages, currentInput, currentFile, systemInstruction } = req.body;
@@ -507,6 +508,7 @@ async function startServer() {
   });
 
   app.post('/api/analyze-sleep', async (req, res) => {
+    console.log('Received POST request to /api/analyze-sleep');
     try {
       const user = await requireUserFromRequest(req);
       const { prompt, lang, selectedFileName } = req.body;
