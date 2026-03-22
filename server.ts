@@ -543,10 +543,11 @@ async function startServer() {
         },
       });
 
-      res.json({ text: response.text });
+      const analysis = JSON.parse(response.text || '{}');
+      res.json(analysis);
     } catch (error: any) {
       console.error('Analyze Sleep API Error:', error);
-      res.status(error.message.includes('Unauthorized') ? 401 : 500).json({ error: error.message || 'Failed to generate analysis' });
+      res.status(500).json({ error: 'Failed to parse analysis' });
     }
   });
 

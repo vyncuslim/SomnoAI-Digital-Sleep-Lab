@@ -5,13 +5,13 @@ export async function getSleepRecommendation(userData: string): Promise<string> 
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) throw new Error("Not authenticated");
 
-    const res = await fetch('/api/sleep-recommendation', {
+    const res = await fetch('/api/analyze-sleep', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${session.access_token}`
       },
-      body: JSON.stringify({ userData })
+      body: JSON.stringify({ prompt: userData })
     });
 
     if (!res.ok) {
@@ -20,7 +20,8 @@ export async function getSleepRecommendation(userData: string): Promise<string> 
     }
 
     const data = await res.json();
-    return data.text || "No recommendation available.";
+    // 假设返回的 JSON 结构包含 overview, insights, recommendations, tomorrowOptimization
+    return `${data.overview}\n\nInsights: ${data.insights?.join(', ')}\n\nRecommendations: ${data.recommendations?.join(', ')}\n\nOptimization: ${data.tomorrowOptimization}`;
   } catch (error) {
     console.error("Error generating recommendation:", error);
     throw error;
