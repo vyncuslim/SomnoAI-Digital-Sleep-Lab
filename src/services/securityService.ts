@@ -28,7 +28,16 @@ export const securityService = {
       await logAuditLog(userId, 'FAILED_LOGIN_ATTEMPT', { email });
 
       // Send security alert for failed login
-      await emailService.sendSecurityAlert(email, 'Failed Login Attempt', 'A failed login attempt was detected for your account. If this wasn\'t you, please monitor your account.');
+      await emailService.sendSecurityAlert(
+        email, 
+        email, 
+        'Failed Login Attempt', 
+        new Date().toLocaleString(), 
+        'Unknown', 
+        'Unknown', 
+        'Unknown', 
+        `${window.location.origin}/security`
+      );
     } catch (error) {
       console.warn("Security service failed to handle login error:", error);
     }

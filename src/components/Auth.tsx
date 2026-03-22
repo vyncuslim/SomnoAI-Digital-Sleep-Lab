@@ -409,7 +409,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               console.warn('sendLoginNotification failed', e);
             }
             try {
-              emailService.sendSignupWelcome(email);
+              emailService.sendSignupWelcome(email, email, `${window.location.origin}/login`, new Date().toLocaleString());
             } catch (e) {
               console.warn('sendSignupWelcome failed', e);
             }
@@ -433,7 +433,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             console.warn('audit signup pending failed', e);
           }
           try {
-            emailService.sendSignupWelcome(email);
+            emailService.sendSignupWelcome(email, email, `${window.location.origin}/login`, new Date().toLocaleString());
           } catch (e) {
             console.warn('sendSignupWelcome failed', e);
           }
@@ -455,7 +455,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
           throw resetError;
         }
         try {
-          emailService.sendPasswordReset(email);
+          emailService.sendPasswordReset(email, email, `${window.location.origin}/auth/reset-password`, '1 hour');
         } catch (e) {
           console.warn('sendPasswordReset failed', e);
         }
