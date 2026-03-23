@@ -220,10 +220,13 @@ export const PersonalChat: React.FC = () => {
       if (!session) throw new Error("Not authenticated");
 
       // Filter out safety refusals from history to prevent the API from blocking the next turn
-      const filteredHistory = messages.filter(m => 
-        !m.content.includes("safety guidelines") && 
-        !m.content.includes("discuss this topic")
-      );
+      // Also limit history to last 10 messages to avoid token limit issues
+      const filteredHistory = messages
+        .filter(m => 
+          !m.content.includes("safety guidelines") && 
+          !m.content.includes("discuss this topic")
+        )
+        .slice(-10);
 
       const res = await fetch('/api/chat', {
         method: 'POST',
@@ -235,7 +238,7 @@ export const PersonalChat: React.FC = () => {
           messages: filteredHistory,
           currentInput,
           currentFile,
-          systemInstruction
+          systemInstruction: systemInstruction.substring(0, 30000) // Safety truncation
         })
       });
 

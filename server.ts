@@ -516,6 +516,7 @@ async function startServer() {
         ],
         config: {
           systemInstruction,
+          maxOutputTokens: 4096,
         }
       });
 
@@ -561,6 +562,7 @@ async function startServer() {
         contents: prompt || "Please analyze my sleep.",
         config: {
           responseMimeType: 'application/json',
+          maxOutputTokens: 4096,
           responseSchema: {
             type: Type.OBJECT,
             properties: {
@@ -629,6 +631,9 @@ async function startServer() {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: `Provide personalized sleep recommendations based on this user data: ${userData}`,
+        config: {
+          maxOutputTokens: 2048,
+        }
       });
 
       res.json({ text: response.text });
