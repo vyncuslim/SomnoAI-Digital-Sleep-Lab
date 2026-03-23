@@ -89,6 +89,10 @@ export const Navbar: React.FC<NavbarProps> = ({
         </m.button>
 
         <div className="hidden xl:flex items-center gap-8">
+          <div className="px-3 py-1 bg-emerald-500/10 border border-emerald-500/20 rounded-full flex items-center gap-2 mr-4">
+            <span className="w-1 h-1 rounded-full bg-emerald-500 animate-pulse" />
+            <span className="text-[8px] font-black text-emerald-500 uppercase tracking-[0.2em] italic">Secure Session</span>
+          </div>
           {links.map((link: any) => {
             const id = link.id || link.view;
             const isActive = activeView === id;

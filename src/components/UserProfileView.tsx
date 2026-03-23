@@ -8,13 +8,14 @@ import { useAuth } from '../context/AuthContext';
 import { Language, UserProfile } from '../types';
 import { userApi, logAuditLog, supabase } from '../services/supabaseService';
 import { GlassCard } from './GlassCard';
+import { ProfileSkeleton } from './ui/Skeleton';
 
 interface UserProfileViewProps {
   lang: Language;
 }
 
 export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
-  const { profile, user, refreshProfile } = useAuth();
+  const { profile, user, refreshProfile, loading } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState<Partial<UserProfile>>({});
   const [isSaving, setIsSaving] = useState(false);
@@ -121,7 +122,8 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
     placeholderName: lang === 'zh' ? '未设置' : 'Not set'
   };
 
-  if (!profile) return null;
+  if (loading || !profile) return <ProfileSkeleton />;
+
 
   return (
     <div className="max-w-4xl mx-auto px-4 py-12 space-y-8">

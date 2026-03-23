@@ -6,7 +6,8 @@ import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import helmet from 'helmet';
 import Stripe from 'stripe';
-import { GoogleGenAI } from '@google/genai';
+import { rateLimit } from 'express-rate-limit';
+import { GoogleGenAI, Type } from '@google/genai';
 import { writeAuditLog, auditLogger } from './src/services/auditLog';
 import { requireAdminFromRequest } from './src/lib/admin-auth';
 import { getUserFromRequest, requireUserFromRequest, isAdmin } from './src/lib/auth-utils';
@@ -46,6 +47,19 @@ async function startServer() {
     },
     crossOriginEmbedderPolicy: false,
   }));
+
+  // Rate Limiting (Method 61)
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+    standardHeaders: 'draft-7', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
+    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    message: { error: 'Too many requests, please try again later.' }
+  });
+
+  // Apply rate limiter to AI routes
+  app.use('/api/chat', apiLimiter);
+  app.use('/api/analyze-sleep', apiLimiter);
 
   // Stripe Webhook needs raw body
   app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -475,7 +489,7 @@ async function startServer() {
   app.post('/api/chat', async (req, res) => {
     try {
       const user = await requireUserFromRequest(req);
-      const { messages, currentInput, currentFile, systemInstruction } = req.body;
+      const { messages = [], currentInput, currentFile, systemInstruction } = req.body;
 
       const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
       if (!apiKey) {
@@ -497,7 +511,7 @@ async function startServer() {
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview",
         contents: [
-          ...messages.map((m: any) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content }] })),
+          ...messages.map((m: any) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content || "" }] })),
           { role: 'user', parts }
         ],
         config: {
@@ -505,17 +519,26 @@ async function startServer() {
         }
       });
 
+      if (!response.candidates || response.candidates.length === 0) {
+        return res.json({ text: "I'm sorry, I couldn't generate a response. Please try a different query." });
+      }
+
       const text = response.text || "I'm sorry, I cannot discuss this topic due to safety guidelines. How else can I help you with your sleep?";
       res.json({ text });
     } catch (error: any) {
       console.error('Chat API Error:', error);
       
-      // Handle safety block errors from the SDK
-      if (error.message?.includes('SAFETY') || error.message?.includes('blocked')) {
+      // Handle safety block errors from the SDK or any other refusal
+      const isSafetyError = error.message?.toLowerCase().includes('safety') || 
+                           error.message?.toLowerCase().includes('blocked') ||
+                           error.message?.toLowerCase().includes('finish_reason') ||
+                           error.message?.toLowerCase().includes('candidate');
+      
+      if (isSafetyError) {
         return res.json({ text: "I'm sorry, I cannot discuss this topic due to safety guidelines. How else can I help you with your sleep?" });
       }
       
-      res.status(500).json({ text: "An error occurred. Please try a different query." });
+      res.status(500).json({ error: "An error occurred. Please try a different query.", details: error.message });
     }
   });
 
@@ -530,12 +553,11 @@ async function startServer() {
         return res.status(500).json({ error: 'Gemini API key is not configured.' });
       }
 
-      const { GoogleGenAI, Type } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
+        model: 'gemini-3.1-pro-preview',
+        contents: prompt || "Please analyze my sleep.",
         config: {
           responseMimeType: 'application/json',
           responseSchema: {
@@ -565,8 +587,13 @@ async function startServer() {
     } catch (error: any) {
       console.error('Analyze Sleep API Error:', error);
       
-      // Handle safety block errors from the SDK
-      if (error.message?.includes('SAFETY') || error.message?.includes('blocked')) {
+      // Handle safety block errors from the SDK or any other refusal
+      const isSafetyError = error.message?.toLowerCase().includes('safety') || 
+                           error.message?.toLowerCase().includes('blocked') ||
+                           error.message?.toLowerCase().includes('finish_reason') ||
+                           error.message?.toLowerCase().includes('candidate');
+      
+      if (isSafetyError) {
         return res.json({
           overview: "I'm sorry, but I cannot process this specific request due to safety guidelines.",
           insights: ["Safety block triggered"],
@@ -576,10 +603,8 @@ async function startServer() {
       }
 
       res.status(500).json({ 
-        overview: "An error occurred during analysis.",
-        insights: [error.message || "Unknown error"],
-        recommendations: ["Please try again later"],
-        tomorrowOptimization: "N/A"
+        error: "An error occurred during analysis.",
+        details: error.message || "Unknown error"
       });
     }
   });

@@ -14,6 +14,17 @@ export const AuthCallback: React.FC = () => {
     console.log('AuthCallback rendered, URL:', window.location.href);
     
     const checkSession = async () => {
+      const url = new URL(window.location.href);
+      const code = url.searchParams.get('code');
+      
+      if (code) {
+        try {
+          await supabase.auth.exchangeCodeForSession(code);
+        } catch (error) {
+          console.error('Error exchanging code for session:', error);
+        }
+      }
+
       const { data } = await supabase.auth.getSession();
       if (data.session) {
         if (window.opener) {

@@ -1,15 +1,18 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase, logAuditLog } from '../services/supabaseService';
+import { TextObfuscator } from './TextObfuscator';
 import { SleepRecord } from '../types';
 import { Send, User, Bot, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff } from 'lucide-react';
 import { GlassCard } from './GlassCard';
+import { PersonalChatSkeleton } from './ui/Skeleton';
 
 export const PersonalChat: React.FC = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string, fileData?: string }[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
   const [isRecording, setIsRecording] = useState(false);
   const recognitionRef = useRef<any>(null);
   const [sleepData, setSleepData] = useState<SleepRecord[]>([]);
@@ -163,7 +166,23 @@ export const PersonalChat: React.FC = () => {
     }
   };
 
+  const clearChat = async () => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('chat_messages')
+      .delete()
+      .eq('user_id', user.id);
+    
+    if (!error) {
+      setMessages([]);
+    }
+  };
+
   const sendMessage = async () => {
+    if (honeypot) {
+      console.warn('Bot detected via honeypot.');
+      return;
+    }
     if ((!input.trim() && !selectedFile) || loading) return;
     
     if (dailyCount >= DAILY_LIMIT) {
@@ -200,6 +219,12 @@ export const PersonalChat: React.FC = () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error("Not authenticated");
 
+      // Filter out safety refusals from history to prevent the API from blocking the next turn
+      const filteredHistory = messages.filter(m => 
+        !m.content.includes("safety guidelines") && 
+        !m.content.includes("discuss this topic")
+      );
+
       const res = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -207,7 +232,7 @@ export const PersonalChat: React.FC = () => {
           'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          messages,
+          messages: filteredHistory,
           currentInput,
           currentFile,
           systemInstruction
@@ -220,6 +245,9 @@ export const PersonalChat: React.FC = () => {
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.error || errorMessage;
+          if (errorData.details) {
+            errorMessage += ` (${errorData.details})`;
+          }
         } catch (e) {
           errorMessage = errorText || errorMessage;
         }
@@ -239,15 +267,25 @@ export const PersonalChat: React.FC = () => {
     }
   };
 
+  if (authLoading) return <PersonalChatSkeleton />;
+
   return (
     <div className="min-h-screen bg-[#01040a] p-6 flex flex-col items-center">
       <GlassCard className="w-full max-w-2xl h-[700px] flex flex-col p-6 relative overflow-hidden">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold text-white">Personal Sleep Coach</h2>
-          <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
-            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Daily Analysis: {DAILY_LIMIT === Infinity ? 'Unlimited' : `${dailyCount}/${DAILY_LIMIT}`}
-            </span>
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={clearChat}
+              className="text-[10px] font-bold text-rose-500 hover:text-rose-400 uppercase tracking-widest transition-colors"
+            >
+              Clear Chat
+            </button>
+            <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                Daily Analysis: {DAILY_LIMIT === Infinity ? 'Unlimited' : `${dailyCount}/${DAILY_LIMIT}`}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -273,7 +311,7 @@ export const PersonalChat: React.FC = () => {
                   ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20' 
                   : 'bg-white/5 text-slate-200 border border-white/10'
               }`}>
-                {msg.content}
+                <TextObfuscator text={msg.content} />
               </div>
               {msg.role === 'user' && <User className="text-slate-400 shrink-0 mt-1" size={20} />}
             </div>
@@ -303,6 +341,18 @@ export const PersonalChat: React.FC = () => {
             </button>
           </div>
         )}
+
+        {/* Honeypot field - Method 62 */}
+        <div className="hidden" aria-hidden="true">
+          <input 
+            type="text" 
+            name="website_url" 
+            value={honeypot} 
+            onChange={(e) => setHoneypot(e.target.value)} 
+            tabIndex={-1} 
+            autoComplete="off" 
+          />
+        </div>
 
         <div className="flex gap-2 items-end">
           <div className="flex-1 relative">

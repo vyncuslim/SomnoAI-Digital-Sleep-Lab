@@ -4,6 +4,7 @@ import { AuthProvider, useAuth } from './context/AuthContext';
 import { trackPageView } from './services/analytics';
 import { Language } from './types';
 import { LanguageProvider } from './context/LanguageProvider';
+import { ContentProtection } from './components/ContentProtection';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AnalyticsProvider } from './components/AnalyticsProvider';
 import RootLayout from './components/RootLayout';
@@ -356,77 +357,44 @@ const AppContent = () => {
 
   const isOwner = user?.email === 'ongyuze1401@gmail.com';
 
-  useEffect(() => {
-    if (isOwner) return;
-
-    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
-    const handleCopy = (e: ClipboardEvent) => e.preventDefault();
-    const handleCut = (e: ClipboardEvent) => e.preventDefault();
-    const handlePaste = (e: ClipboardEvent) => e.preventDefault();
-    const handleDragStart = (e: DragEvent) => e.preventDefault();
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (
-        e.key === 'F12' ||
-        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
-        (e.ctrlKey && (e.key === 'u' || e.key === 's' || e.key === 'p' || e.key === 'c' || e.key === 'a' || e.key === 'x'))
-      ) {
-        e.preventDefault();
-      }
-    };
-
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('copy', handleCopy);
-    document.addEventListener('cut', handleCut);
-    document.addEventListener('paste', handlePaste);
-    document.addEventListener('dragstart', handleDragStart);
-    document.addEventListener('keydown', handleKeyDown);
-
-    return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('copy', handleCopy);
-      document.removeEventListener('cut', handleCut);
-      document.removeEventListener('paste', handlePaste);
-      document.removeEventListener('dragstart', handleDragStart);
-      document.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOwner]);
-
   return (
     <ErrorBoundary lang={lang}>
       <Watermark />
-      <div className={isOwner ? '' : 'select-none'}>
-        <RootLayout 
-        lang={lang} 
-        activeView={activeView} 
-        onNavigate={handleNavigate} 
-        onLanguageChange={handleLanguageChange}
-        isAuthenticated={!!user}
-        isAdmin={isAdmin}
-        onLogout={handleLogout}
-        showNavbar={showNavbar}
-      >
-        <SchemaMarkup />
-        
-        {!isSupabaseConfigured && (
-          <div className="fixed top-0 left-0 right-0 bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
-            ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
-          </div>
-        )}
-        
-        <LanguageProvider lang={lang} setLang={handleLanguageChange}>
-          {/^\/(cn|en)(\/|$)/.test(location.pathname) ? (
-            <Routes>
-              <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} handleNavigate={handleNavigate} />} />
-              <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} handleNavigate={handleNavigate} />} />
-            </Routes>
-          ) : (
-            <AppRoutes lang="en" setLang={handleLanguageChange} handleNavigate={handleNavigate} />
-          )}
-        </LanguageProvider>
-      </RootLayout>
-    </div>
-  </ErrorBoundary>
-);
+      <ContentProtection>
+        <div className={isOwner ? '' : 'select-none'}>
+          <RootLayout 
+            lang={lang} 
+            activeView={activeView} 
+            onNavigate={handleNavigate} 
+            onLanguageChange={handleLanguageChange}
+            isAuthenticated={!!user}
+            isAdmin={isAdmin}
+            onLogout={handleLogout}
+            showNavbar={showNavbar}
+          >
+            <SchemaMarkup />
+            
+            {!isSupabaseConfigured && (
+              <div className="fixed top-0 left-0 right-0 bg-rose-600 text-white text-[10px] font-black uppercase tracking-[0.2em] py-2 text-center z-[9999] shadow-xl">
+                ⚠️ Supabase Configuration Missing. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in your environment.
+              </div>
+            )}
+            
+            <LanguageProvider lang={lang} setLang={handleLanguageChange}>
+              {/^\/(cn|en)(\/|$)/.test(location.pathname) ? (
+                <Routes>
+                  <Route path="/cn/*" element={<AppRoutes lang="zh" setLang={handleLanguageChange} handleNavigate={handleNavigate} />} />
+                  <Route path="/en/*" element={<AppRoutes lang="en" setLang={handleLanguageChange} handleNavigate={handleNavigate} />} />
+                </Routes>
+              ) : (
+                <AppRoutes lang="en" setLang={handleLanguageChange} handleNavigate={handleNavigate} />
+              )}
+            </LanguageProvider>
+          </RootLayout>
+        </div>
+      </ContentProtection>
+    </ErrorBoundary>
+  );
 };
 
 function App() {

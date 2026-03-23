@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Logo } from './Logo';
 import { OFFICIAL_LINKS } from '../constants/links';
 import { Language } from '../types';
+import { Shield } from 'lucide-react';
 
 interface FooterProps {
   lang?: Language;
@@ -108,15 +109,25 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
           </ul>
         </div>
       </div>
-      <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-xs gap-4">
+        <div className="mt-12 pt-8 border-t border-white/10 flex flex-col md:flex-row justify-between items-center text-xs gap-4">
         <div className="flex items-center gap-4">
-          <span className="text-green-500">● ALL SYSTEMS OPERATIONAL</span>
+          <span className="text-green-500 flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            ALL SYSTEMS OPERATIONAL
+          </span>
+          <span className="text-indigo-400 flex items-center gap-1.5">
+            <Shield size={10} />
+            ENCRYPTED SESSION
+          </span>
           <a href={OFFICIAL_LINKS.discord} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">DISCORD</a>
           <a href={OFFICIAL_LINKS.linkedinCompany} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">LINKEDIN</a>
           <a href={OFFICIAL_LINKS.github} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">GITHUB</a>
           <a href={OFFICIAL_LINKS.supportAssistant} target="_blank" rel="noopener noreferrer" className="hover:text-white transition-colors">AI SUPPORT</a>
         </div>
-        <p>© 2026 SOMNOAI DIGITAL SLEEP LAB. ALL RIGHTS RESERVED. SDSL-CS-001</p>
+        <div className="text-right flex flex-col items-end gap-1">
+          <p>© 2026 SOMNOAI DIGITAL SLEEP LAB. ALL RIGHTS RESERVED. SDSL-CS-001</p>
+          <p className="text-[9px] text-gray-600 uppercase tracking-widest">Unauthorized reproduction or distribution is strictly prohibited.</p>
+        </div>
       </div>
     </footer>
   );

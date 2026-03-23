@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { TextObfuscator } from './TextObfuscator';
 import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, Settings, LogOut, Upload, FileText, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { GridBackground, TelemetryStream, HardwareWidget } from './ui/Components';
 import { useLanguage } from '../context/useLanguage';
 import { supabase } from '../services/supabaseService';
+import { DashboardSkeleton } from './ui/Skeleton';
 
 import { TimePicker } from './ui/TimePicker';
 
@@ -37,7 +39,7 @@ interface HistoryRecord {
 }
 
 export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, loading: authLoading } = useAuth();
   const { langPrefix } = useLanguage();
   const navigate = useNavigate();
   const rawPlan = profile?.subscription_plan || 'go';
@@ -58,6 +60,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   });
 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [honeypot, setHoneypot] = useState('');
   const [analysis, setAnalysis] = useState<AIAnalysis | null>(null);
   const [history, setHistory] = useState<HistoryRecord[]>([]);
   const [dailyCount, setDailyCount] = useState(0);
@@ -133,7 +136,13 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     navigate(`${langPrefix}`);
   };
 
+  if (authLoading) return <DashboardSkeleton />;
+
   const generateAnalysis = async () => {
+    if (honeypot) {
+      console.warn('Bot detected via honeypot.');
+      return;
+    }
     if (dailyCount >= DAILY_LIMIT) {
       alert(lang === 'zh' 
         ? "您已达到每日 4 次分析限制。我们设置此限制是为了确保系统稳定性并避免超出每日配额。请明天再试！" 
@@ -190,6 +199,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
         try {
           const errorData = JSON.parse(errorText);
           errorMessage = errorData.error || errorMessage;
+          if (errorData.details) {
+            errorMessage += ` (${errorData.details})`;
+          }
         } catch (e) {
           errorMessage = errorText || errorMessage;
         }
@@ -282,7 +294,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                 <TelemetryStream />
               </div>
               <div className="text-left lg:text-right">
-                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Daily Analysis</p>
+                <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">
+                  <TextObfuscator text="Daily Analysis" />
+                </p>
                 <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
                   dailyCount >= DAILY_LIMIT && DAILY_LIMIT !== Infinity
                     ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' 
@@ -487,6 +501,18 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                   )}
                 </div>
 
+                {/* Honeypot field - Method 62 */}
+                <div className="hidden" aria-hidden="true">
+                  <input 
+                    type="text" 
+                    name="website_url" 
+                    value={honeypot} 
+                    onChange={(e) => setHoneypot(e.target.value)} 
+                    tabIndex={-1} 
+                    autoComplete="off" 
+                  />
+                </div>
+
                 <button 
                   onClick={generateAnalysis}
                   disabled={isAnalyzing}
@@ -561,7 +587,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                         <Activity size={10} className="animate-pulse" />
                         {t.overview}
                       </div>
-                      <p className="text-lg text-slate-200 leading-relaxed font-medium italic">"{analysis.overview}"</p>
+                      <p className="text-lg text-slate-200 leading-relaxed font-medium italic">
+                        <TextObfuscator text={`"${analysis.overview}"`} />
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -617,7 +645,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
                           {t.tomorrow}
                         </h3>
                         <p className="text-xl md:text-2xl text-white font-black italic uppercase tracking-tight leading-tight group-hover:text-indigo-200 transition-colors drop-shadow-md">
-                          {analysis.tomorrowOptimization}
+                          <TextObfuscator text={analysis.tomorrowOptimization} />
                         </p>
                       </div>
                       <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-indigo-500/20 blur-3xl rounded-full group-hover:bg-indigo-400/30 transition-colors duration-700" />
