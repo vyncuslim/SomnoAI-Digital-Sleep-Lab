@@ -56,7 +56,10 @@ export const serverEmailService = {
       category: 'account_block',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #fee2e2; border-radius: 10px; background-color: #fef2f2;">
-          <h1 style="color: #dc2626;">Account Blocked</h1>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://sleepsomno.com/logo_512.png" alt="SomnoAI Logo" style="width: 60px; height: 60px; object-fit: contain;">
+          </div>
+          <h1 style="color: #dc2626; text-align: center;">Account Blocked</h1>
           <p>Hello,</p>
           <p>Your account at SomnoAI Digital Sleep Lab has been blocked by an administrator.</p>
           <p><strong>Reason:</strong> ${reason}</p>
@@ -74,7 +77,10 @@ export const serverEmailService = {
       category: 'account_unblock',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #dcfce7; border-radius: 10px; background-color: #f0fdf4;">
-          <h1 style="color: #16a34a;">Account Unblocked</h1>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://sleepsomno.com/logo_512.png" alt="SomnoAI Logo" style="width: 60px; height: 60px; object-fit: contain;">
+          </div>
+          <h1 style="color: #16a34a; text-align: center;">Account Unblocked</h1>
           <p>Hello,</p>
           <p>Your account at SomnoAI Digital Sleep Lab has been unblocked. You can now log in and access your dashboard.</p>
           <div style="margin: 30px 0; text-align: center;">
@@ -93,7 +99,10 @@ export const serverEmailService = {
       category: 'account_delete',
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-          <h1 style="color: #4b5563;">Account Deleted</h1>
+          <div style="text-align: center; margin-bottom: 20px;">
+            <img src="https://sleepsomno.com/logo_512.png" alt="SomnoAI Logo" style="width: 60px; height: 60px; object-fit: contain;">
+          </div>
+          <h1 style="color: #4b5563; text-align: center;">Account Deleted</h1>
           <p>Hello,</p>
           <p>This is to inform you that your account at SomnoAI Digital Sleep Lab has been deleted by an administrator.</p>
           <p>All your personal data has been removed from our active systems.</p>

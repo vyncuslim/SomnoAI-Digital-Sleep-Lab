@@ -2,10 +2,14 @@
   "rewrites": [
     {
       "source": "/api/(.*)",
-      "destination": "/api/$1"
+      "destination": "/api/index"
     },
     {
-      "source": "/((?!api/|.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|json|xml|txt|html|woff|woff2|ttf|otf|map)).*)",
+      "source": "/api",
+      "destination": "/api/index"
+    },
+    {
+      "source": "/((?!api/|api$|.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|json|xml|txt|html|woff|woff2|ttf|otf|map)).*)",
       "destination": "/index.html"
     }
   ]

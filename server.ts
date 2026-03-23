@@ -1,7 +1,6 @@
 import express from 'express';
 import { Resend } from 'resend';
 import dotenv from 'dotenv';
-import { createServer as createViteServer } from 'vite';
 import { createClient } from '@supabase/supabase-js';
 import path from 'path';
 import helmet from 'helmet';
@@ -26,9 +25,9 @@ const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 const supabase = (supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey) : null;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
-async function startServer() {
-  const app = express();
+const app = express();
 
+async function startServer() {
   let resend: Resend | null = null;
   if (process.env.RESEND_API_KEY) {
     resend = new Resend(process.env.RESEND_API_KEY);
@@ -868,6 +867,7 @@ async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     console.log('Creating Vite server...');
     try {
+      const { createServer: createViteServer } = await import('vite');
       const vite = await createViteServer({
         server: { middlewareMode: true },
         appType: 'spa',
@@ -891,10 +891,14 @@ async function startServer() {
     });
   }
 
-  const PORT = 3000;
-  app.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
+  if (!process.env.VERCEL) {
+    const PORT = process.env.PORT || 3000;
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  }
 }
 
 startServer();
+
+export default app;
