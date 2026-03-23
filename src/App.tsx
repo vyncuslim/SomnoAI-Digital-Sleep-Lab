@@ -355,13 +355,11 @@ const AppContent = () => {
 
   const activeView = getActiveView();
 
-  const isOwner = user?.email === 'ongyuze1401@gmail.com';
-
   return (
     <ErrorBoundary lang={lang}>
       <Watermark />
       <ContentProtection>
-        <div className={isOwner ? '' : 'select-none'}>
+        <div>
           <RootLayout 
             lang={lang} 
             activeView={activeView} 

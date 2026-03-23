@@ -195,12 +195,17 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
 
       if (!res.ok) {
         const errorText = await res.text();
-        let errorMessage = 'Failed to generate analysis';
+        console.error('Server error response:', errorText);
+        let errorMessage = `Server error (${res.status})`;
         try {
           const errorData = JSON.parse(errorText);
-          errorMessage = errorData.error || errorMessage;
-          if (errorData.details) {
-            errorMessage += ` (${errorData.details})`;
+          if (errorData.error) {
+            errorMessage = errorData.error;
+            if (errorData.details) {
+              errorMessage += `: ${errorData.details}`;
+            }
+          } else {
+            errorMessage = errorText || errorMessage;
           }
         } catch (e) {
           errorMessage = errorText || errorMessage;

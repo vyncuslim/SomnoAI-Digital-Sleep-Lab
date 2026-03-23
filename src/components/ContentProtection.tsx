@@ -19,6 +19,11 @@ export const ContentProtection: React.FC<ContentProtectionProps> = ({ children }
     if (isOwner) return;
 
     const handleSecurity = (e: Event) => {
+      const target = e.target as HTMLElement;
+      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+      
+      if (isInput) return; // Allow normal operations on inputs
+
       e.preventDefault();
       if (e.type === 'copy') {
         setShowCopyToast(true);
@@ -31,10 +36,22 @@ export const ContentProtection: React.FC<ContentProtectionProps> = ({ children }
     const handleBlur = () => setIsWindowFocused(false);
 
     const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
       const key = e.key.toLowerCase();
       const ctrlOrMeta = e.ctrlKey || e.metaKey;
 
-      // Block Ctrl+C, X, V, S, U, P, A
+      // Allow basic typing and shortcuts in inputs
+      if (isInput) {
+        // Still block F12 even in inputs
+        if (e.key === 'F12') {
+          e.preventDefault();
+          return false;
+        }
+        return;
+      }
+
+      // Block Ctrl+C, X, V, S, U, P, A for non-input areas
       if (ctrlOrMeta && ['c', 'x', 'v', 's', 'u', 'p', 'a'].includes(key)) {
         e.preventDefault();
         return false;
@@ -81,11 +98,23 @@ export const ContentProtection: React.FC<ContentProtectionProps> = ({ children }
   }, [profile]);
 
   return (
-    <div className={`relative min-h-screen ${!isOwner ? 'select-none' : ''}`}>
+    <div className="relative min-h-screen">
       {children}
       
       {!isOwner && (
         <>
+          {/* Global Style for Selection Control */}
+          <style dangerouslySetInnerHTML={{ __html: `
+            body {
+              user-select: none !important;
+              -webkit-user-select: none !important;
+            }
+            input, textarea, select, [contenteditable="true"] {
+              user-select: text !important;
+              -webkit-user-select: text !important;
+            }
+          `}} />
+
           {/* Copy Protection Toast */}
           <AnimatePresence>
             {showCopyToast && (

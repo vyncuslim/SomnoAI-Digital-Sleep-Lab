@@ -554,9 +554,10 @@ async function startServer() {
       }
 
       const ai = new GoogleGenAI({ apiKey });
+      console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-3-flash-preview`);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview',
         contents: prompt || "Please analyze my sleep.",
         config: {
           responseMimeType: 'application/json',
@@ -574,6 +575,7 @@ async function startServer() {
       });
 
       if (!response.text) {
+        console.warn(`[DEBUG] No text returned from Gemini for user ${user.id}`);
         return res.json({
           overview: "I'm sorry, but I cannot process this specific request due to safety guidelines.",
           insights: ["Safety block triggered"],
@@ -583,6 +585,7 @@ async function startServer() {
       }
 
       const analysis = JSON.parse(response.text);
+      console.log(`[DEBUG] Analysis successful for user ${user.id}`);
       res.json(analysis);
     } catch (error: any) {
       console.error('Analyze Sleep API Error:', error);
@@ -604,7 +607,8 @@ async function startServer() {
 
       res.status(500).json({ 
         error: "An error occurred during analysis.",
-        details: error.message || "Unknown error"
+        details: error.message || "Unknown error",
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
       });
     }
   });
