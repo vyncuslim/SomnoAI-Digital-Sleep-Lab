@@ -509,6 +509,12 @@ async function startServer() {
       res.json({ text });
     } catch (error: any) {
       console.error('Chat API Error:', error);
+      
+      // Handle safety block errors from the SDK
+      if (error.message?.includes('SAFETY') || error.message?.includes('blocked')) {
+        return res.json({ text: "I'm sorry, I cannot discuss this topic due to safety guidelines. How else can I help you with your sleep?" });
+      }
+      
       res.status(500).json({ text: "An error occurred. Please try a different query." });
     }
   });
@@ -558,6 +564,17 @@ async function startServer() {
       res.json(analysis);
     } catch (error: any) {
       console.error('Analyze Sleep API Error:', error);
+      
+      // Handle safety block errors from the SDK
+      if (error.message?.includes('SAFETY') || error.message?.includes('blocked')) {
+        return res.json({
+          overview: "I'm sorry, but I cannot process this specific request due to safety guidelines.",
+          insights: ["Safety block triggered"],
+          recommendations: ["Please try a different query"],
+          tomorrowOptimization: "N/A"
+        });
+      }
+
       res.status(500).json({ 
         overview: "An error occurred during analysis.",
         insights: [error.message || "Unknown error"],
