@@ -504,10 +504,12 @@ async function startServer() {
         }
       });
 
-      res.json({ text: response.text });
+      const text = response.text || "I'm sorry, I cannot discuss this topic due to safety guidelines. How else can I help you with your sleep?";
+      res.json({ text });
     } catch (error: any) {
       console.error('Chat API Error:', error);
-      res.status(error.message.includes('Unauthorized') ? 401 : 500).json({ error: error.message || 'Failed to generate response' });
+      res.status(500).json({ text: "An error occurred. Please try a different query." });
+    }
     }
   });
 
@@ -543,11 +545,25 @@ async function startServer() {
         },
       });
 
-      const analysis = JSON.parse(response.text || '{}');
+      if (!response.text) {
+        return res.json({
+          overview: "I'm sorry, but I cannot process this specific request due to safety guidelines.",
+          insights: ["Safety block triggered"],
+          recommendations: ["Please try a different query"],
+          tomorrowOptimization: "N/A"
+        });
+      }
+
+      const analysis = JSON.parse(response.text);
       res.json(analysis);
     } catch (error: any) {
       console.error('Analyze Sleep API Error:', error);
-      res.status(500).json({ error: 'Failed to parse analysis' });
+      res.status(500).json({ 
+        overview: "An error occurred during analysis.",
+        insights: [error.message || "Unknown error"],
+        recommendations: ["Please try again later"],
+        tomorrowOptimization: "N/A"
+      });
     }
   });
 

@@ -19,7 +19,11 @@ export const PersonalChat: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const DAILY_LIMIT = (profile?.id === '8f424e4f-e53d-447f-ba5f-98428fe0a34e' || profile?.subscription_plan === 'unlimited') ? Infinity : 4;
+  const isUnlimitedUser = profile?.email === 'ongyuze1401@gmail.com' || 
+                         profile?.id === '8f424e4f-e53d-447f-ba5f-98428fe0a34e' || 
+                         profile?.subscription_plan === 'unlimited';
+
+  const DAILY_LIMIT = isUnlimitedUser ? Infinity : 4;
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -242,12 +246,12 @@ export const PersonalChat: React.FC = () => {
           <h2 className="text-xl font-bold text-white">Personal Sleep Coach</h2>
           <div className="flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
-              Daily Analysis: {dailyCount}/{DAILY_LIMIT}
+              Daily Analysis: {DAILY_LIMIT === Infinity ? 'Unlimited' : `${dailyCount}/${DAILY_LIMIT}`}
             </span>
           </div>
         </div>
 
-        {dailyCount >= DAILY_LIMIT && (
+        {dailyCount >= DAILY_LIMIT && DAILY_LIMIT !== Infinity && (
           <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl flex items-center gap-3 text-amber-200 text-xs">
             <AlertTriangle size={16} />
             <span>您已达到今日限制。请明天再来获取更多分析！</span>

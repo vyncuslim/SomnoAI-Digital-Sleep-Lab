@@ -63,7 +63,11 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const [dailyCount, setDailyCount] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const DAILY_LIMIT = (profile?.id === '8f424e4f-e53d-447f-ba5f-98428fe0a34e' || profile?.subscription_plan === 'unlimited') ? Infinity : 4;
+  const isUnlimitedUser = profile?.email === 'ongyuze1401@gmail.com' || 
+                         profile?.id === '8f424e4f-e53d-447f-ba5f-98428fe0a34e' || 
+                         profile?.subscription_plan === 'unlimited';
+
+  const DAILY_LIMIT = isUnlimitedUser ? Infinity : 4;
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -193,12 +197,9 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       }
 
       const data = await res.json();
-      const resultText = data.text;
-      if (resultText) {
-        const cleanedText = resultText.replace(/```json\n?|\n?```/g, '').trim();
-        const parsedResult = JSON.parse(cleanedText) as AIAnalysis;
-        setAnalysis(parsedResult);
-        saveToHistory(parsedResult);
+      if (data) {
+        setAnalysis(data);
+        saveToHistory(data);
       }
     } catch (error: any) {
       console.error('Error generating analysis:', error);
@@ -283,11 +284,11 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
               <div className="text-left lg:text-right">
                 <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mb-1">Daily Analysis</p>
                 <div className={`inline-flex items-center px-4 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest border ${
-                  dailyCount >= DAILY_LIMIT 
+                  dailyCount >= DAILY_LIMIT && DAILY_LIMIT !== Infinity
                     ? 'bg-rose-500/10 text-rose-400 border-rose-500/30' 
                     : 'bg-indigo-500/10 text-indigo-300 border-indigo-500/30'
                 }`}>
-                  {dailyCount}/{DAILY_LIMIT}
+                  {DAILY_LIMIT === Infinity ? 'Unlimited' : `${dailyCount}/${DAILY_LIMIT}`}
                 </div>
               </div>
             </div>
