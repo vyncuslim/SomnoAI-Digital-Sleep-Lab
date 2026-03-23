@@ -7,6 +7,7 @@ import { LanguageProvider } from './context/LanguageProvider';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { AnalyticsProvider } from './components/AnalyticsProvider';
 import RootLayout from './components/RootLayout';
+import Watermark from './components/Watermark';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HelmetProvider } from 'react-helmet-async';
@@ -353,9 +354,48 @@ const AppContent = () => {
 
   const activeView = getActiveView();
 
+  const isOwner = user?.email === 'ongyuze1401@gmail.com';
+
+  useEffect(() => {
+    if (isOwner) return;
+
+    const handleContextMenu = (e: MouseEvent) => e.preventDefault();
+    const handleCopy = (e: ClipboardEvent) => e.preventDefault();
+    const handleCut = (e: ClipboardEvent) => e.preventDefault();
+    const handlePaste = (e: ClipboardEvent) => e.preventDefault();
+    const handleDragStart = (e: DragEvent) => e.preventDefault();
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'C')) ||
+        (e.ctrlKey && (e.key === 'u' || e.key === 's' || e.key === 'p' || e.key === 'c' || e.key === 'a' || e.key === 'x'))
+      ) {
+        e.preventDefault();
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('copy', handleCopy);
+    document.addEventListener('cut', handleCut);
+    document.addEventListener('paste', handlePaste);
+    document.addEventListener('dragstart', handleDragStart);
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('copy', handleCopy);
+      document.removeEventListener('cut', handleCut);
+      document.removeEventListener('paste', handlePaste);
+      document.removeEventListener('dragstart', handleDragStart);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOwner]);
+
   return (
     <ErrorBoundary lang={lang}>
-      <RootLayout 
+      <Watermark />
+      <div className={isOwner ? '' : 'select-none'}>
+        <RootLayout 
         lang={lang} 
         activeView={activeView} 
         onNavigate={handleNavigate} 
@@ -384,6 +424,7 @@ const AppContent = () => {
           )}
         </LanguageProvider>
       </RootLayout>
+    </div>
   </ErrorBoundary>
 );
 };

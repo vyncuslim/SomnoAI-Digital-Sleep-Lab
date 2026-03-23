@@ -473,6 +473,7 @@ async function startServer() {
   });
 
   app.post('/api/chat', async (req, res) => {
+    try {
       const user = await requireUserFromRequest(req);
       const { messages, currentInput, currentFile, systemInstruction } = req.body;
 
@@ -509,7 +510,6 @@ async function startServer() {
     } catch (error: any) {
       console.error('Chat API Error:', error);
       res.status(500).json({ text: "An error occurred. Please try a different query." });
-    }
     }
   });
 
