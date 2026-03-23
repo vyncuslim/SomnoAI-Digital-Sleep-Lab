@@ -20,7 +20,7 @@ export const ContentProtection: React.FC<ContentProtectionProps> = ({ children }
 
     const handleSecurity = (e: Event) => {
       const target = e.target as HTMLElement;
-      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+      const isInput = target.closest?.('input, textarea, select, [contenteditable]');
       
       if (isInput) return; // Allow normal operations on inputs
 
@@ -37,7 +37,7 @@ export const ContentProtection: React.FC<ContentProtectionProps> = ({ children }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const target = e.target as HTMLElement;
-      const isInput = ['INPUT', 'TEXTAREA', 'SELECT'].includes(target.tagName) || target.isContentEditable;
+      const isInput = target.closest?.('input, textarea, select, [contenteditable]');
       const key = e.key.toLowerCase();
       const ctrlOrMeta = e.ctrlKey || e.metaKey;
 
@@ -109,9 +109,11 @@ export const ContentProtection: React.FC<ContentProtectionProps> = ({ children }
               user-select: none !important;
               -webkit-user-select: none !important;
             }
-            input, textarea, select, [contenteditable="true"] {
+            input, textarea, select, [contenteditable] {
               user-select: text !important;
               -webkit-user-select: text !important;
+              -moz-user-select: text !important;
+              -ms-user-select: text !important;
             }
           `}} />
 

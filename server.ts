@@ -58,8 +58,8 @@ async function startServer() {
   });
 
   // Apply rate limiter to AI routes
-  app.use('/api/chat', apiLimiter);
-  app.use('/api/analyze-sleep', apiLimiter);
+  app.use(['/api/chat', '/api/chat/'], apiLimiter);
+  app.use(['/api/analyze-sleep', '/api/analyze-sleep/'], apiLimiter);
 
   // Stripe Webhook needs raw body
   app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -481,12 +481,12 @@ async function startServer() {
   });
 
   // Debugging middleware for API routes
-  app.use(['/api/chat', '/api/analyze-sleep'], (req, res, next) => {
+  app.use(['/api/chat', '/api/chat/', '/api/analyze-sleep', '/api/analyze-sleep/'], (req, res, next) => {
     console.log(`[DEBUG] Received ${req.method} request to ${req.url}`);
     next();
   });
 
-  app.post('/api/chat', async (req, res) => {
+  app.post(['/api/chat', '/api/chat/'], async (req, res) => {
     try {
       const user = await requireUserFromRequest(req);
       const { messages = [], currentInput, currentFile, systemInstruction } = req.body;
@@ -542,7 +542,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/analyze-sleep', async (req, res) => {
+  app.post(['/api/analyze-sleep', '/api/analyze-sleep/'], async (req, res) => {
     console.log('Received POST request to /api/analyze-sleep');
     try {
       const user = await requireUserFromRequest(req);
