@@ -1,4 +1,9 @@
 {
+  "functions": {
+    "api/index.ts": {
+      "maxDuration": 60
+    }
+  },
   "rewrites": [
     {
       "source": "/api/(.*)",
@@ -7,6 +12,22 @@
     {
       "source": "/api",
       "destination": "/api/index"
+    },
+    {
+      "source": "/en/news/rss.xml",
+      "destination": "/rss.xml"
+    },
+    {
+      "source": "/zh/news/rss.xml",
+      "destination": "/rss.xml"
+    },
+    {
+      "source": "/news/rss.xml",
+      "destination": "/rss.xml"
+    },
+    {
+      "source": "/blog/rss.xml",
+      "destination": "/rss.xml"
     },
     {
       "source": "/((?!api/|api$|.*\\.(?:js|css|png|jpg|jpeg|gif|svg|ico|json|xml|txt|html|woff|woff2|ttf|otf|map)).*)",

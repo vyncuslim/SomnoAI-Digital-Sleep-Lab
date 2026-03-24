@@ -6,6 +6,7 @@ import { SleepRecord } from '../types';
 import { Send, User, Bot, Loader2, Paperclip, X, AlertTriangle, Mic, MicOff } from 'lucide-react';
 import { GlassCard } from './GlassCard';
 import { PersonalChatSkeleton } from './ui/Skeleton';
+import toast from 'react-hot-toast';
 
 export const PersonalChat: React.FC = () => {
   const { user, profile, loading: authLoading } = useAuth();
@@ -122,6 +123,14 @@ export const PersonalChat: React.FC = () => {
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    // Vercel Serverless Functions have a 4.5MB payload limit.
+    // Limit file size to 3MB to account for base64 encoding overhead.
+    if (file.size > 3 * 1024 * 1024) {
+      toast.error("File size cannot exceed 3MB / 文件大小不能超过 3MB");
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
 
     const reader = new FileReader();
     reader.onloadend = () => {
