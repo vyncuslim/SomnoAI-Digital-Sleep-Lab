@@ -64,7 +64,62 @@ const Footer: React.FC<FooterProps> = ({ lang = 'en' }) => {
             <Logo showText={true} className="scale-75 origin-left" />
           </div>
           <p className="text-sm">Our mission is to decode human sleep through neural interfaces and advanced AI telemetry at the SomnoAI Digital Sleep Lab.</p>
-          <div className="mt-4 text-xs">
+          
+          <div className="mt-6">
+            <h4 className="font-bold text-white mb-2 text-sm">{lang === 'zh' ? '订阅新闻通讯' : 'SUBSCRIBE TO NEWSLETTER'}</h4>
+            <form 
+              className="flex flex-col gap-2"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                const form = e.currentTarget;
+                const input = form.querySelector('input');
+                const btn = form.querySelector('button');
+                if (input && btn && input.value) {
+                  const originalText = btn.innerText;
+                  btn.innerText = lang === 'zh' ? '订阅中...' : 'SUBSCRIBING...';
+                  btn.disabled = true;
+                  try {
+                    const res = await fetch('/api/subscribe', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ email: input.value })
+                    });
+                    if (res.ok) {
+                      btn.innerText = lang === 'zh' ? '已订阅!' : 'SUBSCRIBED!';
+                      btn.classList.add('bg-green-600', 'text-white');
+                      btn.classList.remove('bg-white', 'text-black');
+                      input.value = '';
+                    } else {
+                      btn.innerText = lang === 'zh' ? '错误' : 'ERROR';
+                    }
+                  } catch (err) {
+                    btn.innerText = lang === 'zh' ? '错误' : 'ERROR';
+                  }
+                  setTimeout(() => {
+                    btn.innerText = originalText;
+                    btn.disabled = false;
+                    btn.classList.remove('bg-green-600', 'text-white');
+                    btn.classList.add('bg-white', 'text-black');
+                  }, 3000);
+                }
+              }}
+            >
+              <input 
+                type="email" 
+                placeholder={lang === 'zh' ? '输入您的邮箱' : 'Enter your email'}
+                className="bg-white/5 border border-white/10 rounded px-3 py-2 text-sm text-white focus:outline-none focus:border-indigo-500 w-full"
+                required
+              />
+              <button 
+                type="submit"
+                className="bg-white text-black px-4 py-2 rounded text-xs font-bold hover:bg-gray-200 transition-colors w-full"
+              >
+                {lang === 'zh' ? '订阅' : 'SUBSCRIBE'}
+              </button>
+            </form>
+          </div>
+
+          <div className="mt-6 text-xs">
             <p className="text-gray-500">
               {lang === 'zh' 
                 ? "请认准 SomnoAI Digital Sleep Lab 官方品牌。如有任何疑问，请通过官方支持渠道或电子邮件与我们联系。" 

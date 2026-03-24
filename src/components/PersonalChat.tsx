@@ -125,9 +125,9 @@ export const PersonalChat: React.FC = () => {
     if (!file) return;
 
     // Vercel Serverless Functions have a 4.5MB payload limit.
-    // Limit file size to 3MB to account for base64 encoding overhead.
-    if (file.size > 3 * 1024 * 1024) {
-      toast.error("File size cannot exceed 3MB / 文件大小不能超过 3MB");
+    // Limit file size to 2.5MB to account for base64 encoding overhead.
+    if (file.size > 2.5 * 1024 * 1024) {
+      toast.error("File size cannot exceed 2.5MB / 文件大小不能超过 2.5MB");
       if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }

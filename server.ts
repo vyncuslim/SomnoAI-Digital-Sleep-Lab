@@ -254,6 +254,47 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
+  app.post(['/api/subscribe', '/api/subscribe/'], async (req, res) => {
+    console.log('Received subscribe request:', req.method, req.url);
+    const { email } = req.body;
+    
+    if (!email) {
+      return res.status(400).json({ error: 'Email is required' });
+    }
+
+    try {
+      // In a real app, you would save this to a database or newsletter service like Mailchimp/Resend
+      // For now, we'll just log it and return success
+      console.log(`New newsletter subscription: ${email}`);
+      
+      // Optional: Send a welcome email if Resend is configured
+      if (resend) {
+        try {
+          await resend.emails.send({
+            from: 'SomnoAI <noreply@sleepsomno.com>',
+            to: email,
+            subject: 'Welcome to SomnoAI Newsletter',
+            html: `
+              <div style="font-family: sans-serif; max-w: 600px; margin: 0 auto;">
+                <h2>Welcome to SomnoAI</h2>
+                <p>Thank you for subscribing to our newsletter. You will now receive the latest updates on sleep science and AI.</p>
+                <p>Best regards,<br>The SomnoAI Team</p>
+              </div>
+            `
+          });
+        } catch (emailError) {
+          console.error('Failed to send welcome email:', emailError);
+          // Don't fail the subscription if the welcome email fails
+        }
+      }
+
+      res.status(200).json({ success: true, message: 'Subscribed successfully' });
+    } catch (error) {
+      console.error('Subscription error:', error);
+      res.status(500).json({ error: 'Failed to subscribe' });
+    }
+  });
+
   app.post(['/api/contact', '/api/contact/'], async (req, res) => {
     console.log('Received contact request:', req.method, req.url);
     const { subject, email, message } = req.body;
@@ -310,8 +351,8 @@ async function startServer() {
       console.error('Failed to process contact message:', error);
       res.status(500).json({ 
         error: 'Failed to send message',
-        details: error.message,
-        stack: error.stack
+        details: error?.message,
+        stack: error?.stack
       });
     }
   });
@@ -359,7 +400,7 @@ async function startServer() {
       res.status(200).json({ success: true });
     } catch (error: any) {
       console.error('Failed to log login event:', error);
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -386,7 +427,7 @@ async function startServer() {
 
       res.status(200).json({ success: true });
     } catch (error: any) {
-      res.status(500).json({ error: error.message });
+      res.status(500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -448,7 +489,7 @@ async function startServer() {
 
       res.status(200).json(data);
     } catch (error: any) {
-      res.status(error.message.includes('Unauthorized') ? 401 : 500).json({ error: error.message });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 401 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -529,16 +570,17 @@ async function startServer() {
       console.error('Chat API Error:', error);
       
       // Handle safety block errors from the SDK or any other refusal
-      const isSafetyError = error.message?.toLowerCase().includes('safety') || 
-                           error.message?.toLowerCase().includes('blocked') ||
-                           error.message?.toLowerCase().includes('finish_reason') ||
-                           error.message?.toLowerCase().includes('candidate');
+      const errorMessage = String(error?.message || error || '').toLowerCase();
+      const isSafetyError = errorMessage.includes('safety') || 
+                           errorMessage.includes('blocked') ||
+                           errorMessage.includes('finish_reason') ||
+                           errorMessage.includes('candidate');
       
       if (isSafetyError) {
         return res.json({ text: "I'm sorry, I cannot discuss this topic due to safety guidelines. How else can I help you with your sleep?" });
       }
       
-      res.status(500).json({ error: "An error occurred. Please try a different query.", details: error.message });
+      res.status(500).json({ error: "An error occurred. Please try a different query.", details: error?.message });
     }
   });
 
@@ -592,10 +634,11 @@ async function startServer() {
       console.error('Analyze Sleep API Error:', error);
       
       // Handle safety block errors from the SDK or any other refusal
-      const isSafetyError = error.message?.toLowerCase().includes('safety') || 
-                           error.message?.toLowerCase().includes('blocked') ||
-                           error.message?.toLowerCase().includes('finish_reason') ||
-                           error.message?.toLowerCase().includes('candidate');
+      const errorMessage = String(error?.message || error || '').toLowerCase();
+      const isSafetyError = errorMessage.includes('safety') || 
+                           errorMessage.includes('blocked') ||
+                           errorMessage.includes('finish_reason') ||
+                           errorMessage.includes('candidate');
       
       if (isSafetyError) {
         return res.json({
@@ -608,8 +651,8 @@ async function startServer() {
 
       res.status(500).json({ 
         error: "An error occurred during analysis.",
-        details: error.message || "Unknown error",
-        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+        details: error?.message || "Unknown error",
+        stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
       });
     }
   });
@@ -638,7 +681,7 @@ async function startServer() {
       res.json({ text: response.text });
     } catch (error: any) {
       console.error('Sleep Recommendation API Error:', error);
-      res.status(error.message.includes('Unauthorized') ? 401 : 500).json({ error: error.message || 'Failed to generate recommendation' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 401 : 500).json({ error: error?.message || 'Failed to generate recommendation' });
     }
   });
 
@@ -652,7 +695,7 @@ async function startServer() {
       (req as any).adminUser = adminUser;
       next();
     } catch (error: any) {
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 401).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 401).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -665,7 +708,7 @@ async function startServer() {
       res.json({ ok: true });
     } catch (error: any) {
       console.error('Delete user error:', error);
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -676,7 +719,7 @@ async function startServer() {
       await adminServices.blockUser({ adminUserId: adminUser.id, targetUserId, reason });
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -687,7 +730,7 @@ async function startServer() {
       await adminServices.unblockUser({ adminUserId: adminUser.id, targetUserId });
       res.json({ ok: true });
     } catch (error: any) {
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -701,7 +744,7 @@ async function startServer() {
       res.json({ ok: true });
     } catch (error: any) {
       console.error('Update role error:', error);
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 400).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -714,7 +757,7 @@ async function startServer() {
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -733,7 +776,7 @@ async function startServer() {
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -757,7 +800,7 @@ async function startServer() {
       if (error) throw error;
       res.json(users);
     } catch (error: any) {
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 
@@ -820,7 +863,7 @@ async function startServer() {
       const authSchemaInfo = await Promise.all(authTables.map(async (table) => {
         try {
           const { data, error } = await supabase!.schema('auth').from(table).select('*').limit(1);
-          if (error) return { name: table, error: error.message, isAuth: true, schema: 'auth' };
+          if (error) return { name: table, error: error?.message, isAuth: true, schema: 'auth' };
           const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
           return { name: table, columns, isAuth: true, schema: 'auth' };
         } catch (e) {
@@ -859,7 +902,7 @@ async function startServer() {
       if (error) throw error;
       res.json(data);
     } catch (error: any) {
-      res.status(error?.message?.includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
+      res.status(String(error?.message || '').includes('Unauthorized') ? 403 : 500).json({ error: error?.message || 'Unknown error' });
     }
   });
 

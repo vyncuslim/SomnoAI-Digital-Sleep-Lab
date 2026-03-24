@@ -502,28 +502,40 @@ export const LandingPage: React.FC<LandingPageProps> = ({ lang, onNavigate }) =>
             <h3 className="text-4xl font-black uppercase tracking-tight italic text-white">{t.newsletter?.title || "Stay Updated"}</h3>
             <p className="text-xl text-slate-400 italic font-medium max-w-xl mx-auto">{t.newsletter?.subtitle || "Join our newsletter for the latest sleep science and AI updates."}</p>
           </div>
-          <form className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto" onSubmit={(e) => { 
+          <form className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto" onSubmit={async (e) => { 
             e.preventDefault(); 
             const btn = e.currentTarget.querySelector('button');
             const input = e.currentTarget.querySelector('input');
-            if (btn && input) {
+            if (btn && input && input.value) {
               const originalText = btn.innerText;
               btn.disabled = true;
               btn.innerText = t.subscribing || "Subscribing...";
               
-              setTimeout(() => {
-                btn.innerText = t.subscribed || "Subscribed!";
-                btn.classList.add('bg-emerald-600');
-                btn.classList.remove('bg-indigo-600');
-                input.value = '';
+              try {
+                const res = await fetch('/api/subscribe', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ email: input.value })
+                });
                 
-                setTimeout(() => {
-                  btn.innerText = originalText;
-                  btn.classList.remove('bg-emerald-600');
-                  btn.classList.add('bg-indigo-600');
-                  btn.disabled = false;
-                }, 5000);
-              }, 1500);
+                if (res.ok) {
+                  btn.innerText = t.subscribed || "Subscribed!";
+                  btn.classList.add('bg-emerald-600');
+                  btn.classList.remove('bg-indigo-600');
+                  input.value = '';
+                } else {
+                  btn.innerText = "Error";
+                }
+              } catch (err) {
+                btn.innerText = "Error";
+              }
+              
+              setTimeout(() => {
+                btn.innerText = originalText;
+                btn.classList.remove('bg-emerald-600');
+                btn.classList.add('bg-indigo-600');
+                btn.disabled = false;
+              }, 5000);
             }
           }}>
             <input 
