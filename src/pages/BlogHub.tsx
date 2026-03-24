@@ -104,9 +104,11 @@ export const BlogHub: React.FC<BlogHubProps> = ({ lang, onSelectPost }) => {
       </Section>
 
       <div className="text-center pt-12 border-t border-white/5">
-        <div className="flex items-center justify-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
           <InlineCTA text={isZh ? "阅读研究" : "Read Research"} link="/research" />
-          <span className="text-white/20">|</span>
+          <span className="hidden sm:inline text-white/20">|</span>
+          <InlineCTA text={isZh ? "RSS 订阅" : "RSS Feed"} link="/rss.xml" />
+          <span className="hidden sm:inline text-white/20">|</span>
           <InlineCTA text={isZh ? "新闻中心" : "Newsroom"} link="/news" />
         </div>
       </div>

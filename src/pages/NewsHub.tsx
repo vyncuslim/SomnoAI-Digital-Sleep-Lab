@@ -100,9 +100,11 @@ export const NewsHub: React.FC<NewsHubProps> = ({ lang, onSelectArticle }) => {
       </Section>
 
       <div className="text-center pt-12 border-t border-white/5">
-        <div className="flex items-center justify-center gap-6">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6">
           <InlineCTA text={isZh ? "阅读博客" : "Read Blog"} link="/blog" />
-          <span className="text-white/20">|</span>
+          <span className="hidden sm:inline text-white/20">|</span>
+          <InlineCTA text={isZh ? "RSS 订阅" : "RSS Feed"} link="/rss.xml" />
+          <span className="hidden sm:inline text-white/20">|</span>
           <InlineCTA text={isZh ? "联系我们" : "Contact Us"} link="/contact" />
         </div>
       </div>
