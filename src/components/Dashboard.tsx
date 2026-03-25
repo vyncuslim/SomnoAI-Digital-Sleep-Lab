@@ -67,11 +67,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const [dailyCount, setDailyCount] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const isUnlimitedUser = profile?.email === 'ongyuze1401@gmail.com' || 
-                         profile?.id === '8f424e4f-e53d-447f-ba5f-98428fe0a34e' || 
-                         profile?.subscription_plan === 'unlimited';
-
-  const DAILY_LIMIT = isUnlimitedUser ? Infinity : 4;
+  const DAILY_LIMIT = 9999; // Set to 9999 for 'unlimited' experience for all users
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {

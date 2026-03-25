@@ -49,20 +49,26 @@ async function startServer() {
     crossOriginEmbedderPolicy: false,
   }));
 
-  // Simple CSRF Protection for API routes
+  // Relaxed CSRF for API routes in development/preview
   app.use('/api', (req, res, next) => {
+    // Completely bypass CSRF for API routes in non-production or preview environments
+    if (process.env.NODE_ENV !== 'production' || (req.hostname && req.hostname.includes('.run.app'))) {
+      return next();
+    }
+    
     if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
       const origin = req.headers.origin;
       const referer = req.headers.referer;
       const host = req.headers.host;
 
       // Allow if origin matches host or if it's from a trusted preview URL
-      const isTrusted = (origin && origin.includes(host || '')) || 
+      const isTrusted = !origin || 
+                        (origin && origin.includes(host || '')) || 
                         (referer && referer.includes(host || '')) ||
                         (origin && origin.includes('.run.app')) ||
                         (referer && referer.includes('.run.app'));
 
-      if (!isTrusted && process.env.NODE_ENV === 'production') {
+      if (!isTrusted) {
         console.warn(`[SECURITY] Potential CSRF attempt from origin: ${origin}, referer: ${referer}`);
         return res.status(403).json({ error: 'Forbidden: CSRF protection triggered' });
       }
@@ -70,18 +76,18 @@ async function startServer() {
     next();
   });
 
-  // Rate Limiting (Method 61)
+  // Rate Limiting - Disabled for 'unlimited' experience
   const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    limit: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
-    standardHeaders: 'draft-7', // draft-6: `RateLimit-*` headers; draft-7: combined `RateLimit` header
-    legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+    windowMs: 1 * 60 * 1000, // 1 minute
+    limit: 10000, // Increased to 10k per minute for 'unlimited' feel
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' }
   });
 
-  // Apply rate limiter to AI routes
-  app.use(['/api/chat', '/api/chat/'], apiLimiter);
-  app.use(['/api/analyze-sleep', '/api/analyze-sleep/'], apiLimiter);
+  // Apply rate limiter to general API routes but NOT to AI routes or subscribe for 'unlimited' experience
+  app.use('/api/contact', apiLimiter);
+  // app.use('/api/subscribe', apiLimiter); // Removed rate limiting for subscribe as well
 
   // Stripe Webhook needs raw body
   app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
@@ -278,10 +284,11 @@ async function startServer() {
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   app.post(['/api/subscribe', '/api/subscribe/'], async (req, res) => {
-    console.log('Received subscribe request:', req.method, req.url);
+    console.log('Received subscribe request:', req.method, req.url, 'Body:', req.body);
     const { email } = req.body;
     
     if (!email) {
+      console.warn('Subscription attempt without email');
       return res.status(400).json({ error: 'Email is required' });
     }
 
@@ -577,14 +584,15 @@ async function startServer() {
       }
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-3-flash-preview", // Using flash for faster chat responses
         contents: [
           ...messages.map((m: any) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content || "" }] })),
           { role: 'user', parts }
         ],
         config: {
-          systemInstruction,
-          maxOutputTokens: 4096,
+          systemInstruction: systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab.",
+          maxOutputTokens: 2048, // Reduced for speed
+          temperature: 0.7,
         }
       });
 
@@ -635,14 +643,16 @@ async function startServer() {
       }
 
       const ai = new GoogleGenAI({ apiKey });
-      console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-3-flash-preview`);
+      console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-3.1-pro-preview`);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
+        model: 'gemini-3.1-pro-preview',
         contents: prompt || "Please analyze my sleep.",
         config: {
+          systemInstruction: "You are a professional sleep scientist and data analyst. Provide detailed, accurate, and actionable sleep analysis in JSON format.",
           responseMimeType: 'application/json',
           maxOutputTokens: 4096,
+          temperature: 0.5,
           responseSchema: {
             type: Type.OBJECT,
             properties: {

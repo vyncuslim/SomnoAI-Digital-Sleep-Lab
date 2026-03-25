@@ -9,7 +9,7 @@ import { PersonalChatSkeleton } from './ui/Skeleton';
 import toast from 'react-hot-toast';
 
 export const PersonalChat: React.FC = () => {
-  const { user, profile, loading: authLoading } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [messages, setMessages] = useState<{ role: 'user' | 'model', content: string, fileData?: string }[]>([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,11 +23,7 @@ export const PersonalChat: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const isUnlimitedUser = profile?.email === 'ongyuze1401@gmail.com' || 
-                         profile?.id === '8f424e4f-e53d-447f-ba5f-98428fe0a34e' || 
-                         profile?.subscription_plan === 'unlimited';
-
-  const DAILY_LIMIT = isUnlimitedUser ? Infinity : 4;
+  const DAILY_LIMIT = 9999; // Set to 9999 for 'unlimited' experience for all users
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
