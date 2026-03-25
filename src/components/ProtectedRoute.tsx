@@ -15,7 +15,6 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, adminO
   const { user, loading, isAdmin, isVerified } = useAuth();
   const { langPrefix } = useLanguage();
   const location = useLocation();
-  console.log('ProtectedRoute rendered for path:', location.pathname, 'User:', user);
 
   if (loading) {
     return (

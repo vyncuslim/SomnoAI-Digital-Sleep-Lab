@@ -67,7 +67,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
   const [dailyCount, setDailyCount] = useState(0);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
-  const DAILY_LIMIT = 9999; // Set to 9999 for 'unlimited' experience for all users
+  const DAILY_LIMIT = Infinity; // Set to Infinity for 'unlimited' experience for all users
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
@@ -140,10 +140,10 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
       console.warn('Bot detected via honeypot.');
       return;
     }
-    if (dailyCount >= DAILY_LIMIT) {
+    if (dailyCount >= DAILY_LIMIT && DAILY_LIMIT !== Infinity) {
       alert(lang === 'zh' 
-        ? "您已达到每日 4 次分析限制。我们设置此限制是为了确保系统稳定性并避免超出每日配额。请明天再试！" 
-        : "You have reached the daily limit of 4 analyses. We set this limit to ensure system stability and avoid exceeding daily quotas. Please try again tomorrow!");
+        ? "您已达到每日分析限制。请明天再试！" 
+        : "You have reached the daily analysis limit. Please try again tomorrow!");
       return;
     }
     setIsAnalyzing(true);

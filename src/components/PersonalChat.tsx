@@ -23,7 +23,7 @@ export const PersonalChat: React.FC = () => {
   const chatEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const DAILY_LIMIT = 9999; // Set to 9999 for 'unlimited' experience for all users
+  const DAILY_LIMIT = Infinity; // Set to Infinity for 'unlimited' experience for all users
 
   useEffect(() => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
@@ -190,10 +190,10 @@ export const PersonalChat: React.FC = () => {
     }
     if ((!input.trim() && !selectedFile) || loading) return;
     
-    if (dailyCount >= DAILY_LIMIT) {
+    if (dailyCount >= DAILY_LIMIT && DAILY_LIMIT !== Infinity) {
       setMessages(prev => [...prev, { 
         role: 'model', 
-        content: "您已达到每日 4 次分析限制。我们设置此限制是为了确保系统稳定性并避免超出每日配额。请明天再试！" 
+        content: "您已达到每日分析限制。请明天再试！" 
       }]);
       return;
     }

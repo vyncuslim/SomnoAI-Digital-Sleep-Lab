@@ -13,7 +13,7 @@ const SleepRecommendation: React.FC = () => {
                          profile?.email === 'ongyuze1401@gmail.com' || 
                          profile?.subscription_plan === 'unlimited';
 
-  const DAILY_LIMIT = isUnlimitedUser ? Infinity : 4;
+  const DAILY_LIMIT = Infinity;
 
   const handleGetRecommendation = async () => {
     if (dailyCount >= DAILY_LIMIT) {

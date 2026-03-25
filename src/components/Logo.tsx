@@ -18,12 +18,22 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true, cod
           referrerPolicy="no-referrer"
           onError={(e) => {
             const target = e.target as HTMLImageElement;
-            console.error("Logo image failed to load from /logo_512.png, trying fallback. Path:", target.src);
-            target.src = "https://ais-dev-v4ejkidirch3jvmnuho5bc-29986613499.asia-east1.run.app/logo_512.png";
-            target.onerror = () => {
-              console.error("Secondary logo fallback failed, using placeholder");
-              target.src = "https://picsum.photos/seed/sleep/200/200";
-            };
+            const currentSrc = target.src;
+            
+            if (currentSrc.includes('/logo_512.png') && !currentSrc.startsWith('http')) {
+              // Try absolute path if relative failed
+              console.warn("Logo relative path failed, trying absolute path");
+              target.src = window.location.origin + "/logo_512.png";
+            } else if (currentSrc.includes('logo_512.png')) {
+              // Try the dev URL provided in context if self-origin failed
+              console.warn("Logo self-origin failed, trying dev URL fallback");
+              target.src = "https://ais-dev-v4ejkidirch3jvmnuho5bc-29986613499.asia-east1.run.app/logo_512.png";
+            } else {
+              // Final fallback to a robust SVG placeholder
+              console.error("All logo image sources failed, using SVG placeholder");
+              target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236366f1'/%3E%3Cpath d='M30 50 Q50 20 70 50 T70 80' fill='none' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E";
+              target.onerror = null; // Prevent infinite loop
+            }
           }}
         />
         <div className="absolute inset-0 rounded-xl border border-white/10 pointer-events-none" />

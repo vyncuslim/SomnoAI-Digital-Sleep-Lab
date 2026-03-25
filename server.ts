@@ -284,18 +284,17 @@ async function startServer() {
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   app.post(['/api/subscribe', '/api/subscribe/'], async (req, res) => {
-    console.log('Received subscribe request:', req.method, req.url, 'Body:', req.body);
+    console.log('Received subscribe request:', req.method, req.url);
     const { email } = req.body;
     
-    if (!email) {
-      console.warn('Subscription attempt without email');
-      return res.status(400).json({ error: 'Email is required' });
+    if (!email || typeof email !== 'string') {
+      return res.status(400).json({ error: 'A valid email is required' });
     }
 
     try {
       // In a real app, you would save this to a database or newsletter service like Mailchimp/Resend
       // For now, we'll just log it and return success
-      console.log(`New newsletter subscription: ${email}`);
+      console.log(`New newsletter subscription request`);
       
       // Optional: Send a welcome email if Resend is configured
       if (resend) {
@@ -562,8 +561,9 @@ async function startServer() {
   });
 
   app.post(['/api/chat', '/api/chat/'], async (req, res) => {
+    let user: any = null;
     try {
-      const user = await requireUserFromRequest(req);
+      user = await requireUserFromRequest(req);
       const { messages = [], currentInput, currentFile, systemInstruction } = req.body;
 
       const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -609,7 +609,6 @@ async function startServer() {
 
       // Handle Quota Reached
       if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('limit')) {
-        const user = (req as any).user;
         await sendTelegramMessage(`⚠️ <b>AI Quota Reached</b>\nUser: <code>${user?.id || 'Unknown'}</code>\nEndpoint: <code>/api/chat</code>`);
         return res.status(429).json({ 
           error: "System is currently busy (quota reached). Please try again in a few minutes or tomorrow.",
@@ -627,14 +626,17 @@ async function startServer() {
         return res.json({ text: "I'm sorry, I cannot discuss this topic due to safety guidelines. How else can I help you with your sleep?" });
       }
       
-      res.status(500).json({ error: "An error occurred. Please try a different query.", details: error?.message });
+      const status = errorMessage.includes('unauthorized') ? 401 : 
+                     errorMessage.includes('blocked') ? 403 : 500;
+      res.status(status).json({ error: error?.message || "An error occurred. Please try a different query." });
     }
   });
 
   app.post(['/api/analyze-sleep', '/api/analyze-sleep/'], async (req, res) => {
     console.log('Received POST request to /api/analyze-sleep');
+    let user: any = null;
     try {
-      const user = await requireUserFromRequest(req);
+      user = await requireUserFromRequest(req);
       const { prompt, lang, selectedFileName } = req.body;
 
       const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
@@ -676,7 +678,14 @@ async function startServer() {
         });
       }
 
-      const analysis = JSON.parse(response.text);
+      let analysis;
+      try {
+        analysis = JSON.parse(response.text);
+      } catch (parseError) {
+        console.error('Failed to parse Gemini response as JSON:', response.text);
+        return res.status(500).json({ error: 'Failed to parse sleep analysis data. Please try again.' });
+      }
+      
       console.log(`[DEBUG] Analysis successful for user ${user.id}`);
       res.json(analysis);
     } catch (error: any) {
@@ -708,10 +717,11 @@ async function startServer() {
         });
       }
 
-      res.status(500).json({ 
-        error: "An error occurred during analysis.",
-        details: error?.message || "Unknown error",
-        stack: process.env.NODE_ENV === 'development' ? error?.stack : undefined
+      const status = errorMessage.includes('unauthorized') ? 401 : 
+                     errorMessage.includes('blocked') ? 403 : 500;
+      res.status(status).json({ 
+        error: error?.message || "An error occurred during analysis.",
+        details: error?.message || "Unknown error"
       });
     }
   });
@@ -726,7 +736,6 @@ async function startServer() {
         return res.status(500).json({ error: 'Gemini API key is not configured.' });
       }
 
-      const { GoogleGenAI } = await import('@google/genai');
       const ai = new GoogleGenAI({ apiKey });
 
       const response = await ai.models.generateContent({
@@ -740,7 +749,10 @@ async function startServer() {
       res.json({ text: response.text });
     } catch (error: any) {
       console.error('Sleep Recommendation API Error:', error);
-      res.status(String(error?.message || '').includes('Unauthorized') ? 401 : 500).json({ error: error?.message || 'Failed to generate recommendation' });
+      const errorMessage = String(error?.message || '').toLowerCase();
+      const status = errorMessage.includes('unauthorized') ? 401 : 
+                     errorMessage.includes('blocked') ? 403 : 500;
+      res.status(status).json({ error: error?.message || 'Failed to generate recommendation' });
     }
   });
 

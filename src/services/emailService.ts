@@ -189,7 +189,6 @@ export const emailService = {
           `,
         }),
       }, 'sendBlockNotification', 'CRITICAL');
-      console.log('Block notification sent to:', email);
     } catch (error) {
       console.warn('Failed to send block notification:', error);
     }

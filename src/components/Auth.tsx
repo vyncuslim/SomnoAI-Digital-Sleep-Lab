@@ -210,8 +210,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setSuccessMessage(null);
 
     try {
+      const trimmedEmail = email.trim().toLowerCase();
+      const trimmedPassword = password.trim();
+
       console.log('handleSubmit started', { 
         view, 
+        email: trimmedEmail,
         requiresCaptcha: (view === 'login' || view === 'signup' || view === 'forgot-password' || (view === 'otp' && !showOtpInput)), 
         hasToken: !!turnstileToken, 
         isTurnstileEnabled, 
@@ -242,12 +246,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
       }
 
       if (view === 'signup') {
-        const emailValidation = validateEmail(email);
+        const emailValidation = validateEmail(trimmedEmail);
         if (!emailValidation.valid) {
           throw new Error(emailValidation.message);
         }
 
-        if (password !== confirmPassword) {
+        if (trimmedPassword !== confirmPassword.trim()) {
           throw new Error('Passwords do not match.');
         }
       }
@@ -258,8 +262,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         }
 
         const { data, error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+          email: trimmedEmail,
+          password: trimmedPassword,
           options: {
             captchaToken: turnstileToken || undefined,
           },
@@ -268,7 +272,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         if (signInError) {
           console.error('Supabase signInWithPassword error:', signInError);
           try {
-            await securityService.handleFailedLogin(email);
+            await securityService.handleFailedLogin(trimmedEmail);
           } catch (e) {
             console.warn('handleFailedLogin failed', e);
           }
@@ -277,7 +281,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
-                email, 
+                email: trimmedEmail, 
                 status: 'failed', 
                 errorCode: signInError.message 
               })
@@ -308,7 +312,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ 
-                    email, 
+                    email: trimmedEmail, 
                     status: 'failed', 
                     errorCode: `Blocked user attempted login. Role: ${profileData.role || 'user'}. Code: ${profileData.block_code || 'N/A'}` 
                   })
@@ -335,7 +339,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       userId: data.user.id,
-                      email,
+                      email: trimmedEmail,
                       status: 'success',
                       metadata: {
                         role: profileData?.role || 'user',
@@ -348,7 +352,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                console.warn('audit login success failed', e);
              }
              try {
-               notificationService.sendLoginNotification(email, data.user.id);
+               notificationService.sendLoginNotification(trimmedEmail, data.user.id);
              } catch (e) {
                console.warn('sendLoginNotification failed', e);
              }
@@ -358,9 +362,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         
         navigate(`${langPrefix}/dashboard`);
       } else if (view === 'signup') {
+        const trimmedEmail = email.trim().toLowerCase();
+        const trimmedPassword = password.trim();
+
         const { data, error: signUpError } = await supabase.auth.signUp({
-          email,
-          password,
+          email: trimmedEmail,
+          password: trimmedPassword,
           options: {
             captchaToken: turnstileToken || undefined,
             emailRedirectTo: `${window.location.origin}/auth/verify`,
@@ -375,7 +382,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 userId: null,
-                email,
+                email: trimmedEmail,
                 success: false,
                 errorCode: signUpError.message
               })
@@ -396,7 +403,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({
                       userId: data.user.id,
-                      email,
+                      email: trimmedEmail,
                       success: true
                   })
               }, 'Auth Signup Success');
@@ -404,12 +411,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               console.warn('audit signup success failed', e);
             }
             try {
-              notificationService.sendLoginNotification(email, data.user.id);
+              notificationService.sendLoginNotification(trimmedEmail, data.user.id);
             } catch (e) {
               console.warn('sendLoginNotification failed', e);
             }
             try {
-              emailService.sendSignupWelcome(email, email, `${window.location.origin}/login`, new Date().toLocaleString());
+              emailService.sendSignupWelcome(trimmedEmail, trimmedEmail, `${window.location.origin}/login`, new Date().toLocaleString());
             } catch (e) {
               console.warn('sendSignupWelcome failed', e);
             }
@@ -424,7 +431,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                   userId: data.user?.id ?? null,
-                  email,
+                  email: trimmedEmail,
                   success: true,
                   needsEmailConfirmation: true
               })
@@ -433,38 +440,40 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
             console.warn('audit signup pending failed', e);
           }
           try {
-            emailService.sendSignupWelcome(email, email, `${window.location.origin}/login`, new Date().toLocaleString());
+            emailService.sendSignupWelcome(trimmedEmail, trimmedEmail, `${window.location.origin}/login`, new Date().toLocaleString());
           } catch (e) {
             console.warn('sendSignupWelcome failed', e);
           }
           setSuccessMessage('Registration successful! Please check your email to verify your account before logging in.');
-          navigate(`${langPrefix}/auth/verify-email`, { state: { email } });
+          navigate(`${langPrefix}/auth/verify-email`, { state: { email: trimmedEmail } });
         }
       } else if (view === 'forgot-password') {
-        const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        const trimmedEmail = email.trim().toLowerCase();
+        const { error: resetError } = await supabase.auth.resetPasswordForEmail(trimmedEmail, {
           redirectTo: `${window.location.origin}/auth/reset-password`,
           captchaToken: turnstileToken || undefined,
         });
         
         if (resetError) {
           try {
-            await logError(null, resetError, `Password reset request failed for ${email}`);
+            await logError(null, resetError, `Password reset request failed for ${trimmedEmail}`);
           } catch (e) {
             console.warn('logError failed', e);
           }
           throw resetError;
         }
         try {
-          emailService.sendPasswordReset(email, email, `${window.location.origin}/auth/reset-password`, '1 hour');
+          emailService.sendPasswordReset(trimmedEmail, trimmedEmail, `${window.location.origin}/auth/reset-password`, '1 hour');
         } catch (e) {
           console.warn('sendPasswordReset failed', e);
         }
         setSuccessMessage(lang === 'zh' ? '重置链接已发送到您的邮箱。' : 'Password reset link sent to your email.');
       } else if (view === 'otp') {
+        const trimmedEmail = email.trim().toLowerCase();
         if (showOtpInput) {
           console.log('Verifying OTP:', { otpType });
           const { data, error: verifyError } = await supabase.auth.verifyOtp({
-            email: email,
+            email: trimmedEmail,
             token,
             type: 'magiclink',
           });
@@ -485,7 +494,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
 
         console.log('Requesting new OTP:', { otpType });
         const { error: otpError } = await supabase.auth.signInWithOtp({
-          email: email,
+          email: trimmedEmail,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
             captchaToken: turnstileToken || undefined,
@@ -608,7 +617,8 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
   };
 
   const handleResendVerification = async () => {
-    if (!email) {
+    const trimmedEmail = email.trim().toLowerCase();
+    if (!trimmedEmail) {
       setError('Please enter your email address.');
       return;
     }
@@ -617,12 +627,12 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
     setError(null);
     setSuccessMessage(null);
     try {
-      console.log('Resending verification:', { view, otpType, email });
+      console.log('Resending verification:', { view, otpType, email: trimmedEmail });
       
       if (otpType === 'magiclink' || view === 'otp') {
         // For magic link / passwordless login, use signInWithOtp
         const { error } = await supabase.auth.signInWithOtp({
-          email: email,
+          email: trimmedEmail,
           options: {
             emailRedirectTo: `${window.location.origin}/dashboard`,
             captchaToken: turnstileToken || undefined,
@@ -634,7 +644,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         // For signup confirmation
         const { error } = await supabase.auth.resend({
           type: 'signup',
-          email: email,
+          email: trimmedEmail,
         });
         if (error) throw error;
         setSuccessMessage(lang === 'zh' ? '验证邮件已重发，请检查您的邮箱。' : 'Verification email resent! Please check your inbox.');
@@ -797,6 +807,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                       onChange={(e: any) => setEmail(e.target.value)}
                       placeholder="name@example.com"
                       required
+                      autoComplete="email"
                       disabled={showOtpInput}
                     />
                   </motion.div>
@@ -849,6 +860,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                         onChange={(e: any) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         required
+                        autoComplete={view === 'login' ? 'current-password' : 'new-password'}
                         rightElement={
                           view === 'login' && (
                             <button 
@@ -876,6 +888,7 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                             value={pin}
                             onChange={(e) => setPin(e.target.value.replace(/\D/g, ''))}
                             placeholder="••••••"
+                            autoComplete="off"
                             className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 pl-12 pr-4 text-sm text-white font-mono tracking-[0.5em] focus:outline-none focus:border-indigo-500/50 focus:ring-1 focus:ring-indigo-500/50 transition-all placeholder-slate-700/50"
                           />
                         </div>
