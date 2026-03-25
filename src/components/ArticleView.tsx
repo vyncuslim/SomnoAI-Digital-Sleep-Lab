@@ -38,8 +38,8 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
       "dateModified": `${article.date}T10:00:00+08:00`,
       "author": {
         "@type": "Person",
-        "name": article.author.name,
-        "jobTitle": article.author.role,
+        "name": article.author?.name || "SomnoAI Expert",
+        "jobTitle": article.author?.role || "Sleep Specialist",
         "url": "https://sleepsomno.com/about"
       },
       "publisher": {
@@ -112,8 +112,8 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
                     </div>
                     <div>
                        <p className="text-[10px] font-black text-slate-500 uppercase tracking-widest">{t.author}</p>
-                       <p className="text-lg font-black text-white italic leading-tight">{article.author.name}</p>
-                       <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{article.author.role}</p>
+                       <p className="text-lg font-black text-white italic leading-tight">{article.author?.name || "SomnoAI Expert"}</p>
+                       <p className="text-[10px] font-bold text-indigo-400 uppercase tracking-widest">{article.author?.role || "Sleep Specialist"}</p>
                     </div>
                 </address>
              </div>
@@ -146,15 +146,15 @@ export const ArticleView: React.FC<ArticleViewProps> = ({ article, lang, onBack 
            <div className="flex flex-col md:flex-row gap-12 items-start md:items-center">
               <div className="w-28 h-28 rounded-[3rem] bg-indigo-600 flex items-center justify-center text-white text-5xl font-black italic shadow-2xl shrink-0 group relative overflow-hidden">
                 <div className="absolute inset-0 bg-gradient-to-br from-indigo-400 to-indigo-700" />
-                <span className="relative z-10">{article.author.name[0]}</span>
+                <span className="relative z-10">{(article.author?.name || "S")[0]}</span>
               </div>
               <div className="space-y-6 flex-1">
                  <div>
-                    <h4 className="text-3xl font-black italic text-white uppercase tracking-tight">{article.author.name}</h4>
-                    <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.4em]">{article.author.role}</p>
+                    <h4 className="text-3xl font-black italic text-white uppercase tracking-tight">{article.author?.name || "SomnoAI Expert"}</h4>
+                    <p className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.4em]">{article.author?.role || "Sleep Specialist"}</p>
                  </div>
                  <p className="text-base text-slate-400 italic leading-relaxed font-medium">
-                   {article.author.bio}
+                   {article.author?.bio || "Dedicated to improving sleep through AI."}
                  </p>
                  <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-white/5">
                     <span className="text-[10px] font-black text-slate-600 uppercase tracking-widest flex items-center gap-2">

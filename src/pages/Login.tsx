@@ -29,10 +29,13 @@ const Login = () => {
     setLoading(true);
     setError(null);
 
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
 
       if (error) {
@@ -42,7 +45,7 @@ const Login = () => {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
-              email, 
+              email: trimmedEmail, 
               status: 'failed', 
               errorCode: error.message 
             }),
@@ -75,7 +78,7 @@ const Login = () => {
 
       navigate(from, { replace: true });
     } catch (err: any) {
-      setError(err.message || t('auth.loginError'));
+      setError(err?.message || t('auth.loginError'));
     } finally {
       setLoading(false);
     }

@@ -20,11 +20,7 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true, cod
             const target = e.target as HTMLImageElement;
             const currentSrc = target.src;
             
-            if (currentSrc.includes('/logo_512.png') && !currentSrc.startsWith('http')) {
-              // Try absolute path if relative failed
-              console.warn("Logo relative path failed, trying absolute path");
-              target.src = window.location.origin + "/logo_512.png";
-            } else if (currentSrc.includes('logo_512.png')) {
+            if (currentSrc.endsWith('/logo_512.png') && !currentSrc.includes('ais-dev')) {
               // Try the dev URL provided in context if self-origin failed
               console.warn("Logo self-origin failed, trying dev URL fallback");
               target.src = "https://ais-dev-v4ejkidirch3jvmnuho5bc-29986613499.asia-east1.run.app/logo_512.png";

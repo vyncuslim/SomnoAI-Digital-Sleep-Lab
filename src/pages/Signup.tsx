@@ -14,7 +14,10 @@ const Signup: React.FC = () => {
   const [privacy, setPrivacy] = useState(false);
 
   const handleSignup = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email.trim().toLowerCase();
+    const trimmedPassword = password.trim();
+
+    if (!trimmedEmail || !trimmedPassword) {
       toast.error(t('auth.fillAllFields'));
       return;
     }
@@ -25,8 +28,8 @@ const Signup: React.FC = () => {
 
     try {
       const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
+        email: trimmedEmail,
+        password: trimmedPassword,
       });
 
       // Record signup attempt
@@ -36,7 +39,7 @@ const Signup: React.FC = () => {
         body: JSON.stringify({
           success: !error,
           userId: data.user?.id ?? null,
-          email: email,
+          email: trimmedEmail,
           errorCode: error?.message ?? null,
           needsEmailConfirmation: !!data.user && !data.user.identities?.length
         }),
@@ -45,7 +48,7 @@ const Signup: React.FC = () => {
       if (error) throw error;
       toast.success(t('auth.signupSuccess'));
     } catch (err: any) {
-      toast.error(err.message || t('auth.signupError'));
+      toast.error(err?.message || t('auth.signupError'));
     }
   };
 

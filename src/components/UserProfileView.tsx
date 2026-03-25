@@ -38,7 +38,9 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({ lang }) => {
     setIsUploading(true);
     setMessage(null);
     
-    const file = event.target.files[0];
+    const file = event.target.files?.[0];
+    if (!file) return;
+    
     const fileExt = file.name.split('.').pop();
     const fileName = `${user.id}-${Math.random()}.${fileExt}`;
     const filePath = `avatars/${fileName}`;

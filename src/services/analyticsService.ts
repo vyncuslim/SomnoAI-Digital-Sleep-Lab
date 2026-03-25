@@ -13,11 +13,12 @@ export const analyticsService = {
       else if (/tablet/i.test(ua)) deviceType = 'tablet';
 
       // 2. Update analytics_device
-      await supabase.rpc('increment_device_analytics', { 
+      const { error: deviceError } = await supabase.rpc('increment_device_analytics', { 
         d_type: deviceType, 
         browser_info: ua, 
         os_info: platform 
       });
+      if (deviceError) console.warn('increment_device_analytics failed:', deviceError.message);
 
       // 3. Update analytics_country (using a simple API or just placeholder for now)
       // In a real app, we'd use a geo-ip service.
@@ -25,26 +26,29 @@ export const analyticsService = {
       const lang = navigator.language || 'en-US';
       const countryCode = lang.split('-')[1] || 'US';
       
-      await supabase.rpc('increment_country_analytics', { 
+      const { error: countryError } = await supabase.rpc('increment_country_analytics', { 
         c_code: countryCode,
         c_name: new Intl.DisplayNames(['en'], { type: 'region' }).of(countryCode) || 'Unknown'
       });
+      if (countryError) console.warn('increment_country_analytics failed:', countryError.message);
 
       // 4. Update user_app_status if userId is provided
       if (userId) {
-        await supabase.from('user_app_status').upsert({
+        const { error: statusError } = await supabase.from('user_app_status').upsert({
           user_id: userId,
           last_seen: new Date().toISOString(),
           is_online: true,
           updated_at: new Date().toISOString()
         });
+        if (statusError) console.warn('user_app_status upsert failed:', statusError.message);
 
         // 5. Log the login
-        await supabase.from('logins').insert({
+        const { error: loginError } = await supabase.from('logins').insert({
           user_id: userId,
           ip_address: 'client-side', // We can't get real IP on client easily
-          user_agent: ua
+          device_info: ua
         });
+        if (loginError) console.warn('logins insert failed:', loginError.message);
       }
 
       // 6. Realtime analytics

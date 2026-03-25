@@ -2,7 +2,7 @@ import { createClient } from '@supabase/supabase-js';
 import { supabaseAdmin } from '../services/supabaseAdmin';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
-const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || '';
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 
 export async function getUserFromRequest(req: any) {
   const authHeader = req.headers.authorization;
@@ -13,30 +13,47 @@ export async function getUserFromRequest(req: any) {
   const token = authHeader.split(' ')[1];
   
   try {
+    if (!supabaseUrl || !supabaseAnonKey) {
+      console.error('[AUTH-UTILS] Supabase URL or Anon Key is missing in environment variables');
+      return null;
+    }
+
     const userClient = createClient(supabaseUrl, supabaseAnonKey, {
       global: { headers: { Authorization: `Bearer ${token}` } }
     });
 
     const { data: { user }, error: authError } = await userClient.auth.getUser();
     
-    if (authError || !user) {
+    if (authError) {
+      console.error('[AUTH-UTILS] getUser error:', authError);
+      return null;
+    }
+
+    if (!user) {
+      console.warn('[AUTH-UTILS] No user found for token');
       return null;
     }
 
     // Check if user is blocked in the profiles table
-    const { data: profile } = await supabaseAdmin
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('profiles')
       .select('is_blocked, block_code')
       .eq('id', user.id)
       .single();
 
+    if (profileError) {
+      console.warn('[AUTH-UTILS] Error fetching profile for block check:', profileError);
+      // We continue if profile fetch fails, unless it's a critical error
+    }
+
     if (profile?.is_blocked) {
-      console.warn(`Blocked user ${user.id} attempted to access API`);
+      console.warn(`[AUTH-UTILS] Blocked user ${user.id} attempted to access API`);
       return null;
     }
 
     return user;
   } catch (error) {
+    console.error('[AUTH-UTILS] Unexpected error in getUserFromRequest:', error);
     return null;
   }
 }

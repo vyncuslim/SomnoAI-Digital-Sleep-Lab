@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
 import { getSleepRecommendation } from '../services/geminiService';
-import { useAuth } from '../context/AuthContext';
 
 const SleepRecommendation: React.FC = () => {
-  const { profile } = useAuth();
   const [userData, setUserData] = useState('');
   const [recommendation, setRecommendation] = useState('');
   const [loading, setLoading] = useState(false);
   const [dailyCount, setDailyCount] = useState(0);
-
-  const isUnlimitedUser = profile?.id === '8f424e4f-e53d-447f-ba5f-98428fe0a34e' || 
-                         profile?.email === 'ongyuze1401@gmail.com' || 
-                         profile?.subscription_plan === 'unlimited';
 
   const DAILY_LIMIT = Infinity;
 

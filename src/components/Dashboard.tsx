@@ -98,16 +98,22 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
     }
 
     // Load ElevenLabs Widget Script
-    const script = document.createElement('script');
-    script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
-    script.async = true;
-    script.type = "text/javascript";
-    document.body.appendChild(script);
+    const scriptId = 'elevenlabs-widget-script';
+    let script = document.getElementById(scriptId) as HTMLScriptElement;
+    
+    if (!script) {
+      script = document.createElement('script');
+      script.id = scriptId;
+      script.src = "https://unpkg.com/@elevenlabs/convai-widget-embed";
+      script.async = true;
+      script.type = "text/javascript";
+      document.body.appendChild(script);
+    }
 
     return () => {
-      if (document.body.contains(script)) {
-        document.body.removeChild(script);
-      }
+      // We don't necessarily want to remove it if it's a global widget,
+      // but if we do, we should be careful. 
+      // For now, let's keep it to avoid re-registration issues if the user navigates back.
     }
   }, []);
 

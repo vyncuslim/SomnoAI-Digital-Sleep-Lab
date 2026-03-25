@@ -40,7 +40,7 @@ async function startServer() {
     contentSecurityPolicy: {
       directives: {
         ...helmet.contentSecurityPolicy.getDefaultDirectives(),
-        "img-src": ["'self'", "data:", "blob:", "https://*.supabase.co", "https://*.sleepsomno.com", "https://picsum.photos", "https://*.google-analytics.com", "https://*.googletagmanager.com", "https://*.gstatic.com"],
+        "img-src": ["'self'", "data:", "blob:", "https://*.supabase.co", "https://*.sleepsomno.com", "https://picsum.photos", "https://*.google-analytics.com", "https://*.googletagmanager.com", "https://*.gstatic.com", "https://*.run.app"],
         "script-src": ["'self'", "'unsafe-inline'", "'unsafe-eval'", "'wasm-unsafe-eval'", "https://*.googletagmanager.com", "https://app.livechatai.com", "https://challenges.cloudflare.com", "https://unpkg.com", "https://*.run.app", "https://*.google-analytics.com"],
         "frame-src": ["'self'", "https://challenges.cloudflare.com", "https://app.livechatai.com", "https://*.supabase.co"],
         "connect-src": ["'self'", "https://*.supabase.co", "https://*.google-analytics.com", "https://*.googletagmanager.com", "wss://*.supabase.co", "https://app.livechatai.com", "https://api.elevenlabs.io", "wss://api.elevenlabs.io", "https://connectors.windsor.ai", "https://unpkg.com", "https://*.run.app", "wss://*.run.app", "https://*.google-analytics.com", "https://stats.g.doubleclick.net"]
@@ -300,7 +300,7 @@ async function startServer() {
       if (resend) {
         try {
           await resend.emails.send({
-            from: 'SomnoAI <noreply@sleepsomno.com>',
+            from: 'SomnoAI <onboarding@resend.dev>',
             to: email,
             subject: 'Welcome to SomnoAI Newsletter',
             html: `
@@ -568,9 +568,11 @@ async function startServer() {
 
       const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
       if (!apiKey) {
+        console.error('[CHAT] Gemini API key is missing in environment variables');
         return res.status(500).json({ error: 'Gemini API key is not configured.' });
       }
 
+      console.log(`[CHAT] Processing request for user ${user.id}`);
       const ai = new GoogleGenAI({ apiKey });
 
       const parts: any[] = [{ text: currentInput || "Please analyze this file." }];
@@ -641,9 +643,11 @@ async function startServer() {
 
       const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
       if (!apiKey) {
+        console.error('[ANALYZE] Gemini API key is missing in environment variables');
         return res.status(500).json({ error: 'Gemini API key is not configured.' });
       }
 
+      console.log(`[ANALYZE] Processing request for user ${user.id}`);
       const ai = new GoogleGenAI({ apiKey });
       console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-3.1-pro-preview`);
 
@@ -733,9 +737,11 @@ async function startServer() {
 
       const apiKey = process.env.GEMINI_API_KEY || process.env.API_KEY;
       if (!apiKey) {
+        console.error('[RECOMMENDATION] Gemini API key is missing in environment variables');
         return res.status(500).json({ error: 'Gemini API key is not configured.' });
       }
 
+      console.log(`[RECOMMENDATION] Processing request for user ${user.id}`);
       const ai = new GoogleGenAI({ apiKey });
 
       const response = await ai.models.generateContent({
@@ -978,6 +984,20 @@ async function startServer() {
   });
 
   console.log('Starting server...');
+  // Explicit route for logo to ensure it's served correctly
+  app.get('/logo_512.png', (req, res) => {
+    const logoPath = process.env.NODE_ENV === 'production' 
+      ? path.join(process.cwd(), 'dist', 'logo_512.png')
+      : path.join(process.cwd(), 'public', 'logo_512.png');
+    
+    res.sendFile(logoPath, (err) => {
+      if (err) {
+        console.error('Error serving logo_512.png:', err);
+        res.status(404).end();
+      }
+    });
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     console.log('Creating Vite server...');
     try {
@@ -1004,6 +1024,16 @@ async function startServer() {
       res.sendFile(path.resolve('dist/index.html'));
     });
   }
+
+  // Global error handler
+  app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    console.error('[GLOBAL ERROR HANDLER]', err);
+    res.status(500).json({ 
+      error: 'Internal Server Error', 
+      message: process.env.NODE_ENV === 'production' ? 'An unexpected error occurred' : err.message,
+      stack: process.env.NODE_ENV === 'production' ? undefined : err.stack
+    });
+  });
 
   if (!process.env.VERCEL) {
     const PORT = process.env.PORT || 3000;

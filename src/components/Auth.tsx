@@ -530,26 +530,26 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
         }
       }
 
-      let errorMessage = err.message || 'Authentication failed';
+      let errorMessage = err?.message || 'Authentication failed';
       
-      if (err.name === 'AuthRetryableFetchError' || (err.status && err.status === 504)) {
+      if (err?.name === 'AuthRetryableFetchError' || (err?.status && err.status === 504)) {
         errorMessage = lang === 'zh'
           ? '服务器响应超时，请检查网络连接或稍后重试。'
           : 'Server response timed out. Please check your connection or try again later.';
-      } else if (err.message && err.message.includes('invalid-input-secret')) {
+      } else if (err?.message && err.message.includes('invalid-input-secret')) {
         errorMessage = 'CAPTCHA configuration error: The secret key is invalid. Please check your Supabase Auth settings.';
-      } else if (err.message && (err.message.includes('captcha verification process failed') || err.message.includes('timeout-or-duplicate'))) {
+      } else if (err?.message && (err.message.includes('captcha verification process failed') || err.message.includes('timeout-or-duplicate'))) {
         errorMessage = lang === 'zh' 
           ? '验证码验证失败或已过期，请重试。' 
           : 'CAPTCHA verification failed or expired. Please try again.';
         console.log('Specific CAPTCHA error detected, resetting Turnstile');
-      } else if (err.message === 'Invalid login credentials') {
+      } else if (err?.message === 'Invalid login credentials') {
         errorMessage = 'Invalid email or password.';
-      } else if (err.message === 'User already registered') {
+      } else if (err?.message === 'User already registered') {
         errorMessage = 'An account with this email already exists.';
-      } else if (err.message && err.message.includes('Password should contain at least one character of each')) {
+      } else if (err?.message && err.message.includes('Password should contain at least one character of each')) {
         errorMessage = 'Password must contain at least one uppercase letter, one lowercase letter, and one number.';
-      } else if (err.message && err.message.includes('Password should be at least')) {
+      } else if (err?.message && err.message.includes('Password should be at least')) {
         errorMessage = 'Password should be at least 6 characters.';
       }
       setError(errorMessage);

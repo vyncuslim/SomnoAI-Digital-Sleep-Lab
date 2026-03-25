@@ -170,6 +170,25 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_blocked boolean DEFAULT 
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS blocked_reason text;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS failed_login_attempts int DEFAULT 0;
 
+-- 9. Missing user_app_status table
+CREATE TABLE IF NOT EXISTS public.user_app_status (
+    user_id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
+    last_seen timestamptz DEFAULT now(),
+    is_online boolean DEFAULT true,
+    updated_at timestamptz DEFAULT now()
+);
+
+ALTER TABLE public.user_app_status ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Admin manage user_app_status" ON public.user_app_status;
+CREATE POLICY "Admin manage user_app_status" ON public.user_app_status FOR ALL TO authenticated USING (public.is_admin_check(auth.uid()));
+
+DROP POLICY IF EXISTS "Users view own user_app_status" ON public.user_app_status;
+CREATE POLICY "Users view own user_app_status" ON public.user_app_status FOR SELECT TO authenticated USING (auth.uid() = user_id);
+
+DROP POLICY IF EXISTS "Users insert/update own user_app_status" ON public.user_app_status;
+CREATE POLICY "Users insert/update own user_app_status" ON public.user_app_status FOR ALL TO authenticated USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
+
 -- Public can read reviews
 DROP POLICY IF EXISTS "Public read reviews" ON public.reviews;
 CREATE POLICY "Public read reviews" ON public.reviews
