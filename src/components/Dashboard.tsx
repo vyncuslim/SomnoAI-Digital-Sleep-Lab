@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { toast } from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
 import { TextObfuscator } from './TextObfuscator';
 import { Moon, Sun, Clock, Activity, Zap, Smartphone, Coffee, AlertCircle, History, Sparkles, Brain, ShieldCheck, Cpu, Terminal, ChevronRight, Settings, LogOut, Upload, FileText, Trash2 } from 'lucide-react';
@@ -226,7 +227,7 @@ export const Dashboard = ({ lang }: { lang: 'en' | 'zh' }) => {
           ? "系统当前繁忙（配额已满），请稍后再试或明天再试。" 
           : "System is currently busy (quota reached). Please try again in a few minutes or tomorrow.";
       }
-      alert(lang === 'zh' ? `生成分析时出错：${errorMsg}` : `Error generating analysis: ${errorMsg}`);
+      toast.error(lang === 'zh' ? `生成分析时出错：${errorMsg}` : `Error generating analysis: ${errorMsg}`);
     } finally {
       setIsAnalyzing(false);
     }

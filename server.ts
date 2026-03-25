@@ -25,6 +25,8 @@ const stripeWebhookSecret = process.env.STRIPE_WEBHOOK_SECRET || '';
 const supabase = (supabaseUrl && supabaseServiceKey) ? createClient(supabaseUrl, supabaseServiceKey) : null;
 const stripe = stripeSecretKey ? new Stripe(stripeSecretKey) : null;
 
+import { sendTelegramMessage } from './src/lib/telegram';
+
 const app = express();
 
 async function startServer() {
@@ -46,6 +48,27 @@ async function startServer() {
     },
     crossOriginEmbedderPolicy: false,
   }));
+
+  // Simple CSRF Protection for API routes
+  app.use('/api', (req, res, next) => {
+    if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(req.method)) {
+      const origin = req.headers.origin;
+      const referer = req.headers.referer;
+      const host = req.headers.host;
+
+      // Allow if origin matches host or if it's from a trusted preview URL
+      const isTrusted = (origin && origin.includes(host || '')) || 
+                        (referer && referer.includes(host || '')) ||
+                        (origin && origin.includes('.run.app')) ||
+                        (referer && referer.includes('.run.app'));
+
+      if (!isTrusted && process.env.NODE_ENV === 'production') {
+        console.warn(`[SECURITY] Potential CSRF attempt from origin: ${origin}, referer: ${referer}`);
+        return res.status(403).json({ error: 'Forbidden: CSRF protection triggered' });
+      }
+    }
+    next();
+  });
 
   // Rate Limiting (Method 61)
   const apiLimiter = rateLimit({
@@ -385,6 +408,11 @@ async function startServer() {
         metadata: { ...metadata, email, errorCode }
       });
 
+      // Send Telegram alert for failed login
+      if (status === 'failed') {
+        await sendTelegramMessage(`⚠️ <b>Failed Login Attempt</b>\nEmail: ${email}\nError: ${errorCode}\nIP: ${ip}\nUser Agent: ${userAgent}`);
+      }
+
       // If success, also record in logins table
       if (status === 'success' && userId && supabase) {
         await supabase.from('logins').insert([{
@@ -569,8 +597,19 @@ async function startServer() {
     } catch (error: any) {
       console.error('Chat API Error:', error);
       
-      // Handle safety block errors from the SDK or any other refusal
       const errorMessage = String(error?.message || error || '').toLowerCase();
+
+      // Handle Quota Reached
+      if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('limit')) {
+        const user = (req as any).user;
+        await sendTelegramMessage(`⚠️ <b>AI Quota Reached</b>\nUser: <code>${user?.id || 'Unknown'}</code>\nEndpoint: <code>/api/chat</code>`);
+        return res.status(429).json({ 
+          error: "System is currently busy (quota reached). Please try again in a few minutes or tomorrow.",
+          code: 'QUOTA_EXCEEDED'
+        });
+      }
+      
+      // Handle safety block errors from the SDK or any other refusal
       const isSafetyError = errorMessage.includes('safety') || 
                            errorMessage.includes('blocked') ||
                            errorMessage.includes('finish_reason') ||
@@ -633,8 +672,18 @@ async function startServer() {
     } catch (error: any) {
       console.error('Analyze Sleep API Error:', error);
       
-      // Handle safety block errors from the SDK or any other refusal
       const errorMessage = String(error?.message || error || '').toLowerCase();
+
+      // Handle Quota Reached
+      if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('limit')) {
+        await sendTelegramMessage(`⚠️ <b>AI Quota Reached</b>\nUser: <code>${user?.id || 'Unknown'}</code>\nEndpoint: <code>/api/analyze-sleep</code>`);
+        return res.status(429).json({ 
+          error: "System is currently busy (quota reached). Please try again in a few minutes or tomorrow.",
+          code: 'QUOTA_EXCEEDED'
+        });
+      }
+      
+      // Handle safety block errors from the SDK or any other refusal
       const isSafetyError = errorMessage.includes('safety') || 
                            errorMessage.includes('blocked') ||
                            errorMessage.includes('finish_reason') ||

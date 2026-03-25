@@ -1,6 +1,7 @@
 import { supabaseAdmin } from './supabaseAdmin';
 import { auditLogger } from './auditLog';
 import { serverEmailService } from './serverEmailService';
+import { sendTelegramMessage } from '../lib/telegram';
 
 export const adminServices = {
   async deleteUser(adminUserId: string, targetUserId: string) {
@@ -63,6 +64,10 @@ export const adminServices = {
       metadata: { reason: params.reason, userEmail },
     });
 
+    if (!error) {
+      await sendTelegramMessage(`🚫 <b>User Blocked</b>\nAdmin: <code>${params.adminUserId}</code>\nUser: <code>${params.targetUserId}</code>\nEmail: ${userEmail || 'N/A'}\nReason: ${params.reason}`);
+    }
+
     if (error) throw error;
 
     // Send notification if user email is available
@@ -97,6 +102,10 @@ export const adminServices = {
       message: error ? 'Admin failed to unblock user' : 'Admin unblocked user',
       metadata: { userEmail },
     });
+
+    if (!error) {
+      await sendTelegramMessage(`✅ <b>User Unblocked</b>\nAdmin: <code>${params.adminUserId}</code>\nUser: <code>${params.targetUserId}</code>\nEmail: ${userEmail || 'N/A'}`);
+    }
 
     if (error) throw error;
 

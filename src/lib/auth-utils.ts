@@ -23,6 +23,18 @@ export async function getUserFromRequest(req: any) {
       return null;
     }
 
+    // Check if user is blocked in the profiles table
+    const { data: profile } = await supabaseAdmin
+      .from('profiles')
+      .select('is_blocked, block_code')
+      .eq('id', user.id)
+      .single();
+
+    if (profile?.is_blocked) {
+      console.warn(`Blocked user ${user.id} attempted to access API`);
+      return null;
+    }
+
     return user;
   } catch (error) {
     return null;
@@ -32,6 +44,25 @@ export async function getUserFromRequest(req: any) {
 export async function requireUserFromRequest(req: any) {
   const user = await getUserFromRequest(req);
   if (!user) {
+    // Check if it was a block or just unauthenticated
+    const authHeader = req.headers.authorization;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      const token = authHeader.split(' ')[1];
+      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+        global: { headers: { Authorization: `Bearer ${token}` } }
+      });
+      const { data: { user: authUser } } = await userClient.auth.getUser();
+      if (authUser) {
+        const { data: profile } = await supabaseAdmin
+          .from('profiles')
+          .select('is_blocked, block_code')
+          .eq('id', authUser.id)
+          .single();
+        if (profile?.is_blocked) {
+          throw new Error(`Account Blocked: ${profile.block_code || 'Violation of terms'}`);
+        }
+      }
+    }
     throw new Error('Unauthorized: Authentication required');
   }
   return user;

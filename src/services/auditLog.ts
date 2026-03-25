@@ -1,4 +1,5 @@
 import { supabaseAdmin } from './supabaseAdmin';
+import { sendTelegramMessage } from '../lib/telegram';
 
 type AuditLevel = 'info' | 'warning' | 'error' | 'critical';
 type AuditCategory =
@@ -61,6 +62,13 @@ export async function writeAuditLog(params: AuditLogParams) {
 
     if (error) {
       console.error('writeAuditLog failed:', error);
+    }
+
+    // Send Telegram alert for critical or error events
+    if (params.level === 'critical' || params.level === 'error') {
+      const emoji = params.level === 'critical' ? '🚨' : '⚠️';
+      const message = `${emoji} <b>Audit Alert: ${params.action}</b>\nLevel: ${params.level}\nStatus: ${params.status || 'N/A'}\nMessage: ${params.message || 'No message'}\nUser: <code>${params.actorUserId || 'System'}</code>`;
+      await sendTelegramMessage(message);
     }
 
     return { data, error };
