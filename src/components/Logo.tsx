@@ -15,22 +15,6 @@ export const Logo: React.FC<LogoProps> = ({ className = "", showText = true, cod
           src="/logo_512.png" 
           alt="SomnoAI Logo" 
           className="w-full h-full object-contain rounded-xl shadow-lg shadow-indigo-500/20"
-          referrerPolicy="no-referrer"
-          onError={(e) => {
-            const target = e.target as HTMLImageElement;
-            const currentSrc = target.src;
-            
-            if (currentSrc.endsWith('/logo_512.png') && !currentSrc.includes('ais-dev')) {
-              // Try the dev URL provided in context if self-origin failed
-              console.warn("Logo self-origin failed, trying dev URL fallback");
-              target.src = "https://ais-dev-v4ejkidirch3jvmnuho5bc-29986613499.asia-east1.run.app/logo_512.png";
-            } else {
-              // Final fallback to a robust SVG placeholder
-              console.error("All logo image sources failed, using SVG placeholder");
-              target.src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%236366f1'/%3E%3Cpath d='M30 50 Q50 20 70 50 T70 80' fill='none' stroke='white' stroke-width='8' stroke-linecap='round'/%3E%3C/svg%3E";
-              target.onerror = null; // Prevent infinite loop
-            }
-          }}
         />
         <div className="absolute inset-0 rounded-xl border border-white/10 pointer-events-none" />
       </div>
