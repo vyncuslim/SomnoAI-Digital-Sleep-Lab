@@ -33,6 +33,16 @@ END $$;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS block_code text;
 
 -- Fix missing columns in user_app_status
+DO $$
+BEGIN
+    IF EXISTS (SELECT 1 FROM pg_views WHERE viewname = 'user_app_status' AND schemaname = 'public') THEN
+        DROP VIEW public.user_app_status CASCADE;
+    END IF;
+    IF EXISTS (SELECT 1 FROM pg_matviews WHERE matviewname = 'user_app_status' AND schemaname = 'public') THEN
+        DROP MATERIALIZED VIEW public.user_app_status CASCADE;
+    END IF;
+END $$;
+
 CREATE TABLE IF NOT EXISTS public.user_app_status (
     user_id uuid REFERENCES auth.users ON DELETE CASCADE PRIMARY KEY,
     last_seen timestamptz DEFAULT now(),
