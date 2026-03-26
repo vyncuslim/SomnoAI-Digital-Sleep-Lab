@@ -247,6 +247,7 @@ export const ProtectedView: React.FC<ProtectedViewProps> = ({
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder={passwordPlaceholder}
+                  autoComplete="new-password"
                   className="w-full bg-transparent border-none text-white text-2xl text-center py-4 focus:outline-none placeholder:text-white/10 tracking-[0.5em]"
                   autoFocus
                 />

@@ -18,7 +18,9 @@ export const analyticsService = {
         browser_info: ua, 
         os_info: platform 
       });
-      if (deviceError) console.warn('increment_device_analytics failed:', deviceError.message);
+      if (deviceError && !deviceError.message.includes('does not exist')) {
+        console.warn('increment_device_analytics failed:', deviceError.message);
+      }
 
       // 3. Update analytics_country (using a simple API or just placeholder for now)
       // In a real app, we'd use a geo-ip service.
@@ -30,7 +32,9 @@ export const analyticsService = {
         c_code: countryCode,
         c_name: new Intl.DisplayNames(['en'], { type: 'region' }).of(countryCode) || 'Unknown'
       });
-      if (countryError) console.warn('increment_country_analytics failed:', countryError.message);
+      if (countryError && !countryError.message.includes('does not exist')) {
+        console.warn('increment_country_analytics failed:', countryError.message);
+      }
 
       // 4. Update user_app_status if userId is provided
       if (userId) {
@@ -40,7 +44,9 @@ export const analyticsService = {
           is_online: true,
           updated_at: new Date().toISOString()
         });
-        if (statusError) console.warn('user_app_status upsert failed:', statusError.message);
+        if (statusError && !statusError.message.includes('Could not find the')) {
+          console.warn('user_app_status upsert failed:', statusError.message);
+        }
 
         // 5. Log the login
         const { error: loginError } = await supabase.from('logins').insert({

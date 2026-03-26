@@ -65,19 +65,31 @@ export async function requireUserFromRequest(req: any) {
     const authHeader = req.headers.authorization;
     if (authHeader && authHeader.startsWith('Bearer ')) {
       const token = authHeader.split(' ')[1];
-      const userClient = createClient(supabaseUrl, supabaseAnonKey, {
-        global: { headers: { Authorization: `Bearer ${token}` } }
-      });
-      const { data: { user: authUser } } = await userClient.auth.getUser();
-      if (authUser) {
-        const { data: profile } = await supabaseAdmin
-          .from('profiles')
-          .select('is_blocked, block_code')
-          .eq('id', authUser.id)
-          .single();
-        if (profile?.is_blocked) {
-          throw new Error(`Account Blocked: ${profile.block_code || 'Violation of terms'}`);
+      
+      if (!supabaseUrl || !supabaseAnonKey) {
+        throw new Error('Unauthorized: Authentication required (Supabase not configured)');
+      }
+      
+      try {
+        const userClient = createClient(supabaseUrl, supabaseAnonKey, {
+          global: { headers: { Authorization: `Bearer ${token}` } }
+        });
+        const { data: { user: authUser } } = await userClient.auth.getUser();
+        if (authUser) {
+          const { data: profile } = await supabaseAdmin
+            .from('profiles')
+            .select('is_blocked, block_code')
+            .eq('id', authUser.id)
+            .single();
+          if (profile?.is_blocked) {
+            throw new Error(`Account Blocked: ${profile.block_code || 'Violation of terms'}`);
+          }
         }
+      } catch (err: any) {
+        if (err.message && err.message.includes('Account Blocked')) {
+          throw err;
+        }
+        console.error('[AUTH-UTILS] Error checking block status:', err);
       }
     }
     throw new Error('Unauthorized: Authentication required');

@@ -155,6 +155,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
           disabled={disabled}
           autoFocus={autoFocus}
           placeholder="••••••"
+          autoComplete="new-password"
           className="w-full bg-white/5 border border-white/10 rounded-2xl py-5 text-center text-4xl font-mono tracking-[0.5em] text-emerald-500 focus:outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 transition-all placeholder:text-white/5"
         />
         <div className="absolute inset-0 rounded-2xl border border-white/5 pointer-events-none group-hover:border-white/10 transition-colors" />

@@ -585,12 +585,41 @@ async function startServer() {
         });
       }
 
+      const rawContents = [
+        ...messages.map((m: any) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content || "" }] })),
+        { role: 'user', parts }
+      ];
+
+      // Ensure alternating roles (user, model, user, model)
+      const validContents: any[] = [];
+      for (const msg of rawContents) {
+        if (validContents.length === 0) {
+          if (msg.role === 'user') validContents.push(msg);
+        } else {
+          const lastRole = validContents[validContents.length - 1].role;
+          if (msg.role !== lastRole) {
+            validContents.push(msg);
+          } else {
+            // Merge consecutive messages of the same role
+            const lastMsg = validContents[validContents.length - 1];
+            const lastPart = lastMsg.parts[lastMsg.parts.length - 1];
+            const newPart = msg.parts[0];
+            
+            if (lastPart && newPart && lastPart.text && newPart.text) {
+              lastPart.text += "\n\n" + newPart.text;
+              if (msg.parts.length > 1) {
+                lastMsg.parts.push(...msg.parts.slice(1));
+              }
+            } else {
+              lastMsg.parts.push(...msg.parts);
+            }
+          }
+        }
+      }
+
       const response = await ai.models.generateContent({
         model: "gemini-3-flash-preview", // Using flash for faster chat responses
-        contents: [
-          ...messages.map((m: any) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content || "" }] })),
-          { role: 'user', parts }
-        ],
+        contents: validContents,
         config: {
           systemInstruction: systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab.",
           maxOutputTokens: 2048, // Reduced for speed
@@ -649,10 +678,10 @@ async function startServer() {
 
       console.log(`[ANALYZE] Processing request for user ${user.id}`);
       const ai = new GoogleGenAI({ apiKey });
-      console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-3.1-pro-preview`);
+      console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-3-flash-preview`);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3.1-pro-preview',
+        model: 'gemini-3-flash-preview', // Using flash for faster response to avoid Vercel timeouts
         contents: prompt || "Please analyze my sleep.",
         config: {
           systemInstruction: "You are a professional sleep scientist and data analyst. Provide detailed, accurate, and actionable sleep analysis in JSON format.",
@@ -684,7 +713,14 @@ async function startServer() {
 
       let analysis;
       try {
-        analysis = JSON.parse(response.text);
+        let cleanText = response.text || "{}";
+        // Remove markdown code blocks if present
+        if (cleanText.startsWith('```json')) {
+          cleanText = cleanText.replace(/^```json\n/, '').replace(/\n```$/, '');
+        } else if (cleanText.startsWith('```')) {
+          cleanText = cleanText.replace(/^```\n/, '').replace(/\n```$/, '');
+        }
+        analysis = JSON.parse(cleanText);
       } catch (parseError) {
         console.error('Failed to parse Gemini response as JSON:', response.text);
         return res.status(500).json({ error: 'Failed to parse sleep analysis data. Please try again.' });

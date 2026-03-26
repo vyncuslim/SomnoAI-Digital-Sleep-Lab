@@ -226,7 +226,7 @@ export const PersonalChat: React.FC = () => {
 
       // Filter out safety refusals from history to prevent the API from blocking the next turn
       // Also limit history to last 10 messages to avoid token limit issues
-      const filteredHistory = messages
+      const filteredHistory = [...messages, userMessage]
         .filter(m => 
           !m.content.includes("safety guidelines") && 
           !m.content.includes("discuss this topic")
@@ -240,7 +240,7 @@ export const PersonalChat: React.FC = () => {
           'Authorization': `Bearer ${session.access_token}`
         },
         body: JSON.stringify({
-          messages: filteredHistory,
+          messages: filteredHistory.slice(0, -1), // Exclude the current user message from history
           currentInput,
           currentFile,
           systemInstruction: systemInstruction.substring(0, 30000) // Safety truncation
