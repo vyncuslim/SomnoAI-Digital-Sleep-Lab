@@ -68,10 +68,11 @@ const Voice = lazyWithRetry(() => import('./pages/Voice').then(module => ({ defa
 const GenericFeature = lazyWithRetry(() => import('./pages/GenericFeature').then(module => ({ default: module.GenericFeature })));
 const Trials = lazyWithRetry(() => import('./pages/Trials').then(module => ({ default: module.Trials })));
 // const DiaryView = lazyWithRetry(() => import('./components/Placeholders').then(module => ({ default: module.DiaryView })));
+import { BlogPostView } from './components/BlogPostView';
+import { ArticleView } from './components/ArticleView';
+
 const BlogHub = lazyWithRetry(() => import('./pages/BlogHub').then(module => ({ default: module.BlogHub })));
-const BlogPostView = lazyWithRetry(() => import('./components/BlogPostView').then(module => ({ default: module.BlogPostView })));
 const NewsHub = lazyWithRetry(() => import('./pages/NewsHub').then(module => ({ default: module.NewsHub })));
-const ArticleView = lazyWithRetry(() => import('./components/ArticleView').then(module => ({ default: module.ArticleView })));
 const ChangelogView = lazyWithRetry(() => import('./components/Placeholders').then(module => ({ default: module.ChangelogView })));
 const SupportView = lazyWithRetry(() => import('./components/SupportView').then(module => ({ default: module.SupportView })));
 const FounderDashboardPage = lazyWithRetry(() => import('./pages/FounderDashboardPage').then(module => ({ default: module.FounderDashboardPage })));
@@ -161,13 +162,12 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
   return (
     <React.Fragment>
     <Suspense fallback={
-      <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center p-6">
+      <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center p-6 text-center">
         <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-8"></div>
-        <div className="sr-only opacity-0 h-0 overflow-hidden">
-          <h2>SomnoAI Digital Sleep Lab</h2>
-          <p>Loading our advanced AI-powered sleep analysis platform. SomnoAI provides personalized sleep coaching, comprehensive tracking, and actionable insights based on your unique sleep patterns.</p>
-          <p>Features include deep sleep analysis, REM sleep tracking, heart rate variability monitoring, and a digital sleep clinic experience. Improve your rest, recovery, and overall health with our data-driven approach.</p>
-          <p>Whether you struggle with insomnia, sleep apnea symptoms, or just want to optimize your daily energy levels, SomnoAI is your personal digital sleep clinic. Join thousands of users who have transformed their sleep habits.</p>
+        <div className="max-w-md text-slate-400 text-sm space-y-4 animate-pulse">
+          <h2 className="text-white text-lg font-medium">Loading SomnoAI Digital Sleep Lab</h2>
+          <p>Preparing your advanced AI-powered sleep analysis platform...</p>
+          <p className="text-xs text-slate-500">SomnoAI provides personalized sleep coaching, comprehensive tracking, and actionable insights based on your unique sleep patterns. Whether you struggle with insomnia, sleep apnea symptoms, or just want to optimize your daily energy levels, SomnoAI is your personal digital sleep clinic.</p>
         </div>
       </div>
     }>

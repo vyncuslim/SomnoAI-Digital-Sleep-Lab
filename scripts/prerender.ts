@@ -13,24 +13,27 @@ if (!fs.existsSync(indexHtmlPath)) {
 const indexHtml = fs.readFileSync(indexHtmlPath, 'utf8');
 
 function generatePage(route: string, title: string, content: string) {
-  const dir = path.join(distDir, route);
+  const filePath = path.join(distDir, `${route}.html`);
+  const dir = path.dirname(filePath);
   fs.mkdirSync(dir, { recursive: true });
   
   const seoContent = `
-    <div id="seo-content" style="opacity: 0; position: absolute; z-index: -1; pointer-events: none;">
-      <h1>${title}</h1>
-      <div>${content}</div>
+    <div id="root">
+      <div style="padding: 40px; max-width: 800px; margin: 0 auto; font-family: system-ui, sans-serif; color: #e2e8f0; background: #01040a; min-height: 100vh;">
+        <h1 style="font-size: 2rem; margin-bottom: 1rem;">${title}</h1>
+        <div style="line-height: 1.6;">${content}</div>
+      </div>
     </div>
   `;
   
-  // Replace the default seo-content with the specific one
+  // Replace the default root div with the specific one
   const newHtml = indexHtml.replace(
-    /<div id="seo-content".*?<\/div>/s,
-    seoContent
+    /<div id="root">.*?<\/div>\s*<\/body>/s,
+    `${seoContent}\n  </body>`
   );
   
-  fs.writeFileSync(path.join(dir, 'index.html'), newHtml);
-  console.log(`Generated static page for ${route}`);
+  fs.writeFileSync(filePath, newHtml);
+  console.log(`Generated static page for ${route}.html`);
 }
 
 // Generate pages for research articles

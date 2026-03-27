@@ -5,6 +5,7 @@ export const analyticsService = {
     try {
       // 1. Get user agent info
       const ua = navigator.userAgent;
+      /*
       const platform = navigator.platform;
       
       // Determine device type
@@ -21,10 +22,12 @@ export const analyticsService = {
       if (deviceError && !deviceError.message.includes('does not exist')) {
         console.warn('increment_device_analytics failed:', deviceError.message);
       }
+      */
 
       // 3. Update analytics_country (using a simple API or just placeholder for now)
       // In a real app, we'd use a geo-ip service.
       // For now, we'll use a placeholder or try to get it from the browser if possible.
+      /*
       const lang = navigator.language || 'en-US';
       const countryCode = lang.split('-')[1] || 'US';
       
@@ -35,6 +38,7 @@ export const analyticsService = {
       if (countryError && !countryError.message.includes('does not exist')) {
         console.warn('increment_country_analytics failed:', countryError.message);
       }
+      */
 
       // 4. Update user_app_status if userId is provided
       if (userId) {
