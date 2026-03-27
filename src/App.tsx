@@ -161,8 +161,14 @@ const AppRoutes: React.FC<AppRoutesProps> = ({
   return (
     <React.Fragment>
     <Suspense fallback={
-      <div className="min-h-screen bg-[#01040a] flex items-center justify-center">
-        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+      <div className="min-h-screen bg-[#01040a] flex flex-col items-center justify-center p-6">
+        <div className="w-8 h-8 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin mb-8"></div>
+        <div className="sr-only opacity-0 h-0 overflow-hidden">
+          <h2>SomnoAI Digital Sleep Lab</h2>
+          <p>Loading our advanced AI-powered sleep analysis platform. SomnoAI provides personalized sleep coaching, comprehensive tracking, and actionable insights based on your unique sleep patterns.</p>
+          <p>Features include deep sleep analysis, REM sleep tracking, heart rate variability monitoring, and a digital sleep clinic experience. Improve your rest, recovery, and overall health with our data-driven approach.</p>
+          <p>Whether you struggle with insomnia, sleep apnea symptoms, or just want to optimize your daily energy levels, SomnoAI is your personal digital sleep clinic. Join thousands of users who have transformed their sleep habits.</p>
+        </div>
       </div>
     }>
     <Routes>

@@ -50,7 +50,7 @@ async function startServer() {
   }));
 
   // Relaxed CSRF for API routes in development/preview
-  app.use('/api', (req, res, next) => {
+  app.use('/api', (req: any, res: any, next: any) => {
     // Completely bypass CSRF for API routes in non-production or preview environments
     if (process.env.NODE_ENV !== 'production' || (req.hostname && req.hostname.includes('.run.app'))) {
       return next();
@@ -90,7 +90,7 @@ async function startServer() {
   // app.use('/api/subscribe', apiLimiter); // Removed rate limiting for subscribe as well
 
   // Stripe Webhook needs raw body
-  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
+  app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req: any, res: any) => {
     if (!stripe || !stripeWebhookSecret) {
       console.warn('Stripe or Webhook Secret not configured');
       return res.status(400).send('Webhook Error: Missing configuration');
@@ -283,7 +283,7 @@ async function startServer() {
   app.use(express.json({ limit: '50mb' }));
   app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
-  app.post(['/api/subscribe', '/api/subscribe/'], async (req, res) => {
+  app.post(['/api/subscribe', '/api/subscribe/'], async (req: any, res: any) => {
     console.log('Received subscribe request:', req.method, req.url);
     const { email } = req.body;
     
@@ -324,7 +324,7 @@ async function startServer() {
     }
   });
 
-  app.post(['/api/contact', '/api/contact/'], async (req, res) => {
+  app.post(['/api/contact', '/api/contact/'], async (req: any, res: any) => {
     console.log('Received contact request:', req.method, req.url);
     const { subject, email, message } = req.body;
     
@@ -387,7 +387,7 @@ async function startServer() {
   });
 
   // API routes FIRST
-  app.get("/api/health", (req, res) => {
+  app.get("/api/health", (req: any, res: any) => {
     res.json({ 
       status: "ok",
       environment: !!(process.env.GEMINI_API_KEY || process.env.API_KEY)
@@ -396,7 +396,7 @@ async function startServer() {
 
   // Secure login recording
   // Consolidated Login Logging Endpoint
-  app.post(['/api/audit/login', '/api/audit/login/'], async (req, res) => {
+  app.post(['/api/audit/login', '/api/audit/login/'], async (req: any, res: any) => {
     const { email, status, errorCode, userId, metadata } = req.body;
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     const userAgent = req.headers['user-agent'];
@@ -439,7 +439,7 @@ async function startServer() {
   });
 
   // General Event Logging Endpoint
-  app.post(['/api/audit/log-event', '/api/audit/log-event/'], async (req, res) => {
+  app.post(['/api/audit/log-event', '/api/audit/log-event/'], async (req: any, res: any) => {
     try {
       const user = await getUserFromRequest(req);
       const { category, action, status, level, message, metadata } = req.body;
@@ -465,7 +465,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/notify-login', async (req, res) => {
+  app.post('/api/notify-login', async (req: any, res: any) => {
     if (!resend) {
       console.warn('Resend is not configured. Skipping login notification.');
       return res.status(200).json({ success: true, message: 'Resend not configured' });
@@ -496,7 +496,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/send-email', async (req, res) => {
+  app.post('/api/send-email', async (req: any, res: any) => {
     try {
       // Only authenticated users can send emails (or restrict to admins)
       const user = await requireUserFromRequest(req);
@@ -527,7 +527,7 @@ async function startServer() {
     }
   });
 
-  app.post(['/api/audit/auth-signup', '/api/audit/auth-signup/'], async (req, res) => {
+  app.post(['/api/audit/auth-signup', '/api/audit/auth-signup/'], async (req: any, res: any) => {
     const body = req.body;
     const forwardedFor = req.headers['x-forwarded-for'];
     const ip = typeof forwardedFor === 'string' ? forwardedFor.split(',')[0].trim() : null;
@@ -555,12 +555,12 @@ async function startServer() {
   });
 
   // Debugging middleware for API routes
-  app.use(['/api/chat', '/api/chat/', '/api/analyze-sleep', '/api/analyze-sleep/'], (req, res, next) => {
+  app.use(['/api/chat', '/api/chat/', '/api/analyze-sleep', '/api/analyze-sleep/'], (req: any, res: any, next: any) => {
     console.log(`[DEBUG] Received ${req.method} request to ${req.url}`);
     next();
   });
 
-  app.post(['/api/chat', '/api/chat/'], async (req, res) => {
+  app.post(['/api/chat', '/api/chat/'], async (req: any, res: any) => {
     let user: any = null;
     try {
       user = await requireUserFromRequest(req);
@@ -663,7 +663,7 @@ async function startServer() {
     }
   });
 
-  app.post(['/api/analyze-sleep', '/api/analyze-sleep/'], async (req, res) => {
+  app.post(['/api/analyze-sleep', '/api/analyze-sleep/'], async (req: any, res: any) => {
     console.log('Received POST request to /api/analyze-sleep');
     let user: any = null;
     try {
@@ -766,7 +766,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/sleep-recommendation', async (req, res) => {
+  app.post('/api/sleep-recommendation', async (req: any, res: any) => {
     try {
       const user = await requireUserFromRequest(req);
       const { userData } = req.body;
@@ -802,7 +802,7 @@ async function startServer() {
   // Removed old /api/stripe/webhook here as it's now handled with raw body parsing above
 
   // Protect all /api/admin/* endpoints
-  app.use('/api/admin', async (req, res, next) => {
+  app.use('/api/admin', async (req: any, res: any, next: any) => {
     try {
       const adminUser = await requireAdminFromRequest(req);
       (req as any).adminUser = adminUser;
@@ -812,7 +812,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/admin/delete-user', async (req, res) => {
+  app.post('/api/admin/delete-user', async (req: any, res: any) => {
     try {
       const adminUser = (req as any).adminUser;
       const { targetUserId } = req.body;
@@ -825,7 +825,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/admin/block-user', async (req, res) => {
+  app.post('/api/admin/block-user', async (req: any, res: any) => {
     try {
       const adminUser = (req as any).adminUser;
       const { targetUserId, reason } = req.body;
@@ -836,7 +836,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/admin/unblock-user', async (req, res) => {
+  app.post('/api/admin/unblock-user', async (req: any, res: any) => {
     try {
       const adminUser = (req as any).adminUser;
       const { targetUserId } = req.body;
@@ -847,7 +847,7 @@ async function startServer() {
     }
   });
 
-  app.post('/api/admin/update-role', async (req, res) => {
+  app.post('/api/admin/update-role', async (req: any, res: any) => {
     console.log(`Received ${req.method} request for /api/admin/update-role`);
     try {
       const adminUser = (req as any).adminUser;
@@ -862,7 +862,7 @@ async function startServer() {
   });
 
   // Admin Analytics API
-  app.get("/api/admin/founder-stats", async (req, res) => {
+  app.get("/api/admin/founder-stats", async (req: any, res: any) => {
     try {
       const adminUser = (req as any).adminUser;
       if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
@@ -874,7 +874,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/admin/security-events", async (req, res) => {
+  app.get("/api/admin/security-events", async (req: any, res: any) => {
     try {
       const adminUser = (req as any).adminUser;
       if (!supabase) return res.status(500).json({ error: 'Supabase not configured' });
@@ -893,7 +893,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/admin/auth-users", async (req, res) => {
+  app.get("/api/admin/auth-users", async (req: any, res: any) => {
     try {
       const adminUser = (req as any).adminUser;
       // Extra check for super owner if needed, but requireAdminFromRequest already checks for admin/super_owner
@@ -917,7 +917,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/admin/schema", async (req, res) => {
+  app.get("/api/admin/schema", async (req: any, res: any) => {
     try {
       const adminUser = (req as any).adminUser;
       const { data: profile } = await supabase!
@@ -991,7 +991,7 @@ async function startServer() {
     }
   });
 
-  app.get("/api/admin/table-data/:table", async (req, res) => {
+  app.get("/api/admin/table-data/:table", async (req: any, res: any) => {
     try {
       const adminUser = (req as any).adminUser;
       const { data: profile } = await supabase!
@@ -1021,7 +1021,7 @@ async function startServer() {
 
   console.log('Starting server...');
   // Explicit route for logo to ensure it's served correctly
-  app.get('/logo_512.png', (req, res) => {
+  app.get('/logo_512.png', (req: any, res: any) => {
     const logoPath = process.env.NODE_ENV === 'production' 
       ? path.join(process.cwd(), 'dist', 'logo_512.png')
       : path.join(process.cwd(), 'public', 'logo_512.png');
@@ -1055,7 +1055,7 @@ async function startServer() {
         }
       }
     }));
-    app.get('*', (req, res) => {
+    app.get('*', (req: any, res: any) => {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.sendFile(path.resolve('dist/index.html'));
     });
