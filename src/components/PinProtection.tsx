@@ -219,6 +219,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               onSubmit={handlePinSubmit}
               className="space-y-6"
             >
+              <input type="text" name="username" value="user" autoComplete="username" className="hidden" readOnly />
               <PinInput 
                 value={pin} 
                 onChange={setPinInput} 
@@ -286,6 +287,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               onSubmit={handleSetupSubmit}
               className="space-y-6"
             >
+              <input type="text" name="username" value="user" autoComplete="username" className="hidden" readOnly />
               <div className="space-y-6">
                 <div>
                   <label className="text-xs text-white/30 uppercase tracking-widest mb-4 block text-center">
@@ -336,6 +338,7 @@ export const PinProtection: React.FC<PinProtectionProps> = ({ children }) => {
               onSubmit={handleRecoverySubmit}
               className="space-y-6"
             >
+              <input type="text" name="username" value="user" autoComplete="username" className="hidden" readOnly />
               <div className="space-y-6">
                 <div>
                   <label className="text-xs text-white/30 uppercase tracking-widest mb-2 block">

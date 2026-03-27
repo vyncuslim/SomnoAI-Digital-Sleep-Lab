@@ -586,7 +586,7 @@ async function startServer() {
       }
 
       const rawContents = [
-        ...messages.map((m: any) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content || "" }] })),
+        ...messages.map((m: any) => ({ role: m.role === 'user' ? 'user' : 'model', parts: [{ text: m.content || " " }] })),
         { role: 'user', parts }
       ];
 
@@ -605,7 +605,7 @@ async function startServer() {
             const lastPart = lastMsg.parts[lastMsg.parts.length - 1];
             const newPart = msg.parts[0];
             
-            if (lastPart && newPart && lastPart.text && newPart.text) {
+            if (lastPart && newPart && typeof lastPart.text === 'string' && typeof newPart.text === 'string') {
               lastPart.text += "\n\n" + newPart.text;
               if (msg.parts.length > 1) {
                 lastMsg.parts.push(...msg.parts.slice(1));
@@ -621,7 +621,7 @@ async function startServer() {
         model: "gemini-3-flash-preview", // Using flash for faster chat responses
         contents: validContents,
         config: {
-          systemInstruction: systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab.",
+          systemInstruction: (systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab.").substring(0, 8000),
           maxOutputTokens: 2048, // Reduced for speed
           temperature: 0.7,
         }

@@ -241,6 +241,7 @@ export const ProtectedView: React.FC<ProtectedViewProps> = ({
             <p className="text-white/50 text-lg mb-12 max-w-md leading-relaxed">{loginSubtitle}</p>
 
             <form onSubmit={handleLogin} className="w-full max-w-sm space-y-8">
+              <input type="text" name="username" value="user" autoComplete="username" className="hidden" readOnly />
               <div className="relative group">
                 <input 
                   type="password" 
