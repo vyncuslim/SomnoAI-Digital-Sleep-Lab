@@ -33,6 +33,7 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
       const { data } = await supabase
         .from('user_usb_keys')
         .select('*')
+        .eq('user_id', session.user.id)
         .eq('status', 'active');
       
       if (data) setBoundDevices(data);
@@ -46,21 +47,17 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
     try {
       const usb = (navigator as any).usb;
       
-      // We provide two filters: 
-      // 1. Generic [{}] to show all devices
-      // 2. Specific { classCode: 8 } to target Mass Storage (U-disks)
-      const device = await usb.requestDevice({
-        filters: [
-          {}, 
-          { classCode: 8 } 
-        ] 
+      // Use a more specific filter for Mass Storage (Class 8)
+      // Note: Browsers still often block these for security.
+      const device = await usb.requestDevice({ 
+        filters: [{ classCode: 8 }] 
       });
 
       const payload = {
         vendorId: device.vendorId,
         productId: device.productId,
         serialNumber: device.serialNumber || "",
-        productName: device.productName || "",
+        productName: device.productName || "Standard U-disk",
         manufacturerName: device.manufacturerName || ""
       };
 
@@ -206,10 +203,10 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
           
           <div className="space-y-2 px-1">
             <p className="text-[10px] text-slate-400 leading-relaxed">
-              <span className="text-rose-500 font-bold">Important:</span> Standard <span className="text-white">Flash Drives (U-disks)</span> are often blocked by browsers for security. 
+              <span className="text-amber-500 font-bold">Security Note:</span> Standard U-disks are often restricted by browsers. 
             </p>
-            <p className="text-[10px] text-indigo-400/80 leading-relaxed font-medium">
-              <span className="text-amber-500">Pro Tip:</span> Use your <span className="text-white">USB Mouse, Keyboard, or Bluetooth dongle</span> as your key instead. They are recognized instantly and are just as secure.
+            <p className="text-[10px] text-slate-500 leading-relaxed italic">
+              If your device doesn't appear, try <span className="text-white">Ejecting</span> it from your OS first (without unplugging) to release the system lock.
             </p>
           </div>
 
