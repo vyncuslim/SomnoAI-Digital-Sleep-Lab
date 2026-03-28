@@ -8,6 +8,12 @@ import Stripe from 'stripe';
 import { rateLimit } from 'express-rate-limit';
 import { GoogleGenAI, Type } from '@google/genai';
 import { writeAuditLog, auditLogger } from './src/services/auditLog';
+import {
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+} from '@simplewebauthn/server';
 import { requireAdminFromRequest } from './src/lib/admin-auth';
 import { getUserFromRequest, requireUserFromRequest, isAdmin } from './src/lib/auth-utils';
 import { adminServices } from './src/services/adminServices';
@@ -523,13 +529,6 @@ async function startServer() {
   });
 
   // WebAuthn / Passkey Endpoints
-  const {
-    generateRegistrationOptions,
-    verifyRegistrationResponse,
-    generateAuthenticationOptions,
-    verifyAuthenticationResponse,
-  } = require('@simplewebauthn/server');
-
   const rpName = 'SomnoAI';
   const rpID = process.env.APP_URL ? new URL(process.env.APP_URL).hostname : 'localhost';
   const origin = process.env.APP_URL || `http://localhost:3000`;
