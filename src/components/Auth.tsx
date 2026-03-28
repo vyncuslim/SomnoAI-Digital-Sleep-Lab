@@ -15,6 +15,7 @@ import { useLanguage } from '../context/useLanguage';
 import { notificationService } from '../services/notificationService';
 import { trackEvent } from '../services/analytics';
 import { fetchWithLogging } from '../services/apiService';
+import { UsbAuth } from './UsbAuth';
 
 interface AuthProps {
   lang: Language;
@@ -1018,6 +1019,23 @@ export const Auth: React.FC<AuthProps> = ({ lang, initialView = 'login' }) => {
                     animate={{ opacity: 1 }}
                     transition={{ delay: 0.4 }}
                   >
+                    <div className="mt-10 relative">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-white/5"></div>
+                      </div>
+                      <div className="relative flex justify-center text-[10px] font-black uppercase tracking-widest">
+                        <span className="bg-[#0f172a] px-4 text-slate-500">Hardware Access</span>
+                      </div>
+                    </div>
+
+                    <div className="mt-8">
+                      <UsbAuth 
+                        mode="unlock" 
+                        email={email} 
+                        onSuccess={() => navigate(`${langPrefix}/dashboard`)} 
+                      />
+                    </div>
+
                     <div className="mt-10 relative">
                       <div className="absolute inset-0 flex items-center">
                         <div className="w-full border-t border-white/5"></div>

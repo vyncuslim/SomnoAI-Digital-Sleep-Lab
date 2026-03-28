@@ -522,6 +522,111 @@ async function startServer() {
     }
   });
 
+  // USB Authentication Endpoints
+  app.post('/api/usb/bind', async (req: any, res: any) => {
+    try {
+      const user = await requireUserFromRequest(req);
+      const { vendorId, productId, serialNumber, productName, manufacturerName } = req.body;
+
+      if (!supabase) {
+        return res.status(500).json({ success: false, message: "Database not configured" });
+      }
+
+      const { error } = await supabase
+        .from('user_usb_keys')
+        .upsert({
+          user_id: user.id,
+          vendor_id: vendorId,
+          product_id: productId,
+          serial_number: serialNumber,
+          product_name: productName,
+          manufacturer_name: manufacturerName,
+          status: 'active',
+          updated_at: new Date().toISOString()
+        }, {
+          onConflict: 'user_id, vendor_id, product_id, serial_number'
+        });
+
+      if (error) {
+        console.error('[USB BIND ERROR]', error);
+        return res.status(500).json({ success: false, message: error.message });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(401).json({ success: false, message: error.message });
+    }
+  });
+
+  app.post('/api/usb/unlock', async (req: any, res: any) => {
+    try {
+      const { devices, userId, email } = req.body;
+      
+      let targetUserId = userId;
+      if (!targetUserId && email) {
+        // Find user by email in profiles or auth.users
+        // Assuming profiles table has email or we use auth admin API
+        const { data: userData, error: userError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('email', email.trim().toLowerCase())
+          .maybeSingle();
+        
+        if (userData) {
+          targetUserId = userData.id;
+        } else {
+          // Fallback to auth admin API if profiles doesn't have email or user not found
+          const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
+          const foundUser = users.find(u => u.email?.toLowerCase() === email.trim().toLowerCase());
+          if (foundUser) targetUserId = foundUser.id;
+        }
+      }
+
+      if (!targetUserId) {
+        const user = await getUserFromRequest(req);
+        if (user) targetUserId = user.id;
+      }
+
+      if (!targetUserId) {
+        return res.status(400).json({ success: false, message: "User ID or Email required" });
+      }
+
+      if (!supabase) {
+        return res.status(500).json({ success: false, message: "Database not configured" });
+      }
+
+      const { data: boundKeys, error } = await supabase
+        .from('user_usb_keys')
+        .select('*')
+        .eq('user_id', targetUserId)
+        .eq('status', 'active');
+
+      if (error) {
+        return res.status(500).json({ success: false, message: error.message });
+      }
+
+      if (!boundKeys || boundKeys.length === 0) {
+        return res.status(404).json({ success: false, message: "No bound USB keys found" });
+      }
+
+      const matched = devices.some((d: any) => 
+        boundKeys.some((b: any) => 
+          d.vendorId === b.vendor_id && 
+          d.productId === b.product_id && 
+          (b.serial_number ? d.serialNumber === b.serial_number : true)
+        )
+      );
+
+      if (!matched) {
+        return res.status(401).json({ success: false, message: "U-disk not matched" });
+      }
+
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
   app.post('/api/notify-login', async (req: any, res: any) => {
     if (!resend) {
       console.warn('Resend is not configured. Skipping login notification.');

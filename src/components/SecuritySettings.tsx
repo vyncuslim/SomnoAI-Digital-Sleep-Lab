@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Shield, Key, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Shield, Key, CheckCircle2, AlertCircle, Usb } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useLanguage } from '../context/useLanguage';
+import { UsbAuth } from './UsbAuth';
 
 export const SecuritySettings: React.FC = () => {
   const { hasPinSet, setPin, resetPinWithRecoveryKey } = useAuth();
@@ -109,6 +110,21 @@ export const SecuritySettings: React.FC = () => {
         >
           {hasPinSet ? t('auth.pinChange') : t('auth.pinCreate')}
         </button>
+      </div>
+
+      <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl border border-slate-700">
+        <div className="flex items-center gap-3">
+          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+            <Usb className="w-5 h-5" />
+          </div>
+          <div>
+            <h3 className="text-sm font-bold text-white">U-disk Authentication</h3>
+            <p className="text-xs text-slate-400">Bind a physical U-disk for hardware-based unlocking</p>
+          </div>
+        </div>
+        <div className="w-40">
+          <UsbAuth mode="bind" />
+        </div>
       </div>
 
       <AnimatePresence mode="wait">
