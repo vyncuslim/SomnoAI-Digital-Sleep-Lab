@@ -36,6 +36,7 @@
     "react-router-dom": "^7.13.1",
     "recharts": "^3.8.0",
     "resend": "^3.2.0",
+    "sharp": "^0.34.5",
     "stripe": "^20.4.1",
     "tailwind-merge": "^3.5.0",
     "ua-parser-js": "^2.0.9",

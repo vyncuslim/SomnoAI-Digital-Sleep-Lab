@@ -618,11 +618,11 @@ async function startServer() {
       }
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview", // Switched to 2.5 to avoid 2026 quota issues and thinking token overhead
+        model: "gemini-2.5-flash", // Switched to 2.5 to avoid 2026 quota issues and thinking token overhead
         contents: validContents,
         config: {
           systemInstruction: (systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab.").substring(0, 8000),
-          // Removed maxOutputTokens to allow the model to manage its own output/thinking balance within context limits
+          maxOutputTokens: 8192, // Explicitly set to avoid "generation exceeded max tokens limit"
           temperature: 0.7,
         }
       });
@@ -678,15 +678,15 @@ async function startServer() {
 
       console.log(`[ANALYZE] Processing request for user ${user.id}`);
       const ai = new GoogleGenAI({ apiKey });
-      console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-3-flash-preview`);
+      console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-2.5-flash`);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash-preview', // Switched to 2.5 for 2026 compatibility
+        model: 'gemini-2.5-flash', // Switched to 2.5 for 2026 compatibility
         contents: prompt || "Please analyze my sleep.",
         config: {
           systemInstruction: "You are a professional sleep scientist and data analyst. Provide detailed, accurate, and actionable sleep analysis in JSON format.",
           responseMimeType: 'application/json',
-          // Removed maxOutputTokens
+          maxOutputTokens: 8192, // Explicitly set to avoid "generation exceeded max tokens limit"
           temperature: 0.5,
           responseSchema: {
             type: Type.OBJECT,
@@ -781,10 +781,10 @@ async function startServer() {
       const ai = new GoogleGenAI({ apiKey });
 
       const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash-preview",
+        model: "gemini-2.5-flash",
         contents: `Provide personalized sleep recommendations based on this user data: ${userData}`,
         config: {
-          // Removed maxOutputTokens
+          maxOutputTokens: 8192, // Explicitly set to avoid "generation exceeded max tokens limit"
         }
       });
 
