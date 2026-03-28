@@ -1,10 +1,21 @@
 // src/lib/testUsbAuth.ts
-export async function testUdiskAccess() {
-  console.log("=== U-disk WebUSB Deep Diagnostic Start ===");
+export interface UsbDeviceInfo {
+  serialNumber: string | null;
+  vendorId: number;
+  productId: number;
+  productName?: string;
+  manufacturerName?: string;
+}
+
+export async function testUdiskAccess(): Promise<{
+  success: boolean;
+  message: string;
+  deviceInfo?: UsbDeviceInfo;
+}> {
+  console.log("=== U-disk WebUSB Diagnostic Start ===");
 
   if (!('usb' in navigator)) {
-    console.error("WebUSB not supported in this browser.");
-    return { success: false, message: "Browser does not support WebUSB" };
+    return { success: false, message: "Browser does not support WebUSB. Please use latest Chrome/Edge." };
   }
 
   try {
@@ -13,59 +24,62 @@ export async function testUdiskAccess() {
       filters: [] 
     });
 
-    const info = {
+    console.log("Selected USB Device Info:", {
       productName: device.productName,
       manufacturerName: device.manufacturerName,
       serialNumber: device.serialNumber,
-      vendorId: device.vendorId.toString(16).padStart(4, '0'),
-      productId: device.productId.toString(16).padStart(4, '0'),
-      deviceClass: device.deviceClass,
-      deviceSubclass: device.deviceSubclass,
-    };
-
-    console.log("Selected Device Descriptor:", info);
+      vendorId: '0x' + device.vendorId.toString(16).padStart(4, '0'),
+      productId: '0x' + device.productId.toString(16).padStart(4, '0'),
+    });
 
     await device.open();
     console.log("Device opened successfully.");
 
-    // Attempt to select configuration
     await device.selectConfiguration(1);
     const interfaces = device.configuration?.interfaces || [];
     console.log("Available Interfaces:", interfaces);
 
-    const results: any[] = [];
-
-    // Attempt to claim each interface (This is where Mass Storage usually fails)
+    let claimed = false;
     for (const iface of interfaces) {
       try {
         await device.claimInterface(iface.interfaceNumber);
+        claimed = true;
         console.log(`Successfully claimed interface ${iface.interfaceNumber}`);
-        results.push({ id: iface.interfaceNumber, status: "claimed" });
-      } catch (claimErr: any) {
-        console.warn(`Failed to claim interface ${iface.interfaceNumber}:`, claimErr.message);
-        results.push({ id: iface.interfaceNumber, status: "failed", error: claimErr.message });
+        break; // Stop after first successful claim
+      } catch (claimErr) {
+        console.warn(`Failed to claim interface ${iface.interfaceNumber}:`, claimErr);
       }
     }
 
-    const isMassStorage = interfaces.some((i: any) => 
-      i.alternates.some((a: any) => a.interfaceClass === 8)
-    );
+    if (!claimed) {
+      console.log("Could not claim any interfaces (likely Mass Storage protection). Closing device, but we still have descriptors.");
+      await device.close();
+    }
+
+    const deviceInfo: UsbDeviceInfo = {
+      serialNumber: device.serialNumber,
+      vendorId: device.vendorId,
+      productId: device.productId,
+      productName: device.productName,
+      manufacturerName: device.manufacturerName,
+    };
 
     return {
       success: true,
-      message: isMassStorage ? "Mass Storage detected. Full access is restricted by browser security policies." : "Device accessed successfully.",
-      deviceInfo: info,
-      interfaceResults: results
+      message: claimed ? "Device accessed and interface claimed!" : "Device descriptor read successfully, but interface is protected (Mass Storage).",
+      deviceInfo
     };
 
   } catch (err: any) {
     console.error("WebUSB Diagnostic Error:", err);
-    let msg = err.message || "Unknown error";
+    let msg = "U-disk access failed";
 
-    if (msg.includes("protected") || msg.includes("Mass Storage") || msg.includes("claim")) {
-      msg = "Detected Mass Storage Protection: Standard U-disks are blocked by browser security to protect your files. WebUSB cannot claim this interface.";
-    } else if (msg.includes("No device selected") || msg.includes("NotFoundError")) {
-      msg = "Device not shown: Your U-disk might be locked by the OS. Try 'Ejecting' it first (without unplugging).";
+    if (err.name === 'NotFoundError' || err.message.includes('No device selected')) {
+      msg = "Browser did not detect your U-disk in the popup. It may be locked by the OS.";
+    } else if (err.message.includes('protected') || err.message.includes('claimInterface') || err.message.includes('Mass Storage')) {
+      msg = "Standard U-disks are protected by the browser. Cannot fully access.";
+    } else {
+      msg = err.message || "Unknown USB error.";
     }
 
     return { success: false, message: msg };

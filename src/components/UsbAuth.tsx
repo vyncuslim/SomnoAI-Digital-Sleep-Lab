@@ -52,17 +52,17 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
     try {
       const usb = (navigator as any).usb;
       
-      // Use a more specific filter for Mass Storage (Class 8)
-      // Note: Browsers still often block these for security.
+      // Default to empty filters to show EVERYTHING the browser can see
+      // This ensures the user's U-disk shows up if it's not blocked in usb-internals
       const device = await usb.requestDevice({ 
-        filters: showAll ? [] : [{ classCode: 8 }] 
+        filters: [] 
       });
 
       const payload = {
         vendorId: device.vendorId,
         productId: device.productId,
         serialNumber: device.serialNumber || "",
-        productName: device.productName || "Standard U-disk",
+        productName: device.productName || "Hardware Key",
         manufacturerName: device.manufacturerName || ""
       };
 
@@ -122,11 +122,11 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
       const usb = (navigator as any).usb;
       
       // 1. Fetch filters for this user first (if email provided)
-      let filters: any[] = showAll ? [] : [{ classCode: 8 }];
+      let filters: any[] = []; // Default to empty to show everything
       if (email) {
         const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
         const data = await res.json();
-        if (data.success && data.filters.length > 0 && !showAll) {
+        if (data.success && data.filters.length > 0) {
           filters = data.filters;
         }
       }
@@ -189,8 +189,8 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
       if (error.name === 'NotFoundError') {
         toast.success("Verification cancelled");
       } else {
-        console.error(error);
-        toast.error("An error occurred during verification");
+        console.error("USB Unlock Error:", error);
+        toast.error(error.message || "U-disk verification failed. Please try again.");
       }
     } finally {
       setLoading(false);
