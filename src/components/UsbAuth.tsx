@@ -45,10 +45,15 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
     setLoading(true);
     try {
       const usb = (navigator as any).usb;
-      // Chrome requires at least one filter object. [{}] is the broadest possible filter.
-      // Note: Standard Flash Drives (Mass Storage) are often blocked by Chrome for security.
+      
+      // We provide two filters: 
+      // 1. Generic [{}] to show all devices
+      // 2. Specific { classCode: 8 } to target Mass Storage (U-disks)
       const device = await usb.requestDevice({
-        filters: [{}] 
+        filters: [
+          {}, 
+          { classCode: 8 } 
+        ] 
       });
 
       const payload = {
@@ -109,21 +114,26 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
     setLoading(true);
     try {
       const usb = (navigator as any).usb;
-      const devices = await usb.getDevices();
       
-      if (devices.length === 0) {
-        toast.error("No paired U-disks found. Please ensure it's plugged in and was previously bound.");
-        setLoading(false);
-        return;
+      let filters: any[] = [{}];
+      if (email) {
+        const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.success && data.filters.length > 0) {
+          filters = data.filters;
+        }
       }
 
-      const candidates = devices.map((d: any) => ({
-        vendorId: d.vendorId,
-        productId: d.productId,
-        serialNumber: d.serialNumber || "",
-        productName: d.productName || "",
-        manufacturerName: d.manufacturerName || ""
-      }));
+      // Use the filters for precise selection
+      const device = await usb.requestDevice({ filters });
+      
+      const candidates = [{
+        vendorId: device.vendorId,
+        productId: device.productId,
+        serialNumber: device.serialNumber || "",
+        productName: device.productName || "",
+        manufacturerName: device.manufacturerName || ""
+      }];
 
       const res = await fetch("/api/usb/unlock", {
         method: "POST",
@@ -139,8 +149,12 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
         toast.error(data.message || "U-disk verification failed");
       }
     } catch (error: any) {
-      console.error(error);
-      toast.error("An error occurred during verification");
+      if (error.name === 'NotFoundError') {
+        toast.success("Verification cancelled");
+      } else {
+        console.error(error);
+        toast.error("An error occurred during verification");
+      }
     } finally {
       setLoading(false);
     }
@@ -148,9 +162,14 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
 
   if (!supported) {
     return (
-      <div className="flex items-center gap-2 text-sm text-rose-500 bg-rose-500/10 p-3 rounded-lg">
-        <ShieldAlert className="w-4 h-4" />
-        <span>WebUSB is not supported in this browser.</span>
+      <div className="flex flex-col gap-2 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
+        <div className="flex items-center gap-2 text-sm text-rose-500 font-bold">
+          <ShieldAlert className="w-4 h-4" />
+          <span>Browser Not Supported</span>
+        </div>
+        <p className="text-xs text-slate-400 leading-relaxed">
+          WebUSB is required for hardware authentication. Please use <span className="text-white font-bold">Google Chrome</span> or <span className="text-white font-bold">Microsoft Edge</span>. Firefox and Safari are currently not supported.
+        </p>
       </div>
     );
   }
@@ -170,7 +189,7 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
           </Button>
           
           <p className="text-[10px] text-slate-500 leading-relaxed px-1">
-            <span className="text-amber-500/80 font-bold">Note:</span> Standard flash drives may be hidden by your browser for security. If your U-disk doesn't appear, try using a USB mouse, keyboard, or other peripheral as your hardware key.
+            <span className="text-amber-500/80 font-bold">U-disk Tips:</span> If your U-disk doesn't appear, please <span className="text-white font-bold">Eject</span> it from your OS first (but keep it plugged in). This allows the browser to access the hardware ID.
           </p>
 
           {boundDevices.length > 0 && (

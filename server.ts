@@ -558,6 +558,39 @@ async function startServer() {
     }
   });
 
+  app.get('/api/usb/get-filters', async (req: any, res: any) => {
+    try {
+      const { email } = req.query;
+      if (!email) return res.status(400).json({ success: false, message: "Email required" });
+
+      const { data: userData } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('email', email.trim().toLowerCase())
+        .maybeSingle();
+      
+      let targetUserId = userData?.id;
+      if (!targetUserId) {
+        const { data: { users } } = await supabase.auth.admin.listUsers();
+        const foundUser = users.find(u => u.email?.toLowerCase() === email.trim().toLowerCase());
+        if (foundUser) targetUserId = foundUser.id;
+      }
+
+      if (!targetUserId) return res.json({ success: true, filters: [] });
+
+      const { data: keys } = await supabase
+        .from('user_usb_keys')
+        .select('vendor_id')
+        .eq('user_id', targetUserId)
+        .eq('status', 'active');
+
+      const filters = keys ? Array.from(new Set(keys.map((k: any) => ({ vendorId: k.vendor_id })))) : [];
+      res.json({ success: true, filters });
+    } catch (error: any) {
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
   app.post('/api/usb/unlock', async (req: any, res: any) => {
     try {
       const { devices, userId, email } = req.body;
