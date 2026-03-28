@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { HardwareButton as Button } from './ui/Components';
 import { toast } from 'react-hot-toast';
-import { Usb, ShieldCheck, ShieldAlert, Loader2 } from 'lucide-react';
+import { Usb, ShieldCheck, ShieldAlert, Loader2, ChevronDown } from 'lucide-react';
 
 interface UsbAuthProps {
   mode: 'bind' | 'unlock';
@@ -17,6 +17,8 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
   const [boundDevices, setBoundDevices] = useState<any[]>([]);
 
   const [showAll, setShowAll] = useState(false);
+
+  const [showGuide, setShowGuide] = useState(false);
 
   useEffect(() => {
     if (!('usb' in navigator)) {
@@ -195,33 +197,45 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
 
   return (
     <div className="flex flex-col gap-4 w-full">
-      {mode === 'bind' ? (
-        <div className="space-y-4">
-          <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-4 mb-4">
-            <div className="flex items-start gap-3">
-              <Usb className="w-5 h-5 text-indigo-400 mt-0.5" />
-              <div className="text-[11px] text-indigo-200 space-y-2">
-                <p className="font-bold text-indigo-300 uppercase tracking-wider">U-disk Binding Guide:</p>
-                <p>Standard U-disks are often hidden by browsers. If your device doesn't appear in the list:</p>
-                <ul className="list-disc list-inside space-y-1 opacity-90">
-                  <li>Try to <span className="text-white font-bold underline">"Eject"</span> the U-disk in your OS (but don't pull it out).</li>
-                  <li>Ensure no other app is accessing the U-disk.</li>
-                  <li>Check the <span className="text-white font-bold">"Show all devices"</span> option below.</li>
-                </ul>
-              </div>
+      <div className="bg-indigo-900/10 border border-indigo-500/20 rounded-xl overflow-hidden transition-all">
+        <button 
+          onClick={() => setShowGuide(!showGuide)}
+          className="w-full flex items-center justify-between p-3 hover:bg-indigo-500/5 transition-colors"
+        >
+          <div className="flex items-center gap-2">
+            <Usb className="w-4 h-4 text-indigo-400" />
+            <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">Troubleshooting Guide</span>
+          </div>
+          <ChevronDown className={`w-3 h-3 text-indigo-400 transition-transform ${showGuide ? 'rotate-180' : ''}`} />
+        </button>
+        
+        {showGuide && (
+          <div className="p-3 pt-0 border-t border-indigo-500/10">
+            <div className="text-[10px] text-indigo-200/80 space-y-2 leading-relaxed">
+              <p>Browsers often hide standard U-disks for security. If your device is not listed:</p>
+              <ul className="list-disc list-inside space-y-1.5">
+                <li><span className="text-white font-bold underline">"Eject"</span> the U-disk in your OS (Windows/macOS) but <span className="text-indigo-300">keep it plugged in</span>. This often releases the lock and allows the browser to see it.</li>
+                <li>Ensure no other applications (like File Explorer or Disk Utility) are actively using the drive.</li>
+                <li>Enable the <span className="text-white font-bold">"Show all devices"</span> option below to bypass strict filtering.</li>
+              </ul>
             </div>
           </div>
+        )}
+      </div>
 
-          <div className="flex items-center gap-2 px-1">
+      {mode === 'bind' ? (
+        <div className="space-y-4">
+
+          <div className="flex items-center gap-2 px-1 py-1">
             <input 
               type="checkbox" 
               id="showAll" 
               checked={showAll} 
               onChange={(e) => setShowAll(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500"
+              className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 transition-all cursor-pointer"
             />
-            <label htmlFor="showAll" className="text-[10px] text-slate-400 cursor-pointer select-none hover:text-slate-300">
-              Show all devices (if U-disk is not detected)
+            <label htmlFor="showAll" className="text-xs text-slate-400 cursor-pointer select-none hover:text-slate-300 font-medium">
+              Show all devices <span className="text-[10px] opacity-60 font-normal">(Use if U-disk is not detected)</span>
             </label>
           </div>
 
@@ -267,16 +281,16 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 px-1">
+          <div className="flex items-center gap-2 px-1 py-1">
             <input 
               type="checkbox" 
               id="showAllUnlock" 
               checked={showAll} 
               onChange={(e) => setShowAll(e.target.checked)}
-              className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500"
+              className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 transition-all cursor-pointer"
             />
-            <label htmlFor="showAllUnlock" className="text-[10px] text-slate-400 cursor-pointer select-none hover:text-slate-300">
-              Show all devices (if U-disk is not detected)
+            <label htmlFor="showAllUnlock" className="text-xs text-slate-400 cursor-pointer select-none hover:text-slate-300 font-medium">
+              Show all devices <span className="text-[10px] opacity-60 font-normal">(Use if U-disk is not detected)</span>
             </label>
           </div>
 

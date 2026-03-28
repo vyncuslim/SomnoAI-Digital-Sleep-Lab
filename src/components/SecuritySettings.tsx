@@ -112,17 +112,19 @@ export const SecuritySettings: React.FC = () => {
         </button>
       </div>
 
-      <div className="flex items-center justify-between p-4 bg-slate-800/50 rounded-xl border border-slate-700">
-        <div className="flex items-center gap-3">
-          <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
-            <Usb className="w-5 h-5" />
-          </div>
-          <div>
-            <h3 className="text-sm font-bold text-white">U-disk Authentication</h3>
-            <p className="text-xs text-slate-400">Bind a physical U-disk for hardware-based unlocking</p>
+      <div className="p-4 bg-slate-800/50 rounded-xl border border-slate-700 space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-indigo-500/10 text-indigo-500">
+              <Usb className="w-5 h-5" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">U-disk Authentication</h3>
+              <p className="text-xs text-slate-400">Bind a physical U-disk for hardware-based unlocking</p>
+            </div>
           </div>
         </div>
-        <div className="w-40">
+        <div className="pt-2">
           <UsbAuth mode="bind" />
         </div>
       </div>
