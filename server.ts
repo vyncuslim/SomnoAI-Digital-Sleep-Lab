@@ -618,11 +618,11 @@ async function startServer() {
       }
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview", // Using flash for faster chat responses
+        model: "gemini-2.5-flash-preview", // Switched to 2.5 to avoid 2026 quota issues and thinking token overhead
         contents: validContents,
         config: {
           systemInstruction: (systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab.").substring(0, 8000),
-          maxOutputTokens: 2048, // Reduced for speed
+          // Removed maxOutputTokens to allow the model to manage its own output/thinking balance within context limits
           temperature: 0.7,
         }
       });
@@ -681,12 +681,12 @@ async function startServer() {
       console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-3-flash-preview`);
 
       const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview', // Using flash for faster response to avoid Vercel timeouts
+        model: 'gemini-2.5-flash-preview', // Switched to 2.5 for 2026 compatibility
         contents: prompt || "Please analyze my sleep.",
         config: {
           systemInstruction: "You are a professional sleep scientist and data analyst. Provide detailed, accurate, and actionable sleep analysis in JSON format.",
           responseMimeType: 'application/json',
-          maxOutputTokens: 4096,
+          // Removed maxOutputTokens
           temperature: 0.5,
           responseSchema: {
             type: Type.OBJECT,
@@ -781,10 +781,10 @@ async function startServer() {
       const ai = new GoogleGenAI({ apiKey });
 
       const response = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
+        model: "gemini-2.5-flash-preview",
         contents: `Provide personalized sleep recommendations based on this user data: ${userData}`,
         config: {
-          maxOutputTokens: 2048,
+          // Removed maxOutputTokens
         }
       });
 
