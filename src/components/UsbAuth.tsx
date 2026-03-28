@@ -115,25 +115,36 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
     try {
       const usb = (navigator as any).usb;
       
-      let filters: any[] = [{}];
-      if (email) {
-        const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-        if (data.success && data.filters.length > 0) {
-          filters = data.filters;
-        }
-      }
+      // 1. Try to find already paired devices first (seamless)
+      let pairedDevices = await usb.getDevices();
+      let candidates = pairedDevices.map((d: any) => ({
+        vendorId: d.vendorId,
+        productId: d.productId,
+        serialNumber: d.serialNumber || "",
+        productName: d.productName || "",
+        manufacturerName: d.manufacturerName || ""
+      }));
 
-      // Use the filters for precise selection
-      const device = await usb.requestDevice({ filters });
-      
-      const candidates = [{
-        vendorId: device.vendorId,
-        productId: device.productId,
-        serialNumber: device.serialNumber || "",
-        productName: device.productName || "",
-        manufacturerName: device.manufacturerName || ""
-      }];
+      // 2. If no paired devices or no match, request a device
+      if (candidates.length === 0) {
+        let filters: any[] = [{}];
+        if (email) {
+          const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
+          const data = await res.json();
+          if (data.success && data.filters.length > 0) {
+            filters = data.filters;
+          }
+        }
+
+        const device = await usb.requestDevice({ filters });
+        candidates = [{
+          vendorId: device.vendorId,
+          productId: device.productId,
+          serialNumber: device.serialNumber || "",
+          productName: device.productName || "",
+          manufacturerName: device.manufacturerName || ""
+        }];
+      }
 
       const res = await fetch("/api/usb/unlock", {
         method: "POST",
@@ -194,7 +205,10 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
           </Button>
           
           <p className="text-[10px] text-slate-500 leading-relaxed px-1">
-            <span className="text-amber-500/80 font-bold">U-disk Tips:</span> If your U-disk doesn't appear, please <span className="text-white font-bold">Eject</span> it from your OS first (but keep it plugged in). This allows the browser to access the hardware ID.
+            <span className="text-amber-500/80 font-bold">U-disk Tips:</span> If your U-disk doesn't appear, please <span className="text-white font-bold">Eject</span> it from your OS first (but keep it plugged in). 
+          </p>
+          <p className="text-[10px] text-slate-600 italic px-1">
+            * Note: Internal components like your <span className="text-slate-400">Webcam</span> or <span className="text-slate-400">Bluetooth</span> may appear in the list as "Foxconn" or "Unknown". Please ignore them and look for your external drive.
           </p>
 
           {boundDevices.length > 0 && (

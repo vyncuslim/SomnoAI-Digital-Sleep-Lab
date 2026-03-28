@@ -657,11 +657,25 @@ async function startServer() {
       }
 
       const matched = devices.some((d: any) => 
-        boundKeys.some((b: any) => 
-          d.vendorId === b.vendor_id && 
-          d.productId === b.product_id && 
-          (b.serial_number ? d.serialNumber === b.serial_number : true)
-        )
+        boundKeys.some((b: any) => {
+          const idMatch = d.vendorId === b.vendor_id && d.productId === b.product_id;
+          if (!idMatch) return false;
+
+          // Priority 1: Serial Number Match (if both have it)
+          if (b.serial_number && d.serialNumber) {
+            return b.serial_number === d.serialNumber;
+          }
+
+          // Priority 2: If DB has serial but device doesn't (rare/browser limit), 
+          // we might fail or require extra verification. 
+          // For now, if DB has it, we require it.
+          if (b.serial_number && !d.serialNumber) {
+            return false; 
+          }
+
+          // Priority 3: Fallback to Vendor/Product ID only if DB has no serial
+          return true;
+        })
       );
 
       if (!matched) {
