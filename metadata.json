@@ -33,6 +33,7 @@
   ],
   "requestFramePermissions": [
     "microphone",
-    "camera"
+    "camera",
+    "usb"
   ]
 }

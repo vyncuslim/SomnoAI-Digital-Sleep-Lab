@@ -16,6 +16,8 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
   const [supported, setSupported] = useState(true);
   const [boundDevices, setBoundDevices] = useState<any[]>([]);
 
+  const [showAll, setShowAll] = useState(false);
+
   useEffect(() => {
     if (!('usb' in navigator)) {
       setSupported(false);
@@ -50,7 +52,7 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
       // Use a more specific filter for Mass Storage (Class 8)
       // Note: Browsers still often block these for security.
       const device = await usb.requestDevice({ 
-        filters: [{ classCode: 8 }] 
+        filters: showAll ? [] : [{ classCode: 8 }] 
       });
 
       const payload = {
@@ -128,7 +130,7 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
 
       // 2. If no paired devices or no match, request a device
       if (candidates.length === 0) {
-        let filters: any[] = [{ classCode: 8 }];
+        let filters: any[] = showAll ? [] : [{ classCode: 8 }];
         if (email) {
           const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
           const data = await res.json();
@@ -195,11 +197,39 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
     <div className="flex flex-col gap-4 w-full">
       {mode === 'bind' ? (
         <div className="space-y-4">
+          <div className="bg-indigo-900/20 border border-indigo-500/30 rounded-xl p-4 mb-4">
+            <div className="flex items-start gap-3">
+              <Usb className="w-5 h-5 text-indigo-400 mt-0.5" />
+              <div className="text-[11px] text-indigo-200 space-y-2">
+                <p className="font-bold text-indigo-300 uppercase tracking-wider">U-disk Binding Guide:</p>
+                <p>Standard U-disks are often hidden by browsers. If your device doesn't appear in the list:</p>
+                <ul className="list-disc list-inside space-y-1 opacity-90">
+                  <li>Try to <span className="text-white font-bold underline">"Eject"</span> the U-disk in your OS (but don't pull it out).</li>
+                  <li>Ensure no other app is accessing the U-disk.</li>
+                  <li>Check the <span className="text-white font-bold">"Show all devices"</span> option below.</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 px-1">
+            <input 
+              type="checkbox" 
+              id="showAll" 
+              checked={showAll} 
+              onChange={(e) => setShowAll(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500"
+            />
+            <label htmlFor="showAll" className="text-[10px] text-slate-400 cursor-pointer select-none hover:text-slate-300">
+              Show all devices (if U-disk is not detected)
+            </label>
+          </div>
+
           <Button 
             onClick={handleBind} 
             disabled={loading}
             variant="outline"
-            className="w-full flex items-center gap-2 bg-indigo-600/10 border-indigo-500/20 hover:bg-indigo-600/20 text-indigo-400"
+            className="w-full flex items-center gap-2 bg-indigo-600/10 border-indigo-500/20 hover:bg-indigo-600/20 text-indigo-400 py-6 rounded-2xl"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Usb className="w-4 h-4" />}
             Bind Hardware Key
@@ -207,10 +237,7 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
           
           <div className="space-y-2 px-1">
             <p className="text-[10px] text-slate-400 leading-relaxed">
-              <span className="text-amber-500 font-bold">Security Note:</span> Standard U-disks are often restricted by browsers. 
-            </p>
-            <p className="text-[10px] text-slate-500 leading-relaxed italic">
-              If your device doesn't appear, try <span className="text-white">Ejecting</span> it from your OS first (without unplugging) to release the system lock.
+              <span className="text-amber-500 font-bold italic">Note:</span> Only bind devices you trust.
             </p>
           </div>
 
@@ -239,14 +266,29 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
           )}
         </div>
       ) : (
-        <Button 
-          onClick={handleUnlock} 
-          disabled={loading}
-          className="w-full flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-6 rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.3)]"
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-          Verify U-disk to Unlock
-        </Button>
+        <div className="space-y-4">
+          <div className="flex items-center gap-2 px-1">
+            <input 
+              type="checkbox" 
+              id="showAllUnlock" 
+              checked={showAll} 
+              onChange={(e) => setShowAll(e.target.checked)}
+              className="w-3.5 h-3.5 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500"
+            />
+            <label htmlFor="showAllUnlock" className="text-[10px] text-slate-400 cursor-pointer select-none hover:text-slate-300">
+              Show all devices (if U-disk is not detected)
+            </label>
+          </div>
+
+          <Button 
+            onClick={handleUnlock} 
+            disabled={loading}
+            className="w-full flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-6 rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.3)]"
+          >
+            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+            Verify U-disk to Unlock
+          </Button>
+        </div>
       )}
     </div>
   );
