@@ -2,10 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../context/AuthContext';
-import { Mail, Lock, AlertCircle } from 'lucide-react';
+import { Mail, Lock, AlertCircle, Key } from 'lucide-react';
 import { fetchWithLogging } from '../services/apiService';
 import { Logo } from '../components/Logo';
 import { useLanguage } from '../context/useLanguage';
+import { startAuthentication } from '@simplewebauthn/browser';
 
 const Login = () => {
   const { t } = useLanguage();
@@ -84,6 +85,50 @@ const Login = () => {
     }
   };
 
+  const handlePasskeyLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      // 1. Get authentication options from server
+      const optionsRes = await fetch("/api/webauthn/generate-authentication-options", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const optionsData = await optionsRes.json();
+      if (!optionsData.success) throw new Error(optionsData.message);
+
+      // 2. Start WebAuthn authentication in browser
+      const asseResp = await startAuthentication({ optionsJSON: optionsData.options });
+
+      // 3. Send response to server for verification
+      const verifyRes = await fetch("/api/webauthn/verify-authentication", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          response: asseResp,
+          challengeId: optionsData.challengeId
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.success && verifyData.action_link) {
+        window.location.href = verifyData.action_link;
+      } else {
+        throw new Error(verifyData.message || "Verification failed");
+      }
+    } catch (error: any) {
+      console.error(error);
+      if (error.name === 'NotAllowedError') {
+        setError("Authentication cancelled or blocked by browser.");
+      } else {
+        setError(error.message || "An error occurred during authentication");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-md bg-secondary/30 p-8 rounded-2xl border border-white/10 shadow-xl backdrop-blur-sm">
@@ -145,6 +190,29 @@ const Login = () => {
             {loading ? t('auth.loggingIn') : t('auth.loginBtn')}
           </button>
         </form>
+
+        <div className="mt-6">
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-white/10"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-2 bg-secondary/30 text-gray-500">Or continue with</span>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <button
+              type="button"
+              onClick={handlePasskeyLogin}
+              disabled={loading}
+              className="w-full flex justify-center items-center py-3 px-4 border border-white/10 rounded-xl shadow-sm text-sm font-medium text-gray-300 bg-background/50 hover:bg-background/80 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary focus:ring-offset-background disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            >
+              <Key className="w-5 h-5 mr-2" />
+              Login with Passkey
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   );
