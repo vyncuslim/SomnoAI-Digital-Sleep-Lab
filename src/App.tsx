@@ -362,10 +362,32 @@ const AppContent = () => {
   const activeView = getActiveView();
   const canonicalUrl = `https://sleepsomno.com${location.pathname}`;
 
+  // Paths that should NOT be indexed by search engines
+  const sensitivePaths = [
+    '/auth',
+    '/dashboard',
+    '/admin',
+    '/settings',
+    '/profile',
+    '/subscription',
+    '/feedback',
+    '/experiment',
+    '/atlas',
+    '/dreams',
+    '/voice',
+    '/journal',
+    '/personal-chat',
+    '/founder-dashboard',
+    '/search'
+  ];
+
+  const isSensitivePath = sensitivePaths.some(path => location.pathname.includes(path));
+
   return (
     <ErrorBoundary lang={lang}>
       <Helmet>
         <link rel="canonical" href={canonicalUrl} />
+        {isSensitivePath && <meta name="robots" content="noindex, nofollow" />}
       </Helmet>
       <Watermark />
       <ContentProtection>

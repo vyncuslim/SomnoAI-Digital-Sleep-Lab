@@ -76,18 +76,40 @@ async function startServer() {
     next();
   });
 
-  // Rate Limiting - Disabled for 'unlimited' experience
-  const apiLimiter = rateLimit({
+  // Rate Limiting - Tiered approach for security and performance
+  const generalLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minute
-    limit: 10000, // Increased to 10k per minute for 'unlimited' feel
+    limit: 300, // 300 requests per minute for general API
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     message: { error: 'Too many requests, please try again later.' }
   });
 
-  // Apply rate limiter to general API routes but NOT to AI routes or subscribe for 'unlimited' experience
-  app.use('/api/contact', apiLimiter);
-  // app.use('/api/subscribe', apiLimiter); // Removed rate limiting for subscribe as well
+  const strictLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 20, // 20 requests per 15 minutes for sensitive forms
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Too many attempts from this IP, please try again after 15 minutes.' }
+  });
+
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    limit: 10, // 10 login attempts per 15 minutes
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    message: { error: 'Too many login attempts, please try again later.' }
+  });
+
+  // Apply rate limiters to specific routes
+  app.use('/api/contact', strictLimiter);
+  app.use('/api/subscribe', strictLimiter);
+  app.use('/api/audit/login', authLimiter);
+  app.use('/api/audit/auth-signup', authLimiter);
+  app.use('/api/chat', generalLimiter);
+  app.use('/api/analyze-sleep', generalLimiter);
+  app.use('/api/sleep-recommendation', generalLimiter);
+  app.use('/api/health', generalLimiter);
 
   // Stripe Webhook needs raw body
   app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), async (req: any, res: any) => {
@@ -621,7 +643,7 @@ async function startServer() {
         model: "gemini-2.5-flash", // Switched to 2.5 to avoid 2026 quota issues and thinking token overhead
         contents: validContents,
         config: {
-          systemInstruction: (systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab.").substring(0, 8000),
+          systemInstruction: (systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab. Always maintain a professional, scientific, yet approachable tone. All your responses are proprietary content of SomnoAI.").substring(0, 8000),
           maxOutputTokens: 8192, // Explicitly set to avoid "generation exceeded max tokens limit"
           temperature: 0.7,
         }
@@ -684,7 +706,7 @@ async function startServer() {
         model: 'gemini-2.5-flash', // Switched to 2.5 for 2026 compatibility
         contents: prompt || "Please analyze my sleep.",
         config: {
-          systemInstruction: "You are a professional sleep scientist and data analyst. Provide detailed, accurate, and actionable sleep analysis in JSON format.",
+          systemInstruction: "You are a professional sleep scientist and data analyst at SomnoAI. Provide detailed, accurate, and actionable sleep analysis in JSON format. Ensure the analysis reflects the high standards of SomnoAI Digital Sleep Lab.",
           responseMimeType: 'application/json',
           maxOutputTokens: 8192, // Explicitly set to avoid "generation exceeded max tokens limit"
           temperature: 0.5,

@@ -5,13 +5,16 @@ const Watermark: React.FC = () => {
   const { profile } = useAuth();
   const [sessionId] = React.useState(() => Math.random().toString(36).substring(2, 10).toUpperCase());
   
-  if (!profile) return null;
+  // Base opacity for public content
+  let opacity = 'opacity-[0.005]';
+  let watermarkText = `SOMNOAI | SLEEPSOMNO.COM | ${new Date().getFullYear()}`;
 
-  const isOwner = profile.email === 'ongyuze1401@gmail.com';
-  const opacity = isOwner ? 'opacity-[0.01]' : 'opacity-[0.04]';
-
-  // 包含 Email, User ID, Session ID 和日期
-  const watermarkText = `SDSL-CONFIDENTIAL | ${profile.email} | ID:${profile.id?.substring(0, 8)} | SESS:${sessionId} | ${new Date().toLocaleDateString()}`;
+  if (profile) {
+    const isOwner = profile.email === 'ongyuze1401@gmail.com';
+    opacity = isOwner ? 'opacity-[0.01]' : 'opacity-[0.04]';
+    // More detailed watermark for authenticated users
+    watermarkText = `SDSL-CONFIDENTIAL | ${profile.email} | ID:${profile.id?.substring(0, 8)} | SESS:${sessionId} | ${new Date().toLocaleDateString()}`;
+  }
 
   return (
     <div className={`fixed inset-0 z-[9999] pointer-events-none overflow-hidden ${opacity} select-none`}>
