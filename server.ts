@@ -17,6 +17,41 @@ import { serverEmailService } from './src/services/serverEmailService';
 
 dotenv.config();
 
+// Helper for Gemini content generation with exponential backoff and fallback
+async function generateWithFallback(ai: any, params: any, maxRetries = 3) {
+  const models = ['gemini-2.5-flash', 'gemini-2.5-flash-lite'];
+  let lastError: any = null;
+
+  for (const model of models) {
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        console.log(`[AI] Attempting generation with ${model} (Attempt ${attempt + 1}/${maxRetries})`);
+        const response = await ai.models.generateContent({
+          ...params,
+          model: model,
+        });
+        return response;
+      } catch (error: any) {
+        lastError = error;
+        const errorMessage = String(error?.message || '').toLowerCase();
+        
+        // If it's a quota/rate limit error, wait and retry
+        if (errorMessage.includes('quota') || errorMessage.includes('429') || errorMessage.includes('limit')) {
+          const delay = Math.pow(2, attempt) * 1000 + Math.random() * 1000;
+          console.warn(`[AI] Quota reached for ${model}. Retrying in ${Math.round(delay)}ms...`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+          continue;
+        }
+        
+        // If it's a safety error or other non-retryable error, break retry loop and try next model
+        console.error(`[AI] Error with ${model}:`, error.message);
+        break; 
+      }
+    }
+  }
+  throw lastError;
+}
+
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || '';
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
 const stripeSecretKey = process.env.STRIPE_SECRET_KEY || '';
@@ -639,8 +674,7 @@ async function startServer() {
         }
       }
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash", // Switched to 2.5 to avoid 2026 quota issues and thinking token overhead
+      const response = await generateWithFallback(ai, {
         contents: validContents,
         config: {
           systemInstruction: (systemInstruction || "You are a professional sleep science expert at SomnoAI Digital Sleep Lab. Always maintain a professional, scientific, yet approachable tone. All your responses are proprietary content of SomnoAI.").substring(0, 8000),
@@ -702,8 +736,7 @@ async function startServer() {
       const ai = new GoogleGenAI({ apiKey });
       console.log(`[DEBUG] Starting analysis for user ${user.id} using gemini-2.5-flash`);
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash', // Switched to 2.5 for 2026 compatibility
+      const response = await generateWithFallback(ai, {
         contents: prompt || "Please analyze my sleep.",
         config: {
           systemInstruction: "You are a professional sleep scientist and data analyst at SomnoAI. Provide detailed, accurate, and actionable sleep analysis in JSON format. Ensure the analysis reflects the high standards of SomnoAI Digital Sleep Lab.",
@@ -802,8 +835,7 @@ async function startServer() {
       console.log(`[RECOMMENDATION] Processing request for user ${user.id}`);
       const ai = new GoogleGenAI({ apiKey });
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
+      const response = await generateWithFallback(ai, {
         contents: `Provide personalized sleep recommendations based on this user data: ${userData}`,
         config: {
           maxOutputTokens: 8192, // Explicitly set to avoid "generation exceeded max tokens limit"
