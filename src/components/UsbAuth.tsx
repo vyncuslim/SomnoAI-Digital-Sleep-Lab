@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { HardwareButton as Button } from './ui/Components';
 import { toast } from 'react-hot-toast';
-import { Usb, ShieldCheck, ShieldAlert, Loader2, ChevronDown } from 'lucide-react';
+import { Usb, ShieldCheck, ShieldAlert, Loader2, ChevronDown, Activity } from 'lucide-react';
+import { testUdiskAccess } from '../lib/testUsbAuth';
 
 interface UsbAuthProps {
   mode: 'bind' | 'unlock';
@@ -120,7 +121,17 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
     try {
       const usb = (navigator as any).usb;
       
-      // 1. Try to find already paired devices first (seamless)
+      // 1. Fetch filters for this user first (if email provided)
+      let filters: any[] = showAll ? [] : [{ classCode: 8 }];
+      if (email) {
+        const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
+        const data = await res.json();
+        if (data.success && data.filters.length > 0 && !showAll) {
+          filters = data.filters;
+        }
+      }
+
+      // 2. Try to find a match among ALREADY paired devices (seamless)
       let pairedDevices = await usb.getDevices();
       let candidates = pairedDevices.map((d: any) => ({
         vendorId: d.vendorId,
@@ -130,44 +141,49 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
         manufacturerName: d.manufacturerName || ""
       }));
 
-      // 2. If no paired devices or no match, request a device
-      if (candidates.length === 0) {
-        let filters: any[] = showAll ? [] : [{ classCode: 8 }];
-        if (email) {
-          const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
-          const data = await res.json();
-          if (data.success && data.filters.length > 0) {
-            filters = data.filters;
-          }
+      // 3. Send paired devices to backend to see if any match
+      let matched = false;
+      if (candidates.length > 0) {
+        const res = await fetch("/api/usb/unlock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ devices: candidates, userId, email })
+        });
+        const data = await res.json();
+        if (data.success) {
+          matched = true;
+          toast.success("U-disk verified (auto-detected)");
+          if (data.action_link) window.location.href = data.action_link;
+          else if (onSuccess) onSuccess();
+          return;
         }
+      }
 
+      // 4. If no paired device matched, FORCE a popup selection
+      if (!matched) {
         const device = await usb.requestDevice({ filters });
-        candidates = [{
+        const manualCandidate = [{
           vendorId: device.vendorId,
           productId: device.productId,
           serialNumber: device.serialNumber || "",
           productName: device.productName || "",
           manufacturerName: device.manufacturerName || ""
         }];
-      }
 
-      const res = await fetch("/api/usb/unlock", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ devices: candidates, userId, email })
-      });
+        const res = await fetch("/api/usb/unlock", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ devices: manualCandidate, userId, email })
+        });
 
-      const data = await res.json();
-      if (data.success) {
-        toast.success("U-disk verified successfully");
-        if (data.action_link) {
-          // Redirect to the magic link for seamless login
-          window.location.href = data.action_link;
-        } else if (onSuccess) {
-          onSuccess();
+        const data = await res.json();
+        if (data.success) {
+          toast.success("U-disk verified successfully");
+          if (data.action_link) window.location.href = data.action_link;
+          else if (onSuccess) onSuccess();
+        } else {
+          toast.error(data.message || "U-disk verification failed");
         }
-      } else {
-        toast.error(data.message || "U-disk verification failed");
       }
     } catch (error: any) {
       if (error.name === 'NotFoundError') {
@@ -218,6 +234,23 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
                 <li>Ensure no other applications (like File Explorer or Disk Utility) are actively using the drive.</li>
                 <li>Enable the <span className="text-white font-bold">"Show all devices"</span> option below to bypass strict filtering.</li>
               </ul>
+              
+              <div className="pt-2 border-t border-indigo-500/10 mt-2">
+                <button 
+                  onClick={async () => {
+                    const result = await testUdiskAccess();
+                    if (result.success) {
+                      toast.success(result.message);
+                    } else {
+                      toast.error(result.message);
+                    }
+                  }}
+                  className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-all text-[9px] font-bold uppercase tracking-widest"
+                >
+                  <Activity className="w-3 h-3" />
+                  Run Deep Diagnostic
+                </button>
+              </div>
             </div>
           </div>
         )}
@@ -246,7 +279,7 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
             className="w-full flex items-center gap-2 bg-indigo-600/10 border-indigo-500/20 hover:bg-indigo-600/20 text-indigo-400 py-6 rounded-2xl"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Usb className="w-4 h-4" />}
-            Bind Hardware Key
+            Bind Optional Hardware Key
           </Button>
           
           <div className="space-y-2 px-1">
@@ -300,8 +333,14 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
             className="w-full flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-6 rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.3)]"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-            Verify U-disk to Unlock
+            Verify U-disk (Optional)
           </Button>
+
+          <div className="text-center">
+            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
+              Verification failed? Use your <span className="text-indigo-400">PIN</span> or <span className="text-indigo-400">Magic Link</span> instead.
+            </p>
+          </div>
         </div>
       )}
     </div>
