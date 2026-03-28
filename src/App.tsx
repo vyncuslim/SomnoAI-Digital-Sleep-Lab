@@ -11,7 +11,7 @@ import RootLayout from './components/RootLayout';
 import Watermark from './components/Watermark';
 import { BLOG_POSTS, RESEARCH_ARTICLES } from './data/mockData';
 import { ProtectedRoute } from './components/ProtectedRoute';
-import { HelmetProvider } from 'react-helmet-async';
+import { Helmet, HelmetProvider } from 'react-helmet-async';
 import { SchemaMarkup } from './components/SchemaMarkup';
 import { AuthCallback } from './components/AuthCallback';
 
@@ -360,9 +360,13 @@ const AppContent = () => {
   };
 
   const activeView = getActiveView();
+  const canonicalUrl = `https://sleepsomno.com${location.pathname}`;
 
   return (
     <ErrorBoundary lang={lang}>
+      <Helmet>
+        <link rel="canonical" href={canonicalUrl} />
+      </Helmet>
       <Watermark />
       <ContentProtection>
         <div>

@@ -1,11 +1,14 @@
 User-agent: *
 Allow: /
+Allow: /en/*
+Allow: /cn/*
 Allow: /about
 Allow: /product
 Allow: /how-it-works
 Allow: /features
 Allow: /research
 Allow: /science
+Allow: /founder
 Allow: /news
 Allow: /faq
 Allow: /status
