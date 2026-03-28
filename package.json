@@ -12,6 +12,8 @@
     "@google/genai": "^1.44.0",
     "@hookform/resolvers": "^5.2.2",
     "@marsidev/react-turnstile": "^1.4.2",
+    "@simplewebauthn/browser": "^13.3.0",
+    "@simplewebauthn/server": "^13.3.0",
     "@supabase/supabase-js": "^2.99.0",
     "axios": "^1.13.6",
     "clsx": "^2.1.1",

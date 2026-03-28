@@ -522,188 +522,194 @@ async function startServer() {
     }
   });
 
-  // USB Authentication Endpoints
-  app.post('/api/usb/bind', async (req: any, res: any) => {
+  // WebAuthn / Passkey Endpoints
+  const {
+    generateRegistrationOptions,
+    verifyRegistrationResponse,
+    generateAuthenticationOptions,
+    verifyAuthenticationResponse,
+  } = require('@simplewebauthn/server');
+
+  const rpName = 'SomnoAI';
+  const rpID = process.env.APP_URL ? new URL(process.env.APP_URL).hostname : 'localhost';
+  const origin = process.env.APP_URL || `http://localhost:3000`;
+
+  // Store challenges in memory (for production, use Redis or DB)
+  const passkeyChallenges = new Map<string, { challenge: string, userId: string, expires: number }>();
+
+  app.post('/api/webauthn/generate-registration-options', async (req: any, res: any) => {
     try {
       const user = await requireUserFromRequest(req);
-      const { vendorId, productId, serialNumber, productName, manufacturerName } = req.body;
-
-      if (!supabase) {
-        return res.status(500).json({ success: false, message: "Database not configured" });
-      }
-
-      const { error } = await supabase
-        .from('user_usb_keys')
-        .upsert({
-          user_id: user.id,
-          vendor_id: vendorId,
-          product_id: productId,
-          serial_number: serialNumber,
-          product_name: productName,
-          manufacturer_name: manufacturerName,
-          status: 'active',
-          updated_at: new Date().toISOString()
-        }, {
-          onConflict: 'user_id, vendor_id, product_id, serial_number'
-        });
-
-      if (error) {
-        console.error('[USB BIND ERROR]', error);
-        return res.status(500).json({ success: false, message: error.message });
-      }
-
-      res.json({ success: true });
-    } catch (error: any) {
-      res.status(401).json({ success: false, message: error.message });
-    }
-  });
-
-  app.get('/api/usb/get-filters', async (req: any, res: any) => {
-    try {
-      const { email } = req.query;
-      if (!email) return res.status(400).json({ success: false, message: "Email required" });
-
-      const { data: userData } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('email', email.trim().toLowerCase())
-        .maybeSingle();
       
-      let targetUserId = userData?.id;
-      if (!targetUserId) {
-        const { data: { users } } = await supabase.auth.admin.listUsers();
-        const foundUser = users.find(u => u.email?.toLowerCase() === email.trim().toLowerCase());
-        if (foundUser) targetUserId = foundUser.id;
-      }
+      if (!supabase) return res.status(500).json({ success: false, message: "Database not configured" });
 
-      if (!targetUserId) return res.json({ success: true, filters: [] });
+      const { data: existingKeys } = await supabase
+        .from('user_passkeys')
+        .select('credential_id')
+        .eq('user_id', user.id);
 
-      const { data: keys } = await supabase
-        .from('user_usb_keys')
-        .select('vendor_id')
-        .eq('user_id', targetUserId)
-        .eq('status', 'active');
+      const excludeCredentials = (existingKeys || []).map((key: any) => ({
+        id: key.credential_id,
+        type: 'public-key' as const,
+        transports: ['internal', 'usb', 'ble', 'nfc'] as any[],
+      }));
 
-      const filters = keys ? Array.from(new Set(keys.map((k: any) => ({ vendorId: k.vendor_id })))) : [];
-      res.json({ success: true, filters });
+      const options = await generateRegistrationOptions({
+        rpName,
+        rpID,
+        userID: new Uint8Array(Buffer.from(user.id)),
+        userName: user.email || 'user',
+        attestationType: 'none',
+        excludeCredentials,
+        authenticatorSelection: {
+          residentKey: 'preferred',
+          userVerification: 'preferred',
+        },
+      });
+
+      const challengeId = Math.random().toString(36).substring(2, 15);
+      passkeyChallenges.set(challengeId, {
+        challenge: options.challenge,
+        userId: user.id,
+        expires: Date.now() + 5 * 60 * 1000
+      });
+
+      res.json({ success: true, options, challengeId });
     } catch (error: any) {
+      console.error('[WebAuthn Reg Options Error]', error);
       res.status(500).json({ success: false, message: error.message });
     }
   });
 
-  app.post('/api/usb/unlock', async (req: any, res: any) => {
+  app.post('/api/webauthn/verify-registration', async (req: any, res: any) => {
     try {
-      const { devices, userId, email } = req.body;
-      
-      let targetUserId = userId;
-      if (!targetUserId && email) {
-        // Find user by email in profiles or auth.users
-        // Assuming profiles table has email or we use auth admin API
-        const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('id')
-          .eq('email', email.trim().toLowerCase())
-          .maybeSingle();
+      const user = await requireUserFromRequest(req);
+      const { response, challengeId } = req.body;
+
+      const challengeData = passkeyChallenges.get(challengeId);
+      if (!challengeData || challengeData.expires < Date.now() || challengeData.userId !== user.id) {
+        return res.status(400).json({ success: false, message: 'Challenge expired or invalid' });
+      }
+
+      const verification = await verifyRegistrationResponse({
+        response,
+        expectedChallenge: challengeData.challenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+      });
+
+      if (verification.verified && verification.registrationInfo) {
+        const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
+
+        const { error } = await supabase
+          .from('user_passkeys')
+          .insert({
+            user_id: user.id,
+            credential_id: credential.id,
+            public_key: Buffer.from(credential.publicKey).toString('base64'),
+            counter: credential.counter,
+            device_type: credentialDeviceType,
+            backed_up: credentialBackedUp,
+            transports: response.response.transports || [],
+          });
+
+        if (error) throw error;
         
-        if (userData) {
-          targetUserId = userData.id;
-        } else {
-          // Fallback to auth admin API if profiles doesn't have email or user not found
-          const { data: { users }, error: listError } = await supabase.auth.admin.listUsers();
-          const foundUser = users.find(u => u.email?.toLowerCase() === email.trim().toLowerCase());
-          if (foundUser) targetUserId = foundUser.id;
-        }
+        passkeyChallenges.delete(challengeId);
+        res.json({ success: true });
+      } else {
+        res.status(400).json({ success: false, message: 'Verification failed' });
       }
-
-      if (!targetUserId) {
-        // Search for ANY user that has this U-disk bound
-        for (const d of devices) {
-          const { data: keyData } = await supabase
-            .from('user_usb_keys')
-            .select('user_id')
-            .eq('vendor_id', d.vendorId)
-            .eq('product_id', d.productId)
-            .eq('serial_number', d.serialNumber || "")
-            .eq('status', 'active')
-            .maybeSingle();
-          
-          if (keyData) {
-            targetUserId = keyData.user_id;
-            break;
-          }
-        }
-      }
-
-      if (!targetUserId) {
-        return res.status(400).json({ success: false, message: "User not identified. Please enter your email or ensure your U-disk is bound." });
-      }
-
-      if (!supabase) {
-        return res.status(500).json({ success: false, message: "Database not configured" });
-      }
-
-      const { data: boundKeys, error } = await supabase
-        .from('user_usb_keys')
-        .select('*')
-        .eq('user_id', targetUserId)
-        .eq('status', 'active');
-
-      if (error) {
-        return res.status(500).json({ success: false, message: error.message });
-      }
-
-      if (!boundKeys || boundKeys.length === 0) {
-        return res.status(404).json({ success: false, message: "No bound USB keys found" });
-      }
-
-      const matched = devices.some((d: any) => 
-        boundKeys.some((b: any) => {
-          const idMatch = d.vendorId === b.vendor_id && d.productId === b.product_id;
-          if (!idMatch) return false;
-
-          // Priority 1: Serial Number Match (if both have it)
-          if (b.serial_number && d.serialNumber) {
-            return b.serial_number === d.serialNumber;
-          }
-
-          // Priority 2: If DB has serial but device doesn't (rare/browser limit), 
-          // we might fail or require extra verification. 
-          // For now, if DB has it, we require it.
-          if (b.serial_number && !d.serialNumber) {
-            return false; 
-          }
-
-          // Priority 3: Fallback to Vendor/Product ID only if DB has no serial
-          return true;
-        })
-      );
-
-      if (!matched) {
-        return res.status(401).json({ success: false, message: "U-disk not matched" });
-      }
-
-      // Generate a magic link for seamless login
-      const { data: userData } = await supabase.auth.admin.getUserById(targetUserId);
-      if (!userData || !userData.user) {
-        return res.status(404).json({ success: false, message: "User not found" });
-      }
-
-      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
-        type: 'magiclink',
-        email: userData.user.email!,
-        options: { redirectTo: `${process.env.APP_URL || 'http://localhost:3000'}/dashboard` }
-      });
-
-      if (linkError) {
-        console.error('[USB UNLOCK LINK ERROR]', linkError);
-        return res.status(500).json({ success: false, message: "Failed to generate login link" });
-      }
-
-      res.json({ 
-        success: true, 
-        action_link: linkData.properties.action_link 
-      });
     } catch (error: any) {
+      console.error('[WebAuthn Verify Reg Error]', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  app.post('/api/webauthn/generate-authentication-options', async (req: any, res: any) => {
+    try {
+      const options = await generateAuthenticationOptions({
+        rpID,
+        userVerification: 'preferred',
+      });
+
+      const challengeId = Math.random().toString(36).substring(2, 15);
+      passkeyChallenges.set(challengeId, {
+        challenge: options.challenge,
+        userId: 'anonymous',
+        expires: Date.now() + 5 * 60 * 1000
+      });
+
+      res.json({ success: true, options, challengeId });
+    } catch (error: any) {
+      console.error('[WebAuthn Auth Options Error]', error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  });
+
+  app.post('/api/webauthn/verify-authentication', async (req: any, res: any) => {
+    try {
+      const { response, challengeId } = req.body;
+
+      const challengeData = passkeyChallenges.get(challengeId);
+      if (!challengeData || challengeData.expires < Date.now()) {
+        return res.status(400).json({ success: false, message: 'Challenge expired or invalid' });
+      }
+
+      if (!supabase) return res.status(500).json({ success: false, message: "Database not configured" });
+
+      const { data: passkey } = await supabase
+        .from('user_passkeys')
+        .select('*')
+        .eq('credential_id', response.id)
+        .maybeSingle();
+
+      if (!passkey) {
+        return res.status(404).json({ success: false, message: 'Passkey not found' });
+      }
+
+      const verification = await verifyAuthenticationResponse({
+        response,
+        expectedChallenge: challengeData.challenge,
+        expectedOrigin: origin,
+        expectedRPID: rpID,
+        credential: {
+          id: passkey.credential_id,
+          publicKey: new Uint8Array(Buffer.from(passkey.public_key, 'base64')),
+          counter: passkey.counter,
+          transports: passkey.transports,
+        },
+      });
+
+      if (verification.verified && verification.authenticationInfo) {
+        await supabase
+          .from('user_passkeys')
+          .update({ 
+            counter: verification.authenticationInfo.newCounter,
+            last_used_at: new Date().toISOString()
+          })
+          .eq('id', passkey.id);
+
+        const { data: userData } = await supabase.auth.admin.getUserById(passkey.user_id);
+        if (!userData || !userData.user) {
+          return res.status(404).json({ success: false, message: 'User not found' });
+        }
+
+        const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+          type: 'magiclink',
+          email: userData.user.email!,
+          options: { redirectTo: `${process.env.APP_URL || 'http://localhost:3000'}/dashboard` }
+        });
+
+        if (linkError) throw linkError;
+
+        passkeyChallenges.delete(challengeId);
+        res.json({ success: true, action_link: linkData.properties.action_link });
+      } else {
+        res.status(400).json({ success: false, message: 'Verification failed' });
+      }
+    } catch (error: any) {
+      console.error('[WebAuthn Verify Auth Error]', error);
       res.status(500).json({ success: false, message: error.message });
     }
   });

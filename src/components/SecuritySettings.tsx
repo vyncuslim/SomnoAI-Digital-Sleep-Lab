@@ -119,8 +119,8 @@ export const SecuritySettings: React.FC = () => {
               <Usb className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">U-disk Authentication</h3>
-              <p className="text-xs text-slate-400">Bind a physical U-disk for hardware-based unlocking</p>
+              <h3 className="text-sm font-bold text-white">Passkeys & Hardware Keys</h3>
+              <p className="text-xs text-slate-400">Bind a passkey or security key for passwordless login</p>
             </div>
           </div>
         </div>

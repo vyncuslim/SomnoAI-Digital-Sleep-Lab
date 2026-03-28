@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { HardwareButton as Button } from './ui/Components';
 import { toast } from 'react-hot-toast';
-import { Usb, ShieldCheck, ShieldAlert, Loader2, ChevronDown, Activity } from 'lucide-react';
-import { testUdiskAccess } from '../lib/testUsbAuth';
+import { ShieldCheck, ShieldAlert, Loader2, Fingerprint, Trash2 } from 'lucide-react';
+import { startRegistration, startAuthentication } from '@simplewebauthn/browser';
 
 interface UsbAuthProps {
   mode: 'bind' | 'unlock';
@@ -12,17 +12,14 @@ interface UsbAuthProps {
   onSuccess?: () => void;
 }
 
-export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess }) => {
+export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [supported, setSupported] = useState(true);
   const [boundDevices, setBoundDevices] = useState<any[]>([]);
 
-  const [showAll, setShowAll] = useState(false);
-
-  const [showGuide, setShowGuide] = useState(false);
-
   useEffect(() => {
-    if (!('usb' in navigator)) {
+    // Check if WebAuthn is supported
+    if (!window.PublicKeyCredential) {
       setSupported(false);
     }
     if (mode === 'bind') {
@@ -36,10 +33,9 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
       if (!session) return;
 
       const { data } = await supabase
-        .from('user_usb_keys')
+        .from('user_passkeys')
         .select('*')
-        .eq('user_id', session.user.id)
-        .eq('status', 'active');
+        .eq('user_id', session.user.id);
       
       if (data) setBoundDevices(data);
     } catch (error) {
@@ -50,47 +46,95 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
   const handleBind = async () => {
     setLoading(true);
     try {
-      const usb = (navigator as any).usb;
-      
-      // Default to empty filters to show EVERYTHING the browser can see
-      // This ensures the user's U-disk shows up if it's not blocked in usb-internals
-      const device = await usb.requestDevice({ 
-        filters: [] 
-      });
-
-      const payload = {
-        vendorId: device.vendorId,
-        productId: device.productId,
-        serialNumber: device.serialNumber || "",
-        productName: device.productName || "Hardware Key",
-        manufacturerName: device.manufacturerName || ""
-      };
-
       const { data: { session } } = await supabase.auth.getSession();
-      
-      const res = await fetch("/api/usb/bind", {
+      if (!session) throw new Error("Not authenticated");
+
+      // 1. Get registration options from server
+      const optionsRes = await fetch("/api/webauthn/generate-registration-options", {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
-          "Authorization": `Bearer ${session?.access_token}`
+          "Authorization": `Bearer ${session.access_token}`
+        }
+      });
+      
+      const optionsData = await optionsRes.json();
+      if (!optionsData.success) throw new Error(optionsData.message);
+
+      // 2. Start WebAuthn registration in browser
+      const attResp = await startRegistration({ optionsJSON: optionsData.options });
+
+      // 3. Send response to server for verification
+      const verifyRes = await fetch("/api/webauthn/verify-registration", {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${session.access_token}`
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify({
+          response: attResp,
+          challengeId: optionsData.challengeId
+        })
       });
 
-      const data = await res.json();
-      if (data.success) {
-        toast.success("U-disk bound successfully");
+      const verifyData = await verifyRes.json();
+      if (verifyData.success) {
+        toast.success("Passkey registered successfully!");
         fetchBoundDevices();
         if (onSuccess) onSuccess();
       } else {
-        toast.error(data.message || "Binding failed");
+        throw new Error(verifyData.message || "Verification failed");
       }
     } catch (error: any) {
-      if (error.name === 'NotFoundError') {
-        toast.success("Device selection cancelled");
+      console.error(error);
+      if (error.name === 'NotAllowedError') {
+        toast.error("Registration cancelled or blocked by browser.");
       } else {
-        console.error(error);
-        toast.error("An error occurred during binding");
+        toast.error(error.message || "An error occurred during registration");
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUnlock = async () => {
+    setLoading(true);
+    try {
+      // 1. Get authentication options from server
+      const optionsRes = await fetch("/api/webauthn/generate-authentication-options", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }
+      });
+      
+      const optionsData = await optionsRes.json();
+      if (!optionsData.success) throw new Error(optionsData.message);
+
+      // 2. Start WebAuthn authentication in browser
+      const asseResp = await startAuthentication({ optionsJSON: optionsData.options });
+
+      // 3. Send response to server for verification
+      const verifyRes = await fetch("/api/webauthn/verify-authentication", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          response: asseResp,
+          challengeId: optionsData.challengeId
+        })
+      });
+
+      const verifyData = await verifyRes.json();
+      if (verifyData.success && verifyData.action_link) {
+        toast.success("Authentication successful! Redirecting...");
+        window.location.href = verifyData.action_link;
+      } else {
+        throw new Error(verifyData.message || "Verification failed");
+      }
+    } catch (error: any) {
+      console.error(error);
+      if (error.name === 'NotAllowedError') {
+        toast.error("Authentication cancelled or blocked by browser.");
+      } else {
+        toast.error(error.message || "An error occurred during authentication");
       }
     } finally {
       setLoading(false);
@@ -99,213 +143,77 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
 
   const handleDelete = async (id: string) => {
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) return;
-
-      const { error } = await supabase
-        .from('user_usb_keys')
-        .delete()
-        .eq('id', id)
-        .eq('user_id', session.user.id);
-      
+      const { error } = await supabase.from('user_passkeys').delete().eq('id', id);
       if (error) throw error;
-      toast.success("U-disk unbound");
+      toast.success("Passkey removed");
       fetchBoundDevices();
     } catch (error: any) {
-      toast.error(error.message || "Failed to unbind device");
-    }
-  };
-
-  const handleUnlock = async () => {
-    setLoading(true);
-    try {
-      const usb = (navigator as any).usb;
-      
-      // 1. Fetch filters for this user first (if email provided)
-      let filters: any[] = []; // Default to empty to show everything
-      if (email) {
-        const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
-        const data = await res.json();
-        if (data.success && data.filters.length > 0) {
-          filters = data.filters;
-        }
-      }
-
-      // 2. Try to find a match among ALREADY paired devices (seamless)
-      let pairedDevices = await usb.getDevices();
-      let candidates = pairedDevices.map((d: any) => ({
-        vendorId: d.vendorId,
-        productId: d.productId,
-        serialNumber: d.serialNumber || "",
-        productName: d.productName || "",
-        manufacturerName: d.manufacturerName || ""
-      }));
-
-      // 3. Send paired devices to backend to see if any match
-      let matched = false;
-      if (candidates.length > 0) {
-        const res = await fetch("/api/usb/unlock", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ devices: candidates, userId, email })
-        });
-        const data = await res.json();
-        if (data.success) {
-          matched = true;
-          toast.success("U-disk verified (auto-detected)");
-          if (data.action_link) window.location.href = data.action_link;
-          else if (onSuccess) onSuccess();
-          return;
-        }
-      }
-
-      // 4. If no paired device matched, FORCE a popup selection
-      if (!matched) {
-        const device = await usb.requestDevice({ filters });
-        const manualCandidate = [{
-          vendorId: device.vendorId,
-          productId: device.productId,
-          serialNumber: device.serialNumber || "",
-          productName: device.productName || "",
-          manufacturerName: device.manufacturerName || ""
-        }];
-
-        const res = await fetch("/api/usb/unlock", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ devices: manualCandidate, userId, email })
-        });
-
-        const data = await res.json();
-        if (data.success) {
-          toast.success("U-disk verified successfully");
-          if (data.action_link) window.location.href = data.action_link;
-          else if (onSuccess) onSuccess();
-        } else {
-          toast.error(data.message || "U-disk verification failed");
-        }
-      }
-    } catch (error: any) {
-      if (error.name === 'NotFoundError') {
-        toast.success("Verification cancelled");
-      } else {
-        console.error("USB Unlock Error:", error);
-        toast.error(error.message || "U-disk verification failed. Please try again.");
-      }
-    } finally {
-      setLoading(false);
+      toast.error("Failed to remove passkey");
     }
   };
 
   if (!supported) {
     return (
-      <div className="flex flex-col gap-2 p-4 bg-rose-500/10 border border-rose-500/20 rounded-2xl">
-        <div className="flex items-center gap-2 text-sm text-rose-500 font-bold">
-          <ShieldAlert className="w-4 h-4" />
-          <span>Browser Not Supported</span>
+      <div className="p-4 bg-red-500/10 border border-red-500/20 rounded-lg flex items-start gap-3">
+        <ShieldAlert className="w-5 h-5 text-red-400 shrink-0 mt-0.5" />
+        <div>
+          <h4 className="text-sm font-medium text-red-400">WebAuthn Not Supported</h4>
+          <p className="text-xs text-red-400/80 mt-1">
+            Your browser or device does not support Passkeys/WebAuthn. Please use a modern browser.
+          </p>
         </div>
-        <p className="text-xs text-slate-400 leading-relaxed">
-          WebUSB is required for hardware authentication. Please use <span className="text-white font-bold">Google Chrome</span> or <span className="text-white font-bold">Microsoft Edge</span>. Firefox and Safari are currently not supported.
-        </p>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col gap-4 w-full">
-      <div className="bg-indigo-900/10 border border-indigo-500/20 rounded-xl overflow-hidden transition-all">
-        <button 
-          onClick={() => setShowGuide(!showGuide)}
-          className="w-full flex items-center justify-between p-3 hover:bg-indigo-500/5 transition-colors"
-        >
-          <div className="flex items-center gap-2">
-            <Usb className="w-4 h-4 text-indigo-400" />
-            <span className="text-[10px] font-bold text-indigo-300 uppercase tracking-wider">Troubleshooting Guide</span>
-          </div>
-          <ChevronDown className={`w-3 h-3 text-indigo-400 transition-transform ${showGuide ? 'rotate-180' : ''}`} />
-        </button>
-        
-        {showGuide && (
-          <div className="p-3 pt-0 border-t border-indigo-500/10">
-            <div className="text-[10px] text-indigo-200/80 space-y-2 leading-relaxed">
-              <p>Browsers often hide standard U-disks for security. If your device is not listed:</p>
-              <ul className="list-disc list-inside space-y-1.5">
-                <li><span className="text-white font-bold underline">"Eject"</span> the U-disk in your OS (Windows/macOS) but <span className="text-indigo-300">keep it plugged in</span>. This often releases the lock and allows the browser to see it.</li>
-                <li>Ensure no other applications (like File Explorer or Disk Utility) are actively using the drive.</li>
-                <li>Enable the <span className="text-white font-bold">"Show all devices"</span> option below to bypass strict filtering.</li>
-              </ul>
-              
-              <div className="pt-2 border-t border-indigo-500/10 mt-2">
-                <button 
-                  onClick={async () => {
-                    const result = await testUdiskAccess();
-                    if (result.success) {
-                      toast.success(result.message);
-                    } else {
-                      toast.error(result.message);
-                    }
-                  }}
-                  className="flex items-center gap-2 px-3 py-1.5 bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-400 rounded-lg transition-all text-[9px] font-bold uppercase tracking-widest"
-                >
-                  <Activity className="w-3 h-3" />
-                  Run Deep Diagnostic
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
+    <div className="space-y-6">
       {mode === 'bind' ? (
         <div className="space-y-4">
-
-          <div className="flex items-center gap-2 px-1 py-1">
-            <input 
-              type="checkbox" 
-              id="showAll" 
-              checked={showAll} 
-              onChange={(e) => setShowAll(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 transition-all cursor-pointer"
-            />
-            <label htmlFor="showAll" className="text-xs text-slate-400 cursor-pointer select-none hover:text-slate-300 font-medium">
-              Show all devices <span className="text-[10px] opacity-60 font-normal">(Use if U-disk is not detected)</span>
-            </label>
-          </div>
-
-          <Button 
-            onClick={handleBind} 
-            disabled={loading}
-            variant="outline"
-            className="w-full flex items-center gap-2 bg-indigo-600/10 border-indigo-500/20 hover:bg-indigo-600/20 text-indigo-400 py-6 rounded-2xl"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Usb className="w-4 h-4" />}
-            Bind Optional Hardware Key
-          </Button>
-          
-          <div className="space-y-2 px-1">
-            <p className="text-[10px] text-slate-400 leading-relaxed">
-              <span className="text-amber-500 font-bold italic">Note:</span> Only bind devices you trust.
-            </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm font-medium text-white flex items-center gap-2">
+                <Fingerprint className="w-4 h-4 text-emerald-400" />
+                Passkeys & Hardware Keys
+              </h3>
+              <p className="text-xs text-zinc-400 mt-1">
+                Use your device's biometric sensor (Touch ID, Face ID) or a dedicated security key (YubiKey) for passwordless login.
+              </p>
+            </div>
+            <Button 
+              onClick={handleBind} 
+              disabled={loading}
+              className="bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20 border-emerald-500/20"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+              Register Passkey
+            </Button>
           </div>
 
           {boundDevices.length > 0 && (
-            <div className="space-y-2">
-              <p className="text-[10px] uppercase tracking-widest text-slate-500 font-bold">Bound Devices</p>
-              {boundDevices.map((device) => (
-                <div key={device.id} className="flex items-center justify-between p-3 bg-slate-900/50 border border-slate-800 rounded-xl">
-                  <div className="flex flex-col">
-                    <span className="text-xs font-bold text-white truncate max-w-[150px]">
-                      {device.product_name || "Unknown Device"}
-                    </span>
-                    <span className="text-[10px] text-slate-500 font-mono">
-                      {device.vendor_id.toString(16).padStart(4, '0')}:{device.product_id.toString(16).padStart(4, '0')}
-                    </span>
+            <div className="mt-4 space-y-2">
+              <h4 className="text-xs font-medium text-zinc-500 uppercase tracking-wider">Registered Keys</h4>
+              {boundDevices.map((device, idx) => (
+                <div key={idx} className="flex items-center justify-between p-3 bg-zinc-900/50 border border-zinc-800 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                      <Fingerprint className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-zinc-200">
+                        Passkey {idx + 1}
+                      </p>
+                      <p className="text-xs text-zinc-500 font-mono">
+                        Added: {new Date(device.created_at).toLocaleDateString()}
+                      </p>
+                    </div>
                   </div>
                   <button 
                     onClick={() => handleDelete(device.id)}
-                    className="text-[10px] text-rose-500 hover:text-rose-400 font-bold uppercase tracking-wider"
+                    className="p-2 text-zinc-500 hover:text-red-400 hover:bg-red-400/10 rounded-md transition-colors"
+                    title="Remove Key"
                   >
-                    Unbind
+                    <Trash2 className="w-4 h-4" />
                   </button>
                 </div>
               ))}
@@ -314,32 +222,22 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
         </div>
       ) : (
         <div className="space-y-4">
-          <div className="flex items-center gap-2 px-1 py-1">
-            <input 
-              type="checkbox" 
-              id="showAllUnlock" 
-              checked={showAll} 
-              onChange={(e) => setShowAll(e.target.checked)}
-              className="w-4 h-4 rounded border-slate-700 bg-slate-800 text-indigo-600 focus:ring-indigo-500 transition-all cursor-pointer"
-            />
-            <label htmlFor="showAllUnlock" className="text-xs text-slate-400 cursor-pointer select-none hover:text-slate-300 font-medium">
-              Show all devices <span className="text-[10px] opacity-60 font-normal">(Use if U-disk is not detected)</span>
-            </label>
-          </div>
-
-          <Button 
-            onClick={handleUnlock} 
-            disabled={loading}
-            className="w-full flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-6 rounded-2xl shadow-[0_0_20px_rgba(79,70,229,0.3)]"
-          >
-            {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
-            Verify U-disk (Optional)
-          </Button>
-
-          <div className="text-center">
-            <p className="text-[10px] text-slate-500 uppercase tracking-widest font-bold">
-              Verification failed? Use your <span className="text-indigo-400">PIN</span> or <span className="text-indigo-400">Magic Link</span> instead.
+          <div className="p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-lg">
+            <h4 className="text-sm font-medium text-emerald-400 flex items-center gap-2">
+              <Fingerprint className="w-4 h-4" />
+              Sign in with Passkey
+            </h4>
+            <p className="text-xs text-emerald-400/80 mt-1 mb-4">
+              Use your registered device biometrics or security key to sign in instantly.
             </p>
+            <Button 
+              onClick={handleUnlock} 
+              disabled={loading}
+              className="w-full bg-emerald-500 hover:bg-emerald-600 text-white border-transparent"
+            >
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Fingerprint className="w-4 h-4 mr-2" />}
+              Verify Passkey
+            </Button>
           </div>
         </div>
       )}
