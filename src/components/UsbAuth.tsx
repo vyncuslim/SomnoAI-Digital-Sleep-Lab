@@ -144,7 +144,12 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
       const data = await res.json();
       if (data.success) {
         toast.success("U-disk verified successfully");
-        if (onSuccess) onSuccess();
+        if (data.action_link) {
+          // Redirect to the magic link for seamless login
+          window.location.href = data.action_link;
+        } else if (onSuccess) {
+          onSuccess();
+        }
       } else {
         toast.error(data.message || "U-disk verification failed");
       }

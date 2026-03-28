@@ -616,12 +616,26 @@ async function startServer() {
       }
 
       if (!targetUserId) {
-        const user = await getUserFromRequest(req);
-        if (user) targetUserId = user.id;
+        // Search for ANY user that has this U-disk bound
+        for (const d of devices) {
+          const { data: keyData } = await supabase
+            .from('user_usb_keys')
+            .select('user_id')
+            .eq('vendor_id', d.vendorId)
+            .eq('product_id', d.productId)
+            .eq('serial_number', d.serialNumber || "")
+            .eq('status', 'active')
+            .maybeSingle();
+          
+          if (keyData) {
+            targetUserId = keyData.user_id;
+            break;
+          }
+        }
       }
 
       if (!targetUserId) {
-        return res.status(400).json({ success: false, message: "User ID or Email required" });
+        return res.status(400).json({ success: false, message: "User not identified. Please enter your email or ensure your U-disk is bound." });
       }
 
       if (!supabase) {
@@ -654,7 +668,27 @@ async function startServer() {
         return res.status(401).json({ success: false, message: "U-disk not matched" });
       }
 
-      res.json({ success: true });
+      // Generate a magic link for seamless login
+      const { data: userData } = await supabase.auth.admin.getUserById(targetUserId);
+      if (!userData || !userData.user) {
+        return res.status(404).json({ success: false, message: "User not found" });
+      }
+
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
+        email: userData.user.email!,
+        options: { redirectTo: `${process.env.APP_URL || 'http://localhost:3000'}/dashboard` }
+      });
+
+      if (linkError) {
+        console.error('[USB UNLOCK LINK ERROR]', linkError);
+        return res.status(500).json({ success: false, message: "Failed to generate login link" });
+      }
+
+      res.json({ 
+        success: true, 
+        action_link: linkData.properties.action_link 
+      });
     } catch (error: any) {
       res.status(500).json({ success: false, message: error.message });
     }
