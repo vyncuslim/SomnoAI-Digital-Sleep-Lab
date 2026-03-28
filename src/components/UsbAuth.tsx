@@ -201,15 +201,17 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
             className="w-full flex items-center gap-2 bg-indigo-600/10 border-indigo-500/20 hover:bg-indigo-600/20 text-indigo-400"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Usb className="w-4 h-4" />}
-            Bind New Hardware Key
+            Bind Hardware Key
           </Button>
           
-          <p className="text-[10px] text-slate-500 leading-relaxed px-1">
-            <span className="text-amber-500/80 font-bold">U-disk Tips:</span> If your U-disk doesn't appear, please <span className="text-white font-bold">Eject</span> it from your OS first (but keep it plugged in). 
-          </p>
-          <p className="text-[10px] text-slate-600 italic px-1">
-            * Note: Internal components like your <span className="text-slate-400">Webcam</span> or <span className="text-slate-400">Bluetooth</span> may appear in the list as "Foxconn" or "Unknown". Please ignore them and look for your external drive.
-          </p>
+          <div className="space-y-2 px-1">
+            <p className="text-[10px] text-slate-400 leading-relaxed">
+              <span className="text-rose-500 font-bold">Important:</span> Standard <span className="text-white">Flash Drives (U-disks)</span> are often blocked by browsers for security. 
+            </p>
+            <p className="text-[10px] text-indigo-400/80 leading-relaxed font-medium">
+              <span className="text-amber-500">Pro Tip:</span> Use your <span className="text-white">USB Mouse, Keyboard, or Bluetooth dongle</span> as your key instead. They are recognized instantly and are just as secure.
+            </p>
+          </div>
 
           {boundDevices.length > 0 && (
             <div className="space-y-2">
