@@ -94,10 +94,14 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
 
   const handleDelete = async (id: string) => {
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+
       const { error } = await supabase
         .from('user_usb_keys')
         .delete()
-        .eq('id', id);
+        .eq('id', id)
+        .eq('user_id', session.user.id);
       
       if (error) throw error;
       toast.success("U-disk unbound");
@@ -124,7 +128,7 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
 
       // 2. If no paired devices or no match, request a device
       if (candidates.length === 0) {
-        let filters: any[] = [{}];
+        let filters: any[] = [{ classCode: 8 }];
         if (email) {
           const res = await fetch(`/api/usb/get-filters?email=${encodeURIComponent(email)}`);
           const data = await res.json();
