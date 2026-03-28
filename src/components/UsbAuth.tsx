@@ -45,8 +45,10 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
     setLoading(true);
     try {
       const usb = (navigator as any).usb;
+      // Chrome requires at least one filter object. [{}] is the broadest possible filter.
+      // Note: Standard Flash Drives (Mass Storage) are often blocked by Chrome for security.
       const device = await usb.requestDevice({
-        filters: [{ classCode: 0x08 }] // Mass Storage
+        filters: [{}] 
       });
 
       const payload = {
@@ -164,8 +166,12 @@ export const UsbAuth: React.FC<UsbAuthProps> = ({ mode, userId, email, onSuccess
             className="w-full flex items-center gap-2 bg-indigo-600/10 border-indigo-500/20 hover:bg-indigo-600/20 text-indigo-400"
           >
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Usb className="w-4 h-4" />}
-            Bind New U-disk
+            Bind New Hardware Key
           </Button>
+          
+          <p className="text-[10px] text-slate-500 leading-relaxed px-1">
+            <span className="text-amber-500/80 font-bold">Note:</span> Standard flash drives may be hidden by your browser for security. If your U-disk doesn't appear, try using a USB mouse, keyboard, or other peripheral as your hardware key.
+          </p>
 
           {boundDevices.length > 0 && (
             <div className="space-y-2">
